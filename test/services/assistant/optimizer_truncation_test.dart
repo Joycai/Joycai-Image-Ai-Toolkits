@@ -28,20 +28,28 @@ void main() {
   /// up on its half JSON: the call is there, the arguments decoded to what
   /// survived — here a prompt, to prove it is not staged anyway.
   LLMResponse cutSubmit(int n) => LLMResponse(
-        text: '',
-        toolCalls: [
-          LLMToolCall(id: 'call_$n', name: 'submit_prompt', arguments: const {'prompt': 'half a prompt'}),
-        ],
-        metadata: const {'finish_reason': 'length', 'completion_tokens': 8192},
-      );
+    text: '',
+    toolCalls: [
+      LLMToolCall(
+        id: 'call_$n',
+        name: 'submit_prompt',
+        arguments: const {'prompt': 'half a prompt'},
+      ),
+    ],
+    metadata: const {'finish_reason': 'length', 'completion_tokens': 8192},
+  );
 
   LLMResponse wholeSubmit(int n) => LLMResponse(
-        text: '',
-        toolCalls: [
-          LLMToolCall(id: 'call_$n', name: 'submit_prompt', arguments: const {'prompt': 'the whole prompt'}),
-        ],
-        metadata: const {'finish_reason': 'tool_calls'},
-      );
+    text: '',
+    toolCalls: [
+      LLMToolCall(
+        id: 'call_$n',
+        name: 'submit_prompt',
+        arguments: const {'prompt': 'the whole prompt'},
+      ),
+    ],
+    metadata: const {'finish_reason': 'tool_calls'},
+  );
 
   test('a cut call is not executed, and its result says why and what to do', () async {
     final session = PromptOptimizerSession();
@@ -57,19 +65,31 @@ void main() {
       };
     };
 
-    await PromptOptimizerAgent.runTurn(session: session, modelIdentifier: 'm', referenceImages: const []);
+    await PromptOptimizerAgent.runTurn(
+      session: session,
+      modelIdentifier: 'm',
+      referenceImages: const [],
+    );
 
     // The cut call staged nothing; the retry's whole call did.
     expect(session.promptVersions, 1);
-    expect(session.transcript.where((e) => e.kind == OptimizerEntryKind.prompt).single.text, 'the whole prompt');
+    expect(
+      session.transcript.where((e) => e.kind == OptimizerEntryKind.prompt).single.text,
+      'the whole prompt',
+    );
 
     // The cut call is paired — the history stays sendable — with the directed result.
-    final cutResult = session.history.firstWhere((m) => m.role == LLMRole.tool && m.toolCallId == 'call_1');
+    final cutResult = session.history.firstWhere(
+      (m) => m.role == LLMRole.tool && m.toolCallId == 'call_1',
+    );
     final decoded = jsonDecode(cutResult.content) as Map<String, dynamic>;
     expect(decoded['code'], 'output_truncated');
     expect(decoded['message'], contains('8192 tokens'));
     expect(decoded['message'], contains('ONLY the tool call'));
-    expect(PromptOptimizerAgent.repairToolCallPairing(session.history), hasLength(session.history.length));
+    expect(
+      PromptOptimizerAgent.repairToolCallPairing(session.history),
+      hasLength(session.history.length),
+    );
     expect(session.transcript.any((e) => e.kind == OptimizerEntryKind.error), isFalse);
   });
 
@@ -82,13 +102,20 @@ void main() {
       return cutSubmit(requests);
     };
 
-    await PromptOptimizerAgent.runTurn(session: session, modelIdentifier: 'm', referenceImages: const []);
+    await PromptOptimizerAgent.runTurn(
+      session: session,
+      modelIdentifier: 'm',
+      referenceImages: const [],
+    );
 
     expect(requests, maxTruncatedRounds, reason: 'no further rounds are burned on the same cut');
     expect(session.promptVersions, 0);
     expect(session.transcript.last.kind, OptimizerEntryKind.error);
     expect(session.transcript.last.text, PromptOptimizerAgent.truncationStopNoticeToken);
-    expect(PromptOptimizerAgent.repairToolCallPairing(session.history), hasLength(session.history.length));
+    expect(
+      PromptOptimizerAgent.repairToolCallPairing(session.history),
+      hasLength(session.history.length),
+    );
   });
 
   test('a whole reply between two cuts resets the count', () async {
@@ -100,16 +127,23 @@ void main() {
       // cut, a whole view call, cut, then the delivery.
       return switch (requests) {
         1 => cutSubmit(1),
-        2 => LLMResponse(text: '', toolCalls: [
+        2 => LLMResponse(
+          text: '',
+          toolCalls: [
             LLMToolCall(id: 'call_2', name: 'list_reference_images', arguments: const {}),
-          ]),
+          ],
+        ),
         3 => cutSubmit(3),
         4 => wholeSubmit(4),
         _ => LLMResponse(text: 'done'),
       };
     };
 
-    await PromptOptimizerAgent.runTurn(session: session, modelIdentifier: 'm', referenceImages: const []);
+    await PromptOptimizerAgent.runTurn(
+      session: session,
+      modelIdentifier: 'm',
+      referenceImages: const [],
+    );
 
     expect(session.promptVersions, 1);
     expect(session.transcript.any((e) => e.kind == OptimizerEntryKind.error), isFalse);
@@ -124,23 +158,35 @@ void main() {
       return LLMResponse(text: '', metadata: const {'finish_reason': 'length'});
     };
 
-    await PromptOptimizerAgent.runTurn(session: session, modelIdentifier: 7, referenceImages: const []);
+    await PromptOptimizerAgent.runTurn(
+      session: session,
+      modelIdentifier: 7,
+      referenceImages: const [],
+    );
 
     expect(requests, maxTruncatedRounds);
     expect(session.transcript.last.kind, OptimizerEntryKind.error);
     expect(session.transcript.last.text, PromptOptimizerAgent.truncationStopNoticeToken);
-    expect(session.transcript.last.modelDbId, 7, reason: 'the card jumps to the model that produced the reply');
+    expect(
+      session.transcript.last.modelDbId,
+      7,
+      reason: 'the card jumps to the model that produced the reply',
+    );
   });
 
   test('a cut plain-text reply is kept as a reply and marked truncated', () async {
     final session = PromptOptimizerSession();
     session.addUserTurn('go');
     PromptOptimizerAgent.debugRequestOverride = (messages, tools, options) async => LLMResponse(
-          text: 'I would suggest a low-angle shot with',
-          metadata: const {'finish_reason': 'length'},
-        );
+      text: 'I would suggest a low-angle shot with',
+      metadata: const {'finish_reason': 'length'},
+    );
 
-    await PromptOptimizerAgent.runTurn(session: session, modelIdentifier: 'm', referenceImages: const []);
+    await PromptOptimizerAgent.runTurn(
+      session: session,
+      modelIdentifier: 'm',
+      referenceImages: const [],
+    );
 
     final reply = session.transcript.last;
     expect(reply.kind, OptimizerEntryKind.assistant);
@@ -152,15 +198,20 @@ void main() {
     final session = PromptOptimizerSession();
     session.addUserTurn('go');
     PromptOptimizerAgent.debugRequestOverride = (messages, tools, options) async => LLMResponse(
-          text: 'I would suggest a low-angle shot with',
-          metadata: const {'finish_reason': 'length'},
-        );
+      text: 'I would suggest a low-angle shot with',
+      metadata: const {'finish_reason': 'length'},
+    );
 
-    await PromptOptimizerAgent.runTurn(session: session, modelIdentifier: 7, referenceImages: const []);
+    await PromptOptimizerAgent.runTurn(
+      session: session,
+      modelIdentifier: 7,
+      referenceImages: const [],
+    );
 
     // What the repository stores and reads back.
     final stored = [
-      for (final m in session.history) LLMMessage.fromJson(jsonDecode(jsonEncode(m.toJson())) as Map<String, dynamic>),
+      for (final m in session.history)
+        LLMMessage.fromJson(jsonDecode(jsonEncode(m.toJson())) as Map<String, dynamic>),
     ];
     final restored = PromptOptimizerSession.fromStored(
       id: session.id,
@@ -184,10 +235,14 @@ void main() {
   test('a whole plain-text reply is not marked', () async {
     final session = PromptOptimizerSession();
     session.addUserTurn('go');
-    PromptOptimizerAgent.debugRequestOverride =
-        (messages, tools, options) async => LLMResponse(text: 'done', metadata: const {'finish_reason': 'stop'});
+    PromptOptimizerAgent.debugRequestOverride = (messages, tools, options) async =>
+        LLMResponse(text: 'done', metadata: const {'finish_reason': 'stop'});
 
-    await PromptOptimizerAgent.runTurn(session: session, modelIdentifier: 'm', referenceImages: const []);
+    await PromptOptimizerAgent.runTurn(
+      session: session,
+      modelIdentifier: 'm',
+      referenceImages: const [],
+    );
 
     expect(session.transcript.last.truncated, isFalse);
   });
@@ -213,10 +268,10 @@ void main() {
           requests++;
           return switch (requests) {
             1 => LLMResponse(
-                text: '',
-                toolCalls: [LLMToolCall(id: 'c1', name: 'read_knowledge_file', arguments: const {})],
-                metadata: const {'finish_reason': 'length'},
-              ),
+              text: '',
+              toolCalls: [LLMToolCall(id: 'c1', name: 'read_knowledge_file', arguments: const {})],
+              metadata: const {'finish_reason': 'length'},
+            ),
             _ => LLMResponse(text: 'findings'),
           };
         },
@@ -243,7 +298,9 @@ void main() {
           requests++;
           return LLMResponse(
             text: '',
-            toolCalls: [LLMToolCall(id: 'c$requests', name: 'read_knowledge_file', arguments: const {})],
+            toolCalls: [
+              LLMToolCall(id: 'c$requests', name: 'read_knowledge_file', arguments: const {}),
+            ],
             metadata: const {'finish_reason': 'length'},
           );
         },

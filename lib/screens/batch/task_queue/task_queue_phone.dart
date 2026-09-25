@@ -100,7 +100,12 @@ extension _PhoneForm on _TaskQueueScreenState {
                     positions,
                     l10n,
                     phone: true,
-                    padding: EdgeInsets.fromLTRB(12, 12, 12, 12 + (inBottomSheet ? bottomInset : 0)),
+                    padding: EdgeInsets.fromLTRB(
+                      12,
+                      12,
+                      12,
+                      12 + (inBottomSheet ? bottomInset : 0),
+                    ),
                   ),
           ),
         ],

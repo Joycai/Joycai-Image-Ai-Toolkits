@@ -25,8 +25,8 @@ class AppTopBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final top = MediaQuery.paddingOf(context).top;
     final theme = Theme.of(context);
-    final current = AppDestination.values[
-        context.select<AppState, int>((s) => s.activeScreenIndex)];
+    final current =
+        AppDestination.values[context.select<AppState, int>((s) => s.activeScreenIndex)];
     final destination = current.label(AppLocalizations.of(context)!);
     final destinationStyle = theme.textTheme.bodyMedium!.metricsOnly.copyWith(
       fontWeight: FontWeight.w600,
@@ -49,8 +49,7 @@ class AppTopBar extends StatelessWidget {
                 textDirection: TextDirection.ltr,
                 textScaler: MediaQuery.textScalerOf(context),
                 maxLines: 1,
-              )..layout())
-                  .width;
+              )..layout()).width;
               // The name takes the trailing half beside the centred group, or
               // nothing: it never pushes the group off centre.
               final showName = nameWidth + AppSpace.s16 * 2 <= (constraints.maxWidth - nav) / 2;
@@ -69,7 +68,12 @@ class AppTopBar extends StatelessWidget {
                       top: 0,
                       bottom: 0,
                       child: Center(
-                        child: Text(destination, maxLines: 1, softWrap: false, style: destinationStyle),
+                        child: Text(
+                          destination,
+                          maxLines: 1,
+                          softWrap: false,
+                          style: destinationStyle,
+                        ),
                       ),
                     ),
                 ],

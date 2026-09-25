@@ -19,17 +19,11 @@ import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/core/constants.dart';
 import 'package:joycai_image_ai_toolkits/widgets/shell/baked_backdrop.dart';
 
-Future<ui.Image> _record(
-  void Function(Canvas canvas, Size size) paint,
-  Size size,
-) async {
+Future<ui.Image> _record(void Function(Canvas canvas, Size size) paint, Size size) async {
   final recorder = ui.PictureRecorder();
   paint(Canvas(recorder), size);
   final ui.Picture picture = recorder.endRecording();
-  final ui.Image image = await picture.toImage(
-    size.width.round(),
-    size.height.round(),
-  );
+  final ui.Image image = await picture.toImage(size.width.round(), size.height.round());
   picture.dispose();
   return image;
 }
@@ -45,10 +39,7 @@ Future<ui.Image> _upscaled(ui.Image small, Size full) async {
     Paint()..filterQuality = FilterQuality.medium,
   );
   final ui.Picture picture = recorder.endRecording();
-  final ui.Image image = await picture.toImage(
-    full.width.round(),
-    full.height.round(),
-  );
+  final ui.Image image = await picture.toImage(full.width.round(), full.height.round());
   picture.dispose();
   return image;
 }
@@ -95,9 +86,13 @@ void main() {
       // Both figures, because they fail differently: `worst` catches a hard
       // edge that only exists in a few pixels, `mean` catches a recipe whose
       // whole surface has drifted.
-      expect(worst, lessThanOrEqualTo(4),
-          reason: 'a quarter-resolution bake is only invisible while the '
-              'recipe has no edge in it — worst channel delta was $worst');
+      expect(
+        worst,
+        lessThanOrEqualTo(4),
+        reason:
+            'a quarter-resolution bake is only invisible while the '
+            'recipe has no edge in it — worst channel delta was $worst',
+      );
       expect(mean, lessThan(0.5), reason: 'mean channel delta was $mean');
 
       live.dispose();
@@ -113,8 +108,7 @@ void main() {
     test('a dithering renderer bakes at physical resolution', () {
       for (final double ratio in [1.0, 1.5, 2.0, 3.0]) {
         expect(
-          BakedBackdrop.texelsPerLogicalPixel(
-              devicePixelRatio: ratio, rendererDithers: true),
+          BakedBackdrop.texelsPerLogicalPixel(devicePixelRatio: ratio, rendererDithers: true),
           ratio,
         );
       }
@@ -122,8 +116,7 @@ void main() {
 
     test('Skia keeps the measured quarter-resolution bake', () {
       expect(
-        BakedBackdrop.texelsPerLogicalPixel(
-            devicePixelRatio: 2, rendererDithers: false),
+        BakedBackdrop.texelsPerLogicalPixel(devicePixelRatio: 2, rendererDithers: false),
         0.25,
       );
     });

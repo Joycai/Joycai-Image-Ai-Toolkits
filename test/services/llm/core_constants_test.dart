@@ -45,12 +45,9 @@ void main() {
     });
 
     test('gpt-image-2 exposes the expanded 2K/4K size set', () {
-      List<String> sizesFor(String modelId) => ModelCapabilities.forModel(modelId)
-          .imageParams
-          .firstWhere((p) => p.key == 'imageSize')
-          .options
-          .map((o) => o.value)
-          .toList();
+      List<String> sizesFor(String modelId) => ModelCapabilities.forModel(
+        modelId,
+      ).imageParams.firstWhere((p) => p.key == 'imageSize').options.map((o) => o.value).toList();
 
       final v2 = sizesFor('gpt-image-2');
       // The popular 2K / 4K sizes are only offered on v2.
@@ -63,12 +60,9 @@ void main() {
     });
 
     test('only gpt-image-2.5 offers the xhigh / max quality rungs', () {
-      List<String> qualitiesFor(String modelId) => ModelCapabilities.forModel(modelId)
-          .imageParams
-          .firstWhere((p) => p.key == 'quality')
-          .options
-          .map((o) => o.value)
-          .toList();
+      List<String> qualitiesFor(String modelId) => ModelCapabilities.forModel(
+        modelId,
+      ).imageParams.firstWhere((p) => p.key == 'quality').options.map((o) => o.value).toList();
 
       // OpenAI: "gpt-image-2.5-sunburst and gpt-image-2.5-flare add xhigh and
       // max quality settings. Earlier GPT Image models support quality
@@ -81,12 +75,9 @@ void main() {
     });
 
     test('nano Banana variants expose wider aspect-ratio sets', () {
-      List<String> ratiosFor(String modelId) => ModelCapabilities.forModel(modelId)
-          .imageParams
-          .firstWhere((p) => p.key == 'aspectRatio')
-          .options
-          .map((o) => o.value)
-          .toList();
+      List<String> ratiosFor(String modelId) => ModelCapabilities.forModel(
+        modelId,
+      ).imageParams.firstWhere((p) => p.key == 'aspectRatio').options.map((o) => o.value).toList();
 
       // Nano Banana Pro adds 21:9; it must not gain the extreme strip ratios.
       final pro = ratiosFor('gemini-3.1-pro-image');
@@ -130,9 +121,9 @@ void main() {
     });
 
     test('normalize falls back to default for invalid values', () {
-      final spec = ModelCapabilities.forModel('gpt-image-1')
-          .imageParams
-          .firstWhere((p) => p.key == 'imageSize');
+      final spec = ModelCapabilities.forModel(
+        'gpt-image-1',
+      ).imageParams.firstWhere((p) => p.key == 'imageSize');
       expect(spec.normalize('4K'), spec.defaultValue); // 4K is a Gemini value
       expect(spec.normalize('1024x1024'), '1024x1024');
     });

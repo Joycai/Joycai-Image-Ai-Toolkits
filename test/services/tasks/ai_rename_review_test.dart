@@ -29,11 +29,8 @@ void main() {
     return file.path;
   }
 
-  RenameReviewRow row(String oldName, String newName) => RenameReviewRow(RenameProposal(
-        path: touch(oldName),
-        oldName: oldName,
-        newName: newName,
-      ));
+  RenameReviewRow row(String oldName, String newName) =>
+      RenameReviewRow(RenameProposal(path: touch(oldName), oldName: oldName, newName: newName));
 
   test('two rows proposing one name both clash, whatever the case', () async {
     final rows = [row('a.jpg', 'beach.jpg'), row('b.jpg', 'Beach.JPG'), row('c.jpg', 'dunes.jpg')];
@@ -72,7 +69,11 @@ void main() {
     resolveRenameConflict(rows[1], RenameConflictChoice.skip, among: rows);
     await recomputeRenameConflicts(rows);
 
-    expect(rows[0].conflict, RenameConflict.none, reason: 'the skipped row no longer claims the name');
+    expect(
+      rows[0].conflict,
+      RenameConflict.none,
+      reason: 'the skipped row no longer claims the name',
+    );
     expect(rows[0].willApply, isTrue);
     expect(rows[1].conflict, RenameConflict.none);
     expect(rows[1].choice, RenameConflictChoice.skip);
@@ -103,7 +104,11 @@ void main() {
     await recomputeRenameConflicts(rows);
 
     expect(rows.single.conflict, RenameConflict.none);
-    expect(rows.single.choice, isNull, reason: 'an overwrite must not outlive the clash it answered');
+    expect(
+      rows.single.choice,
+      isNull,
+      reason: 'an overwrite must not outlive the clash it answered',
+    );
   });
 
   test('rename picks the next free name on disk', () async {
@@ -133,7 +138,11 @@ void main() {
   });
 
   test('rename steers clear of a name another row takes in a different case', () async {
-    final rows = [row('a.jpg', 'Beach.JPG'), row('b.jpg', 'beach (2).jpg'), row('c.jpg', 'beach.jpg')];
+    final rows = [
+      row('a.jpg', 'Beach.JPG'),
+      row('b.jpg', 'beach (2).jpg'),
+      row('c.jpg', 'beach.jpg'),
+    ];
     await recomputeRenameConflicts(rows);
     expect(rows[2].conflict, RenameConflict.duplicate);
 

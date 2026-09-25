@@ -52,8 +52,7 @@ class ChannelProbeResult {
 /// completion probe judged by the *shape* of the rejection rather than its
 /// success.
 class ChannelProbeService {
-  ChannelProbeService({LLMDispatcher? dispatcher})
-      : _dispatcher = dispatcher ?? LLMDispatcher();
+  ChannelProbeService({LLMDispatcher? dispatcher}) : _dispatcher = dispatcher ?? LLMDispatcher();
 
   final LLMDispatcher _dispatcher;
 
@@ -78,8 +77,7 @@ class ChannelProbeService {
   /// as unreachable with the provider's own words.
   static const int _paymentRequired = 402;
 
-  static bool _isQuotaExhausted(LLMApiException e) =>
-      e.statusCode == _paymentRequired;
+  static bool _isQuotaExhausted(LLMApiException e) => e.statusCode == _paymentRequired;
 
   /// 429 or a 5xx outside [_endpointAbsent]: the host is there and served the
   /// path, it just will not answer right now.
@@ -99,22 +97,17 @@ class ChannelProbeService {
       return const ChannelProbeResult(ChannelProbeStatus.notSupported);
     }
     try {
-      final models =
-          await _dispatcher.discoverModels(config).timeout(_stepTimeout);
-      return ChannelProbeResult(ChannelProbeStatus.ok,
-          modelCount: models.length);
+      final models = await _dispatcher.discoverModels(config).timeout(_stepTimeout);
+      return ChannelProbeResult(ChannelProbeStatus.ok, modelCount: models.length);
     } on LLMApiException catch (e) {
       if (e.statusCode == 401 || e.statusCode == 403) {
-        return ChannelProbeResult(ChannelProbeStatus.authFailed,
-            detail: e.message);
+        return ChannelProbeResult(ChannelProbeStatus.authFailed, detail: e.message);
       }
       if (_isQuotaExhausted(e)) {
-        return ChannelProbeResult(ChannelProbeStatus.unreachable,
-            detail: e.message);
+        return ChannelProbeResult(ChannelProbeStatus.unreachable, detail: e.message);
       }
       if (e.isNonJsonBody) {
-        return ChannelProbeResult(ChannelProbeStatus.notAnApi,
-            detail: e.message);
+        return ChannelProbeResult(ChannelProbeStatus.notAnApi, detail: e.message);
       }
       if (e.statusCode != null && _endpointAbsent.contains(e.statusCode)) {
         return _completionProbe(config);
@@ -123,19 +116,15 @@ class ChannelProbeService {
       // anyone can tell, just not answering now. Reported as such, with the
       // provider's words — "unreachable" sent users to check their DNS.
       if (_isUpstreamRefusal(e)) {
-        return ChannelProbeResult(ChannelProbeStatus.upstreamError,
-            detail: e.message);
+        return ChannelProbeResult(ChannelProbeStatus.upstreamError, detail: e.message);
       }
       // Any other served-but-refused answer (an error envelope): the
       // provider said why — pass that on rather than re-guessing.
-      return ChannelProbeResult(ChannelProbeStatus.unreachable,
-          detail: e.message);
+      return ChannelProbeResult(ChannelProbeStatus.unreachable, detail: e.message);
     } on TimeoutException {
-      return const ChannelProbeResult(ChannelProbeStatus.unreachable,
-          detail: 'timed out');
+      return const ChannelProbeResult(ChannelProbeStatus.unreachable, detail: 'timed out');
     } catch (e) {
-      return ChannelProbeResult(ChannelProbeStatus.unreachable,
-          detail: '$e');
+      return ChannelProbeResult(ChannelProbeStatus.unreachable, detail: '$e');
     }
   }
 
@@ -150,44 +139,41 @@ class ChannelProbeService {
     // route asked the vendor's default face instead.
     final probeConfig = config.withModelId(probeModelId);
     try {
-      await _dispatcher.generate(
-        probeConfig,
-        [LLMMessage(role: LLMRole.user, content: 'ping')],
-        // Capped: a relay that routes the impossible name to a default model
-        // must not bill a full generation for a connection test.
-        options: const {'maxTokens': _probeMaxTokens},
-      ).timeout(_stepTimeout);
+      await _dispatcher
+          .generate(
+            probeConfig,
+            [LLMMessage(role: LLMRole.user, content: 'ping')],
+            // Capped: a relay that routes the impossible name to a default model
+            // must not bill a full generation for a connection test.
+            options: const {'maxTokens': _probeMaxTokens},
+          )
+          .timeout(_stepTimeout);
       // Some relays route unknown model names to a default — a billed
       // surprise, but proof of connectivity.
       return const ChannelProbeResult(ChannelProbeStatus.connectedNoModels);
     } on LLMApiException catch (e) {
       if (e.statusCode == 401 || e.statusCode == 403) {
-        return ChannelProbeResult(ChannelProbeStatus.authFailed,
-            detail: e.message);
+        return ChannelProbeResult(ChannelProbeStatus.authFailed, detail: e.message);
       }
       // Ahead of the "protocol-shaped rejection" rule below, which it would
       // otherwise satisfy: a 402 is a well-formed JSON error from an endpoint
       // that speaks this API and will run nothing.
       if (_isQuotaExhausted(e)) {
-        return ChannelProbeResult(ChannelProbeStatus.unreachable,
-            detail: e.message);
+        return ChannelProbeResult(ChannelProbeStatus.unreachable, detail: e.message);
       }
       // Also ahead of the connected rule: a 429 or a 5xx is protocol-shaped
       // too, but says nothing about whether this endpoint would run a request.
       if (_isUpstreamRefusal(e)) {
-        return ChannelProbeResult(ChannelProbeStatus.upstreamError,
-            detail: e.message);
+        return ChannelProbeResult(ChannelProbeStatus.upstreamError, detail: e.message);
       }
       if (e.isNonJsonBody) {
-        return ChannelProbeResult(ChannelProbeStatus.notAnApi,
-            detail: e.message);
+        return ChannelProbeResult(ChannelProbeStatus.notAnApi, detail: e.message);
       }
       // Any protocol-shaped rejection (400 unknown model, an error envelope):
       // the endpoint speaks this API. That is what the probe asked.
       return const ChannelProbeResult(ChannelProbeStatus.connectedNoModels);
     } on TimeoutException {
-      return const ChannelProbeResult(ChannelProbeStatus.unreachable,
-          detail: 'timed out');
+      return const ChannelProbeResult(ChannelProbeStatus.unreachable, detail: 'timed out');
     } catch (e) {
       return ChannelProbeResult(ChannelProbeStatus.unreachable, detail: '$e');
     }

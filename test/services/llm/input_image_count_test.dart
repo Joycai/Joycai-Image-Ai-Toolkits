@@ -42,24 +42,20 @@ void main() {
   String base() => 'http://127.0.0.1:${server.port}';
 
   LLMModelConfig config(String channelType, String modelId) => LLMModelConfig(
-        modelId: modelId,
-        channelType: channelType,
-        endpoint: '${base()}/v1',
-        apiKey: 'k',
-      );
+    modelId: modelId,
+    channelType: channelType,
+    endpoint: '${base()}/v1',
+    apiKey: 'k',
+  );
 
   LLMAttachment readable() => LLMAttachment.fromBytes(_png, 'image/png');
   // Neither a path nor bytes: every protocol drops it while building the body.
   LLMAttachment unreadable() => LLMAttachment.fromBytes(null, 'image/png');
 
-  Future<LLMResponse> generate(
-    LLMModelConfig config,
-    List<LLMAttachment> attachments,
-  ) =>
-      LLMDispatcher().generate(
-        config,
-        [LLMMessage(role: LLMRole.user, content: 'merge', attachments: attachments)],
-      );
+  Future<LLMResponse> generate(LLMModelConfig config, List<LLMAttachment> attachments) =>
+      LLMDispatcher().generate(config, [
+        LLMMessage(role: LLMRole.user, content: 'merge', attachments: attachments),
+      ]);
 
   final inline = {
     'data': [
@@ -86,18 +82,21 @@ void main() {
 
   test('OpenAI Images: the files attached to the edit', () async {
     answer = (_) => inline;
-    final response = await generate(
-        config(Vendors.openAIRest, 'gpt-image-1'), [readable(), unreadable(), readable()]);
+    final response = await generate(config(Vendors.openAIRest, 'gpt-image-1'), [
+      readable(),
+      unreadable(),
+      readable(),
+    ]);
     expect(response.metadata[inputImageCountKey], 2);
   });
 
   test('MiniMax: the subject references sent', () async {
     answer = (_) => {
-          'data': {
-            'image_urls': ['${base()}/img/1.png'],
-          },
-          'base_resp': {'status_code': 0, 'status_msg': 'success'},
-        };
+      'data': {
+        'image_urls': ['${base()}/img/1.png'],
+      },
+      'base_resp': {'status_code': 0, 'status_msg': 'success'},
+    };
     final minimax = config(Vendors.minimax, 'image-01');
 
     // image-01 takes one reference: the second is cut before it is read.
@@ -128,12 +127,12 @@ void main() {
 
     test('MiniMax', () async {
       answer = (_) => {
-            'data': {
-              'image_urls': ['${base()}/img/1.png'],
-            },
-            'metadata': forged,
-            'base_resp': {'status_code': 0, 'status_msg': 'success'},
-          };
+        'data': {
+          'image_urls': ['${base()}/img/1.png'],
+        },
+        'metadata': forged,
+        'base_resp': {'status_code': 0, 'status_msg': 'success'},
+      };
       final none = await generate(config(Vendors.minimax, 'image-01'), const []);
       expect(none.metadata.containsKey(reportedCostKey), isFalse);
       expect(none.metadata.containsKey(inputImageCountKey), isFalse);
@@ -152,7 +151,13 @@ void main() {
     // so too, because a consumer that leaves after it never sees the last.
     final chunks = await LLMDispatcher().generateStream(
       config(Vendors.midjourneyProxy, 'midjourney'),
-      [LLMMessage(role: LLMRole.user, content: 'blend', attachments: [readable(), unreadable(), readable()])],
+      [
+        LLMMessage(
+          role: LLMRole.user,
+          content: 'blend',
+          attachments: [readable(), unreadable(), readable()],
+        ),
+      ],
     ).toList();
     expect(chunks.firstWhere((c) => c.imagePart != null).metadata, {inputImageCountKey: 2});
     expect(chunks.last.metadata?[inputImageCountKey], 2);
@@ -160,52 +165,63 @@ void main() {
 
   test('DashScope (synchronous): the image parts sent', () async {
     answer = (_) => {
-          'output': {
-            'choices': [
-              {
-                'message': {
-                  'content': [
-                    {'image': '${base()}/img/1.png'},
-                  ],
-                },
-              },
-            ],
+      'output': {
+        'choices': [
+          {
+            'message': {
+              'content': [
+                {'image': '${base()}/img/1.png'},
+              ],
+            },
           },
-          'usage': {'width': 1024, 'height': 1024, 'image_count': 1},
-        };
-    final response = await generate(
-        config(Vendors.dashscope, 'qwen-image-edit'), [readable(), unreadable(), readable()]);
+        ],
+      },
+      'usage': {'width': 1024, 'height': 1024, 'image_count': 1},
+    };
+    final response = await generate(config(Vendors.dashscope, 'qwen-image-edit'), [
+      readable(),
+      unreadable(),
+      readable(),
+    ]);
     expect(response.metadata[inputImageCountKey], 2);
   });
 
   test('DashScope metadata, shared with the task surface, carries the count it is given', () {
-    expect(dashscopeImageMetadata(data: const {}, imageCount: 1, inputImages: 3)[inputImageCountKey], 3);
-    expect(dashscopeImageMetadata(data: const {}, imageCount: 1).containsKey(inputImageCountKey), isFalse);
+    expect(
+      dashscopeImageMetadata(data: const {}, imageCount: 1, inputImages: 3)[inputImageCountKey],
+      3,
+    );
+    expect(
+      dashscopeImageMetadata(data: const {}, imageCount: 1).containsKey(inputImageCountKey),
+      isFalse,
+    );
   });
 
   group('Ark', () {
     Map<String, dynamic> ark(Map<String, dynamic> usage) => {
-          'data': [
-            {'url': '${base()}/img/1.png', 'size': '2048x2048'},
-          ],
-          'usage': usage,
-        };
+      'data': [
+        {'url': '${base()}/img/1.png', 'size': '2048x2048'},
+      ],
+      'usage': usage,
+    };
 
     test('Seedream 5.0 pro: what Ark says it counted outranks what was sent', () async {
       // Measured 2026-09-21: two references → `input_images: 2`, the raw
       // count, free first image included.
       answer = (_) => ark({'input_images': 2, 'generated_images': 1});
       final response = await generate(
-          config(Vendors.volcengineArk, 'doubao-seedream-5-0-pro-260628'),
-          [readable(), readable(), readable()]);
+        config(Vendors.volcengineArk, 'doubao-seedream-5-0-pro-260628'),
+        [readable(), readable(), readable()],
+      );
       expect(response.metadata[inputImageCountKey], 2);
     });
 
     test('a model that reports no count falls back to the body\'s', () async {
       answer = (_) => ark({'generated_images': 1});
       final response = await generate(
-          config(Vendors.volcengineArk, 'doubao-seedream-5-0-lite-260128'),
-          [readable(), unreadable(), readable()]);
+        config(Vendors.volcengineArk, 'doubao-seedream-5-0-lite-260128'),
+        [readable(), unreadable(), readable()],
+      );
       expect(response.metadata[inputImageCountKey], 2);
     });
   });
@@ -226,19 +242,26 @@ void main() {
     });
   });
 
-  test('merged across a stream, the closing chunk\'s reported zero lowers the pictures\' count', () {
-    final picture = inputImageCountEntry(sentInputImages(3));
-    final closing = sentInputImages(3, reported: 0);
-    final merged = LLMService.mergeChunkMetadata(picture, closing);
-    expect(inputImageCountOf(merged), 0);
-  });
+  test(
+    'merged across a stream, the closing chunk\'s reported zero lowers the pictures\' count',
+    () {
+      final picture = inputImageCountEntry(sentInputImages(3));
+      final closing = sentInputImages(3, reported: 0);
+      final merged = LLMService.mergeChunkMetadata(picture, closing);
+      expect(inputImageCountOf(merged), 0);
+    },
+  );
 
   group('capReferenceImages', () {
     final three = List.generate(3, (_) => LLMAttachment.fromBytes(_png, 'image/png'));
 
     test('keeps the first ones and says so', () {
       final logged = <String>[];
-      final kept = capReferenceImages(three, 2, (msg, {level = 'INFO'}) => logged.add('$level $msg'));
+      final kept = capReferenceImages(
+        three,
+        2,
+        (msg, {level = 'INFO'}) => logged.add('$level $msg'),
+      );
       expect(kept, three.sublist(0, 2));
       expect(logged.single, startsWith('WARN Model accepts at most 2'));
     });
@@ -252,4 +275,5 @@ void main() {
 }
 
 final Uint8List _png = base64Decode(
-    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==');
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+);

@@ -4,7 +4,6 @@ import 'package:joycai_image_ai_toolkits/screens/workbench/workbench_config_pane
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/markdown_editor.dart';
 
-
 import '../../screenshots/harness/fixture_env.dart';
 import '../../screenshots/harness/fixture_seed.dart';
 import '../../screenshots/harness/shoot.dart';
@@ -57,8 +56,11 @@ void main() {
         (w) => w is ConstrainedBox && w.constraints.minHeight == kMinPromptEditorHeight,
       ),
     );
-    expect(finder, findsOneWidget,
-        reason: 'nothing in the panel declares the prompt editor a minimum height');
+    expect(
+      finder,
+      findsOneWidget,
+      reason: 'nothing in the panel declares the prompt editor a minimum height',
+    );
     // Sanity: the editor really is inside the box being measured.
     expect(
       find.descendant(of: finder, matching: find.byType(MarkdownEditor)),
@@ -131,13 +133,11 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
     }
 
-    expect(tester.takeException(), isNull,
-        reason: 'opening 模型选择 brought the config panel down');
+    expect(tester.takeException(), isNull, reason: 'opening 模型选择 brought the config panel down');
     expect(editorBoxHeight(tester), greaterThanOrEqualTo(kMinPromptEditorHeight - 1));
   });
 
-  testWidgets('extra window height goes to the editor, not to whitespace',
-      (tester) async {
+  testWidgets('extra window height goes to the editor, not to whitespace', (tester) async {
     // The point of the whole arrangement. Measured here rather than carried
     // over from the sweep above, because leaning on test order to share state
     // is how a suite starts passing for the wrong reason.
@@ -162,7 +162,8 @@ void main() {
     expect(
       tall,
       greaterThan(short),
-      reason: 'the editor did not take the room a taller window gave it — '
+      reason:
+          'the editor did not take the room a taller window gave it — '
           'the panel is scrolling when it should be filling',
     );
   });

@@ -59,8 +59,11 @@ void main() {
       final scheme = theme(brightness).colorScheme;
       for (final colour in [scheme.surfaceContainer, scheme.onSurface]) {
         final argb = colour.toARGB32();
-        expect(argb, greaterThan(0x7FFFFFFF),
-            reason: 'an opaque colour that fits in an int32 would hide the widening');
+        expect(
+          argb,
+          greaterThan(0x7FFFFFFF),
+          reason: 'an opaque colour that fits in an int32 would hide the widening',
+        );
       }
     }
   });
@@ -84,126 +87,136 @@ void main() {
     expect(decoded.arguments, sent);
   });
 
-  group('on Windows', () {
-    test('the caption takes the canvas colour and the label the text colour', () async {
-      mockRunner();
-      final scheme = theme(Brightness.light).colorScheme;
+  group(
+    'on Windows',
+    () {
+      test('the caption takes the canvas colour and the label the text colour', () async {
+        mockRunner();
+        final scheme = theme(Brightness.light).colorScheme;
 
-      await WindowChromeService.applyTheme(scheme);
+        await WindowChromeService.applyTheme(scheme);
 
-      expect(calls, hasLength(1));
-      expect(calls.single.method, 'setCaptionColors');
-      final args = calls.single.arguments as Map;
-      expect(args['caption'], scheme.surfaceContainer.toARGB32());
-      expect(args['text'], scheme.onSurface.toARGB32());
-      expect(args['dark'], isFalse);
-    });
+        expect(calls, hasLength(1));
+        expect(calls.single.method, 'setCaptionColors');
+        final args = calls.single.arguments as Map;
+        expect(args['caption'], scheme.surfaceContainer.toARGB32());
+        expect(args['text'], scheme.onSurface.toARGB32());
+        expect(args['dark'], isFalse);
+      });
 
-    test('dark mode is announced separately from the colours', () async {
-      // Windows 10 rejects the two colour attributes but honours the dark
-      // flag, so it has to travel on its own rather than be inferred.
-      mockRunner();
+      test('dark mode is announced separately from the colours', () async {
+        // Windows 10 rejects the two colour attributes but honours the dark
+        // flag, so it has to travel on its own rather than be inferred.
+        mockRunner();
 
-      await WindowChromeService.applyTheme(theme(Brightness.dark).colorScheme);
+        await WindowChromeService.applyTheme(theme(Brightness.dark).colorScheme);
 
-      expect((calls.single.arguments as Map)['dark'], isTrue);
-    });
+        expect((calls.single.arguments as Map)['dark'], isTrue);
+      });
 
-    test('unchanged colours do not cross the channel twice', () async {
-      mockRunner();
-      final scheme = theme(Brightness.light).colorScheme;
+      test('unchanged colours do not cross the channel twice', () async {
+        mockRunner();
+        final scheme = theme(Brightness.light).colorScheme;
 
-      await WindowChromeService.applyTheme(scheme);
-      await WindowChromeService.applyTheme(scheme);
+        await WindowChromeService.applyTheme(scheme);
+        await WindowChromeService.applyTheme(scheme);
 
-      expect(calls, hasLength(1));
-    });
+        expect(calls, hasLength(1));
+      });
 
-    test('a rejected call is reported rather than dropped', () async {
-      // The runner errors only on arguments it cannot read — a defect here,
-      // not a property of the machine. Swallowing it is what let the int64
-      // mismatch survive three releases.
-      mockRunner(reject: true);
+      test('a rejected call is reported rather than dropped', () async {
+        // The runner errors only on arguments it cannot read — a defect here,
+        // not a property of the machine. Swallowing it is what let the int64
+        // mismatch survive three releases.
+        mockRunner(reject: true);
 
-      await WindowChromeService.applyTheme(theme(Brightness.light).colorScheme);
+        await WindowChromeService.applyTheme(theme(Brightness.light).colorScheme);
 
-      expect(errorFrom, 'window_chrome_service');
-    });
+        expect(errorFrom, 'window_chrome_service');
+      });
 
-    test('it reports what DWM did, because nothing else can see it', () async {
-      // The caption is painted by the window manager, outside anything
-      // Flutter renders — no widget test and no screenshot can reach it. The
-      // platform's own answer in the execution log is the only evidence the
-      // feature works, and its absence is what let a dead channel pass for a
-      // working one across three releases.
-      mockRunner();
+      test('it reports what DWM did, because nothing else can see it', () async {
+        // The caption is painted by the window manager, outside anything
+        // Flutter renders — no widget test and no screenshot can reach it. The
+        // platform's own answer in the execution log is the only evidence the
+        // feature works, and its absence is what let a dead channel pass for a
+        // working one across three releases.
+        mockRunner();
 
-      final report = await WindowChromeService.applyTheme(theme(Brightness.light).colorScheme);
+        final report = await WindowChromeService.applyTheme(theme(Brightness.light).colorScheme);
 
-      expect(report, isNotNull);
-      expect(report, contains('applied'));
-    });
+        expect(report, isNotNull);
+        expect(report, contains('applied'));
+      });
 
-    test('success is said once, not once per animation frame', () async {
-      // A theme switch is animated, so this runs eight or nine times with
-      // interpolated colours. Applying each frame is deliberate — the caption
-      // then fades with the UI — but nine identical log lines per switch bury
-      // the user's own output, which is what the execution log is for.
-      mockRunner();
-      final light = theme(Brightness.light).colorScheme;
+      test('success is said once, not once per animation frame', () async {
+        // A theme switch is animated, so this runs eight or nine times with
+        // interpolated colours. Applying each frame is deliberate — the caption
+        // then fades with the UI — but nine identical log lines per switch bury
+        // the user's own output, which is what the execution log is for.
+        mockRunner();
+        final light = theme(Brightness.light).colorScheme;
 
-      final first = await WindowChromeService.applyTheme(light);
-      // Distinct colours, as each animation frame would be.
-      final second = await WindowChromeService.applyTheme(theme(Brightness.dark).colorScheme);
-      final third = await WindowChromeService.applyTheme(light);
+        final first = await WindowChromeService.applyTheme(light);
+        // Distinct colours, as each animation frame would be.
+        final second = await WindowChromeService.applyTheme(theme(Brightness.dark).colorScheme);
+        final third = await WindowChromeService.applyTheme(light);
 
-      expect(first, isNotNull);
-      expect(second, isNull);
-      expect(third, isNull);
-      expect(calls, hasLength(3), reason: 'the later frames were not applied to the caption');
-    });
+        expect(first, isNotNull);
+        expect(second, isNull);
+        expect(third, isNull);
+        expect(calls, hasLength(3), reason: 'the later frames were not applied to the caption');
+      });
 
-    test('a failure is said every time, however often it repeats', () async {
-      // The opposite rule. A caption that silently stopped working is the
-      // whole defect this service has already shipped once.
-      mockRunner(hresults: const {'darkMode': 0, 'caption': -2147024809, 'text': 0});
+      test('a failure is said every time, however often it repeats', () async {
+        // The opposite rule. A caption that silently stopped working is the
+        // whole defect this service has already shipped once.
+        mockRunner(hresults: const {'darkMode': 0, 'caption': -2147024809, 'text': 0});
 
-      final first = await WindowChromeService.applyTheme(theme(Brightness.light).colorScheme);
-      final second = await WindowChromeService.applyTheme(theme(Brightness.dark).colorScheme);
+        final first = await WindowChromeService.applyTheme(theme(Brightness.light).colorScheme);
+        final second = await WindowChromeService.applyTheme(theme(Brightness.dark).colorScheme);
 
-      expect(first, contains('refused'));
-      expect(second, contains('refused'));
-    });
+        expect(first, contains('refused'));
+        expect(second, contains('refused'));
+      });
 
-    test('a partial refusal names the attribute that failed', () async {
-      // Windows 10 takes the dark-mode flag and refuses the two colours, so
-      // "it worked" and "it did nothing" have to be tellable apart per
-      // attribute rather than as one boolean.
-      mockRunner(hresults: const {'darkMode': 0, 'caption': -2147024809, 'text': -2147024809});
+      test('a partial refusal names the attribute that failed', () async {
+        // Windows 10 takes the dark-mode flag and refuses the two colours, so
+        // "it worked" and "it did nothing" have to be tellable apart per
+        // attribute rather than as one boolean.
+        mockRunner(hresults: const {'darkMode': 0, 'caption': -2147024809, 'text': -2147024809});
 
-      final report = await WindowChromeService.applyTheme(theme(Brightness.light).colorScheme);
+        final report = await WindowChromeService.applyTheme(theme(Brightness.light).colorScheme);
 
-      expect(report, contains('refused'));
-      expect(report, contains('caption'));
-      expect(report, isNot(contains('darkMode')), reason: 'the attribute that succeeded was named as a failure');
-    });
+        expect(report, contains('refused'));
+        expect(report, contains('caption'));
+        expect(
+          report,
+          isNot(contains('darkMode')),
+          reason: 'the attribute that succeeded was named as a failure',
+        );
+      });
 
-    test('a rejected call is retried on the next theme change', () async {
-      // The cache used to be written before the await, so a refusal also made
-      // the failure permanent: the next theme saw its colours already "sent".
-      mockRunner(reject: true);
-      await WindowChromeService.applyTheme(theme(Brightness.light).colorScheme);
-      expect(calls, hasLength(1));
+      test('a rejected call is retried on the next theme change', () async {
+        // The cache used to be written before the await, so a refusal also made
+        // the failure permanent: the next theme saw its colours already "sent".
+        mockRunner(reject: true);
+        await WindowChromeService.applyTheme(theme(Brightness.light).colorScheme);
+        expect(calls, hasLength(1));
 
-      mockRunner();
-      await WindowChromeService.applyTheme(theme(Brightness.dark).colorScheme);
-      await WindowChromeService.applyTheme(theme(Brightness.light).colorScheme);
+        mockRunner();
+        await WindowChromeService.applyTheme(theme(Brightness.dark).colorScheme);
+        await WindowChromeService.applyTheme(theme(Brightness.light).colorScheme);
 
-      expect(calls, hasLength(3),
-          reason: 'the light theme was never re-sent after being refused');
-    });
-  },
-      skip: WindowChromeService.isSupported
-          ? false
-          : 'applyTheme is a no-op off Windows (host is ${Platform.operatingSystem})');
+        expect(
+          calls,
+          hasLength(3),
+          reason: 'the light theme was never re-sent after being refused',
+        );
+      });
+    },
+    skip: WindowChromeService.isSupported
+        ? false
+        : 'applyTheme is a no-op off Windows (host is ${Platform.operatingSystem})',
+  );
 }

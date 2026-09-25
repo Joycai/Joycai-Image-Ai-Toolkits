@@ -19,31 +19,29 @@ void main() {
     int input = 1000,
     int cache = 0,
     int output = 500,
-  }) =>
-      TokenUsage(
-        modelId: modelId,
-        timestamp: timestamp,
-        inputTokens: input,
-        cacheTokens: cache,
-        outputTokens: output,
-        inputPrice: 3.0,
-        cachePrice: 0.3,
-        outputPrice: 12.0,
-      );
+  }) => TokenUsage(
+    modelId: modelId,
+    timestamp: timestamp,
+    inputTokens: input,
+    cacheTokens: cache,
+    outputTokens: output,
+    inputPrice: 3.0,
+    cachePrice: 0.3,
+    outputPrice: 12.0,
+  );
 
   TokenUsage requestRow({
     required DateTime timestamp,
     String modelId = 'gpt-image-2',
     int count = 2,
     double price = 0.04,
-  }) =>
-      TokenUsage(
-        modelId: modelId,
-        timestamp: timestamp,
-        billingMode: 'request',
-        requestCount: count,
-        requestPrice: price,
-      );
+  }) => TokenUsage(
+    modelId: modelId,
+    timestamp: timestamp,
+    billingMode: 'request',
+    requestCount: count,
+    requestPrice: price,
+  );
 
   /// A spec-billed video row: 8 seconds of 1080p at $0.30 a second.
   TokenUsage specRow({
@@ -52,36 +50,34 @@ void main() {
     UsageSpecSnapshot spec = const UsageSpecSnapshot(size: '1080p', quality: 'high', seconds: 8),
     double units = 8,
     double price = 0.3,
-  }) =>
-      TokenUsage(
-        modelId: modelId,
-        timestamp: timestamp,
-        billingMode: 'spec',
-        spec: UsageSpecBilling(
-          unit: OutputUnit.second,
-          units: units,
-          unitPrice: price,
-          snapshot: spec,
-        ),
-      );
+  }) => TokenUsage(
+    modelId: modelId,
+    timestamp: timestamp,
+    billingMode: 'spec',
+    spec: UsageSpecBilling(unit: OutputUnit.second, units: units, unitPrice: price, snapshot: spec),
+  );
 
   /// A Seedream pro edit (`D2c`): one 2K picture at $0.30, [sent] reference
   /// images of which [billed] were charged at $0.02.
-  TokenUsage seedreamRow({required DateTime timestamp, int sent = 3, double billed = 2, double inputPrice = 0.02}) =>
-      TokenUsage(
-        modelId: 'doubao-seedream-5-0-pro',
-        timestamp: timestamp,
-        billingMode: 'spec',
-        spec: UsageSpecBilling(
-          unit: OutputUnit.image,
-          units: 1,
-          unitPrice: 0.3,
-          snapshot: const UsageSpecSnapshot(size: '2K'),
-          inputImages: sent,
-          inputUnits: billed,
-          inputUnitPrice: inputPrice,
-        ),
-      );
+  TokenUsage seedreamRow({
+    required DateTime timestamp,
+    int sent = 3,
+    double billed = 2,
+    double inputPrice = 0.02,
+  }) => TokenUsage(
+    modelId: 'doubao-seedream-5-0-pro',
+    timestamp: timestamp,
+    billingMode: 'spec',
+    spec: UsageSpecBilling(
+      unit: OutputUnit.image,
+      units: 1,
+      unitPrice: 0.3,
+      snapshot: const UsageSpecSnapshot(size: '2K'),
+      inputImages: sent,
+      inputUnits: billed,
+      inputUnitPrice: inputPrice,
+    ),
+  );
 
   /// Today's date at [hour], so "Today" is a fact about the test run rather
   /// than a date baked into it.
@@ -131,15 +127,11 @@ void main() {
     'Desktop': const Size(1920, 1080),
   }.entries) {
     testWidgets('lays out without overflow on ${entry.key}', (tester) async {
-      await pumpList(
-        tester,
-        [
-          tokenRow(timestamp: todayAt(14, minute: 12), cache: 250),
-          requestRow(timestamp: todayAt(9)),
-          tokenRow(timestamp: daysAgoAt(1, 8), modelId: 'a-model-with-a-deliberately-long-name'),
-        ],
-        entry.value,
-      );
+      await pumpList(tester, [
+        tokenRow(timestamp: todayAt(14, minute: 12), cache: 250),
+        requestRow(timestamp: todayAt(9)),
+        tokenRow(timestamp: daysAgoAt(1, 8), modelId: 'a-model-with-a-deliberately-long-name'),
+      ], entry.value);
 
       expect(tester.takeException(), isNull, reason: 'Overflow on ${entry.key}');
       expect(find.text('Today'), findsOneWidget);
@@ -148,15 +140,11 @@ void main() {
   }
 
   testWidgets('groups records under the day they happened', (tester) async {
-    await pumpList(
-      tester,
-      [
-        tokenRow(timestamp: todayAt(14)),
-        tokenRow(timestamp: todayAt(9)),
-        requestRow(timestamp: daysAgoAt(1, 8)),
-      ],
-      const Size(1920, 1080),
-    );
+    await pumpList(tester, [
+      tokenRow(timestamp: todayAt(14)),
+      tokenRow(timestamp: todayAt(9)),
+      requestRow(timestamp: daysAgoAt(1, 8)),
+    ], const Size(1920, 1080));
 
     expect(find.text('Today'), findsOneWidget);
     expect(find.text('· 2 records'), findsOneWidget);
@@ -190,11 +178,9 @@ void main() {
   });
 
   testWidgets('a channel prefix is lifted out of the model name', (tester) async {
-    await pumpList(
-      tester,
-      [tokenRow(timestamp: todayAt(14), modelId: '[R]gemini-3.1-flash-image-preview')],
-      const Size(1920, 1080),
-    );
+    await pumpList(tester, [
+      tokenRow(timestamp: todayAt(14), modelId: '[R]gemini-3.1-flash-image-preview'),
+    ], const Size(1920, 1080));
 
     // The prefix is the channel the model came through — the same handful of
     // strings down the whole column, which is what makes it a badge and not
@@ -204,14 +190,10 @@ void main() {
   });
 
   testWidgets('says what was billed, by billing mode', (tester) async {
-    await pumpList(
-      tester,
-      [
-        tokenRow(timestamp: todayAt(14), input: 1500, cache: 250, output: 500),
-        requestRow(timestamp: todayAt(9), count: 2),
-      ],
-      const Size(1920, 1080),
-    );
+    await pumpList(tester, [
+      tokenRow(timestamp: todayAt(14), input: 1500, cache: 250, output: 500),
+      requestRow(timestamp: todayAt(9), count: 2),
+    ], const Size(1920, 1080));
 
     // Token rows count tokens, abbreviated — six digits a row defeats a column
     // meant to be compared down the page.
@@ -227,15 +209,13 @@ void main() {
     expect(find.text('No usage data in the selected range.'), findsOneWidget);
   });
 
-  testWidgets('a spec-billed row states its spec in its own column, other rows a dash', (tester) async {
-    await pumpList(
-      tester,
-      [
-        specRow(timestamp: todayAt(14)),
-        tokenRow(timestamp: todayAt(13)),
-      ],
-      const Size(1920, 1080),
-    );
+  testWidgets('a spec-billed row states its spec in its own column, other rows a dash', (
+    tester,
+  ) async {
+    await pumpList(tester, [
+      specRow(timestamp: todayAt(14)),
+      tokenRow(timestamp: todayAt(13)),
+    ], const Size(1920, 1080));
 
     expect(find.text('SPEC'), findsOneWidget);
     expect(find.text('1080p · high · 8s'), findsOneWidget);
@@ -246,17 +226,13 @@ void main() {
   });
 
   testWidgets('an unmatched row keeps its spec and prices at zero', (tester) async {
-    await pumpList(
-      tester,
-      [
-        specRow(
-          timestamp: todayAt(14),
-          spec: const UsageSpecSnapshot(size: '1440p', seconds: 8, matched: false),
-          price: 0,
-        ),
-      ],
-      const Size(1920, 1080),
-    );
+    await pumpList(tester, [
+      specRow(
+        timestamp: todayAt(14),
+        spec: const UsageSpecSnapshot(size: '1440p', seconds: 8, matched: false),
+        price: 0,
+      ),
+    ], const Size(1920, 1080));
 
     // The spec is exactly what the user needs to copy into the rate table.
     expect(find.text('1440p · 8s'), findsOneWidget);
@@ -264,14 +240,18 @@ void main() {
   });
 
   group('a row whose group charges for reference images (D2c)', () {
-    testWidgets('says how many it sent beside its spec, and costs output plus input', (tester) async {
+    testWidgets('says how many it sent beside its spec, and costs output plus input', (
+      tester,
+    ) async {
       await pumpList(tester, [seedreamRow(timestamp: todayAt(14))], const Size(1920, 1080));
 
       expect(find.text('2K · input ×3'), findsOneWidget);
       expect(find.text('\$0.3400'), findsWidgets);
     });
 
-    testWidgets('expanded, the amount splits in two and the input side is written out', (tester) async {
+    testWidgets('expanded, the amount splits in two and the input side is written out', (
+      tester,
+    ) async {
       await pumpList(tester, [seedreamRow(timestamp: todayAt(14))], const Size(1920, 1080));
       await tester.tap(find.text('2K · input ×3'));
       await tester.pumpAndSettle();
@@ -283,7 +263,9 @@ void main() {
     });
 
     testWidgets('a request whose only image was the free one says so, at zero', (tester) async {
-      await pumpList(tester, [seedreamRow(timestamp: todayAt(14), sent: 1, billed: 0)], const Size(1920, 1080));
+      await pumpList(tester, [
+        seedreamRow(timestamp: todayAt(14), sent: 1, billed: 0),
+      ], const Size(1920, 1080));
       expect(find.text('2K · input ×1'), findsOneWidget);
 
       await tester.tap(find.text('2K · input ×1'));
@@ -292,7 +274,9 @@ void main() {
       expect(find.text('0 × \$0.0200 = \$0.0000'), findsOneWidget);
     });
 
-    testWidgets('a request that delivered nothing does not call its unbilled images free', (tester) async {
+    testWidgets('a request that delivered nothing does not call its unbilled images free', (
+      tester,
+    ) async {
       final failed = TokenUsage(
         modelId: 'doubao-seedream-5-0-pro',
         timestamp: todayAt(14),
@@ -315,8 +299,12 @@ void main() {
       expect(find.textContaining('free'), findsNothing);
     });
 
-    testWidgets('a group that never charged inputs shows none of it, though the count is kept', (tester) async {
-      await pumpList(tester, [seedreamRow(timestamp: todayAt(14), billed: 0, inputPrice: 0)], const Size(1920, 1080));
+    testWidgets('a group that never charged inputs shows none of it, though the count is kept', (
+      tester,
+    ) async {
+      await pumpList(tester, [
+        seedreamRow(timestamp: todayAt(14), billed: 0, inputPrice: 0),
+      ], const Size(1920, 1080));
 
       expect(find.text('2K'), findsOneWidget);
       expect(find.textContaining('input ×'), findsNothing);
@@ -326,11 +314,10 @@ void main() {
       expect(find.text('Input cost'), findsNothing);
     });
 
-    for (final entry in {
-      'Mobile': const Size(390, 844),
-      'Tablet': const Size(820, 1180),
-    }.entries) {
-      testWidgets('the count rides the second line without overflow on ${entry.key}', (tester) async {
+    for (final entry in {'Mobile': const Size(390, 844), 'Tablet': const Size(820, 1180)}.entries) {
+      testWidgets('the count rides the second line without overflow on ${entry.key}', (
+        tester,
+      ) async {
         await pumpList(tester, [seedreamRow(timestamp: todayAt(14))], entry.value);
         expect(tester.takeException(), isNull, reason: 'Overflow on ${entry.key}');
         expect(find.text('2K · input ×3'), findsOneWidget);
@@ -346,7 +333,8 @@ void main() {
   group('a request-billed row whose group charges for reference images (D2e)', () {
     /// A relay's grok-imagine-video on a request group: one request at
     /// \$0.08, two references at \$0.01 — the input three alone on the row.
-    TokenUsage videoRow({required DateTime timestamp, int sent = 2, double billed = 2}) => TokenUsage(
+    TokenUsage videoRow({required DateTime timestamp, int sent = 2, double billed = 2}) =>
+        TokenUsage(
           modelId: 'grok-imagine-video-1.5',
           timestamp: timestamp,
           billingMode: 'request',
@@ -361,7 +349,9 @@ void main() {
           ),
         );
 
-    testWidgets('the spec cell says only how many it sent, and the cost is request plus input', (tester) async {
+    testWidgets('the spec cell says only how many it sent, and the cost is request plus input', (
+      tester,
+    ) async {
       await pumpList(tester, [videoRow(timestamp: todayAt(14))], const Size(1920, 1080));
       expect(find.text('input ×2'), findsOneWidget);
       expect(find.text('\$0.1000'), findsWidgets);
@@ -381,7 +371,9 @@ void main() {
     });
 
     testWidgets('a free image on a request row is free, not undelivered', (tester) async {
-      await pumpList(tester, [videoRow(timestamp: todayAt(14), sent: 1, billed: 0)], const Size(1920, 1080));
+      await pumpList(tester, [
+        videoRow(timestamp: todayAt(14), sent: 1, billed: 0),
+      ], const Size(1920, 1080));
       await tester.tap(find.text('input ×1'));
       await tester.pumpAndSettle();
       expect(find.text('1 image · 1 free'), findsOneWidget);
@@ -396,10 +388,7 @@ void main() {
       expect(find.text('Unit price'), findsNothing);
     });
 
-    for (final entry in {
-      'Mobile': const Size(390, 844),
-      'Tablet': const Size(820, 1180),
-    }.entries) {
+    for (final entry in {'Mobile': const Size(390, 844), 'Tablet': const Size(820, 1180)}.entries) {
       testWidgets('no overflow collapsed or expanded on ${entry.key}', (tester) async {
         await pumpList(tester, [videoRow(timestamp: todayAt(14))], entry.value);
         expect(tester.takeException(), isNull, reason: 'Overflow on ${entry.key}');
@@ -413,39 +402,50 @@ void main() {
   group('a row the provider priced itself (D2d)', () {
     /// An xAI 2.0 edit: the table says 1K · medium $0.06 + one reference
     /// image at $0.01, upstream billed $0.05 (it served low).
-    TokenUsage reportedRow({required DateTime timestamp, double reported = 0.05, bool matched = true}) =>
-        TokenUsage(
-          modelId: 'grok-imagine-image-2.0',
-          timestamp: timestamp,
-          billingMode: 'spec',
-          spec: UsageSpecBilling(
-            unit: OutputUnit.image,
-            units: 1,
-            unitPrice: 0.06,
-            snapshot: UsageSpecSnapshot(size: '1K', quality: 'medium', matched: matched),
-            inputImages: 1,
-            inputUnits: 1,
-            inputUnitPrice: 0.01,
-          ),
-          reportedCost: reported,
+    TokenUsage reportedRow({
+      required DateTime timestamp,
+      double reported = 0.05,
+      bool matched = true,
+    }) => TokenUsage(
+      modelId: 'grok-imagine-image-2.0',
+      timestamp: timestamp,
+      billingMode: 'spec',
+      spec: UsageSpecBilling(
+        unit: OutputUnit.image,
+        units: 1,
+        unitPrice: 0.06,
+        snapshot: UsageSpecSnapshot(size: '1K', quality: 'medium', matched: matched),
+        inputImages: 1,
+        inputUnits: 1,
+        inputUnitPrice: 0.01,
+      ),
+      reportedCost: reported,
+    );
+
+    testWidgets(
+      'collapsed, the cost is the report, set like any other, with the estimate a tooltip away',
+      (tester) async {
+        await pumpList(tester, [reportedRow(timestamp: todayAt(14))], const Size(1920, 1080));
+
+        expect(find.text('\$0.0500'), findsWidgets);
+        expect(find.text('\$0.0700'), findsNothing);
+        expect(find.text('1K · medium · input ×1'), findsOneWidget);
+        // No glyph or sub-label on the cell — only the tooltip says more.
+        final tooltip = find.byWidgetPredicate(
+          (w) => w is Tooltip && (w.message?.startsWith('Reported cost') ?? false),
         );
+        expect(tooltip, findsOneWidget);
+        expect(
+          tester.widget<Tooltip>(tooltip).message,
+          'Reported cost: \$0.0500\nTable estimate: \$0.0700',
+        );
+        expect(find.descendant(of: tooltip, matching: find.text('\$0.0500')), findsOneWidget);
+      },
+    );
 
-    testWidgets('collapsed, the cost is the report, set like any other, with the estimate a tooltip away',
-        (tester) async {
-      await pumpList(tester, [reportedRow(timestamp: todayAt(14))], const Size(1920, 1080));
-
-      expect(find.text('\$0.0500'), findsWidgets);
-      expect(find.text('\$0.0700'), findsNothing);
-      expect(find.text('1K · medium · input ×1'), findsOneWidget);
-      // No glyph or sub-label on the cell — only the tooltip says more.
-      final tooltip = find.byWidgetPredicate(
-          (w) => w is Tooltip && (w.message?.startsWith('Reported cost') ?? false));
-      expect(tooltip, findsOneWidget);
-      expect(tester.widget<Tooltip>(tooltip).message, 'Reported cost: \$0.0500\nTable estimate: \$0.0700');
-      expect(find.descendant(of: tooltip, matching: find.text('\$0.0500')), findsOneWidget);
-    });
-
-    testWidgets('expanded, the comparison leads and the table\'s figures are demoted', (tester) async {
+    testWidgets('expanded, the comparison leads and the table\'s figures are demoted', (
+      tester,
+    ) async {
       await pumpList(tester, [reportedRow(timestamp: todayAt(14))], const Size(1920, 1080));
       await tester.tap(find.text('1K · medium · input ×1'));
       await tester.pumpAndSettle();
@@ -463,7 +463,9 @@ void main() {
       expect(tester.widget<Text>(find.text('\$0.0500').last).style?.color, isNot(outline));
     });
 
-    testWidgets('the estimate is stated even when the table would have charged nothing', (tester) async {
+    testWidgets('the estimate is stated even when the table would have charged nothing', (
+      tester,
+    ) async {
       final unpriced = TokenUsage(
         modelId: 'grok-imagine-image-2.0',
         timestamp: todayAt(14),
@@ -478,10 +480,7 @@ void main() {
       expect(find.text('\$0.0000'), findsOneWidget);
     });
 
-    for (final entry in {
-      'Mobile': const Size(390, 844),
-      'Tablet': const Size(820, 1180),
-    }.entries) {
+    for (final entry in {'Mobile': const Size(390, 844), 'Tablet': const Size(820, 1180)}.entries) {
       testWidgets('the comparison pair fits without overflow on ${entry.key}', (tester) async {
         await pumpList(tester, [reportedRow(timestamp: todayAt(14))], entry.value);
         expect(tester.takeException(), isNull, reason: 'Overflow on ${entry.key}');
@@ -495,12 +494,12 @@ void main() {
     }
   });
 
-  for (final entry in {
-    'Mobile': const Size(390, 844),
-    'Tablet': const Size(820, 1180),
-  }.entries) {
+  for (final entry in {'Mobile': const Size(390, 844), 'Tablet': const Size(820, 1180)}.entries) {
     testWidgets('the spec joins the second line without overflow on ${entry.key}', (tester) async {
-      await pumpList(tester, [specRow(timestamp: todayAt(14)), tokenRow(timestamp: todayAt(13))], entry.value);
+      await pumpList(tester, [
+        specRow(timestamp: todayAt(14)),
+        tokenRow(timestamp: todayAt(13)),
+      ], entry.value);
 
       expect(tester.takeException(), isNull, reason: 'Overflow on ${entry.key}');
       expect(find.text('1080p · high · 8s'), findsOneWidget);

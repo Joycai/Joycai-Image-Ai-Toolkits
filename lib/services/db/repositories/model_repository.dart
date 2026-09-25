@@ -24,12 +24,7 @@ class ModelRepository {
   /// ([updateModelEstimation]). An editor holds the row as it was when it
   /// opened; writing these back would undo a reorder or an estimate that
   /// landed since — or, from a form that never carried them, reset them.
-  static const _ownedElsewhere = [
-    'sort_order',
-    'est_mean_ms',
-    'est_sd_ms',
-    'tasks_since_update',
-  ];
+  static const _ownedElsewhere = ['sort_order', 'est_mean_ms', 'est_sd_ms', 'tasks_since_update'];
 
   Future<void> updateModel(int id, LLMModel model) async {
     final db = await _db;
@@ -58,15 +53,16 @@ class ModelRepository {
     return maps.map(LLMModel.fromMap).toList();
   }
 
-  Future<void> updateModelEstimation(int modelDbId, double mean, double sd, int tasksSinceUpdate) async {
+  Future<void> updateModelEstimation(
+    int modelDbId,
+    double mean,
+    double sd,
+    int tasksSinceUpdate,
+  ) async {
     final db = await _db;
     await db.update(
       'llm_models',
-      {
-        'est_mean_ms': mean,
-        'est_sd_ms': sd,
-        'tasks_since_update': tasksSinceUpdate,
-      },
+      {'est_mean_ms': mean, 'est_sd_ms': sd, 'tasks_since_update': tasksSinceUpdate},
       where: 'id = ?',
       whereArgs: [modelDbId],
     );
@@ -79,8 +75,7 @@ class ModelRepository {
     // `sort_order` (it is owned by [updateChannelOrder] alone), so an
     // untouched insert would land at 0 and put every new channel at the *top*
     // of the rail — the opposite of where a just-added item belongs.
-    final maxRow = await db
-        .rawQuery('SELECT MAX(sort_order) AS m FROM llm_channels');
+    final maxRow = await db.rawQuery('SELECT MAX(sort_order) AS m FROM llm_channels');
     final maxOrder = maxRow.first['m'] as int?;
     return db.insert('llm_channels', {
       ...normalizedChannel(channel).toMap(includeId: false),
@@ -96,16 +91,27 @@ class ModelRepository {
     final db = await _db;
     var incoming = channel;
     if (incoming.routes == null) {
-      final stored = await db.query('llm_channels',
-          columns: ['routes'], where: 'id = ?', whereArgs: [id]);
+      final stored = await db.query(
+        'llm_channels',
+        columns: ['routes'],
+        where: 'id = ?',
+        whereArgs: [id],
+      );
       final doc = stored.isEmpty ? null : stored.first['routes'] as String?;
       if (doc != null) {
         incoming = incoming.withRoutes(
-            type: incoming.type, endpoint: incoming.endpoint, routes: doc);
+          type: incoming.type,
+          endpoint: incoming.endpoint,
+          routes: doc,
+        );
       }
     }
-    await db.update('llm_channels', normalizedChannel(incoming).toMap(includeId: false),
-        where: 'id = ?', whereArgs: [id]);
+    await db.update(
+      'llm_channels',
+      normalizedChannel(incoming).toMap(includeId: false),
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 
   /// [channel] with its route document resolved against its flat columns and
@@ -113,8 +119,7 @@ class ModelRepository {
   /// every write, and idempotent, so "`type` / `endpoint` are the primary
   /// route" is a fact rather than a convention (standard 02 §2).
   static LLMChannel normalizedChannel(LLMChannel channel) {
-    final routes =
-        ChannelRoutes.resolve(channel.type, channel.endpoint, channel.routes);
+    final routes = ChannelRoutes.resolve(channel.type, channel.endpoint, channel.routes);
     return channel.withRoutes(
       type: routes.primaryVendorId,
       endpoint: routes.primaryAddress,
@@ -157,23 +162,22 @@ class ModelRepository {
       // edit, the task queue's duration estimate).
       for (final m in updates) {
         await txn.update(
-            'llm_models',
-            {
-              'channel_id': m.channelId,
-              'active_route': m.activeRoute,
-              'route_params': m.routeParams,
-              'wire_protocol': m.wireProtocol,
-            },
-            where: 'id = ?',
-            whereArgs: [m.id]);
+          'llm_models',
+          {
+            'channel_id': m.channelId,
+            'active_route': m.activeRoute,
+            'route_params': m.routeParams,
+            'wire_protocol': m.wireProtocol,
+          },
+          where: 'id = ?',
+          whereArgs: [m.id],
+        );
       }
       for (final id in deletes) {
         await txn.delete('llm_models', where: 'id = ?', whereArgs: [id]);
       }
-      await txn.delete('llm_models',
-          where: 'channel_id = ?', whereArgs: [absorbedChannelId]);
-      await txn.delete('llm_channels',
-          where: 'id = ?', whereArgs: [absorbedChannelId]);
+      await txn.delete('llm_models', where: 'channel_id = ?', whereArgs: [absorbedChannelId]);
+      await txn.delete('llm_channels', where: 'id = ?', whereArgs: [absorbedChannelId]);
     });
   }
 
@@ -193,8 +197,7 @@ class ModelRepository {
     final db = await _db;
     final batch = db.batch();
     for (var i = 0; i < orderedIds.length; i++) {
-      batch.update('llm_channels', {'sort_order': i},
-          where: 'id = ?', whereArgs: [orderedIds[i]]);
+      batch.update('llm_channels', {'sort_order': i}, where: 'id = ?', whereArgs: [orderedIds[i]]);
     }
     await batch.commit(noResult: true);
   }
@@ -240,9 +243,18 @@ class ModelRepository {
 
   Future<void> deletePricingGroup(int id) async {
     final db = await _db;
-    await db.update('llm_models', {'fee_group_id': null}, where: 'fee_group_id = ?', whereArgs: [id]);
-    await db.update('llm_channels', {'default_fee_group_id': null},
-        where: 'default_fee_group_id = ?', whereArgs: [id]);
+    await db.update(
+      'llm_models',
+      {'fee_group_id': null},
+      where: 'fee_group_id = ?',
+      whereArgs: [id],
+    );
+    await db.update(
+      'llm_channels',
+      {'default_fee_group_id': null},
+      where: 'default_fee_group_id = ?',
+      whereArgs: [id],
+    );
     await db.delete('fee_groups', where: 'id = ?', whereArgs: [id]);
   }
 

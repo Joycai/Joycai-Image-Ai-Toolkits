@@ -11,7 +11,7 @@ void main() async {
     if (!await langDir.exists()) continue;
 
     final Map<String, dynamic> merged = {};
-    
+
     // Sort files to ensure stable output (common first is good practice)
     final files = await langDir.list().toList();
     files.sort((a, b) => a.path.compareTo(b.path));

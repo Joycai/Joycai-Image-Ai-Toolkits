@@ -45,37 +45,37 @@ Future<bool?> showImportOptionsDialog(
   bool usage = hasUsage;
 
   Widget body(StateSetter setState) => Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          ImportOptionRow(
-            title: l10n.includeDirectories,
-            description: l10n.includeDirectoriesDesc,
-            value: dirs,
-            enabled: hasDirs,
-            missingLabel: l10n.notInBackup,
-            onChanged: (v) => setState(() => dirs = v),
-          ),
-          ImportOptionRow(
-            title: l10n.includePrompts,
-            description: l10n.includePromptsDesc,
-            value: prompts,
-            enabled: hasPrompts,
-            missingLabel: l10n.notInBackup,
-            onChanged: (v) => setState(() => prompts = v),
-          ),
-          ImportOptionRow(
-            title: l10n.includeUsage,
-            description: l10n.includeUsageDesc,
-            value: usage,
-            enabled: hasUsage,
-            missingLabel: l10n.notInBackup,
-            onChanged: (v) => setState(() => usage = v),
-          ),
-          const SizedBox(height: AppSpace.s10),
-          _WarningNote(l10n.importSettingsConfirm),
-        ],
-      );
+    mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      ImportOptionRow(
+        title: l10n.includeDirectories,
+        description: l10n.includeDirectoriesDesc,
+        value: dirs,
+        enabled: hasDirs,
+        missingLabel: l10n.notInBackup,
+        onChanged: (v) => setState(() => dirs = v),
+      ),
+      ImportOptionRow(
+        title: l10n.includePrompts,
+        description: l10n.includePromptsDesc,
+        value: prompts,
+        enabled: hasPrompts,
+        missingLabel: l10n.notInBackup,
+        onChanged: (v) => setState(() => prompts = v),
+      ),
+      ImportOptionRow(
+        title: l10n.includeUsage,
+        description: l10n.includeUsageDesc,
+        value: usage,
+        enabled: hasUsage,
+        missingLabel: l10n.notInBackup,
+        onChanged: (v) => setState(() => usage = v),
+      ),
+      const SizedBox(height: AppSpace.s10),
+      _WarningNote(l10n.importSettingsConfirm),
+    ],
+  );
 
   if (isMobile ?? Responsive.isMobile(context)) {
     return showModalBottomSheet<bool>(
@@ -84,16 +84,18 @@ Future<bool?> showImportOptionsDialog(
       useSafeArea: true,
       builder: (sheetContext) => StatefulBuilder(
         builder: (sheetContext, setState) => SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(AppSpace.s22, AppSpace.s22, AppSpace.s22, AppSpace.s28),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpace.s22,
+            AppSpace.s22,
+            AppSpace.s22,
+            AppSpace.s28,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(l10n.importOptions, style: Theme.of(sheetContext).textTheme.titleLarge),
-              if (fileName != null) ...[
-                const SizedBox(height: 2),
-                _FileName(fileName),
-              ],
+              if (fileName != null) ...[const SizedBox(height: 2), _FileName(fileName)],
               const SizedBox(height: AppSpace.s16),
               body(setState),
               const SizedBox(height: AppSpace.s22),
@@ -249,9 +251,9 @@ class _FileName extends StatelessWidget {
       name,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      style: Theme.of(context).textTheme.bodySmall?.mono.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
+      style: Theme.of(
+        context,
+      ).textTheme.bodySmall?.mono.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
     );
   }
 }
@@ -282,9 +284,9 @@ class _WarningNote extends StatelessWidget {
             child: Text(
               text.trim(),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: semantic.onWarningContainer,
-                    height: AppType.proseHeight,
-                  ),
+                color: semantic.onWarningContainer,
+                height: AppType.proseHeight,
+              ),
             ),
           ),
         ],

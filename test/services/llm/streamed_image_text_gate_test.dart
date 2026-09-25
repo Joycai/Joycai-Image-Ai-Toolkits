@@ -17,8 +17,7 @@ void main() {
       expect(gate.feed(' world'), ' world');
     });
 
-    test('text before an inline image is shown once, text after it at the end',
-        () {
+    test('text before an inline image is shown once, text after it at the end', () {
       final gate = StreamedImageTextGate();
       final b64 = 'A' * 2000;
       var shown = gate.feed('Here is your picture: ');

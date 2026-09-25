@@ -145,10 +145,10 @@ class ProtocolMenu {
   }) : fixed = false;
 
   const ProtocolMenu.fixed(this.surface)
-      : options = const [],
-        auto = null,
-        fixed = true,
-        recognized = true;
+    : options = const [],
+      auto = null,
+      fixed = true,
+      recognized = true;
 }
 
 /// The `anthropic-version` every Anthropic-shaped request must carry.
@@ -362,8 +362,7 @@ class VendorProfile {
 
   /// Whether a stored web-search switch is sent on [face] — [webSearchOn]
   /// for the payload builders, which only need yes or no.
-  bool sendsWebSearchOn(WireProtocol face) =>
-      webSearchOn(face) != ServerWebSearch.unsupported;
+  bool sendsWebSearchOn(WireProtocol face) => webSearchOn(face) != ServerWebSearch.unsupported;
 
   /// Stable id, stored verbatim in `llm_channels.type`.
   final String id;
@@ -443,8 +442,7 @@ class VendorProfile {
   /// The thinking spelling for requests on [face]: the face's override, else
   /// the vendor default. The one place protocols and the editor's reasoning
   /// ladder read the declaration from, so the two cannot disagree.
-  ThinkingDialect thinkingFor(WireProtocol face) =>
-      thinkingByProtocol[face] ?? thinking;
+  ThinkingDialect thinkingFor(WireProtocol face) => thinkingByProtocol[face] ?? thinking;
 
   /// Whether this vendor understands ④'s `cache_control` breakpoints.
   ///
@@ -574,9 +572,7 @@ class VendorProfile {
   List<UnlistedModel> unlistedBeyond(Iterable<String> listedIds) {
     if (unlistedModels.isEmpty) return const [];
     final seen = listedIds.map((id) => id.toLowerCase()).toSet();
-    return unlistedModels
-        .where((m) => !seen.contains(m.id.toLowerCase()))
-        .toList();
+    return unlistedModels.where((m) => !seen.contains(m.id.toLowerCase())).toList();
   }
 
   /// Request headers for this vendor. [endpoint] is needed because
@@ -591,20 +587,11 @@ class VendorProfile {
     final bool keyed = apiKey.isNotEmpty;
     switch (auth) {
       case AuthScheme.bearer:
-        return {
-          'Content-Type': 'application/json',
-          if (keyed) 'Authorization': 'Bearer $apiKey',
-        };
+        return {'Content-Type': 'application/json', if (keyed) 'Authorization': 'Bearer $apiKey'};
       case AuthScheme.googleApiKey:
-        return {
-          'Content-Type': 'application/json',
-          if (keyed) 'x-goog-api-key': apiKey,
-        };
+        return {'Content-Type': 'application/json', if (keyed) 'x-goog-api-key': apiKey};
       case AuthScheme.googleApiKeyWithBearerFallback:
-        final headers = {
-          'Content-Type': 'application/json',
-          if (keyed) 'x-goog-api-key': apiKey,
-        };
+        final headers = {'Content-Type': 'application/json', if (keyed) 'x-goog-api-key': apiKey};
         final host = Uri.tryParse(endpoint)?.host ?? '';
         if (keyed && !host.endsWith('googleapis.com')) {
           headers['Authorization'] = 'Bearer $apiKey';
@@ -660,10 +647,7 @@ class VendorProfile {
     switch (auth) {
       case AuthScheme.googleApiKey:
       case AuthScheme.googleApiKeyWithBearerFallback:
-        return url.replace(queryParameters: {
-          ...url.queryParameters,
-          'key': apiKey,
-        });
+        return url.replace(queryParameters: {...url.queryParameters, 'key': apiKey});
       case AuthScheme.bearer:
       case AuthScheme.anthropicApiKeyWithBearerFallback:
         return url;
@@ -695,8 +679,5 @@ class UnlistedModel {
 /// must go through this first so the key never leaves the process.
 String redactUrl(Uri url) {
   if (!url.queryParameters.containsKey('key')) return url.toString();
-  return url.replace(queryParameters: {
-    ...url.queryParameters,
-    'key': '***MASKED***',
-  }).toString();
+  return url.replace(queryParameters: {...url.queryParameters, 'key': '***MASKED***'}).toString();
 }

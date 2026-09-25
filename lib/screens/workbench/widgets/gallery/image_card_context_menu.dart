@@ -78,25 +78,28 @@ Future<void> showImageCardContextMenu(
   // Asked only of a file the layer index knows, so an ordinary picture's
   // menu opens without touching the database; null when nothing is left to
   // stack, and then the row is not offered (`A7 · 7b`).
-  final layerSet = !multi &&
-          ImageLayerRepository.layeredPaths.value.containsKey(imageFile.path)
+  final layerSet = !multi && ImageLayerRepository.layeredPaths.value.containsKey(imageFile.path)
       ? await ImageLayerRepository().setFor(imageFile.path)
       : null;
   if (!context.mounted) return;
 
-  final bool inTempWorkspace =
-      appState.galleryState.viewMode == GalleryViewMode.temp;
+  final bool inTempWorkspace = appState.galleryState.viewMode == GalleryViewMode.temp;
 
   final entries = <AppGlassMenuEntry>[
     if (isVideo)
       AppGlassMenuItem(
-          icon: Icons.visibility_outlined,
-          label: l10n.openInPreview,
-          trailing: _keys(AppShortcutIds.preview),
-          onSelected: openPreview)
+        icon: Icons.visibility_outlined,
+        label: l10n.openInPreview,
+        trailing: _keys(AppShortcutIds.preview),
+        onSelected: openPreview,
+      )
     else
       AppGlassMenuQuickBlock([
-        AppGlassMenuQuickCell(icon: Icons.visibility_outlined, label: l10n.preview, onSelected: openPreview),
+        AppGlassMenuQuickCell(
+          icon: Icons.visibility_outlined,
+          label: l10n.preview,
+          onSelected: openPreview,
+        ),
         AppGlassMenuQuickCell(
           icon: Icons.brush_outlined,
           label: l10n.menuQuickMask,
@@ -219,15 +222,11 @@ Future<void> showImageCardContextMenu(
           // that carries a key's badge and then acts on one file while the
           // key acts on five is the drift this round exists to remove.
           onSelected: () {
-            Clipboard.setData(
-              ClipboardData(text: targets.map((i) => i.name).join('\n')),
-            );
+            Clipboard.setData(ClipboardData(text: targets.map((i) => i.name).join('\n')));
             if (!context.mounted) return;
             AppSnackBar.success(
               context,
-              multi
-                  ? l10n.copiedFilenames(targets.length)
-                  : l10n.copiedToClipboard(imageFile.name),
+              multi ? l10n.copiedFilenames(targets.length) : l10n.copiedToClipboard(imageFile.name),
             );
           },
         ),
@@ -278,8 +277,8 @@ Future<void> showImageCardContextMenu(
         icon: Icons.remove_circle_outline,
         label: l10n.removeFromWorkspace,
         trailing: _keys(AppShortcutIds.delete),
-        onSelected: () => appState.galleryState
-            .removeDroppedImages(targets.map((i) => i.path).toList()),
+        onSelected: () =>
+            appState.galleryState.removeDroppedImages(targets.map((i) => i.path).toList()),
       ),
     AppGlassMenuItem(
       icon: Icons.delete_outline,
@@ -304,7 +303,12 @@ Future<void> showImageCardContextMenu(
 
   workbenchUIState.setGalleryMenuOpen(true);
   try {
-    await showAppGlassMenu(context, position: position, entries: entries, width: kImageCardMenuWidth);
+    await showAppGlassMenu(
+      context,
+      position: position,
+      entries: entries,
+      width: kImageCardMenuWidth,
+    );
   } finally {
     workbenchUIState.setGalleryMenuOpen(false);
   }

@@ -26,27 +26,28 @@ void main() {
 
     test('should resolve config from database', () async {
       // Setup mock data in the in-memory DB
-      final channelId = await db.addChannel(LLMChannel(
-        displayName: 'Test Channel',
-        type: 'openai-api',
-        endpoint: 'https://test.com',
-        apiKey: 'key-123',
-      ));
+      final channelId = await db.addChannel(
+        LLMChannel(
+          displayName: 'Test Channel',
+          type: 'openai-api',
+          endpoint: 'https://test.com',
+          apiKey: 'key-123',
+        ),
+      );
 
-      final pricingGroupId = await db.addPricingGroup(PricingGroup(
-        name: 'Test Pricing',
-        billingMode: 'token',
-        inputPrice: 0.5,
-        outputPrice: 1.0,
-      ));
+      final pricingGroupId = await db.addPricingGroup(
+        PricingGroup(name: 'Test Pricing', billingMode: 'token', inputPrice: 0.5, outputPrice: 1.0),
+      );
 
-      final modelPk = await db.addModel(LLMModel(
-        modelId: 'test-model-1',
-        modelName: 'Test Model',
-        tag: 'chat',
-        channelId: channelId,
-        feeGroupId: pricingGroupId,
-      ));
+      final modelPk = await db.addModel(
+        LLMModel(
+          modelId: 'test-model-1',
+          modelName: 'Test Model',
+          tag: 'chat',
+          channelId: channelId,
+          feeGroupId: pricingGroupId,
+        ),
+      );
 
       final resolver = LLMConfigResolver(database: db);
       final config = await resolver.resolveConfig(modelPk);
@@ -61,36 +62,44 @@ void main() {
     });
 
     test('resolves a configured cache rate, keeping 0.0 distinct from unset', () async {
-      final channelId = await db.addChannel(LLMChannel(
-        displayName: 'Cache Channel',
-        type: 'openai-api',
-        endpoint: 'https://cache.test',
-        apiKey: 'key-cache',
-      ));
+      final channelId = await db.addChannel(
+        LLMChannel(
+          displayName: 'Cache Channel',
+          type: 'openai-api',
+          endpoint: 'https://cache.test',
+          apiKey: 'key-cache',
+        ),
+      );
 
-      final freeCacheGroup = await db.addPricingGroup(PricingGroup(
-        name: 'Free Cache',
-        billingMode: 'token',
-        inputPrice: 2.0,
-        cacheInputPrice: 0.0,
-        outputPrice: 8.0,
-      ));
-      final discountGroup = await db.addPricingGroup(PricingGroup(
-        name: 'Discounted Cache',
-        billingMode: 'token',
-        inputPrice: 2.0,
-        cacheInputPrice: 0.25,
-        outputPrice: 8.0,
-      ));
+      final freeCacheGroup = await db.addPricingGroup(
+        PricingGroup(
+          name: 'Free Cache',
+          billingMode: 'token',
+          inputPrice: 2.0,
+          cacheInputPrice: 0.0,
+          outputPrice: 8.0,
+        ),
+      );
+      final discountGroup = await db.addPricingGroup(
+        PricingGroup(
+          name: 'Discounted Cache',
+          billingMode: 'token',
+          inputPrice: 2.0,
+          cacheInputPrice: 0.25,
+          outputPrice: 8.0,
+        ),
+      );
 
       Future<void> expectCacheFee(int groupId, String modelId, double expected) async {
-        final modelPk = await db.addModel(LLMModel(
-          modelId: modelId,
-          modelName: modelId,
-          tag: 'chat',
-          channelId: channelId,
-          feeGroupId: groupId,
-        ));
+        final modelPk = await db.addModel(
+          LLMModel(
+            modelId: modelId,
+            modelName: modelId,
+            tag: 'chat',
+            channelId: channelId,
+            feeGroupId: groupId,
+          ),
+        );
         final config = await LLMConfigResolver(database: db).resolveConfig(modelPk);
         expect(config.effectiveCacheInputFee, expected);
       }
@@ -102,25 +111,31 @@ void main() {
     });
 
     test('a spec group\'s input-image rate reaches the config', () async {
-      final channelId = await db.addChannel(LLMChannel(
-        displayName: 'Ark',
-        type: 'openai-api',
-        endpoint: 'https://ark.test',
-        apiKey: 'key-ark',
-      ));
-      final groupId = await db.addPricingGroup(PricingGroup(
-        name: 'Seedream pro',
-        billingMode: 'spec',
-        inputUnitPrice: 0.02,
-        inputFreeUnits: 1,
-      ));
-      final modelPk = await db.addModel(LLMModel(
-        modelId: 'doubao-seedream-5-0-pro',
-        modelName: 'Seedream pro',
-        tag: 'image',
-        channelId: channelId,
-        feeGroupId: groupId,
-      ));
+      final channelId = await db.addChannel(
+        LLMChannel(
+          displayName: 'Ark',
+          type: 'openai-api',
+          endpoint: 'https://ark.test',
+          apiKey: 'key-ark',
+        ),
+      );
+      final groupId = await db.addPricingGroup(
+        PricingGroup(
+          name: 'Seedream pro',
+          billingMode: 'spec',
+          inputUnitPrice: 0.02,
+          inputFreeUnits: 1,
+        ),
+      );
+      final modelPk = await db.addModel(
+        LLMModel(
+          modelId: 'doubao-seedream-5-0-pro',
+          modelName: 'Seedream pro',
+          tag: 'image',
+          channelId: channelId,
+          feeGroupId: groupId,
+        ),
+      );
 
       final config = await LLMConfigResolver(database: db).resolveConfig(modelPk);
 
@@ -128,64 +143,72 @@ void main() {
       expect(config.inputFreeUnits, 1);
     });
 
-    test('a per-second and a request group\'s input-image rate reach the config; a token group\'s does not', () async {
-      final channelId = await db.addChannel(LLMChannel(
-        displayName: 'xAI',
-        type: 'xai-api',
-        endpoint: 'https://api.x.ai/v1',
-        apiKey: 'key-xai',
-      ));
-      Future<LLMModelConfig> configOf(PricingGroup group) async {
-        final groupId = await db.addPricingGroup(group);
-        final modelPk = await db.addModel(LLMModel(
-          modelId: 'grok-imagine-video-1.5-${group.name}',
-          modelName: group.name,
-          tag: 'video',
-          channelId: channelId,
-          feeGroupId: groupId,
-        ));
-        return LLMConfigResolver(database: db).resolveConfig(modelPk);
-      }
+    test(
+      'a per-second and a request group\'s input-image rate reach the config; a token group\'s does not',
+      () async {
+        final channelId = await db.addChannel(
+          LLMChannel(
+            displayName: 'xAI',
+            type: 'xai-api',
+            endpoint: 'https://api.x.ai/v1',
+            apiKey: 'key-xai',
+          ),
+        );
+        Future<LLMModelConfig> configOf(PricingGroup group) async {
+          final groupId = await db.addPricingGroup(group);
+          final modelPk = await db.addModel(
+            LLMModel(
+              modelId: 'grok-imagine-video-1.5-${group.name}',
+              modelName: group.name,
+              tag: 'video',
+              channelId: channelId,
+              feeGroupId: groupId,
+            ),
+          );
+          return LLMConfigResolver(database: db).resolveConfig(modelPk);
+        }
 
-      final perSecond = await configOf(PricingGroup(
-        name: 'sec',
-        billingMode: 'spec',
-        outputUnit: OutputUnit.second,
-        inputUnitPrice: 0.01,
-      ));
-      final perRequest = await configOf(PricingGroup(
-        name: 'req',
-        billingMode: 'request',
-        requestPrice: 0.08,
-        inputUnitPrice: 0.01,
-        inputFreeUnits: 1,
-      ));
-      final token = await configOf(PricingGroup(
-        name: 'tok',
-        billingMode: 'token',
-        inputUnitPrice: 0.01,
-      ));
+        final perSecond = await configOf(
+          PricingGroup(
+            name: 'sec',
+            billingMode: 'spec',
+            outputUnit: OutputUnit.second,
+            inputUnitPrice: 0.01,
+          ),
+        );
+        final perRequest = await configOf(
+          PricingGroup(
+            name: 'req',
+            billingMode: 'request',
+            requestPrice: 0.08,
+            inputUnitPrice: 0.01,
+            inputFreeUnits: 1,
+          ),
+        );
+        final token = await configOf(
+          PricingGroup(name: 'tok', billingMode: 'token', inputUnitPrice: 0.01),
+        );
 
-      expect(perSecond.inputUnitFee, 0.01);
-      expect(perRequest.inputUnitFee, 0.01);
-      expect(perRequest.inputFreeUnits, 1);
-      expect(token.inputUnitFee, 0.0, reason: 'a token group never charges inputs');
-      expect(token.inputFreeUnits, 0);
-    });
+        expect(perSecond.inputUnitFee, 0.01);
+        expect(perRequest.inputUnitFee, 0.01);
+        expect(perRequest.inputFreeUnits, 1);
+        expect(token.inputUnitFee, 0.0, reason: 'a token group never charges inputs');
+        expect(token.inputFreeUnits, 0);
+      },
+    );
 
     test('deleting a channel deletes its models without leaving orphans', () async {
-      final channelId = await db.addChannel(LLMChannel(
-        displayName: 'Disposable Channel',
-        type: 'openai-api-rest',
-        endpoint: 'https://disposable.com/v1',
-        apiKey: 'key-xyz',
-      ));
-      await db.addModel(LLMModel(
-        modelId: 'doomed-model',
-        modelName: 'Doomed',
-        tag: 'image',
-        channelId: channelId,
-      ));
+      final channelId = await db.addChannel(
+        LLMChannel(
+          displayName: 'Disposable Channel',
+          type: 'openai-api-rest',
+          endpoint: 'https://disposable.com/v1',
+          apiKey: 'key-xyz',
+        ),
+      );
+      await db.addModel(
+        LLMModel(modelId: 'doomed-model', modelName: 'Doomed', tag: 'image', channelId: channelId),
+      );
 
       expect((await db.getModels()).where((m) => m.channelId == channelId), isNotEmpty);
 
@@ -198,34 +221,34 @@ void main() {
       expect(remaining.where((m) => m.channelId == null), isEmpty);
     });
 
-    test('a missing model is a typed config error, not a bare Exception',
-        () async {
+    test('a missing model is a typed config error, not a bare Exception', () async {
       await expectLater(
         LLMConfigResolver(database: db).resolveConfig(987654),
-        throwsA(isA<LLMConfigException>().having(
-            (e) => e.kind, 'kind', LLMConfigErrorKind.modelNotFound)),
+        throwsA(
+          isA<LLMConfigException>().having((e) => e.kind, 'kind', LLMConfigErrorKind.modelNotFound),
+        ),
       );
     });
 
-    test('a keyed channel saved without a key fails before any request',
-        () async {
-      final channelId = await db.addChannel(LLMChannel(
-        displayName: 'Keyless Relay',
-        type: 'openai-api-rest',
-        endpoint: 'https://keyless.test/v1',
-        apiKey: '',
-      ));
-      final modelPk = await db.addModel(LLMModel(
-        modelId: 'keyless-model',
-        modelName: 'Keyless',
-        tag: 'chat',
-        channelId: channelId,
-      ));
+    test('a keyed channel saved without a key fails before any request', () async {
+      final channelId = await db.addChannel(
+        LLMChannel(
+          displayName: 'Keyless Relay',
+          type: 'openai-api-rest',
+          endpoint: 'https://keyless.test/v1',
+          apiKey: '',
+        ),
+      );
+      final modelPk = await db.addModel(
+        LLMModel(modelId: 'keyless-model', modelName: 'Keyless', tag: 'chat', channelId: channelId),
+      );
       await expectLater(
         LLMConfigResolver(database: db).resolveConfig(modelPk),
-        throwsA(isA<LLMConfigException>()
-            .having((e) => e.kind, 'kind', LLMConfigErrorKind.missingApiKey)
-            .having((e) => e.message, 'message', contains('Keyless Relay'))),
+        throwsA(
+          isA<LLMConfigException>()
+              .having((e) => e.kind, 'kind', LLMConfigErrorKind.missingApiKey)
+              .having((e) => e.message, 'message', contains('Keyless Relay')),
+        ),
       );
     });
   });
@@ -235,8 +258,7 @@ void main() {
   // a typed error naming the channel — except for vendors that declare they
   // work keyless (standard 11 §D39).
   group('LLMConfigResolver.requireApiKey', () {
-    test('a keyed vendor with no key is a typed config error naming the channel',
-        () {
+    test('a keyed vendor with no key is a typed config error naming the channel', () {
       expect(
         () => LLMConfigResolver.requireApiKey(
           channelType: Vendors.openAIRest,
@@ -244,9 +266,11 @@ void main() {
           channelName: 'My Relay',
           modelId: 'gpt-4o',
         ),
-        throwsA(isA<LLMConfigException>()
-            .having((e) => e.kind, 'kind', LLMConfigErrorKind.missingApiKey)
-            .having((e) => e.message, 'message', contains('My Relay'))),
+        throwsA(
+          isA<LLMConfigException>()
+              .having((e) => e.kind, 'kind', LLMConfigErrorKind.missingApiKey)
+              .having((e) => e.message, 'message', contains('My Relay')),
+        ),
       );
     });
 
@@ -291,9 +315,11 @@ void main() {
 
     test('config errors are never retried', () {
       expect(
-          LLMService.isRetryable(const LLMConfigException(
-              LLMConfigErrorKind.missingApiKey, 'no key')),
-          isFalse);
+        LLMService.isRetryable(
+          const LLMConfigException(LLMConfigErrorKind.missingApiKey, 'no key'),
+        ),
+        isFalse,
+      );
     });
   });
 }

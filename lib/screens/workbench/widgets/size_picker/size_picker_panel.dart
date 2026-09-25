@@ -127,8 +127,10 @@ class _SizePickerPanelState extends State<SizePickerPanel> {
   ImageSizeRules get _rules => widget.spec.sizeRules!;
   ImageSizeVocabulary get _vocab => widget.spec.sizeVocabulary!;
 
-  String? get _sentinel =>
-      widget.spec.options.map((o) => o.value).where((v) => v == 'auto' || v == 'not_set').firstOrNull;
+  String? get _sentinel => widget.spec.options
+      .map((o) => o.value)
+      .where((v) => v == 'auto' || v == 'not_set')
+      .firstOrNull;
 
   @override
   void initState() {
@@ -147,7 +149,12 @@ class _SizePickerPanelState extends State<SizePickerPanel> {
         _ratio = const AspectRatioSpec(1, false);
         _ratioChip = _vocab.ratios.contains('1:1') ? '1:1' : null;
       case SizeSentinelValue():
-        final (w, h) = tierSize(const AspectRatioSpec(1, false), _vocab.tiers.first, _rules, _vocab);
+        final (w, h) = tierSize(
+          const AspectRatioSpec(1, false),
+          _vocab.tiers.first,
+          _rules,
+          _vocab,
+        );
         _w = w;
         _h = h;
         _ratio = const AspectRatioSpec(1, false);
@@ -225,7 +232,13 @@ class _SizePickerPanelState extends State<SizePickerPanel> {
     widget.onChanged(_value);
   }
 
-  void _setDims(int w, int h, {Set<_Field> flash = const {}, String? notice, IconData? noticeIcon}) {
+  void _setDims(
+    int w,
+    int h, {
+    Set<_Field> flash = const {},
+    String? notice,
+    IconData? noticeIcon,
+  }) {
     setState(() {
       _w = w;
       _h = h;
@@ -328,15 +341,35 @@ class _SizePickerPanelState extends State<SizePickerPanel> {
       final label = _ratioChip ?? _customRatioLabel ?? ratioLabel(w, h);
       if (got < snapped) {
         icon = Icons.south_west;
-        notice = l10n.imageSizeClampedDown('$typed', label, mp, megapixels(_rules.maxPixels), _rules.edgeStep, '$got');
+        notice = l10n.imageSizeClampedDown(
+          '$typed',
+          label,
+          mp,
+          megapixels(_rules.maxPixels),
+          _rules.edgeStep,
+          '$got',
+        );
       } else {
         icon = Icons.north_east;
-        notice = l10n.imageSizeClampedUp('$typed', label, mp, megapixels(_rules.minPixels), _rules.edgeStep, '$got');
+        notice = l10n.imageSizeClampedUp(
+          '$typed',
+          label,
+          mp,
+          megapixels(_rules.minPixels),
+          _rules.edgeStep,
+          '$got',
+        );
       }
     } else if (got != typed) {
       notice = l10n.imageSizeSnapped(_rules.edgeStep, '$typed', '$got');
     }
-    _setDims(w, h, flash: got != typed ? {_Field.long} : const {}, notice: notice, noticeIcon: icon);
+    _setDims(
+      w,
+      h,
+      flash: got != typed ? {_Field.long} : const {},
+      notice: notice,
+      noticeIcon: icon,
+    );
   }
 
   // S5 — while typing, only the other side follows (with the lock on).
@@ -391,7 +424,9 @@ class _SizePickerPanelState extends State<SizePickerPanel> {
           sw,
           sh,
           flash: changed,
-          notice: changed.isEmpty ? null : l10n.imageSizeSnapped(_rules.edgeStep, '$w × $h', '$sw × $sh'),
+          notice: changed.isEmpty
+              ? null
+              : l10n.imageSizeSnapped(_rules.edgeStep, '$w × $h', '$sw × $sh'),
           noticeIcon: Icons.straighten,
         );
         if (_linked) setState(() => _adoptRatioOf(sw, sh));
@@ -487,7 +522,10 @@ class _SizePickerPanelState extends State<SizePickerPanel> {
         ),
       ],
       gap,
-      if (blocked) _blockedBox(l10n, scheme, text) else _summary(l10n, scheme, text, dimmed: typing),
+      if (blocked)
+        _blockedBox(l10n, scheme, text)
+      else
+        _summary(l10n, scheme, text, dimmed: typing),
       gap,
       _dimsRow(l10n, scheme, blocked: blocked),
       gap,
@@ -583,7 +621,10 @@ class _SizePickerPanelState extends State<SizePickerPanel> {
                 ),
                 const SizedBox(width: AppSpace.s10),
                 Expanded(
-                  child: Text(hint, style: text.labelSmall?.copyWith(color: scheme.onSurfaceVariant)),
+                  child: Text(
+                    hint,
+                    style: text.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
+                  ),
                 ),
               ],
             ),
@@ -636,7 +677,9 @@ class _SizePickerPanelState extends State<SizePickerPanel> {
                 label: customSelected && _customRatioLabel != null
                     ? '${l10n.imageSizeCustom} ${_customRatioLabel!}'
                     : l10n.imageSizeCustom,
-                ratio: customSelected ? (_ratio.portrait ? 1 / _ratio.longOverShort : _ratio.longOverShort) : null,
+                ratio: customSelected
+                    ? (_ratio.portrait ? 1 / _ratio.longOverShort : _ratio.longOverShort)
+                    : null,
                 icon: Icons.tune,
                 selected: customSelected,
                 error: customSelected && _ratioImpossible,
@@ -656,7 +699,9 @@ class _SizePickerPanelState extends State<SizePickerPanel> {
           const SizedBox(height: AppSpace.s4),
           Text(
             '16:9 · 16x9 · 16/9 · 1.78',
-            style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(color: scheme.outline, fontSize: 10.5),
+            style: Theme.of(
+              context,
+            ).textTheme.labelSmall?.mono.copyWith(color: scheme.outline, fontSize: 10.5),
           ),
         ],
       ],
@@ -722,7 +767,10 @@ class _SizePickerPanelState extends State<SizePickerPanel> {
                 semanticsLabel: l10n.imageSizeLongEdge,
               ),
             ),
-            if (_notice != null) ...[const SizedBox(width: AppSpace.s10), Expanded(child: _noticeLine(scheme, text))],
+            if (_notice != null) ...[
+              const SizedBox(width: AppSpace.s10),
+              Expanded(child: _noticeLine(scheme, text)),
+            ],
           ],
         ),
       ],
@@ -742,7 +790,12 @@ class _SizePickerPanelState extends State<SizePickerPanel> {
     );
   }
 
-  Widget _summary(AppLocalizations l10n, ColorScheme scheme, TextTheme text, {required bool dimmed}) {
+  Widget _summary(
+    AppLocalizations l10n,
+    ColorScheme scheme,
+    TextTheme text, {
+    required bool dimmed,
+  }) {
     final billing = _billing(l10n);
     final label = _isSentinel && _vocab.sentinel == SizeSentinelMeaning.modelDecides
         ? l10n.imageSizeHintGpt
@@ -778,7 +831,10 @@ class _SizePickerPanelState extends State<SizePickerPanel> {
                   ),
                 ),
                 if (billing != null && !dimmed)
-                  _BillingTag(label: l10n.imageSizeBillingTier(billing.tier), crossed: billing.crossed != null),
+                  _BillingTag(
+                    label: l10n.imageSizeBillingTier(billing.tier),
+                    crossed: billing.crossed != null,
+                  ),
               ],
             ),
           ),
@@ -790,7 +846,10 @@ class _SizePickerPanelState extends State<SizePickerPanel> {
                 Icon(Icons.sell_outlined, size: AppSize.iconSm, color: scheme.onSurfaceVariant),
                 const SizedBox(width: AppSpace.s6),
                 Expanded(
-                  child: Text(billing!.crossed!, style: text.labelSmall?.copyWith(color: scheme.onSurfaceVariant)),
+                  child: Text(
+                    billing!.crossed!,
+                    style: text.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
+                  ),
                 ),
               ],
             ),
@@ -805,7 +864,9 @@ class _SizePickerPanelState extends State<SizePickerPanel> {
   /// Null without a spec-billed group that names tiers.
   ({String tier, String? crossed})? _billing(AppLocalizations l10n) {
     final rates = widget.rates;
-    if (rates == null || _isSentinel && _vocab.sentinel == SizeSentinelMeaning.modelDecides) return null;
+    if (rates == null || _isSentinel && _vocab.sentinel == SizeSentinelMeaning.modelDecides) {
+      return null;
+    }
     final tier = specRateTierOf('${_w}x$_h', rates);
     if (tier == null) return null;
     String? crossed;
@@ -817,7 +878,11 @@ class _SizePickerPanelState extends State<SizePickerPanel> {
       final lowest = tiers.firstOrNull;
       if (lowest != null && lowest != tier) {
         final edge = tierEdge(lowest)!;
-        crossed = l10n.imageSizeBillingCrossed(lowest, '$edge² = ${megapixels(edge * edge)} MP', tier);
+        crossed = l10n.imageSizeBillingCrossed(
+          lowest,
+          '$edge² = ${megapixels(edge * edge)} MP',
+          tier,
+        );
       }
     }
     return (tier: tier, crossed: crossed);
@@ -838,7 +903,9 @@ class _SizePickerPanelState extends State<SizePickerPanel> {
       message = l10n.imageSizeOutOfRange;
       fix = fixFor(_w, _h, _rules);
     }
-    final kept = _written == _sentinel ? sentinelTexts(l10n, _vocab.sentinel).$1 : sizeValueText(_written);
+    final kept = _written == _sentinel
+        ? sentinelTexts(l10n, _vocab.sentinel).$1
+        : sizeValueText(_written);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
@@ -854,7 +921,10 @@ class _SizePickerPanelState extends State<SizePickerPanel> {
               Icon(Icons.error_outline, size: AppSize.iconSm, color: scheme.onErrorContainer),
               const SizedBox(width: AppSpace.s6),
               Expanded(
-                child: Text(message, style: text.labelSmall?.copyWith(color: scheme.onErrorContainer)),
+                child: Text(
+                  message,
+                  style: text.labelSmall?.copyWith(color: scheme.onErrorContainer),
+                ),
               ),
               const SizedBox(width: AppSpace.s6),
               AppButton(
@@ -871,7 +941,10 @@ class _SizePickerPanelState extends State<SizePickerPanel> {
             Icon(Icons.block, size: AppSize.iconSm, color: scheme.outline),
             const SizedBox(width: AppSpace.s6),
             Expanded(
-              child: Text(l10n.imageSizeNotWrittenBack(kept), style: text.labelSmall?.copyWith(color: scheme.outline)),
+              child: Text(
+                l10n.imageSizeNotWrittenBack(kept),
+                style: text.labelSmall?.copyWith(color: scheme.outline),
+              ),
             ),
           ],
         ),
@@ -915,7 +988,10 @@ class _SizePickerPanelState extends State<SizePickerPanel> {
         ),
         if (widget.density.showUnits) ...[
           const SizedBox(width: AppSpace.s4),
-          Text('px', style: Theme.of(context).textTheme.labelSmall?.copyWith(color: scheme.outline)),
+          Text(
+            'px',
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(color: scheme.outline),
+          ),
         ],
         const SizedBox(width: AppSpace.s4),
         SizedBox.square(
@@ -942,9 +1018,16 @@ class _SizePickerPanelState extends State<SizePickerPanel> {
           children: [
             Icon(Icons.table_chart_outlined, size: AppSize.iconSm, color: scheme.accentText),
             const SizedBox(width: AppSpace.s6),
-            Text(l10n.imageSizeRecommendTable, style: text.labelSmall?.copyWith(color: scheme.accentText)),
+            Text(
+              l10n.imageSizeRecommendTable,
+              style: text.labelSmall?.copyWith(color: scheme.accentText),
+            ),
             const Spacer(),
-            Icon(_tableOpen ? Icons.expand_less : Icons.expand_more, size: AppSize.iconMd, color: scheme.accentText),
+            Icon(
+              _tableOpen ? Icons.expand_less : Icons.expand_more,
+              size: AppSize.iconMd,
+              color: scheme.accentText,
+            ),
           ],
         ),
       ),
@@ -956,7 +1039,10 @@ class _SizePickerPanelState extends State<SizePickerPanel> {
       ('1:1', const AspectRatioSpec(1, false)),
       for (final r in _vocab.officialTable.values.first.keys)
         if (parseAspectRatio(r) case final spec?)
-          ('$r / ${r.split(':').reversed.join(':')}', AspectRatioSpec(spec.longOverShort, _ratio.portrait)),
+          (
+            '$r / ${r.split(':').reversed.join(':')}',
+            AspectRatioSpec(spec.longOverShort, _ratio.portrait),
+          ),
     ];
     final mono = text.labelSmall?.mono.copyWith(fontSize: 10.5);
     final current = _currentTier;
@@ -997,7 +1083,10 @@ class _SizePickerPanelState extends State<SizePickerPanel> {
               children: [
                 Padding(
                   padding: const EdgeInsets.all(AppSpace.s4),
-                  child: Text(l10n.imageSizeRecommendCorner, style: text.labelSmall?.copyWith(color: scheme.outline)),
+                  child: Text(
+                    l10n.imageSizeRecommendCorner,
+                    style: text.labelSmall?.copyWith(color: scheme.outline),
+                  ),
                 ),
                 for (final t in _vocab.tiers)
                   Padding(
@@ -1023,7 +1112,9 @@ class _SizePickerPanelState extends State<SizePickerPanel> {
                         final (w, h) = tierSize(ratio, t, _rules, _vocab);
                         final isSquare = (ratio.longOverShort - 1).abs() < 1e-9;
                         final selected =
-                            !_isSentinel && current == t && (ratio.longOverShort - _ratio.longOverShort).abs() < 1e-6;
+                            !_isSentinel &&
+                            current == t &&
+                            (ratio.longOverShort - _ratio.longOverShort).abs() < 1e-6;
                         return cell(
                           isSquare ? t : '$w×$h',
                           selected: selected,
@@ -1050,7 +1141,10 @@ class _SizePickerPanelState extends State<SizePickerPanel> {
             Icon(Icons.info_outline, size: AppSize.iconSm, color: scheme.outline),
             const SizedBox(width: AppSpace.s6),
             Expanded(
-              child: Text(l10n.imageSizeRecommendHint, style: text.labelSmall?.copyWith(color: scheme.outline)),
+              child: Text(
+                l10n.imageSizeRecommendHint,
+                style: text.labelSmall?.copyWith(color: scheme.outline),
+              ),
             ),
           ],
         ),
@@ -1075,7 +1169,11 @@ class _SizePickerPanelState extends State<SizePickerPanel> {
         Expanded(
           child: Text(hint, style: text.labelSmall?.copyWith(color: scheme.outline)),
         ),
-        AppButton(label: l10n.imageSizeDone, size: AppButtonSize.compact, onPressed: blocked ? null : _done),
+        AppButton(
+          label: l10n.imageSizeDone,
+          size: AppButtonSize.compact,
+          onPressed: blocked ? null : _done,
+        ),
       ],
     );
   }
@@ -1104,9 +1202,10 @@ class _BillingTag extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: Theme.of(
-          context,
-        ).textTheme.labelSmall?.copyWith(color: crossed ? scheme.accentText : scheme.onSurfaceVariant, fontSize: 10.5),
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          color: crossed ? scheme.accentText : scheme.onSurfaceVariant,
+          fontSize: 10.5,
+        ),
       ),
     );
   }

@@ -94,19 +94,24 @@ class MarkdownTextEditingController extends TextEditingController {
       final String matchText = match.group(0)!;
       TextStyle? matchStyle;
 
-      if (match.group(1) != null) { // header
+      if (match.group(1) != null) {
+        // header
         matchStyle = TextStyle(
           color: colorScheme.accentText,
           fontWeight: FontWeight.bold,
           fontSize: (style?.fontSize ?? 13) + 2,
         );
-      } else if (match.group(2) != null) { // bold
+      } else if (match.group(2) != null) {
+        // bold
         matchStyle = const TextStyle(fontWeight: FontWeight.bold);
-      } else if (match.group(3) != null) { // italic
+      } else if (match.group(3) != null) {
+        // italic
         matchStyle = const TextStyle(fontStyle: FontStyle.italic);
-      } else if (match.group(4) != null) { // link
+      } else if (match.group(4) != null) {
+        // link
         matchStyle = TextStyle(color: colorScheme.tertiary, decoration: TextDecoration.underline);
-      } else if (match.group(5) != null) { // list
+      } else if (match.group(5) != null) {
+        // list
         matchStyle = TextStyle(color: colorScheme.secondary, fontWeight: FontWeight.w500);
       }
 
@@ -155,12 +160,18 @@ class MarkdownTextEditingController extends TextEditingController {
         children.add(piece);
         continue;
       }
-      if (from > start) children.add(TextSpan(text: pieceText.substring(0, from - start), style: piece.style));
-      children.add(TextSpan(
-        text: pieceText.substring(from - start, to - start),
-        style: piece.style?.merge(underline) ?? underline,
-      ));
-      if (to < end) children.add(TextSpan(text: pieceText.substring(to - start), style: piece.style));
+      if (from > start) {
+        children.add(TextSpan(text: pieceText.substring(0, from - start), style: piece.style));
+      }
+      children.add(
+        TextSpan(
+          text: pieceText.substring(from - start, to - start),
+          style: piece.style?.merge(underline) ?? underline,
+        ),
+      );
+      if (to < end) {
+        children.add(TextSpan(text: pieceText.substring(to - start), style: piece.style));
+      }
     }
     return TextSpan(style: span.style, children: children);
   }
@@ -175,10 +186,7 @@ class SmartMarkdownFormatter extends TextInputFormatter {
   final bool continueLists;
 
   @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
     // 1. Normalize line endings
     String newText = newValue.text;
     if (newText.contains('\r')) {
@@ -187,31 +195,37 @@ class SmartMarkdownFormatter extends TextInputFormatter {
 
     // 2. Detect if a newline was just added to handle list continuation
     if (continueLists &&
-        newValue.text.length == oldValue.text.length + 1 && 
-        newValue.selection.isCollapsed && 
+        newValue.text.length == oldValue.text.length + 1 &&
+        newValue.selection.isCollapsed &&
         newValue.selection.start > 0 &&
         newValue.text[newValue.selection.start - 1] == '\n') {
-      
       final String textBeforeNewLine = oldValue.text.substring(0, oldValue.selection.start);
       final List<String> lines = textBeforeNewLine.split('\n');
       if (lines.isNotEmpty) {
         final String lastLine = lines.last;
-        
+
         // Match "- " or "* " or "1. " etc.
         final RegExp listRegex = RegExp(r'^(\s*)([-*] |[0-9]+\. )(.*)$');
         final Match? match = listRegex.firstMatch(lastLine);
-        
+
         if (match != null) {
           final String indent = match.group(1)!;
           final String prefix = match.group(2)!;
           final String content = match.group(3)!;
-          
+
           if (content.trim().isEmpty) {
             // User pressed Enter on an empty list item: remove the prefix (end of list)
-            final String textWithoutPrefix = oldValue.text.substring(0, oldValue.selection.start - (indent.length + prefix.length)) + oldValue.text.substring(oldValue.selection.start);
+            final String textWithoutPrefix =
+                oldValue.text.substring(
+                  0,
+                  oldValue.selection.start - (indent.length + prefix.length),
+                ) +
+                oldValue.text.substring(oldValue.selection.start);
             return newValue.copyWith(
               text: textWithoutPrefix,
-              selection: TextSelection.collapsed(offset: oldValue.selection.start - (indent.length + prefix.length)),
+              selection: TextSelection.collapsed(
+                offset: oldValue.selection.start - (indent.length + prefix.length),
+              ),
             );
           } else {
             // User pressed Enter on a populated list item: continue the list
@@ -221,12 +235,17 @@ class SmartMarkdownFormatter extends TextInputFormatter {
               final int currentNumber = int.parse(prefix.substring(0, prefix.length - 2));
               newPrefix = '${currentNumber + 1}. ';
             }
-            
+
             final String autoInsert = indent + newPrefix;
-            final String finalSub = newValue.text.substring(0, newValue.selection.start) + autoInsert + newValue.text.substring(newValue.selection.start);
+            final String finalSub =
+                newValue.text.substring(0, newValue.selection.start) +
+                autoInsert +
+                newValue.text.substring(newValue.selection.start);
             return newValue.copyWith(
               text: finalSub,
-              selection: TextSelection.collapsed(offset: newValue.selection.start + autoInsert.length),
+              selection: TextSelection.collapsed(
+                offset: newValue.selection.start + autoInsert.length,
+              ),
             );
           }
         }
@@ -236,7 +255,9 @@ class SmartMarkdownFormatter extends TextInputFormatter {
     if (newText != newValue.text) {
       return newValue.copyWith(
         text: newText,
-        selection: TextSelection.collapsed(offset: math.min(newValue.selection.start, newText.length)),
+        selection: TextSelection.collapsed(
+          offset: math.min(newValue.selection.start, newText.length),
+        ),
       );
     }
 
@@ -249,7 +270,11 @@ class SmartMarkdownFormatter extends TextInputFormatter {
 ///
 /// [duringBuild] is for `initState` / `didUpdateWidget`; see
 /// [MarkdownTextEditingController._setHighlight].
-void _syncMarkdownHighlight(TextEditingController controller, bool isMarkdown, {bool duringBuild = false}) {
+void _syncMarkdownHighlight(
+  TextEditingController controller,
+  bool isMarkdown, {
+  bool duringBuild = false,
+}) {
   if (controller is! MarkdownTextEditingController) return;
   if (duringBuild) {
     controller._setHighlight(isMarkdown);
@@ -263,7 +288,12 @@ void _syncMarkdownHighlight(TextEditingController controller, bool isMarkdown, {
 /// with it. One node for a screen reader — 「Markdown, switch, on」 — not a
 /// button and a switch that do the same thing.
 class _MarkdownSwitch extends StatelessWidget {
-  const _MarkdownSwitch({required this.value, required this.onChanged, this.labelFirst = false, this.labelColor});
+  const _MarkdownSwitch({
+    required this.value,
+    required this.onChanged,
+    this.labelFirst = false,
+    this.labelColor,
+  });
 
   final bool value;
   final ValueChanged<bool> onChanged;
@@ -275,7 +305,10 @@ class _MarkdownSwitch extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final label = Text('Markdown', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: labelColor));
+    final label = Text(
+      'Markdown',
+      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: labelColor),
+    );
     final control = AppSwitch(value: value, onChanged: onChanged);
     return MergeSemantics(
       child: InkWell(
@@ -285,7 +318,9 @@ class _MarkdownSwitch extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 9),
           child: Row(
             mainAxisSize: MainAxisSize.min,
-            children: labelFirst ? [label, const SizedBox(width: 6), control] : [control, const SizedBox(width: 6), label],
+            children: labelFirst
+                ? [label, const SizedBox(width: 6), control]
+                : [control, const SizedBox(width: 6), label],
           ),
         ),
       ),
@@ -309,9 +344,9 @@ void _insertMarkdownTab(TextEditingController controller, ValueChanged<String>? 
 
 class MarkdownEditor extends StatefulWidget {
   final TextEditingController controller;
-// ... (rest of the file remains similar)
+  // ... (rest of the file remains similar)
 
-// ... (rest of the class remains similar but using the new features)
+  // ... (rest of the class remains similar but using the new features)
 
   final String label;
   final String hint;
@@ -379,7 +414,11 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
   void initState() {
     super.initState();
     _isPreview = (widget.initiallyPreview && widget.isMarkdown) || widget.isRefined;
-    _syncMarkdownHighlight(widget.controller, widget.isMarkdown || widget.isRefined, duringBuild: true);
+    _syncMarkdownHighlight(
+      widget.controller,
+      widget.isMarkdown || widget.isRefined,
+      duringBuild: true,
+    );
   }
 
   /// While the pop-out is open it is the editor on screen, and the one that
@@ -393,7 +432,11 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
     super.didUpdateWidget(oldWidget);
     // A controller swapped in behind the pop-out is nobody else's to colour.
     if (_popOutOpen && oldWidget.controller == widget.controller) return;
-    _syncMarkdownHighlight(widget.controller, widget.isMarkdown || widget.isRefined, duringBuild: true);
+    _syncMarkdownHighlight(
+      widget.controller,
+      widget.isMarkdown || widget.isRefined,
+      duringBuild: true,
+    );
   }
 
   @override
@@ -585,7 +628,9 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
       _popOutOpen = false;
       // The caller has the last word either way: its next rebuild goes through
       // [didUpdateWidget], which colours by whatever it then says.
-      if (mounted) _syncMarkdownHighlight(widget.controller, (asked ?? widget.isMarkdown) || widget.isRefined);
+      if (mounted) {
+        _syncMarkdownHighlight(widget.controller, (asked ?? widget.isMarkdown) || widget.isRefined);
+      }
     });
   }
 
@@ -636,15 +681,13 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
         selectable: widget.selectable,
       );
 
-      inner = SingleChildScrollView(
-        padding: const EdgeInsets.all(12),
-        child: inner,
-      );
+      inner = SingleChildScrollView(padding: const EdgeInsets.all(12), child: inner);
     } else {
       inner = CallbackShortcuts(
         bindings: {
           if (!widget.isRefined)
-            const SingleActivator(LogicalKeyboardKey.tab): () => _insertMarkdownTab(widget.controller, widget.onChanged),
+            const SingleActivator(LogicalKeyboardKey.tab): () =>
+                _insertMarkdownTab(widget.controller, widget.onChanged),
         },
         child: TextField(
           controller: widget.controller,
@@ -673,10 +716,12 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
     }
 
     return Container(
-      constraints: shouldExpand ? null : BoxConstraints(
-        minHeight: math.min(120.0, widget.maxLines * 24.0),
-        maxHeight: widget.maxLines * 24.0,
-      ),
+      constraints: shouldExpand
+          ? null
+          : BoxConstraints(
+              minHeight: math.min(120.0, widget.maxLines * 24.0),
+              maxHeight: widget.maxLines * 24.0,
+            ),
       decoration: BoxDecoration(
         border: widget.bordered ? Border.all(color: colorScheme.outlineVariant) : null,
         borderRadius: BorderRadius.circular(8),

@@ -64,7 +64,10 @@ void main() {
   /// `onCreate` would otherwise hand us the current one and make the migration
   /// a no-op.
   Future<Database> openV29Db() async {
-    final db = await factory.openDatabase(inMemoryDatabasePath, options: OpenDatabaseOptions(version: 29));
+    final db = await factory.openDatabase(
+      inMemoryDatabasePath,
+      options: OpenDatabaseOptions(version: 29),
+    );
     await createPreV31TasksTable(db);
     await createPreV32LlmModelsTable(db);
     await db.execute('''
@@ -160,7 +163,10 @@ void main() {
   test('a fresh database is created with the cache columns', () async {
     final db = await factory.openDatabase(
       inMemoryDatabasePath,
-      options: OpenDatabaseOptions(version: 30, onCreate: (db, _) => DatabaseMigration.onCreate(db)),
+      options: OpenDatabaseOptions(
+        version: 30,
+        onCreate: (db, _) => DatabaseMigration.onCreate(db),
+      ),
     );
     addTearDown(db.close);
 
@@ -171,7 +177,10 @@ void main() {
 
   /// A v30 database carrying only what the v31 upgrade touches.
   Future<Database> openV30TasksDb() async {
-    final db = await factory.openDatabase(inMemoryDatabasePath, options: OpenDatabaseOptions(version: 30));
+    final db = await factory.openDatabase(
+      inMemoryDatabasePath,
+      options: OpenDatabaseOptions(version: 30),
+    );
     await createPreV31TasksTable(db);
     await createPreV32LlmModelsTable(db);
     return db;
@@ -183,8 +192,7 @@ void main() {
 
     await DatabaseMigration.migrate(db, 37, 38);
 
-    expect(await columnsOf(db, 'tasks'),
-        containsAll(['operation_name', 'operation_surface']));
+    expect(await columnsOf(db, 'tasks'), containsAll(['operation_name', 'operation_surface']));
 
     // Pre-v38 rows read back with null provenance — the poll router treats
     // that as "fall back to the id-prefix guards", never as an error.
@@ -252,7 +260,9 @@ void main() {
 
     // Re-running the step must neither throw nor restamp what is filled.
     await DatabaseMigration.migrate(db, 38, 39);
-    final again = TaskItem.fromMap((await db.query('tasks', where: 'id = ?', whereArgs: ['ran'])).single);
+    final again = TaskItem.fromMap(
+      (await db.query('tasks', where: 'id = ?', whereArgs: ['ran'])).single,
+    );
     expect(again.createdAt, DateTime(2026, 9, 1, 10));
   });
 
@@ -265,8 +275,8 @@ void main() {
     }
 
     Future<Map<String, String>> settingsOf(Database db) async => {
-          for (final row in await db.query('settings')) row['key'] as String: row['value'] as String,
-        };
+      for (final row in await db.query('settings')) row['key'] as String: row['value'] as String,
+    };
 
     test('a recognised seed becomes its preset, and the old row goes', () async {
       final db = await settingsDb();
@@ -399,7 +409,10 @@ void main() {
   });
 
   test('v32 drops llm_models.type and keeps every row intact', () async {
-    final db = await factory.openDatabase(inMemoryDatabasePath, options: OpenDatabaseOptions(version: 31));
+    final db = await factory.openDatabase(
+      inMemoryDatabasePath,
+      options: OpenDatabaseOptions(version: 31),
+    );
     addTearDown(db.close);
     await createPreV32LlmModelsTable(db);
     await db.insert('llm_models', {
@@ -423,7 +436,17 @@ void main() {
 
     final columns = await columnsOf(db, 'llm_models');
     expect(columns, isNot(contains('type')));
-    expect(columns, containsAll(['model_id', 'tag', 'channel_id', 'fee_group_id', 'context_window', 'supports_stream']));
+    expect(
+      columns,
+      containsAll([
+        'model_id',
+        'tag',
+        'channel_id',
+        'fee_group_id',
+        'context_window',
+        'supports_stream',
+      ]),
+    );
 
     final row = (await db.query('llm_models')).single;
     expect(row['model_id'], 'gemini-3-pro-image');
@@ -459,7 +482,10 @@ void main() {
   test('a fresh database is created with the logs column', () async {
     final db = await factory.openDatabase(
       inMemoryDatabasePath,
-      options: OpenDatabaseOptions(version: 31, onCreate: (db, _) => DatabaseMigration.onCreate(db)),
+      options: OpenDatabaseOptions(
+        version: 31,
+        onCreate: (db, _) => DatabaseMigration.onCreate(db),
+      ),
     );
     addTearDown(db.close);
 
@@ -473,7 +499,11 @@ void main() {
     test('existing groups gain the defaults and keep their mode and rates', () async {
       final db = await openV29Db();
       addTearDown(db.close);
-      await db.insert('fee_groups', {'name': 'Old', 'billing_mode': 'request', 'request_price': 0.02});
+      await db.insert('fee_groups', {
+        'name': 'Old',
+        'billing_mode': 'request',
+        'request_price': 0.02,
+      });
 
       await DatabaseMigration.migrate(db, 41, 42);
 
@@ -517,10 +547,15 @@ void main() {
           name: 'Veo',
           billingMode: 'spec',
           outputUnit: OutputUnit.second,
-          outputRates: const [SpecRate(size: '1080p', price: 0.30), SpecRate(price: 0.10)],
+          outputRates: const [
+            SpecRate(size: '1080p', price: 0.30),
+            SpecRate(price: 0.10),
+          ],
         ).toMap(includeId: false),
       );
-      final g = PricingGroup.fromMap((await db.query('fee_groups', where: 'id = ?', whereArgs: [id])).single);
+      final g = PricingGroup.fromMap(
+        (await db.query('fee_groups', where: 'id = ?', whereArgs: [id])).single,
+      );
       expect(g.outputUnit, OutputUnit.second);
       expect(g.outputRates.map((r) => r.price), [0.30, 0.10]);
 
@@ -619,7 +654,8 @@ void main() {
         ).toMap(includeId: false),
       );
       final g = PricingGroup.fromMap(
-          (await db.query('fee_groups', where: 'name = ?', whereArgs: ['Seedream pro'])).single);
+        (await db.query('fee_groups', where: 'name = ?', whereArgs: ['Seedream pro'])).single,
+      );
       expect(g.inputUnitPrice, 0.02);
       expect(g.inputFreeUnits, 1);
       expect(g.chargesInputImages, isTrue);
@@ -819,8 +855,10 @@ void main() {
       });
       await DatabaseMigration.migrate(db, 45, 46);
       expect(await db.query('image_layers'), hasLength(1));
-      expect(await columnsOf(db, 'image_layers'),
-          containsAll(['set_id', 'z_index', 'box_left', 'box_bottom']));
+      expect(
+        await columnsOf(db, 'image_layers'),
+        containsAll(['set_id', 'z_index', 'box_left', 'box_bottom']),
+      );
     });
 
     test('a fresh database is created with the table', () async {
@@ -836,7 +874,8 @@ void main() {
       final db = await factory.openDatabase(inMemoryDatabasePath);
       addTearDown(db.close);
       await db.execute(
-          'CREATE TABLE system_prompts (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, content TEXT NOT NULL, type TEXT NOT NULL)');
+        'CREATE TABLE system_prompts (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, content TEXT NOT NULL, type TEXT NOT NULL)',
+      );
       await db.insert('system_prompts', {'title': 'old', 'content': 'c', 'type': 'refiner'});
       await DatabaseMigration.migrate(db, 46, 47);
       await DatabaseMigration.migrate(db, 46, 47);
@@ -847,8 +886,11 @@ void main() {
       final db = await factory.openDatabase(inMemoryDatabasePath);
       addTearDown(db.close);
       await DatabaseMigration.onCreate(db);
-      expect(await columnsOf(db, 'system_prompts'), contains('output_kind'),
-          reason: 'a fresh database has the column too');
+      expect(
+        await columnsOf(db, 'system_prompts'),
+        contains('output_kind'),
+        reason: 'a fresh database has the column too',
+      );
       await db.insert('system_prompts', {'title': 't', 'content': 'c', 'type': 'refiner'});
       final row = (await db.query('system_prompts', where: 'title = ?', whereArgs: ['t'])).single;
       expect(row['output_kind'], 'prompt');

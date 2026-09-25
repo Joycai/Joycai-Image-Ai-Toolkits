@@ -40,11 +40,7 @@ void main() {
   );
 
   test('switching to a route never configured leaves every param unset', () {
-    final moved = RouteSwitching.switchRoute(
-      model(),
-      routes,
-      RouteKind.anthropic,
-    );
+    final moved = RouteSwitching.switchRoute(model(), routes, RouteKind.anthropic);
     expect(moved.activeRoute, 'anthropic');
     expect(moved.maxOutputTokens, isNull);
     expect(moved.reasoningEffort, isNull);
@@ -54,11 +50,7 @@ void main() {
 
   test('switching away and back restores the values; the id never changes', () {
     final original = model();
-    final there = RouteSwitching.switchRoute(
-      original,
-      routes,
-      RouteKind.responses,
-    );
+    final there = RouteSwitching.switchRoute(original, routes, RouteKind.responses);
     final configured = there.withRouteState(
       activeRoute: there.activeRoute,
       routeParams: there.routeParams,
@@ -81,11 +73,7 @@ void main() {
   });
 
   test('model-scoped fields and the web search grant are untouched', () {
-    final moved = RouteSwitching.switchRoute(
-      model(),
-      routes,
-      RouteKind.anthropic,
-    );
+    final moved = RouteSwitching.switchRoute(model(), routes, RouteKind.anthropic);
     expect(moved.enableWebSearch, isTrue);
     expect(moved.contextWindow, 200000);
     expect(moved.feeGroupId, 3);
@@ -93,11 +81,7 @@ void main() {
   });
 
   test('a rung the target route does not have is not carried', () {
-    final ladder = RouteSwitching.ladderFor(
-      model(),
-      routes,
-      RouteKind.anthropic,
-    );
+    final ladder = RouteSwitching.ladderFor(model(), routes, RouteKind.anthropic);
     // Park an Off on Anthropic, where adaptive thinking has no Off rung.
     final parked = ModelRoutes.encodeParked({
       RouteKind.anthropic: const RouteParams(reasoningEffort: 'off'),
@@ -129,10 +113,7 @@ void main() {
       ReasoningEffort.max,
     ];
     RouteParams at(String effort, List<ReasoningEffort?> ladder) =>
-        RouteSwitching.forRoute(
-          RouteParams(reasoningEffort: effort, enableThinking: true),
-          ladder,
-        );
+        RouteSwitching.forRoute(RouteParams(reasoningEffort: effort, enableThinking: true), ladder);
 
     test('a boolean switch keeps any "on" as on', () {
       for (final e in ['low', 'high', 'max']) {
@@ -151,10 +132,7 @@ void main() {
     });
 
     test('a rung below every on rung takes the lowest', () {
-      expect(
-        at('low', const [null, ReasoningEffort.medium]).reasoningEffort,
-        'medium',
-      );
+      expect(at('low', const [null, ReasoningEffort.medium]).reasoningEffort, 'medium');
     });
   });
 
@@ -175,38 +153,19 @@ void main() {
   });
 
   test('the compat pin is written only where an older build can route it', () {
-    final toAnthropic = RouteSwitching.switchRoute(
-      model(),
-      routes,
-      RouteKind.anthropic,
-    );
+    final toAnthropic = RouteSwitching.switchRoute(model(), routes, RouteKind.anthropic);
     // New API's OpenAI vendor never offered the Anthropic face.
     expect(toAnthropic.wireProtocol, isNull);
-    final toResponses = RouteSwitching.switchRoute(
-      model(),
-      routes,
-      RouteKind.responses,
-    );
+    final toResponses = RouteSwitching.switchRoute(model(), routes, RouteKind.responses);
     expect(toResponses.wireProtocol, 'openai-responses');
   });
 
   test('preview lists what changes, unset shown as null', () {
-    final changes = RouteSwitching.preview(
-      model(),
-      routes,
-      RouteKind.responses,
-    );
+    final changes = RouteSwitching.preview(model(), routes, RouteKind.responses);
+    expect(changes, contains(const RouteParamChange(RouteParamField.maxOutputTokens, 65536, null)));
     expect(
       changes,
-      contains(
-        const RouteParamChange(RouteParamField.maxOutputTokens, 65536, null),
-      ),
-    );
-    expect(
-      changes,
-      contains(
-        const RouteParamChange(RouteParamField.reasoningEffort, 'high', null),
-      ),
+      contains(const RouteParamChange(RouteParamField.reasoningEffort, 'high', null)),
     );
   });
 
@@ -217,11 +176,7 @@ void main() {
       final legacyPin = model(wireProtocol: 'openai-responses');
       final stalePin = model(wireProtocol: 'gemini-chat');
       final gone = model(activeRoute: 'gemini');
-      final image = LLMModel(
-        modelId: 'gpt-image-1',
-        modelName: 'img',
-        tag: 'image',
-      );
+      final image = LLMModel(modelId: 'gpt-image-1', modelName: 'img', tag: 'image');
       final pinned = RouteSwitching.pinFollowers([
         follower,
         chosen,
@@ -268,11 +223,7 @@ void main() {
     });
 
     test('switching away never files its values under the primary', () {
-      final moved = RouteSwitching.switchRoute(
-        stranded(),
-        routes,
-        RouteKind.responses,
-      );
+      final moved = RouteSwitching.switchRoute(stranded(), routes, RouteKind.responses);
       final parked = ModelRoutes.parked(moved);
       expect(parked[RouteKind.chat]?.maxOutputTokens, 4096);
       expect(parked[RouteKind.gemini]?.maxOutputTokens, 32768);
@@ -305,11 +256,7 @@ void main() {
     final responsesFirst = routes.withPrimary(RouteKind.responses);
 
     test('a primary that changed but stayed pins its followers', () {
-      final r = RouteSwitching.afterChannelEdit(
-        [model()],
-        routes,
-        responsesFirst,
-      );
+      final r = RouteSwitching.afterChannelEdit([model()], routes, responsesFirst);
       expect(r.pinned.single.activeRoute, RouteKind.chat.id);
       expect(r.moved, isEmpty);
     });

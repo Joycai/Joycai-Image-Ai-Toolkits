@@ -55,8 +55,7 @@ void main() {
     return state;
   }
 
-  List<String> names(FileBrowserState s) =>
-      s.filteredFiles.map((f) => f.name).toList();
+  List<String> names(FileBrowserState s) => s.filteredFiles.map((f) => f.name).toList();
 
   test('two folders, grouping on: folder order first, then the sort', () async {
     final state = await loadedState();
@@ -145,10 +144,7 @@ void main() {
     state.toggleSelection(state.filteredFiles[1]);
     state.selectRangeTo(state.filteredFiles[3]);
 
-    expect(
-      state.selectedFiles.map((f) => f.name).toSet(),
-      {'a2.png', 'a3.png', 'b1.png'},
-    );
+    expect(state.selectedFiles.map((f) => f.name).toSet(), {'a2.png', 'a3.png', 'b1.png'});
   });
 
   test('the preference survives a reload', () async {

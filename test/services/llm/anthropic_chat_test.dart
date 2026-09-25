@@ -45,21 +45,16 @@ void main() {
     Map<String, dynamic>? options,
     List<LLMTool>? tools,
     bool isStreaming = false,
-  }) =>
-      prepareAnthropicPayload(
-        target('claude-opus-5'),
-        history,
-        options: options,
-        tools: tools,
-        isStreaming: isStreaming,
-      );
+  }) => prepareAnthropicPayload(
+    target('claude-opus-5'),
+    history,
+    options: options,
+    tools: tools,
+    isStreaming: isStreaming,
+  );
 
   /// [payload] with the target chosen, for the rules that differ per vendor.
-  Map<String, dynamic> payloadFor(
-    LLMTarget on,
-    List<LLMMessage> history, {
-    List<LLMTool>? tools,
-  }) =>
+  Map<String, dynamic> payloadFor(LLMTarget on, List<LLMMessage> history, {List<LLMTool>? tools}) =>
       prepareAnthropicPayload(on, history, tools: tools, isStreaming: false);
 
   /// [payload] with cache breakpoints off.
@@ -72,14 +67,13 @@ void main() {
     List<LLMMessage> history, {
     Map<String, dynamic>? options,
     List<LLMTool>? tools,
-  }) =>
-      prepareAnthropicPayload(
-        target('claude-opus-5', channelType: Vendors.minimaxAnthropic),
-        history,
-        options: options,
-        tools: tools,
-        isStreaming: false,
-      );
+  }) => prepareAnthropicPayload(
+    target('claude-opus-5', channelType: Vendors.minimaxAnthropic),
+    history,
+    options: options,
+    tools: tools,
+    isStreaming: false,
+  );
 
   group('history conversion', () {
     test('system leaves the message array for the top-level field', () {
@@ -92,9 +86,9 @@ void main() {
         {
           'role': 'user',
           'content': [
-            {'type': 'text', 'text': 'hi'}
-          ]
-        }
+            {'type': 'text', 'text': 'hi'},
+          ],
+        },
       ]);
     });
 
@@ -118,10 +112,14 @@ void main() {
       // that calls two tools in a turn hits this on its very first reply.
       final p = uncachedPayload([
         LLMMessage(role: LLMRole.user, content: 'do both'),
-        LLMMessage(role: LLMRole.assistant, content: '', toolCalls: [
-          LLMToolCall(id: 'toolu_1', name: 'a', arguments: {'x': 1}),
-          LLMToolCall(id: 'toolu_2', name: 'b', arguments: const {}),
-        ]),
+        LLMMessage(
+          role: LLMRole.assistant,
+          content: '',
+          toolCalls: [
+            LLMToolCall(id: 'toolu_1', name: 'a', arguments: {'x': 1}),
+            LLMToolCall(id: 'toolu_2', name: 'b', arguments: const {}),
+          ],
+        ),
         LLMMessage(role: LLMRole.tool, content: 'ra', toolCallId: 'toolu_1'),
         LLMMessage(role: LLMRole.tool, content: 'rb', toolCallId: 'toolu_2'),
       ]);
@@ -131,16 +129,21 @@ void main() {
       expect(messages[1], {
         'role': 'assistant',
         'content': [
-          {'type': 'tool_use', 'id': 'toolu_1', 'name': 'a', 'input': {'x': 1}},
+          {
+            'type': 'tool_use',
+            'id': 'toolu_1',
+            'name': 'a',
+            'input': {'x': 1},
+          },
           {'type': 'tool_use', 'id': 'toolu_2', 'name': 'b', 'input': <String, dynamic>{}},
-        ]
+        ],
       });
       expect(messages[2], {
         'role': 'user',
         'content': [
           {'type': 'tool_result', 'tool_use_id': 'toolu_1', 'content': 'ra'},
           {'type': 'tool_result', 'tool_use_id': 'toolu_2', 'content': 'rb'},
-        ]
+        ],
       });
     });
 
@@ -151,30 +154,30 @@ void main() {
       // (protocol 02 §2.1 rule 4, pitfalls 11 §21).
       final p = uncachedPayload([
         LLMMessage(role: LLMRole.user, content: 'do it'),
-        LLMMessage(role: LLMRole.assistant, content: '', toolCalls: [
-          LLMToolCall(id: 'toolu_1', name: 'a', arguments: const {}),
-        ]),
+        LLMMessage(
+          role: LLMRole.assistant,
+          content: '',
+          toolCalls: [LLMToolCall(id: 'toolu_1', name: 'a', arguments: const {})],
+        ),
         LLMMessage(role: LLMRole.tool, content: 'ra', toolCallId: 'toolu_1'),
         LLMMessage(role: LLMRole.user, content: 'continue'),
       ]);
       final blocks = (p['messages'] as List).last['content'] as List;
       expect(blocks.first['type'], 'tool_result');
-      expect(blocks.last, {
-        'type': 'text',
-        'text': '$anthropicAuthorTextLabel\ncontinue',
-      });
+      expect(blocks.last, {'type': 'text', 'text': '$anthropicAuthorTextLabel\ncontinue'});
     });
 
     test('a message that already names itself is not labelled again', () {
       // The assistant's own `[view_image result]` message is self-describing.
       expect(PromptOptimizerAgent.viewResultMarker, startsWith('['));
-      const note =
-          '${PromptOptimizerAgent.viewResultMarker} Reference image #1 is attached.';
+      const note = '${PromptOptimizerAgent.viewResultMarker} Reference image #1 is attached.';
       final p = uncachedPayload([
         LLMMessage(role: LLMRole.user, content: 'look'),
-        LLMMessage(role: LLMRole.assistant, content: '', toolCalls: [
-          LLMToolCall(id: 'toolu_1', name: 'view_image', arguments: const {}),
-        ]),
+        LLMMessage(
+          role: LLMRole.assistant,
+          content: '',
+          toolCalls: [LLMToolCall(id: 'toolu_1', name: 'view_image', arguments: const {})],
+        ),
         LLMMessage(role: LLMRole.tool, content: 'ok', toolCallId: 'toolu_1'),
         LLMMessage(role: LLMRole.user, content: note),
       ]);
@@ -183,9 +186,7 @@ void main() {
     });
 
     test('a user turn that follows no tool result is never labelled', () {
-      final p = uncachedPayload([
-        LLMMessage(role: LLMRole.user, content: 'hi'),
-      ]);
+      final p = uncachedPayload([LLMMessage(role: LLMRole.user, content: 'hi')]);
       final blocks = (p['messages'] as List).single['content'] as List;
       expect(blocks.single, {'type': 'text', 'text': 'hi'});
     });
@@ -193,9 +194,11 @@ void main() {
     test('a tool that returned nothing still sends a non-empty block', () {
       final p = uncachedPayload([
         LLMMessage(role: LLMRole.user, content: 'go'),
-        LLMMessage(role: LLMRole.assistant, content: '', toolCalls: [
-          LLMToolCall(id: 'toolu_1', name: 'a', arguments: const {}),
-        ]),
+        LLMMessage(
+          role: LLMRole.assistant,
+          content: '',
+          toolCalls: [LLMToolCall(id: 'toolu_1', name: 'a', arguments: const {})],
+        ),
         LLMMessage(role: LLMRole.tool, content: '', toolCallId: 'toolu_1'),
       ]);
       final blocks = (p['messages'] as List).last['content'] as List;
@@ -235,8 +238,7 @@ void main() {
           role: LLMRole.user,
           content: 'what is this',
           attachments: [
-            LLMAttachment.fromBytes(
-                Uint8List.fromList([1, 2, 3]), 'image/png'),
+            LLMAttachment.fromBytes(Uint8List.fromList([1, 2, 3]), 'image/png'),
           ],
         ),
       ]);
@@ -264,8 +266,10 @@ void main() {
     test('a nonsensical cap falls back rather than being sent', () {
       for (final bad in [0, -1, 'lots', null]) {
         expect(
-          payload([LLMMessage(role: LLMRole.user, content: 'hi')],
-              options: {'maxTokens': bad})['max_tokens'],
+          payload(
+            [LLMMessage(role: LLMRole.user, content: 'hi')],
+            options: {'maxTokens': bad},
+          )['max_tokens'],
           anthropicDefaultMaxTokens,
           reason: '$bad',
         );
@@ -292,7 +296,7 @@ void main() {
             name: 'read_file',
             description: 'reads',
             parameters: {'type': 'object', 'properties': <String, dynamic>{}},
-          )
+          ),
         ],
       );
       expect(p['tools'], [
@@ -300,7 +304,7 @@ void main() {
           'name': 'read_file',
           'description': 'reads',
           'input_schema': {'type': 'object', 'properties': <String, dynamic>{}},
-        }
+        },
       ]);
       // `auto` only: the forcing modes are the first thing ④ compat layers
       // drop, and nothing here depends on them.
@@ -319,7 +323,12 @@ void main() {
       final content = parseAnthropicContent([
         {'type': 'thinking', 'thinking': 'hmm', 'signature': 'sig'},
         {'type': 'text', 'text': 'the answer'},
-        {'type': 'tool_use', 'id': 'toolu_1', 'name': 'f', 'input': {'a': 1}},
+        {
+          'type': 'tool_use',
+          'id': 'toolu_1',
+          'name': 'f',
+          'input': {'a': 1},
+        },
       ]);
       expect(content.text, 'the answer');
       expect(content.thinking, 'hmm');
@@ -367,8 +376,7 @@ void main() {
     });
 
     test('absent cache buckets simply count as zero', () {
-      final metadata =
-          anthropicUsageMetadata({'input_tokens': 7, 'output_tokens': 3});
+      final metadata = anthropicUsageMetadata({'input_tokens': 7, 'output_tokens': 3});
       expect(metadata['prompt_tokens'], 7);
     });
 
@@ -393,21 +401,24 @@ void main() {
 
   group('authentication', () {
     test('the version header is not optional', () {
-      final headers = Vendors.byId(Vendors.anthropicRest)
-          .headers('secret', 'https://api.anthropic.com/v1');
+      final headers = Vendors.byId(
+        Vendors.anthropicRest,
+      ).headers('secret', 'https://api.anthropic.com/v1');
       expect(headers['anthropic-version'], isNotEmpty);
       expect(headers['x-api-key'], 'secret');
     });
 
     test('Anthropic itself is the one host that gets no bearer token', () {
-      final official = Vendors.byId(Vendors.anthropicRest)
-          .headers('secret', 'https://api.anthropic.com/v1');
+      final official = Vendors.byId(
+        Vendors.anthropicRest,
+      ).headers('secret', 'https://api.anthropic.com/v1');
       expect(official.containsKey('Authorization'), isFalse);
     });
 
     test('a relay gets both spellings, since it documents neither', () {
-      final relay = Vendors.byId(Vendors.newApiAnthropic)
-          .headers('secret', 'https://relay.example.com/v1');
+      final relay = Vendors.byId(
+        Vendors.newApiAnthropic,
+      ).headers('secret', 'https://relay.example.com/v1');
       expect(relay['x-api-key'], 'secret');
       expect(relay['Authorization'], 'Bearer secret');
     });
@@ -417,29 +428,22 @@ void main() {
       // "not bearer" as "wants a key parameter", which would have leaked an
       // Anthropic key into every logged URL.
       final url = Uri.parse('https://relay.example.com/v1/messages');
-      expect(
-        Vendors.byId(Vendors.anthropicRest).decorateUrl(url, 'secret'),
-        url,
-      );
+      expect(Vendors.byId(Vendors.anthropicRest).decorateUrl(url, 'secret'), url);
     });
   });
 
   group('thinking', () {
     Map<String, dynamic> payloadFor(String channelType, {bool thinking = true}) =>
-        prepareAnthropicPayload(
-          target('m', channelType: channelType, thinking: thinking),
-          [LLMMessage(role: LLMRole.user, content: 'hi')],
-          isStreaming: false,
-        );
+        prepareAnthropicPayload(target('m', channelType: channelType, thinking: thinking), [
+          LLMMessage(role: LLMRole.user, content: 'hi'),
+        ], isStreaming: false);
 
     setUp(resetAnthropicThinkingDialectsForTest);
 
     /// One user turn on [on], for the rules that differ per target.
-    Map<String, dynamic> sendWith(LLMTarget on) => prepareAnthropicPayload(
-          on,
-          [LLMMessage(role: LLMRole.user, content: 'hi')],
-          isStreaming: false,
-        );
+    Map<String, dynamic> sendWith(LLMTarget on) => prepareAnthropicPayload(on, [
+      LLMMessage(role: LLMRole.user, content: 'hi'),
+    ], isStreaming: false);
 
     test('each host gets its own spelling — there is no shared one', () {
       // MiniMax says a bare `adaptive`; Anthropic's current generation says
@@ -447,10 +451,8 @@ void main() {
       // ④ face documents the manual `enabled` + budget. A single hardcoded
       // shape would be a 400 on two of the three, which is why the dialect
       // is declared on the vendor rather than guessed here.
-      expect(payloadFor(Vendors.minimaxAnthropic)['thinking'],
-          {'type': 'adaptive'});
-      expect(payloadFor(Vendors.minimaxAnthropic).containsKey('output_config'),
-          isFalse);
+      expect(payloadFor(Vendors.minimaxAnthropic)['thinking'], {'type': 'adaptive'});
+      expect(payloadFor(Vendors.minimaxAnthropic).containsKey('output_config'), isFalse);
 
       final official = payloadFor(Vendors.anthropicRest);
       expect(official['thinking'], {'type': 'adaptive', 'display': 'summarized'});
@@ -458,8 +460,10 @@ void main() {
       expect(official.containsKey('budget_tokens'), isFalse);
 
       final bailian = payloadFor(Vendors.dashscope);
-      expect(bailian['thinking'],
-          {'type': 'enabled', 'budget_tokens': anthropicDefaultMaxTokens ~/ 2});
+      expect(bailian['thinking'], {
+        'type': 'enabled',
+        'budget_tokens': anthropicDefaultMaxTokens ~/ 2,
+      });
       expect(bailian.containsKey('output_config'), isFalse);
     });
 
@@ -511,9 +515,10 @@ void main() {
         'claude-haiku-4-5',
       ]) {
         final p = sendWith(target(id, thinking: true));
-        expect(p['thinking'],
-            {'type': 'enabled', 'budget_tokens': anthropicDefaultMaxTokens ~/ 2},
-            reason: id);
+        expect(p['thinking'], {
+          'type': 'enabled',
+          'budget_tokens': anthropicDefaultMaxTokens ~/ 2,
+        }, reason: id);
         expect(p.containsKey('output_config'), isFalse, reason: id);
       }
       for (final id in [
@@ -525,8 +530,7 @@ void main() {
         'anthropic/claude-opus-4.7',
       ]) {
         final p = sendWith(target(id, thinking: true));
-        expect(p['thinking'], {'type': 'adaptive', 'display': 'summarized'},
-            reason: id);
+        expect(p['thinking'], {'type': 'adaptive', 'display': 'summarized'}, reason: id);
       }
     });
 
@@ -536,7 +540,8 @@ void main() {
       // two spellings.
       expect(
         resolveAnthropicThinkingDialect(
-            target('claude-3-5-sonnet', channelType: Vendors.minimaxAnthropic)),
+          target('claude-3-5-sonnet', channelType: Vendors.minimaxAnthropic),
+        ),
         ThinkingDialect.adaptive,
       );
     });
@@ -581,42 +586,75 @@ void main() {
 
       test('the memo is per endpoint and model', () {
         learnAnthropicThinkingDialect(on, ThinkingDialect.anthropicAdaptive);
-        expect(resolveAnthropicThinkingDialect(target('another-model', thinking: true)),
-            ThinkingDialect.anthropicAdaptive);
+        expect(
+          resolveAnthropicThinkingDialect(target('another-model', thinking: true)),
+          ThinkingDialect.anthropicAdaptive,
+        );
       });
 
       test('the two Anthropic spellings are each other\'s fallback; nothing else has one', () {
-        expect(alternateAnthropicThinkingDialect(ThinkingDialect.anthropicAdaptive),
-            ThinkingDialect.anthropicBudget);
-        expect(alternateAnthropicThinkingDialect(ThinkingDialect.anthropicBudget),
-            ThinkingDialect.anthropicAdaptive);
+        expect(
+          alternateAnthropicThinkingDialect(ThinkingDialect.anthropicAdaptive),
+          ThinkingDialect.anthropicBudget,
+        );
+        expect(
+          alternateAnthropicThinkingDialect(ThinkingDialect.anthropicBudget),
+          ThinkingDialect.anthropicAdaptive,
+        );
         expect(alternateAnthropicThinkingDialect(ThinkingDialect.adaptive), isNull);
         expect(alternateAnthropicThinkingDialect(ThinkingDialect.none), isNull);
-        expect(learnAnthropicThinkingDialect(
-                target('m', channelType: Vendors.minimaxAnthropic, thinking: true),
-                ThinkingDialect.adaptive),
-            isNull);
+        expect(
+          learnAnthropicThinkingDialect(
+            target('m', channelType: Vendors.minimaxAnthropic, thinking: true),
+            ThinkingDialect.adaptive,
+          ),
+          isNull,
+        );
       });
 
       test('only a 400 that names the thinking field qualifies', () {
         bool rejects(Object e) => isAnthropicThinkingRejection(e);
 
-        expect(rejects(LLMApiException(
-            'Anthropic API request failed: 400 - thinking.type: unexpected value "enabled"',
-            statusCode: 400)), isTrue);
-        expect(rejects(LLMApiException(
-            'Anthropic API request failed: 400 - Extra inputs are not permitted: output_config',
-            statusCode: 400)), isTrue);
+        expect(
+          rejects(
+            LLMApiException(
+              'Anthropic API request failed: 400 - thinking.type: unexpected value "enabled"',
+              statusCode: 400,
+            ),
+          ),
+          isTrue,
+        );
+        expect(
+          rejects(
+            LLMApiException(
+              'Anthropic API request failed: 400 - Extra inputs are not permitted: output_config',
+              statusCode: 400,
+            ),
+          ),
+          isTrue,
+        );
 
         // A level the model does not support is the user's to lower, not a
         // dialect problem — respelling it would only earn a second 400.
-        expect(rejects(LLMApiException(
-            'Anthropic API request failed: 400 - output_config.effort: unsupported value "max"',
-            statusCode: 400)), isFalse);
+        expect(
+          rejects(
+            LLMApiException(
+              'Anthropic API request failed: 400 - output_config.effort: unsupported value "max"',
+              statusCode: 400,
+            ),
+          ),
+          isFalse,
+        );
         // Not about thinking at all.
-        expect(rejects(LLMApiException(
-            'Anthropic API request failed: 400 - messages: roles must alternate',
-            statusCode: 400)), isFalse);
+        expect(
+          rejects(
+            LLMApiException(
+              'Anthropic API request failed: 400 - messages: roles must alternate',
+              statusCode: 400,
+            ),
+          ),
+          isFalse,
+        );
         // About thinking, but not its spelling: a broken replay or a cap.
         // Learned for the session, a flip here swapped a working dialect
         // for a broken one.
@@ -628,20 +666,43 @@ void main() {
           'Thinking may not be enabled when tool_choice forces tool use.',
           '`temperature` may only be set to 1 when thinking is enabled.',
         ]) {
-          expect(rejects(LLMApiException('Anthropic API request failed: 400 - $message',
-              statusCode: 400)), isFalse, reason: message);
+          expect(
+            rejects(
+              LLMApiException('Anthropic API request failed: 400 - $message', statusCode: 400),
+            ),
+            isFalse,
+            reason: message,
+          );
         }
         // The field-level spellings of an unknown dialect still qualify.
-        expect(rejects(LLMApiException(
-            "Anthropic API request failed: 400 - thinking: Input tag 'adaptive' found using 'type' does not match any of the expected tags",
-            statusCode: 400)), isTrue);
-        expect(rejects(LLMApiException(
-            'Anthropic API request failed: 400 - adaptive thinking is not supported on this model',
-            statusCode: 400)), isTrue);
+        expect(
+          rejects(
+            LLMApiException(
+              "Anthropic API request failed: 400 - thinking: Input tag 'adaptive' found using 'type' does not match any of the expected tags",
+              statusCode: 400,
+            ),
+          ),
+          isTrue,
+        );
+        expect(
+          rejects(
+            LLMApiException(
+              'Anthropic API request failed: 400 - adaptive thinking is not supported on this model',
+              statusCode: 400,
+            ),
+          ),
+          isTrue,
+        );
         // Not a 400.
-        expect(rejects(LLMApiException(
-            'Anthropic API request failed: 529 - overloaded (thinking)',
-            statusCode: 529)), isFalse);
+        expect(
+          rejects(
+            LLMApiException(
+              'Anthropic API request failed: 529 - overloaded (thinking)',
+              statusCode: 529,
+            ),
+          ),
+          isFalse,
+        );
         expect(rejects(LLMApiException('thinking envelope', isEnvelope: true)), isFalse);
         expect(rejects(Exception('thinking')), isFalse);
       });
@@ -650,38 +711,30 @@ void main() {
     test('a sealed thinking block is replayed ahead of the tool call', () {
       // With thinking on, ④ rejects a replayed tool-calling turn whose
       // thinking block is missing — and the block has to come first.
-      final p = prepareAnthropicPayload(
-        target('m', thinking: true),
-        [
-          LLMMessage(role: LLMRole.user, content: 'go'),
-          LLMMessage(
-            role: LLMRole.assistant,
-            content: 'looking',
-            reasoningContent: 'I should search',
-            reasoningSignature: 'sig-abc',
-            toolCalls: [LLMToolCall(id: 'toolu_1', name: 'a', arguments: const {})],
-          ),
-        ],
-        isStreaming: false,
-      );
+      final p = prepareAnthropicPayload(target('m', thinking: true), [
+        LLMMessage(role: LLMRole.user, content: 'go'),
+        LLMMessage(
+          role: LLMRole.assistant,
+          content: 'looking',
+          reasoningContent: 'I should search',
+          reasoningSignature: 'sig-abc',
+          toolCalls: [LLMToolCall(id: 'toolu_1', name: 'a', arguments: const {})],
+        ),
+      ], isStreaming: false);
       final blocks = (p['messages'] as List)[1]['content'] as List;
       expect(blocks.map((b) => b['type']), ['thinking', 'text', 'tool_use']);
       expect(blocks.first['signature'], 'sig-abc');
     });
 
     test('an unsealed one is dropped rather than sent to be rejected', () {
-      final p = prepareAnthropicPayload(
-        target('m', thinking: true),
-        [
-          LLMMessage(role: LLMRole.user, content: 'go'),
-          LLMMessage(
-            role: LLMRole.assistant,
-            content: 'answer',
-            reasoningContent: 'thought that arrived without a signature',
-          ),
-        ],
-        isStreaming: false,
-      );
+      final p = prepareAnthropicPayload(target('m', thinking: true), [
+        LLMMessage(role: LLMRole.user, content: 'go'),
+        LLMMessage(
+          role: LLMRole.assistant,
+          content: 'answer',
+          reasoningContent: 'thought that arrived without a signature',
+        ),
+      ], isStreaming: false);
       final blocks = (p['messages'] as List)[1]['content'] as List;
       expect(blocks.map((b) => b['type']), ['text']);
     });
@@ -712,7 +765,7 @@ void main() {
           // The only brake the API offers: billed per search, and every
           // result re-billed as input on each later turn.
           'max_uses': anthropicWebSearchMaxUses,
-        }
+        },
       ]);
       // No tool_choice with server tools alone: `auto` would be the caller
       // voicing an opinion on the host's own decision (tools 05 §2).
@@ -723,9 +776,7 @@ void main() {
       final p = prepareAnthropicPayload(
         target('m', webSearch: true),
         [LLMMessage(role: LLMRole.user, content: 'hi')],
-        tools: [
-          LLMTool(name: 'read_file', description: 'reads', parameters: const {})
-        ],
+        tools: [LLMTool(name: 'read_file', description: 'reads', parameters: const {})],
         isStreaming: false,
       );
       final tools = p['tools'] as List;
@@ -735,11 +786,9 @@ void main() {
     });
 
     test('switched off means no tools array at all', () {
-      final p = prepareAnthropicPayload(
-        target('m'),
-        [LLMMessage(role: LLMRole.user, content: 'hi')],
-        isStreaming: false,
-      );
+      final p = prepareAnthropicPayload(target('m'), [
+        LLMMessage(role: LLMRole.user, content: 'hi'),
+      ], isStreaming: false);
       expect(p.containsKey('tools'), isFalse);
     });
 
@@ -765,7 +814,7 @@ void main() {
               'url': 'http://www.weather.com.cn/textFC/shanghai.shtml',
               'page_age': '2026-07-07 18:00:00',
               'content': '小雨 南风',
-            }
+            },
           ],
         },
         {'type': 'text', 'text': 'It is raining.'},
@@ -774,8 +823,10 @@ void main() {
       expect(content.toolCalls, isEmpty);
       expect(content.serverToolRuns, hasLength(1));
       expect(content.serverToolRuns.single.query, '今天上海天气');
-      expect(content.serverToolRuns.single.results.single.url,
-          'http://www.weather.com.cn/textFC/shanghai.shtml');
+      expect(
+        content.serverToolRuns.single.results.single.url,
+        'http://www.weather.com.cn/textFC/shanghai.shtml',
+      );
     });
 
     test('the two texts around the search stay two paragraphs', () {
@@ -789,27 +840,32 @@ void main() {
 
     test('sources reach the caller as metadata, not as prose', () {
       final content = parseAnthropicContent([
-        {'type': 'server_tool_use', 'id': 'c1', 'name': 'web_search', 'input': {'query': 'q'}},
+        {
+          'type': 'server_tool_use',
+          'id': 'c1',
+          'name': 'web_search',
+          'input': {'query': 'q'},
+        },
         {
           'type': 'web_search_tool_result',
           'tool_use_id': 'c1',
           'content': [
-            {'type': 'web_search_result', 'title': 'T', 'url': 'https://e.com/a'}
+            {'type': 'web_search_result', 'title': 'T', 'url': 'https://e.com/a'},
           ],
         },
       ]);
-      final metadata = anthropicUsageMetadata(
-        {'input_tokens': 10, 'output_tokens': 5},
-        serverToolRuns: content.serverToolRuns,
-      );
+      final metadata = anthropicUsageMetadata({
+        'input_tokens': 10,
+        'output_tokens': 5,
+      }, serverToolRuns: content.serverToolRuns);
       expect(metadata['server_tool_runs'], [
         {
           'name': 'web_search',
           'query': 'q',
           'sources': [
-            {'title': 'T', 'url': 'https://e.com/a'}
+            {'title': 'T', 'url': 'https://e.com/a'},
           ],
-        }
+        },
       ]);
     });
 
@@ -818,12 +874,22 @@ void main() {
       // rebuilt from text + tool calls loses it, and with it the search.
       final blocks = [
         {'type': 'text', 'text': 'Searching.'},
-        {'type': 'server_tool_use', 'id': 'c1', 'name': 'web_search', 'input': {'query': 'q'}},
+        {
+          'type': 'server_tool_use',
+          'id': 'c1',
+          'name': 'web_search',
+          'input': {'query': 'q'},
+        },
         {
           'type': 'web_search_tool_result',
           'tool_use_id': 'c1',
           'content': [
-            {'type': 'web_search_result', 'title': 'T', 'url': 'https://e.com/a', 'encrypted_content': 'Eqgf'}
+            {
+              'type': 'web_search_result',
+              'title': 'T',
+              'url': 'https://e.com/a',
+              'encrypted_content': 'Eqgf',
+            },
           ],
         },
         {'type': 'text', 'text': 'Found it.'},
@@ -840,12 +906,17 @@ void main() {
     test('a server-tool turn is replayed verbatim, not rebuilt', () {
       final blocks = <Map<String, dynamic>>[
         {'type': 'text', 'text': 'Searching.'},
-        {'type': 'server_tool_use', 'id': 'c1', 'name': 'web_search', 'input': {'query': 'q'}},
+        {
+          'type': 'server_tool_use',
+          'id': 'c1',
+          'name': 'web_search',
+          'input': {'query': 'q'},
+        },
         {
           'type': 'web_search_tool_result',
           'tool_use_id': 'c1',
           'content': [
-            {'type': 'web_search_result', 'url': 'https://e.com/a', 'encrypted_content': 'Eqgf'}
+            {'type': 'web_search_result', 'url': 'https://e.com/a', 'encrypted_content': 'Eqgf'},
           ],
         },
       ];
@@ -871,7 +942,7 @@ void main() {
         ),
       ]);
       expect((foreign['messages'] as List)[1]['content'], [
-        {'type': 'text', 'text': 'Searching.'}
+        {'type': 'text', 'text': 'Searching.'},
       ]);
     });
 
@@ -907,12 +978,20 @@ void main() {
       // help and the shape is the only signal.
       final content = parseAnthropicContent([
         {'type': 'text', 'text': 'Let me look.'},
-        {'type': 'server_tool_use', 'id': 'c1', 'name': 'web_search', 'input': {'query': 'q'}},
+        {
+          'type': 'server_tool_use',
+          'id': 'c1',
+          'name': 'web_search',
+          'input': {'query': 'q'},
+        },
         {'type': 'web_search_tool_result', 'tool_use_id': 'c1', 'content': []},
       ]);
       expect(content.turnIncomplete, isTrue);
-      final metadata = anthropicUsageMetadata(null,
-          stopReason: 'end_turn', turnIncomplete: content.turnIncomplete);
+      final metadata = anthropicUsageMetadata(
+        null,
+        stopReason: 'end_turn',
+        turnIncomplete: content.turnIncomplete,
+      );
       expect(metadata[anthropicTurnIncompleteKey], isTrue);
       expect(metadata['finish_reason'], 'stop');
 
@@ -936,7 +1015,12 @@ void main() {
       // Delivered as a 200 with an error *block* whose content is an object,
       // not a list; the old parser read it as an empty result list.
       final content = parseAnthropicContent([
-        {'type': 'server_tool_use', 'id': 'c1', 'name': 'web_search', 'input': {'query': 'q'}},
+        {
+          'type': 'server_tool_use',
+          'id': 'c1',
+          'name': 'web_search',
+          'input': {'query': 'q'},
+        },
         {
           'type': 'web_search_tool_result',
           'tool_use_id': 'c1',
@@ -953,14 +1037,48 @@ void main() {
     test('the stream assembler keeps the same content array the sync path would', () {
       final assembler = AnthropicStreamAssembler();
       final events = <Map<String, dynamic>>[
-        {'type': 'message_start', 'message': {'usage': {'input_tokens': 5}}},
-        {'type': 'content_block_start', 'index': 0, 'content_block': {'type': 'text', 'text': ''}},
-        {'type': 'content_block_delta', 'index': 0, 'delta': {'type': 'text_delta', 'text': 'Let me '}},
-        {'type': 'content_block_delta', 'index': 0, 'delta': {'type': 'text_delta', 'text': 'look.'}},
+        {
+          'type': 'message_start',
+          'message': {
+            'usage': {'input_tokens': 5},
+          },
+        },
+        {
+          'type': 'content_block_start',
+          'index': 0,
+          'content_block': {'type': 'text', 'text': ''},
+        },
+        {
+          'type': 'content_block_delta',
+          'index': 0,
+          'delta': {'type': 'text_delta', 'text': 'Let me '},
+        },
+        {
+          'type': 'content_block_delta',
+          'index': 0,
+          'delta': {'type': 'text_delta', 'text': 'look.'},
+        },
         {'type': 'content_block_stop', 'index': 0},
-        {'type': 'content_block_start', 'index': 1, 'content_block': {'type': 'server_tool_use', 'id': 'srv', 'name': 'web_search', 'input': {}}},
-        {'type': 'content_block_delta', 'index': 1, 'delta': {'type': 'input_json_delta', 'partial_json': '{"que'}},
-        {'type': 'content_block_delta', 'index': 1, 'delta': {'type': 'input_json_delta', 'partial_json': 'ry":"q"}'}},
+        {
+          'type': 'content_block_start',
+          'index': 1,
+          'content_block': {
+            'type': 'server_tool_use',
+            'id': 'srv',
+            'name': 'web_search',
+            'input': {},
+          },
+        },
+        {
+          'type': 'content_block_delta',
+          'index': 1,
+          'delta': {'type': 'input_json_delta', 'partial_json': '{"que'},
+        },
+        {
+          'type': 'content_block_delta',
+          'index': 1,
+          'delta': {'type': 'input_json_delta', 'partial_json': 'ry":"q"}'},
+        },
         {'type': 'content_block_stop', 'index': 1},
         {
           'type': 'content_block_start',
@@ -969,28 +1087,50 @@ void main() {
             'type': 'web_search_tool_result',
             'tool_use_id': 'srv',
             'content': [
-              {'type': 'web_search_result', 'title': 'T', 'url': 'https://e.com/a', 'encrypted_content': 'Eqgf'}
+              {
+                'type': 'web_search_result',
+                'title': 'T',
+                'url': 'https://e.com/a',
+                'encrypted_content': 'Eqgf',
+              },
             ],
           },
         },
         {'type': 'content_block_stop', 'index': 2},
-        {'type': 'message_delta', 'delta': {'stop_reason': 'pause_turn'}, 'usage': {'output_tokens': 7}},
+        {
+          'type': 'message_delta',
+          'delta': {'stop_reason': 'pause_turn'},
+          'usage': {'output_tokens': 7},
+        },
         {'type': 'message_stop'},
       ];
       final chunks = [for (final e in events) ...assembler.accept(e)];
       expect(chunks.map((c) => c.textPart).whereType<String>().join(), 'Let me look.');
-      expect(chunks.any((c) => c.toolCallPart != null), isFalse,
-          reason: 'a host-run search is never a call to make');
+      expect(
+        chunks.any((c) => c.toolCallPart != null),
+        isFalse,
+        reason: 'a host-run search is never a call to make',
+      );
 
       final closing = assembler.finish()!;
       expect(closing.rawContentBlocks, [
         {'type': 'text', 'text': 'Let me look.'},
-        {'type': 'server_tool_use', 'id': 'srv', 'name': 'web_search', 'input': {'query': 'q'}},
+        {
+          'type': 'server_tool_use',
+          'id': 'srv',
+          'name': 'web_search',
+          'input': {'query': 'q'},
+        },
         {
           'type': 'web_search_tool_result',
           'tool_use_id': 'srv',
           'content': [
-            {'type': 'web_search_result', 'title': 'T', 'url': 'https://e.com/a', 'encrypted_content': 'Eqgf'}
+            {
+              'type': 'web_search_result',
+              'title': 'T',
+              'url': 'https://e.com/a',
+              'encrypted_content': 'Eqgf',
+            },
           ],
         },
       ]);
@@ -1002,19 +1142,34 @@ void main() {
 
     test('the content array survives persistence — the replay outlives the session', () {
       final blocks = <Map<String, dynamic>>[
-        {'type': 'server_tool_use', 'id': 'c1', 'name': 'web_search', 'input': {'query': 'q'}},
-        {'type': 'web_search_tool_result', 'tool_use_id': 'c1', 'content': [{'encrypted_content': 'E'}]},
+        {
+          'type': 'server_tool_use',
+          'id': 'c1',
+          'name': 'web_search',
+          'input': {'query': 'q'},
+        },
+        {
+          'type': 'web_search_tool_result',
+          'tool_use_id': 'c1',
+          'content': [
+            {'encrypted_content': 'E'},
+          ],
+        },
       ];
-      final revived = LLMMessage.fromJson(LLMMessage(
-        role: LLMRole.assistant,
-        content: '',
-        rawThinkingModelId: 'claude-opus-5',
-        rawContentBlocks: blocks,
-      ).toJson());
+      final revived = LLMMessage.fromJson(
+        LLMMessage(
+          role: LLMRole.assistant,
+          content: '',
+          rawThinkingModelId: 'claude-opus-5',
+          rawContentBlocks: blocks,
+        ).toJson(),
+      );
       expect(revived.rawContentBlocks, blocks);
       expect(revived.rawThinkingModelId, 'claude-opus-5');
-      expect(LLMMessage(role: LLMRole.assistant, content: 'x').toJson().containsKey('rawContentBlocks'),
-          isFalse);
+      expect(
+        LLMMessage(role: LLMRole.assistant, content: 'x').toJson().containsKey('rawContentBlocks'),
+        isFalse,
+      );
     });
 
     test('keep-alives alone are not a message', () {
@@ -1027,17 +1182,34 @@ void main() {
       expect(pings.finish(), isNull);
 
       final started = AnthropicStreamAssembler();
-      started.accept({'type': 'message_start', 'message': {'usage': {'input_tokens': 1}}}).toList();
+      started.accept({
+        'type': 'message_start',
+        'message': {
+          'usage': {'input_tokens': 1},
+        },
+      }).toList();
       expect(started.sawMessage, isTrue);
     });
 
     test('a stream without a server tool carries no content array', () {
       final assembler = AnthropicStreamAssembler();
       for (final e in <Map<String, dynamic>>[
-        {'type': 'content_block_start', 'index': 0, 'content_block': {'type': 'text', 'text': ''}},
-        {'type': 'content_block_delta', 'index': 0, 'delta': {'type': 'text_delta', 'text': 'hi'}},
+        {
+          'type': 'content_block_start',
+          'index': 0,
+          'content_block': {'type': 'text', 'text': ''},
+        },
+        {
+          'type': 'content_block_delta',
+          'index': 0,
+          'delta': {'type': 'text_delta', 'text': 'hi'},
+        },
         {'type': 'content_block_stop', 'index': 0},
-        {'type': 'message_delta', 'delta': {'stop_reason': 'end_turn'}, 'usage': {'output_tokens': 1}},
+        {
+          'type': 'message_delta',
+          'delta': {'stop_reason': 'end_turn'},
+          'usage': {'output_tokens': 1},
+        },
       ]) {
         assembler.accept(e).toList();
       }
@@ -1050,7 +1222,7 @@ void main() {
           'type': 'web_search_tool_result',
           'tool_use_id': 'never-announced',
           'content': [
-            {'type': 'web_search_result', 'title': 'T', 'url': 'https://e.com/a'}
+            {'type': 'web_search_result', 'title': 'T', 'url': 'https://e.com/a'},
           ],
         },
       ]);
@@ -1060,11 +1232,7 @@ void main() {
 
   group('third-party ④ hosts', () {
     test('every ④ vendor routes to the ④ protocol', () {
-      for (final id in [
-        Vendors.anthropicRest,
-        Vendors.newApiAnthropic,
-        Vendors.minimaxAnthropic,
-      ]) {
+      for (final id in [Vendors.anthropicRest, Vendors.newApiAnthropic, Vendors.minimaxAnthropic]) {
         expect(Vendors.byId(id).family, ProtocolFamily.anthropic, reason: id);
       }
     });
@@ -1074,8 +1242,7 @@ void main() {
       // same key reaches `/v1/chat/completions` and `/anthropic/v1/messages`
       // depending only on which channel it was saved under.
       expect(Vendors.byId(Vendors.minimax).family, ProtocolFamily.openai);
-      expect(Vendors.byId(Vendors.minimaxAnthropic).family,
-          ProtocolFamily.anthropic);
+      expect(Vendors.byId(Vendors.minimaxAnthropic).family, ProtocolFamily.anthropic);
     });
 
     test('a non-/v1 base path still composes to the documented URL', () {
@@ -1116,11 +1283,7 @@ void main() {
   });
 
   group('raw thinking blocks (verbatim replay)', () {
-    final sealed = {
-      'type': 'thinking',
-      'thinking': 'let me check',
-      'signature': 'sig-1',
-    };
+    final sealed = {'type': 'thinking', 'thinking': 'let me check', 'signature': 'sig-1'};
     final redacted = {'type': 'redacted_thinking', 'data': 'opaque-blob'};
 
     test('parse keeps sealed thinking and redacted_thinking, in order', () {
@@ -1154,8 +1317,7 @@ void main() {
           rawThinkingModelId: 'claude-opus-5',
           toolCalls: [LLMToolCall(id: 't1', name: 'f', arguments: {})],
         ),
-        LLMMessage(
-            role: LLMRole.tool, content: 'ok', toolCallId: 't1', toolName: 'f'),
+        LLMMessage(role: LLMRole.tool, content: 'ok', toolCallId: 't1', toolName: 'f'),
       ]);
       final assistant = (p['messages'] as List)[1] as Map;
       final blocks = assistant['content'] as List;
@@ -1181,14 +1343,12 @@ void main() {
         ),
       ]);
       final assistant = (p['messages'] as List)[1] as Map;
-      final types =
-          [for (final b in assistant['content'] as List) (b as Map)['type']];
+      final types = [for (final b in assistant['content'] as List) (b as Map)['type']];
       expect(types, isNot(contains('thinking')));
       expect(types, isNot(contains('redacted_thinking')));
     });
 
-    test('legacy histories without raw blocks still reconstruct a sealed one',
-        () {
+    test('legacy histories without raw blocks still reconstruct a sealed one', () {
       final p = payload([
         LLMMessage(role: LLMRole.user, content: 'go'),
         LLMMessage(
@@ -1220,8 +1380,7 @@ void main() {
         ),
       ]);
       final assistant = (p['messages'] as List)[1] as Map;
-      final types =
-          [for (final b in assistant['content'] as List) (b as Map)['type']];
+      final types = [for (final b in assistant['content'] as List) (b as Map)['type']];
       expect(types, isNot(contains('thinking')));
     });
 
@@ -1241,8 +1400,7 @@ void main() {
   group('streamed tool calls', () {
     /// Runs [events] through a fresh assembler and returns everything it
     /// emitted, closing chunk included.
-    List<LLMResponseChunk> run(List<Map<String, dynamic>> events,
-        {List<String>? log}) {
+    List<LLMResponseChunk> run(List<Map<String, dynamic>> events, {List<String>? log}) {
       final assembler = AnthropicStreamAssembler(
         logger: log == null ? null : (m, {level = 'INFO'}) => log.add(m),
       );
@@ -1255,12 +1413,17 @@ void main() {
       return out;
     }
 
-    Map<String, dynamic> start(int index, Map<String, dynamic> block) =>
-        {'type': 'content_block_start', 'index': index, 'content_block': block};
-    Map<String, dynamic> delta(int index, Map<String, dynamic> d) =>
-        {'type': 'content_block_delta', 'index': index, 'delta': d};
-    Map<String, dynamic> stop(int index) =>
-        {'type': 'content_block_stop', 'index': index};
+    Map<String, dynamic> start(int index, Map<String, dynamic> block) => {
+      'type': 'content_block_start',
+      'index': index,
+      'content_block': block,
+    };
+    Map<String, dynamic> delta(int index, Map<String, dynamic> d) => {
+      'type': 'content_block_delta',
+      'index': index,
+      'delta': d,
+    };
+    Map<String, dynamic> stop(int index) => {'type': 'content_block_stop', 'index': index};
 
     test('arguments fragmented across deltas reassemble into one call', () {
       // The whole reason this needs an accumulator: no single delta is valid
@@ -1278,8 +1441,7 @@ void main() {
       expect(calls, hasLength(1));
       expect(calls.single.id, 'toolu_1');
       expect(calls.single.name, 'read_knowledge_file');
-      expect(calls.single.arguments,
-          {'path': '07_footwear/07a1.md', 'page': 2});
+      expect(calls.single.arguments, {'path': '07_footwear/07a1.md', 'page': 2});
     });
 
     test('client tool fragments report progress; the host\'s own do not', () {
@@ -1296,25 +1458,21 @@ void main() {
       expect([for (final c in chunks) ?c.toolArgumentChars], [5, 15]);
     });
 
-    test('nothing escapes before content_block_stop — and a cut there fails',
-        () {
+    test('nothing escapes before content_block_stop — and a cut there fails', () {
       // Half the deltas seen, no stop: the call is still under construction
       // and must not reach a consumer that is promised whole values. Nor may
       // the stream end quietly: the call used to sit in the pending map
       // forever, and the loop read the turn as "answered without a tool".
       final assembler = AnthropicStreamAssembler();
       final chunks = [
-        ...assembler.accept(
-            start(0, {'type': 'tool_use', 'id': 'toolu_1', 'name': 'x'})),
-        ...assembler.accept(
-            delta(0, {'type': 'input_json_delta', 'partial_json': '{"a": 1'})),
+        ...assembler.accept(start(0, {'type': 'tool_use', 'id': 'toolu_1', 'name': 'x'})),
+        ...assembler.accept(delta(0, {'type': 'input_json_delta', 'partial_json': '{"a": 1'})),
       ];
 
       expect(chunks.map((c) => c.toolCallPart).nonNulls, isEmpty);
       expect(
         assembler.finish,
-        throwsA(isA<LLMApiException>()
-            .having((e) => e.message, 'message', contains('x'))),
+        throwsA(isA<LLMApiException>().having((e) => e.message, 'message', contains('x'))),
       );
     });
 
@@ -1371,14 +1529,12 @@ void main() {
       ]);
 
       final byName = {
-        for (final c in chunks.map((c) => c.toolCallPart).nonNulls)
-          c.name: c.arguments['who']
+        for (final c in chunks.map((c) => c.toolCallPart).nonNulls) c.name: c.arguments['who'],
       };
       expect(byName, {'second': 'b', 'first': 'a'});
     });
 
-    test('a call cut mid-JSON still reaches the loop, with empty arguments',
-        () {
+    test('a call cut mid-JSON still reaches the loop, with empty arguments', () {
       // Dropping it would read as "the model chose to answer directly",
       // which is the one failure an agent loop cannot detect. The tool
       // reports the missing argument itself.
@@ -1404,7 +1560,7 @@ void main() {
           'type': 'server_tool_use',
           'id': 's1',
           'name': 'web_search',
-          'input': {'query': 'cosplay lighting'}
+          'input': {'query': 'cosplay lighting'},
         }),
         stop(0),
       ], log: log);
@@ -1431,13 +1587,13 @@ void main() {
         {
           'type': 'message_start',
           'message': {
-            'usage': {'input_tokens': 161, 'cache_read_input_tokens': 68796}
-          }
+            'usage': {'input_tokens': 161, 'cache_read_input_tokens': 68796},
+          },
         },
         {
           'type': 'message_delta',
           'delta': {'stop_reason': 'tool_use'},
-          'usage': {'output_tokens': 7131}
+          'usage': {'output_tokens': 7131},
         },
       ]);
 
@@ -1449,7 +1605,12 @@ void main() {
     });
 
     test('a stream that carried nothing closes without a chunk', () {
-      expect(run([{'type': 'ping'}]), isEmpty);
+      expect(
+        run([
+          {'type': 'ping'},
+        ]),
+        isEmpty,
+      );
     });
   });
 
@@ -1470,10 +1631,26 @@ void main() {
       // does not reject an incomplete thinking history, it silently strips
       // thinking and keeps billing.
       final chunks = run([
-        {'type': 'content_block_start', 'index': 0, 'content_block': {'type': 'thinking', 'thinking': ''}},
-        {'type': 'content_block_delta', 'index': 0, 'delta': {'type': 'thinking_delta', 'thinking': 'first '}},
-        {'type': 'content_block_delta', 'index': 0, 'delta': {'type': 'thinking_delta', 'thinking': 'second'}},
-        {'type': 'content_block_delta', 'index': 0, 'delta': {'type': 'signature_delta', 'signature': 'sig-abc'}},
+        {
+          'type': 'content_block_start',
+          'index': 0,
+          'content_block': {'type': 'thinking', 'thinking': ''},
+        },
+        {
+          'type': 'content_block_delta',
+          'index': 0,
+          'delta': {'type': 'thinking_delta', 'thinking': 'first '},
+        },
+        {
+          'type': 'content_block_delta',
+          'index': 0,
+          'delta': {'type': 'thinking_delta', 'thinking': 'second'},
+        },
+        {
+          'type': 'content_block_delta',
+          'index': 0,
+          'delta': {'type': 'signature_delta', 'signature': 'sig-abc'},
+        },
         {'type': 'content_block_stop', 'index': 0},
       ]);
 
@@ -1491,8 +1668,16 @@ void main() {
       // Same rule as the synchronous parser: ④ refuses an unsigned block, and
       // refusing the whole request is worse than re-deriving a thought.
       final chunks = run([
-        {'type': 'content_block_start', 'index': 0, 'content_block': {'type': 'thinking', 'thinking': ''}},
-        {'type': 'content_block_delta', 'index': 0, 'delta': {'type': 'thinking_delta', 'thinking': 'unsealed'}},
+        {
+          'type': 'content_block_start',
+          'index': 0,
+          'content_block': {'type': 'thinking', 'thinking': ''},
+        },
+        {
+          'type': 'content_block_delta',
+          'index': 0,
+          'delta': {'type': 'thinking_delta', 'thinking': 'unsealed'},
+        },
         {'type': 'content_block_stop', 'index': 0},
       ]);
 
@@ -1502,10 +1687,22 @@ void main() {
     test('redacted_thinking is kept verbatim and keeps its place', () {
       // It has no text to reconstruct from, so losing it loses the block.
       final chunks = run([
-        {'type': 'content_block_start', 'index': 0, 'content_block': {'type': 'thinking', 'thinking': ''}},
-        {'type': 'content_block_delta', 'index': 0, 'delta': {'type': 'signature_delta', 'signature': 'sig-1'}},
+        {
+          'type': 'content_block_start',
+          'index': 0,
+          'content_block': {'type': 'thinking', 'thinking': ''},
+        },
+        {
+          'type': 'content_block_delta',
+          'index': 0,
+          'delta': {'type': 'signature_delta', 'signature': 'sig-1'},
+        },
         {'type': 'content_block_stop', 'index': 0},
-        {'type': 'content_block_start', 'index': 1, 'content_block': {'type': 'redacted_thinking', 'data': 'OPAQUE'}},
+        {
+          'type': 'content_block_start',
+          'index': 1,
+          'content_block': {'type': 'redacted_thinking', 'data': 'OPAQUE'},
+        },
         {'type': 'content_block_stop', 'index': 1},
       ]);
 
@@ -1518,16 +1715,31 @@ void main() {
       // The combination that matters: this is the turn whose replay needs
       // the blocks in the first place.
       final chunks = run([
-        {'type': 'content_block_start', 'index': 0, 'content_block': {'type': 'thinking', 'thinking': 'plan'}},
-        {'type': 'content_block_delta', 'index': 0, 'delta': {'type': 'signature_delta', 'signature': 'sig-z'}},
+        {
+          'type': 'content_block_start',
+          'index': 0,
+          'content_block': {'type': 'thinking', 'thinking': 'plan'},
+        },
+        {
+          'type': 'content_block_delta',
+          'index': 0,
+          'delta': {'type': 'signature_delta', 'signature': 'sig-z'},
+        },
         {'type': 'content_block_stop', 'index': 0},
-        {'type': 'content_block_start', 'index': 1, 'content_block': {'type': 'tool_use', 'id': 't', 'name': 'submit_prompt'}},
-        {'type': 'content_block_delta', 'index': 1, 'delta': {'type': 'input_json_delta', 'partial_json': '{"prompt": "ok"}'}},
+        {
+          'type': 'content_block_start',
+          'index': 1,
+          'content_block': {'type': 'tool_use', 'id': 't', 'name': 'submit_prompt'},
+        },
+        {
+          'type': 'content_block_delta',
+          'index': 1,
+          'delta': {'type': 'input_json_delta', 'partial_json': '{"prompt": "ok"}'},
+        },
         {'type': 'content_block_stop', 'index': 1},
       ]);
 
-      expect(chunks.map((c) => c.toolCallPart).nonNulls.single.name,
-          'submit_prompt');
+      expect(chunks.map((c) => c.toolCallPart).nonNulls.single.name, 'submit_prompt');
       expect(chunks.last.rawThinkingBlocks, hasLength(1));
       expect(chunks.last.reasoningSignature, 'sig-z');
     });
@@ -1535,12 +1747,12 @@ void main() {
 
   group('prompt caching', () {
     List<LLMMessage> conversation(int userTurns) => [
-          LLMMessage(role: LLMRole.system, content: 'the file map'),
-          for (var i = 0; i < userTurns; i++) ...[
-            LLMMessage(role: LLMRole.user, content: 'ask $i'),
-            LLMMessage(role: LLMRole.assistant, content: 'answer $i'),
-          ],
-        ];
+      LLMMessage(role: LLMRole.system, content: 'the file map'),
+      for (var i = 0; i < userTurns; i++) ...[
+        LLMMessage(role: LLMRole.user, content: 'ask $i'),
+        LLMMessage(role: LLMRole.assistant, content: 'answer $i'),
+      ],
+    ];
 
     Map<String, dynamic>? cacheOf(Object? block) =>
         block is Map ? block['cache_control'] as Map<String, dynamic>? : null;
@@ -1548,9 +1760,12 @@ void main() {
     test('system becomes a marked block array, which also covers tools', () {
       // The prefix is ordered tools -> system -> messages and a breakpoint
       // caches everything before it, so one mark here buys both.
-      final body = payload(conversation(1), tools: [
-        LLMTool(name: 't', description: 'd', parameters: const {'type': 'object'})
-      ]);
+      final body = payload(
+        conversation(1),
+        tools: [
+          LLMTool(name: 't', description: 'd', parameters: const {'type': 'object'}),
+        ],
+      );
 
       final system = body['system'] as List;
       expect(system.single['text'], 'the file map');
@@ -1565,19 +1780,16 @@ void main() {
 
       final marked = [
         for (var i = 0; i < messages.length; i++)
-          if (cacheOf((messages[i]['content'] as List).last) != null) i
+          if (cacheOf((messages[i]['content'] as List).last) != null) i,
       ];
       expect(marked, [messages.length - 2, messages.length - 1]);
     });
 
     test('a single-message conversation still gets one', () {
-      final messages =
-          payload([LLMMessage(role: LLMRole.user, content: 'hi')])['messages']
-              as List;
+      final messages = payload([LLMMessage(role: LLMRole.user, content: 'hi')])['messages'] as List;
 
       expect(messages, hasLength(1));
-      expect(cacheOf((messages.single['content'] as List).last),
-          {'type': 'ephemeral'});
+      expect(cacheOf((messages.single['content'] as List).last), {'type': 'ephemeral'});
     });
 
     test('a vendor that has not been verified sends none of it', () {
@@ -1585,8 +1797,9 @@ void main() {
       // sends, and an unsupported cache_control fails the whole request
       // rather than just the caching.
       final body = payloadFor(
-          target('claude-opus-4-8', channelType: Vendors.minimaxAnthropic),
-          conversation(2));
+        target('claude-opus-4-8', channelType: Vendors.minimaxAnthropic),
+        conversation(2),
+      );
 
       expect(body['system'], isA<String>());
       for (final message in body['messages'] as List) {

@@ -101,7 +101,11 @@ class ModelCard extends StatelessWidget {
     final pin = model.wireProtocol;
     if (pin == null || pin.isEmpty) return null;
     final stale = LLMDispatcher.isStaleProtocolSelection(
-        RoutedChannel.primary(channel).channelType, model.modelId, pin, tag: model.tag);
+      RoutedChannel.primary(channel).channelType,
+      model.modelId,
+      pin,
+      tag: model.tag,
+    );
     return stale ? storedProtocolLabel(l10n, pin) : null;
   }
 
@@ -137,8 +141,10 @@ class ModelCard extends StatelessWidget {
             model.modelName,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: (_phone ? textTheme.titleMedium : textTheme.titleSmall)
-                ?.copyWith(fontWeight: FontWeight.w600, color: scheme.onSurface),
+            style: (_phone ? textTheme.titleMedium : textTheme.titleSmall)?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: scheme.onSurface,
+            ),
           ),
         ),
         const SizedBox(width: 8),
@@ -160,9 +166,9 @@ class ModelCard extends StatelessWidget {
           model.modelId,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: (_phone ? textTheme.bodySmall : textTheme.labelSmall)
-              ?.mono
-              .copyWith(color: scheme.onSurfaceVariant),
+          style: (_phone ? textTheme.bodySmall : textTheme.labelSmall)?.mono.copyWith(
+            color: scheme.onSurfaceVariant,
+          ),
         ),
         if (showChannel && channel != null) ...[
           SizedBox(height: _phone ? AppSpace.s4 : AppSpace.s6),
@@ -187,22 +193,26 @@ class ModelCard extends StatelessWidget {
     final Widget? trailing = _phone
         ? Icon(Icons.chevron_right, size: AppSize.iconLg, color: scheme.outline)
         : (onEdit == null && onDelete == null)
-            ? null
-            : Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (onEdit != null)
-                    ModelsRowIconButton(icon: Icons.edit_outlined, tooltip: l10n.edit, onPressed: onEdit),
-                  if (onEdit != null && onDelete != null) const SizedBox(width: 2),
-                  if (onDelete != null)
-                    ModelsRowIconButton(
-                      icon: Icons.delete_outline,
-                      tooltip: l10n.delete,
-                      onPressed: onDelete,
-                      danger: true,
-                    ),
-                ],
-              );
+        ? null
+        : Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (onEdit != null)
+                ModelsRowIconButton(
+                  icon: Icons.edit_outlined,
+                  tooltip: l10n.edit,
+                  onPressed: onEdit,
+                ),
+              if (onEdit != null && onDelete != null) const SizedBox(width: 2),
+              if (onDelete != null)
+                ModelsRowIconButton(
+                  icon: Icons.delete_outline,
+                  tooltip: l10n.delete,
+                  onPressed: onDelete,
+                  danger: true,
+                ),
+            ],
+          );
 
     return Material(
       color: scheme.surface,
@@ -221,10 +231,7 @@ class ModelCard extends StatelessWidget {
               ModelKindPlate(model.tag, size: plate),
               const SizedBox(width: 12),
               Expanded(child: content),
-              if (trailing != null) ...[
-                const SizedBox(width: 8),
-                trailing,
-              ],
+              if (trailing != null) ...[const SizedBox(width: 8), trailing],
             ],
           ),
         ),
@@ -261,7 +268,8 @@ class ModelCard extends StatelessWidget {
       _CapabilityChip(contextLabel, mono: true),
       // Only a cap the user set: ④'s built-in 8192 is the app's default, not
       // a declaration about this model.
-      if (cap != null && cap > 0) _CapabilityChip(l10n.outputCapChip(_formatTokens(cap)), mono: true),
+      if (cap != null && cap > 0)
+        _CapabilityChip(l10n.outputCapChip(_formatTokens(cap)), mono: true),
       // Streaming is the interesting fact; standard-request only worth stating
       // when streaming is off.
       if (model.supportsStream)
@@ -285,7 +293,10 @@ class ModelCard extends StatelessWidget {
           message: storedProtocolLabel(l10n, pin),
           child: _CapabilityChip(storedProtocolLabel(l10n, pin), maxWidth: 128),
         ),
-      if (group != null) _FeeGroupChip(group.name) else _CapabilityChip(l10n.noFeeGroup, faint: true),
+      if (group != null)
+        _FeeGroupChip(group.name)
+      else
+        _CapabilityChip(l10n.noFeeGroup, faint: true),
     ];
   }
 
@@ -361,10 +372,9 @@ class _StaleSelectionBadge extends StatelessWidget {
                 l10n.protocolPinStale,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context)
-                    .textTheme
-                    .labelSmall
-                    ?.copyWith(color: semantic.onWarningContainer),
+                style: Theme.of(
+                  context,
+                ).textTheme.labelSmall?.copyWith(color: semantic.onWarningContainer),
               ),
             ),
           ],
@@ -437,7 +447,9 @@ class _FeeGroupChip extends StatelessWidget {
               name,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
+              style: Theme.of(
+                context,
+              ).textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
             ),
           ),
         ],

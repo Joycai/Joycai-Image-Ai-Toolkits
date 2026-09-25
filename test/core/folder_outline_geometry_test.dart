@@ -11,24 +11,24 @@ void main() {
       // 1000 wide, 150 tiles, 12 gutter: ceil(1000/162) = 7 columns,
       // (1000 - 72) / 7 wide each.
       final columns = FolderOutlineGeometry.columnsFor(
-          crossAxisExtent: 1000, maxCrossAxisExtent: 150, spacing: 12);
+        crossAxisExtent: 1000,
+        maxCrossAxisExtent: 150,
+        spacing: 12,
+      );
       expect(columns, 7);
       expect(
-        FolderOutlineGeometry.cellExtentFor(
-            crossAxisExtent: 1000, columns: columns, spacing: 12),
+        FolderOutlineGeometry.cellExtentFor(crossAxisExtent: 1000, columns: columns, spacing: 12),
         closeTo(928 / 7, 1e-9),
       );
     });
 
     test('never fewer than one column', () {
       expect(
-        FolderOutlineGeometry.columnsFor(
-            crossAxisExtent: 40, maxCrossAxisExtent: 150, spacing: 12),
+        FolderOutlineGeometry.columnsFor(crossAxisExtent: 40, maxCrossAxisExtent: 150, spacing: 12),
         1,
       );
       expect(
-        FolderOutlineGeometry.columnsFor(
-            crossAxisExtent: 0, maxCrossAxisExtent: 150, spacing: 12),
+        FolderOutlineGeometry.columnsFor(crossAxisExtent: 0, maxCrossAxisExtent: 150, spacing: 12),
         1,
       );
     });
@@ -102,8 +102,7 @@ void main() {
     });
   });
 
-  testWidgets('the computed offsets are where the real slivers land',
-      (tester) async {
+  testWidgets('the computed offsets are where the real slivers land', (tester) async {
     tester.view.physicalSize = const Size(1000, 600);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -152,9 +151,15 @@ void main() {
     );
 
     final columns = FolderOutlineGeometry.columnsFor(
-        crossAxisExtent: 1000 - gap * 2, maxCrossAxisExtent: tile, spacing: gap);
+      crossAxisExtent: 1000 - gap * 2,
+      maxCrossAxisExtent: tile,
+      spacing: gap,
+    );
     final cell = FolderOutlineGeometry.cellExtentFor(
-        crossAxisExtent: 1000 - gap * 2, columns: columns, spacing: gap);
+      crossAxisExtent: 1000 - gap * 2,
+      columns: columns,
+      spacing: gap,
+    );
     final offsets = FolderOutlineGeometry.sectionOffsets(
       counts: counts,
       columns: columns,

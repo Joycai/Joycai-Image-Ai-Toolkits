@@ -110,7 +110,12 @@ class _SystemTemplateListState extends State<SystemTemplateList> {
   /// Writes [nextIds], the whole stored order, showing [shown] in it at once.
   Future<void> _writeOrder(List<SystemPrompt> shown, List<int> nextIds) async {
     final byId = {for (final p in shown) p.id!: p};
-    setState(() => _optimistic = [for (final i in nextIds) if (byId.containsKey(i)) byId[i]!]);
+    setState(
+      () => _optimistic = [
+        for (final i in nextIds)
+          if (byId.containsKey(i)) byId[i]!,
+      ],
+    );
     await _db.updateSystemPromptOrder(nextIds);
     widget.onRefresh();
   }
@@ -123,16 +128,18 @@ class _SystemTemplateListState extends State<SystemTemplateList> {
   /// next to it, under a type narrowing or a search too, trading places with
   /// it in the full order.
   Future<void> _moveStep(List<SystemPrompt> shown, int id, {required bool down}) => _writeOrder(
-        shown,
-        moveIdPastVisibleNeighbour(_fullIds(shown), [for (final p in shown) p.id!], id, down: down),
-      );
+    shown,
+    moveIdPastVisibleNeighbour(_fullIds(shown), [for (final p in shown) p.id!], id, down: down),
+  );
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final phone = Responsive.isMobile(context);
     final pending = _optimistic;
-    final prompts = pending != null && _sameIdSet(pending, widget.prompts) ? pending : widget.prompts;
+    final prompts = pending != null && _sameIdSet(pending, widget.prompts)
+        ? pending
+        : widget.prompts;
 
     Widget content;
     if (prompts.isEmpty && widget.searchQuery.isEmpty) {
@@ -145,7 +152,8 @@ class _SystemTemplateListState extends State<SystemTemplateList> {
     } else {
       final canDrag = widget.searchQuery.isEmpty && !widget.isSelectionMode;
       final horizontal = phone ? 12.0 : 20.0;
-      final bottom = 12 +
+      final bottom =
+          12 +
           MediaQuery.paddingOf(context).bottom +
           (phone && widget.isSelectionMode ? PromptSelectionCapsule.height + 28 : 0);
 
@@ -155,7 +163,9 @@ class _SystemTemplateListState extends State<SystemTemplateList> {
         touch: phone,
         slotPadding: const EdgeInsets.only(bottom: _kCardGap),
         builder: (context, gap) {
-          final reorder = gap.onReorderItem((oldIndex, newIndex) => _reorder(prompts, oldIndex, newIndex));
+          final reorder = gap.onReorderItem(
+            (oldIndex, newIndex) => _reorder(prompts, oldIndex, newIndex),
+          );
           // A move from a card's menu or keys, confirmed and announced as a
           // drop at [target] would be.
           void moveTo(int index, int target, Future<void> Function() move) =>
@@ -219,13 +229,17 @@ class _SystemTemplateListState extends State<SystemTemplateList> {
                       onToggle: widget.isSelectionMode
                           ? () => widget.onToggleSelection(id)
                           : () => setState(() {
-                                if (isExpanded) {
-                                  _expandedSysPromptIds.remove(id);
-                                } else {
-                                  _expandedSysPromptIds.add(id);
-                                }
-                              }),
-                      dragHandle: PromptDragHandle(index: index, enabled: canDrag, onBlockedTap: _showBlocked),
+                              if (isExpanded) {
+                                _expandedSysPromptIds.remove(id);
+                              } else {
+                                _expandedSysPromptIds.add(id);
+                              }
+                            }),
+                      dragHandle: PromptDragHandle(
+                        index: index,
+                        enabled: canDrag,
+                        onBlockedTap: _showBlocked,
+                      ),
                       leading: PromptTemplateTypeIcon(type: systemPrompt.type),
                       badge: PromptTemplateTypeBadge(
                         type: systemPrompt.type,
@@ -234,10 +248,12 @@ class _SystemTemplateListState extends State<SystemTemplateList> {
                       showCategory: true,
                       onMoveUp: (selecting || index == 0)
                           ? null
-                          : () => moveTo(index, index - 1, () => _moveStep(prompts, id, down: false)),
+                          : () =>
+                                moveTo(index, index - 1, () => _moveStep(prompts, id, down: false)),
                       onMoveDown: (selecting || index == last)
                           ? null
-                          : () => moveTo(index, index + 1, () => _moveStep(prompts, id, down: true)),
+                          : () =>
+                                moveTo(index, index + 1, () => _moveStep(prompts, id, down: true)),
                       onMoveToTop: (isFirst || selecting)
                           ? null
                           : () => moveTo(index, 0, () => _moveToEdge(prompts, id, toEnd: false)),
@@ -262,7 +278,8 @@ class _SystemTemplateListState extends State<SystemTemplateList> {
                           icon: Icons.delete_outline,
                           label: l10n.delete,
                           danger: true,
-                          onPressed: () => widget.onConfirmDelete(l10n, systemPrompt, isSystem: true),
+                          onPressed: () =>
+                              widget.onConfirmDelete(l10n, systemPrompt, isSystem: true),
                         ),
                       ],
                     ),

@@ -12,29 +12,28 @@ import 'package:joycai_image_ai_toolkits/widgets/models/route_labels.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/dashed_border.dart';
 
 void main() {
-  Future<ColorScheme> pump(
-    WidgetTester tester,
-    Widget child, {
-    String? fontFamily,
-  }) async {
+  Future<ColorScheme> pump(WidgetTester tester, Widget child, {String? fontFamily}) async {
     final theme = buildAppTheme(
       accent: AppConstants.presetThemes.values.first,
       brightness: Brightness.light,
       fontFamily: fontFamily,
     );
-    await tester.pumpWidget(MaterialApp(
-      theme: theme,
-      home: Scaffold(body: Center(child: child)),
-    ));
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: theme,
+        home: Scaffold(body: Center(child: child)),
+      ),
+    );
     return theme.colorScheme;
   }
 
-  BoxDecoration decorationOf(WidgetTester tester) => tester
-      .widget<Container>(find.descendant(
-        of: find.byType(AppRouteBadge),
-        matching: find.byType(Container),
-      ))
-      .decoration! as BoxDecoration;
+  BoxDecoration decorationOf(WidgetTester tester) =>
+      tester
+              .widget<Container>(
+                find.descendant(of: find.byType(AppRouteBadge), matching: find.byType(Container)),
+              )
+              .decoration!
+          as BoxDecoration;
 
   testWidgets('current is a solid accent fill', (tester) async {
     final scheme = await pump(
@@ -53,8 +52,7 @@ void main() {
     final d = decorationOf(tester);
     expect(d.color, isNull);
     expect((d.border! as Border).top.color, scheme.primary);
-    expect(tester.widget<Text>(find.text('Resp')).style!.color,
-        scheme.onAccentTint);
+    expect(tester.widget<Text>(find.text('Resp')).style!.color, scheme.onAccentTint);
   });
 
   testWidgets('the label is mono, falling back to the UI font for CJK', (tester) async {
@@ -72,10 +70,7 @@ void main() {
   });
 
   testWidgets('off is dashed', (tester) async {
-    await pump(
-      tester,
-      const AppRouteBadge(label: 'Anth', state: RouteBadgeState.off),
-    );
+    await pump(tester, const AppRouteBadge(label: 'Anth', state: RouteBadgeState.off));
     expect(find.byType(DashedBorder), findsOneWidget);
   });
 

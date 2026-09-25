@@ -18,10 +18,10 @@ extension _ContextSection on _ModelEditDialogState {
       // An image or video model has no conversation to budget, so "unset" is
       // not a guess there but the right answer.
       ContextWindowMode.unset => switch (tag) {
-          'image' => l10n.contextImageUnsetDesc,
-          'video' => l10n.contextVideoUnsetDesc,
-          _ => l10n.contextUnsetDesc,
-        },
+        'image' => l10n.contextImageUnsetDesc,
+        'video' => l10n.contextVideoUnsetDesc,
+        _ => l10n.contextUnsetDesc,
+      },
       ContextWindowMode.specified => l10n.contextWindowHint,
       ContextWindowMode.unlimited => l10n.contextUnlimitedDesc,
     };
@@ -39,7 +39,9 @@ extension _ContextSection on _ModelEditDialogState {
               const SizedBox(width: AppSpace.s10),
               Text(
                 _contextStatus(tokens),
-                style: theme.textTheme.labelSmall?.mono.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                style: theme.textTheme.labelSmall?.mono.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
             ],
           ],
@@ -75,11 +77,15 @@ extension _ContextSection on _ModelEditDialogState {
                           semanticLabel: l10n.contextMax,
                           // The typed figure where the thumb rests on it; the
                           // track's own value anywhere else.
-                          semanticValueOf: (p) => l10n.contextTokens(formatGroupedTokens(
+                          semanticValueOf: (p) => l10n.contextTokens(
+                            formatGroupedTokens(
                               hasValue && p == ContextWindowScale.positionOf(tokens)
                                   ? tokens
-                                  : ContextWindowScale.tokensAt(p))),
-                          onChanged: (position) => _setContextTokens(ContextWindowScale.tokensAt(position)),
+                                  : ContextWindowScale.tokensAt(p),
+                            ),
+                          ),
+                          onChanged: (position) =>
+                              _setContextTokens(ContextWindowScale.tokensAt(position)),
                         ),
                       ),
                       const SizedBox(height: AppSpace.s4),
@@ -115,8 +121,10 @@ extension _ContextSection on _ModelEditDialogState {
       bindings: {
         const SingleActivator(LogicalKeyboardKey.arrowUp): () => _stepContext(1),
         const SingleActivator(LogicalKeyboardKey.arrowDown): () => _stepContext(-1),
-        const SingleActivator(LogicalKeyboardKey.arrowUp, shift: true): () => _stepContext(1, majorOnly: true),
-        const SingleActivator(LogicalKeyboardKey.arrowDown, shift: true): () => _stepContext(-1, majorOnly: true),
+        const SingleActivator(LogicalKeyboardKey.arrowUp, shift: true): () =>
+            _stepContext(1, majorOnly: true),
+        const SingleActivator(LogicalKeyboardKey.arrowDown, shift: true): () =>
+            _stepContext(-1, majorOnly: true),
       },
       child: ModelEditTextField(
         controller: contextCtrl,

@@ -2,6 +2,7 @@ class LLMModel {
   final int? id;
   final String modelId;
   final String modelName;
+
   /// The model's kind: `chat`, `image`, `video`, `multimodal` (or the legacy
   /// `refiner`). Written by `inferTag` at discovery and editable by the user.
   ///
@@ -146,31 +147,30 @@ class LLMModel {
     required int? maxOutputTokens,
     required bool enableThinking,
     required String? reasoningEffort,
-  }) =>
-      LLMModel(
-        id: id,
-        modelId: modelId,
-        modelName: modelName,
-        tag: tag,
-        isPaid: isPaid,
-        supportsStream: supportsStream,
-        supportsStandard: supportsStandard,
-        sortOrder: sortOrder,
-        channelId: channelId,
-        feeGroupId: feeGroupId,
-        contextWindow: contextWindow,
-        maxOutputTokens: maxOutputTokens,
-        forceViewAllImages: forceViewAllImages,
-        enableThinking: enableThinking,
-        reasoningEffort: reasoningEffort,
-        enableWebSearch: enableWebSearch,
-        wireProtocol: wireProtocol,
-        activeRoute: activeRoute,
-        routeParams: routeParams,
-        estMeanMs: estMeanMs,
-        estSdMs: estSdMs,
-        tasksSinceUpdate: tasksSinceUpdate,
-      );
+  }) => LLMModel(
+    id: id,
+    modelId: modelId,
+    modelName: modelName,
+    tag: tag,
+    isPaid: isPaid,
+    supportsStream: supportsStream,
+    supportsStandard: supportsStandard,
+    sortOrder: sortOrder,
+    channelId: channelId,
+    feeGroupId: feeGroupId,
+    contextWindow: contextWindow,
+    maxOutputTokens: maxOutputTokens,
+    forceViewAllImages: forceViewAllImages,
+    enableThinking: enableThinking,
+    reasoningEffort: reasoningEffort,
+    enableWebSearch: enableWebSearch,
+    wireProtocol: wireProtocol,
+    activeRoute: activeRoute,
+    routeParams: routeParams,
+    estMeanMs: estMeanMs,
+    estSdMs: estSdMs,
+    tasksSinceUpdate: tasksSinceUpdate,
+  );
 
   /// This model moved to channel [channelId] — a channel merge's one change
   /// of ownership. Everything else, the id included, is kept.

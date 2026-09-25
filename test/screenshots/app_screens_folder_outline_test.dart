@@ -48,8 +48,9 @@ void main() {
 
   for (final Brightness brightness in Brightness.values) {
     for (final ShotSize size in <ShotSize>[kShotSizes.first, kShotSizes.last]) {
-      testWidgets('workbench · folder outline @ ${size.label} ${brightness.name}',
-          (WidgetTester tester) async {
+      testWidgets('workbench · folder outline @ ${size.label} ${brightness.name}', (
+        WidgetTester tester,
+      ) async {
         await shoot(
           tester,
           env: env,
@@ -65,8 +66,9 @@ void main() {
       });
     }
 
-    testWidgets('fileBrowser · folder outline @ desktop ${brightness.name}',
-        (WidgetTester tester) async {
+    testWidgets('fileBrowser · folder outline @ desktop ${brightness.name}', (
+      WidgetTester tester,
+    ) async {
       await shoot(
         tester,
         env: env,

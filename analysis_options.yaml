@@ -69,3 +69,8 @@ linter:
     # A future dropped on the floor is either a missing `await` or a
     # deliberate fire-and-forget; `unawaited(...)` says which.
     - unawaited_futures
+
+# `dart format` with Flutter's own setting (flutter/flutter's
+# analysis_options_common.yaml). CI fails on an unformatted file.
+formatter:
+  page_width: 100

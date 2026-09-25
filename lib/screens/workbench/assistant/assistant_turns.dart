@@ -107,7 +107,10 @@ extension _AssistantTurns on _WorkbenchScreenState {
     final l10n = AppLocalizations.of(context)!;
     final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
     final dbId = modelDbId ?? workbenchUIState.optSelectedModelDbId;
-    final model = appState.allModels.cast<LLMModel?>().firstWhere((m) => m?.id == dbId, orElse: () => null);
+    final model = appState.allModels.cast<LLMModel?>().firstWhere(
+      (m) => m?.id == dbId,
+      orElse: () => null,
+    );
     if (model == null) return;
     showDialog(
       context: context,

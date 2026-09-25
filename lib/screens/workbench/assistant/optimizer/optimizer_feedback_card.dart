@@ -16,11 +16,10 @@ extension _FeedbackCard on _PromptOptimizerChatViewState {
     // the name → image binding. A missing image degrades to a plain glyph.
     final image = imageName == null
         ? null
-        : context
-            .watch<WorkbenchUIState>()
-            .optimizerReferenceImages
-            .cast<AppImage?>()
-            .firstWhere((i) => i?.name == imageName, orElse: () => null);
+        : context.watch<WorkbenchUIState>().optimizerReferenceImages.cast<AppImage?>().firstWhere(
+            (i) => i?.name == imageName,
+            orElse: () => null,
+          );
     final monoMeta = textTheme.labelSmall?.mono.copyWith(
       fontWeight: FontWeight.w400,
       color: colorScheme.onSurfaceVariant,
@@ -47,8 +46,11 @@ extension _FeedbackCard on _PromptOptimizerChatViewState {
                         ? Image(image: image.imageProvider, fit: BoxFit.cover)
                         : ColoredBox(
                             color: colorScheme.surfaceContainerHighest,
-                            child: Icon(Icons.image_outlined,
-                                size: AppSize.iconMd, color: colorScheme.outline),
+                            child: Icon(
+                              Icons.image_outlined,
+                              size: AppSize.iconMd,
+                              color: colorScheme.outline,
+                            ),
                           ),
                   ),
                 ),
@@ -120,8 +122,7 @@ extension _FeedbackCard on _PromptOptimizerChatViewState {
                               ),
                             if (imageName != null && entry.version != null)
                               Text(' · ', style: monoMeta),
-                            if (entry.version != null)
-                              Text('v${entry.version}', style: monoMeta),
+                            if (entry.version != null) Text('v${entry.version}', style: monoMeta),
                           ],
                         ),
                       ],
@@ -148,10 +149,7 @@ extension _FeedbackCard on _PromptOptimizerChatViewState {
     return Container(
       height: 22,
       padding: const EdgeInsets.symmetric(horizontal: 8),
-      decoration: BoxDecoration(
-        color: fill,
-        borderRadius: BorderRadius.circular(11),
-      ),
+      decoration: BoxDecoration(color: fill, borderRadius: BorderRadius.circular(11)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

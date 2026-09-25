@@ -29,19 +29,25 @@ void main() {
       // What LLMService reports while a long call streams.
       session.streamingToolArgumentChars.value = 4200;
       if (requests == 1) {
-        return LLMResponse(text: '', toolCalls: [
-          LLMToolCall(id: 'c1', name: 'list_reference_images', arguments: const {}),
-        ]);
+        return LLMResponse(
+          text: '',
+          toolCalls: [LLMToolCall(id: 'c1', name: 'list_reference_images', arguments: const {})],
+        );
       }
       return LLMResponse(text: 'done');
     };
 
     await PromptOptimizerAgent.runTurn(
-        session: session, modelIdentifier: 'm', referenceImages: const []);
+      session: session,
+      modelIdentifier: 'm',
+      referenceImages: const [],
+    );
 
     expect(requests, 2);
-    expect(seenAtRequest, [null, null],
-        reason: 'the second request must not start from the first one\'s count');
+    expect(seenAtRequest, [
+      null,
+      null,
+    ], reason: 'the second request must not start from the first one\'s count');
     expect(session.streamingToolArgumentChars.value, isNull);
   });
 
@@ -55,7 +61,10 @@ void main() {
 
     await expectLater(
       PromptOptimizerAgent.runTurn(
-          session: session, modelIdentifier: 'm', referenceImages: const []),
+        session: session,
+        modelIdentifier: 'm',
+        referenceImages: const [],
+      ),
       throwsException,
     );
 

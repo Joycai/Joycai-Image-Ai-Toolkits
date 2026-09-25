@@ -29,7 +29,8 @@ extension _ModelSection on _VideoConfigPanelState {
             _ParamCell(
               label: _videoParamLabel(l10n, spec.labelKey),
               control: _buildVideoParamControl(spec, modelInChannel, appState, l10n),
-              spansRow: spec.control == ParamControl.slider ||
+              spansRow:
+                  spec.control == ParamControl.slider ||
                   (spec.control == ParamControl.segmented && spec.options.length > 2),
             ),
     ];
@@ -55,7 +56,9 @@ extension _ModelSection on _VideoConfigPanelState {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.end,
-                        style: textTheme.labelSmall?.mono.copyWith(color: colorScheme.onSurfaceVariant),
+                        style: textTheme.labelSmall?.mono.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
                       ),
               ),
               const SizedBox(width: AppSpace.s4),
@@ -94,7 +97,9 @@ extension _ModelSection on _VideoConfigPanelState {
                 selected: selectedChannel == null ? null : channelPickerOption(selectedChannel),
                 optionsBuilder: () => videoChannels.map(channelPickerOption).toList(),
                 onChanged: (val) {
-                  final firstVideoInChannel = videoModels.where((m) => m.channelId == val).firstOrNull;
+                  final firstVideoInChannel = videoModels
+                      .where((m) => m.channelId == val)
+                      .firstOrNull;
                   if (firstVideoInChannel != null) {
                     appState.updateVideoConfig(modelId: firstVideoInChannel.id.toString());
                   }
@@ -128,10 +133,7 @@ extension _ModelSection on _VideoConfigPanelState {
               ),
             ),
           ),
-          if (cells.isNotEmpty) ...[
-            const SizedBox(height: _kCardInnerGap),
-            _paramGrid(cells),
-          ],
+          if (cells.isNotEmpty) ...[const SizedBox(height: _kCardInnerGap), _paramGrid(cells)],
         ],
       ),
     );
@@ -146,7 +148,10 @@ extension _ModelSection on _VideoConfigPanelState {
           curve: AppMotion.enter,
           alignment: AlignmentDirectional.topStart,
           child: _isModelSettingsExpanded
-              ? Padding(padding: const EdgeInsets.only(top: _kCardInnerGap), child: body)
+              ? Padding(
+                  padding: const EdgeInsets.only(top: _kCardInnerGap),
+                  child: body,
+                )
               : const SizedBox(width: double.infinity),
         ),
       ],

@@ -68,12 +68,7 @@ class LogState extends ChangeNotifier {
       }
     }
 
-    _logs.add(LogEntry(
-      timestamp: DateTime.now(),
-      level: level,
-      message: message,
-      taskId: taskId,
-    ));
+    _logs.add(LogEntry(timestamp: DateTime.now(), level: level, message: message, taskId: taskId));
 
     if (_logs.length > _maxEntries) {
       _logs.removeRange(0, _logs.length - _maxEntries);

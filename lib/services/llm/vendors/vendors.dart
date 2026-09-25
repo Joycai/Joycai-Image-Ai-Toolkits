@@ -1,7 +1,6 @@
 import '../protocols/dashscope_payload.dart'
     show dashscopeAnthropicBase, dashscopeCompatibleBase, dashscopeNativeBase;
-import '../protocols/minimax_payload.dart'
-    show minimaxAnthropicBase, minimaxOpenAIBase;
+import '../protocols/minimax_payload.dart' show minimaxAnthropicBase, minimaxOpenAIBase;
 import 'vendor_profile.dart';
 
 export 'vendor_profile.dart';
@@ -270,9 +269,7 @@ class Vendors {
       // `/v2/chat/completions` and `/v2/models`. One channel reaching every
       // face is the whole design; the generic protocols were the half of it
       // still keyed off the raw string.
-      protocolBases: {
-        WireProtocol.openaiChat: minimaxOpenAIBase,
-      },
+      protocolBases: {WireProtocol.openaiChat: minimaxOpenAIBase},
       unlistedModels: _minimaxNativeModels,
     ),
     VendorProfile(
@@ -318,9 +315,7 @@ class Vendors {
       // and its ① sibling reach them from either stored face. The entry below
       // is for the *chat* face, the one generic protocol here, so that it
       // derives from the stored endpoint the same way.
-      protocolBases: {
-        WireProtocol.anthropicChat: minimaxAnthropicBase,
-      },
+      protocolBases: {WireProtocol.anthropicChat: minimaxAnthropicBase},
       unlistedModels: _minimaxNativeModels,
       //
       // promptCaching left off deliberately: MiniMax's ④ layer is the one
@@ -342,15 +337,8 @@ class Vendors {
       // native synchronous surface with the async task flow as a per-model
       // alternate (only offered where layer 3 says the model supports it);
       // video is the native async task surface — wan3.x has no other route.
-      chatMenu: [
-        WireProtocol.openaiChat,
-        WireProtocol.anthropicChat,
-        WireProtocol.dashscopeChat,
-      ],
-      imageMenu: [
-        WireProtocol.dashscopeImagesSync,
-        WireProtocol.dashscopeImagesAsync,
-      ],
+      chatMenu: [WireProtocol.openaiChat, WireProtocol.anthropicChat, WireProtocol.dashscopeChat],
+      imageMenu: [WireProtocol.dashscopeImagesSync, WireProtocol.dashscopeImagesAsync],
       videoProtocol: WireProtocol.dashscopeVideo,
       protocolBases: {
         WireProtocol.anthropicChat: dashscopeAnthropicBase,
@@ -376,15 +364,8 @@ class Vendors {
       // compatible one. Both alternates are generic protocols served on
       // another base of the same host, so both are derived rather than
       // stored — a channel configured with `…/api/v1` still reaches them.
-      chatMenu: [
-        WireProtocol.dashscopeChat,
-        WireProtocol.openaiChat,
-        WireProtocol.anthropicChat,
-      ],
-      imageMenu: [
-        WireProtocol.dashscopeImagesSync,
-        WireProtocol.dashscopeImagesAsync,
-      ],
+      chatMenu: [WireProtocol.dashscopeChat, WireProtocol.openaiChat, WireProtocol.anthropicChat],
+      imageMenu: [WireProtocol.dashscopeImagesSync, WireProtocol.dashscopeImagesAsync],
       videoProtocol: WireProtocol.dashscopeVideo,
       protocolBases: {
         WireProtocol.openaiChat: dashscopeCompatibleBase,
@@ -416,11 +397,7 @@ class Vendors {
       // dispatcher — api/volcengine-ark.md §7.1). Its `thinking` object also
       // works but adds nothing, and rejects `auto`.
     ),
-    VendorProfile(
-      id: midjourneyProxy,
-      family: ProtocolFamily.midjourney,
-      auth: AuthScheme.bearer,
-    ),
+    VendorProfile(id: midjourneyProxy, family: ProtocolFamily.midjourney, auth: AuthScheme.bearer),
     VendorProfile(
       id: ollama,
       family: ProtocolFamily.openai,
@@ -452,8 +429,10 @@ class Vendors {
       // either way, spelled the way the generation endpoint expects it
       // (the HuggingFace repo path, not the cloud id).
       unlistedModels: [
-        UnlistedModel('MiniMaxAI/MiniMax-H3',
-            description: 'Video generation (self-hosted SGLang /v1/videos)'),
+        UnlistedModel(
+          'MiniMaxAI/MiniMax-H3',
+          description: 'Video generation (self-hosted SGLang /v1/videos)',
+        ),
       ],
     ),
   ];
@@ -496,35 +475,42 @@ class Vendors {
   };
 
   static const List<UnlistedModel> _minimaxNativeModels = [
-    UnlistedModel('MiniMax-H3',
-        description: 'Video generation (MiniMax /v2 task surface)'),
-    UnlistedModel('image-01',
-        description: 'Image generation (MiniMax /v1 surface)'),
-    UnlistedModel('image-01-live',
-        description: 'Image generation (MiniMax /v1 surface)'),
+    UnlistedModel('MiniMax-H3', description: 'Video generation (MiniMax /v2 task surface)'),
+    UnlistedModel('image-01', description: 'Image generation (MiniMax /v1 surface)'),
+    UnlistedModel('image-01-live', description: 'Image generation (MiniMax /v1 surface)'),
   ];
 
   /// Seedream on Ark: the dated ids pay-as-you-go serves, then the two
   /// undated aliases the subscription plan documents — the plan serves only
   /// the 5.0 pair, and names them this way (docs/api/volcengine-ark.md §7).
   static const List<UnlistedModel> _arkSeedreamModels = [
-    UnlistedModel('doubao-seedream-5-0-pro-260628',
-        description: 'Seedream 5.0 pro · image generation (Ark)'),
-    UnlistedModel('doubao-seedream-5-0-lite-260128',
-        description: 'Seedream 5.0 lite · image generation (Ark)'),
-    UnlistedModel('doubao-seedream-4-5-251128',
-        description: 'Seedream 4.5 · image generation (Ark, pay-as-you-go)'),
-    UnlistedModel('doubao-seedream-4-0-250828',
-        description: 'Seedream 4.0 · image generation (Ark, pay-as-you-go)'),
-    UnlistedModel('doubao-seedream-5.0-pro',
-        description: 'Seedream 5.0 pro · image generation (Ark plan)'),
-    UnlistedModel('doubao-seedream-5.0-lite',
-        description: 'Seedream 5.0 lite · image generation (Ark plan)'),
+    UnlistedModel(
+      'doubao-seedream-5-0-pro-260628',
+      description: 'Seedream 5.0 pro · image generation (Ark)',
+    ),
+    UnlistedModel(
+      'doubao-seedream-5-0-lite-260128',
+      description: 'Seedream 5.0 lite · image generation (Ark)',
+    ),
+    UnlistedModel(
+      'doubao-seedream-4-5-251128',
+      description: 'Seedream 4.5 · image generation (Ark, pay-as-you-go)',
+    ),
+    UnlistedModel(
+      'doubao-seedream-4-0-250828',
+      description: 'Seedream 4.0 · image generation (Ark, pay-as-you-go)',
+    ),
+    UnlistedModel(
+      'doubao-seedream-5.0-pro',
+      description: 'Seedream 5.0 pro · image generation (Ark plan)',
+    ),
+    UnlistedModel(
+      'doubao-seedream-5.0-lite',
+      description: 'Seedream 5.0 lite · image generation (Ark plan)',
+    ),
   ];
 
-  static final Map<String, VendorProfile> _byId = {
-    for (final v in all) v.id: v,
-  };
+  static final Map<String, VendorProfile> _byId = {for (final v in all) v.id: v};
 
   /// Profile for a channel's stored `type`. Unknown values fall back to the
   /// generic OpenAI-compatible profile — the historical behavior for any

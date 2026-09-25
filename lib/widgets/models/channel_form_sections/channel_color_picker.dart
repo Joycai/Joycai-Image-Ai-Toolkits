@@ -63,11 +63,7 @@ class _ChannelTagColorPickerState extends State<ChannelTagColorPicker> {
     if (picked != null) widget.onColorChanged(picked);
   }
 
-  Widget _pill({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
+  Widget _pill({required IconData icon, required String label, required VoidCallback onTap}) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     return Material(
@@ -83,13 +79,11 @@ class _ChannelTagColorPickerState extends State<ChannelTagColorPicker> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(icon,
-                    size: AppSize.iconSm, color: colorScheme.onSurfaceVariant),
+                Icon(icon, size: AppSize.iconSm, color: colorScheme.onSurfaceVariant),
                 const SizedBox(width: AppSpace.s4),
                 Text(
                   label,
-                  style: theme.textTheme.labelMedium
-                      ?.copyWith(color: colorScheme.onSurfaceVariant),
+                  style: theme.textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant),
                 ),
               ],
             ),
@@ -118,11 +112,7 @@ class _ChannelTagColorPickerState extends State<ChannelTagColorPicker> {
           label: widget.l10n.moreColors,
           onTap: () => setState(() => _showAll = !_showAll),
         ),
-        _pill(
-          icon: Icons.colorize,
-          label: widget.l10n.customColor,
-          onTap: _openCustom,
-        ),
+        _pill(icon: Icons.colorize, label: widget.l10n.customColor, onTap: _openCustom),
       ],
     );
   }
@@ -161,16 +151,13 @@ class ChannelColorSwatch extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: selected ? null : color,
-              border: selected
-                  ? Border.all(color: colorScheme.primary, width: 2)
-                  : null,
+              border: selected ? Border.all(color: colorScheme.primary, width: 2) : null,
             ),
             child: selected
                 ? Padding(
                     padding: const EdgeInsets.all(AppSpace.s4),
                     child: DecoratedBox(
-                      decoration:
-                          BoxDecoration(color: color, shape: BoxShape.circle),
+                      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
                     ),
                   )
                 : null,
@@ -187,11 +174,7 @@ class ChannelColorPickerDialog extends StatefulWidget {
   final AppLocalizations l10n;
   final int initialColor;
 
-  const ChannelColorPickerDialog({
-    super.key,
-    required this.l10n,
-    required this.initialColor,
-  });
+  const ChannelColorPickerDialog({super.key, required this.l10n, required this.initialColor});
 
   /// Returns the chosen colour, or null when dismissed.
   static Future<int?> show(
@@ -202,22 +185,17 @@ class ChannelColorPickerDialog extends StatefulWidget {
     return showDialog<int>(
       context: context,
       animationStyle: appDialogAnimation(context),
-      builder: (_) => ChannelColorPickerDialog(
-        l10n: l10n,
-        initialColor: initialColor,
-      ),
+      builder: (_) => ChannelColorPickerDialog(l10n: l10n, initialColor: initialColor),
     );
   }
 
   @override
-  State<ChannelColorPickerDialog> createState() =>
-      _ChannelColorPickerDialogState();
+  State<ChannelColorPickerDialog> createState() => _ChannelColorPickerDialogState();
 }
 
 class _ChannelColorPickerDialogState extends State<ChannelColorPickerDialog> {
   late int _color = widget.initialColor;
-  late final TextEditingController _hexCtrl =
-      TextEditingController(text: _hexOf(_color));
+  late final TextEditingController _hexCtrl = TextEditingController(text: _hexOf(_color));
 
   static String _hexOf(int argb) =>
       '#${argb.toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
@@ -265,10 +243,7 @@ class _ChannelColorPickerDialogState extends State<ChannelColorPickerDialog> {
           ),
           const SizedBox(height: AppSpace.s16),
           Center(
-            child: ColorHuePicker(
-              initialColor: Color(_color),
-              onColorChanged: _select,
-            ),
+            child: ColorHuePicker(initialColor: Color(_color), onColorChanged: _select),
           ),
           const SizedBox(height: AppSpace.s16),
           Row(
@@ -303,10 +278,7 @@ class _ChannelColorPickerDialogState extends State<ChannelColorPickerDialog> {
           variant: AppButtonVariant.text,
           onPressed: () => Navigator.pop(context),
         ),
-        AppButton(
-          label: l10n.apply,
-          onPressed: () => Navigator.pop(context, _color),
-        ),
+        AppButton(label: l10n.apply, onPressed: () => Navigator.pop(context, _color)),
       ],
     );
   }

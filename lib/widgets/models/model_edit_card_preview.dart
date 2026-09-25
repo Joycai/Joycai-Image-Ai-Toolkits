@@ -13,12 +13,7 @@ import 'model_edit_controls.dart';
 /// drift from the list. It is given no callbacks, which is how it knows to
 /// draw no edit or delete buttons.
 class ModelEditCardPreview extends StatelessWidget {
-  const ModelEditCardPreview({
-    super.key,
-    required this.model,
-    this.channel,
-    this.feeGroup,
-  });
+  const ModelEditCardPreview({super.key, required this.model, this.channel, this.feeGroup});
 
   /// The in-progress model — unsaved, built from the form.
   final LLMModel model;

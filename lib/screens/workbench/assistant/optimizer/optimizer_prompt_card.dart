@@ -2,7 +2,11 @@ part of '../prompt_optimizer_view.dart';
 
 /// A staged prompt version, folded when long.
 extension _PromptCard on _PromptOptimizerChatViewState {
-  Widget _buildPromptCard(OptimizerChatEntry entry, AppLocalizations l10n, ColorScheme colorScheme) {
+  Widget _buildPromptCard(
+    OptimizerChatEntry entry,
+    AppLocalizations l10n,
+    ColorScheme colorScheme,
+  ) {
     final textTheme = Theme.of(context).textTheme;
     // Keyed by version rather than transcript index: a prompt card is the one
     // row a user scrolls back to, and the version is what identifies it.

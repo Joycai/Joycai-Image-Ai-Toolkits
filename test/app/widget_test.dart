@@ -42,7 +42,7 @@ void main() {
     );
 
     // Wait for the async initialization in AppState (loadSettings)
-    // We pump a few frames to allow async ops to start, though strictly 
+    // We pump a few frames to allow async ops to start, though strictly
     // async filesystem/db calls might not complete without proper mocking.
     // For a smoke test, we just want to ensure the UI renders without crashing.
     await tester.pump();

@@ -36,10 +36,10 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
   int _editRequest = 0;
 
   void _fixRates(int groupId) => setState(() {
-        _viewIndex = 1;
-        _editGroupId = groupId;
-        _editRequest++;
-      });
+    _viewIndex = 1;
+    _editGroupId = groupId;
+    _editRequest++;
+  });
 
   /// The phone header and the phone usage tab act on the same data. Created
   /// on first phone layout; the view loads it when it mounts.
@@ -120,9 +120,17 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
       phoneReorder: _phoneReorder,
       fill: desktop,
     );
-    final padding = EdgeInsets.fromLTRB(inset, top, inset, MediaQuery.paddingOf(context).bottom + inset);
+    final padding = EdgeInsets.fromLTRB(
+      inset,
+      top,
+      inset,
+      MediaQuery.paddingOf(context).bottom + inset,
+    );
     if (desktop && cardPadding != null) {
-      return Padding(padding: padding, child: UsagePanel(padding: cardPadding, child: manager));
+      return Padding(
+        padding: padding,
+        child: UsagePanel(padding: cardPadding, child: manager),
+      );
     }
     return SingleChildScrollView(
       padding: padding,
@@ -224,7 +232,10 @@ class _ViewTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final base = Theme.of(context).textTheme.titleMedium!;
-    final selectedStyle = base.copyWith(fontWeight: FontWeight.w600, color: colorScheme.onAccentTint);
+    final selectedStyle = base.copyWith(
+      fontWeight: FontWeight.w600,
+      color: colorScheme.onAccentTint,
+    );
     final style = selected
         ? selectedStyle
         : base.copyWith(fontWeight: FontWeight.w500, color: colorScheme.onSurfaceVariant);
@@ -311,8 +322,8 @@ class _PhoneHeader extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                color: GlassInk.maybeOf(context)?.ink,
-                              ),
+                            color: GlassInk.maybeOf(context)?.ink,
+                          ),
                         ),
                       ),
                     ),
@@ -328,7 +339,11 @@ class _PhoneHeader extends StatelessWidget {
                                   active: reorder,
                                   onPressed: onToggleReorder,
                                 ),
-                                GlassIconButton(icon: Icons.add, tooltip: l10n.newFeeGroup, onPressed: onAdd),
+                                GlassIconButton(
+                                  icon: Icons.add,
+                                  tooltip: l10n.newFeeGroup,
+                                  onPressed: onAdd,
+                                ),
                               ],
                             )
                           : Row(
@@ -337,7 +352,9 @@ class _PhoneHeader extends StatelessWidget {
                                 GlassIconButton(
                                   icon: Icons.refresh,
                                   tooltip: l10n.refresh,
-                                  onPressed: controller.isLoading ? null : () => controller.load(reset: true),
+                                  onPressed: controller.isLoading
+                                      ? null
+                                      : () => controller.load(reset: true),
                                 ),
                                 GlassIconButton(
                                   icon: Icons.delete_sweep_outlined,
@@ -357,8 +374,14 @@ class _PhoneHeader extends StatelessWidget {
               child: TabBar(
                 padding: const EdgeInsets.fromLTRB(AppSpace.s16, 0, AppSpace.s16, AppSpace.s6),
                 tabs: [
-                  Tab(height: _TokenUsageScreenState._phoneTabBarHeight - AppSpace.s6, text: l10n.usage),
-                  Tab(height: _TokenUsageScreenState._phoneTabBarHeight - AppSpace.s6, text: l10n.feeGroups),
+                  Tab(
+                    height: _TokenUsageScreenState._phoneTabBarHeight - AppSpace.s6,
+                    text: l10n.usage,
+                  ),
+                  Tab(
+                    height: _TokenUsageScreenState._phoneTabBarHeight - AppSpace.s6,
+                    text: l10n.feeGroups,
+                  ),
                 ],
               ),
             ),

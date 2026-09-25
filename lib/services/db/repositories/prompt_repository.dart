@@ -25,10 +25,7 @@ class PromptRepository {
       final id = await txn.insert('prompts', prompt.toMap(includeId: false));
       if (tagIds != null && tagIds.isNotEmpty) {
         for (final tagId in tagIds) {
-          await txn.insert('prompt_tag_refs', {
-            'prompt_id': id,
-            'tag_id': tagId,
-          });
+          await txn.insert('prompt_tag_refs', {'prompt_id': id, 'tag_id': tagId});
         }
       }
       return id;
@@ -40,22 +37,23 @@ class PromptRepository {
   /// [updateSystemPromptOrder], [updateTagOrder]), and an editor holds the row
   /// as it was when it opened — the workbench keeps a preset for a whole
   /// session — so writing the position back would undo a reorder made since.
-  static Map<String, dynamic> _editedRow(Map<String, dynamic> row) =>
-      row..remove('sort_order');
+  static Map<String, dynamic> _editedRow(Map<String, dynamic> row) => row..remove('sort_order');
 
-  Future<void> updatePrompt(int id, Prompt prompt, {List<int>? tagIds}) async { 
+  Future<void> updatePrompt(int id, Prompt prompt, {List<int>? tagIds}) async {
     final db = await _db;
     await db.transaction((txn) async {
       // CRITICAL: Use includeId: false to avoid updating the Primary Key to NULL
-      await txn.update('prompts', _editedRow(prompt.toMap(includeId: false)), where: 'id = ?', whereArgs: [id]);
+      await txn.update(
+        'prompts',
+        _editedRow(prompt.toMap(includeId: false)),
+        where: 'id = ?',
+        whereArgs: [id],
+      );
 
       if (tagIds != null) {
         await txn.delete('prompt_tag_refs', where: 'prompt_id = ?', whereArgs: [id]);
         for (final tagId in tagIds) {
-          await txn.insert('prompt_tag_refs', {
-            'prompt_id': id,
-            'tag_id': tagId,
-          });
+          await txn.insert('prompt_tag_refs', {'prompt_id': id, 'tag_id': tagId});
         }
       }
     });
@@ -84,10 +82,7 @@ class PromptRepository {
         await txn.delete('prompt_tag_refs', where: 'prompt_id = ?', whereArgs: [id]);
         if (tagIds.isNotEmpty) {
           for (final tagId in tagIds) {
-            await txn.insert('prompt_tag_refs', {
-              'prompt_id': id,
-              'tag_id': tagId,
-            });
+            await txn.insert('prompt_tag_refs', {'prompt_id': id, 'tag_id': tagId});
           }
         }
       }
@@ -152,7 +147,9 @@ class PromptRepository {
   /// Body of [getPromptHistory], split out so it can run against any executor.
   @visibleForTesting
   static Future<List<PromptHistoryEntry>> getPromptHistoryFrom(
-      DatabaseExecutor db, PromptHistoryType type) async {
+    DatabaseExecutor db,
+    PromptHistoryType type,
+  ) async {
     final maps = await db.query(
       'prompt_history',
       where: 'type = ?',
@@ -179,7 +176,10 @@ class PromptRepository {
   /// trim must not be observable half-applied.
   @visibleForTesting
   static Future<void> addPromptHistoryInto(
-      DatabaseExecutor txn, PromptHistoryType type, String content) async {
+    DatabaseExecutor txn,
+    PromptHistoryType type,
+    String content,
+  ) async {
     final trimmed = content.trim();
     if (trimmed.isEmpty) return;
 
@@ -219,7 +219,12 @@ class PromptRepository {
 
   Future<void> updatePromptTag(int id, PromptTag tag) async {
     final db = await _db;
-    await db.update('prompt_tags', _editedRow(tag.toMap(includeId: false)), where: 'id = ?', whereArgs: [id]);
+    await db.update(
+      'prompt_tags',
+      _editedRow(tag.toMap(includeId: false)),
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 
   Future<void> deletePromptTag(int id) async {
@@ -229,7 +234,7 @@ class PromptRepository {
 
   Future<List<PromptTag>> getPromptTags() async {
     final db = await _db;
-    final maps = await db.query('prompt_tags', orderBy: 'sort_order ASC');      
+    final maps = await db.query('prompt_tags', orderBy: 'sort_order ASC');
     return maps.map(PromptTag.fromMap).toList();
   }
 
@@ -243,16 +248,13 @@ class PromptRepository {
   }
 
   // System Prompts Methods
-  Future<int> addSystemPrompt(SystemPrompt prompt, {List<int>? tagIds}) async { 
+  Future<int> addSystemPrompt(SystemPrompt prompt, {List<int>? tagIds}) async {
     final db = await _db;
     return db.transaction((txn) async {
       final id = await txn.insert('system_prompts', prompt.toMap(includeId: false));
       if (tagIds != null && tagIds.isNotEmpty) {
         for (final tagId in tagIds) {
-          await txn.insert('system_prompt_tag_refs', {
-            'prompt_id': id,
-            'tag_id': tagId,
-          });
+          await txn.insert('system_prompt_tag_refs', {'prompt_id': id, 'tag_id': tagId});
         }
       }
       return id;
@@ -262,14 +264,16 @@ class PromptRepository {
   Future<void> updateSystemPrompt(int id, SystemPrompt prompt, {List<int>? tagIds}) async {
     final db = await _db;
     await db.transaction((txn) async {
-      await txn.update('system_prompts', _editedRow(prompt.toMap(includeId: false)), where: 'id = ?', whereArgs: [id]);
+      await txn.update(
+        'system_prompts',
+        _editedRow(prompt.toMap(includeId: false)),
+        where: 'id = ?',
+        whereArgs: [id],
+      );
       if (tagIds != null) {
         await txn.delete('system_prompt_tag_refs', where: 'prompt_id = ?', whereArgs: [id]);
         for (final tagId in tagIds) {
-          await txn.insert('system_prompt_tag_refs', {
-            'prompt_id': id,
-            'tag_id': tagId,
-          });
+          await txn.insert('system_prompt_tag_refs', {'prompt_id': id, 'tag_id': tagId});
         }
       }
     });
@@ -277,7 +281,7 @@ class PromptRepository {
 
   Future<void> deleteSystemPrompt(int id) async {
     final db = await _db;
-    await db.delete('system_prompts', where: 'id = ?', whereArgs: [id]);        
+    await db.delete('system_prompts', where: 'id = ?', whereArgs: [id]);
   }
 
   Future<void> deleteSystemPrompts(List<int> ids) async {
@@ -286,7 +290,11 @@ class PromptRepository {
     final placeholders = ids.map((_) => '?').join(',');
     await db.transaction((txn) async {
       await txn.delete('system_prompts', where: 'id IN ($placeholders)', whereArgs: ids);
-      await txn.delete('system_prompt_tag_refs', where: 'prompt_id IN ($placeholders)', whereArgs: ids);
+      await txn.delete(
+        'system_prompt_tag_refs',
+        where: 'prompt_id IN ($placeholders)',
+        whereArgs: ids,
+      );
     });
   }
 
@@ -298,10 +306,7 @@ class PromptRepository {
         await txn.delete('system_prompt_tag_refs', where: 'prompt_id = ?', whereArgs: [id]);
         if (tagIds.isNotEmpty) {
           for (final tagId in tagIds) {
-            await txn.insert('system_prompt_tag_refs', {
-              'prompt_id': id,
-              'tag_id': tagId,
-            });
+            await txn.insert('system_prompt_tag_refs', {'prompt_id': id, 'tag_id': tagId});
           }
         }
       }

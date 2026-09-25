@@ -89,12 +89,12 @@ String _buildSystemPrompt(
   // straight away, so viewing every image can be made a hard requirement.
   final viewStep = forceViewAllImages && referenceImageCount > 0
       ? '1. MANDATORY: first call list_reference_images, then call '
-          'view_image for EVERY image id from 1 to $referenceImageCount, '
-          'one call per image. You must have viewed ALL '
-          '$referenceImageCount reference image(s) before calling '
-          'submit_prompt — never skip an image and never submit early.\n'
+            'view_image for EVERY image id from 1 to $referenceImageCount, '
+            'one call per image. You must have viewed ALL '
+            '$referenceImageCount reference image(s) before calling '
+            'submit_prompt — never skip an image and never submit early.\n'
       : '1. If reference images could be relevant, inspect them with '
-          'list_reference_images and view_image first.\n';
+            'list_reference_images and view_image first.\n';
   return '$base\n\n'
       '---\n'
       'You are working inside an interactive prompt-optimization chat. The '
@@ -129,20 +129,16 @@ String _buildSystemPrompt(
 /// message is the request itself, the full answer goes in the reply, and
 /// submit_prompt stays — for the natural next sentence, "now give me a prompt
 /// for this" — as something to be asked for.
-String _buildAnalysisSystemPrompt(
-  String base,
-  int referenceImageCount,
-  bool forceViewAllImages,
-) {
+String _buildAnalysisSystemPrompt(String base, int referenceImageCount, bool forceViewAllImages) {
   final viewStep = forceViewAllImages && referenceImageCount > 0
       ? '1. MANDATORY: first call list_reference_images, then call '
-          'view_image for EVERY image id from 1 to $referenceImageCount, '
-          'one call per image. You must have viewed ALL '
-          '$referenceImageCount reference image(s) before answering — never '
-          'skip an image and never answer early.\n'
+            'view_image for EVERY image id from 1 to $referenceImageCount, '
+            'one call per image. You must have viewed ALL '
+            '$referenceImageCount reference image(s) before answering — never '
+            'skip an image and never answer early.\n'
       : '1. Look before you answer: inspect the reference images the request '
-          'concerns with list_reference_images and view_image. Never '
-          'describe an image you have not viewed in this conversation.\n';
+            'concerns with list_reference_images and view_image. Never '
+            'describe an image you have not viewed in this conversation.\n';
   return '$base\n\n'
       '---\n'
       'You are working inside an interactive chat, on the task the '
@@ -186,10 +182,10 @@ String _buildKnowledgeSystemPrompt(
 ) {
   final viewStep = forceViewAllImages && referenceImageCount > 0
       ? '- MANDATORY: call list_reference_images, then view_image for EVERY '
-          'image id from 1 to $referenceImageCount before calling '
-          'submit_prompt — never skip an image and never submit early.\n'
+            'image id from 1 to $referenceImageCount before calling '
+            'submit_prompt — never skip an image and never submit early.\n'
       : '- If reference images could be relevant, inspect them with '
-          'list_reference_images and view_image before relying on them.\n';
+            'list_reference_images and view_image before relying on them.\n';
   return 'You are a prompt-engineering agent for AI image generation. You '
       'build and refine prompts strictly according to the user\'s knowledge '
       'base — a folder of rule files whose entry file (the file map) is '
@@ -239,10 +235,10 @@ String _buildKnowledgeEditSystemPrompt(
 ) {
   final viewStep = forceViewAllImages && referenceImageCount > 0
       ? '- MANDATORY: call list_reference_images, then view_image for EVERY '
-          'image id from 1 to $referenceImageCount before calling '
-          'submit_prompt — never skip an image and never submit early.\n'
+            'image id from 1 to $referenceImageCount before calling '
+            'submit_prompt — never skip an image and never submit early.\n'
       : '- If reference images could be relevant, inspect them with '
-          'list_reference_images and view_image before relying on them.\n';
+            'list_reference_images and view_image before relying on them.\n';
   return 'You are a knowledge-base maintainer for a prompt-engineering '
       'knowledge base — a folder of rule files whose entry file (the file '
       'map) is included below. You help the user improve and extend these '
@@ -298,25 +294,22 @@ String _buildKnowledgeEditSystemPrompt(
 /// keep a single anecdote from being written as a universal law. [canWrite]
 /// is false when the user has switched knowledge writing off — the review
 /// still runs, the findings just stay in chat.
-String _buildKnowledgeDistillSystemPrompt(
-  String entryContent, {
-  required bool canWrite,
-}) {
+String _buildKnowledgeDistillSystemPrompt(String entryContent, {required bool canWrite}) {
   final deliverStep = canWrite
       ? '5. Deliver each change with write_knowledge_file — one file per '
-          'call, and when a file is large, one call per message. Prefer '
-          'mode "replace_section" or "append" and send only the section '
-          'that changes; the whole-file mode needs the COMPLETE content and '
-          'is for new files. You MUST read an existing file with '
-          'read_knowledge_file before changing it. Every edit is STAGED for '
-          'the user to approve; never claim it is saved. If you add or '
-          'rename a file, update the entry file '
-          '(${KnowledgeBaseService.entryFileName}) in the same turn so the '
-          'file map keeps matching the tree.\n'
+            'call, and when a file is large, one call per message. Prefer '
+            'mode "replace_section" or "append" and send only the section '
+            'that changes; the whole-file mode needs the COMPLETE content and '
+            'is for new files. You MUST read an existing file with '
+            'read_knowledge_file before changing it. Every edit is STAGED for '
+            'the user to approve; never claim it is saved. If you add or '
+            'rename a file, update the entry file '
+            '(${KnowledgeBaseService.entryFileName}) in the same turn so the '
+            'file map keeps matching the tree.\n'
       : '5. Knowledge-base writing is currently switched OFF for this '
-          'session, so do NOT call write_knowledge_file. Present each '
-          'proposed change in chat instead: the target file, the new or '
-          'changed passage, and why.\n';
+            'session, so do NOT call write_knowledge_file. Present each '
+            'proposed change in chat instead: the target file, the new or '
+            'changed passage, and why.\n';
   return 'You are distilling the lessons of a finished prompt-tuning '
       'session into the user\'s prompt-engineering knowledge base — a '
       'folder of rule files whose entry file (the file map) is included '

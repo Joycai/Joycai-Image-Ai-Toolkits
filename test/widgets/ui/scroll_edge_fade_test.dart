@@ -10,16 +10,20 @@ import 'package:joycai_image_ai_toolkits/widgets/ui/scroll_edge_fade.dart';
 /// pointing the other way.
 void main() {
   Widget host(Widget child, {double height = 200}) => MaterialApp(
-        home: Scaffold(body: Center(child: SizedBox(height: height, width: 300, child: child))),
-      );
+    home: Scaffold(
+      body: Center(
+        child: SizedBox(height: height, width: 300, child: child),
+      ),
+    ),
+  );
 
   Widget list({required int items, ScrollController? controller}) => ScrollEdgeFade(
-        child: ListView.builder(
-          controller: controller,
-          itemCount: items,
-          itemBuilder: (_, i) => SizedBox(height: 50, child: Text('row $i')),
-        ),
-      );
+    child: ListView.builder(
+      controller: controller,
+      itemCount: items,
+      itemBuilder: (_, i) => SizedBox(height: 50, child: Text('row $i')),
+    ),
+  );
 
   testWidgets('a list that fits pays nothing — no mask at all', (tester) async {
     // Three 50px rows in a 200px box. Nothing to say, so nothing is drawn, and
@@ -30,8 +34,7 @@ void main() {
     expect(find.byType(ShaderMask), findsNothing);
   });
 
-  testWidgets('a list that overflows fades the edge it can scroll towards',
-      (tester) async {
+  testWidgets('a list that overflows fades the edge it can scroll towards', (tester) async {
     await tester.pumpWidget(host(list(items: 20)));
     await tester.pumpAndSettle();
 
@@ -59,8 +62,7 @@ void main() {
     // The callback is the only thing that knows which end is soft; run it and
     // check the gradient it would build, rather than the pixels.
     expect(shader.blendMode, BlendMode.dstIn);
-    expect(() => shader.shaderCallback(const Rect.fromLTWH(0, 0, 300, 200)),
-        returnsNormally);
+    expect(() => shader.shaderCallback(const Rect.fromLTWH(0, 0, 300, 200)), returnsNormally);
   });
 
   testWidgets('it disappears again once the content shrinks to fit', (tester) async {
@@ -88,8 +90,11 @@ void main() {
 
     await tester.pumpWidget(host(list(items: 2, controller: controller)));
     await tester.pump();
-    expect(find.byType(ShaderMask), findsOneWidget,
-        reason: 'a frame after the content fits, the fade is still running out');
+    expect(
+      find.byType(ShaderMask),
+      findsOneWidget,
+      reason: 'a frame after the content fits, the fade is still running out',
+    );
     await tester.pumpAndSettle();
     expect(find.byType(ShaderMask), findsNothing);
   });

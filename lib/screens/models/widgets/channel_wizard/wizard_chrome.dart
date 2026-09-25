@@ -8,8 +8,7 @@ extension _WizardChrome on _ChannelWizardDialogState {
     // the provider list scrollable and a ceiling that stops the dialog
     // stretching on a tall display. Heading, footer and the dialog's own
     // vertical inset account for the subtracted band.
-    final bodyHeight =
-        (MediaQuery.sizeOf(context).height - 230).clamp(320.0, 580.0);
+    final bodyHeight = (MediaQuery.sizeOf(context).height - 230).clamp(320.0, 580.0);
 
     return AppDialog(
       titleWidget: _buildHeader(l10n),
@@ -58,16 +57,16 @@ extension _WizardChrome on _ChannelWizardDialogState {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(
-                AppSpace.s16, AppSpace.s4, AppSpace.s16, AppSpace.s10),
+              AppSpace.s16,
+              AppSpace.s4,
+              AppSpace.s16,
+              AppSpace.s10,
+            ),
             child: Row(
               children: [
                 for (final (i, step) in steps.indexed) ...[
                   if (i > 0) const SizedBox(width: AppSpace.s4),
-                  _StepDot(
-                    number: i + 1,
-                    done: i < _stepIndex,
-                    current: step == _step,
-                  ),
+                  _StepDot(number: i + 1, done: i < _stepIndex, current: step == _step),
                 ],
                 const SizedBox(width: AppSpace.s10),
                 Expanded(
@@ -75,8 +74,7 @@ extension _WizardChrome on _ChannelWizardDialogState {
                     _stepName(l10n, _step),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: textTheme.titleSmall
-                        ?.copyWith(color: colorScheme.onSurface),
+                    style: textTheme.titleSmall?.copyWith(color: colorScheme.onSurface),
                   ),
                 ),
               ],
@@ -93,7 +91,9 @@ extension _WizardChrome on _ChannelWizardDialogState {
               top: false,
               child: Padding(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpace.s16, vertical: AppSpace.s10),
+                  horizontal: AppSpace.s16,
+                  vertical: AppSpace.s10,
+                ),
                 child: _buildFooter(l10n),
               ),
             ),
@@ -118,28 +118,29 @@ extension _WizardChrome on _ChannelWizardDialogState {
 
     return switch (_step) {
       _WizardStep.provider => ChannelDialogHeader(
-          leading: const ChannelIconPlate(Icons.add_link),
-          title: l10n.addChannel,
-          subtitle: l10n.providerCountSummary(
-            kListedChannelProviderPresets.length,
-            ChannelProviderGroup.values.length,
-          ),
-          monoSubtitle: true,
-          onClose: () => Navigator.pop(context),
+        leading: const ChannelIconPlate(Icons.add_link),
+        title: l10n.addChannel,
+        subtitle: l10n.providerCountSummary(
+          kListedChannelProviderPresets.length,
+          ChannelProviderGroup.values.length,
         ),
+        monoSubtitle: true,
+        onClose: () => Navigator.pop(context),
+      ),
       _WizardStep.variant => ChannelDialogHeader(
-          leading: avatar,
-          title: '$title · ${_stepName(l10n, _WizardStep.variant)}',
-          subtitle: channelProviderVariantHint(l10n, preset.id),
-          onClose: () => Navigator.pop(context),
-        ),
+        leading: avatar,
+        title: '$title · ${_stepName(l10n, _WizardStep.variant)}',
+        subtitle: channelProviderVariantHint(l10n, preset.id),
+        onClose: () => Navigator.pop(context),
+      ),
       final step => ChannelDialogHeader(
-          leading: avatar,
-          title: '$title · ${_stepName(l10n, step)}',
-          subtitle: '${channelProviderGroupHint(l10n, preset.group)}'
-              ' · ${channelProviderNeedLabel(l10n, preset.need)}',
-          onClose: () => Navigator.pop(context),
-        ),
+        leading: avatar,
+        title: '$title · ${_stepName(l10n, step)}',
+        subtitle:
+            '${channelProviderGroupHint(l10n, preset.group)}'
+            ' · ${channelProviderNeedLabel(l10n, preset.need)}',
+        onClose: () => Navigator.pop(context),
+      ),
     };
   }
 
@@ -176,9 +177,9 @@ extension _WizardChrome on _ChannelWizardDialogState {
             child: Text(
               l10n.wizardStepsAdaptNote,
               style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
-                    fontWeight: FontWeight.w400,
-                    color: colorScheme.outline,
-                  ),
+                fontWeight: FontWeight.w400,
+                color: colorScheme.outline,
+              ),
             ),
           ),
         ],
@@ -218,8 +219,8 @@ extension _WizardChrome on _ChannelWizardDialogState {
                       color: current
                           ? colorScheme.onAccentTint
                           : done
-                              ? colorScheme.onSurface
-                              : colorScheme.onSurfaceVariant,
+                          ? colorScheme.onSurface
+                          : colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ),
@@ -237,8 +238,9 @@ extension _WizardChrome on _ChannelWizardDialogState {
       children: [
         Text(
           l10n.wizardStepCounter(_stepIndex + 1, _steps.length),
-          style: theme.textTheme.labelSmall?.mono
-              .copyWith(color: theme.colorScheme.onSurfaceVariant),
+          style: theme.textTheme.labelSmall?.mono.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
         ),
         const Spacer(),
         AppButton(
@@ -247,11 +249,7 @@ extension _WizardChrome on _ChannelWizardDialogState {
           onPressed: _stepIndex == 0 ? null : _back,
         ),
         const SizedBox(width: AppSpace.s6),
-        AppButton(
-          label: _nextLabel(l10n),
-          loading: _submitting,
-          onPressed: _next,
-        ),
+        AppButton(label: _nextLabel(l10n), loading: _submitting, onPressed: _next),
       ],
     );
   }
@@ -263,17 +261,17 @@ extension _WizardChrome on _ChannelWizardDialogState {
     final Widget body = switch (step) {
       _WizardStep.provider => _buildProviderStep(l10n),
       _WizardStep.variant => SingleChildScrollView(
-          padding: formPadding,
-          child: _buildVariantStep(l10n),
-        ),
+        padding: formPadding,
+        child: _buildVariantStep(l10n),
+      ),
       _WizardStep.connection => SingleChildScrollView(
-          padding: formPadding,
-          child: _buildConnectionStep(l10n),
-        ),
+        padding: formPadding,
+        child: _buildConnectionStep(l10n),
+      ),
       _WizardStep.appearance => SingleChildScrollView(
-          padding: formPadding,
-          child: _buildAppearanceStep(l10n),
-        ),
+        padding: formPadding,
+        child: _buildAppearanceStep(l10n),
+      ),
     };
 
     final shown = _shownStep;
@@ -302,10 +300,7 @@ extension _WizardChrome on _ChannelWizardDialogState {
         return FadeTransition(
           opacity: animation,
           child: SlideTransition(
-            position: Tween<Offset>(
-              begin: Offset(shift, 0),
-              end: Offset.zero,
-            ).animate(animation),
+            position: Tween<Offset>(begin: Offset(shift, 0), end: Offset.zero).animate(animation),
             child: child,
           ),
         );
@@ -318,11 +313,7 @@ extension _WizardChrome on _ChannelWizardDialogState {
 /// A step's 20px marker: a filled check once done, an accent ring on the
 /// current step, a hairline ring with the step's number ahead.
 class _StepDot extends StatelessWidget {
-  const _StepDot({
-    required this.number,
-    required this.done,
-    required this.current,
-  });
+  const _StepDot({required this.number, required this.done, required this.current});
 
   final int number;
   final bool done;
@@ -356,9 +347,7 @@ class _StepDot extends StatelessWidget {
               style: theme.textTheme.labelSmall?.mono.copyWith(
                 fontWeight: FontWeight.w600,
                 height: 1,
-                color: current
-                    ? colorScheme.onAccentTint
-                    : colorScheme.onSurfaceVariant,
+                color: current ? colorScheme.onAccentTint : colorScheme.onSurfaceVariant,
               ),
             ),
     );

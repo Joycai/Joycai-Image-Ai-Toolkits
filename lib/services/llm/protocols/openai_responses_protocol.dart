@@ -26,15 +26,14 @@ const String responsesEncryptedReasoningInclude = 'reasoning.encrypted_content';
 /// reject `none` and every Grok rejects `max`, each with a 400 that names
 /// the value — the endpoint's own statement beats a guess from a model id
 /// that a relay may have renamed.
-Map<String, dynamic>? responsesReasoningField(ReasoningEffort? effort) =>
-    switch (effort) {
-      null => null,
-      ReasoningEffort.off => {'effort': 'none'},
-      ReasoningEffort.low => {'effort': 'low', 'summary': 'auto'},
-      ReasoningEffort.medium => {'effort': 'medium', 'summary': 'auto'},
-      ReasoningEffort.high => {'effort': 'high', 'summary': 'auto'},
-      ReasoningEffort.max => {'effort': 'max', 'summary': 'auto'},
-    };
+Map<String, dynamic>? responsesReasoningField(ReasoningEffort? effort) => switch (effort) {
+  null => null,
+  ReasoningEffort.off => {'effort': 'none'},
+  ReasoningEffort.low => {'effort': 'low', 'summary': 'auto'},
+  ReasoningEffort.medium => {'effort': 'medium', 'summary': 'auto'},
+  ReasoningEffort.high => {'effort': 'high', 'summary': 'auto'},
+  ReasoningEffort.max => {'effort': 'max', 'summary': 'auto'},
+};
 
 /// The `tool_choice` for a request that declares function tools.
 ///
@@ -95,7 +94,8 @@ List<Map<String, dynamic>> buildResponsesInput(
         });
       case LLMRole.assistant:
         final raw = msg.rawResponseItems;
-        final replayRaw = msg.toolCalls.isNotEmpty &&
+        final replayRaw =
+            msg.toolCalls.isNotEmpty &&
             raw != null &&
             raw.isNotEmpty &&
             msg.rawThinkingModelId == modelId;
@@ -103,8 +103,7 @@ List<Map<String, dynamic>> buildResponsesInput(
           // A deep copy, so nothing downstream of the payload can write into
           // stored history.
           for (final item in raw) {
-            input.add(
-                (jsonDecode(jsonEncode(item)) as Map).cast<String, dynamic>());
+            input.add((jsonDecode(jsonEncode(item)) as Map).cast<String, dynamic>());
           }
           continue;
         }
@@ -129,8 +128,7 @@ List<Map<String, dynamic>> buildResponsesInput(
           final resolved = ImageCompressor.readForApi(attachment);
           parts.add({
             'type': 'input_image',
-            'image_url':
-                'data:${resolved.mimeType};base64,${base64Encode(resolved.bytes)}',
+            'image_url': 'data:${resolved.mimeType};base64,${base64Encode(resolved.bytes)}',
           });
         }
         input.add({'role': 'user', 'content': parts});
@@ -364,19 +362,21 @@ class ResponsesStreamAssembler {
         final error = response is Map ? response['error'] : null;
         final message = error is Map
             ? '${error['message'] ?? error}'
-                '${error['code'] == null ? '' : ' (${error['code']})'}'
+                  '${error['code'] == null ? '' : ' (${error['code']})'}'
             : 'no error detail';
         throw LLMApiException(
-            '$requestLabel reported the response as failed: $message',
-            isEnvelope: true);
+          '$requestLabel reported the response as failed: $message',
+          isEnvelope: true,
+        );
 
       case 'error':
         _terminal = true;
         final code = event['code'];
         throw LLMApiException(
-            '$requestLabel stream error: ${event['message'] ?? event}'
-            '${code == null ? '' : ' ($code)'}',
-            isEnvelope: true);
+          '$requestLabel stream error: ${event['message'] ?? event}'
+          '${code == null ? '' : ' ($code)'}',
+          isEnvelope: true,
+        );
 
       default:
         return const [];
@@ -442,9 +442,7 @@ class ResponsesStreamAssembler {
     final reason = details is Map ? details['reason']?.toString() : null;
     if (type == 'response.incomplete' || reason != null) {
       _finishRaw = reason ?? 'incomplete';
-      _finishReason = reason == contentFilterFinishReason
-          ? contentFilterFinishReason
-          : 'length';
+      _finishReason = reason == contentFilterFinishReason ? contentFilterFinishReason : 'length';
     } else {
       _finishReason = 'stop';
     }
@@ -508,9 +506,7 @@ class ResponsesStreamAssembler {
       );
     }
 
-    if (!_sawOutput &&
-        _finishReason != 'length' &&
-        _finishReason != contentFilterFinishReason) {
+    if (!_sawOutput && _finishReason != 'length' && _finishReason != contentFilterFinishReason) {
       throw LLMApiException(
         '$requestLabel returned no content — no text, reasoning or function '
         'calls (usage: ${_usage ?? 'none'}).',
@@ -522,13 +518,16 @@ class ResponsesStreamAssembler {
     final calls = <LLMToolCall>[];
     for (final index in indices) {
       final pending = _calls[index]!;
-      calls.add(LLMToolCall(
-        id: resolveToolCallId(pending.callId, index < 0 ? calls.length : index),
-        name: pending.name,
-        arguments: decodeToolArguments(
+      calls.add(
+        LLMToolCall(
+          id: resolveToolCallId(pending.callId, index < 0 ? calls.length : index),
+          name: pending.name,
+          arguments: decodeToolArguments(
             pending.whole ?? pending.deltas.toString(),
-            logger: logger),
-      ));
+            logger: logger,
+          ),
+        ),
+      );
     }
     for (final call in calls) {
       chunks.add(LLMResponseChunk(toolCallPart: call));
@@ -548,15 +547,19 @@ class ResponsesStreamAssembler {
       }
     }
 
-    chunks.add(LLMResponseChunk(metadata: {
-      ...?_usage,
-      'finish_reason': calls.isNotEmpty && _finishReason == 'stop'
-          ? 'tool_calls'
-          : _finishReason,
-      'finish_reason_raw': ?_finishRaw,
-      if (streamIncomplete) 'stream_incomplete': true,
-      'wire_rewrites': ?_rewrites,
-    }));
+    chunks.add(
+      LLMResponseChunk(
+        metadata: {
+          ...?_usage,
+          'finish_reason': calls.isNotEmpty && _finishReason == 'stop'
+              ? 'tool_calls'
+              : _finishReason,
+          'finish_reason_raw': ?_finishRaw,
+          if (streamIncomplete) 'stream_incomplete': true,
+          'wire_rewrites': ?_rewrites,
+        },
+      ),
+    );
     return chunks;
   }
 
@@ -616,15 +619,13 @@ Map<String, dynamic> responsesUsageMetadata(Map<String, dynamic> usage) {
   final inputDetails = usage['input_tokens_details'];
   final outputDetails = usage['output_tokens_details'];
   final cached = inputDetails is Map ? inputDetails['cached_tokens'] : null;
-  final reasoning =
-      outputDetails is Map ? outputDetails['reasoning_tokens'] : null;
+  final reasoning = outputDetails is Map ? outputDetails['reasoning_tokens'] : null;
   return {
     'prompt_tokens': ?input,
     'completion_tokens': ?output,
     'total_tokens': ?usage['total_tokens'],
     if (cached != null) 'prompt_tokens_details': {'cached_tokens': cached},
-    if (reasoning != null)
-      'completion_tokens_details': {'reasoning_tokens': reasoning},
+    if (reasoning != null) 'completion_tokens_details': {'reasoning_tokens': reasoning},
   };
 }
 
@@ -639,29 +640,32 @@ LLMResponse responsesResponseFromBody(
   LLMLogger? logger,
 }) {
   final assembler = ResponsesStreamAssembler(
-      sentEffort: sentEffort, requestLabel: requestLabel, logger: logger);
+    sentEffort: sentEffort,
+    requestLabel: requestLabel,
+    logger: logger,
+  );
   final chunks = <LLMResponseChunk>[];
   final output = body['output'];
   if (output is List) {
     for (var i = 0; i < output.length; i++) {
       final item = output[i];
       if (item is! Map) continue;
-      chunks.addAll(assembler.feed({
-        'type': 'response.output_item.done',
-        'output_index': i,
-        'item': item,
-      }));
+      chunks.addAll(
+        assembler.feed({'type': 'response.output_item.done', 'output_index': i, 'item': item}),
+      );
     }
   }
   final status = body['status'];
-  chunks.addAll(assembler.feed({
-    'type': switch (status) {
-      'failed' => 'response.failed',
-      'incomplete' => 'response.incomplete',
-      _ => 'response.completed',
-    },
-    'response': body,
-  }));
+  chunks.addAll(
+    assembler.feed({
+      'type': switch (status) {
+        'failed' => 'response.failed',
+        'incomplete' => 'response.incomplete',
+        _ => 'response.completed',
+      },
+      'response': body,
+    }),
+  );
   chunks.addAll(assembler.finish());
 
   final text = StringBuffer();
@@ -708,27 +712,35 @@ class OpenAIResponsesProtocol implements ChatProtocol {
   }) async {
     final config = target.config;
     final url = Uri.parse(openaiResponsesUrl(config.endpoint));
-    logger?.call('Preparing OpenAI Responses request to: ${url.host}',
-        level: 'DEBUG');
+    logger?.call('Preparing OpenAI Responses request to: ${url.host}', level: 'DEBUG');
     final headers = target.headers();
-    final payload = buildResponsesPayload(target, history,
-        options: options, isStreaming: false, tools: tools);
+    final payload = buildResponsesPayload(
+      target,
+      history,
+      options: options,
+      isStreaming: false,
+      tools: tools,
+    );
 
     final client = config.createClient();
     try {
       LLMDebugLog? debugFile;
       if (LLMDebugLogger.enabled) {
-        debugFile = await LLMDebugLogger.startLog(
-          config.modelId,
-          'OpenAI (Responses)',
-          {'url': redactUrl(url), 'headers': headers, 'body': payload},
-        );
+        debugFile = await LLMDebugLogger.startLog(config.modelId, 'OpenAI (Responses)', {
+          'url': redactUrl(url),
+          'headers': headers,
+          'body': payload,
+        });
       }
-      final response = await sendJsonRequest(client, url,
-          headers: headers, body: jsonEncode(payload), options: options);
+      final response = await sendJsonRequest(
+        client,
+        url,
+        headers: headers,
+        body: jsonEncode(payload),
+        options: options,
+      );
       if (debugFile != null) {
-        await LLMDebugLogger.appendLine(
-            debugFile, 'Status: ${response.statusCode}');
+        await LLMDebugLogger.appendLine(debugFile, 'Status: ${response.statusCode}');
         await LLMDebugLogger.appendLine(debugFile, 'Body: ${response.body}');
         await LLMDebugLogger.finish(debugFile);
       }
@@ -755,23 +767,32 @@ class OpenAIResponsesProtocol implements ChatProtocol {
   }) async* {
     final config = target.config;
     final url = Uri.parse(openaiResponsesUrl(config.endpoint));
-    logger?.call('Starting OpenAI Responses stream: ${url.host}',
-        level: 'DEBUG');
+    logger?.call('Starting OpenAI Responses stream: ${url.host}', level: 'DEBUG');
     final headers = target.headers();
-    final payload = buildResponsesPayload(target, history,
-        options: options, isStreaming: true, tools: tools);
+    final payload = buildResponsesPayload(
+      target,
+      history,
+      options: options,
+      isStreaming: true,
+      tools: tools,
+    );
 
-    final request = buildJsonRequest('POST', url,
-        headers: headers, body: jsonEncode(payload), options: options);
+    final request = buildJsonRequest(
+      'POST',
+      url,
+      headers: headers,
+      body: jsonEncode(payload),
+      options: options,
+    );
 
     final client = config.createClient();
     LLMDebugLog? debugFile;
     if (LLMDebugLogger.enabled) {
-      debugFile = await LLMDebugLogger.startLog(
-        config.modelId,
-        'OpenAI (Responses Stream)',
-        {'url': redactUrl(url), 'headers': headers, 'body': payload},
-      );
+      debugFile = await LLMDebugLogger.startLog(config.modelId, 'OpenAI (Responses Stream)', {
+        'url': redactUrl(url),
+        'headers': headers,
+        'body': payload,
+      });
     }
 
     final http.StreamedResponse response;
@@ -786,8 +807,7 @@ class OpenAIResponsesProtocol implements ChatProtocol {
     if (response.statusCode != 200) {
       final body = await response.stream.bytesToString();
       if (debugFile != null) {
-        await LLMDebugLogger.appendLine(
-            debugFile, 'Error Status: ${response.statusCode}');
+        await LLMDebugLogger.appendLine(debugFile, 'Error Status: ${response.statusCode}');
         await LLMDebugLogger.appendLine(debugFile, 'Error Body: $body');
         await LLMDebugLogger.finish(debugFile);
       }
@@ -808,9 +828,8 @@ class OpenAIResponsesProtocol implements ChatProtocol {
     );
 
     try {
-      await for (final line in response.stream
-          .transform(utf8.decoder)
-          .transform(const LineSplitter())) {
+      await for (final line
+          in response.stream.transform(utf8.decoder).transform(const LineSplitter())) {
         if (debugFile != null && line.isNotEmpty) {
           await LLMDebugLogger.appendStreamLine(debugFile, line);
         }

@@ -45,21 +45,16 @@ void main() {
   group('outputCapFor ranks its sources', () {
     test('nothing set is null', () {
       expect(outputCapFor(target(Vendors.openAIRest), null), isNull);
-      expect(outputCapFor(target(Vendors.openAIRest), const {'retryCount': 2}),
-          isNull);
+      expect(outputCapFor(target(Vendors.openAIRest), const {'retryCount': 2}), isNull);
     });
 
     test('the stored cap is used when no option asks', () {
-      expect(
-          outputCapFor(target(Vendors.openAIRest, maxOutputTokens: 65536), null),
-          65536);
+      expect(outputCapFor(target(Vendors.openAIRest, maxOutputTokens: 65536), null), 65536);
     });
 
-    test('a per-request option beats the stored cap — the probe stays one token',
-        () {
+    test('a per-request option beats the stored cap — the probe stays one token', () {
       expect(
-        outputCapFor(target(Vendors.openAIRest, maxOutputTokens: 65536),
-            const {'maxTokens': 1}),
+        outputCapFor(target(Vendors.openAIRest, maxOutputTokens: 65536), const {'maxTokens': 1}),
         1,
       );
     });
@@ -67,8 +62,12 @@ void main() {
 
   group('① chat/completions', () {
     Map<String, dynamic> payload(LLMTarget t, [Map<String, dynamic>? options]) =>
-        OpenAIChatProtocol()
-            .buildChatPayloadForTest(t, history, options: options, isStreaming: false);
+        OpenAIChatProtocol().buildChatPayloadForTest(
+          t,
+          history,
+          options: options,
+          isStreaming: false,
+        );
 
     test('no cap set sends neither spelling', () {
       final body = payload(target(Vendors.openAIRest));
@@ -77,8 +76,9 @@ void main() {
     });
 
     test('OpenAI\'s own host takes the new spelling only', () {
-      final body = payload(target(Vendors.openAIRest,
-          maxOutputTokens: 32768, endpoint: 'https://api.openai.com/v1'));
+      final body = payload(
+        target(Vendors.openAIRest, maxOutputTokens: 32768, endpoint: 'https://api.openai.com/v1'),
+      );
       expect(body['max_completion_tokens'], 32768);
       expect(body.containsKey('max_tokens'), isFalse);
     });
@@ -104,13 +104,15 @@ void main() {
       }
     });
 
-    test('the probe\'s one token wins over the stored cap, under the host\'s key',
-        () {
+    test('the probe\'s one token wins over the stored cap, under the host\'s key', () {
       final official = payload(
-          target(Vendors.openAIRest, maxOutputTokens: 65536, endpoint: 'https://api.openai.com/v1'),
-          const {'maxTokens': 1});
+        target(Vendors.openAIRest, maxOutputTokens: 65536, endpoint: 'https://api.openai.com/v1'),
+        const {'maxTokens': 1},
+      );
       expect(official['max_completion_tokens'], 1);
-      final relay = payload(target(Vendors.openAIRest, maxOutputTokens: 65536), const {'maxTokens': 1});
+      final relay = payload(target(Vendors.openAIRest, maxOutputTokens: 65536), const {
+        'maxTokens': 1,
+      });
       expect(relay['max_tokens'], 1);
     });
   });
@@ -120,23 +122,24 @@ void main() {
         buildResponsesPayload(t, history, options: options, isStreaming: false);
 
     test('no cap set sends no max_output_tokens', () {
-      expect(payload(target(Vendors.openAIResponsesRest))
-          .containsKey('max_output_tokens'), isFalse);
+      expect(
+        payload(target(Vendors.openAIResponsesRest)).containsKey('max_output_tokens'),
+        isFalse,
+      );
     });
 
     test('the stored cap reaches max_output_tokens', () {
       expect(
-          payload(target(Vendors.openAIResponsesRest, maxOutputTokens: 16384))[
-              'max_output_tokens'],
-          16384);
+        payload(target(Vendors.openAIResponsesRest, maxOutputTokens: 16384))['max_output_tokens'],
+        16384,
+      );
     });
   });
 
   group('③ generateContent', () {
-    Map<String, dynamic> generationConfig(int? outputCap,
-            [Map<String, dynamic>? options]) =>
-        (prepareGooglePayload(history, options, null, outputCap: outputCap)[
-                'generationConfig'] as Map)
+    Map<String, dynamic> generationConfig(int? outputCap, [Map<String, dynamic>? options]) =>
+        (prepareGooglePayload(history, options, null, outputCap: outputCap)['generationConfig']
+                as Map)
             .cast<String, dynamic>();
 
     test('no cap sends no maxOutputTokens', () {
@@ -153,34 +156,34 @@ void main() {
   });
 
   group('④ messages', () {
-    Map<String, dynamic> payload(LLMTarget t,
-            {Map<String, dynamic>? options, ThinkingDialect? dialect}) =>
-        prepareAnthropicPayload(t, history,
-            options: options, isStreaming: false, dialect: dialect);
+    Map<String, dynamic> payload(
+      LLMTarget t, {
+      Map<String, dynamic>? options,
+      ThinkingDialect? dialect,
+    }) =>
+        prepareAnthropicPayload(t, history, options: options, isStreaming: false, dialect: dialect);
 
     test('no cap set falls back to the built-in constant', () {
-      expect(payload(target(Vendors.anthropicRest))['max_tokens'],
-          anthropicDefaultMaxTokens);
+      expect(payload(target(Vendors.anthropicRest))['max_tokens'], anthropicDefaultMaxTokens);
     });
 
     test('the stored cap replaces the constant', () {
-      expect(
-          payload(target(Vendors.anthropicRest, maxOutputTokens: 65536))[
-              'max_tokens'],
-          65536);
+      expect(payload(target(Vendors.anthropicRest, maxOutputTokens: 65536))['max_tokens'], 65536);
     });
 
     test('the probe\'s one token wins over the stored cap', () {
       expect(
-          payload(target(Vendors.anthropicRest, maxOutputTokens: 65536),
-              options: const {'maxTokens': 1})['max_tokens'],
-          1);
+        payload(
+          target(Vendors.anthropicRest, maxOutputTokens: 65536),
+          options: const {'maxTokens': 1},
+        )['max_tokens'],
+        1,
+      );
     });
 
     test('the budget dialect carves its half out of the raised cap', () {
       final body = payload(
-        target(Vendors.anthropicRest,
-            maxOutputTokens: 65536, effort: ReasoningEffort.medium),
+        target(Vendors.anthropicRest, maxOutputTokens: 65536, effort: ReasoningEffort.medium),
         dialect: ThinkingDialect.anthropicBudget,
       );
       expect(body['max_tokens'], 65536);
@@ -190,23 +193,32 @@ void main() {
 
   group('C2 DashScope native', () {
     Map<String, dynamic> params(LLMTarget t, [Map<String, dynamic>? options]) =>
-        (buildDashScopeChatPayload(t, history,
-                options: options, multimodal: false, isStreaming: false)['parameters']
-            as Map)
+        (buildDashScopeChatPayload(
+                  t,
+                  history,
+                  options: options,
+                  multimodal: false,
+                  isStreaming: false,
+                )['parameters']
+                as Map)
             .cast<String, dynamic>();
 
     test('no cap set sends no max_tokens', () {
-      expect(params(target(Vendors.dashscopeNative)).containsKey('max_tokens'),
-          isFalse);
+      expect(params(target(Vendors.dashscopeNative)).containsKey('max_tokens'), isFalse);
     });
 
     test('the stored cap goes into parameters, not the top level', () {
       final t = target(Vendors.dashscopeNative, maxOutputTokens: 32768);
       expect(params(t)['max_tokens'], 32768);
       expect(
-          buildDashScopeChatPayload(t, history,
-              multimodal: false, isStreaming: false).containsKey('max_tokens'),
-          isFalse);
+        buildDashScopeChatPayload(
+          t,
+          history,
+          multimodal: false,
+          isStreaming: false,
+        ).containsKey('max_tokens'),
+        isFalse,
+      );
     });
   });
 
@@ -216,8 +228,7 @@ void main() {
     Duration deadline(LLMTarget t, [Map<String, dynamic>? options]) =>
         dispatcher.generateTimeout(t.config, options: options);
 
-    test('a stored cap sizes the non-streaming deadline like a request option',
-        () {
+    test('a stored cap sizes the non-streaming deadline like a request option', () {
       final byOption = deadline(target(Vendors.openAIRest), const {'maxTokens': 65536});
       final byModel = deadline(target(Vendors.openAIRest, maxOutputTokens: 65536));
       expect(byModel, byOption);

@@ -8,9 +8,9 @@ void main() {
   const seed = Colors.indigo;
 
   Widget host(Widget child) => MaterialApp(
-        theme: buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light),
-        home: Scaffold(body: Center(child: child)),
-      );
+    theme: buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light),
+    home: Scaffold(body: Center(child: child)),
+  );
 
   testWidgets('typing reports through onChanged', (tester) async {
     String? changed;

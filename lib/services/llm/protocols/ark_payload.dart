@@ -103,8 +103,10 @@ Map<String, dynamic> buildArkImagePayload({
     // A transparent result is PNG by definition; asking for JPEG beside
     // `background: transparent` is a documented 400.
     if (format != null && format != 'png') {
-      warn?.call('Transparent-layer editing always outputs PNG; '
-          'sending output_format png instead of $format.');
+      warn?.call(
+        'Transparent-layer editing always outputs PNG; '
+        'sending output_format png instead of $format.',
+      );
     }
     body['output_format'] = 'png';
   } else if (format == 'png' || format == 'jpeg') {
@@ -138,8 +140,9 @@ Map<String, dynamic> buildArkImagePayload({
 void _requireSingleReference(List<String> refs, String mode) {
   if (refs.length == 1) return;
   throw LLMApiException(
-      '$mode needs exactly one reference image; this request has '
-      '${refs.length}. Nothing was sent.');
+    '$mode needs exactly one reference image; this request has '
+    '${refs.length}. Nothing was sent.',
+  );
 }
 
 /// The `size` field: the tier alone when no ratio is chosen (the model reads
@@ -148,32 +151,43 @@ void _requireSingleReference(List<String> refs, String mode) {
 /// first tier, which the tables list as upstream's default
 /// (`ModelCapabilities.tierPixelSizes`) — and which is the only one for a
 /// version that has no tier control.
-String? _arkSize(String? tier, String? ratio,
-    Map<String, Map<String, String>> tierPixelSizes,
-    void Function(String message)? warn) {
+String? _arkSize(
+  String? tier,
+  String? ratio,
+  Map<String, Map<String, String>> tierPixelSizes,
+  void Function(String message)? warn,
+) {
   final hasTier = !_unset(tier);
   if (_unset(ratio)) return hasTier ? tier : null;
   final key = hasTier ? tier! : tierPixelSizes.keys.firstOrNull;
   final pixels = key == null ? null : tierPixelSizes[key]?[ratio];
   if (pixels != null) return pixels;
-  warn?.call('No documented size for aspect ratio $ratio at '
-      '${key ?? 'the default tier'}; letting the model choose the ratio.');
+  warn?.call(
+    'No documented size for aspect ratio $ratio at '
+    '${key ?? 'the default tier'}; letting the model choose the ratio.',
+  );
   return hasTier ? tier : null;
 }
 
 /// Group generation: `maxImages` of 1 (or none) sends nothing; more turns it
 /// on with that ceiling, tightened so references plus results stay within
 /// [arkMaxImagesPerRequest].
-void _applyGroup(Map<String, dynamic> body, Map<String, dynamic>? options,
-    int referenceCount, void Function(String message)? warn) {
+void _applyGroup(
+  Map<String, dynamic> body,
+  Map<String, dynamic>? options,
+  int referenceCount,
+  void Function(String message)? warn,
+) {
   final asked = int.tryParse(_opt(options, 'maxImages') ?? '') ?? 1;
   if (asked <= 1) return;
   final room = arkMaxImagesPerRequest - referenceCount;
   final ceiling = asked > room ? room : asked;
   if (ceiling < asked) {
-    warn?.call('Group generation is capped at $arkMaxImagesPerRequest images '
-        'including references; $referenceCount reference(s) leave room for '
-        '$ceiling, not $asked.');
+    warn?.call(
+      'Group generation is capped at $arkMaxImagesPerRequest images '
+      'including references; $referenceCount reference(s) leave room for '
+      '$ceiling, not $asked.',
+    );
   }
   if (ceiling <= 1) return;
   body['sequential_image_generation'] = 'auto';
@@ -199,14 +213,12 @@ class ArkImageItem {
   /// image's pixels. Null for the base and outside that mode.
   final LayerBox? box;
 
-  const ArkImageItem(this.ref,
-      {this.zIndex, this.name, this.description, this.box});
+  const ArkImageItem(this.ref, {this.zIndex, this.name, this.description, this.box});
 
   /// This image's place in a decomposition, or null outside that mode.
   GeneratedImageLayer? get layer => zIndex == null
       ? null
-      : GeneratedImageLayer(
-          zIndex: zIndex!, name: name, description: description, box: box);
+      : GeneratedImageLayer(zIndex: zIndex!, name: name, description: description, box: box);
 }
 
 /// One `data[]` item (or a stream's `partial_succeeded` event) that carries
@@ -220,11 +232,13 @@ ArkImageItem? _imageItemFrom(Map item) {
   if (ref == null) return null;
   final z = item['z_index'];
   final bbox = item['bounding_box'];
-  return ArkImageItem(ref,
-      zIndex: z is num ? z.toInt() : null,
-      name: _nonEmpty(item['name']),
-      description: _nonEmpty(item['description']),
-      box: bbox is Map ? LayerBox.fromList(bbox['absolute']) : null);
+  return ArkImageItem(
+    ref,
+    zIndex: z is num ? z.toInt() : null,
+    name: _nonEmpty(item['name']),
+    description: _nonEmpty(item['description']),
+    box: bbox is Map ? LayerBox.fromList(bbox['absolute']) : null,
+  );
 }
 
 String? _nonEmpty(Object? v) => v is String && v.isNotEmpty ? v : null;
@@ -266,8 +280,7 @@ ArkImageResult parseArkImageResponse(Map<String, dynamic> body) {
     if (item is! Map) continue;
     final err = item['error'];
     if (err is Map) {
-      failures.add(ArkImageFailure(
-          '${err['code'] ?? ''}', '${err['message'] ?? 'unknown error'}'));
+      failures.add(ArkImageFailure('${err['code'] ?? ''}', '${err['message'] ?? 'unknown error'}'));
       continue;
     }
     final image = _imageItemFrom(item);
@@ -287,8 +300,7 @@ ArkImageResult parseArkImageResponse(Map<String, dynamic> body) {
       ..addAll(indexed.map((e) => e.$2));
   }
   final usage = body['usage'];
-  return ArkImageResult(images, failures,
-      usage is Map ? usage.cast<String, dynamic>() : const {});
+  return ArkImageResult(images, failures, usage is Map ? usage.cast<String, dynamic>() : const {});
 }
 
 /// The response metadata for one Ark request that delivered [delivered]
@@ -320,8 +332,7 @@ Map<String, dynamic> arkResultMetadata({
     'image_count': delivered,
     if (failed > 0) 'failed_images': failed,
     if (usage.isNotEmpty) 'ark_usage': usage,
-    if (billed is num && billed.isFinite && billed > 0)
-      billedImageCountKey: billed.toInt(),
+    if (billed is num && billed.isFinite && billed > 0) billedImageCountKey: billed.toInt(),
     ...sentInputImages(refCount, reported: usage['input_images']),
   };
 }
@@ -373,12 +384,12 @@ ArkStreamEvent? parseArkStreamEvent(Map<String, dynamic> data) {
     case 'image_generation.partial_failed':
       final err = data['error'];
       final source = err is Map ? err : data;
-      return ArkStreamFailure(ArkImageFailure('${source['code'] ?? ''}',
-          '${source['message'] ?? 'unknown error'}'));
+      return ArkStreamFailure(
+        ArkImageFailure('${source['code'] ?? ''}', '${source['message'] ?? 'unknown error'}'),
+      );
     case 'image_generation.completed':
       final usage = data['usage'];
-      return ArkStreamCompleted(
-          usage is Map ? usage.cast<String, dynamic>() : const {});
+      return ArkStreamCompleted(usage is Map ? usage.cast<String, dynamic>() : const {});
     default:
       return null;
   }

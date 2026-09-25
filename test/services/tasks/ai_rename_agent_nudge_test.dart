@@ -37,17 +37,27 @@ void main() {
           case 1:
             return LLMResponse(text: 'Sure, happy to help.');
           case 2:
-            return LLMResponse(text: '', toolCalls: [
-              LLMToolCall(id: 'r1', name: 'rename_file', arguments: const {'id': 1, 'new_name': 'b.png'}),
-            ]);
+            return LLMResponse(
+              text: '',
+              toolCalls: [
+                LLMToolCall(
+                  id: 'r1',
+                  name: 'rename_file',
+                  arguments: const {'id': 1, 'new_name': 'b.png'},
+                ),
+              ],
+            );
           default:
             return LLMResponse(text: 'Done.');
         }
       },
     );
     expect(seen.length, 3);
-    expect(seen[1].last.role, LLMRole.user,
-        reason: 'the nudge is a user message after the text-only reply');
+    expect(
+      seen[1].last.role,
+      LLMRole.user,
+      reason: 'the nudge is a user message after the text-only reply',
+    );
     expect(seen[1].length, greaterThan(seen[0].length));
     expect(proposals.single.newName, 'b.png');
   });
@@ -60,9 +70,10 @@ void main() {
       request: (messages, tools) async {
         requests++;
         if (requests == 1) {
-          return LLMResponse(text: '', toolCalls: [
-            LLMToolCall(id: 'l1', name: 'list_files', arguments: const {}),
-          ]);
+          return LLMResponse(
+            text: '',
+            toolCalls: [LLMToolCall(id: 'l1', name: 'list_files', arguments: const {})],
+          );
         }
         return LLMResponse(text: 'Nothing needs renaming.');
       },

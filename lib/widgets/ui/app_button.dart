@@ -201,18 +201,18 @@ class AppButton extends StatelessWidget {
       // was 20, and the button came out as tall as its label, a 22px pill
       // that changed height with the glyph beside it (`1c` 更改 vs `2a` 查看).
       AppButtonSize.compact => (
-          AppSize.compact,
-          const EdgeInsets.symmetric(horizontal: 10),
-          textTheme.labelMedium,
-        ),
+        AppSize.compact,
+        const EdgeInsets.symmetric(horizontal: 10),
+        textTheme.labelMedium,
+      ),
       AppButtonSize.normal => (AppSize.control, null, null),
       // A screen's main action carries a little more weight than the buttons
       // beside it; several of these had spelled that out as a bold label.
       AppButtonSize.large => (
-          AppSize.large,
-          const EdgeInsets.symmetric(horizontal: 20),
-          textTheme.titleMedium,
-        ),
+        AppSize.large,
+        const EdgeInsets.symmetric(horizontal: 20),
+        textTheme.titleMedium,
+      ),
     };
 
     return ButtonStyle(
@@ -241,7 +241,10 @@ class AppButton extends StatelessWidget {
       final spinner = SizedBox(
         width: 16,
         height: 16,
-        child: CircularProgressIndicator(strokeWidth: 2, color: _foregroundColor(context, colorScheme)),
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          color: _foregroundColor(context, colorScheme),
+        ),
       );
       return _button(style: style, onPressed: effectiveOnPressed, child: spinner);
     }
@@ -264,7 +267,11 @@ class AppButton extends StatelessWidget {
     return _button(style: style, onPressed: effectiveOnPressed, child: _label());
   }
 
-  Widget _button({required ButtonStyle? style, required VoidCallback? onPressed, required Widget child}) {
+  Widget _button({
+    required ButtonStyle? style,
+    required VoidCallback? onPressed,
+    required Widget child,
+  }) {
     switch (variant) {
       case AppButtonVariant.primary:
       case AppButtonVariant.destructive:
@@ -275,24 +282,29 @@ class AppButton extends StatelessWidget {
       case AppButtonVariant.secondary:
       case AppButtonVariant.tonal:
       case AppButtonVariant.destructiveOutline:
-        return OutlinedButton(style: style, onPressed: onPressed, autofocus: autofocus, child: child);
+        return OutlinedButton(
+          style: style,
+          onPressed: onPressed,
+          autofocus: autofocus,
+          child: child,
+        );
     }
   }
 
   double get _iconSize => switch (size) {
-        AppButtonSize.compact => AppSize.iconSm,
-        AppButtonSize.normal => AppSize.iconMd,
-        AppButtonSize.large => AppSize.iconLg,
-      };
+    AppButtonSize.compact => AppSize.iconSm,
+    AppButtonSize.normal => AppSize.iconMd,
+    AppButtonSize.large => AppSize.iconLg,
+  };
 
   /// Between the glyph and the label. Composed here rather than through the
   /// `.icon` constructors, which fix it at Material's 8: the compact skin
   /// (`E1` row buttons) closes it to 6, and the label's leading edge is the
   /// one thing a row of these buttons has to agree on.
   double get _iconGap => switch (size) {
-        AppButtonSize.compact => AppSpace.s6,
-        AppButtonSize.normal || AppButtonSize.large => 8,
-      };
+    AppButtonSize.compact => AppSpace.s6,
+    AppButtonSize.normal || AppButtonSize.large => 8,
+  };
 
   ButtonStyle? _styleFor(BuildContext context, ColorScheme colorScheme) {
     switch (variant) {

@@ -79,22 +79,23 @@ void main() {
 
   group('task rows', () {
     TaskItem download(String id, Map<String, dynamic> params) => TaskItem(
-          id: id,
-          type: TaskType.imageDownload,
-          imagePaths: const [],
-          modelId: 'm',
-          parameters: params,
-          createdAt: now,
-        );
+      id: id,
+      type: TaskType.imageDownload,
+      imagePaths: const [],
+      modelId: 'm',
+      parameters: params,
+      createdAt: now,
+    );
 
     Future<Map<String, dynamic>> storedParams(String id) async {
-      final rows = await (await db.database)
-          .query('tasks', where: 'id = ?', whereArgs: [id]);
+      final rows = await (await db.database).query('tasks', where: 'id = ?', whereArgs: [id]);
       return jsonDecode(rows.single['parameters'] as String) as Map<String, dynamic>;
     }
 
     test('a saved download keeps everything but its cookies', () async {
-      await tasks.saveTask(download('t1', {'url': 'https://a.example/p', 'cookies': 'sid=1', 'prefix': 'x'}));
+      await tasks.saveTask(
+        download('t1', {'url': 'https://a.example/p', 'cookies': 'sid=1', 'prefix': 'x'}),
+      );
       final params = await storedParams('t1');
       expect(params.containsKey('cookies'), isFalse);
       expect(params['url'], 'https://a.example/p');
@@ -103,16 +104,21 @@ void main() {
 
     test('rows written before the rule are scrubbed', () async {
       await (await db.database).insert(
-          'tasks', download('t2', {'url': 'u', 'cookies': 'sid=2'}).toMap(),
-          conflictAlgorithm: ConflictAlgorithm.replace);
+        'tasks',
+        download('t2', {'url': 'u', 'cookies': 'sid=2'}).toMap(),
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
       await tasks.scrubStoredCookies();
       expect((await storedParams('t2')).containsKey('cookies'), isFalse);
     });
 
     test('a download queued without cookies keeps saying so', () async {
       await tasks.saveTask(download('t3', {'url': 'https://a.example/p', 'cookies': ''}));
-      expect((await storedParams('t3'))['cookies'], '',
-          reason: 'a missing key would make a restored task borrow the saved cookies');
+      expect(
+        (await storedParams('t3'))['cookies'],
+        '',
+        reason: 'a missing key would make a restored task borrow the saved cookies',
+      );
       await tasks.scrubStoredCookies();
       expect((await storedParams('t3'))['cookies'], '');
     });

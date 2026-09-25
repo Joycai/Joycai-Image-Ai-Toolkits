@@ -14,8 +14,8 @@ List<String> imagenImageRefs(Object? predictions) {
   for (final prediction in predictions) {
     if (prediction is! Map) continue;
     final nested = prediction['image'];
-    final raw = prediction['bytesBase64Encoded'] ??
-        (nested is Map ? nested['bytesBase64Encoded'] : null);
+    final raw =
+        prediction['bytesBase64Encoded'] ?? (nested is Map ? nested['bytesBase64Encoded'] : null);
     if (raw is String && raw.trim().isNotEmpty) refs.add(raw);
   }
   return refs;
@@ -34,8 +34,7 @@ class GeminiImagenProtocol implements ImageGenProtocol {
   }) async {
     final config = target.config;
     final baseUrl = trimBaseUrl(config.endpoint);
-    final url = target.decorateUrl(
-        Uri.parse('$baseUrl/models/${config.modelId}:predict'));
+    final url = target.decorateUrl(Uri.parse('$baseUrl/models/${config.modelId}:predict'));
     logger?.call('Preparing Imagen request to: ${url.host}', level: 'DEBUG');
 
     // Imagen is text-to-image only — surface (rather than silently drop) any
@@ -53,7 +52,9 @@ class GeminiImagenProtocol implements ImageGenProtocol {
 
     final headers = target.headers();
     final payload = prepareImagenPayload(
-        history, optionsWithCheckedSize(target, options, logger: logger));
+      history,
+      optionsWithCheckedSize(target, options, logger: logger),
+    );
 
     final client = config.createClient();
     try {
@@ -66,8 +67,13 @@ class GeminiImagenProtocol implements ImageGenProtocol {
         });
       }
 
-      final response = await sendJsonRequest(client, url,
-          headers: headers, body: jsonEncode(payload), options: options);
+      final response = await sendJsonRequest(
+        client,
+        url,
+        headers: headers,
+        body: jsonEncode(payload),
+        options: options,
+      );
 
       if (debugFile != null) {
         await LLMDebugLogger.appendLine(debugFile, 'Status: ${response.statusCode}');
@@ -89,8 +95,10 @@ class GeminiImagenProtocol implements ImageGenProtocol {
         // decodable image (missing predictions, filtered prompt) is a
         // failure, not an empty success the caller reads as "nothing to do".
         final body = response.body;
-        throw LLMApiException('Imagen returned no image data: '
-            '${body.length > 500 ? '${body.substring(0, 500)}…' : body}');
+        throw LLMApiException(
+          'Imagen returned no image data: '
+          '${body.length > 500 ? '${body.substring(0, 500)}…' : body}',
+        );
       }
 
       logger?.call('Imagen parse complete. Images: ${images.length}', level: 'DEBUG');

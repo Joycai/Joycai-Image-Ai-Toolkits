@@ -30,20 +30,32 @@ void main() {
         final offered = tools!.map((t) => t.name).toSet();
         expect(offered, isNot(contains('read_note')));
         expect(offered, isNot(contains('write_knowledge_file')));
-        return LLMResponse(text: '', toolCalls: [
-          LLMToolCall(id: 'a', name: 'read_note', arguments: const {'note_id': 1}),
-          LLMToolCall(
-              id: 'b', name: 'write_knowledge_file', arguments: const {'path': 'a.md', 'content': 'x'}),
-        ]);
+        return LLMResponse(
+          text: '',
+          toolCalls: [
+            LLMToolCall(id: 'a', name: 'read_note', arguments: const {'note_id': 1}),
+            LLMToolCall(
+              id: 'b',
+              name: 'write_knowledge_file',
+              arguments: const {'path': 'a.md', 'content': 'x'},
+            ),
+          ],
+        );
       }
       followUp = List.of(messages);
       return LLMResponse(text: 'ok');
     };
 
     await PromptOptimizerAgent.runTurn(
-        session: session, modelIdentifier: 'm', referenceImages: const []);
+      session: session,
+      modelIdentifier: 'm',
+      referenceImages: const [],
+    );
 
-    final results = [for (final m in followUp!) if (m.role == LLMRole.tool) m];
+    final results = [
+      for (final m in followUp!)
+        if (m.role == LLMRole.tool) m,
+    ];
     expect(results.map((m) => m.toolCallId), ['a', 'b'], reason: 'still paired');
     for (final r in results) {
       final decoded = jsonDecode(r.content) as Map;
@@ -60,15 +72,21 @@ void main() {
     PromptOptimizerAgent.debugRequestOverride = (messages, tools, options) async {
       requests++;
       if (requests == 1) {
-        return LLMResponse(text: '', toolCalls: [
-          LLMToolCall(id: 's', name: 'submit_prompt', arguments: const {'prompt': 'a cat'}),
-        ]);
+        return LLMResponse(
+          text: '',
+          toolCalls: [
+            LLMToolCall(id: 's', name: 'submit_prompt', arguments: const {'prompt': 'a cat'}),
+          ],
+        );
       }
       return LLMResponse(text: 'done');
     };
 
     await PromptOptimizerAgent.runTurn(
-        session: session, modelIdentifier: 'm', referenceImages: const []);
+      session: session,
+      modelIdentifier: 'm',
+      referenceImages: const [],
+    );
     expect(session.refinedPrompt, 'a cat');
   });
 }

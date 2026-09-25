@@ -70,8 +70,7 @@ void main() {
   }
 
   test('a request is handed over once', () {
-    final app = AppState()
-      ..navigateToScreen(4, systemTemplateType: SystemPrompt.typeRefiner);
+    final app = AppState()..navigateToScreen(4, systemTemplateType: SystemPrompt.typeRefiner);
     expect(app.takeSystemTemplateRequest(), SystemPrompt.typeRefiner);
     expect(app.takeSystemTemplateRequest(), isNull);
   });
@@ -88,11 +87,8 @@ void main() {
     ('desktop', const Size(1440, 900)),
     ('phone', const Size(390, 800)),
   ]) {
-    testWidgets('$name: a request opens the templates on that type, once', (
-      tester,
-    ) async {
-      final app = AppState()
-        ..navigateToScreen(4, systemTemplateType: SystemPrompt.typeRefiner);
+    testWidgets('$name: a request opens the templates on that type, once', (tester) async {
+      final app = AppState()..navigateToScreen(4, systemTemplateType: SystemPrompt.typeRefiner);
 
       await pumpLibrary(tester, app, size);
       expect(shownView(tester), 1);
@@ -106,9 +102,7 @@ void main() {
     });
   }
 
-  testWidgets('a type the filter does not offer opens the ordinary library', (
-    tester,
-  ) async {
+  testWidgets('a type the filter does not offer opens the ordinary library', (tester) async {
     final app = AppState()..navigateToScreen(4, systemTemplateType: 'refine');
 
     await pumpLibrary(tester, app, const Size(1440, 900));

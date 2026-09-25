@@ -11,11 +11,16 @@ import '../../models/browser_file.dart';
 extension FileCategoryGlyph on FileCategory {
   IconData get icon {
     switch (this) {
-      case FileCategory.image: return Icons.image;
-      case FileCategory.video: return Icons.movie;
-      case FileCategory.audio: return Icons.audiotrack;
-      case FileCategory.text: return Icons.description;
-      default: return Icons.insert_drive_file;
+      case FileCategory.image:
+        return Icons.image;
+      case FileCategory.video:
+        return Icons.movie;
+      case FileCategory.audio:
+        return Icons.audiotrack;
+      case FileCategory.text:
+        return Icons.description;
+      default:
+        return Icons.insert_drive_file;
     }
   }
 }

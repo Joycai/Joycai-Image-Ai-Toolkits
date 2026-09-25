@@ -61,13 +61,14 @@ void main() {
     return parts.length == 1 ? '<root>' : parts.first;
   }
 
-  final dartFiles = libDir
-      .listSync(recursive: true)
-      .whereType<File>()
-      .map((f) => p.normalize(f.path))
-      .where((f) => f.endsWith('.dart'))
-      .toList()
-    ..sort();
+  final dartFiles =
+      libDir
+          .listSync(recursive: true)
+          .whereType<File>()
+          .map((f) => p.normalize(f.path))
+          .where((f) => f.endsWith('.dart'))
+          .toList()
+        ..sort();
 
   // A directive URI as written, with the line it was written on.
   final directive = RegExp(r"^\s*(?:import|export|part)\s+'([^']+)'", multiLine: true);
@@ -93,8 +94,10 @@ void main() {
         final ups = RegExp(r'^(?:\.\./)+').firstMatch(uri)?.group(0);
         final depth = p.split(p.relative(dir, from: 'lib')).where((s) => s != '.').length;
         if (ups != null && (ups.length ~/ 3) > depth) {
-          overDeep.add("$file:$line  '$uri' climbs ${ups.length ~/ 3} "
-              'but sits $depth level(s) below lib/');
+          overDeep.add(
+            "$file:$line  '$uri' climbs ${ups.length ~/ 3} "
+            'but sits $depth level(s) below lib/',
+          );
         }
 
         final target = p.normalize(p.join(dir, uri));
@@ -110,7 +113,8 @@ void main() {
     expect(
       unranked,
       isEmpty,
-      reason: 'new top-level director${unranked.length == 1 ? 'y' : 'ies'} under lib/ '
+      reason:
+          'new top-level director${unranked.length == 1 ? 'y' : 'ies'} under lib/ '
           '($unranked) — decide where they sit in the layering and add them to `rank`',
     );
   });
@@ -124,14 +128,17 @@ void main() {
       final fromRank = rank[from]!;
       final toRank = rank[to]!;
       if (toRank >= fromRank) {
-        violations.add('${edge.from}:${edge.line}  $from (rank $fromRank) -> '
-            "$to (rank $toRank)   import '${edge.uri}'");
+        violations.add(
+          '${edge.from}:${edge.line}  $from (rank $fromRank) -> '
+          "$to (rank $toRank)   import '${edge.uri}'",
+        );
       }
     }
     expect(
       violations,
       isEmpty,
-      reason: 'these imports run against the layering:\n  ${violations.join('\n  ')}\n\n'
+      reason:
+          'these imports run against the layering:\n  ${violations.join('\n  ')}\n\n'
           'Move the file to the layer it belongs in — a shared widget that needs a '
           'feature screen usually wants the dependency injected instead.',
     );
@@ -174,7 +181,8 @@ void main() {
     expect(
       leaked,
       isEmpty,
-      reason: 'the foundation layer reached upwards:\n  ${leaked.join('\n  ')}\n\n'
+      reason:
+          'the foundation layer reached upwards:\n  ${leaked.join('\n  ')}\n\n'
           'A presentation helper that needs a service type is not foundational — '
           '`backup_error_text`, `context_usage_palette` and `task_type_glyph` all '
           'moved to lib/widgets/ for this reason.',
@@ -199,7 +207,8 @@ void main() {
     expect(
       leaked,
       isEmpty,
-      reason: 'a model reached for the framework:\n  ${leaked.join('\n  ')}\n\n'
+      reason:
+          'a model reached for the framework:\n  ${leaked.join('\n  ')}\n\n'
           'A model says what a thing is; how it looks is a widget-layer extension — '
           '`BrowserFile.icon` and `AppImage.imageProvider` moved to '
           'lib/widgets/files/file_visuals.dart for this reason.',
@@ -210,7 +219,8 @@ void main() {
     expect(
       overDeep,
       isEmpty,
-      reason: 'Dart clamps `..` at the package root, so these resolve anyway and '
+      reason:
+          'Dart clamps `..` at the package root, so these resolve anyway and '
           'will keep resolving however many are added — but they claim a depth the '
           'file does not have:\n  ${overDeep.join('\n  ')}',
     );
@@ -250,7 +260,8 @@ void main() {
     expect(
       loose,
       isEmpty,
-      reason: 'these sit in a grouped directory\'s root:\n  ${loose.join('\n  ')}\n\n'
+      reason:
+          'these sit in a grouped directory\'s root:\n  ${loose.join('\n  ')}\n\n'
           'Put the file in the folder whose domain it belongs to, or add a '
           'folder and say in the commit what it is for. A shared widget used by '
           'exactly one screen is not shared — it belongs under that screen.',
@@ -269,7 +280,8 @@ void main() {
     expect(
       violations,
       isEmpty,
-      reason: 'the design system reached outside the foundation:\n'
+      reason:
+          'the design system reached outside the foundation:\n'
           '  ${violations.join('\n  ')}\n\n'
           'Either the primitive is not one — move it to the feature folder that '
           'owns it — or the thing it needs belongs lower down. `TagAvatar` came '
@@ -289,11 +301,11 @@ void main() {
       (importers[edge.to] ??= <String>{}).add(edge.from);
     }
     String? consumerOf(String file) => switch (moduleOf(file)) {
-          'screens' => 'screens/${p.split(p.relative(file, from: 'lib'))[1]}',
-          'bench' => 'bench',
-          '<root>' => 'main.dart',
-          _ => null,
-        };
+      'screens' => 'screens/${p.split(p.relative(file, from: 'lib'))[1]}',
+      'bench' => 'bench',
+      '<root>' => 'main.dart',
+      _ => null,
+    };
     Set<String> consumersOf(String file) {
       final found = <String>{};
       final seen = {file};
@@ -325,7 +337,8 @@ void main() {
     expect(
       stranded,
       isEmpty,
-      reason: 'these sit in widgets/ but one screen is all that uses them:\n'
+      reason:
+          'these sit in widgets/ but one screen is all that uses them:\n'
           '  ${stranded.join('\n  ')}\n\n'
           '`lib/widgets/` means more than one feature uses it. Move the file under '
           'the screen that owns it (its test follows, into the mirrored folder); '
@@ -367,16 +380,19 @@ void main() {
       // file's own directory: the one that covers the whole suite can live
       // nowhere but here.
       if (folder == '<root>') {
-        return !const {'source_layout_test.dart', 'flutter_test_config.dart'}.contains(p.basename(f));
+        return !const {
+          'source_layout_test.dart',
+          'flutter_test_config.dart',
+        }.contains(p.basename(f));
       }
       return groupedTestDirs.contains(folder);
-    }).toList()
-      ..sort();
+    }).toList()..sort();
 
     expect(
       loose,
       isEmpty,
-      reason: 'these sit loose instead of in the folder mirroring lib/:\n  ${loose.join('\n  ')}\n\n'
+      reason:
+          'these sit loose instead of in the folder mirroring lib/:\n  ${loose.join('\n  ')}\n\n'
           'test/ holds nothing in its own root but source_layout_test.dart and '
           'flutter_test_config.dart, and '
           'test/services/, test/widgets/ and test/screens/ hold nothing in their own '
@@ -392,20 +408,22 @@ void main() {
 
     // Every directory at every depth, so `test/core/foo/` and
     // `test/services/llm/bogus/` are caught as well as `test/bogus/`.
-    final unmirrored = Directory('test')
-        .listSync(recursive: true)
-        .whereType<Directory>()
-        .map((d) => p.split(p.relative(d.path, from: 'test')))
-        .where((parts) => !extraTestDirs.contains(parts.first))
-        .where((parts) => !Directory(p.joinAll(['lib', ...parts])).existsSync())
-        .map((parts) => 'test/${parts.join('/')}')
-        .toList()
-      ..sort();
+    final unmirrored =
+        Directory('test')
+            .listSync(recursive: true)
+            .whereType<Directory>()
+            .map((d) => p.split(p.relative(d.path, from: 'test')))
+            .where((parts) => !extraTestDirs.contains(parts.first))
+            .where((parts) => !Directory(p.joinAll(['lib', ...parts])).existsSync())
+            .map((parts) => 'test/${parts.join('/')}')
+            .toList()
+          ..sort();
 
     expect(
       unmirrored,
       isEmpty,
-      reason: 'these test/ directories name no lib/ counterpart:\n  ${unmirrored.join('\n  ')}\n\n'
+      reason:
+          'these test/ directories name no lib/ counterpart:\n  ${unmirrored.join('\n  ')}\n\n'
           'Every directory under test/, at any depth, has a lib/ directory of the same path, '
           'or sits under one of the agreed extras ($extraTestDirs). One with nothing on the '
           'lib/ side is a typo or a leftover, not a home for a test. (A scratch folder such as '

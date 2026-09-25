@@ -4,8 +4,7 @@ import 'package:joycai_image_ai_toolkits/services/system/runtime_info.dart';
 /// `RuntimeInfo`: what the About page's 「运行信息」 block reports, and the block
 /// the Copy button puts on the clipboard (`E1 · 2a`).
 void main() {
-  const String windowsDart =
-      '3.13.2 (stable) (Tue Sep 9 2026) on "windows_x64"';
+  const String windowsDart = '3.13.2 (stable) (Tue Sep 9 2026) on "windows_x64"';
   const String macDart = '3.13.2 (stable) (Tue Sep 9 2026) on "macos_arm64"';
 
   group('describeEngine', () {
@@ -75,12 +74,15 @@ void main() {
     );
 
     test('is the four lines an issue needs, labelled in English', () {
-      expect(info.report, '''
+      expect(
+        info.report,
+        '''
 Version: 4.0.0 (build 0)
 Engine: Dart 3.13.2
 Platform: Windows 11 Pro 10.0 (Build 26200) · x64
 Data directory: C:\\Users\\me\\AppData\\Roaming\\Joycai'''
-          .trim());
+            .trim(),
+      );
     });
 
     test('a platform reporting no build number says the version alone', () {

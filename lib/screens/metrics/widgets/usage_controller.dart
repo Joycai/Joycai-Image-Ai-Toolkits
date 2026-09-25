@@ -20,8 +20,8 @@ class UsageController extends ChangeNotifier {
     this.pageSize = 100,
     this.createCheckpoints = false,
     DatabaseService? database,
-  })  : _models = models,
-        _db = database ?? DatabaseService();
+  }) : _models = models,
+       _db = database ?? DatabaseService();
 
   final List<LLMModel> Function() _models;
   final DatabaseService _db;
@@ -131,17 +131,18 @@ class UsageController extends ChangeNotifier {
   Future<void> _maybeCreateCheckpoint(UsageStats currentStats) async {
     try {
       final last = await _db.getLatestUsageCheckpoint();
-      if (last == null ||
-          DateTime.now().difference(last.timestamp).inDays >= 1) {
-        await _db.saveUsageCheckpoint(UsageCheckpoint(
-          timestamp: DateTime.now(),
-          totalInputTokens: currentStats.totalInput,
-          totalCacheTokens: currentStats.totalCache,
-          totalOutputTokens: currentStats.totalOutput,
-          totalRequestCount: currentStats.totalRequestCount,
-          totalCost: currentStats.totalCost,
-          groupCosts: currentStats.groupCosts,
-        ));
+      if (last == null || DateTime.now().difference(last.timestamp).inDays >= 1) {
+        await _db.saveUsageCheckpoint(
+          UsageCheckpoint(
+            timestamp: DateTime.now(),
+            totalInputTokens: currentStats.totalInput,
+            totalCacheTokens: currentStats.totalCache,
+            totalOutputTokens: currentStats.totalOutput,
+            totalRequestCount: currentStats.totalRequestCount,
+            totalCost: currentStats.totalCost,
+            groupCosts: currentStats.groupCosts,
+          ),
+        );
       }
     } catch (_) {
       // Checkpoint persistence is best-effort; it must never break the view.

@@ -127,11 +127,8 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
     _outline.attach(_scroll);
   }
 
-  Future<void> _jumpToSection(int index) => _outline.scrollTo(
-        index,
-        duration: AppMotion.sceneOf(context),
-        curve: AppMotion.emphasized,
-      );
+  Future<void> _jumpToSection(int index) =>
+      _outline.scrollTo(index, duration: AppMotion.sceneOf(context), curve: AppMotion.emphasized);
 
   /// Opens the tree to [path] and pulses its row; on a narrow window the
   /// tree is the drawer, so that opens first.
@@ -221,8 +218,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
       // and only for Escape — leaving it is not a text-editing act.
       if (_searchFocusNode.hasFocus &&
           AppShortcuts.byId(AppShortcutIds.exitSearch).matches(event)) {
-        final state =
-            Provider.of<AppState>(context, listen: false).fileBrowserState;
+        final state = Provider.of<AppState>(context, listen: false).fileBrowserState;
         _searchController.clear();
         state.setSearchQuery('');
         _searchFocusNode.unfocus();
@@ -280,9 +276,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
     if (Responsive.isNarrow(context)) {
       final scaffold = _scaffoldKey.currentState;
       if (scaffold == null) return;
-      scaffold.isEndDrawerOpen
-          ? scaffold.closeEndDrawer()
-          : scaffold.openEndDrawer();
+      scaffold.isEndDrawerOpen ? scaffold.closeEndDrawer() : scaffold.openEndDrawer();
       return;
     }
     setState(() => _stagingOpen = !_stagingOpen);
@@ -328,13 +322,10 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
     // files in their default apps is a trap, so those take the first and the
     // only one respectively.
     if (bound(AppShortcutIds.copyFileName) && state.selectedFiles.isNotEmpty) {
-      Clipboard.setData(ClipboardData(
-        text: state.selectedFiles.map((f) => f.name).join('\n'),
-      ));
+      Clipboard.setData(ClipboardData(text: state.selectedFiles.map((f) => f.name).join('\n')));
       return KeyEventResult.handled;
     }
-    if (bound(AppShortcutIds.revealInFileManager) &&
-        state.selectedFiles.isNotEmpty) {
+    if (bound(AppShortcutIds.revealInFileManager) && state.selectedFiles.isNotEmpty) {
       FileUtils.openFolder(state.selectedFiles.first.path);
       return KeyEventResult.handled;
     }
@@ -400,7 +391,11 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
                     style: textTheme.titleLarge?.copyWith(color: scheme.onSurface),
                   ),
                   const SizedBox(height: AppSpace.s10),
-                  Text(l10n.fileBrowserDesktopOnlyDesc, textAlign: TextAlign.center, style: bodyStyle),
+                  Text(
+                    l10n.fileBrowserDesktopOnlyDesc,
+                    textAlign: TextAlign.center,
+                    style: bodyStyle,
+                  ),
                   const SizedBox(height: AppSpace.s10),
                   Text(
                     Platform.isIOS ? l10n.fileBrowseriOSHint : l10n.fileBrowserAndroidHint,
@@ -409,7 +404,9 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
                   ),
                   const SizedBox(height: AppSpace.s22),
                   FilledButton(
-                    style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(AppSize.touch)),
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size.fromHeight(AppSize.touch),
+                    ),
                     onPressed: () =>
                         context.read<AppState>().navigateToScreen(AppDestination.workbench.index),
                     child: Text(l10n.goToWorkbench),
@@ -521,16 +518,18 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
               PanelResizer(
                 shape: PanelShape.column,
                 onDrag: (dx) => setState(() {
-                  _dragSidebarWidth = ((_dragSidebarWidth ?? _sidebarWidth) + dx)
-                      .clamp(_minSidebarWidth - _kDragSlack, _maxSidebarWidth + _kDragSlack);
+                  _dragSidebarWidth = ((_dragSidebarWidth ?? _sidebarWidth) + dx).clamp(
+                    _minSidebarWidth - _kDragSlack,
+                    _maxSidebarWidth + _kDragSlack,
+                  );
                   _sidebarWidth = _dragSidebarWidth!.clamp(_minSidebarWidth, _maxSidebarWidth);
                 }),
                 onDragEnd: () {
                   _dragSidebarWidth = null;
-                  context
-                      .read<AppState>()
-                      .uiPrefs
-                      .savePanelWidth(UiPanel.browserSidebar, _sidebarWidth);
+                  context.read<AppState>().uiPrefs.savePanelWidth(
+                    UiPanel.browserSidebar,
+                    _sidebarWidth,
+                  );
                 },
               ),
             ],
@@ -583,14 +582,12 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
                               autofocus: true,
                               onKeyEvent: _handleGridKeys,
                               child: _FileArea(
-                              pendingRefreshes: _pendingRefreshes,
-                              scrollController: _scroll,
-                              outline: _outline,
-                              onTap: (file) => _handleSelectionTap(browser, file),
-                              onDoubleTap: (file) =>
-                                  _openWithPreview(context, file, browser),
-                              onSecondaryTap: (file, pos) =>
-                                  _showContextMenu(context, file, pos),
+                                pendingRefreshes: _pendingRefreshes,
+                                scrollController: _scroll,
+                                outline: _outline,
+                                onTap: (file) => _handleSelectionTap(browser, file),
+                                onDoubleTap: (file) => _openWithPreview(context, file, browser),
+                                onSecondaryTap: (file, pos) => _showContextMenu(context, file, pos),
                               ),
                             ),
                           ),
@@ -725,8 +722,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
 /// header's button. Not `items` — the column reads those.
 typedef _StagingInputs = ({int count, String? destination});
 
-_StagingInputs _stagingInputs(FileStagingState s) =>
-    (count: s.count, destination: s.destination);
+_StagingInputs _stagingInputs(FileStagingState s) => (count: s.count, destination: s.destination);
 
 typedef _AreaInputs = ({
   List<BrowserFile> files,
@@ -738,13 +734,13 @@ typedef _AreaInputs = ({
 });
 
 _AreaInputs _areaInputs(FileBrowserState s) => (
-      files: s.filteredFiles,
-      sections: s.folderSections,
-      viewMode: s.viewMode,
-      thumbnailSize: s.thumbnailSize,
-      isScanning: s.isScanning,
-      hasFolders: s.sourceDirectories.isNotEmpty,
-    );
+  files: s.filteredFiles,
+  sections: s.folderSections,
+  viewMode: s.viewMode,
+  thumbnailSize: s.thumbnailSize,
+  isScanning: s.isScanning,
+  hasFolders: s.sourceDirectories.isNotEmpty,
+);
 
 /// What the outline bar draws: the folder runs and which of them the last
 /// scan could not read. Not the files, not the selection.
@@ -929,7 +925,11 @@ class _FileArea extends StatelessWidget {
         );
         final double cardWidth = math.max(
           1,
-          FolderOutlineGeometry.cellExtentFor(crossAxisExtent: usable, columns: columns, spacing: _gap),
+          FolderOutlineGeometry.cellExtentFor(
+            crossAxisExtent: usable,
+            columns: columns,
+            spacing: _gap,
+          ),
         );
         final double cardHeight = FileCard.mainAxisExtentFor(context, cardWidth);
         final gridDelegate = SliverGridDelegateWithMaxCrossAxisExtent(
@@ -939,21 +939,24 @@ class _FileArea extends StatelessWidget {
           mainAxisExtent: cardHeight,
         );
 
-        Widget card(BrowserFile file) => _tile(file, (context, flags, payload) => FileCard(
-              file: file,
-              isSelected: flags.selected,
-              isStaged: flags.staged,
-              // Dragging a card inside the selection drags the whole
-              // selection; dragging one outside it drags only that file.
-              // Same rule the context menu uses, so the count in the drag
-              // chip and the count in the menu never disagree.
-              dragPayload: payload,
-              thumbnailSize: area.thumbnailSize,
-              heroScope: kBrowserPreviewHeroScope,
-              onTap: () => onTap(file),
-              onDoubleTap: () => onDoubleTap(file),
-              onSecondaryTap: (pos) => onSecondaryTap(file, pos),
-            ));
+        Widget card(BrowserFile file) => _tile(
+          file,
+          (context, flags, payload) => FileCard(
+            file: file,
+            isSelected: flags.selected,
+            isStaged: flags.staged,
+            // Dragging a card inside the selection drags the whole
+            // selection; dragging one outside it drags only that file.
+            // Same rule the context menu uses, so the count in the drag
+            // chip and the count in the menu never disagree.
+            dragPayload: payload,
+            thumbnailSize: area.thumbnailSize,
+            heroScope: kBrowserPreviewHeroScope,
+            onTap: () => onTap(file),
+            onDoubleTap: () => onDoubleTap(file),
+            onSecondaryTap: (pos) => onSecondaryTap(file, pos),
+          ),
+        );
 
         _layoutOutline(
           sections: area.sections,
@@ -1010,16 +1013,19 @@ class _FileArea extends StatelessWidget {
   }
 
   Widget _buildList(BuildContext context, _AreaInputs area) {
-    Widget row(BrowserFile file) => _tile(file, (context, flags, payload) => BrowserFileListRow(
-          key: ValueKey(file.path),
-          file: file,
-          isSelected: flags.selected,
-          isStaged: flags.staged,
-          dragPayload: payload,
-          onTap: () => onTap(file),
-          onDoubleTap: () => onDoubleTap(file),
-          onSecondaryTap: (pos) => onSecondaryTap(file, pos),
-        ));
+    Widget row(BrowserFile file) => _tile(
+      file,
+      (context, flags, payload) => BrowserFileListRow(
+        key: ValueKey(file.path),
+        file: file,
+        isSelected: flags.selected,
+        isStaged: flags.staged,
+        dragPayload: payload,
+        onTap: () => onTap(file),
+        onDoubleTap: () => onDoubleTap(file),
+        onSecondaryTap: (pos) => onSecondaryTap(file, pos),
+      ),
+    );
 
     _layoutOutline(
       sections: area.sections,

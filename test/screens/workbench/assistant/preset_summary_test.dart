@@ -4,7 +4,9 @@ import 'package:joycai_image_ai_toolkits/screens/workbench/assistant/optimizer_c
 void main() {
   test('takes the first prose paragraph, past a heading', () {
     expect(
-      presetSummaryOf('# Role\n\nYou are a **portrait** prompt writer.\nKeep `names` intact.\n\n## Rules\n- one'),
+      presetSummaryOf(
+        '# Role\n\nYou are a **portrait** prompt writer.\nKeep `names` intact.\n\n## Rules\n- one',
+      ),
       'You are a portrait prompt writer. Keep names intact.',
     );
   });

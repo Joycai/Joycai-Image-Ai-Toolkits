@@ -31,14 +31,14 @@ class SpecRateDraft {
   final TextEditingController priceCtrl;
 
   SpecRateDraft({this.size, this.quality, this.seconds, String price = ''})
-      : priceCtrl = TextEditingController(text: price);
+    : priceCtrl = TextEditingController(text: price);
 
   factory SpecRateDraft.of(SpecRate rate) => SpecRateDraft(
-        size: rate.size,
-        quality: rate.quality,
-        seconds: rate.seconds,
-        price: rate.price.toStringAsFixed(4),
-      );
+    size: rate.size,
+    quality: rate.quality,
+    seconds: rate.seconds,
+    price: rate.price.toStringAsFixed(4),
+  );
 
   double? get price => parsePriceInput(priceCtrl.text);
 
@@ -146,7 +146,10 @@ class SpecRateTableEditor extends StatelessWidget {
     final otherBlank = otherPriceCtrl.text.trim().isEmpty;
     final onlyOther = rows.isEmpty;
     final suffix = specUnitSuffix(l10n, unit);
-    final helpStyle = textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant, height: AppType.proseHeight);
+    final helpStyle = textTheme.labelSmall?.copyWith(
+      color: scheme.onSurfaceVariant,
+      height: AppType.proseHeight,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -182,7 +185,9 @@ class SpecRateTableEditor extends StatelessWidget {
           decoration: BoxDecoration(
             border: Border(top: BorderSide(color: scheme.outlineVariant)),
           ),
-          child: narrow ? _buildNarrowOtherRow(context, l10n, suffix) : _buildWideOtherRow(context, l10n),
+          child: narrow
+              ? _buildNarrowOtherRow(context, l10n, suffix)
+              : _buildWideOtherRow(context, l10n),
         ),
         if (otherBlank) ...[
           const SizedBox(height: _gap),
@@ -192,7 +197,11 @@ class SpecRateTableEditor extends StatelessWidget {
           const SizedBox(height: _gap),
           _Hint(
             icon: Icons.error_outline,
-            text: l10n.specDuplicateRow(dup.a, dup.b, specRateConditions(l10n, rows[dup.a - 1].toRate())),
+            text: l10n.specDuplicateRow(
+              dup.a,
+              dup.b,
+              specRateConditions(l10n, rows[dup.a - 1].toRate()),
+            ),
             error: true,
           ),
         ] else if (issues.missingPriceRow case final n?) ...[
@@ -302,7 +311,8 @@ class SpecRateTableEditor extends StatelessWidget {
   Widget _buildHeader(BuildContext context, AppLocalizations l10n, String suffix) {
     final scheme = Theme.of(context).colorScheme;
     final style = Theme.of(context).textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant);
-    Widget cell(String text) => Text(text, style: style, maxLines: 1, overflow: TextOverflow.ellipsis);
+    Widget cell(String text) =>
+        Text(text, style: style, maxLines: 1, overflow: TextOverflow.ellipsis);
 
     return Row(
       children: [
@@ -320,7 +330,12 @@ class SpecRateTableEditor extends StatelessWidget {
     );
   }
 
-  List<Widget> _conditionCells(BuildContext context, AppLocalizations l10n, SpecRateDraft row, bool error) {
+  List<Widget> _conditionCells(
+    BuildContext context,
+    AppLocalizations l10n,
+    SpecRateDraft row,
+    bool error,
+  ) {
     final known = SpecKnownValues.collect();
     return [
       Expanded(
@@ -356,7 +371,9 @@ class SpecRateTableEditor extends StatelessWidget {
         child: SpecConditionField(
           value: row.seconds?.toString(),
           error: error,
-          groups: [(null, [for (final s in known.seconds) '$s'])],
+          groups: [
+            (null, [for (final s in known.seconds) '$s']),
+          ],
           normalize: (raw) => OutputSpec.normalizeSeconds(raw)?.toString(),
           onChanged: (v) {
             row.seconds = v == null ? null : int.tryParse(v);
@@ -372,7 +389,13 @@ class SpecRateTableEditor extends StatelessWidget {
     return dup != null && (dup.a == index + 1 || dup.b == index + 1);
   }
 
-  Widget _buildWideRow(BuildContext context, AppLocalizations l10n, int index, SpecRateDraft row, SpecTableIssues issues) {
+  Widget _buildWideRow(
+    BuildContext context,
+    AppLocalizations l10n,
+    int index,
+    SpecRateDraft row,
+    SpecTableIssues issues,
+  ) {
     final l10n = AppLocalizations.of(context)!;
     return Row(
       children: [
@@ -380,7 +403,11 @@ class SpecRateTableEditor extends StatelessWidget {
         const SizedBox(width: _gap),
         SizedBox(
           width: _priceWidth,
-          child: _PriceField(controller: row.priceCtrl, placeholder: l10n.specPricePlaceholder, onChanged: onChanged),
+          child: _PriceField(
+            controller: row.priceCtrl,
+            placeholder: l10n.specPricePlaceholder,
+            onChanged: onChanged,
+          ),
         ),
         const SizedBox(width: _gap),
         _DeleteButton(width: _deleteWidth, onPressed: () => onRemoveRow(index)),
@@ -400,7 +427,9 @@ class SpecRateTableEditor extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.only(bottom: _gap),
       margin: const EdgeInsets.only(bottom: _gap),
-      decoration: BoxDecoration(border: Border(bottom: BorderSide(color: scheme.outlineVariant))),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: scheme.outlineVariant)),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
@@ -431,7 +460,10 @@ class SpecRateTableEditor extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     return Row(
       children: [
-        Text(l10n.specOtherRates, style: textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500)),
+        Text(
+          l10n.specOtherRates,
+          style: textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500),
+        ),
         const SizedBox(width: 8),
         Flexible(
           child: Text(
@@ -453,7 +485,10 @@ class SpecRateTableEditor extends StatelessWidget {
             height: AppSize.control,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Align(alignment: AlignmentDirectional.centerStart, child: _otherTitle(context, l10n)),
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: _otherTitle(context, l10n),
+              ),
             ),
           ),
         ),
@@ -495,7 +530,12 @@ class SpecRateTableEditor extends StatelessWidget {
 
 /// A unit choice (`21a`): 28 tall at r10, the accent tint and edge when on.
 class _UnitChip extends StatelessWidget {
-  const _UnitChip({required this.label, required this.selected, required this.onTap, required this.expand});
+  const _UnitChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    required this.expand,
+  });
 
   final String label;
   final bool selected;
@@ -673,9 +713,18 @@ class _SpecConditionFieldState extends State<SpecConditionField> {
                 filled: true,
                 fillColor: scheme.surface,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                border: OutlineInputBorder(borderRadius: radius, borderSide: BorderSide(color: scheme.primary)),
-                enabledBorder: OutlineInputBorder(borderRadius: radius, borderSide: BorderSide(color: scheme.primary)),
-                focusedBorder: OutlineInputBorder(borderRadius: radius, borderSide: BorderSide(color: scheme.primary)),
+                border: OutlineInputBorder(
+                  borderRadius: radius,
+                  borderSide: BorderSide(color: scheme.primary),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: radius,
+                  borderSide: BorderSide(color: scheme.primary),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: radius,
+                  borderSide: BorderSide(color: scheme.primary),
+                ),
               ),
             ),
           ),
@@ -706,7 +755,9 @@ class _SpecConditionFieldState extends State<SpecConditionField> {
             padding: const EdgeInsetsDirectional.fromSTEB(8, 0, 6, 0),
             child: Row(
               children: [
-                Expanded(child: value == null ? label : Tooltip(message: value, child: label)),
+                Expanded(
+                  child: value == null ? label : Tooltip(message: value, child: label),
+                ),
                 const SizedBox(width: AppSpace.s4),
                 Icon(Icons.expand_more, size: AppSize.iconSm, color: scheme.outline),
               ],
@@ -757,7 +808,9 @@ class _PriceField extends StatelessWidget {
       height: AppSize.control,
       child: TextField(
         controller: controller,
-        keyboardType: integer ? TextInputType.number : const TextInputType.numberWithOptions(decimal: true),
+        keyboardType: integer
+            ? TextInputType.number
+            : const TextInputType.numberWithOptions(decimal: true),
         inputFormatters: integer
             ? [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(3)]
             : null,
@@ -772,7 +825,10 @@ class _PriceField extends StatelessWidget {
           suffixText: suffix,
           suffixStyle: textTheme.labelSmall?.copyWith(color: scheme.outline),
           contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          border: OutlineInputBorder(borderRadius: radius, borderSide: BorderSide(color: scheme.outlineVariant)),
+          border: OutlineInputBorder(
+            borderRadius: radius,
+            borderSide: BorderSide(color: scheme.outlineVariant),
+          ),
           enabledBorder: OutlineInputBorder(
             borderRadius: radius,
             borderSide: BorderSide(color: error ? scheme.error : scheme.outlineVariant),
@@ -802,7 +858,10 @@ class _DeleteButton extends StatelessWidget {
       tooltip: l10n.delete,
       onPressed: onPressed,
       padding: EdgeInsets.zero,
-      constraints: BoxConstraints.tightFor(width: width, height: width > AppSize.compact ? AppSize.control : AppSize.compact),
+      constraints: BoxConstraints.tightFor(
+        width: width,
+        height: width > AppSize.compact ? AppSize.control : AppSize.compact,
+      ),
       style: IconButton.styleFrom(
         foregroundColor: scheme.onSurfaceVariant,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.control)),
@@ -834,7 +893,10 @@ class _Hint extends StatelessWidget {
         ),
         const SizedBox(width: AppSpace.s4),
         Expanded(
-          child: Text(text, style: textTheme.labelSmall?.copyWith(color: color, height: AppType.proseHeight)),
+          child: Text(
+            text,
+            style: textTheme.labelSmall?.copyWith(color: color, height: AppType.proseHeight),
+          ),
         ),
       ],
     );
@@ -875,7 +937,6 @@ class SpecInputImagesBlock extends StatelessWidget {
   /// Whether the wide row ends with the table's delete-column blank.
   final bool trailingBlank;
 
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -910,7 +971,10 @@ class SpecInputImagesBlock extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     return Row(
       children: [
-        Text(l10n.specInputTitle, style: textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500)),
+        Text(
+          l10n.specInputTitle,
+          style: textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500),
+        ),
         const SizedBox(width: 8),
         Flexible(
           child: Text(
@@ -925,23 +989,23 @@ class SpecInputImagesBlock extends StatelessWidget {
   }
 
   Widget _inputFreeField(AppLocalizations l10n) => _PriceField(
-        key: const ValueKey('spec-input-free'),
-        controller: inputFreeCtrl,
-        placeholder: l10n.specInputFreeHint,
-        suffix: l10n.specInputFreeSuffix,
-        onChanged: onChanged,
-        integer: true,
-        muted: inputFreeWithoutPrice,
-      );
+    key: const ValueKey('spec-input-free'),
+    controller: inputFreeCtrl,
+    placeholder: l10n.specInputFreeHint,
+    suffix: l10n.specInputFreeSuffix,
+    onChanged: onChanged,
+    integer: true,
+    muted: inputFreeWithoutPrice,
+  );
 
   Widget _inputPriceField(AppLocalizations l10n, String suffix) => _PriceField(
-        key: const ValueKey('spec-input-price'),
-        controller: inputPriceCtrl,
-        placeholder: '0.0000',
-        suffix: suffix,
-        onChanged: onChanged,
-        error: inputPriceInvalid,
-      );
+    key: const ValueKey('spec-input-price'),
+    controller: inputPriceCtrl,
+    placeholder: '0.0000',
+    suffix: suffix,
+    onChanged: onChanged,
+    error: inputPriceInvalid,
+  );
 
   Widget _buildWideInputRow(BuildContext context, AppLocalizations l10n) {
     return Row(
@@ -951,7 +1015,10 @@ class SpecInputImagesBlock extends StatelessWidget {
             height: AppSize.control,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Align(alignment: AlignmentDirectional.centerStart, child: _inputTitle(context, l10n)),
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: _inputTitle(context, l10n),
+              ),
             ),
           ),
         ),
@@ -959,10 +1026,14 @@ class SpecInputImagesBlock extends StatelessWidget {
         SizedBox(width: SpecRateTableEditor._priceWidth, child: _inputFreeField(l10n)),
         const SizedBox(width: SpecRateTableEditor._gap),
         // The same vertical as every rate's price and the catch-all's.
-        SizedBox(width: SpecRateTableEditor._priceWidth, child: _inputPriceField(l10n, l10n.specUnitSuffixImage)),
+        SizedBox(
+          width: SpecRateTableEditor._priceWidth,
+          child: _inputPriceField(l10n, l10n.specUnitSuffixImage),
+        ),
         // The delete column's width, so the price sits under the table's
         // prices; a host with no such column (request mode) drops it.
-        if (trailingBlank) const SizedBox(width: SpecRateTableEditor._gap + SpecRateTableEditor._deleteWidth),
+        if (trailingBlank)
+          const SizedBox(width: SpecRateTableEditor._gap + SpecRateTableEditor._deleteWidth),
       ],
     );
   }
@@ -975,7 +1046,9 @@ class SpecInputImagesBlock extends StatelessWidget {
         SizedBox(height: 24, child: _inputTitle(context, l10n)),
         const SizedBox(height: SpecRateTableEditor._gap),
         Padding(
-          padding: EdgeInsets.only(right: trailingBlank ? AppSize.touch + SpecRateTableEditor._gap : 0),
+          padding: EdgeInsets.only(
+            right: trailingBlank ? AppSize.touch + SpecRateTableEditor._gap : 0,
+          ),
           child: Row(
             children: [
               Expanded(child: _inputFreeField(l10n)),
@@ -987,5 +1060,4 @@ class SpecInputImagesBlock extends StatelessWidget {
       ],
     );
   }
-
 }

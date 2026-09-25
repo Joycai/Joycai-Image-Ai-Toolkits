@@ -71,8 +71,7 @@ class _ChannelRouteTableState extends State<ChannelRouteTable> {
     for (final e in widget.routes.entries) {
       final ctrl = _pathOf(e.kind);
       final typed = ctrl.text.trim();
-      final means =
-          typed.isEmpty || typed == widget.routes.defaultPathOf(e.kind) ? null : typed;
+      final means = typed.isEmpty || typed == widget.routes.defaultPathOf(e.kind) ? null : typed;
       if (means != e.path) ctrl.text = e.path ?? '';
     }
   }
@@ -109,9 +108,9 @@ class _ChannelRouteTableState extends State<ChannelRouteTable> {
         ChannelFieldLabel(l10n.routeSectionTitle),
         Text(
           l10n.routeTableCaption,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            color: Theme.of(context).colorScheme.outline,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.outline),
         ),
         const SizedBox(height: AppSpace.s6),
         for (final (i, e) in routes.entries.indexed) ...[
@@ -170,17 +169,13 @@ class _ChannelRouteTableState extends State<ChannelRouteTable> {
           icon: primary ? Icons.star : Icons.star_outline,
           tooltip: primary ? l10n.routeIsPrimary : l10n.routeMakePrimary,
           color: primary ? scheme.primary : scheme.onSurfaceVariant,
-          onPressed: primary
-              ? null
-              : () => widget.onChanged(routes.withPrimary(kind)),
+          onPressed: primary ? null : () => widget.onChanged(routes.withPrimary(kind)),
         ),
         AppIconButton(
           icon: Icons.remove_circle_outline,
           tooltip: removeBlock ?? l10n.routeRemove,
           color: scheme.onSurfaceVariant,
-          onPressed: removeBlock != null
-              ? null
-              : () => widget.onChanged(routes.withoutRoute(kind)),
+          onPressed: removeBlock != null ? null : () => widget.onChanged(routes.withoutRoute(kind)),
         ),
       ],
     );
@@ -236,9 +231,7 @@ class _ChannelRouteTableState extends State<ChannelRouteTable> {
           );
 
     final address = routes.addressOf(kind);
-    final url = address == null
-        ? null
-        : 'POST ${LLMDispatcher.chatRequestUrl(kind.face, address)}';
+    final url = address == null ? null : 'POST ${LLMDispatcher.chatRequestUrl(kind.face, address)}';
 
     final detail = Wrap(
       spacing: AppSpace.s6,
@@ -272,10 +265,7 @@ class _ChannelRouteTableState extends State<ChannelRouteTable> {
             },
           ),
         if (url != null)
-          Text(
-            url,
-            style: textTheme.labelSmall?.mono.copyWith(color: scheme.onSurfaceVariant),
-          ),
+          Text(url, style: textTheme.labelSmall?.mono.copyWith(color: scheme.onSurfaceVariant)),
       ],
     );
 
@@ -328,9 +318,7 @@ class _ChannelRouteTableState extends State<ChannelRouteTable> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: AppSpace.s10),
       decoration: BoxDecoration(
-        border: first
-            ? null
-            : Border(top: BorderSide(color: scheme.outlineVariant)),
+        border: first ? null : Border(top: BorderSide(color: scheme.outlineVariant)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -365,19 +353,14 @@ class _ChannelRouteTableState extends State<ChannelRouteTable> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: AppSpace.s6),
       decoration: BoxDecoration(
-        border: widget.stacked
-            ? null
-            : Border(top: BorderSide(color: scheme.outlineVariant)),
+        border: widget.stacked ? null : Border(top: BorderSide(color: scheme.outlineVariant)),
       ),
       child: Wrap(
         alignment: WrapAlignment.spaceBetween,
         crossAxisAlignment: WrapCrossAlignment.center,
         runSpacing: AppSpace.s4,
         children: [
-          AppRouteBadge(
-            label: routeLabel(l10n, kind),
-            state: RouteBadgeState.off,
-          ),
+          AppRouteBadge(label: routeLabel(l10n, kind), state: RouteBadgeState.off),
           AppButton(
             label: widget.stacked
                 ? l10n.routeEnable(routeLabel(l10n, kind))

@@ -44,16 +44,9 @@ class AppKeyLabel extends StatelessWidget {
 
     final String main = _mainKeyLabel(key.key, macOS: mac);
     if (mac) {
-      return <String>[
-        '${key.alt ? '⌥' : ''}${key.shift ? '⇧' : ''}${key.primary ? '⌘' : ''}$main',
-      ];
+      return <String>['${key.alt ? '⌥' : ''}${key.shift ? '⇧' : ''}${key.primary ? '⌘' : ''}$main'];
     }
-    return <String>[
-      if (key.primary) 'Ctrl',
-      if (key.shift) 'Shift',
-      if (key.alt) 'Alt',
-      main,
-    ];
+    return <String>[if (key.primary) 'Ctrl', if (key.shift) 'Shift', if (key.alt) 'Alt', main];
   }
 
   /// One chord, for a reminder rather than a reference — a context-menu
@@ -223,11 +216,11 @@ class _Badge extends StatelessWidget {
         text,
         maxLines: 1,
         style: Theme.of(context).textTheme.labelSmall!.mono.copyWith(
-              fontSize: dense ? 10.5 : 11,
-              height: 1,
-              fontWeight: FontWeight.w500,
-              color: scheme.onSurfaceVariant,
-            ),
+          fontSize: dense ? 10.5 : 11,
+          height: 1,
+          fontWeight: FontWeight.w500,
+          color: scheme.onSurfaceVariant,
+        ),
       ),
     );
   }
@@ -247,10 +240,10 @@ class _Separator extends StatelessWidget {
       child: Text(
         text,
         style: Theme.of(context).textTheme.labelSmall!.mono.copyWith(
-              fontSize: dense ? 9.5 : 10,
-              height: 1,
-              color: scheme.outline,
-            ),
+          fontSize: dense ? 9.5 : 10,
+          height: 1,
+          color: scheme.outline,
+        ),
       ),
     );
   }

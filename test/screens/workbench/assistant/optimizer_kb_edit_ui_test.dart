@@ -24,11 +24,14 @@ void main() {
     'Desktop': Size(1400, 1000),
   };
 
-  Future<void> pumpChat(WidgetTester tester, PromptOptimizerSession session,
-      {Size size = const Size(1400, 1000),
-      String inputText = '',
-      void Function(String)? onApply,
-      void Function(String)? onReject}) async {
+  Future<void> pumpChat(
+    WidgetTester tester,
+    PromptOptimizerSession session, {
+    Size size = const Size(1400, 1000),
+    String inputText = '',
+    void Function(String)? onApply,
+    void Function(String)? onReject,
+  }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -36,25 +39,27 @@ void main() {
     final ui = WorkbenchUIState();
     ui.optimizerSession = session;
 
-    await tester.pumpWidget(ChangeNotifierProvider<WorkbenchUIState>.value(
-      value: ui,
-      child: MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: Scaffold(
-          body: PromptOptimizerChatView(
-            inputCtrl: TextEditingController(text: inputText),
-            onSend: () {},
-            onRetry: () {},
-            onApplyPrompt: (_) {},
-            onApplyKbEdit: onApply ?? (_) {},
-            onRejectKbEdit: onReject ?? (_) {},
-            onAnswerAskUser: (_, _) {},
-            isBusy: false,
+    await tester.pumpWidget(
+      ChangeNotifierProvider<WorkbenchUIState>.value(
+        value: ui,
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: PromptOptimizerChatView(
+              inputCtrl: TextEditingController(text: inputText),
+              onSend: () {},
+              onRetry: () {},
+              onApplyPrompt: (_) {},
+              onApplyKbEdit: onApply ?? (_) {},
+              onRejectKbEdit: onReject ?? (_) {},
+              onAnswerAskUser: (_, _) {},
+              isBusy: false,
+            ),
           ),
         ),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
   }
 
@@ -81,12 +86,16 @@ void main() {
       final l10n = await AppLocalizations.delegate.load(const Locale('en'));
       expect(find.text(l10n.kbEditScopeReplace('## Composition')), findsOneWidget);
       expect(find.text(l10n.kbEditScopeAppendEnd), findsOneWidget);
-      expect(find.textContaining(RegExp(r'^@@ -\d+ \+\d+ @@ ## Composition$')), findsOneWidget,
-          reason: 'the hunk deep in the file says which section it is in');
+      expect(
+        find.textContaining(RegExp(r'^@@ -\d+ \+\d+ @@ ## Composition$')),
+        findsOneWidget,
+        reason: 'the hunk deep in the file says which section it is in',
+      );
     });
 
-    testWidgets('a deletion is named by the section it was cut from, not the next one',
-        (tester) async {
+    testWidgets('a deletion is named by the section it was cut from, not the next one', (
+      tester,
+    ) async {
       final session = PromptOptimizerSession(mode: AssistantMode.knowledgeEdit);
       final filler = [for (var i = 0; i < 30; i++) '- rule $i'].join('\n');
       final old = '# Rules\n\n## Lighting\n\n$filler\n- soft\n- hard\n## Composition\n\n- thirds\n';
@@ -134,18 +143,15 @@ void main() {
 
     test('rejecting flips the card without invalidating earlier reads', () {
       final session = PromptOptimizerSession(mode: AssistantMode.knowledgeEdit);
-      session.history.add(LLMMessage(
-        role: LLMRole.tool,
-        content: jsonEncode(
-            {'path': 'a.md', 'page': 1, 'total_pages': 1, 'content': 'old'}),
-        toolCallId: 'c1',
-        toolName: 'read_knowledge_file',
-      ));
-      final id = session.stageKbEditForTest(
-        relPath: 'a.md',
-        newContent: 'new',
-        oldContent: 'old',
+      session.history.add(
+        LLMMessage(
+          role: LLMRole.tool,
+          content: jsonEncode({'path': 'a.md', 'page': 1, 'total_pages': 1, 'content': 'old'}),
+          toolCallId: 'c1',
+          toolName: 'read_knowledge_file',
+        ),
       );
+      final id = session.stageKbEditForTest(relPath: 'a.md', newContent: 'new', oldContent: 'old');
 
       PromptOptimizerAgent.rejectStagedKbEdit(session: session, editId: id);
 
@@ -162,10 +168,7 @@ void main() {
       final id = session.stageKbEditForTest(relPath: 'a.md', newContent: 'x', oldContent: null);
       PromptOptimizerAgent.rejectStagedKbEdit(session: session, editId: id);
       PromptOptimizerAgent.rejectStagedKbEdit(session: session, editId: id);
-      expect(
-        session.transcript.where((e) => e.editState == KbEditState.rejected),
-        hasLength(1),
-      );
+      expect(session.transcript.where((e) => e.editState == KbEditState.rejected), hasLength(1));
     });
 
     testWidgets('a new file is labelled as a create, not an update', (tester) async {
@@ -212,22 +215,14 @@ void main() {
 
     testWidgets('a rewrite that halves the file is flagged', (tester) async {
       final session = PromptOptimizerSession(mode: AssistantMode.knowledgeEdit);
-      session.stageKbEditForTest(
-        relPath: 'a.md',
-        newContent: 'x' * 50,
-        oldContent: 'y' * 1000,
-      );
+      session.stageKbEditForTest(relPath: 'a.md', newContent: 'x' * 50, oldContent: 'y' * 1000);
       await pumpChat(tester, session);
       expect(find.byIcon(Icons.warning_amber_outlined), findsOneWidget);
     });
 
     testWidgets('a comparable rewrite is not flagged', (tester) async {
       final session = PromptOptimizerSession(mode: AssistantMode.knowledgeEdit);
-      session.stageKbEditForTest(
-        relPath: 'a.md',
-        newContent: 'x' * 900,
-        oldContent: 'y' * 1000,
-      );
+      session.stageKbEditForTest(relPath: 'a.md', newContent: 'x' * 900, oldContent: 'y' * 1000);
       await pumpChat(tester, session);
       expect(find.byIcon(Icons.warning_amber_outlined), findsNothing);
     });
@@ -252,7 +247,8 @@ void main() {
     // can be dragged up, so the space left for the empty state can fall well
     // under its own height. It used to overflow: a Column(min) inside a Center
     // cannot shrink past its children.
-    const longPrompt = '# 任务\n生成一张超写实的 Cosplay 摄影照片： 一位模特'
+    const longPrompt =
+        '# 任务\n生成一张超写实的 Cosplay 摄影照片： 一位模特'
         '（面部特征严格参照 `kisara-face.jpg` 提供面部）穿着 '
         '`narumi-cos-henshin-bodysuit-design1.png` 中角色的全套紧身衣服装，'
         '在日本漫展的室外拍摄区中摆出动感的拍照姿势。天空正下着';
@@ -269,8 +265,7 @@ void main() {
       });
     }
 
-    testWidgets('the hint stays reachable by scrolling when it does not fit',
-        (tester) async {
+    testWidgets('the hint stays reachable by scrolling when it does not fit', (tester) async {
       await pumpChat(
         tester,
         PromptOptimizerSession(mode: AssistantMode.knowledgeBase),
@@ -330,8 +325,10 @@ void main() {
 
   group('knowledge base status', () {
     test('an empty folder reports a missing entry, which scaffolding resolves', () async {
-      expect(await KnowledgeBaseService().validate('/definitely/not/a/real/path'),
-          KbStatus.missingDir);
+      expect(
+        await KnowledgeBaseService().validate('/definitely/not/a/real/path'),
+        KbStatus.missingDir,
+      );
     });
   });
 }

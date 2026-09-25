@@ -93,12 +93,14 @@ class WindowChromeService {
       // exactly such a defect for three releases: every colour crossed as an
       // int64 while the runner would only accept an int32, so the caption was
       // never once recoloured.
-      FlutterError.reportError(FlutterErrorDetails(
-        exception: error,
-        stack: stack,
-        library: 'window_chrome_service',
-        context: ErrorDescription('applying the window caption colours'),
-      ));
+      FlutterError.reportError(
+        FlutterErrorDetails(
+          exception: error,
+          stack: stack,
+          library: 'window_chrome_service',
+          context: ErrorDescription('applying the window caption colours'),
+        ),
+      );
       return 'Window caption rejected the colours: ${error.code} ${error.message}';
     } on MissingPluginException {
       // Running against a runner built before the channel existed.
@@ -116,7 +118,9 @@ class WindowChromeService {
 
     final failures = applied.entries.where((e) => e.value != 0).toList();
     if (failures.isEmpty) return 'Window caption applied: $summary.';
-    final detail = failures.map((e) => '${e.key}=0x${e.value.toUnsigned(32).toRadixString(16)}').join(', ');
+    final detail = failures
+        .map((e) => '${e.key}=0x${e.value.toUnsigned(32).toRadixString(16)}')
+        .join(', ');
     return 'Window caption partly refused by DWM ($summary) — $detail';
   }
 

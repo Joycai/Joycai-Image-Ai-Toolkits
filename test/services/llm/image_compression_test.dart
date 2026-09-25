@@ -21,8 +21,13 @@ void main() {
     final image = img.Image(width: width, height: height);
     for (var y = 0; y < height; y++) {
       for (var x = 0; x < width; x++) {
-        image.setPixelRgb(x, y, (x * 255) ~/ width, (y * 255) ~/ height,
-            ((x + y) * 255) ~/ (width + height));
+        image.setPixelRgb(
+          x,
+          y,
+          (x * 255) ~/ width,
+          (y * 255) ~/ height,
+          ((x + y) * 255) ~/ (width + height),
+        );
       }
     }
     return image;
@@ -36,8 +41,7 @@ void main() {
     final image = img.Image(width: width, height: height);
     for (var y = 0; y < height; y++) {
       for (var x = 0; x < width; x++) {
-        image.setPixelRgb(
-            x, y, random.nextInt(256), random.nextInt(256), random.nextInt(256));
+        image.setPixelRgb(x, y, random.nextInt(256), random.nextInt(256), random.nextInt(256));
       }
     }
     return image;
@@ -54,8 +58,13 @@ void main() {
     int grain(int base) => (base + random.nextInt(25) - 12).clamp(0, 255);
     for (var y = 0; y < height; y++) {
       for (var x = 0; x < width; x++) {
-        image.setPixelRgb(x, y, grain((x * 255) ~/ width),
-            grain((y * 255) ~/ height), grain(((x + y) * 255) ~/ (width + height)));
+        image.setPixelRgb(
+          x,
+          y,
+          grain((x * 255) ~/ width),
+          grain((y * 255) ~/ height),
+          grain(((x + y) * 255) ~/ (width + height)),
+        );
       }
     }
     return image;
@@ -141,15 +150,13 @@ void main() {
       final result = ImageCompressor.compressForViewing(original, 'image/png');
 
       expect(result.mimeType, 'image/jpeg');
-      expect(dimensionsOf(result.bytes).width,
-          ImageCompressor.viewOnlyMaxLongEdge);
+      expect(dimensionsOf(result.bytes).width, ImageCompressor.viewOnlyMaxLongEdge);
     });
 
     test('bytes that are not an image at all come back unchanged', () {
       final garbage = Uint8List.fromList(List.filled(600 * 1024, 0x42));
 
-      final result =
-          ImageCompressor.compressForViewing(garbage, 'application/octet-stream');
+      final result = ImageCompressor.compressForViewing(garbage, 'application/octet-stream');
 
       expect(identical(result.bytes, garbage), isTrue);
       expect(result.mimeType, 'application/octet-stream');
@@ -160,8 +167,7 @@ void main() {
       final image = img.Image(width: 2000, height: 1000, numChannels: 4);
       img.fill(image, color: img.ColorRgba8(0, 0, 0, 0));
       // One opaque red square, so the image is not uniformly transparent.
-      img.fillRect(image,
-          x1: 0, y1: 0, x2: 99, y2: 99, color: img.ColorRgba8(255, 0, 0, 255));
+      img.fillRect(image, x1: 0, y1: 0, x2: 99, y2: 99, color: img.ColorRgba8(255, 0, 0, 255));
 
       final result = ImageCompressor.compressForViewing(png(image), 'image/png');
 
@@ -178,24 +184,24 @@ void main() {
   group('readForApi', () {
     test('shrinks a viewOnly attachment', () {
       final original = png(gradient(3000, 3000));
-      final attachment = LLMAttachment.fromBytes(original, 'image/png',
-          referenceType: LLMReferenceType.viewOnly);
+      final attachment = LLMAttachment.fromBytes(
+        original,
+        'image/png',
+        referenceType: LLMReferenceType.viewOnly,
+      );
 
       final result = ImageCompressor.readForApi(attachment);
 
       expect(result.mimeType, 'image/jpeg');
-      expect(dimensionsOf(result.bytes).width,
-          ImageCompressor.viewOnlyMaxLongEdge);
+      expect(dimensionsOf(result.bytes).width, ImageCompressor.viewOnlyMaxLongEdge);
     });
 
-    for (final type in LLMReferenceType.values
-        .where((t) => t != LLMReferenceType.viewOnly)) {
+    for (final type in LLMReferenceType.values.where((t) => t != LLMReferenceType.viewOnly)) {
       test('leaves a ${type.name} attachment byte-identical', () {
         // Generation input: the user asked for this resolution, and the
         // workbench toggle is the only thing allowed to trade it away.
         final original = png(gradient(3000, 3000));
-        final attachment = LLMAttachment.fromBytes(original, 'image/png',
-            referenceType: type);
+        final attachment = LLMAttachment.fromBytes(original, 'image/png', referenceType: type);
 
         final result = ImageCompressor.readForApi(attachment);
 

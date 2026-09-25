@@ -43,15 +43,14 @@ void main() {
       await tester.tap(find.text('与提示不符'));
       await tester.tap(find.text('色彩 / 光线'));
       await settle(tester);
-      await tester.enterText(
-        find.byType(TextField).last,
-        '背景偏灰，不是提示里说的青绿渐变；鞋带处细节糊掉了，光也偏软',
-      );
+      await tester.enterText(find.byType(TextField).last, '背景偏灰，不是提示里说的青绿渐变；鞋带处细节糊掉了，光也偏软');
       await settle(tester);
     }
   }
 
-  testWidgets('workbench · resultFeedback satisfied @ desktop dark rose', (WidgetTester tester) async {
+  testWidgets('workbench · resultFeedback satisfied @ desktop dark rose', (
+    WidgetTester tester,
+  ) async {
     await shoot(
       tester,
       env: env,
@@ -64,7 +63,9 @@ void main() {
     );
   });
 
-  testWidgets('workbench · resultFeedback unsatisfied @ desktop light', (WidgetTester tester) async {
+  testWidgets('workbench · resultFeedback unsatisfied @ desktop light', (
+    WidgetTester tester,
+  ) async {
     await shoot(
       tester,
       env: env,

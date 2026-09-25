@@ -76,11 +76,7 @@ abstract final class FolderOutlineGeometry {
   /// short, still counts as reached.
   ///
   /// `0` before the first header; `-1` only when there are no sections.
-  static int sectionAt(
-    List<double> offsets,
-    double scrollOffset, {
-    double tolerance = 0.5,
-  }) {
+  static int sectionAt(List<double> offsets, double scrollOffset, {double tolerance = 0.5}) {
     if (offsets.isEmpty) return -1;
     final target = scrollOffset + tolerance;
     var lo = 0;

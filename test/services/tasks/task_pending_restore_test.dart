@@ -44,9 +44,7 @@ void main() {
   });
 
   test('restored pending task is scheduled after loading', () async {
-    final output = await Directory.systemTemp.createTemp(
-      'joycai_pending_output',
-    );
+    final output = await Directory.systemTemp.createTemp('joycai_pending_output');
     addTearDown(() => output.delete(recursive: true));
     await DatabaseService().saveSetting('output_directory', output.path);
     await DatabaseService().saveTask(
@@ -67,11 +65,8 @@ void main() {
     for (var i = 0; i < 100; i++) {
       await Future<void>.delayed(const Duration(milliseconds: 10));
       if (queue.queue.isNotEmpty) {
-        loaded = queue.queue.firstWhere(
-          (task) => task.id == 'pending-download',
-        );
-        if (loaded.status != TaskStatus.pending &&
-            loaded.status != TaskStatus.processing) {
+        loaded = queue.queue.firstWhere((task) => task.id == 'pending-download');
+        if (loaded.status != TaskStatus.pending && loaded.status != TaskStatus.processing) {
           break;
         }
       }

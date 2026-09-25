@@ -24,7 +24,8 @@ void main() {
 
   test('a Gemini inlineData stream line is collapsed, the rest kept', () {
     final payload = b64(4096);
-    final line = 'data: {"candidates":[{"content":{"parts":[{"inlineData":'
+    final line =
+        'data: {"candidates":[{"content":{"parts":[{"inlineData":'
         '{"mimeType":"image/png","data":"$payload"}}]}}],'
         '"usageMetadata":{"promptTokenCount":7}}';
     final out = LLMDebugLogger.sanitizeLine(line);
@@ -41,8 +42,7 @@ void main() {
 
   test('exactly the threshold is collapsed', () {
     final payload = b64(threshold);
-    expect(LLMDebugLogger.sanitizeLine('"$payload"'),
-        '"<base64 $threshold chars>"');
+    expect(LLMDebugLogger.sanitizeLine('"$payload"'), '"<base64 $threshold chars>"');
   });
 
   test('long prose is never touched', () {
@@ -55,7 +55,8 @@ void main() {
     // characters. The RegExp this used to be threw StackOverflowError on it,
     // which escaped the SSE loop and failed a generation that had succeeded.
     final payload = b64(5600000);
-    final line = 'data: {"candidates":[{"content":{"parts":[{"inlineData":'
+    final line =
+        'data: {"candidates":[{"content":{"parts":[{"inlineData":'
         '{"mimeType":"image/png","data":"$payload"}}]}}]}';
     final out = LLMDebugLogger.sanitizeLine(line);
     expect(out, contains('"data":"<base64 5600000 chars>"'));

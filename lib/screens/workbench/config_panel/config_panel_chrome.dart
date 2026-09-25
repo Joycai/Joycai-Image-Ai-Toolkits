@@ -6,10 +6,7 @@ part of '../workbench_config_panel.dart';
 /// Not [AppCard], whose radius and tones belong to the previous column; this
 /// is the column's own card, used for every group in it.
 class _PanelCard extends StatelessWidget {
-  const _PanelCard({
-    required this.child,
-    this.padding = const EdgeInsets.all(_kCardPadding),
-  });
+  const _PanelCard({required this.child, this.padding = const EdgeInsets.all(_kCardPadding)});
 
   final Widget child;
   final EdgeInsetsGeometry padding;
@@ -69,7 +66,10 @@ class _ToggleRow extends StatelessWidget {
                 child: Text.rich(
                   TextSpan(
                     children: [
-                      TextSpan(text: title, style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurface)),
+                      TextSpan(
+                        text: title,
+                        style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurface),
+                      ),
                       const WidgetSpan(child: SizedBox(width: AppSpace.s6)),
                       TextSpan(
                         text: hint,

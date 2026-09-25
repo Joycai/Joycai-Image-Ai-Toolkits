@@ -24,13 +24,8 @@ void main() {
   /// `8:1`); a plain `gemini-*-image` maps to the narrow one (which does not).
   /// The pair is the point: the value has to be legal for one and absent from
   /// the other.
-  LLMModel model({required int id, required String modelId, int channelId = 1}) => LLMModel(
-        id: id,
-        modelId: modelId,
-        modelName: modelId,
-        tag: 'image',
-        channelId: channelId,
-      );
+  LLMModel model({required int id, required String modelId, int channelId = 1}) =>
+      LLMModel(id: id, modelId: modelId, modelName: modelId, tag: 'image', channelId: channelId);
 
   final wide = model(id: 1, modelId: 'gemini-3.1-flash-image');
   final narrow = model(id: 2, modelId: 'gemini-2.5-flash-image');
@@ -97,13 +92,15 @@ void main() {
     const stored = 'not_set';
     final writes = <String>[];
 
-    await tester.pumpWidget(host(
-      models: [wide, narrow],
-      selectedModelDbId: wide.id,
-      selectedChannelId: 1,
-      resolver: (_, _) => stored,
-      onParamChanged: (_, _, value) => writes.add(value),
-    ));
+    await tester.pumpWidget(
+      host(
+        models: [wide, narrow],
+        selectedModelDbId: wide.id,
+        selectedChannelId: 1,
+        resolver: (_, _) => stored,
+        onParamChanged: (_, _, value) => writes.add(value),
+      ),
+    );
     await tester.pumpAndSettle();
 
     // Pick an aspect ratio only the wide table offers.
@@ -118,13 +115,15 @@ void main() {
     // this row used to be) would keep '8:1' across the two builds — a value
     // absent from the narrow table, which the inner DropdownButton asserts
     // on. The controlled [AppDropdown] shows the resolver's answer instead.
-    await tester.pumpWidget(host(
-      models: [wide, narrow],
-      selectedModelDbId: narrow.id,
-      selectedChannelId: 1,
-      resolver: (_, _) => stored,
-      onParamChanged: (_, _, value) => writes.add(value),
-    ));
+    await tester.pumpWidget(
+      host(
+        models: [wide, narrow],
+        selectedModelDbId: narrow.id,
+        selectedChannelId: 1,
+        resolver: (_, _) => stored,
+        onParamChanged: (_, _, value) => writes.add(value),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(tester.takeException(), isNull);
@@ -137,13 +136,15 @@ void main() {
       // one. Every consumer of the selection has to agree it is not usable —
       // the parameter rows most of all, since editing them writes under this
       // model's family key.
-      await tester.pumpWidget(host(
-        models: [wide],
-        selectedModelDbId: wide.id,
-        selectedChannelId: 99,
-        channels: [channel],
-        resolver: (_, _) => 'not_set',
-      ));
+      await tester.pumpWidget(
+        host(
+          models: [wide],
+          selectedModelDbId: wide.id,
+          selectedChannelId: 99,
+          channels: [channel],
+          resolver: (_, _) => 'not_set',
+        ),
+      );
       await tester.pumpAndSettle();
 
       expect(find.byType(AppDropdown<String>), findsNothing);
@@ -151,12 +152,14 @@ void main() {
     });
 
     testWidgets('draws the parameter rows once the channel agrees', (tester) async {
-      await tester.pumpWidget(host(
-        models: [wide],
-        selectedModelDbId: wide.id,
-        selectedChannelId: 1,
-        resolver: (_, _) => 'not_set',
-      ));
+      await tester.pumpWidget(
+        host(
+          models: [wide],
+          selectedModelDbId: wide.id,
+          selectedChannelId: 1,
+          resolver: (_, _) => 'not_set',
+        ),
+      );
       await tester.pumpAndSettle();
 
       expect(find.byType(AppDropdown<String>), findsWidgets);

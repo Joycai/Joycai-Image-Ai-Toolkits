@@ -18,22 +18,27 @@ void main() {
   /// The synthetic view-result message the agent writes after a view_image
   /// call. The file need not exist — nothing here reads it.
   void recordView(PromptOptimizerSession session, int id) {
-    session.history.add(LLMMessage(
-      role: LLMRole.user,
-      content:
-          '${PromptOptimizerAgent.viewResultMarker} Reference image #$id (img$id.png) is attached.',
-      attachments: [
-        LLMAttachment.fromFile(File(pathOf(id)), 'image/png',
-            referenceType: LLMReferenceType.viewOnly),
-      ],
-    ));
+    session.history.add(
+      LLMMessage(
+        role: LLMRole.user,
+        content:
+            '${PromptOptimizerAgent.viewResultMarker} Reference image #$id (img$id.png) is attached.',
+        attachments: [
+          LLMAttachment.fromFile(
+            File(pathOf(id)),
+            'image/png',
+            referenceType: LLMReferenceType.viewOnly,
+          ),
+        ],
+      ),
+    );
   }
 
   List<String> sent(PromptOptimizerSession session) => [
-        for (final m in PromptOptimizerAgent.trimForSendForTest(session.history))
-          for (final a in m.attachments)
-            if (a.path != null) a.path!,
-      ];
+    for (final m in PromptOptimizerAgent.trimForSendForTest(session.history))
+      for (final a in m.attachments)
+        if (a.path != null) a.path!,
+  ];
 
   Set<String> live(PromptOptimizerSession session) =>
       PromptOptimizerAgent.liveViewedPathsForTest(session);
@@ -89,11 +94,13 @@ void main() {
     // submit_prompt, so the current turn keeps all of its attachments; the
     // cap still applies to older rounds.
     List<String> sentForced(PromptOptimizerSession session) => [
-          for (final m in PromptOptimizerAgent.trimForSendForTest(session.history,
-              keepCurrentTurnImages: true))
-            for (final a in m.attachments)
-              if (a.path != null) a.path!,
-        ];
+      for (final m in PromptOptimizerAgent.trimForSendForTest(
+        session.history,
+        keepCurrentTurnImages: true,
+      ))
+        for (final a in m.attachments)
+          if (a.path != null) a.path!,
+    ];
 
     Set<String> liveForced(PromptOptimizerSession session) =>
         PromptOptimizerAgent.liveViewedPathsForTest(session, keepCurrentTurnImages: true);

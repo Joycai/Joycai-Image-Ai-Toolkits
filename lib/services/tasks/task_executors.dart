@@ -9,14 +9,10 @@ const Duration _videoDownloadFloor = Duration(minutes: 2);
 
 /// Poll pacing for video jobs: first poll at once, then a mild backoff from
 /// 7 s to a 20 s ceiling (it was a flat, uninterruptible 10 s).
-Duration _videoPollInterval(int pollsSoFar) =>
-    Duration(seconds: math.min(5 + pollsSoFar * 2, 20));
+Duration _videoPollInterval(int pollsSoFar) => Duration(seconds: math.min(5 + pollsSoFar * 2, 20));
 
 Map<String, dynamic> _compressReferenceInIsolate(Map<String, dynamic> input) {
-  final result = ImageCompressor.compress(
-    input['bytes'] as Uint8List,
-    input['mimeType'] as String,
-  );
+  final result = ImageCompressor.compress(input['bytes'] as Uint8List, input['mimeType'] as String);
   return {'bytes': result.bytes, 'mimeType': result.mimeType};
 }
 
@@ -62,9 +58,7 @@ extension TaskExecutors on TaskQueueService {
 
     if (model != null) {
       if (!model.supportsStream) {
-        task.addLog(
-          'Model does not support streaming. Falling back to standard request.',
-        );
+        task.addLog('Model does not support streaming. Falling back to standard request.');
         return false;
       }
     }
@@ -83,19 +77,11 @@ extension TaskExecutors on TaskQueueService {
   }) async {
     final mimeType = _getMimeType(path);
     if (task.parameters['compressReferenceImages'] != true) {
-      return LLMAttachment.fromFile(
-        File(path),
-        mimeType,
-        referenceType: referenceType,
-      );
+      return LLMAttachment.fromFile(File(path), mimeType, referenceType: referenceType);
     }
     final raw = await File(path).readAsBytes();
     if (raw.length <= ImageCompressor.maxBytes) {
-      return LLMAttachment.fromFile(
-        File(path),
-        mimeType,
-        referenceType: referenceType,
-      );
+      return LLMAttachment.fromFile(File(path), mimeType, referenceType: referenceType);
     }
     final compressed = await compute(_compressReferenceInIsolate, {
       'bytes': raw,
@@ -109,9 +95,7 @@ extension TaskExecutors on TaskQueueService {
   }
 
   Future<void> _executeImageProcessTask(TaskItem task) async {
-    task.addLog(
-      'Start processing with model: ${task.modelDbId ?? task.modelId}',
-    );
+    task.addLog('Start processing with model: ${task.modelDbId ?? task.modelId}');
 
     final outputDir = await _getEffectiveOutputDir(task);
 
@@ -165,8 +149,7 @@ extension TaskExecutors on TaskQueueService {
       // have returned JPEG under `mimeType: image/png`, and `b64_json`
       // carries no type at all — every result used to be written as `.png`
       // regardless.
-      final fileName =
-          '${prefix}_${timestamp}_$i${imageExtensionFromBytes(bytes)}';
+      final fileName = '${prefix}_${timestamp}_$i${imageExtensionFromBytes(bytes)}';
       final filePath = p.join(outputDir, fileName);
 
       final file = File(filePath);
@@ -223,8 +206,7 @@ extension TaskExecutors on TaskQueueService {
 
       if (task.status != TaskStatus.cancelled) {
         for (final (i, bytes) in response.generatedImages.indexed) {
-          await save(bytes,
-              i < response.imageLayers.length ? response.imageLayers[i] : null);
+          await save(bytes, i < response.imageLayers.length ? response.imageLayers[i] : null);
         }
       }
     }
@@ -245,24 +227,34 @@ extension TaskExecutors on TaskQueueService {
   /// can stack it back. Before the result event, so a gallery refreshed by
   /// that event already sees the row. A failure costs the placement, never
   /// the image: it is logged and the task carries on.
-  Future<void> _recordLayer(TaskItem task, String path, String setId,
-      GeneratedImageLayer layer) async {
+  Future<void> _recordLayer(
+    TaskItem task,
+    String path,
+    String setId,
+    GeneratedImageLayer layer,
+  ) async {
     try {
-      await ImageLayerRepository(db: _db).save(ImageLayer(
-        path: path,
-        setId: setId,
-        zIndex: layer.zIndex,
-        name: layer.name,
-        description: layer.description,
-        box: layer.box,
-      ));
-      task.addLog(layer.zIndex == 0
-          ? 'Layer decomposition: saved the base.'
-          : 'Layer decomposition: saved layer ${layer.zIndex}'
-              '${layer.name == null ? '' : ' (${layer.name})'} at ${layer.box}.');
+      await ImageLayerRepository(db: _db).save(
+        ImageLayer(
+          path: path,
+          setId: setId,
+          zIndex: layer.zIndex,
+          name: layer.name,
+          description: layer.description,
+          box: layer.box,
+        ),
+      );
+      task.addLog(
+        layer.zIndex == 0
+            ? 'Layer decomposition: saved the base.'
+            : 'Layer decomposition: saved layer ${layer.zIndex}'
+                  '${layer.name == null ? '' : ' (${layer.name})'} at ${layer.box}.',
+      );
     } catch (e) {
-      task.addLog('Warning: could not record layer ${layer.zIndex} of '
-          '$path — the image is saved, its placement is not ($e).');
+      task.addLog(
+        'Warning: could not record layer ${layer.zIndex} of '
+        '$path — the image is saved, its placement is not ($e).',
+      );
     }
   }
 
@@ -304,29 +296,20 @@ extension TaskExecutors on TaskQueueService {
         contextWindow = model?.contextWindow;
         if (model != null) {
           // Layer-3 read: text-only models must not be offered image tools.
-          acceptsImageInput = ModelDescriptor.of(
-            model.modelId,
-          ).acceptsImageInput;
+          acceptsImageInput = ModelDescriptor.of(model.modelId).acceptsImageInput;
         }
       }
 
       final contextRatio =
           double.tryParse(
-            await _db.getSetting(
-                  PromptOptimizerAgent.contextRatioSettingKey,
-                ) ??
-                '',
+            await _db.getSetting(PromptOptimizerAgent.contextRatioSettingKey) ?? '',
           ) ??
           PromptOptimizerAgent.defaultContextRatio;
 
       // Knowledge sub-agent opt-in (Settings, default off). Read here and
       // passed down so the agent stays free of app-state coupling.
       var kbSubAgentEnabled =
-          (await _db.getSetting(
-                PromptOptimizerAgent.kbSubAgentSettingKey,
-              ) ??
-              'false') ==
-          'true';
+          (await _db.getSetting(PromptOptimizerAgent.kbSubAgentSettingKey) ?? 'false') == 'true';
 
       // Dedicated sub-agent model binding: absent = follow the session's
       // model. "Enabled" is not "available" (the playbook's double-loss
@@ -340,9 +323,7 @@ extension TaskExecutors on TaskQueueService {
       // the session model's answer.
       var kbSubAgentAcceptsImages = acceptsImageInput;
       if (kbSubAgentEnabled) {
-        final boundRaw = await _db.getSetting(
-          PromptOptimizerAgent.kbSubAgentModelSettingKey,
-        );
+        final boundRaw = await _db.getSetting(PromptOptimizerAgent.kbSubAgentModelSettingKey);
         final boundId = int.tryParse(boundRaw ?? '');
         if (boundId != null) {
           final all = await _db.getModels();
@@ -360,9 +341,7 @@ extension TaskExecutors on TaskQueueService {
           } else {
             kbSubAgentModel = bound.id;
             kbSubAgentWindow = bound.contextWindow;
-            kbSubAgentAcceptsImages = ModelDescriptor.of(
-              bound.modelId,
-            ).acceptsImageInput;
+            kbSubAgentAcceptsImages = ModelDescriptor.of(bound.modelId).acceptsImageInput;
           }
         }
       }
@@ -423,12 +402,7 @@ extension TaskExecutors on TaskQueueService {
 
     final messages = <LLMMessage>[];
     if (task.parameters['systemPrompt'] != null) {
-      messages.add(
-        LLMMessage(
-          role: LLMRole.system,
-          content: task.parameters['systemPrompt'],
-        ),
-      );
+      messages.add(LLMMessage(role: LLMRole.system, content: task.parameters['systemPrompt']));
     }
 
     final attachments = task.imagePaths
@@ -547,9 +521,7 @@ extension TaskExecutors on TaskQueueService {
   }
 
   Future<void> _executeVideoGenerateTask(TaskItem task) async {
-    task.addLog(
-      'Start video generation with model: ${task.modelDbId ?? task.modelId}',
-    );
+    task.addLog('Start video generation with model: ${task.modelDbId ?? task.modelId}');
 
     final outputDir = await _getEffectiveOutputDir(task);
 
@@ -670,9 +642,7 @@ extension TaskExecutors on TaskQueueService {
 
     var budget = _videoJobDeadline - DateTime.now().difference(jobStart);
     if (budget < _videoDownloadFloor) budget = _videoDownloadFloor;
-    final headers = requiresAuth
-        ? await _videoDownloadHeaders(task)
-        : const <String, String>{};
+    final headers = requiresAuth ? await _videoDownloadHeaders(task) : const <String, String>{};
     final downloadPath = await _downloadVideo(
       videoUri,
       task,
@@ -682,11 +652,7 @@ extension TaskExecutors on TaskQueueService {
     );
 
     task.resultPaths.add(downloadPath);
-    _emit(
-      task.id,
-      TaskEventType.imageResult,
-      downloadPath,
-    ); // Reusing imageResult for video path
+    _emit(task.id, TaskEventType.imageResult, downloadPath); // Reusing imageResult for video path
     task.addLog('Saved video to: $downloadPath');
 
     onTaskCompleted?.call(File(downloadPath));
@@ -699,8 +665,10 @@ extension TaskExecutors on TaskQueueService {
   /// id stays in the task log.
   Future<void> _forgetVideoJob(TaskItem task) async {
     if (task.operationName == null) return;
-    task.addLog('Upstream job ${task.operationName} is over and cannot be '
-        'resumed.');
+    task.addLog(
+      'Upstream job ${task.operationName} is over and cannot be '
+      'resumed.',
+    );
     task.operationName = null;
     task.operationSurface = null;
     await _db.saveTask(task);
@@ -739,17 +707,12 @@ extension TaskExecutors on TaskQueueService {
     }
 
     // Reference images
-    final referenceImagePaths =
-        task.parameters['referenceImagePaths'] as List<dynamic>?;
+    final referenceImagePaths = task.parameters['referenceImagePaths'] as List<dynamic>?;
     if (referenceImagePaths != null) {
       for (final path in referenceImagePaths) {
         final pathStr = path as String;
         attachments.add(
-          await _buildReferenceAttachment(
-            task,
-            pathStr,
-            referenceType: LLMReferenceType.asset,
-          ),
+          await _buildReferenceAttachment(task, pathStr, referenceType: LLMReferenceType.asset),
         );
         task.addLog('Added reference image: ${p.basename(pathStr)}');
       }
@@ -859,8 +822,7 @@ extension TaskExecutors on TaskQueueService {
       return remaining;
     }
 
-    final client = HttpClient()
-      ..connectionTimeout = const Duration(seconds: 30);
+    final client = HttpClient()..connectionTimeout = const Duration(seconds: 30);
     File? part;
     try {
       final request = await client.getUrl(Uri.parse(url)).timeout(left());
@@ -879,9 +841,7 @@ extension TaskExecutors on TaskQueueService {
       final sink = part.openWrite();
       var received = 0;
       try {
-        await for (final chunk in response.timeout(
-          const Duration(seconds: 60),
-        )) {
+        await for (final chunk in response.timeout(const Duration(seconds: 60))) {
           if (task.status == TaskStatus.cancelled) throw const LLMCancelled();
           left();
           sink.add(chunk);
@@ -956,16 +916,12 @@ extension TaskExecutors on TaskQueueService {
       refreshQueue();
 
       try {
-        final request = await client
-            .getUrl(Uri.parse(url))
-            .timeout(const Duration(seconds: 30));
+        final request = await client.getUrl(Uri.parse(url)).timeout(const Duration(seconds: 30));
         if (formattedCookies.isNotEmpty) {
           request.headers.add(HttpHeaders.cookieHeader, formattedCookies);
         }
 
-        final response = await request.close().timeout(
-          const Duration(seconds: 30),
-        );
+        final response = await request.close().timeout(const Duration(seconds: 30));
         if (response.statusCode != 200) {
           throw Exception('Failed to download image: ${response.statusCode}');
         }
@@ -985,11 +941,7 @@ extension TaskExecutors on TaskQueueService {
         }
         task.resultPaths.add(filePath);
         _emit(task.id, TaskEventType.imageResult, filePath);
-        _emit(
-          task.id,
-          TaskEventType.progress,
-          (i + 1) / task.imagePaths.length,
-        );
+        _emit(task.id, TaskEventType.progress, (i + 1) / task.imagePaths.length);
         task.addLog('Saved to: $filePath');
 
         onTaskCompleted?.call(file);
@@ -1005,8 +957,7 @@ extension TaskExecutors on TaskQueueService {
   String _getExtensionFromUrl(String url) {
     final path = Uri.parse(url).path;
     final ext = p.extension(path).toLowerCase();
-    if (ext.isEmpty ||
-        !['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp'].contains(ext)) {
+    if (ext.isEmpty || !['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp'].contains(ext)) {
       return '.png'; // Default
     }
     return ext;
@@ -1063,13 +1014,9 @@ extension TaskExecutors on TaskQueueService {
 /// the envelope says neither — the row then stays as the submit priced it.
 /// Pure, so the seam between the poll and [LLMService.settleVideoUsage] is
 /// pinned on its own (`video_settlement_test.dart`).
-({num? renderedSeconds, double? reportedCost})? videoSettlementOf(
-    Map<String, dynamic> done) {
+({num? renderedSeconds, double? reportedCost})? videoSettlementOf(Map<String, dynamic> done) {
   final rendered = done[videoRenderedSecondsKey];
   final reported = reportedCostOf(done);
   if (rendered is! num && reported == null) return null;
-  return (
-    renderedSeconds: rendered is num ? rendered : null,
-    reportedCost: reported,
-  );
+  return (renderedSeconds: rendered is num ? rendered : null, reportedCost: reported);
 }

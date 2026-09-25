@@ -36,27 +36,27 @@ extension _Preview on _ChannelWizardDialogState {
   Widget _buildPreviewSummary(BuildContext context, AppLocalizations l10n) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final keyStyle = theme.textTheme.labelSmall?.mono
-        .copyWith(color: colorScheme.onSurfaceVariant);
-    final valueStyle = theme.textTheme.labelSmall?.mono
-        .copyWith(fontWeight: FontWeight.w400, color: colorScheme.onSurface);
+    final keyStyle = theme.textTheme.labelSmall?.mono.copyWith(color: colorScheme.onSurfaceVariant);
+    final valueStyle = theme.textTheme.labelSmall?.mono.copyWith(
+      fontWeight: FontWeight.w400,
+      color: colorScheme.onSurface,
+    );
     final key = _apiKeyCtrl.text.trim();
 
     Widget row(String label, Widget value) => Padding(
-          padding: const EdgeInsets.symmetric(vertical: 3),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(
-                width: 84,
-                child: Text(label,
-                    maxLines: 1, overflow: TextOverflow.ellipsis, style: keyStyle),
-              ),
-              const SizedBox(width: AppSpace.s10),
-              Expanded(child: value),
-            ],
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 84,
+            child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: keyStyle),
           ),
-        );
+          const SizedBox(width: AppSpace.s10),
+          Expanded(child: value),
+        ],
+      ),
+    );
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -93,19 +93,15 @@ extension _Preview on _ChannelWizardDialogState {
               else
                 row(
                   l10n.protocolField,
-                  Text(channelTypeLabel(l10n, _resolvedChannelType()),
-                      style: valueStyle),
+                  Text(channelTypeLabel(l10n, _resolvedChannelType()), style: valueStyle),
                 ),
-              row(l10n.endpointUrl,
-                  Text(_plannedRoutes.primaryAddress, style: valueStyle)),
+              row(l10n.endpointUrl, Text(_plannedRoutes.primaryAddress, style: valueStyle)),
               row(
                 l10n.apiKey,
                 Text(
                   key.isEmpty ? '—' : '••••••••',
                   style: valueStyle?.copyWith(
-                    color: key.isEmpty
-                        ? colorScheme.outline
-                        : context.semantic.onSuccessContainer,
+                    color: key.isEmpty ? colorScheme.outline : context.semantic.onSuccessContainer,
                   ),
                 ),
               ),

@@ -74,24 +74,26 @@ void main() {
         tester.view.devicePixelRatio = 1.0;
         addTearDown(tester.view.reset);
 
-        await tester.pumpWidget(MaterialApp(
-          debugShowCheckedModeBanner: false,
-          // Not optional: AppDialog's close button reads its tooltip from
-          // AppLocalizations, so a MaterialApp without the delegates throws
-          // rather than degrading. The real app always has them.
-          locale: const Locale('zh'),
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          // The font the app actually runs with. Without it the theme falls
-          // back to Roboto, which has no CJK — every label in this gallery
-          // photographs as a row of tofu boxes.
-          theme: buildAppTheme(
-            accent: seed.value,
-            brightness: brightness,
-            fontFamily: 'NotoSansSC',
+        await tester.pumpWidget(
+          MaterialApp(
+            debugShowCheckedModeBanner: false,
+            // Not optional: AppDialog's close button reads its tooltip from
+            // AppLocalizations, so a MaterialApp without the delegates throws
+            // rather than degrading. The real app always has them.
+            locale: const Locale('zh'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            // The font the app actually runs with. Without it the theme falls
+            // back to Roboto, which has no CJK — every label in this gallery
+            // photographs as a row of tofu boxes.
+            theme: buildAppTheme(
+              accent: seed.value,
+              brightness: brightness,
+              fontFamily: 'NotoSansSC',
+            ),
+            home: const _Gallery(),
           ),
-          home: const _Gallery(),
-        ));
+        );
 
         // The focus ring is a state, not a static style — it only appears in
         // the shot if something actually holds focus.
@@ -117,14 +119,20 @@ void main() {
         tester.view.devicePixelRatio = 1.0;
         addTearDown(tester.view.reset);
 
-        await tester.pumpWidget(MaterialApp(
-          debugShowCheckedModeBanner: false,
-          locale: const Locale('zh'),
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          theme: buildAppTheme(accent: seed.value, brightness: brightness, fontFamily: 'NotoSansSC'),
-          home: const _MarkdownGallery(),
-        ));
+        await tester.pumpWidget(
+          MaterialApp(
+            debugShowCheckedModeBanner: false,
+            locale: const Locale('zh'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            theme: buildAppTheme(
+              accent: seed.value,
+              brightness: brightness,
+              fontFamily: 'NotoSansSC',
+            ),
+            home: const _MarkdownGallery(),
+          ),
+        );
         await tester.pump();
 
         await expectLater(
@@ -244,29 +252,29 @@ class _Gallery extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const _Label('按钮'),
-              Wrap(spacing: 10, runSpacing: 10, children: [
-                AppButton(label: '主操作', icon: Icons.save_outlined, onPressed: () {}),
-                AppButton(
-                  label: '次级操作',
-                  onPressed: () {},
-                  variant: AppButtonVariant.secondary,
-                ),
-                AppButton(
-                  label: '危险操作',
-                  icon: Icons.warning_amber_rounded,
-                  onPressed: () {},
-                  variant: AppButtonVariant.destructiveOutline,
-                ),
-                AppButton(label: '静默操作', onPressed: () {}, variant: AppButtonVariant.text),
-                const AppButton(label: '禁用', onPressed: null),
-                AppIconButton(icon: Icons.settings, tooltip: '设置', onPressed: () {}),
-                AppIconButton(
-                  icon: Icons.grid_view,
-                  tooltip: '已选',
-                  selected: true,
-                  onPressed: () {},
-                ),
-              ]),
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  AppButton(label: '主操作', icon: Icons.save_outlined, onPressed: () {}),
+                  AppButton(label: '次级操作', onPressed: () {}, variant: AppButtonVariant.secondary),
+                  AppButton(
+                    label: '危险操作',
+                    icon: Icons.warning_amber_rounded,
+                    onPressed: () {},
+                    variant: AppButtonVariant.destructiveOutline,
+                  ),
+                  AppButton(label: '静默操作', onPressed: () {}, variant: AppButtonVariant.text),
+                  const AppButton(label: '禁用', onPressed: null),
+                  AppIconButton(icon: Icons.settings, tooltip: '设置', onPressed: () {}),
+                  AppIconButton(
+                    icon: Icons.grid_view,
+                    tooltip: '已选',
+                    selected: true,
+                    onPressed: () {},
+                  ),
+                ],
+              ),
               const _Label('分段控件'),
               AppSegmentedControl<int>(
                 value: 0,
@@ -278,24 +286,26 @@ class _Gallery extends StatelessWidget {
                 ],
               ),
               const _Label('输入'),
-              Row(children: [
-                // The real search component, not an AppTextField wearing a
-                // search icon: it is what six filter fields across the app now
-                // are, and its clear button only exists once there is text.
-                Expanded(
-                  child: SizedBox(
-                    height: 40,
-                    child: AppSearchField(
-                      controller: TextEditingController(text: '猫'),
-                      hint: '搜索文件…',
+              Row(
+                children: [
+                  // The real search component, not an AppTextField wearing a
+                  // search icon: it is what six filter fields across the app now
+                  // are, and its clear button only exists once there is text.
+                  Expanded(
+                    child: SizedBox(
+                      height: 40,
+                      child: AppSearchField(
+                        controller: TextEditingController(text: '猫'),
+                        hint: '搜索文件…',
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: AppTextField(key: ValueKey('focused-field'), hint: '聚焦态'),
-                ),
-              ]),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: AppTextField(key: ValueKey('focused-field'), hint: '聚焦态'),
+                  ),
+                ],
+              ),
               const SizedBox(height: 12),
               // Bare TextField / DropdownButtonFormField, styled by nothing but
               // `inputDecorationTheme`. This is what ~40 call sites across the
@@ -303,111 +313,123 @@ class _Gallery extends StatelessWidget {
               // were deleted in favour of the theme — so if the theme ever
               // stops reaching them, it shows up here rather than on one screen
               // nobody happened to open.
-              Row(children: [
-                const Expanded(
-                  child: TextField(decoration: InputDecoration(labelText: '裸 TextField · 仅靠主题')),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: AppDropdown<int>(
-                    label: '下拉',
-                    value: 0,
-                    items: const [AppDropdownItem(value: 0, label: 'Lanczos')],
-                    onChanged: (_) {},
+              Row(
+                children: [
+                  const Expanded(
+                    child: TextField(decoration: InputDecoration(labelText: '裸 TextField · 仅靠主题')),
                   ),
-                ),
-              ]),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: AppDropdown<int>(
+                      label: '下拉',
+                      value: 0,
+                      items: const [AppDropdownItem(value: 0, label: 'Lanczos')],
+                      onChanged: (_) {},
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 12),
               // The select's two sizes side by side, captioned above as `10a`
               // draws them: regular (32, the sidebar's) and large (40, the
               // theme's and every form's).
-              Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Expanded(
-                  child: AppLabelledField(
-                    label: '渠道 · 默认 32',
-                    size: AppFieldSize.regular,
-                    child: AppDropdown<int>(
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: AppLabelledField(
+                      label: '渠道 · 默认 32',
                       size: AppFieldSize.regular,
-                      value: 0,
-                      items: const [AppDropdownItem(value: 0, label: '企业 CLI')],
-                      onChanged: (_) {},
+                      child: AppDropdown<int>(
+                        size: AppFieldSize.regular,
+                        value: 0,
+                        items: const [AppDropdownItem(value: 0, label: '企业 CLI')],
+                        onChanged: (_) {},
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: AppLabelledField(
-                    label: '渠道类型 · 大号 40',
-                    child: AppDropdown<int>(
-                      value: 0,
-                      items: const [AppDropdownItem(value: 0, label: 'OpenAI 兼容接口')],
-                      onChanged: (_) {},
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: AppLabelledField(
+                      label: '渠道类型 · 大号 40',
+                      child: AppDropdown<int>(
+                        value: 0,
+                        items: const [AppDropdownItem(value: 0, label: 'OpenAI 兼容接口')],
+                        onChanged: (_) {},
+                      ),
                     ),
                   ),
-                ),
-              ]),
+                ],
+              ),
               const _Label('开关与选择'),
-              Row(children: [
-                Switch(value: true, onChanged: (_) {}),
-                const SizedBox(width: 8),
-                Switch(value: false, onChanged: (_) {}),
-                const SizedBox(width: 20),
-                Checkbox(value: true, onChanged: (_) {}),
-                const SizedBox(width: 8),
-                Checkbox(value: false, onChanged: (_) {}),
-              ]),
+              Row(
+                children: [
+                  Switch(value: true, onChanged: (_) {}),
+                  const SizedBox(width: 8),
+                  Switch(value: false, onChanged: (_) {}),
+                  const SizedBox(width: 20),
+                  Checkbox(value: true, onChanged: (_) {}),
+                  const SizedBox(width: 8),
+                  Checkbox(value: false, onChanged: (_) {}),
+                ],
+              ),
               const _Label('主题色 · 预览卡（桌面）与双色圆点（手机）'),
               // Both forms of the chooser, selected and not. The preview
               // card's halves are pictures of the *light* and *dark* schemes
               // of the preset shown, whatever this gallery's own brightness —
               // so across the sixteen shots the Rose card must look the same
               // inside, and only its shell may change.
-              Wrap(spacing: 8, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
-                ThemeAccentPreviewCard(
-                  accent: AppConstants.presetThemes['Blue']!,
-                  name: 'Blue',
-                  selected: true,
-                  onTap: () {},
-                ),
-                ThemeAccentPreviewCard(
-                  accent: AppConstants.presetThemes['Rose']!,
-                  name: 'Rose',
-                  selected: false,
-                  onTap: () {},
-                ),
-                const SizedBox(width: 12),
-                DualToneSwatch(
-                  accent: AppConstants.presetThemes['Blue']!,
-                  name: 'Blue',
-                  pairLabel: _pairLabel(AppConstants.presetThemes['Blue']!),
-                  selected: true,
-                  onTap: () {},
-                ),
-                DualToneSwatch(
-                  accent: AppConstants.presetThemes['Rose']!,
-                  name: 'Rose',
-                  pairLabel: _pairLabel(AppConstants.presetThemes['Rose']!),
-                  selected: false,
-                  onTap: () {},
-                ),
-              ]),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  ThemeAccentPreviewCard(
+                    accent: AppConstants.presetThemes['Blue']!,
+                    name: 'Blue',
+                    selected: true,
+                    onTap: () {},
+                  ),
+                  ThemeAccentPreviewCard(
+                    accent: AppConstants.presetThemes['Rose']!,
+                    name: 'Rose',
+                    selected: false,
+                    onTap: () {},
+                  ),
+                  const SizedBox(width: 12),
+                  DualToneSwatch(
+                    accent: AppConstants.presetThemes['Blue']!,
+                    name: 'Blue',
+                    pairLabel: _pairLabel(AppConstants.presetThemes['Blue']!),
+                    selected: true,
+                    onTap: () {},
+                  ),
+                  DualToneSwatch(
+                    accent: AppConstants.presetThemes['Rose']!,
+                    name: 'Rose',
+                    pairLabel: _pairLabel(AppConstants.presetThemes['Rose']!),
+                    selected: false,
+                    onTap: () {},
+                  ),
+                ],
+              ),
               const _Label('分组小标题 · 两种语气'),
               // The accent tone is the one that has to be checked here: it is
               // small, semibold, and sits on `surface`, which is where an
               // accent is least forgiving. The neutral tone is what every
               // caption on this page already is.
-              const Row(children: [
-                Expanded(
-                  child: AppSectionLabel('价格配置', padding: EdgeInsets.zero),
-                ),
-                Expanded(
-                  child: AppSectionLabel(
-                    '分类管理',
-                    tone: AppSectionTone.neutral,
-                    padding: EdgeInsets.zero,
+              const Row(
+                children: [
+                  Expanded(child: AppSectionLabel('价格配置', padding: EdgeInsets.zero)),
+                  Expanded(
+                    child: AppSectionLabel(
+                      '分类管理',
+                      tone: AppSectionTone.neutral,
+                      padding: EdgeInsets.zero,
+                    ),
                   ),
-                ),
-              ]),
+                ],
+              ),
               const _Label('语义色 · 七个种子色下应完全一致'),
               const _SemanticRow(),
               const _Label('列表行 · 40 单行 / 48 双行'),
@@ -415,42 +437,54 @@ class _Gallery extends StatelessWidget {
               const _Label('滑杆 · 参数（主色）'),
               const _Sliders(),
               const _Label('筛选 chip'),
-              Wrap(spacing: 8, runSpacing: 8, children: [
-                FilterChip(
-                  label: const Text('全部'),
-                  selected: true,
-                  onSelected: (_) {},
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                FilterChip(
-                  label: const Text('对话'),
-                  selected: false,
-                  onSelected: (_) {},
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                const FilterChip(
-                  label: Text('禁用'),
-                  selected: false,
-                  onSelected: null,
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-              ]),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  FilterChip(
+                    label: const Text('全部'),
+                    selected: true,
+                    onSelected: (_) {},
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  FilterChip(
+                    label: const Text('对话'),
+                    selected: false,
+                    onSelected: (_) {},
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  const FilterChip(
+                    label: Text('禁用'),
+                    selected: false,
+                    onSelected: null,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                ],
+              ),
               const _Label('键位徽标 · 中性，不随种子色走（00f）'),
-              Wrap(spacing: 8, runSpacing: 8, children: <Widget>[
-                for (final id in <String>[
-                  AppShortcutIds.rename,
-                  AppShortcutIds.copyFileName,
-                  AppShortcutIds.refresh,
-                  AppShortcutIds.navigateToDestination,
-                  AppShortcutIds.delete,
-                ])
-                  AppShortcutKeys(AppShortcuts.byId(id)),
-              ]),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: <Widget>[
+                  for (final id in <String>[
+                    AppShortcutIds.rename,
+                    AppShortcutIds.copyFileName,
+                    AppShortcutIds.refresh,
+                    AppShortcutIds.navigateToDestination,
+                    AppShortcutIds.delete,
+                  ])
+                    AppShortcutKeys(AppShortcuts.byId(id)),
+                ],
+              ),
               const _Label('中性标记 · 七个种子色下应完全一致（A3e）'),
-              const Wrap(spacing: 8, runSpacing: 8, children: [
-                AppNeutralMarker(icon: Icons.subject, label: '分析'),
-                AppNeutralMarker(icon: Icons.subject, label: '分析文本'),
-              ]),
+              const Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  AppNeutralMarker(icon: Icons.subject, label: '分析'),
+                  AppNeutralMarker(icon: Icons.subject, label: '分析文本'),
+                ],
+              ),
               const _Label('进度条'),
               const _Progress(),
               const _Label('工具提示 · 明暗共用同一个底'),
@@ -560,25 +594,23 @@ class _Progress extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Row(children: [
-      Expanded(child: LinearProgressIndicator(value: 0.34)),
-      SizedBox(width: 16),
-      // Indeterminate. Pumped to a fixed point by the harness, so the sweep
-      // lands in the same place in every shot.
-      Expanded(child: LinearProgressIndicator()),
-      SizedBox(width: 16),
-      SizedBox(
-        width: 20,
-        height: 20,
-        child: CircularProgressIndicator(value: 0.68, strokeWidth: 2.5),
-      ),
-      SizedBox(width: 12),
-      SizedBox(
-        width: 16,
-        height: 16,
-        child: CircularProgressIndicator(strokeWidth: 2),
-      ),
-    ]);
+    return const Row(
+      children: [
+        Expanded(child: LinearProgressIndicator(value: 0.34)),
+        SizedBox(width: 16),
+        // Indeterminate. Pumped to a fixed point by the harness, so the sweep
+        // lands in the same place in every shot.
+        Expanded(child: LinearProgressIndicator()),
+        SizedBox(width: 16),
+        SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(value: 0.68, strokeWidth: 2.5),
+        ),
+        SizedBox(width: 12),
+        SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+      ],
+    );
   }
 }
 
@@ -622,36 +654,36 @@ class _ToastSpecimen extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
 
     Widget toast(IconData icon, Color glyph, String message, {String? action}) => Container(
-          margin: const EdgeInsets.only(bottom: 8),
-          padding: EdgeInsets.only(left: 14, right: action == null ? 14 : 8, top: 11, bottom: 11),
-          decoration: BoxDecoration(
-            color: AppOverlay.ink,
-            borderRadius: BorderRadius.circular(AppRadius.md),
-          ),
-          child: Row(
-            children: [
-              Icon(icon, color: glyph, size: AppSize.iconSm),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  message,
-                  style: textTheme.bodyMedium?.copyWith(
-                    color: AppOverlay.onInk,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.only(left: 14, right: action == null ? 14 : 8, top: 11, bottom: 11),
+      decoration: BoxDecoration(
+        color: AppOverlay.ink,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: glyph, size: AppSize.iconSm),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: textTheme.bodyMedium?.copyWith(
+                color: AppOverlay.onInk,
+                fontWeight: FontWeight.w500,
               ),
-              if (action != null)
-                Padding(
-                  padding: const EdgeInsets.only(left: 8),
-                  child: Text(
-                    action,
-                    style: textTheme.labelLarge?.copyWith(color: colorScheme.accentOnOverlay),
-                  ),
-                ),
-            ],
+            ),
           ),
-        );
+          if (action != null)
+            Padding(
+              padding: const EdgeInsets.only(left: 8),
+              child: Text(
+                action,
+                style: textTheme.labelLarge?.copyWith(color: colorScheme.accentOnOverlay),
+              ),
+            ),
+        ],
+      ),
+    );
 
     return Column(
       children: [
@@ -676,10 +708,10 @@ class _Label extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => AppSectionLabel(
-        text,
-        tone: AppSectionTone.neutral,
-        padding: const EdgeInsets.only(top: 22, bottom: 10),
-      );
+    text,
+    tone: AppSectionTone.neutral,
+    padding: const EdgeInsets.only(top: 22, bottom: 10),
+  );
 }
 
 class _SemanticRow extends StatelessWidget {
@@ -691,25 +723,29 @@ class _SemanticRow extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     Widget chip(String label, Color background, Color foreground) => Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: background,
-            borderRadius: BorderRadius.circular(AppRadius.control),
-          ),
-          child: Text(
-            label,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(color: foreground),
-          ),
-        );
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(AppRadius.control),
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(color: foreground),
+      ),
+    );
 
-    return Wrap(spacing: 10, runSpacing: 10, children: [
-      chip('成功', semantic.successContainer, semantic.onSuccessContainer),
-      chip('警告', semantic.warningContainer, semantic.onWarningContainer),
-      chip('信息', semantic.infoContainer, semantic.onInfoContainer),
-      // A wash of `error` rather than Material's own container, so the four
-      // read as one family at the same weight.
-      chip('危险', colorScheme.error.withValues(alpha: AppAlpha.tint), colorScheme.error),
-    ]);
+    return Wrap(
+      spacing: 10,
+      runSpacing: 10,
+      children: [
+        chip('成功', semantic.successContainer, semantic.onSuccessContainer),
+        chip('警告', semantic.warningContainer, semantic.onWarningContainer),
+        chip('信息', semantic.infoContainer, semantic.onInfoContainer),
+        // A wash of `error` rather than Material's own container, so the four
+        // read as one family at the same weight.
+        chip('危险', colorScheme.error.withValues(alpha: AppAlpha.tint), colorScheme.error),
+      ],
+    );
   }
 }
 

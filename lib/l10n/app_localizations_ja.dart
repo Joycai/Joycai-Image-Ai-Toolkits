@@ -131,8 +131,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get featureLimitedOnMobile => 'モバイルでは機能が制限されています';
 
   @override
-  String get fileBrowserDesktopOnlyDesc =>
-      'OSのサンドボックス制限により、高度なファイルブラウザと一括名前変更機能はデスクトップ版のみで使用できます。';
+  String get fileBrowserDesktopOnlyDesc => 'OSのサンドボックス制限により、高度なファイルブラウザと一括名前変更機能はデスクトップ版のみで使用できます。';
 
   @override
   String get fileBrowseriOSHint => '生成した画像の管理には、システムの「ファイル」アプリをご使用ください。';
@@ -437,8 +436,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get pasteRollbackNote =>
-      '別ドライブへの移動はコピー後に削除します。中止すると進行中のコピーは削除され、元ファイルはそのまま残ります。';
+  String get pasteRollbackNote => '別ドライブへの移動はコピー後に削除します。中止すると進行中のコピーは削除され、元ファイルはそのまま残ります。';
 
   @override
   String get pasteRunInBackground => 'バックグラウンドで実行';
@@ -685,8 +683,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get folderMoveCrossVolumeNote =>
-      '別のドライブです。先にコピーし、すべて到着してから元を削除します。キャンセルしても失われるものはありません。';
+  String get folderMoveCrossVolumeNote => '別のドライブです。先にコピーし、すべて到着してから元を削除します。キャンセルしても失われるものはありません。';
 
   @override
   String get folderMoveCancelledTitle => '移動をキャンセルしました';
@@ -990,8 +987,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get confirm => '確認';
 
   @override
-  String get moreSheetDesktopOnlyNote =>
-      'ファイルブラウザと画像ダウンローダーはデスクトップ／タブレットでのみ利用できます。';
+  String get moreSheetDesktopOnlyNote => 'ファイルブラウザと画像ダウンローダーはデスクトップ／タブレットでのみ利用できます。';
 
   @override
   String get consoleIdle => 'アイドル';
@@ -1051,8 +1047,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get reorderOffFiltered =>
-      'リストが絞り込まれている間は並べ替えできません。行メニューの「上へ / 下へ」を使ってください。';
+  String get reorderOffFiltered => 'リストが絞り込まれている間は並べ替えできません。行メニューの「上へ / 下へ」を使ってください。';
 
   @override
   String get dragKeepToScroll => 'ドラッグを続けるとスクロールします';
@@ -1228,8 +1223,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get importCookieFile => 'クッキーファイルをインポート';
 
   @override
-  String get cookieFileInvalid =>
-      'サポートされていないクッキーファイル形式です。Netscape形式またはrawテキストを使用してください。';
+  String get cookieFileInvalid => 'サポートされていないクッキーファイル形式です。Netscape形式またはrawテキストを使用してください。';
 
   @override
   String cookieImportSuccess(int count) {
@@ -1300,8 +1294,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get manualHtmlEmptyTitle => 'HTML がまだ貼り付けられていません';
 
   @override
-  String get manualHtmlEmptyDesc =>
-      'ブラウザーでページのソースを表示して全選択・コピーし、上の貼り付けを押してください。';
+  String get manualHtmlEmptyDesc => 'ブラウザーでページのソースを表示して全選択・コピーし、上の貼り付けを押してください。';
 
   @override
   String get cookieHistoryUse => '使用';
@@ -1322,8 +1315,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get cookieRetentionForever => '消去するまで';
 
   @override
-  String get cookieRetentionNote =>
-      'この端末に暗号化せずに保存され、バックアップには含まれません。「記憶しない」にすると今ある記録も消去します。';
+  String get cookieRetentionNote => 'この端末に暗号化せずに保存され、バックアップには含まれません。「記憶しない」にすると今ある記録も消去します。';
 
   @override
   String get cookieHistoryForget => '削除';
@@ -1549,15 +1541,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get probeModels => '個のモデル';
 
   @override
-  String get probeConnectedNoModels =>
-      '接続できました。このエンドポイントにはモデル一覧がありませんが、一部の中継では正常です。';
+  String get probeConnectedNoModels => '接続できました。このエンドポイントにはモデル一覧がありませんが、一部の中継では正常です。';
 
   @override
   String get probeAuthFailed => 'エンドポイントは応答しましたが、API キーを拒否しました。';
 
   @override
-  String get probeNotAnApi =>
-      'この URL は本 API 以外のもの（HTML ページなど）を返しました。ベース URL を確認してください。';
+  String get probeNotAnApi => 'この URL は本 API 以外のもの（HTML ページなど）を返しました。ベース URL を確認してください。';
 
   @override
   String get probeUnreachable => 'エンドポイントから応答がありません';
@@ -1745,8 +1735,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get protocolMidjourney => 'Midjourney プロキシ';
 
   @override
-  String get protocolMidjourneyDesc =>
-      'midjourney-proxy / NewAPI の /mj/* インターフェース';
+  String get protocolMidjourneyDesc => 'midjourney-proxy / NewAPI の /mj/* インターフェース';
 
   @override
   String get protocolAnthropicDesc => 'Claude ネイティブの /v1/messages インターフェース';
@@ -1788,8 +1777,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get protocolXai => 'xAI (Grok) API';
 
   @override
-  String get providerXaiOfficialDesc =>
-      'api.x.ai · Grok チャット + ネイティブ Imagine 動画';
+  String get providerXaiOfficialDesc => 'api.x.ai · Grok チャット + ネイティブ Imagine 動画';
 
   @override
   String get providerNewApiOpenAI => 'New API（OpenAI 形式）';
@@ -1831,8 +1819,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get anthropicV1Hint => 'ヒント：Anthropic のエンドポイントは通常「/v1」で終わります';
 
   @override
-  String get dashscopeApiV1Hint =>
-      'ヒント：DashScope ネイティブのエンドポイントは「/api/v1」で終わります';
+  String get dashscopeApiV1Hint => 'ヒント：DashScope ネイティブのエンドポイントは「/api/v1」で終わります';
 
   @override
   String get apiKeyStorageNotice =>
@@ -1915,8 +1902,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get contextUnlimited => '無制限';
 
   @override
-  String get contextUnlimitedDesc =>
-      'すべての候補を1回のリクエストで送信し、プロンプトアシスタントをウィンドウサイズで制限しません。';
+  String get contextUnlimitedDesc => 'すべての候補を1回のリクエストで送信し、プロンプトアシスタントをウィンドウサイズで制限しません。';
 
   @override
   String get contextMax => '最大コンテキスト';
@@ -1927,8 +1913,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get contextWindowHint =>
-      'リクエストごとの画像バッチ分割と、プロンプトアシスタントのナレッジベース読み取り・要約の予算に使われます。';
+  String get contextWindowHint => 'リクエストごとの画像バッチ分割と、プロンプトアシスタントのナレッジベース読み取り・要約の予算に使われます。';
 
   @override
   String get contextSliderHint =>
@@ -2019,8 +2004,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get forceViewAllImages => 'すべての参考画像を確認';
 
   @override
-  String get forceViewAllImagesDesc =>
-      'エージェントは結果を提出する前にすべての参考画像を確認します。小規模なローカルモデルに推奨。';
+  String get forceViewAllImagesDesc => 'エージェントは結果を提出する前にすべての参考画像を確認します。小規模なローカルモデルに推奨。';
 
   @override
   String get reasoningEffort => '推論強度';
@@ -2060,19 +2044,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get enableThinking => '拡張思考';
 
   @override
-  String get enableThinkingDesc =>
-      '回答前にモデルに推論させます。出力トークンを消費し、Anthropic 形式のチャンネルのみ対応。';
+  String get enableThinkingDesc => '回答前にモデルに推論させます。出力トークンを消費し、Anthropic 形式のチャンネルのみ対応。';
 
   @override
   String get enableWebSearch => 'サーバー側ウェブ検索';
 
   @override
-  String get enableWebSearchDesc =>
-      '回答中にプロバイダー自身がウェブ検索を実行します。追加トークンとして課金され、代理でページを取得します。';
+  String get enableWebSearchDesc => '回答中にプロバイダー自身がウェブ検索を実行します。追加トークンとして課金され、代理でページを取得します。';
 
   @override
-  String get enableWebSearchTracelessHint =>
-      'このプロトコルでは検索の痕跡が残りません。出典や引用は返されず、実際に検索が行われたかも確認できません。';
+  String get enableWebSearchTracelessHint => 'このプロトコルでは検索の痕跡が残りません。出典や引用は返されず、実際に検索が行われたかも確認できません。';
 
   @override
   String get noProviderMatch => '一致するプロバイダーがありません';
@@ -2192,16 +2173,14 @@ class AppLocalizationsJa extends AppLocalizations {
   String get variantTitleOpenAI => 'チャットインターフェース';
 
   @override
-  String get variantHintGoogle =>
-      'Google は同じモデルを 2 通りで提供します。切り替えると下のアドレスが書き換わります。';
+  String get variantHintGoogle => 'Google は同じモデルを 2 通りで提供します。切り替えると下のアドレスが書き換わります。';
 
   @override
   String get variantHintOpenAI =>
       'アドレスとキーは同じです。このチャンネルのチャットモデルが既定で使うインターフェースを決めます。個別のモデルはモデル編集で切り替えられます。';
 
   @override
-  String get variantHintMiniMax =>
-      'MiniMax は 2 つのインターフェースを提供しています。どちらかを選択（後から変更可）。';
+  String get variantHintMiniMax => 'MiniMax は 2 つのインターフェースを提供しています。どちらかを選択（後から変更可）。';
 
   @override
   String get variantHintArk =>
@@ -2269,8 +2248,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get restorePresetEndpoint => 'プリセット値に戻す';
 
   @override
-  String get changePresetOverlayHint =>
-      '選択するとプロトコルとアドレスがプリセット値で上書きされます（キー・名前・タグはそのまま）。';
+  String get changePresetOverlayHint => '選択するとプロトコルとアドレスがプリセット値で上書きされます（キー・名前・タグはそのまま）。';
 
   @override
   String get protocolField => 'APIプロトコル';
@@ -2285,8 +2263,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get apiKeyLocalPlaceholder => 'ローカルサービスは通常不要';
 
   @override
-  String get apiKeyLocalNote =>
-      '空欄で構いません。ローカルサービスにリバースプロキシ認証を付けている場合は、そのキーを入力してください。';
+  String get apiKeyLocalNote => '空欄で構いません。ローカルサービスにリバースプロキシ認証を付けている場合は、そのキーを入力してください。';
 
   @override
   String get searchProvidersAlias => 'プロバイダを検索、「Qwen」でも可';
@@ -2344,8 +2321,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get protocolDashScopeNative => 'DashScope ネイティブ';
 
   @override
-  String get protocolDashScopeNativeDesc =>
-      'Alibaba 独自のリクエスト形式。qwen-audio はこの経路のみ';
+  String get protocolDashScopeNativeDesc => 'Alibaba 独自のリクエスト形式。qwen-audio はこの経路のみ';
 
   @override
   String get protocolImageSync => '同期生成';
@@ -2510,8 +2486,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get probeOkNext => 'すぐにモデル検出を有効にできます';
 
   @override
-  String get probeNoModelsNext =>
-      'エンドポイントとキーは有効ですが、モデル一覧が空です。Model ID を手動で追加してください。';
+  String get probeNoModelsNext => 'エンドポイントとキーは有効ですが、モデル一覧が空です。Model ID を手動で追加してください。';
 
   @override
   String get probeAuthFailedNext => 'キーが完全にコピーされているか、期限切れでないか確認してください。';
@@ -2521,8 +2496,7 @@ class AppLocalizationsJa extends AppLocalizations {
       'HTML ページが返りました。コンソールの URL かもしれません。API エンドポイントは通常 /v1 か /v1beta で終わります。';
 
   @override
-  String get probeUnreachableNext =>
-      'DNS の解決に失敗したかタイムアウトしました。URL、プロキシ、ネットワークを確認してください。';
+  String get probeUnreachableNext => 'DNS の解決に失敗したかタイムアウトしました。URL、プロキシ、ネットワークを確認してください。';
 
   @override
   String get probeUpstreamError => 'エンドポイントは応答しましたが、現在リクエストを拒否しています';
@@ -2532,8 +2506,7 @@ class AppLocalizationsJa extends AppLocalizations {
       'レート制限（429）またはサーバーエラー（5xx）です。URL とキーは問題なさそうです。しばらくしてから再試行してください。';
 
   @override
-  String get probeNotSupportedNext =>
-      'このプロトコルにはモデル一覧がないため、タスクを送信して確認するしかありません。';
+  String get probeNotSupportedNext => 'このプロトコルにはモデル一覧がないため、タスクを送信して確認するしかありません。';
 
   @override
   String get previewEmptyKeyNote => 'キーは未入力です。あとでチャネル編集から追加できます。';
@@ -2583,8 +2556,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get moveDown => '下へ移動';
 
   @override
-  String get channelReorderFootnote =>
-      'ホバーでハンドル表示 · ドラッグで並べ替え · 右クリックか Alt+↑/↓ でも可';
+  String get channelReorderFootnote => 'ホバーでハンドル表示 · ドラッグで並べ替え · 右クリックか Alt+↑/↓ でも可';
 
   @override
   String get noModelsConfiguredHint => '「モデル取得」で検出するか、手動で追加してください。';
@@ -2643,8 +2615,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get modelIdTakenTitle => 'このチャンネルには同じ Model ID がすでにあります';
 
   @override
-  String get modelIdTakenDesc =>
-      'Model ID はチャンネル内で一意である必要があります。ID を変えるか、すでにあるモデルを編集してください。';
+  String get modelIdTakenDesc => 'Model ID はチャンネル内で一意である必要があります。ID を変えるか、すでにあるモデルを編集してください。';
 
   @override
   String get perSpec => '仕様別';
@@ -2719,8 +2690,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get specInputFreeSuffix => '枚無料';
 
   @override
-  String get specInputFreeOnlyHint =>
-      '無料枚数だけが入力されています。単価がなければ入力画像は課金されず、この設定は無効です。';
+  String get specInputFreeOnlyHint => '無料枚数だけが入力されています。単価がなければ入力画像は課金されず、この設定は無効です。';
 
   @override
   String get specInputPriceInvalid => '入力画像の単価が有効な非負の数値ではありません。保存前に修正してください。';
@@ -2803,15 +2773,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get feeGroupPickTitle => '編集するグループを選択';
 
   @override
-  String get feeGroupPickText =>
-      'グループカードか編集ボタンを押すと、ここにエディタが開きます。「新しいグループ」もここに開きます。';
+  String get feeGroupPickText => 'グループカードか編集ボタンを押すと、ここにエディタが開きます。「新しいグループ」もここに開きます。';
 
   @override
   String get feeGroupReorderTitle => '左のハンドルをドラッグして並べ替え';
 
   @override
-  String get feeGroupReorderText =>
-      '順序はモデル・チャンネル編集の料金グループ選択にも反映されます。離すと保存されます。';
+  String get feeGroupReorderText => '順序はモデル・チャンネル編集の料金グループ選択にも反映されます。離すと保存されます。';
 
   @override
   String get feeGroupReorderNote => '絞り込み中は並べ替えできません。離すと順序が保存されます。';
@@ -2834,8 +2802,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get feeGroupNamePlaceholder => 'グループ名を入力';
 
   @override
-  String get tokenPriceHint =>
-      '100 万トークン単位で課金。キャッシュ入力が未入力なら入力価格で計算。画像 / 動画モデルは「仕様別」を使ってください。';
+  String get tokenPriceHint => '100 万トークン単位で課金。キャッシュ入力が未入力なら入力価格で計算。画像 / 動画モデルは「仕様別」を使ってください。';
 
   @override
   String get discardChangesTitle => '未保存の変更を破棄しますか？';
@@ -2919,12 +2886,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get mergeDialogTitle => 'チャンネルを統合';
 
   @override
-  String mergeDialogProgress(
-    int index,
-    int total,
-    String platform,
-    String host,
-  ) {
+  String mergeDialogProgress(int index, int total, String platform, String host) {
     return '$index / $total · $platform · $host';
   }
 
@@ -2985,8 +2947,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get mergeIrreversible =>
-      '統合は元に戻せません。キーの一致はこの端末のメモリ内で比較しており、キー自体は表示も記録もしません。';
+  String get mergeIrreversible => '統合は元に戻せません。キーの一致はこの端末のメモリ内で比較しており、キー自体は表示も記録もしません。';
 
   @override
   String get mergeSkip => 'このグループをスキップ';
@@ -3111,8 +3072,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get routeWebSearchPerRoute => 'ルート別';
 
   @override
-  String get routeWebSearchNotSent =>
-      '現在のルートは Web 検索を送信しません。スイッチはオンのまま、送信できるルートで有効になります。';
+  String get routeWebSearchNotSent => '現在のルートは Web 検索を送信しません。スイッチはオンのまま、送信できるルートで有効になります。';
 
   @override
   String get routeWebSearchSends => 'このルートで送信されます';
@@ -3309,8 +3269,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get promptLibraryEmptyHint =>
-      'ワークベンチでよく使うプロンプトを保存すれば、次からワンクリックで適用できます。';
+  String get promptLibraryEmptyHint => 'ワークベンチでよく使うプロンプトを保存すれば、次からワンクリックで適用できます。';
 
   @override
   String get colorPresets => 'プリセット';
@@ -3328,8 +3287,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get presetOutputAnalysisShort => '分析';
 
   @override
-  String get presetOutputPromptHelp =>
-      'アシスタントは結果をバージョン付きのプロンプトカードとして渡し、ワンクリックでワークベンチに適用できます。';
+  String get presetOutputPromptHelp => 'アシスタントは結果をバージョン付きのプロンプトカードとして渡し、ワンクリックでワークベンチに適用できます。';
 
   @override
   String get presetOutputAnalysisHelp =>
@@ -3403,8 +3361,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get fontDownloadTitle => 'フォントをダウンロード';
 
   @override
-  String get fontDownloadPrompt =>
-      'このフォントはアプリに同梱されていないため、使用する前に一度ダウンロードする必要があります。';
+  String get fontDownloadPrompt => 'このフォントはアプリに同梱されていないため、使用する前に一度ダウンロードする必要があります。';
 
   @override
   String get fontDownloadAction => 'ダウンロード';
@@ -3523,12 +3480,10 @@ class AppLocalizationsJa extends AppLocalizations {
       'これはプロンプトライブラリのエクスポートファイルであり、完全なバックアップではありません。プロンプト画面からインポートしてください。';
 
   @override
-  String get importErrorNotABackup =>
-      'このファイルは有効なバックアップではありません。「設定をエクスポート」で作成したファイルを選択してください。';
+  String get importErrorNotABackup => 'このファイルは有効なバックアップではありません。「設定をエクスポート」で作成したファイルを選択してください。';
 
   @override
-  String get importErrorNewerSchema =>
-      'このバックアップは新しいバージョンのアプリで作成されました。アプリを更新してからインポートしてください。';
+  String get importErrorNewerSchema => 'このバックアップは新しいバージョンのアプリで作成されました。アプリを更新してからインポートしてください。';
 
   @override
   String get importMode => 'インポートモード';
@@ -3597,8 +3552,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get openLogFolder => 'ログフォルダを開く';
 
   @override
-  String get iosOutputRecommend =>
-      '推奨：iOSではデフォルトのままにしてください。アプリのフォルダは「ファイル」アプリで表示されます。';
+  String get iosOutputRecommend => '推奨：iOSではデフォルトのままにしてください。アプリのフォルダは「ファイル」アプリで表示されます。';
 
   @override
   String get knowledgeBaseFolder => 'ナレッジベースフォルダ';
@@ -3714,8 +3668,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get aboutMetaDataDir => 'データディレクトリ';
 
   @override
-  String get aboutModelNotice =>
-      'このアプリはモデルの重みを含みません。生成物の権利帰属とコンプライアンスは各プロバイダーの利用規約に従います。';
+  String get aboutModelNotice => 'このアプリはモデルの重みを含みません。生成物の権利帰属とコンプライアンスは各プロバイダーの利用規約に従います。';
 
   @override
   String get themeMode => 'テーマモード';
@@ -4123,8 +4076,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get clearAllKeepsFiles =>
-      '実行中のタスクはそのままです。生成済みのファイルは出力フォルダーに残り、キューの記録だけが消去されます。';
+  String get clearAllKeepsFiles => '実行中のタスクはそのままです。生成済みのファイルは出力フォルダーに残り、キューの記録だけが消去されます。';
 
   @override
   String get taskNoOutputsFailed => '出力はありません。書き込み前にタスクが失敗しました。';
@@ -4366,8 +4318,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get mjChaos => 'カオス';
 
   @override
-  String get referenceImagesNotSupported =>
-      'このモデルは参照画像に対応していません。選択した画像は無視されます。';
+  String get referenceImagesNotSupported => 'このモデルは参照画像に対応していません。選択した画像は無視されます。';
 
   @override
   String referenceImagesLimited(int count) {
@@ -4787,8 +4738,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get optRemoveImage => '画像を削除';
 
   @override
-  String get optEmptyImagesHint =>
-      'ギャラリーで画像を右クリックし、「プロンプトアシスタントに送信」を選択すると追加できます。';
+  String get optEmptyImagesHint => 'ギャラリーで画像を右クリックし、「プロンプトアシスタントに送信」を選択すると追加できます。';
 
   @override
   String get referenceImages => '参照画像';
@@ -4847,8 +4797,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get iosSandboxActive => 'iOSサンドボックス有効';
 
   @override
-  String get iosSandboxDesc =>
-      'iOSでは、上部のツールバーにある「ギャラリーからインポート」ボタンを使用して、一時ワークスペースに画像を追加してください。';
+  String get iosSandboxDesc => 'iOSでは、上部のツールバーにある「ギャラリーからインポート」ボタンを使用して、一時ワークスペースに画像を追加してください。';
 
   @override
   String get mobileSandboxActive => 'モバイルストレージの制限';
@@ -4888,8 +4837,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get safetySettings => 'セーフティ設定';
 
   @override
-  String get safetySettingsDesc =>
-      'Gemini コンテンツフィルタのしきい値。各リクエストに適用されます（厳格 → 寛容）。Veo/Imagen は非対応。';
+  String get safetySettingsDesc => 'Gemini コンテンツフィルタのしきい値。各リクエストに適用されます（厳格 → 寛容）。Veo/Imagen は非対応。';
 
   @override
   String get safetyCategoryHarassment => 'ハラスメント';
@@ -5008,8 +4956,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get optFeedbackReasonStyle => 'スタイルのずれ';
 
   @override
-  String get optFeedbackHintSatisfied =>
-      'どこが良かったか書いておくと、アシスタントは次回もその処理を保ちます（任意）';
+  String get optFeedbackHintSatisfied => 'どこが良かったか書いておくと、アシスタントは次回もその処理を保ちます（任意）';
 
   @override
   String get optFeedbackHintUnsatisfied => 'どこが期待と違いましたか？具体的なほど助かります（任意）';
@@ -5040,8 +4987,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get optDistillAction => '今回の知見をまとめる';
 
   @override
-  String get optDistillDisabledTooltip =>
-      'このセッションにはまだプロンプト版がありません。先に一度最適化してください';
+  String get optDistillDisabledTooltip => 'このセッションにはまだプロンプト版がありません。先に一度最適化してください';
 
   @override
   String optDistillCounts(int versions, int feedbacks) {
@@ -5273,16 +5219,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get optSendHint => 'Enter で送信 · Shift+Enter で改行';
 
   @override
-  String get optRefNumberingHint =>
-      '番号はプロンプトで引用されるファイル名に対応します。エージェントはこれらの画像を参照できます。';
+  String get optRefNumberingHint => '番号はプロンプトで引用されるファイル名に対応します。エージェントはこれらの画像を参照できます。';
 
   @override
-  String get optRefReorderHint =>
-      'カードをドラッグして並べ替えます。番号はアシスタントに渡す順序で、プロンプトが引用する番号でもあります。';
+  String get optRefReorderHint => 'カードをドラッグして並べ替えます。番号はアシスタントに渡す順序で、プロンプトが引用する番号でもあります。';
 
   @override
-  String get optRefReorderHintTouch =>
-      'カードを長押ししてからドラッグで並べ替えます。番号はアシスタントに渡す順序です。';
+  String get optRefReorderHintTouch => 'カードを長押ししてからドラッグで並べ替えます。番号はアシスタントに渡す順序です。';
 
   @override
   String get optRefReorderLocked => 'アシスタントが応答中です。終了後に並べ替えられます。';
@@ -5363,8 +5306,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get optSysPromptNoKb =>
-      'このモードではナレッジベースを参照しません。アシスタントは参考画像の確認や質問は行います。';
+  String get optSysPromptNoKb => 'このモードではナレッジベースを参照しません。アシスタントは参考画像の確認や質問は行います。';
 
   @override
   String get kbEditNoChange => 'この提案はファイルの内容を変更しません。';
@@ -5424,8 +5366,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get kbWriteBackup => '上書き前に .bak を残す';
 
   @override
-  String get kbWriteNoConfirmWarning =>
-      '個別確認をオフにすると、agent が作成した内容が確認なしでファイルに書き込まれます。';
+  String get kbWriteNoConfirmWarning => '個別確認をオフにすると、agent が作成した内容が確認なしでファイルに書き込まれます。';
 
   @override
   String get wbToolComparatorShort => '比較';
@@ -5768,8 +5709,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get imageSizeRecommendCorner => '比率 \\ 段階';
 
   @override
-  String get imageSizeRecommendHint =>
-      'セルを選ぶと比率と大きさが同時に決まります。1:1 の行は段階キーワード、ほかはピクセルを送信。';
+  String get imageSizeRecommendHint => 'セルを選ぶと比率と大きさが同時に決まります。1:1 の行は段階キーワード、ほかはピクセルを送信。';
 
   @override
   String get imageSizeLockRatio => '比率を固定';
@@ -5860,8 +5800,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get optEmptyPresetTitle => '今回は何をしますか？';
 
   @override
-  String get optEmptyPresetSub =>
-      'タスクプリセットを選んで、アイデアをアシスタントに送ってください。必要に応じて参考画像を確認し、何度でもやり取りできます。';
+  String get optEmptyPresetSub => 'タスクプリセットを選んで、アイデアをアシスタントに送ってください。必要に応じて参考画像を確認し、何度でもやり取りできます。';
 
   @override
   String optEmptyPresetAll(int count) {
@@ -5890,8 +5829,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get optEmptyKbEditTitle => 'ナレッジベースをメンテナンスする';
 
   @override
-  String get optEmptyKbEditSub =>
-      '追加・修正したい内容を伝えてください。変更はすべて diff で確認してから書き込まれます。';
+  String get optEmptyKbEditSub => '追加・修正したい内容を伝えてください。変更はすべて diff で確認してから書き込まれます。';
 
   @override
   String get optEmptyKbEditExample1 => 'この種の画の書き方を記録する文書を追加してください：';
@@ -5900,8 +5838,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get optEmptyKbEditExample2 => 'ナレッジベース内に矛盾するルールがないか確認してください。';
 
   @override
-  String get optEmptyKbEditExample3 =>
-      'エントリファイルのファイルマップを実際のディレクトリに合わせて更新してください。';
+  String get optEmptyKbEditExample3 => 'エントリファイルのファイルマップを実際のディレクトリに合わせて更新してください。';
 
   @override
   String get optLeftDocs => '文書';
@@ -5912,12 +5849,10 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get optKbUseMaintainNotice =>
-      '「メンテナンス」に切り替えました · アシスタントはナレッジベースの変更を提案できます';
+  String get optKbUseMaintainNotice => '「メンテナンス」に切り替えました · アシスタントはナレッジベースの変更を提案できます';
 
   @override
-  String get optKbUseWriteNotice =>
-      '「プロンプト作成」に切り替えました · アシスタントはナレッジベースの変更を提案しなくなります';
+  String get optKbUseWriteNotice => '「プロンプト作成」に切り替えました · アシスタントはナレッジベースの変更を提案しなくなります';
 
   @override
   String get optPresetOutputPromptValue => 'プロンプト · カードで渡す';
@@ -5929,8 +5864,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get optEmptyAnalysisTitle => '今回は何を見ますか？';
 
   @override
-  String get optEmptyAnalysisSub =>
-      'どの参考画像を見て、何を取り出すのかを伝えてください。アシスタントはこのプリセットが定める構成でそのまま回答します。';
+  String get optEmptyAnalysisSub => 'どの参考画像を見て、何を取り出すのかを伝えてください。アシスタントはこのプリセットが定める構成でそのまま回答します。';
 
   @override
   String get optEmptyAnalysisExample1 => '参考画像 1 の内容を読み取ってください';

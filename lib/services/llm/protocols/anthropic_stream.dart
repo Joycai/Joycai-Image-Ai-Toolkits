@@ -39,13 +39,11 @@ class AnthropicStreamAssembler {
   /// end: indices are reused across blocks, and a call whose arguments are
   /// still a JSON fragment must never escape (see
   /// [LLMResponseChunk.toolCallPart]).
-  final Map<int, ({String id, String name, StringBuffer json})> _pendingCalls =
-      {};
+  final Map<int, ({String id, String name, StringBuffer json})> _pendingCalls = {};
 
   /// Server-tool calls under construction — same shape, but these are never
   /// emitted as calls: the host runs them itself.
-  final Map<int, ({String id, String name, StringBuffer json})>
-  _pendingServerCalls = {};
+  final Map<int, ({String id, String name, StringBuffer json})> _pendingServerCalls = {};
 
   /// Every block of the turn, verbatim as far as a stream allows, keyed by
   /// index and in arrival order. This is the replay carrier for a
@@ -140,9 +138,7 @@ class AnthropicStreamAssembler {
               json: StringBuffer(),
             );
             final startInput = block['input'];
-            final startQuery = startInput is Map
-                ? startInput['query']?.toString()
-                : null;
+            final startQuery = startInput is Map ? startInput['query']?.toString() : null;
             logger?.call(
               'Host running ${block['name']}'
               '${startQuery == null || startQuery.isEmpty ? '' : '("$startQuery")'}…',
@@ -162,12 +158,7 @@ class AnthropicStreamAssembler {
               );
             } else {
               _serverToolRuns.add(
-                ServerToolRun(
-                  'web_search',
-                  '',
-                  parsed.results,
-                  error: parsed.error,
-                ),
+                ServerToolRun('web_search', '', parsed.results, error: parsed.error),
               );
             }
         }
@@ -227,10 +218,7 @@ class AnthropicStreamAssembler {
             final block = _blocks[index];
             if (citation is Map && block != null) {
               final existing = block['citations'];
-              block['citations'] = [
-                if (existing is List) ...existing,
-                citation,
-              ];
+              block['citations'] = [if (existing is List) ...existing, citation];
             }
         }
 
@@ -238,27 +226,17 @@ class AnthropicStreamAssembler {
         final index = _indexOf(event);
         final call = _pendingCalls.remove(index);
         if (call != null) {
-          final completed = _completeCall(
-            call,
-            startedWith: _blocks[index]?['input'],
-          );
+          final completed = _completeCall(call, startedWith: _blocks[index]?['input']);
           _blocks[index]?['input'] = completed.arguments;
           yield LLMResponseChunk(toolCallPart: completed);
         }
         final serverCall = _pendingServerCalls.remove(index);
         if (serverCall != null) {
-          final input = _completeCall(
-            serverCall,
-            startedWith: _blocks[index]?['input'],
-          ).arguments;
+          final input = _completeCall(serverCall, startedWith: _blocks[index]?['input']).arguments;
           _blocks[index]?['input'] = input;
           _runsByCallId[serverCall.id] = _serverToolRuns.length;
           _serverToolRuns.add(
-            ServerToolRun(
-              serverCall.name,
-              input['query']?.toString() ?? '',
-              const [],
-            ),
+            ServerToolRun(serverCall.name, input['query']?.toString() ?? '', const []),
           );
         }
         final thought = _pendingThinking.remove(index);
@@ -332,8 +310,7 @@ class AnthropicStreamAssembler {
 
   /// Whether the turn stopped on a search result with no text after it — the
   /// MiniMax-shaped half-turn (see [AnthropicContent.turnIncomplete]).
-  bool get turnIncomplete =>
-      _hasServerTool && _lastVisibleType == 'web_search_tool_result';
+  bool get turnIncomplete => _hasServerTool && _lastVisibleType == 'web_search_tool_result';
 
   /// The closing chunk: usage, stop reason, and the replay carriers.
   ///
@@ -370,10 +347,7 @@ class AnthropicStreamAssembler {
     final rawContent = _hasServerTool
         ? [for (final index in _order) _blocks[index]!]
         : const <Map<String, dynamic>>[];
-    if (_usage.isEmpty &&
-        _stopReason == null &&
-        _rawThinkingBlocks.isEmpty &&
-        rawContent.isEmpty) {
+    if (_usage.isEmpty && _stopReason == null && _rawThinkingBlocks.isEmpty && rawContent.isEmpty) {
       return null;
     }
     return LLMResponseChunk(
@@ -385,9 +359,7 @@ class AnthropicStreamAssembler {
               serverToolRuns: _serverToolRuns,
               turnIncomplete: turnIncomplete,
             ),
-      rawThinkingBlocks: _rawThinkingBlocks.isEmpty
-          ? null
-          : List.of(_rawThinkingBlocks),
+      rawThinkingBlocks: _rawThinkingBlocks.isEmpty ? null : List.of(_rawThinkingBlocks),
       reasoningSignature: _thinkingSignature,
       rawContentBlocks: rawContent.isEmpty ? null : rawContent,
     );

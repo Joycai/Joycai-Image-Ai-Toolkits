@@ -19,11 +19,7 @@ abstract class PreviewHandler {
   /// [isActive] is true only for the page currently shown in the pager, so
   /// handlers can lazily allocate heavy resources (e.g. video players) and
   /// release them when the page scrolls away.
-  Widget buildContent(
-    BuildContext context, {
-    required String path,
-    required bool isActive,
-  });
+  Widget buildContent(BuildContext context, {required String path, required bool isActive});
 
   /// Builds the small thumbnail shown in the bottom strip for [path].
   Widget buildThumbnail(BuildContext context, {required String path});

@@ -91,9 +91,11 @@ Future<void> databaseIdle({Duration giveUpAfter = realAsyncGiveUp}) async {
   int rounds = 0;
   // A worker that has answered once is not stuck: time running out after that,
   // even in the middle of a query, is the polling.
-  Never gaveUp() => fail(rounds == 0
-      ? 'the database worker never answered — a call ahead of this one is stuck'
-      : 'the database never went quiet — something is polling it');
+  Never gaveUp() => fail(
+    rounds == 0
+        ? 'the database worker never answered — a call ahead of this one is stuck'
+        : 'the database never went quiet — something is polling it',
+  );
   do {
     final Duration left = giveUp.difference(DateTime.now());
     if (left <= Duration.zero) gaveUp();
@@ -124,14 +126,13 @@ Future<void> inRealAsync(
   WidgetTester tester,
   FutureOr<void> Function() action, {
   Duration wait = Duration.zero,
-}) =>
-    runAsyncRethrowing<void>(tester, () async {
-      await action();
-      await tester.pump();
-      await databaseIdle();
-      if (wait > Duration.zero) await Future<void>.delayed(wait);
-      await tester.pump();
-    });
+}) => runAsyncRethrowing<void>(tester, () async {
+  await action();
+  await tester.pump();
+  await databaseIdle();
+  if (wait > Duration.zero) await Future<void>.delayed(wait);
+  await tester.pump();
+});
 
 /// [WidgetTester.pumpWidget] for a tree whose `initState`s read the database:
 /// the first frame, and the loads it starts, happen in real async.
@@ -139,8 +140,7 @@ Future<void> pumpWidgetInRealAsync(
   WidgetTester tester,
   Widget widget, {
   Duration wait = Duration.zero,
-}) =>
-    inRealAsync(tester, () => tester.pumpWidget(widget), wait: wait);
+}) => inRealAsync(tester, () => tester.pumpWidget(widget), wait: wait);
 
 /// [inRealAsync], but waiting for [until] — what the database work [action]
 /// started ends in — instead of for the database to go quiet. For a chain the
@@ -154,16 +154,15 @@ Future<void> inRealAsyncUntil(
   FutureOr<void> Function() action, {
   required bool Function() until,
   Duration giveUpAfter = realAsyncGiveUp,
-}) =>
-    runAsyncRethrowing<void>(tester, () async {
-      await action();
-      final DateTime giveUp = DateTime.now().add(giveUpAfter);
-      while (true) {
-        await tester.pump();
-        if (until()) return;
-        if (DateTime.now().isAfter(giveUp)) {
-          fail('the work the action started never reached the state waited for');
-        }
-        await Future<void>.delayed(const Duration(milliseconds: 5));
-      }
-    });
+}) => runAsyncRethrowing<void>(tester, () async {
+  await action();
+  final DateTime giveUp = DateTime.now().add(giveUpAfter);
+  while (true) {
+    await tester.pump();
+    if (until()) return;
+    if (DateTime.now().isAfter(giveUp)) {
+      fail('the work the action started never reached the state waited for');
+    }
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+  }
+});

@@ -8,14 +8,16 @@ void main() {
     final notifier = ValueNotifier<int>(0);
     addTearDown(notifier.dispose);
     var builds = 0;
-    await tester.pumpWidget(ListenableSelector<bool>(
-      listenable: notifier,
-      selector: () => notifier.value.isEven,
-      builder: (context) {
-        builds++;
-        return const SizedBox();
-      },
-    ));
+    await tester.pumpWidget(
+      ListenableSelector<bool>(
+        listenable: notifier,
+        selector: () => notifier.value.isEven,
+        builder: (context) {
+          builds++;
+          return const SizedBox();
+        },
+      ),
+    );
     expect(builds, 1);
 
     notifier.value = 2; // still even
@@ -34,13 +36,13 @@ void main() {
     addTearDown(b.dispose);
     var builds = 0;
     Widget host(ValueNotifier<int> n) => ListenableSelector<int>(
-          listenable: n,
-          selector: () => n.value,
-          builder: (context) {
-            builds++;
-            return const SizedBox();
-          },
-        );
+      listenable: n,
+      selector: () => n.value,
+      builder: (context) {
+        builds++;
+        return const SizedBox();
+      },
+    );
     await tester.pumpWidget(host(a));
     await tester.pumpWidget(host(b));
     final before = builds;

@@ -52,7 +52,10 @@ void main() {
   test('the scale sizes match what the app actually renders at', () {
     // Pins the sizes call sites are expected to migrate onto, so a slot
     // can't silently drift away from the value every screen already uses.
-    final textTheme = buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light).textTheme;
+    final textTheme = buildAppTheme(
+      accent: ThemeAccent.fromSeed(seed),
+      brightness: Brightness.light,
+    ).textTheme;
 
     // `00 设计系统 · 1d`: seven sizes and no others — 28 · 20 · 16 · 14 · 13 ·
     // 12 · 11. See _buildTextTheme for which slot carries which job.
@@ -69,10 +72,18 @@ void main() {
     expect(textTheme.labelSmall?.fontSize, 11);
     final ladder = <double>{28, 20, 16, 14, 13, 12, 11};
     for (final style in [
-      textTheme.headlineLarge, textTheme.headlineMedium, textTheme.headlineSmall,
-      textTheme.titleLarge, textTheme.titleMedium, textTheme.titleSmall,
-      textTheme.bodyLarge, textTheme.bodyMedium, textTheme.bodySmall,
-      textTheme.labelLarge, textTheme.labelMedium, textTheme.labelSmall,
+      textTheme.headlineLarge,
+      textTheme.headlineMedium,
+      textTheme.headlineSmall,
+      textTheme.titleLarge,
+      textTheme.titleMedium,
+      textTheme.titleSmall,
+      textTheme.bodyLarge,
+      textTheme.bodyMedium,
+      textTheme.bodySmall,
+      textTheme.labelLarge,
+      textTheme.labelMedium,
+      textTheme.labelSmall,
     ]) {
       expect(ladder, contains(style?.fontSize), reason: 'a slot left the seven-size ladder');
     }
@@ -82,7 +93,10 @@ void main() {
     // The scale merges its overrides on top of Material's own colour-derived
     // default so text keeps tracking colorScheme — it must not have stamped a
     // flat colour of its own on top.
-    final colorScheme = buildAppColorScheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light);
+    final colorScheme = buildAppColorScheme(
+      accent: ThemeAccent.fromSeed(seed),
+      brightness: Brightness.light,
+    );
     final theme = buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light);
     final defaultTheme = ThemeData(useMaterial3: true, colorScheme: colorScheme);
 
@@ -93,8 +107,14 @@ void main() {
   test('the scale is identical across light and dark, only colour differs', () {
     // Switching theme mode must not also reflow text — only the palette
     // should move.
-    final light = buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light).textTheme;
-    final dark = buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.dark).textTheme;
+    final light = buildAppTheme(
+      accent: ThemeAccent.fromSeed(seed),
+      brightness: Brightness.light,
+    ).textTheme;
+    final dark = buildAppTheme(
+      accent: ThemeAccent.fromSeed(seed),
+      brightness: Brightness.dark,
+    ).textTheme;
 
     expect(dark.bodyMedium?.fontSize, light.bodyMedium?.fontSize);
     expect(dark.bodyMedium?.fontWeight, light.bodyMedium?.fontWeight);
@@ -129,15 +149,18 @@ void main() {
     test('every slot carries a tracking, chosen rather than inherited', () {
       final t = scale();
       for (final (name, style) in [
-        ('titleLarge', t.titleLarge), ('titleMedium', t.titleMedium),
-        ('titleSmall', t.titleSmall), ('bodyLarge', t.bodyLarge),
-        ('bodyMedium', t.bodyMedium), ('bodySmall', t.bodySmall),
-        ('labelLarge', t.labelLarge), ('labelMedium', t.labelMedium),
+        ('titleLarge', t.titleLarge),
+        ('titleMedium', t.titleMedium),
+        ('titleSmall', t.titleSmall),
+        ('bodyLarge', t.bodyLarge),
+        ('bodyMedium', t.bodyMedium),
+        ('bodySmall', t.bodySmall),
+        ('labelLarge', t.labelLarge),
+        ('labelMedium', t.labelMedium),
         ('labelSmall', t.labelSmall),
       ]) {
         expect(style?.letterSpacing, isNotNull, reason: name);
-        expect(style?.letterSpacing, AppType.trackingFor(style!.fontSize!),
-            reason: name);
+        expect(style?.letterSpacing, AppType.trackingFor(style!.fontSize!), reason: name);
       }
     });
 
@@ -148,9 +171,11 @@ void main() {
       // fastest.
       const sizes = [10.0, 11.0, 11.5, 12.0, 13.0, 14.0, 15.0, 16.0];
       for (int i = 0; i < sizes.length - 1; i++) {
-        expect(AppType.trackingFor(sizes[i]),
-            greaterThan(AppType.trackingFor(sizes[i + 1])),
-            reason: '${sizes[i]} vs ${sizes[i + 1]}');
+        expect(
+          AppType.trackingFor(sizes[i]),
+          greaterThan(AppType.trackingFor(sizes[i + 1])),
+          reason: '${sizes[i]} vs ${sizes[i + 1]}',
+        );
       }
 
       // Flat outside the ladder rather than extrapolating into nonsense.
@@ -189,15 +214,14 @@ void main() {
     });
 
     test('the UI font closes the fallback, after every mono face', () {
-      expect(ui.mono.fontFamilyFallback, [
-        ...kMonoFontFamilyFallback.skip(1),
-        'Microsoft YaHei',
-      ]);
+      expect(ui.mono.fontFamilyFallback, [...kMonoFontFamilyFallback.skip(1), 'Microsoft YaHei']);
     });
 
     test('no UI font adds nothing to the fallback', () {
-      expect(const TextStyle(fontSize: 12).mono.fontFamilyFallback,
-          kMonoFontFamilyFallback.skip(1).toList());
+      expect(
+        const TextStyle(fontSize: 12).mono.fontFamilyFallback,
+        kMonoFontFamilyFallback.skip(1).toList(),
+      );
     });
 
     test('mono twice keeps the UI font it was built from', () {

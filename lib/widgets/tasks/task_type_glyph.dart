@@ -14,10 +14,10 @@ import '../../models/task_item.dart';
 /// than on [TaskType] itself.
 extension TaskTypeGlyph on TaskType {
   IconData get glyph => switch (this) {
-        TaskType.imageProcess => Icons.image_outlined,
-        TaskType.imageDownload => Icons.cloud_download_outlined,
-        TaskType.promptRefine => Icons.auto_fix_high,
-        TaskType.aiRename => Icons.drive_file_rename_outline,
-        TaskType.videoGenerate => Icons.movie_outlined,
-      };
+    TaskType.imageProcess => Icons.image_outlined,
+    TaskType.imageDownload => Icons.cloud_download_outlined,
+    TaskType.promptRefine => Icons.auto_fix_high,
+    TaskType.aiRename => Icons.drive_file_rename_outline,
+    TaskType.videoGenerate => Icons.movie_outlined,
+  };
 }

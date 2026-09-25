@@ -90,15 +90,21 @@ class _ResultsHeader extends StatelessWidget {
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final addWidth = AppSpace.s16 * 2 +
+          final addWidth =
+              AppSpace.s16 * 2 +
               AppSize.iconMd +
               8 +
               measureGlassText(context, l10n.addToQueue, textTheme.labelLarge!);
-          final fullWidth = measureGlassText(context, l10n.selectImagesToDownload, titleStyle) +
+          final fullWidth =
+              measureGlassText(context, l10n.selectImagesToDownload, titleStyle) +
               8 +
               measureGlassText(context, count, countStyle) +
               AppSpace.s16 +
-              DownloaderActionButton.widthFor(context, label: l10n.selectAll, height: AppSize.compact) +
+              DownloaderActionButton.widthFor(
+                context,
+                label: l10n.selectAll,
+                height: AppSize.compact,
+              ) +
               8 +
               addWidth;
           final labelled = fullWidth <= constraints.maxWidth;
@@ -221,9 +227,9 @@ class _StatusRow extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final scheme = Theme.of(context).colorScheme;
     final base = Theme.of(context).textTheme.labelSmall!.mono.copyWith(
-          fontWeight: FontWeight.w400,
-          color: scheme.onSurfaceVariant,
-        );
+      fontWeight: FontWeight.w400,
+      color: scheme.onSurfaceVariant,
+    );
     final output = Provider.of<AppState>(context, listen: false).galleryState.outputDirectory;
 
     Widget? counts;
@@ -265,10 +271,7 @@ class _StatusRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          if (counts != null) ...[
-            Flexible(child: counts),
-            const SizedBox(width: AppSpace.s16),
-          ],
+          if (counts != null) ...[Flexible(child: counts), const SizedBox(width: AppSpace.s16)],
           Expanded(
             child: Text(
               destination,
@@ -413,7 +416,9 @@ class _EmptyGuide extends StatelessWidget {
             Text(
               l10n.noImagesDiscovered,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleMedium!.copyWith(color: scheme.onSurfaceVariant),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium!.copyWith(color: scheme.onSurfaceVariant),
             ),
             const SizedBox(height: AppSpace.s16),
             Wrap(

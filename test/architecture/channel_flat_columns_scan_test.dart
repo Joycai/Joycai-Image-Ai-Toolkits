@@ -33,7 +33,10 @@ void main() {
         if (read.hasMatch(code)) offenders.add('$path:${i + 1}  $line');
       }
     }
-    expect(offenders, isEmpty,
-        reason: 'read the model\'s route instead:\n  ${offenders.join('\n  ')}');
+    expect(
+      offenders,
+      isEmpty,
+      reason: 'read the model\'s route instead:\n  ${offenders.join('\n  ')}',
+    );
   });
 }

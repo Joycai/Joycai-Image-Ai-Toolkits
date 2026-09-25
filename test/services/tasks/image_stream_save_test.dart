@@ -46,8 +46,8 @@ void main() {
       request.response
         ..bufferOutput = false
         ..headers.contentType = ContentType('text', 'event-stream');
-      void event(Map<String, dynamic> data) => request.response
-          .write('event: ${data['type']}\ndata: ${jsonEncode(data)}\n\n');
+      void event(Map<String, dynamic> data) =>
+          request.response.write('event: ${data['type']}\ndata: ${jsonEncode(data)}\n\n');
       event({
         'type': 'image_generation.partial_succeeded',
         'image_index': 0,
@@ -71,18 +71,22 @@ void main() {
     final outDir = Directory('${dataDir.path}/out')..createSync();
     final db = DatabaseService();
     await db.saveSetting('output_directory', outDir.path);
-    final channelId = await db.addChannel(LLMChannel(
-      displayName: 'Ark',
-      endpoint: 'http://127.0.0.1:${server.port}/api/plan/v3',
-      apiKey: 'k',
-      type: Vendors.volcengineArk,
-    ));
-    final modelId = await db.addModel(LLMModel(
-      modelId: 'doubao-seedream-5.0-lite',
-      modelName: 'Seedream lite',
-      tag: 'image',
-      channelId: channelId,
-    ));
+    final channelId = await db.addChannel(
+      LLMChannel(
+        displayName: 'Ark',
+        endpoint: 'http://127.0.0.1:${server.port}/api/plan/v3',
+        apiKey: 'k',
+        type: Vendors.volcengineArk,
+      ),
+    );
+    final modelId = await db.addModel(
+      LLMModel(
+        modelId: 'doubao-seedream-5.0-lite',
+        modelName: 'Seedream lite',
+        tag: 'image',
+        channelId: channelId,
+      ),
+    );
 
     final queue = TaskQueueService();
     addTearDown(queue.dispose);
@@ -97,13 +101,17 @@ void main() {
     });
     addTearDown(sub.cancel);
 
-    await queue.addTask(const [], modelId,
-        {'prompt': 'two posters', 'maxImages': '2', 'watermark': 'off'},
-        id: 'stream-save');
+    await queue.addTask(const [], modelId, {
+      'prompt': 'two posters',
+      'maxImages': '2',
+      'watermark': 'off',
+    }, id: 'stream-save');
 
     final task = queue.queue.firstWhere((t) => t.id == 'stream-save');
-    await firstSaved.future.timeout(const Duration(seconds: 20),
-        onTimeout: () => fail('no image saved: ${task.logs.join('\n')}'));
+    await firstSaved.future.timeout(
+      const Duration(seconds: 20),
+      onTimeout: () => fail('no image saved: ${task.logs.join('\n')}'),
+    );
     expect(release.isCompleted, isFalse);
     expect(saved, hasLength(1));
     expect(File(saved.single).existsSync(), isTrue);
@@ -120,8 +128,7 @@ void main() {
     expect(saved, hasLength(2));
   });
 
-  test('a stream that fails after an image keeps it and records its usage',
-      () async {
+  test('a stream that fails after an image keeps it and records its usage', () async {
     final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     addTearDown(() => server.close(force: true));
     server.listen((request) async {
@@ -132,17 +139,16 @@ void main() {
         return;
       }
       await utf8.decodeStream(request);
-      request.response.headers.contentType =
-          ContentType('text', 'event-stream');
+      request.response.headers.contentType = ContentType('text', 'event-stream');
       request.response
-        ..write('data: ${jsonEncode({
-              'type': 'image_generation.partial_succeeded',
-              'image_index': 0,
-              'url': 'http://127.0.0.1:${server.port}/img/0.png',
-            })}\n\n')
-        ..write('data: ${jsonEncode({
-              'error': {'code': 'InternalServiceError', 'message': 'boom'},
-            })}\n\n');
+        ..write(
+          'data: ${jsonEncode({'type': 'image_generation.partial_succeeded', 'image_index': 0, 'url': 'http://127.0.0.1:${server.port}/img/0.png'})}\n\n',
+        )
+        ..write(
+          'data: ${jsonEncode({
+            'error': {'code': 'InternalServiceError', 'message': 'boom'},
+          })}\n\n',
+        );
       await request.response.close();
     });
 
@@ -153,24 +159,30 @@ void main() {
     final db = DatabaseService();
     final outDir = Directory('${dataDir.path}/out2')..createSync();
     await db.saveSetting('output_directory', outDir.path);
-    final channelId = await db.addChannel(LLMChannel(
-      displayName: 'Ark 2',
-      endpoint: 'http://127.0.0.1:${server.port}/api/plan/v3',
-      apiKey: 'k',
-      type: Vendors.volcengineArk,
-    ));
-    final modelId = await db.addModel(LLMModel(
-      modelId: 'doubao-seedream-5.0-lite',
-      modelName: 'Seedream lite 2',
-      tag: 'image',
-      channelId: channelId,
-    ));
+    final channelId = await db.addChannel(
+      LLMChannel(
+        displayName: 'Ark 2',
+        endpoint: 'http://127.0.0.1:${server.port}/api/plan/v3',
+        apiKey: 'k',
+        type: Vendors.volcengineArk,
+      ),
+    );
+    final modelId = await db.addModel(
+      LLMModel(
+        modelId: 'doubao-seedream-5.0-lite',
+        modelName: 'Seedream lite 2',
+        tag: 'image',
+        channelId: channelId,
+      ),
+    );
 
     final queue = TaskQueueService();
     addTearDown(queue.dispose);
-    await queue.addTask(const [], modelId,
-        {'prompt': 'three posters', 'maxImages': '3', 'watermark': 'off'},
-        id: 'stream-fail');
+    await queue.addTask(const [], modelId, {
+      'prompt': 'three posters',
+      'maxImages': '3',
+      'watermark': 'off',
+    }, id: 'stream-fail');
     final task = queue.queue.firstWhere((t) => t.id == 'stream-fail');
     for (var i = 0; i < 400 && task.status != TaskStatus.failed; i++) {
       await Future<void>.delayed(const Duration(milliseconds: 50));
@@ -185,4 +197,5 @@ void main() {
 
 /// A 1×1 transparent PNG.
 final Uint8List _png = base64Decode(
-    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==');
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+);

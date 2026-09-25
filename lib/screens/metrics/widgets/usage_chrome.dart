@@ -77,9 +77,9 @@ class UsageCaption extends StatelessWidget {
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            letterSpacing: AppType.trackedLabelSpacing,
-            color: Theme.of(context).colorScheme.onAccentTint,
-          ),
+        letterSpacing: AppType.trackedLabelSpacing,
+        color: Theme.of(context).colorScheme.onAccentTint,
+      ),
     );
   }
 }
@@ -96,7 +96,9 @@ class UsageDot extends StatelessWidget {
     return SizedBox(
       width: size,
       height: size,
-      child: DecoratedBox(decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+      child: DecoratedBox(
+        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+      ),
     );
   }
 }
@@ -146,18 +148,14 @@ class UsageLoadingCard extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const SizedBox(
-              width: 28,
-              height: 28,
-              child: CircularProgressIndicator(strokeWidth: 3),
-            ),
+            const SizedBox(width: 28, height: 28, child: CircularProgressIndicator(strokeWidth: 3)),
             const SizedBox(height: AppSpace.s10),
             Text(
               AppLocalizations.of(context)!.usageLoadingRecords,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.labelSmall?.mono.copyWith(color: colorScheme.onSurfaceVariant),
             ),
           ],
         ),

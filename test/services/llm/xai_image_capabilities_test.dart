@@ -11,12 +11,12 @@ import 'package:joycai_image_ai_toolkits/services/llm/output_spec.dart';
 /// first-generation ids are flat-priced, refuse `1.5k`, and keep the two
 /// they had.
 void main() {
-  List<String> keysOf(ModelCapabilities caps) =>
-      [for (final p in caps.imageParams) p.key];
+  List<String> keysOf(ModelCapabilities caps) => [for (final p in caps.imageParams) p.key];
   ParamSpec spec(ModelCapabilities caps, String key) =>
       caps.imageParams.firstWhere((p) => p.key == key);
-  List<String> optionsOf(ModelCapabilities caps, String key) =>
-      [for (final o in spec(caps, key).options) o.value];
+  List<String> optionsOf(ModelCapabilities caps, String key) => [
+    for (final o in spec(caps, key).options) o.value,
+  ];
 
   group('grok-imagine-image-2.0', () {
     final caps = ModelCapabilities.forModel('grok-imagine-image-2.0');
@@ -40,9 +40,7 @@ void main() {
     });
 
     test('the defaults spell the tier the docs price as 1K · Medium', () {
-      final defaults = {
-        for (final p in caps.imageParams) p.key: p.defaultValue,
-      };
+      final defaults = {for (final p in caps.imageParams) p.key: p.defaultValue};
       final rendered = OutputSpec.from(defaults);
       expect(rendered.size, '1K');
       expect(rendered.quality, 'medium');
@@ -58,9 +56,9 @@ void main() {
         SpecRate(size: '2K', quality: 'medium', price: 0.08),
       ];
       double priceOf(String size, String quality) => matchSpecRate(
-            rates,
-            OutputSpec.from({'imageSize': size, 'quality': quality}),
-          ).rate!.price;
+        rates,
+        OutputSpec.from({'imageSize': size, 'quality': quality}),
+      ).rate!.price;
       expect(priceOf('1k', 'low'), 0.04);
       expect(priceOf('1.5k', 'low'), 0.05);
       expect(priceOf('2k', 'low'), 0.06);
@@ -72,12 +70,8 @@ void main() {
     test('a table written by size alone, from before the control, still matches', () {
       // Quality left blank on the row matches any quality — the tables
       // users wrote against the medium default keep pricing what they did.
-      const rates = [
-        SpecRate(size: '1K', price: 0.06),
-        SpecRate(size: '2K', price: 0.08),
-      ];
-      final match = matchSpecRate(
-          rates, OutputSpec.from({'imageSize': '1k', 'quality': 'medium'}));
+      const rates = [SpecRate(size: '1K', price: 0.06), SpecRate(size: '2K', price: 0.08)];
+      final match = matchSpecRate(rates, OutputSpec.from({'imageSize': '1k', 'quality': 'medium'}));
       expect(match.rate?.price, 0.06);
     });
   });
@@ -100,19 +94,29 @@ void main() {
   });
 
   test('a later version defaults to the 2.0 shape, not the legacy one', () {
-    for (final id in ['grok-imagine-image-2.0', 'grok-imagine-image-3', 'xai/grok-imagine-image-2.0']) {
+    for (final id in [
+      'grok-imagine-image-2.0',
+      'grok-imagine-image-3',
+      'xai/grok-imagine-image-2.0',
+    ]) {
       expect(ModelFamilyClassifier.classify(id), ModelFamily.xaiImage, reason: id);
-      expect(keysOf(ModelCapabilities.forModel(id)),
-          ['aspectRatio', 'quality', 'imageSize'],
-          reason: id);
+      expect(keysOf(ModelCapabilities.forModel(id)), [
+        'aspectRatio',
+        'quality',
+        'imageSize',
+      ], reason: id);
     }
   });
 
   test('the legacy table is reachable by id alone and so is listed for the rate editor', () {
-    expect(ModelCapabilities.idRoutedTables,
-        contains(ModelCapabilities.forModel('grok-imagine-image')));
-    expect(ModelCapabilities.forFamily(ModelFamily.xaiImage),
-        same(ModelCapabilities.forModel('grok-imagine-image-2.0')));
+    expect(
+      ModelCapabilities.idRoutedTables,
+      contains(ModelCapabilities.forModel('grok-imagine-image')),
+    );
+    expect(
+      ModelCapabilities.forFamily(ModelFamily.xaiImage),
+      same(ModelCapabilities.forModel('grok-imagine-image-2.0')),
+    );
   });
 
   test('the rate editor\'s menus know 1.5K, low and medium', () {

@@ -81,14 +81,16 @@ class _AppTextFieldState extends State<AppTextField> {
     // A floating label or an error line lives inside the decorator's own box,
     // and `constraints` bounds that whole box, so those fields keep the
     // theme's height rather than being clipped.
-    final bool pinned = widget.label == null &&
+    final bool pinned =
+        widget.label == null &&
         widget.errorText == null &&
         effectiveMaxLines == 1 &&
         (widget.minLines ?? 1) <= 1;
     EdgeInsets? padding;
     if (pinned) {
-      final themed = (theme.inputDecorationTheme.contentPadding ?? EdgeInsets.zero)
-          .resolve(Directionality.of(context));
+      final themed = (theme.inputDecorationTheme.contentPadding ?? EdgeInsets.zero).resolve(
+        Directionality.of(context),
+      );
       final vertical = pinnedFieldInset(context, style, AppSize.control);
       padding = EdgeInsets.fromLTRB(themed.left, vertical, themed.right, vertical);
     }

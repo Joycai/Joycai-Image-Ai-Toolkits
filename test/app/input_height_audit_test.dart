@@ -47,13 +47,13 @@ void main() {
   }
 
   Future<void> Function(WidgetTester) tapTexts(List<String> labels) => (WidgetTester tester) async {
-        for (final label in labels) {
-          final f = find.text(label);
-          if (f.evaluate().isEmpty) continue;
-          await tester.tap(f.first, warnIfMissed: false);
-          await settle(tester);
-        }
-      };
+    for (final label in labels) {
+      final f = find.text(label);
+      if (f.evaluate().isEmpty) continue;
+      await tester.tap(f.first, warnIfMissed: false);
+      await settle(tester);
+    }
+  };
 
   const desktop = Size(1440, 900);
   const phone = Size(390, 844);
@@ -72,7 +72,7 @@ void main() {
         if (edit.evaluate().isEmpty) return;
         await tester.tap(edit.first, warnIfMissed: false);
         await settle(tester);
-      }
+      },
     ),
     ('new prompt desktop', AppScreen.prompts, desktop, tapTexts(['新建提示词'])),
     ('settings desktop', AppScreen.settings, desktop, null),
@@ -127,8 +127,11 @@ void main() {
       walk(decoratorElement);
       final label = '$surface · "${text.length > 24 ? text.substring(0, 24) : text}"';
 
-      expect(box.size.height, closeTo(outer, 0.5),
-          reason: '$label on $platform: a ${box.size.height} outline in a $outer box');
+      expect(
+        box.size.height,
+        closeTo(outer, 0.5),
+        reason: '$label on $platform: a ${box.size.height} outline in a $outer box',
+      );
 
       if (!multiLine) {
         heights[platform]!['$surface #${singleLine++} $text'] = box.size.height;
@@ -141,7 +144,14 @@ void main() {
       testWidgets('$name fills its fields on $platform', (WidgetTester tester) async {
         if (platform == 'windows') debugDefaultTargetPlatformOverride = TargetPlatform.windows;
         try {
-          await mountApp(tester, env: env, screen: screen, size: size, label: '$name $platform', after: after);
+          await mountApp(
+            tester,
+            env: env,
+            screen: screen,
+            size: size,
+            label: '$name $platform',
+            after: after,
+          );
           measure(tester, name, platform);
         } finally {
           debugDefaultTargetPlatformOverride = null;

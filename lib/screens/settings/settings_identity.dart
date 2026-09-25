@@ -30,37 +30,37 @@ class SettingsIdentity {
     final bool dark = scheme.brightness == Brightness.dark;
     return switch (category) {
       SettingsCategory.appearance => SettingsIdentity(
-          icon: Icons.palette_outlined,
-          plate: dark ? const Color(0xFF383045) : const Color(0xFFECE4FA),
-          ink: dark ? const Color(0xFFA97DFF) : const Color(0xFF7A4ECB),
-        ),
+        icon: Icons.palette_outlined,
+        plate: dark ? const Color(0xFF383045) : const Color(0xFFECE4FA),
+        ink: dark ? const Color(0xFFA97DFF) : const Color(0xFF7A4ECB),
+      ),
       // The neutral of the set: a keyboard is not a mood, and this category
       // is a reference list rather than something to set.
       SettingsCategory.keyboard => SettingsIdentity(
-          icon: Icons.keyboard_outlined,
-          plate: dark ? const Color(0xFF33322E) : const Color(0xFFE3E1DC),
-          ink: dark ? const Color(0xFFA9A69E) : const Color(0xFF625F58),
-        ),
+        icon: Icons.keyboard_outlined,
+        plate: dark ? const Color(0xFF33322E) : const Color(0xFFE3E1DC),
+        ink: dark ? const Color(0xFFA9A69E) : const Color(0xFF625F58),
+      ),
       SettingsCategory.connectivity => SettingsIdentity(
-          icon: Icons.lan_outlined,
-          plate: dark ? const Color(0xFF1B3350) : const Color(0xFFDDEAF8),
-          ink: dark ? const Color(0xFF6AA7E8) : const Color(0xFF2F6FB0),
-        ),
+        icon: Icons.lan_outlined,
+        plate: dark ? const Color(0xFF1B3350) : const Color(0xFFDDEAF8),
+        ink: dark ? const Color(0xFF6AA7E8) : const Color(0xFF2F6FB0),
+      ),
       SettingsCategory.application => SettingsIdentity(
-          icon: Icons.tune,
-          plate: dark ? const Color(0xFF173A24) : const Color(0xFFDDF2E3),
-          ink: dark ? const Color(0xFF4FB86F) : const Color(0xFF1F7A3E),
-        ),
+        icon: Icons.tune,
+        plate: dark ? const Color(0xFF173A24) : const Color(0xFFDDF2E3),
+        ink: dark ? const Color(0xFF4FB86F) : const Color(0xFF1F7A3E),
+      ),
       SettingsCategory.data => SettingsIdentity(
-          icon: Icons.storage_outlined,
-          plate: dark ? const Color(0xFF3F2C10) : const Color(0xFFFBEBD0),
-          ink: dark ? const Color(0xFFE5A040) : const Color(0xFFA1620A),
-        ),
+        icon: Icons.storage_outlined,
+        plate: dark ? const Color(0xFF3F2C10) : const Color(0xFFFBEBD0),
+        ink: dark ? const Color(0xFFE5A040) : const Color(0xFFA1620A),
+      ),
       SettingsCategory.about => SettingsIdentity(
-          icon: Icons.info_outline,
-          plate: scheme.surfaceContainer,
-          ink: scheme.onSurfaceVariant,
-        ),
+        icon: Icons.info_outline,
+        plate: scheme.surfaceContainer,
+        ink: scheme.onSurfaceVariant,
+      ),
     };
   }
 }
@@ -86,10 +86,7 @@ class SettingsIdentityPlate extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        color: identity.plate,
-        borderRadius: BorderRadius.circular(radius),
-      ),
+      decoration: BoxDecoration(color: identity.plate, borderRadius: BorderRadius.circular(radius)),
       child: Icon(identity.icon, size: iconSize, color: identity.ink),
     );
   }

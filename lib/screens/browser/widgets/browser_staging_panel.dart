@@ -41,11 +41,7 @@ class BrowserStagingPanel extends StatelessWidget {
 
   final void Function(FileTransferMode mode) onPaste;
 
-  const BrowserStagingPanel({
-    super.key,
-    required this.destination,
-    required this.onPaste,
-  });
+  const BrowserStagingPanel({super.key, required this.destination, required this.onPaste});
 
   @override
   Widget build(BuildContext context) {
@@ -80,10 +76,21 @@ class BrowserStagingPanel extends StatelessWidget {
             const Expanded(child: _EmptyState()),
             _DestinationSection(destination: target, restoredCount: 0, ruleOnTop: true),
           ] else ...[
-            _DestinationSection(destination: target, restoredCount: staging.restoredCount, ruleOnTop: false),
-            Expanded(child: _ItemList(staging: staging, atTarget: atTarget)),
+            _DestinationSection(
+              destination: target,
+              restoredCount: staging.restoredCount,
+              ruleOnTop: false,
+            ),
+            Expanded(
+              child: _ItemList(staging: staging, atTarget: atTarget),
+            ),
           ],
-          _Footer(staging: staging, destination: target, atTargetCount: atTarget.length, onPaste: onPaste),
+          _Footer(
+            staging: staging,
+            destination: target,
+            atTargetCount: atTarget.length,
+            onPaste: onPaste,
+          ),
         ],
       ),
     );
@@ -327,7 +334,10 @@ class _DestinationSection extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: AppSpace.s10),
       decoration: BoxDecoration(
-        border: Border(top: ruleOnTop ? hair : BorderSide.none, bottom: ruleOnTop ? BorderSide.none : hair),
+        border: Border(
+          top: ruleOnTop ? hair : BorderSide.none,
+          bottom: ruleOnTop ? BorderSide.none : hair,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -377,9 +387,9 @@ class _ItemList extends StatelessWidget {
             child: Text(
               AppLocalizations.of(context)!.stagingDropHint,
               style: Theme.of(context).textTheme.labelSmall!.mono.copyWith(
-                    color: colorScheme.outline,
-                    fontWeight: FontWeight.w400,
-                  ),
+                color: colorScheme.outline,
+                fontWeight: FontWeight.w400,
+              ),
             ),
           );
         }
@@ -438,7 +448,11 @@ class _StagedRow extends StatelessWidget {
     } else if (atTarget) {
       detail = Align(
         alignment: Alignment.centerLeft,
-        child: TransferBadge(label: l10n.stagingSameAsTarget, tone: TransferTone.track, icon: Icons.block),
+        child: TransferBadge(
+          label: l10n.stagingSameAsTarget,
+          tone: TransferTone.track,
+          icon: Icons.block,
+        ),
       );
     } else {
       detail = Text(
@@ -499,7 +513,10 @@ class _StagedRow extends StatelessWidget {
             tooltip: l10n.removeFromStaging,
             onPressed: onRemove,
             padding: EdgeInsets.zero,
-            constraints: const BoxConstraints.tightFor(width: AppSize.compact, height: AppSize.compact),
+            constraints: const BoxConstraints.tightFor(
+              width: AppSize.compact,
+              height: AppSize.compact,
+            ),
             style: IconButton.styleFrom(
               foregroundColor: colorScheme.outline,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
@@ -537,7 +554,8 @@ class _Footer extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    final enabled = destination != null && staging.count > atTargetCount + staging.missingPaths.length;
+    final enabled =
+        destination != null && staging.count > atTargetCount + staging.missingPaths.length;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: AppSpace.s10),
@@ -643,7 +661,9 @@ class _PasteButton extends StatelessWidget {
         return DecoratedBox(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppRadius.control),
-            boxShadow: [BoxShadow(color: colorScheme.accentRing, blurRadius: 12, offset: const Offset(0, 4))],
+            boxShadow: [
+              BoxShadow(color: colorScheme.accentRing, blurRadius: 12, offset: const Offset(0, 4)),
+            ],
           ),
           child: button,
         );

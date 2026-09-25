@@ -20,10 +20,7 @@ List<(String, String)> presetChannels() {
   final out = <(String, String)>[];
   for (final p in kChannelProviderPresets) {
     final variants = p.hasVariants
-        ? [
-            for (final v in p.variants)
-              (v.channelType, v.defaultEndpoint, v.endpointSuffix),
-          ]
+        ? [for (final v in p.variants) (v.channelType, v.defaultEndpoint, v.endpointSuffix)]
         : [(p.channelType, p.defaultEndpoint, p.endpointSuffix)];
     for (final (type, endpoint, suffix) in variants) {
       out.add((type, endpoint ?? '$relayHost$suffix'));
@@ -89,33 +86,21 @@ void main() {
       expectSameAddresses('unknown-type', 'https://relay.example.com/v1');
     });
 
-    test(
-      'every migrated route resolves to the vendor it was pinned through',
-      () {
-        for (final (type, endpoint) in presetChannels()) {
-          final routes = ChannelRoutes.legacy(type, endpoint);
-          for (final k in routes.kinds) {
-            expect(routes.vendorOf(k), type, reason: '$type ${k.id}');
-          }
+    test('every migrated route resolves to the vendor it was pinned through', () {
+      for (final (type, endpoint) in presetChannels()) {
+        final routes = ChannelRoutes.legacy(type, endpoint);
+        for (final k in routes.kinds) {
+          expect(routes.vendorOf(k), type, reason: '$type ${k.id}');
         }
-      },
-    );
+      }
+    });
 
     test('a default path is not stored, anything else is', () {
-      final newapi = ChannelRoutes.legacy(
-        Vendors.newApiOpenAI,
-        'https://relay.example.com/v1',
-      );
+      final newapi = ChannelRoutes.legacy(Vendors.newApiOpenAI, 'https://relay.example.com/v1');
       expect(newapi.host, 'https://relay.example.com');
-      expect(newapi.entries, const [
-        RouteEntry(RouteKind.chat),
-        RouteEntry(RouteKind.responses),
-      ]);
+      expect(newapi.entries, const [RouteEntry(RouteKind.chat), RouteEntry(RouteKind.responses)]);
 
-      final slash = ChannelRoutes.legacy(
-        Vendors.newApiOpenAI,
-        'https://relay.example.com/v1/',
-      );
+      final slash = ChannelRoutes.legacy(Vendors.newApiOpenAI, 'https://relay.example.com/v1/');
       expect(slash.primary.path, '/v1/');
 
       final ds = ChannelRoutes.legacy(
@@ -129,10 +114,7 @@ void main() {
         RouteEntry(RouteKind.anthropic),
       ]);
 
-      final bare = ChannelRoutes.legacy(
-        Vendors.openAIRest,
-        'relay.example.com',
-      );
+      final bare = ChannelRoutes.legacy(Vendors.openAIRest, 'relay.example.com');
       expect(bare.host, '');
       expect(bare.primary.path, 'relay.example.com');
     });
@@ -154,15 +136,9 @@ void main() {
     });
 
     test('carries the write mark', () {
-      final routes = ChannelRoutes.legacy(
-        Vendors.newApiOpenAI,
-        'https://r.example/v1',
-      );
+      final routes = ChannelRoutes.legacy(Vendors.newApiOpenAI, 'https://r.example/v1');
       final doc = jsonDecode(routes.encode()) as Map;
-      expect(doc['mark'], {
-        'type': Vendors.newApiOpenAI,
-        'endpoint': 'https://r.example/v1',
-      });
+      expect(doc['mark'], {'type': Vendors.newApiOpenAI, 'endpoint': 'https://r.example/v1'});
       expect(doc['v'], ChannelRoutes.docVersion);
     });
 
@@ -188,22 +164,15 @@ void main() {
         RouteKind.anthropic,
         RouteKind.responses,
       ]);
-      expect(
-        rewritten.addressOf(RouteKind.gemini),
-        'https://gemini.example.com/v1beta',
-      );
-      expect(
-        rewritten.addressOf(RouteKind.anthropic),
-        'https://moved.example.com/v1',
-      );
+      expect(rewritten.addressOf(RouteKind.gemini), 'https://gemini.example.com/v1beta');
+      expect(rewritten.addressOf(RouteKind.anthropic), 'https://moved.example.com/v1');
     });
 
     test('a flat-only change of type is detected too', () {
-      final routes = ChannelRoutes.create(
-        Platforms.byId(Platforms.newapi),
-        'https://r.example',
-        [RouteKind.chat, RouteKind.gemini],
-      );
+      final routes = ChannelRoutes.create(Platforms.byId(Platforms.newapi), 'https://r.example', [
+        RouteKind.chat,
+        RouteKind.gemini,
+      ]);
       final rewritten = ChannelRoutes.resolve(
         Vendors.newApiGemini,
         'https://r.example/v1beta',
@@ -242,11 +211,7 @@ void main() {
         '{"host": "https://r.example", "routes": [{"kind": "telepathy"}]}',
         '{"host": "https://r.example", "routes": [{"kind": 3}, {"kind": null}]}',
       ]) {
-        expect(
-          ChannelRoutes.resolve(type, endpoint, doc).entries,
-          legacy.entries,
-          reason: '$doc',
-        );
+        expect(ChannelRoutes.resolve(type, endpoint, doc).entries, legacy.entries, reason: '$doc');
       }
       // Unknown kinds and duplicates inside a valid document are dropped.
       final mixed = jsonEncode({
@@ -272,19 +237,11 @@ void main() {
           {'kind': 'chat'},
           {'kind': 'gemini', 'path': '/v1beta'},
         ],
-        'mark': {
-          'type': Vendors.deepseek,
-          'endpoint': 'https://api.deepseek.com',
-        },
+        'mark': {'type': Vendors.deepseek, 'endpoint': 'https://api.deepseek.com'},
       });
-      expect(
-        ChannelRoutes.resolve(
-          Vendors.deepseek,
-          'https://api.deepseek.com',
-          doc,
-        ).kinds,
-        [RouteKind.chat],
-      );
+      expect(ChannelRoutes.resolve(Vendors.deepseek, 'https://api.deepseek.com', doc).kinds, [
+        RouteKind.chat,
+      ]);
     });
   });
 
@@ -326,8 +283,11 @@ void main() {
       final back = ChannelRoutes.resolve(r.primaryVendorId, r.primaryAddress, r.encode());
       expect(back.primary.path, '');
       // Where the default already is the host itself, empty is the default.
-      final ds = ChannelRoutes.create(Platforms.byId(Platforms.deepseek),
-          'https://api.deepseek.com', [RouteKind.chat]);
+      final ds = ChannelRoutes.create(
+        Platforms.byId(Platforms.deepseek),
+        'https://api.deepseek.com',
+        [RouteKind.chat],
+      );
       expect(ds.withPath(RouteKind.chat, '').primary.path, isNull);
     });
 
@@ -343,16 +303,11 @@ void main() {
         r.withHost('https://s.example').addressOf(RouteKind.gemini),
         'https://g.example/v1beta',
       );
-      expect(
-        r.withHost('https://s.example').primaryAddress,
-        'https://s.example/v1',
-      );
+      expect(r.withHost('https://s.example').primaryAddress, 'https://s.example/v1');
     });
 
     test('the primary and the only route cannot be removed', () {
-      final one = ChannelRoutes.create(newapi, 'https://r.example', [
-        RouteKind.chat,
-      ]);
+      final one = ChannelRoutes.create(newapi, 'https://r.example', [RouteKind.chat]);
       expect(one.withoutRoute(RouteKind.chat).kinds, [RouteKind.chat]);
       final two = one.withRoute(RouteKind.gemini);
       expect(two.kinds, [RouteKind.chat, RouteKind.gemini]);
@@ -376,10 +331,7 @@ void main() {
       ).withPrimary(RouteKind.dashscope);
       expect(ds.primaryVendorId, Vendors.dashscopeNative);
       expect(ds.primaryAddress, 'https://dashscope.aliyuncs.com/api/v1');
-      expect(
-        ds.addressOf(RouteKind.chat),
-        'https://dashscope.aliyuncs.com/compatible-mode/v1',
-      );
+      expect(ds.addressOf(RouteKind.chat), 'https://dashscope.aliyuncs.com/compatible-mode/v1');
     });
   });
 
@@ -391,18 +343,25 @@ void main() {
     }
 
     test('a relay caches on its Anthropic face; its web search is untested', () {
-      expect(f(Vendors.newApiOpenAI, 'https://r.example/v1', RouteKind.anthropic),
-          (webSearch: false, promptCaching: true));
-      expect(f(Vendors.newApiOpenAI, 'https://r.example/v1', RouteKind.chat),
-          (webSearch: false, promptCaching: false));
+      expect(f(Vendors.newApiOpenAI, 'https://r.example/v1', RouteKind.anthropic), (
+        webSearch: false,
+        promptCaching: true,
+      ));
+      expect(f(Vendors.newApiOpenAI, 'https://r.example/v1', RouteKind.chat), (
+        webSearch: false,
+        promptCaching: false,
+      ));
     });
 
     test("Anthropic's own host does both; Bailian searches on its Chat face", () {
-      expect(f(Vendors.anthropicRest, 'https://api.anthropic.com/v1', RouteKind.anthropic),
-          (webSearch: true, promptCaching: true));
+      expect(f(Vendors.anthropicRest, 'https://api.anthropic.com/v1', RouteKind.anthropic), (
+        webSearch: true,
+        promptCaching: true,
+      ));
       expect(
-          f(Vendors.dashscope, 'https://dashscope.aliyuncs.com/compatible-mode/v1', RouteKind.chat),
-          (webSearch: true, promptCaching: false));
+        f(Vendors.dashscope, 'https://dashscope.aliyuncs.com/compatible-mode/v1', RouteKind.chat),
+        (webSearch: true, promptCaching: false),
+      );
     });
 
     test('a route the channel lacks carries nothing', () {

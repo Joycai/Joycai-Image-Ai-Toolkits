@@ -27,26 +27,30 @@ class ComparatorToolbar extends StatelessWidget {
   static const double _gap = 4;
 
   static List<GlassSegment<ComparatorLayout>> _segments(AppLocalizations l10n) => [
-        GlassSegment(
-          value: ComparatorLayout.sideBySide,
-          label: l10n.compareLayoutSideBySide,
-          icon: Icons.vertical_split,
-        ),
-        GlassSegment(
-          value: ComparatorLayout.stacked,
-          label: l10n.compareLayoutStacked,
-          icon: Icons.view_agenda_outlined,
-        ),
-        GlassSegment(
-          value: ComparatorLayout.slider,
-          label: l10n.compareLayoutSlider,
-          icon: Icons.tonality,
-        ),
-      ];
+    GlassSegment(
+      value: ComparatorLayout.sideBySide,
+      label: l10n.compareLayoutSideBySide,
+      icon: Icons.vertical_split,
+    ),
+    GlassSegment(
+      value: ComparatorLayout.stacked,
+      label: l10n.compareLayoutStacked,
+      icon: Icons.view_agenda_outlined,
+    ),
+    GlassSegment(
+      value: ComparatorLayout.slider,
+      label: l10n.compareLayoutSlider,
+      icon: Icons.tonality,
+    ),
+  ];
 
   /// The inline sync control: 10 · label · 6 · 36px switch · 10.
   static double _syncInlineWidth(BuildContext context, String label) =>
-      10 + measureGlassText(context, label, GlassIconButton.labelStyle(context)) + 6 + AppSwitch.size.width + 10;
+      10 +
+      measureGlassText(context, label, GlassIconButton.labelStyle(context)) +
+      6 +
+      AppSwitch.size.width +
+      10;
 
   static double _measure(
     BuildContext context,
@@ -58,13 +62,19 @@ class ComparatorToolbar extends StatelessWidget {
     double w = GlassDivider.extent;
     w += GlassSegmented.widthFor(context, _segments(l10n), showLabels: layoutLabels);
     if (!folded) {
-      w += _gap + (actionLabels ? _syncInlineWidth(context, l10n.compareSyncTransform) : AppSize.control);
+      w +=
+          _gap +
+          (actionLabels ? _syncInlineWidth(context, l10n.compareSyncTransform) : AppSize.control);
     }
     // The spacer never closes below one gap.
     w += _gap;
     w += folded
         ? AppSize.control
-        : GlassIconButton.widthFor(context, label: actionLabels ? l10n.clear : null, hasIcon: false);
+        : GlassIconButton.widthFor(
+            context,
+            label: actionLabels ? l10n.clear : null,
+            hasIcon: false,
+          );
     w += _gap + GlassIconButton.widthFor(context, label: actionLabels ? l10n.metadata : null);
     return w.ceilToDouble();
   }
@@ -72,12 +82,12 @@ class ComparatorToolbar extends StatelessWidget {
   /// The width these controls take with everything labelled — what the
   /// toolbar weighs its tool switch against.
   static double preferredWidth(BuildContext context) => _measure(
-        context,
-        AppLocalizations.of(context)!,
-        actionLabels: true,
-        layoutLabels: true,
-        folded: false,
-      );
+    context,
+    AppLocalizations.of(context)!,
+    actionLabels: true,
+    layoutLabels: true,
+    folded: false,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -101,12 +111,12 @@ class ComparatorToolbar extends StatelessWidget {
     bool layoutLabels = true;
     bool folded = false;
     double measure() => _measure(
-          context,
-          l10n,
-          actionLabels: actionLabels,
-          layoutLabels: layoutLabels,
-          folded: folded,
-        );
+      context,
+      l10n,
+      actionLabels: actionLabels,
+      layoutLabels: layoutLabels,
+      folded: folded,
+    );
 
     final bounded = width.isFinite;
     if (bounded) {
@@ -229,9 +239,9 @@ class _SyncSwitchState extends State<_SyncSwitch> {
                 Text(
                   widget.label,
                   maxLines: 1,
-                  style: GlassIconButton.labelStyle(context).copyWith(
-                    color: enabled ? ink : ink2.withValues(alpha: ink2.a * 0.6),
-                  ),
+                  style: GlassIconButton.labelStyle(
+                    context,
+                  ).copyWith(color: enabled ? ink : ink2.withValues(alpha: ink2.a * 0.6)),
                 ),
                 const SizedBox(width: 6),
                 AppSwitch(
@@ -267,8 +277,14 @@ class _ComparatorOverflowMenu extends StatelessWidget {
     return MenuAnchor(
       menuChildren: [
         MenuItemButton(
-          leadingIcon: Icon(Icons.link, size: AppSize.iconLg, color: syncOn ? scheme.primary : null),
-          trailingIcon: syncOn ? Icon(Icons.check, size: AppSize.iconMd, color: scheme.primary) : null,
+          leadingIcon: Icon(
+            Icons.link,
+            size: AppSize.iconLg,
+            color: syncOn ? scheme.primary : null,
+          ),
+          trailingIcon: syncOn
+              ? Icon(Icons.check, size: AppSize.iconMd, color: scheme.primary)
+              : null,
           onPressed: onToggleSync,
           child: Text(l10n.compareSyncTransform),
         ),
@@ -279,10 +295,7 @@ class _ComparatorOverflowMenu extends StatelessWidget {
             color: onClear != null ? scheme.error : null,
           ),
           onPressed: onClear,
-          child: Text(
-            l10n.clear,
-            style: onClear != null ? TextStyle(color: scheme.error) : null,
-          ),
+          child: Text(l10n.clear, style: onClear != null ? TextStyle(color: scheme.error) : null),
         ),
       ],
       builder: (context, controller, _) => GlassIconButton(

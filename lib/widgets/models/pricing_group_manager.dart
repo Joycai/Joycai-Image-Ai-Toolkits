@@ -133,7 +133,11 @@ class _PricingGroupManagerState extends State<PricingGroupManager> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final context = _selectedRowKey.currentContext;
       if (!mounted || context == null) return;
-      Scrollable.ensureVisible(context, alignment: 0.5, duration: AppMotion.durationOf(context, AppMotion.hover));
+      Scrollable.ensureVisible(
+        context,
+        alignment: 0.5,
+        duration: AppMotion.durationOf(context, AppMotion.hover),
+      );
     });
   }
 
@@ -241,7 +245,9 @@ class _PricingGroupManagerState extends State<PricingGroupManager> {
     switch (widget.mode) {
       case PricingGroupManagerMode.dialog:
         final groupIds = {for (final g in groups) g.id};
-        final pricedModels = appState.allModels.where((m) => groupIds.contains(m.feeGroupId)).length;
+        final pricedModels = appState.allModels
+            .where((m) => groupIds.contains(m.feeGroupId))
+            .length;
         return _shortcuts(
           appState,
           Column(
@@ -316,8 +322,10 @@ class _PricingGroupManagerState extends State<PricingGroupManager> {
   Widget _shortcuts(AppState appState, Widget child) {
     return CallbackShortcuts(
       bindings: {
-        const SingleActivator(LogicalKeyboardKey.arrowUp, alt: true): () => _moveSelected(appState, -1),
-        const SingleActivator(LogicalKeyboardKey.arrowDown, alt: true): () => _moveSelected(appState, 1),
+        const SingleActivator(LogicalKeyboardKey.arrowUp, alt: true): () =>
+            _moveSelected(appState, -1),
+        const SingleActivator(LogicalKeyboardKey.arrowDown, alt: true): () =>
+            _moveSelected(appState, 1),
         const SingleActivator(LogicalKeyboardKey.escape): () {
           if (_editing != null) _close();
         },
@@ -329,7 +337,12 @@ class _PricingGroupManagerState extends State<PricingGroupManager> {
   /// `1d` 头行: the caption over the mono counts, the filter, the reorder
   /// button (tint-selected in reorder mode) and 「新建组」 (tint-selected while
   /// adding — `1f` 「正在新建」).
-  Widget _buildHeading(BuildContext context, AppState appState, AppLocalizations l10n, List<PricingGroup> groups) {
+  Widget _buildHeading(
+    BuildContext context,
+    AppState appState,
+    AppLocalizations l10n,
+    List<PricingGroup> groups,
+  ) {
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final groupIds = {for (final g in groups) g.id};
@@ -378,7 +391,9 @@ class _PricingGroupManagerState extends State<PricingGroupManager> {
           icon: Icons.swap_vert,
           tooltip: l10n.reorderFeeGroups,
           selected: _reorderMode,
-          onPressed: filtered || groups.length < 2 ? null : () => setState(() => _reorderMode = !_reorderMode),
+          onPressed: filtered || groups.length < 2
+              ? null
+              : () => setState(() => _reorderMode = !_reorderMode),
         ),
         const SizedBox(width: 12),
         AppButton(
@@ -409,18 +424,27 @@ class _PricingGroupManagerState extends State<PricingGroupManager> {
       return _buildList(context, appState, l10n, groups, inlineEditor: true);
     }
     final Widget list = _buildList(context, appState, l10n, groups, inlineEditor: false);
-    final Widget editor = _editing == null ? _Placeholder(reorder: _reorderMode) : _buildEditor(context, appState, l10n, groups);
+    final Widget editor = _editing == null
+        ? _Placeholder(reorder: _reorderMode)
+        : _buildEditor(context, appState, l10n, groups);
     return Row(
       crossAxisAlignment: fill ? CrossAxisAlignment.stretch : CrossAxisAlignment.start,
       children: [
-        Expanded(child: fill ? SingleChildScrollView(controller: _listScroll, child: list) : list),
+        Expanded(
+          child: fill ? SingleChildScrollView(controller: _listScroll, child: list) : list,
+        ),
         const SizedBox(width: 20),
         Expanded(child: fill ? SingleChildScrollView(child: editor) : editor),
       ],
     );
   }
 
-  Widget _buildEditor(BuildContext context, AppState appState, AppLocalizations l10n, List<PricingGroup> groups) {
+  Widget _buildEditor(
+    BuildContext context,
+    AppState appState,
+    AppLocalizations l10n,
+    List<PricingGroup> groups,
+  ) {
     final draft = _draft;
     if (draft == null) return const SizedBox.shrink();
     final group = draft.group;
@@ -449,7 +473,9 @@ class _PricingGroupManagerState extends State<PricingGroupManager> {
     if (groups.isEmpty && !adding) return const _EmptyGroups();
 
     final filtered = _query.isNotEmpty;
-    final visible = filtered ? groups.where((g) => g.name.toLowerCase().contains(_query)).toList() : groups;
+    final visible = filtered
+        ? groups.where((g) => g.name.toLowerCase().contains(_query)).toList()
+        : groups;
     final touch = switch (Theme.of(context).platform) {
       TargetPlatform.android || TargetPlatform.iOS => true,
       _ => false,
@@ -458,10 +484,10 @@ class _PricingGroupManagerState extends State<PricingGroupManager> {
     final handle = !canReorder
         ? FeeGroupHandle.none
         : _reorderMode
-            ? FeeGroupHandle.always
-            : touch
-                ? FeeGroupHandle.none
-                : FeeGroupHandle.hover;
+        ? FeeGroupHandle.always
+        : touch
+        ? FeeGroupHandle.none
+        : FeeGroupHandle.hover;
     final modelsByGroup = _modelsByGroup(appState);
 
     final Widget list = AppReorderGap(
@@ -507,7 +533,11 @@ class _PricingGroupManagerState extends State<PricingGroupManager> {
               context,
               position: position,
               entries: [
-                AppGlassMenuItem(icon: Icons.edit_outlined, label: l10n.edit, onSelected: () => _open(group.id!)),
+                AppGlassMenuItem(
+                  icon: Icons.edit_outlined,
+                  label: l10n.edit,
+                  onSelected: () => _open(group.id!),
+                ),
                 AppGlassMenuItem(
                   icon: Icons.arrow_upward,
                   label: l10n.moveUp,
@@ -563,8 +593,8 @@ class _PricingGroupManagerState extends State<PricingGroupManager> {
           final Widget child = !canReorder
               ? slot
               : touch
-                  ? AppLongPressDragStartListener(index: index, child: slot)
-                  : ReorderableDragStartListener(index: index, child: slot);
+              ? AppLongPressDragStartListener(index: index, child: slot)
+              : ReorderableDragStartListener(index: index, child: slot);
           return gap.item(key: ValueKey(group.id), index: index, child: child);
         },
       ),
@@ -604,7 +634,10 @@ class _PricingGroupManagerState extends State<PricingGroupManager> {
                 Expanded(
                   child: Text(
                     l10n.feeGroupReorderNote,
-                    style: textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant, height: AppType.proseHeight),
+                    style: textTheme.labelSmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                      height: AppType.proseHeight,
+                    ),
                   ),
                 ),
               ],
@@ -616,7 +649,12 @@ class _PricingGroupManagerState extends State<PricingGroupManager> {
 
   /// `1h` 手机: the two-line cards on the canvas; a tap opens the page. In
   /// reorder mode the cards carry the grip and lift on a long press.
-  Widget _buildPhoneList(BuildContext context, AppState appState, AppLocalizations l10n, List<PricingGroup> groups) {
+  Widget _buildPhoneList(
+    BuildContext context,
+    AppState appState,
+    AppLocalizations l10n,
+    List<PricingGroup> groups,
+  ) {
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     if (groups.isEmpty) return const _EmptyGroups();
@@ -681,7 +719,10 @@ class _PricingGroupManagerState extends State<PricingGroupManager> {
                 Expanded(
                   child: Text(
                     l10n.feeGroupReorderHint,
-                    style: textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant, height: AppType.proseHeight),
+                    style: textTheme.labelSmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                      height: AppType.proseHeight,
+                    ),
                   ),
                 ),
               ],
@@ -740,7 +781,12 @@ class _DialogHeading extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(l10n.feeManagement, maxLines: 1, overflow: TextOverflow.ellipsis, style: textTheme.titleLarge),
+              Text(
+                l10n.feeManagement,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: textTheme.titleLarge,
+              ),
               const SizedBox(height: 2),
               Text(
                 '${l10n.countGroups(groupCount)} · ${l10n.feeGroupModelCount(modelCount)}',
@@ -759,7 +805,10 @@ class _DialogHeading extends StatelessWidget {
           tooltip: l10n.close,
           onPressed: () => Navigator.pop(context),
           padding: EdgeInsets.zero,
-          constraints: const BoxConstraints.tightFor(width: AppSize.iconButton, height: AppSize.iconButton),
+          constraints: const BoxConstraints.tightFor(
+            width: AppSize.iconButton,
+            height: AppSize.iconButton,
+          ),
           style: IconButton.styleFrom(
             foregroundColor: scheme.onSurfaceVariant,
             shape: RoundedRectangleBorder(
@@ -797,7 +846,10 @@ class _EmptyGroups extends StatelessWidget {
             child: Text(
               l10n.noFeeGroupsHint,
               textAlign: TextAlign.center,
-              style: textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant, height: AppType.proseHeight),
+              style: textTheme.bodySmall?.copyWith(
+                color: scheme.onSurfaceVariant,
+                height: AppType.proseHeight,
+              ),
             ),
           ),
         ],
@@ -830,7 +882,11 @@ class _Placeholder extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(reorder ? Icons.swap_vert : Icons.payments_outlined, size: AppSpace.s28, color: scheme.outline),
+              Icon(
+                reorder ? Icons.swap_vert : Icons.payments_outlined,
+                size: AppSpace.s28,
+                color: scheme.outline,
+              ),
               const SizedBox(height: 8),
               Text(
                 reorder ? l10n.feeGroupReorderTitle : l10n.feeGroupPickTitle,
@@ -843,7 +899,10 @@ class _Placeholder extends StatelessWidget {
                 child: Text(
                   reorder ? l10n.feeGroupReorderText : l10n.feeGroupPickText,
                   textAlign: TextAlign.center,
-                  style: textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant, height: AppType.proseHeight),
+                  style: textTheme.labelSmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                    height: AppType.proseHeight,
+                  ),
                 ),
               ),
             ],
@@ -923,7 +982,9 @@ class _EditorCard extends StatelessWidget {
                     foregroundColor: scheme.error,
                     minimumSize: const Size(0, AppSize.control),
                     padding: const EdgeInsets.symmetric(horizontal: AppSpace.s10),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.control)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.control),
+                    ),
                   ),
                   icon: const Icon(Icons.delete_outline, size: AppSize.iconMd),
                   label: Text(l10n.deleteGroup),

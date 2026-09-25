@@ -63,12 +63,7 @@ class _MaintenanceLeftPanelState extends State<_MaintenanceLeftPanel> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpace.s10,
-            AppSpace.s10,
-            AppSpace.s10,
-            0,
-          ),
+          padding: const EdgeInsets.fromLTRB(AppSpace.s10, AppSpace.s10, AppSpace.s10, 0),
           child: AppSegmentedControl<bool>(
             segments: [
               // No count on the documents: the tree's own caption carries it,

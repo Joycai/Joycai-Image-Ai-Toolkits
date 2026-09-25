@@ -12,15 +12,15 @@ import '../../support/private_data_dir.dart';
 import '../../support/real_async.dart';
 
 LLMChannel _sampleChannel({String type = 'google-genai-rest'}) => LLMChannel(
-      id: 1,
-      displayName: 'YYDS-Google',
-      endpoint: 'https://example.com/v1beta',
-      apiKey: 'sk-test',
-      type: type,
-      enableDiscovery: true,
-      tag: 'google',
-      tagColor: 0xFF2196F3,
-    );
+  id: 1,
+  displayName: 'YYDS-Google',
+  endpoint: 'https://example.com/v1beta',
+  apiKey: 'sk-test',
+  type: type,
+  enableDiscovery: true,
+  tag: 'google',
+  tagColor: 0xFF2196F3,
+);
 
 Future<void> _pumpDialog(WidgetTester tester, {String type = 'google-genai-rest'}) async {
   await tester.pumpWidget(
@@ -112,8 +112,7 @@ void main() {
     }
   });
 
-  testWidgets('a supplier-specific type is representable alongside them',
-      (tester) async {
+  testWidgets('a supplier-specific type is representable alongside them', (tester) async {
     tester.view.physicalSize = const Size(1400, 1000);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -143,18 +142,14 @@ void main() {
   group('presetForChannelType', () {
     test('the official host resolves to the official preset', () {
       expect(
-        presetForChannelType(Vendors.openAIRest,
-                endpoint: 'https://api.openai.com/v1')
-            ?.id,
+        presetForChannelType(Vendors.openAIRest, endpoint: 'https://api.openai.com/v1')?.id,
         'openai-official',
       );
     });
 
     test('a trailing slash and casing are not a different address', () {
       expect(
-        presetForChannelType(Vendors.openAIRest,
-                endpoint: 'https://API.OpenAI.com/v1/')
-            ?.id,
+        presetForChannelType(Vendors.openAIRest, endpoint: 'https://API.OpenAI.com/v1/')?.id,
         'openai-official',
       );
     });
@@ -164,18 +159,17 @@ void main() {
       // the address as diverging from its preset, flag it, and offer a
       // one-tap restore that overwrites a working relay with api.openai.com.
       expect(
-        presetForChannelType(Vendors.openAIRest,
-                endpoint: 'https://relay.internal.example/v1')
-            ?.id,
+        presetForChannelType(Vendors.openAIRest, endpoint: 'https://relay.internal.example/v1')?.id,
         'custom-openai',
       );
     });
 
     test('the same rule holds for the Gemini pair', () {
       expect(
-        presetForChannelType(Vendors.googleRest,
-                endpoint: 'https://gateway.corp.example/v1beta')
-            ?.id,
+        presetForChannelType(
+          Vendors.googleRest,
+          endpoint: 'https://gateway.corp.example/v1beta',
+        )?.id,
         'custom-google',
       );
     });
@@ -184,10 +178,10 @@ void main() {
       // It stores ①'s type through a *variant*, so it competes with both
       // OpenAI presets — and its endpoint is what says it is Google's.
       expect(
-        presetForChannelType(Vendors.openAIRest,
-                endpoint:
-                    'https://generativelanguage.googleapis.com/v1beta/openai')
-            ?.id,
+        presetForChannelType(
+          Vendors.openAIRest,
+          endpoint: 'https://generativelanguage.googleapis.com/v1beta/openai',
+        )?.id,
         'google',
       );
     });
@@ -215,8 +209,7 @@ void main() {
       expect(find.text('Change preset'), findsWidgets);
     });
 
-    testWidgets('names the variant when the preset has more than one',
-        (tester) async {
+    testWidgets('names the variant when the preset has more than one', (tester) async {
       tester.view.physicalSize = const Size(1400, 1000);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -226,8 +219,7 @@ void main() {
       expect(find.text('NewAPI · Gemini format'), findsOneWidget);
     });
 
-    testWidgets('says so when no preset matches, and still opens',
-        (tester) async {
+    testWidgets('says so when no preset matches, and still opens', (tester) async {
       tester.view.physicalSize = const Size(1400, 1000);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -244,8 +236,7 @@ void main() {
   // The shortcut itself: it fills the fields and leaves the user's own
   // values alone. The list it opens is the add-channel catalogue, which is
   // the structural half of the fix — one list, so neither dialog can drift.
-  testWidgets('changing preset rewrites protocol and address, keeps the key',
-      (tester) async {
+  testWidgets('changing preset rewrites protocol and address, keeps the key', (tester) async {
     tester.view.physicalSize = const Size(1400, 1200);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -274,8 +265,7 @@ void main() {
   // `D1f` follow-up: a preset change builds the routes the add-channel
   // wizard would — every route the platform offers — not just the one its
   // vendor used to reach, which left the rest behind an "Enable" each.
-  testWidgets('changing preset creates every route the platform offers',
-      (tester) async {
+  testWidgets('changing preset creates every route the platform offers', (tester) async {
     tester.view.physicalSize = const Size(1400, 1400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -288,8 +278,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.textContaining('Anthropic'), findsWidgets);
-    expect(find.text('Enable'), findsNothing,
-        reason: 'MiniMax offers Chat and Anthropic; both are created');
+    expect(
+      find.text('Enable'),
+      findsNothing,
+      reason: 'MiniMax offers Chat and Anthropic; both are created',
+    );
     expect(tester.takeException(), isNull);
   });
 
@@ -303,8 +296,7 @@ void main() {
     expect(find.textContaining('Optional'), findsWidgets);
   });
 
-  testWidgets('every vendor is also named, not left as a raw id',
-      (tester) async {
+  testWidgets('every vendor is also named, not left as a raw id', (tester) async {
     await _pumpDialog(tester);
     final BuildContext context = tester.element(find.byType(ChannelEditDialog));
     final l10n = AppLocalizations.of(context)!;

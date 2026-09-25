@@ -22,8 +22,7 @@ void main() {
     final client = MockClient((req) async {
       hits.update(req.url.path, (n) => n + 1, ifAbsent: () => 1);
       if (req.url.path == '/ok.png') return http.Response.bytes(png, 200);
-      return http.Response('<html>expired</html>', 200,
-          headers: {'content-type': 'text/html'});
+      return http.Response('<html>expired</html>', 200, headers: {'content-type': 'text/html'});
     });
     final logs = <String>[];
 
@@ -40,13 +39,11 @@ void main() {
     expect(result.images.single, png);
     // The HTML link was retried once, then warned about — never saved.
     expect(hits['/gone.png'], 2);
-    expect(logs.where((l) => l.startsWith('WARN') && l.contains('not an image')),
-        isNotEmpty);
+    expect(logs.where((l) => l.startsWith('WARN') && l.contains('not an image')), isNotEmpty);
     expect(logs.where((l) => l.contains('only 1 of 2')), isNotEmpty);
   });
 
-  test('a reply that is one bare link retries once, then gives up loudly',
-      () async {
+  test('a reply that is one bare link retries once, then gives up loudly', () async {
     var calls = 0;
     final client = MockClient((req) async {
       calls++;
@@ -64,8 +61,7 @@ void main() {
 
     expect(result.images, isEmpty);
     expect(calls, 2);
-    expect(logs.where((l) => l.startsWith('WARN') && l.contains('404')),
-        isNotEmpty);
+    expect(logs.where((l) => l.startsWith('WARN') && l.contains('404')), isNotEmpty);
   });
 
   test('a bare link to real image bytes becomes the reply', () async {

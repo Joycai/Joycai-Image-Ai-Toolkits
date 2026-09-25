@@ -72,7 +72,10 @@ class _FeeGroupEditPageState extends State<FeeGroupEditPage> {
     final group = widget.group;
     final models = group == null
         ? const <String>[]
-        : [for (final m in appState.allModels) if (m.feeGroupId == group.id) m.modelName];
+        : [
+            for (final m in appState.allModels)
+              if (m.feeGroupId == group.id) m.modelName,
+          ];
     final top = MediaQuery.paddingOf(context).top;
     final bottom = MediaQuery.paddingOf(context).bottom;
 
@@ -105,7 +108,9 @@ class _FeeGroupEditPageState extends State<FeeGroupEditPage> {
                           group == null ? l10n.newFeeGroup : l10n.editGroupTitle,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: textTheme.headlineMedium?.copyWith(color: GlassInk.maybeOf(context)?.ink),
+                          style: textTheme.headlineMedium?.copyWith(
+                            color: GlassInk.maybeOf(context)?.ink,
+                          ),
                         ),
                       ),
                       if (group != null)
@@ -159,9 +164,14 @@ class _FeeGroupEditPageState extends State<FeeGroupEditPage> {
                             onPressed: () => Navigator.of(context).pop(),
                             style: TextButton.styleFrom(
                               foregroundColor: scheme.onAccentTint,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.control)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(AppRadius.control),
+                              ),
                             ),
-                            child: Text(l10n.cancel, style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500)),
+                            child: Text(
+                              l10n.cancel,
+                              style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+                            ),
                           ),
                         ),
                       ),
@@ -186,7 +196,9 @@ class _FeeGroupEditPageState extends State<FeeGroupEditPage> {
                                         )
                                       : Text(
                                           l10n.save,
-                                          style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                                          style: textTheme.bodyMedium?.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                          ),
                                         ),
                                 ),
                               ),
@@ -224,7 +236,10 @@ class _ModelsUsingGroup extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.only(bottom: AppSpace.s4),
-          child: Text(l10n.modelsUsingGroup, style: textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant)),
+          child: Text(
+            l10n.modelsUsingGroup,
+            style: textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
+          ),
         ),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: AppSpace.s4),
@@ -238,7 +253,10 @@ class _ModelsUsingGroup extends StatelessWidget {
                   height: AppSize.large,
                   child: Align(
                     alignment: AlignmentDirectional.centerStart,
-                    child: Text(l10n.feeGroupUnused, style: textTheme.labelSmall?.mono.copyWith(color: scheme.outline)),
+                    child: Text(
+                      l10n.feeGroupUnused,
+                      style: textTheme.labelSmall?.mono.copyWith(color: scheme.outline),
+                    ),
                   ),
                 )
               : Column(
@@ -251,7 +269,9 @@ class _ModelsUsingGroup extends StatelessWidget {
                         alignment: AlignmentDirectional.centerStart,
                         decoration: i == 0
                             ? null
-                            : BoxDecoration(border: Border(top: BorderSide(color: scheme.outlineVariant))),
+                            : BoxDecoration(
+                                border: Border(top: BorderSide(color: scheme.outlineVariant)),
+                              ),
                         child: Text(
                           name,
                           maxLines: 1,

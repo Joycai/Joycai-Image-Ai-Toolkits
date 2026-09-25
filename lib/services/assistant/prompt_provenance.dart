@@ -53,10 +53,7 @@ class PromptProvenance {
   /// decoded parameters, so callers may also feed it the live queue
   /// unfiltered. Later tasks win on a path collision (a regenerated file
   /// overwrites its predecessor on disk too).
-  static Map<String, int> resultVersionsFromTasks(
-    Iterable<TaskItem> tasks,
-    String sessionId,
-  ) {
+  static Map<String, int> resultVersionsFromTasks(Iterable<TaskItem> tasks, String sessionId) {
     final versions = <String, int>{};
     for (final task in tasks) {
       if (task.parameters[sessionParamKey] != sessionId) continue;
@@ -75,8 +72,7 @@ class PromptProvenance {
   static int? decodeVersionParam(Map<String, dynamic> parameters) =>
       _decodeVersion(parameters[versionParamKey]);
 
-  static int? _decodeVersion(Object? raw) =>
-      raw is int ? raw : int.tryParse(raw?.toString() ?? '');
+  static int? _decodeVersion(Object? raw) => raw is int ? raw : int.tryParse(raw?.toString() ?? '');
 }
 
 /// The prompt most recently applied from the assistant to the workbench:
@@ -103,9 +99,6 @@ class AppliedAssistantPrompt {
   /// user's own, and tagging it vN would claim a lineage it broke.
   Map<String, dynamic>? taskParamsFor(String prompt) {
     if (prompt.trim() != text.trim() || prompt.trim().isEmpty) return null;
-    return {
-      PromptProvenance.sessionParamKey: sessionId,
-      PromptProvenance.versionParamKey: version,
-    };
+    return {PromptProvenance.sessionParamKey: sessionId, PromptProvenance.versionParamKey: version};
   }
 }

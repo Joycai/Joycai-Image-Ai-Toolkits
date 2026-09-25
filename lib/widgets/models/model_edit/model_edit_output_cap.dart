@@ -24,7 +24,8 @@ extension _OutputCapSection on _ModelEditDialogState {
     // refuses the request past it, a local runtime truncates on its own.
     // Said here rather than clamped in the request, where a rewrite would be
     // a third behaviour nobody can see.
-    final exceedsWindow = specified &&
+    final exceedsWindow =
+        specified &&
         hasValue &&
         contextMode == ContextWindowMode.specified &&
         window != null &&
@@ -47,8 +48,8 @@ extension _OutputCapSection on _ModelEditDialogState {
     final description = specified
         ? l10n.outputCapSpecifyDesc
         : _isAnthropicChannel
-            ? l10n.outputCapAutoAnthropicDesc
-            : l10n.outputCapAutoDesc;
+        ? l10n.outputCapAutoAnthropicDesc
+        : l10n.outputCapAutoDesc;
     // Reasoning is set on this model and the cap is a number: the two share
     // it on every wire (usage 04 §3), and a cap sized for the answer alone
     // is spent on the thinking first.
@@ -58,7 +59,10 @@ extension _OutputCapSection on _ModelEditDialogState {
     // the request just goes out without it. Below twice the floor is where
     // that happens; said here, since nothing on the wire says it.
     final capStarvesThinking =
-        thinkingShares && _isAnthropicChannel && hasValue && tokens < 2 * anthropicMinThinkingBudget;
+        thinkingShares &&
+        _isAnthropicChannel &&
+        hasValue &&
+        tokens < 2 * anthropicMinThinkingBudget;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -73,7 +77,9 @@ extension _OutputCapSection on _ModelEditDialogState {
               const SizedBox(width: AppSpace.s10),
               Text(
                 status,
-                style: theme.textTheme.labelSmall?.mono.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                style: theme.textTheme.labelSmall?.mono.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
             ],
           ],
@@ -105,7 +111,9 @@ extension _OutputCapSection on _ModelEditDialogState {
                         mono: true,
                         hint: '${OutputCapScale.stops[4]}',
                         keyboardType: TextInputType.text,
-                        inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9kKmM ,.]'))],
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(RegExp(r'[0-9kKmM ,.]')),
+                        ],
                         suffixText: l10n.contextTokensUnit,
                         error: invalid,
                         onChanged: (_) => _rebuild(() => _outputCapTouched = true),
@@ -118,10 +126,12 @@ extension _OutputCapSection on _ModelEditDialogState {
                           value: hasValue ? OutputCapScale.positionOf(tokens) : 0,
                           snap: true,
                           highlight: hasValue ? OutputCapScale.stopIndexOf(tokens) : null,
-                          labels: [for (final stop in OutputCapScale.stops) OutputCapScale.label(stop)],
+                          labels: [
+                            for (final stop in OutputCapScale.stops) OutputCapScale.label(stop),
+                          ],
                           semanticLabel: l10n.outputCap,
-                          semanticValueOf: (p) => l10n.contextTokens(
-                              formatGroupedTokens(OutputCapScale.tokensAt(p))),
+                          semanticValueOf: (p) =>
+                              l10n.contextTokens(formatGroupedTokens(OutputCapScale.tokensAt(p))),
                           onChanged: (p) => _setOutputCapTokens(OutputCapScale.tokensAt(p)),
                         ),
                       ),
@@ -144,7 +154,8 @@ extension _OutputCapSection on _ModelEditDialogState {
                           padding: const EdgeInsets.only(top: AppSpace.s6),
                           child: ModelEditValidationNote(
                             title: l10n.outputCapStarvesThinking(
-                                formatGroupedTokens(2 * anthropicMinThinkingBudget)),
+                              formatGroupedTokens(2 * anthropicMinThinkingBudget),
+                            ),
                           ),
                         ),
                     ],

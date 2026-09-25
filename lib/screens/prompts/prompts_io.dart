@@ -29,11 +29,7 @@ Future<void> exportPrompts(
   required List<SystemPrompt> systemPrompts,
 }) async {
   final data = {
-    ...promptLibraryExport(
-      tags: tags,
-      userPrompts: userPrompts,
-      systemPrompts: systemPrompts,
-    ),
+    ...promptLibraryExport(tags: tags, userPrompts: userPrompts, systemPrompts: systemPrompts),
     'export_type': 'prompts_only',
     'version': 1,
   };
@@ -65,7 +61,10 @@ Future<bool> importPrompts(BuildContext context, AppLocalizations l10n) async {
   final appState = Provider.of<AppState>(context, listen: false);
   final successMsg = l10n.settingsImported;
 
-  final PlatformFile? picked = await FilePicker.pickFile(type: FileType.custom, allowedExtensions: ['json']);
+  final PlatformFile? picked = await FilePicker.pickFile(
+    type: FileType.custom,
+    allowedExtensions: ['json'],
+  );
   if (!context.mounted || picked == null) return false;
 
   final Map<String, dynamic> data;
@@ -78,7 +77,8 @@ Future<bool> importPrompts(BuildContext context, AppLocalizations l10n) async {
   }
 
   final int incoming = _listLength(data['user_prompts']) + _listLength(data['system_prompts']);
-  final int current = (await appState.getPrompts()).length + (await appState.getSystemPrompts()).length;
+  final int current =
+      (await appState.getPrompts()).length + (await appState.getSystemPrompts()).length;
   if (!context.mounted) return false;
 
   final String? importMode = await showDialog<String>(

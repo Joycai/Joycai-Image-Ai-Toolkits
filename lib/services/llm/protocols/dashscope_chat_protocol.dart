@@ -7,8 +7,7 @@ import '../llm_debug_logger.dart';
 import '../llm_types.dart';
 import '../vendors/vendor_profile.dart' show WireProtocol;
 import 'dashscope_payload.dart';
-import 'openai_chat_parsing.dart'
-    show contentToText, decodeToolArguments, resolveToolCallId;
+import 'openai_chat_parsing.dart' show contentToText, decodeToolArguments, resolveToolCallId;
 import 'protocol.dart';
 import 'streaming_tool_calls.dart' show StreamingToolCallAccumulator;
 
@@ -54,10 +53,7 @@ class DashScopeChatProtocol implements ChatProtocol {
     final multimodal = dashscopeChatIsMultimodal(target);
     _warnIfAttachmentsDropped(target, history, multimodal, logger);
     final url = Uri.parse(dashscopeChatUrl(config.endpoint, multimodal));
-    logger?.call(
-      'Preparing DashScope native chat request to: ${url.host}',
-      level: 'DEBUG',
-    );
+    logger?.call('Preparing DashScope native chat request to: ${url.host}', level: 'DEBUG');
 
     final headers = target.headers();
     final payload = buildDashScopeChatPayload(
@@ -73,18 +69,11 @@ class DashScopeChatProtocol implements ChatProtocol {
     try {
       LLMDebugLog? debugFile;
       if (LLMDebugLogger.enabled) {
-        debugFile = await LLMDebugLogger.startLog(
-          config.modelId,
-          'DashScope (Native Chat)',
-          {
-            'url': redactUrl(url),
-            'headers': headers,
-            'body': dashscopePayloadForLog(
-              payload,
-              dashscopeAttachmentCount(history),
-            ),
-          },
-        );
+        debugFile = await LLMDebugLogger.startLog(config.modelId, 'DashScope (Native Chat)', {
+          'url': redactUrl(url),
+          'headers': headers,
+          'body': dashscopePayloadForLog(payload, dashscopeAttachmentCount(history)),
+        });
       }
 
       // Abortable: LLMService cancels or times out a non-streaming request
@@ -98,10 +87,7 @@ class DashScopeChatProtocol implements ChatProtocol {
       );
 
       if (debugFile != null) {
-        await LLMDebugLogger.appendLine(
-          debugFile,
-          'Status: ${response.statusCode}',
-        );
+        await LLMDebugLogger.appendLine(debugFile, 'Status: ${response.statusCode}');
         await LLMDebugLogger.appendLine(debugFile, 'Body: ${response.body}');
         await LLMDebugLogger.finish(debugFile);
       }
@@ -127,22 +113,14 @@ class DashScopeChatProtocol implements ChatProtocol {
 
       final text = contentToText(message['content']);
       final rawReasoning = message['reasoning_content'];
-      final reasoning = rawReasoning is String && rawReasoning.isNotEmpty
-          ? rawReasoning
-          : null;
+      final reasoning = rawReasoning is String && rawReasoning.isNotEmpty ? rawReasoning : null;
 
       final toolCalls = dashscopeToolCalls(message, logger);
       if (toolCalls.isNotEmpty) {
-        logger?.call(
-          'Model requested ${toolCalls.length} tool call(s).',
-          level: 'DEBUG',
-        );
+        logger?.call('Model requested ${toolCalls.length} tool call(s).', level: 'DEBUG');
       }
 
-      logger?.call(
-        'DashScope parse complete. Text length: ${text.length}',
-        level: 'DEBUG',
-      );
+      logger?.call('DashScope parse complete. Text length: ${text.length}', level: 'DEBUG');
 
       final metadata = dashscopeChatMetadata(data);
       final empty = dashscopeEmptyReplyFailure(
@@ -194,10 +172,7 @@ class DashScopeChatProtocol implements ChatProtocol {
     final multimodal = dashscopeChatIsMultimodal(target);
     _warnIfAttachmentsDropped(target, history, multimodal, logger);
     final url = Uri.parse(dashscopeChatUrl(config.endpoint, multimodal));
-    logger?.call(
-      'Starting DashScope native chat stream: ${url.host}',
-      level: 'DEBUG',
-    );
+    logger?.call('Starting DashScope native chat stream: ${url.host}', level: 'DEBUG');
 
     final headers = {...target.headers(), _dashscopeSseHeader: 'enable'};
     final payload = buildDashScopeChatPayload(
@@ -209,24 +184,22 @@ class DashScopeChatProtocol implements ChatProtocol {
       isStreaming: true,
     );
 
-    final request = buildJsonRequest('POST', url,
-        headers: headers, body: jsonEncode(payload), options: options);
+    final request = buildJsonRequest(
+      'POST',
+      url,
+      headers: headers,
+      body: jsonEncode(payload),
+      options: options,
+    );
 
     final client = config.createClient();
     LLMDebugLog? debugFile;
     if (LLMDebugLogger.enabled) {
-      debugFile = await LLMDebugLogger.startLog(
-        config.modelId,
-        'DashScope (Native Chat Stream)',
-        {
-          'url': redactUrl(url),
-          'headers': headers,
-          'body': dashscopePayloadForLog(
-            payload,
-            dashscopeAttachmentCount(history),
-          ),
-        },
-      );
+      debugFile = await LLMDebugLogger.startLog(config.modelId, 'DashScope (Native Chat Stream)', {
+        'url': redactUrl(url),
+        'headers': headers,
+        'body': dashscopePayloadForLog(payload, dashscopeAttachmentCount(history)),
+      });
     }
 
     final http.StreamedResponse response;
@@ -239,17 +212,11 @@ class DashScopeChatProtocol implements ChatProtocol {
     if (response.statusCode != 200) {
       final body = await response.stream.bytesToString();
       if (debugFile != null) {
-        await LLMDebugLogger.appendLine(
-          debugFile,
-          'Error Status: ${response.statusCode}',
-        );
+        await LLMDebugLogger.appendLine(debugFile, 'Error Status: ${response.statusCode}');
         await LLMDebugLogger.appendLine(debugFile, 'Error Body: $body');
         await LLMDebugLogger.finish(debugFile);
       }
-      logger?.call(
-        'Stream request failed with status: ${response.statusCode}',
-        level: 'ERROR',
-      );
+      logger?.call('Stream request failed with status: ${response.statusCode}', level: 'ERROR');
       client.close();
       throw LLMApiException(
         'DashScope Chat API stream request failed: ${response.statusCode} - '
@@ -260,10 +227,7 @@ class DashScopeChatProtocol implements ChatProtocol {
     }
 
     if (debugFile != null) {
-      await LLMDebugLogger.appendLine(
-        debugFile,
-        'Status: ${response.statusCode}',
-      );
+      await LLMDebugLogger.appendLine(debugFile, 'Status: ${response.statusCode}');
     }
 
     // Everything emitted so far on each channel. `incremental_output: true`
@@ -287,9 +251,7 @@ class DashScopeChatProtocol implements ChatProtocol {
 
     try {
       await for (final line
-          in response.stream
-              .transform(utf8.decoder)
-              .transform(const LineSplitter())) {
+          in response.stream.transform(utf8.decoder).transform(const LineSplitter())) {
         if (debugFile != null && line.isNotEmpty) {
           await LLMDebugLogger.appendStreamLine(debugFile, line);
         }
@@ -330,8 +292,7 @@ class DashScopeChatProtocol implements ChatProtocol {
           // after the loop, but the consumer's idle guard resets only on
           // chunks it receives — a long tool-call-only answer would
           // otherwise time out mid-delivery and be re-sent.
-          yield LLMResponseChunk(
-              toolArgumentChars: streamedToolCalls.argumentChars);
+          yield LLMResponseChunk(toolArgumentChars: streamedToolCalls.argumentChars);
         }
 
         final rawReasoning = message['reasoning_content'];
@@ -344,10 +305,7 @@ class DashScopeChatProtocol implements ChatProtocol {
           final delta = reasoning.feed(rawReasoning);
           if (delta.isNotEmpty) {
             sawOutput = true;
-            yield LLMResponseChunk(
-              reasoningPart: delta,
-              reasoningFieldName: 'reasoning_content',
-            );
+            yield LLMResponseChunk(reasoningPart: delta, reasoningFieldName: 'reasoning_content');
           }
         }
 
@@ -403,10 +361,7 @@ class DashScopeChatProtocol implements ChatProtocol {
     // rather than hand over a half-built call.
     final assembled = streamedToolCalls.flush(logger: logger);
     if (assembled.isNotEmpty) {
-      logger?.call(
-        'Model requested ${assembled.length} tool call(s).',
-        level: 'DEBUG',
-      );
+      logger?.call('Model requested ${assembled.length} tool call(s).', level: 'DEBUG');
     }
     for (final call in assembled) {
       yield LLMResponseChunk(toolCallPart: call);
@@ -447,9 +402,7 @@ LLMApiException? dashscopeEmptyReplyFailure({
   required Map<String, dynamic>? options,
   LLMLogger? logger,
 }) {
-  if (sawOutput ||
-      finishReason == 'length' ||
-      finishReason == contentFilterFinishReason) {
+  if (sawOutput || finishReason == 'length' || finishReason == contentFilterFinishReason) {
     return null;
   }
   if (options?[emptyReplyEndsTurnKey] == true) {
@@ -562,8 +515,7 @@ void _warnIfAttachmentsDropped(
 /// list it — an upstream "model not supported" error on the whole request,
 /// where the text endpoint merely drops the image part. Neither direction is
 /// good; only one of them answers at all, so the callers log the drop instead.
-bool dashscopeChatIsMultimodal(LLMTarget target) =>
-    target.model.needsMultimodalChatSurface;
+bool dashscopeChatIsMultimodal(LLMTarget target) => target.model.needsMultimodalChatSurface;
 
 /// The native chat URL implied by a channel's stored endpoint.
 String dashscopeChatUrl(String endpoint, bool multimodal) =>
@@ -590,11 +542,7 @@ Map<String, dynamic> buildDashScopeChatPayload(
 }) {
   final messages = [
     for (final msg in history)
-      _dashscopeMessage(
-        msg,
-        multimodal: multimodal,
-        modelId: target.config.modelId,
-      ),
+      _dashscopeMessage(msg, multimodal: multimodal, modelId: target.config.modelId),
   ];
 
   final parameters = <String, dynamic>{
@@ -608,9 +556,7 @@ Map<String, dynamic> buildDashScopeChatPayload(
     if (isStreaming) 'incremental_output': true,
   };
 
-  final thinking = dashscopeThinkingRequest(
-    target.config.effectiveReasoningEffort,
-  );
+  final thinking = dashscopeThinkingRequest(target.config.effectiveReasoningEffort);
   if (thinking != null) parameters['enable_thinking'] = thinking;
 
   // The output cap lives in `parameters` like every other generation knob
@@ -624,8 +570,7 @@ Map<String, dynamic> buildDashScopeChatPayload(
   // the vendor's declaration like the ① flag. No `enable_source` is asked
   // for, so no sources come back and nothing is parsed for them (pitfalls 11
   // §A10).
-  if (target.config.enableWebSearch &&
-      target.vendor.sendsWebSearchOn(WireProtocol.dashscopeChat)) {
+  if (target.config.enableWebSearch && target.vendor.sendsWebSearchOn(WireProtocol.dashscopeChat)) {
     parameters['enable_search'] = true;
   }
 
@@ -634,11 +579,7 @@ Map<String, dynamic> buildDashScopeChatPayload(
       for (final t in tools)
         {
           'type': 'function',
-          'function': {
-            'name': t.name,
-            'description': t.description,
-            'parameters': t.parameters,
-          },
+          'function': {'name': t.name, 'description': t.description, 'parameters': t.parameters},
         },
     ];
     parameters['tool_choice'] = 'auto';
@@ -709,19 +650,14 @@ Map<String, dynamic> _dashscopeMessage(
       'content': _dashscopeContent(msg.content, multimodal: multimodal),
       if (msg.reasoningContent != null &&
           msg.reasoningFieldName != null &&
-          (msg.rawThinkingModelId == null ||
-              modelId == null ||
-              msg.rawThinkingModelId == modelId))
+          (msg.rawThinkingModelId == null || modelId == null || msg.rawThinkingModelId == modelId))
         msg.reasoningFieldName!: msg.reasoningContent,
       'tool_calls': [
         for (final tc in msg.toolCalls)
           {
             'id': tc.id,
             'type': 'function',
-            'function': {
-              'name': tc.name,
-              'arguments': jsonEncode(tc.arguments),
-            },
+            'function': {'name': tc.name, 'arguments': jsonEncode(tc.arguments)},
           },
       ],
     };
@@ -800,14 +736,10 @@ Map<String, dynamic> dashscopeChatMetadata(Map<String, dynamic> data) {
   };
 }
 
-String? _stringOrNull(Object? value) =>
-    value is String && value.isNotEmpty ? value : null;
+String? _stringOrNull(Object? value) => value is String && value.isNotEmpty ? value : null;
 
 /// The tool calls carried by an assistant message, in declaration order.
-List<LLMToolCall> dashscopeToolCalls(
-  Map<String, dynamic> message,
-  LLMLogger? logger,
-) {
+List<LLMToolCall> dashscopeToolCalls(Map<String, dynamic> message, LLMLogger? logger) {
   final raw = message['tool_calls'];
   if (raw is! List) return const [];
   final calls = <LLMToolCall>[];

@@ -24,16 +24,16 @@ const Color _cacheIdentity = Color(0xFF7A4ECB);
 /// the cost these add up to is a number, not a success.
 extension UsageTokenIdentity on UsageToken {
   Color colorOf(BuildContext context) => switch (this) {
-        UsageToken.input => _inputIdentity,
-        UsageToken.cache => _cacheIdentity,
-        UsageToken.output => context.semantic.warning,
-      };
+    UsageToken.input => _inputIdentity,
+    UsageToken.cache => _cacheIdentity,
+    UsageToken.output => context.semantic.warning,
+  };
 
   String labelOf(AppLocalizations l10n) => switch (this) {
-        UsageToken.input => l10n.inputTokens,
-        UsageToken.cache => l10n.cachedInputTokens,
-        UsageToken.output => l10n.outputTokens,
-      };
+    UsageToken.input => l10n.inputTokens,
+    UsageToken.cache => l10n.cachedInputTokens,
+    UsageToken.output => l10n.outputTokens,
+  };
 }
 
 /// The identity colour of a record's model kind (`LLMModel.tag`), or null when
@@ -42,18 +42,18 @@ Color? usageModelKindColor(String? tag) => tag == null ? null : modelTagAccent(t
 
 /// The glyph on a record's kind plate.
 IconData usageModelKindGlyph(String? tag) => switch (tag?.toLowerCase()) {
-      'chat' => Icons.chat_bubble_outline,
-      'image' => Icons.image_outlined,
-      'video' => Icons.movie_outlined,
-      'multimodal' => Icons.auto_awesome_outlined,
-      _ => Icons.token_outlined,
-    };
+  'chat' => Icons.chat_bubble_outline,
+  'image' => Icons.image_outlined,
+  'video' => Icons.movie_outlined,
+  'multimodal' => Icons.auto_awesome_outlined,
+  _ => Icons.token_outlined,
+};
 
 /// The kind's name, for the plate's tooltip; null where there is none to give.
 String? usageModelKindLabel(AppLocalizations l10n, String? tag) => switch (tag?.toLowerCase()) {
-      'chat' => l10n.kindChat,
-      'image' => l10n.kindImage,
-      'video' => l10n.kindVideo,
-      'multimodal' => l10n.kindMultimodal,
-      _ => null,
-    };
+  'chat' => l10n.kindChat,
+  'image' => l10n.kindImage,
+  'video' => l10n.kindVideo,
+  'multimodal' => l10n.kindMultimodal,
+  _ => null,
+};

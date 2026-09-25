@@ -36,12 +36,12 @@ part 'task_card/task_card_menu.dart';
 /// What a status is called on its pill. Cancelled carries its cause, because
 /// the filter strip files it under 失败 and the pill is where the two part.
 String taskStatusLabel(TaskStatus status, AppLocalizations l10n) => switch (status) {
-      TaskStatus.processing => l10n.processingTasks,
-      TaskStatus.pending => l10n.pendingTasks,
-      TaskStatus.completed => l10n.completedTasks,
-      TaskStatus.failed => l10n.failedTasks,
-      TaskStatus.cancelled => l10n.cancelledByUser,
-    };
+  TaskStatus.processing => l10n.processingTasks,
+  TaskStatus.pending => l10n.pendingTasks,
+  TaskStatus.completed => l10n.completedTasks,
+  TaskStatus.failed => l10n.failedTasks,
+  TaskStatus.cancelled => l10n.cancelledByUser,
+};
 
 /// The status column's width: the widest of the five pills in this locale at
 /// this text scale.
@@ -57,7 +57,8 @@ double taskStatusColumnWidth(BuildContext context) {
     final double dot = status == TaskStatus.processing
         ? TaskStatusPill.dotSize + TaskStatusPill.dotGap
         : 0;
-    final width = measureGlassText(context, taskStatusLabel(status, l10n), style) +
+    final width =
+        measureGlassText(context, taskStatusLabel(status, l10n), style) +
         dot +
         TaskStatusPill.padX * 2;
     if (width > widest) widest = width;
@@ -106,7 +107,8 @@ List<String> taskFacts(TaskItem task, int position, AppLocalizations l10n) {
       if (task.progress != null) '${(task.progress! * 100).round()}%',
       if (task.startTime != null) formatTaskDuration(DateTime.now().difference(task.startTime!)),
     ],
-    if ((task.status == TaskStatus.completed || task.status == TaskStatus.failed) && elapsed != null)
+    if ((task.status == TaskStatus.completed || task.status == TaskStatus.failed) &&
+        elapsed != null)
       l10n.tookDuration(elapsed),
   ];
 }
@@ -244,11 +246,7 @@ class TaskQueueCard extends StatelessWidget {
 /// shrinks first; the facts are dropped whole when they no longer fit beside
 /// a sliver of log; only then does the model column narrow.
 class _RowHead extends StatelessWidget {
-  const _RowHead({
-    required this.task,
-    required this.position,
-    required this.statusColumnWidth,
-  });
+  const _RowHead({required this.task, required this.position, required this.statusColumnWidth});
 
   final TaskItem task;
   final int position;
@@ -280,14 +278,15 @@ class _RowHead extends StatelessWidget {
       child: LayoutBuilder(
         builder: (context, box) {
           final inner = box.maxWidth - _padX * 2;
-          final fixedBesideModel = _plate +
-              statusColumnWidth +
-              TaskOutputs.columnWidth +
-              _RowIconButton.size +
-              _gap * 5;
-          final modelWidth = (inner - fixedBesideModel - _logMin).clamp(_modelMin, _model).toDouble();
+          final fixedBesideModel =
+              _plate + statusColumnWidth + TaskOutputs.columnWidth + _RowIconButton.size + _gap * 5;
+          final modelWidth = (inner - fixedBesideModel - _logMin)
+              .clamp(_modelMin, _model)
+              .toDouble();
           final flexRoom = inner - fixedBesideModel - modelWidth;
-          final factsWidth = facts.isEmpty ? 0.0 : measureGlassText(context, facts, mono11).ceilToDouble();
+          final factsWidth = facts.isEmpty
+              ? 0.0
+              : measureGlassText(context, facts, mono11).ceilToDouble();
           final showFacts = factsWidth > 0 && factsWidth + (log.isEmpty ? 0 : _gap) <= flexRoom;
 
           return Padding(
@@ -296,7 +295,10 @@ class _RowHead extends StatelessWidget {
               children: [
                 TaskLeadingPlate(task: task, position: position, size: _plate),
                 const SizedBox(width: _gap),
-                SizedBox(width: modelWidth, child: _ModelAndChannel(task: task)),
+                SizedBox(
+                  width: modelWidth,
+                  child: _ModelAndChannel(task: task),
+                ),
                 const SizedBox(width: _gap),
                 SizedBox(
                   width: statusColumnWidth,

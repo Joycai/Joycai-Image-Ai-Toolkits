@@ -42,16 +42,16 @@ void main() {
     }
 
     Map<String, dynamic> file(String password) => {
-          'export_type': 'full_backup',
-          'schema_version': DatabaseService.dbVersion,
-          'settings': [
-            {'key': 'proxy_password', 'value': password},
-            {'key': 'proxy_url', 'value': 'http://proxy:8080'},
-          ],
-          'llm_channels': [],
-          'llm_models': [],
-          'fee_groups': [],
-        };
+      'export_type': 'full_backup',
+      'schema_version': DatabaseService.dbVersion,
+      'settings': [
+        {'key': 'proxy_password', 'value': password},
+        {'key': 'proxy_url', 'value': 'http://proxy:8080'},
+      ],
+      'llm_channels': [],
+      'llm_models': [],
+      'fee_groups': [],
+    };
 
     Future<String?> password(Database db) async {
       final rows = await db.query('settings', where: 'key = ?', whereArgs: ['proxy_password']);

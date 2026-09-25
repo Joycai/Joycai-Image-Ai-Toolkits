@@ -34,10 +34,7 @@ void main() {
     test('a session that has never run reports nothing, not an empty window', () {
       // Zero for the system prompt would be a lie the first turn corrects a
       // second later — it has simply not been built yet.
-      final usage = PromptOptimizerAgent.measureContext(
-        sessionWith(),
-        contextWindowTokens: 131072,
-      );
+      final usage = PromptOptimizerAgent.measureContext(sessionWith(), contextWindowTokens: 131072);
       expect(usage.isUnknown, isTrue);
       expect(usage.basis, ContextWindowBasis.none);
     });
@@ -66,7 +63,9 @@ void main() {
       // turn will build. Reporting that as 0 would show a free system prompt;
       // the key is left out so the card can say "not measured".
       final usage = PromptOptimizerAgent.measureContext(
-        sessionWith(history: [LLMMessage(role: LLMRole.user, content: 'x' * 300)]),
+        sessionWith(
+          history: [LLMMessage(role: LLMRole.user, content: 'x' * 300)],
+        ),
         contextWindowTokens: 131072,
       );
 
@@ -83,25 +82,30 @@ void main() {
       final history = <LLMMessage>[];
       for (int turn = 0; turn < 10; turn++) {
         history.add(LLMMessage(role: LLMRole.user, content: 'turn $turn'));
-        history.add(LLMMessage(
-          role: LLMRole.assistant,
-          content: '',
-          toolCalls: [
-            LLMToolCall(id: 'c$turn', name: 'read_knowledge_file', arguments: {'path': 'a.md'}),
-          ],
-        ));
-        history.add(LLMMessage(
-          role: LLMRole.tool,
-          content: jsonEncode({'path': 'a.md', 'page': 1, 'content': 'y' * 4000}),
-          toolCallId: 'c$turn',
-          toolName: 'read_knowledge_file',
-        ));
+        history.add(
+          LLMMessage(
+            role: LLMRole.assistant,
+            content: '',
+            toolCalls: [
+              LLMToolCall(id: 'c$turn', name: 'read_knowledge_file', arguments: {'path': 'a.md'}),
+            ],
+          ),
+        );
+        history.add(
+          LLMMessage(
+            role: LLMRole.tool,
+            content: jsonEncode({'path': 'a.md', 'page': 1, 'content': 'y' * 4000}),
+            toolCallId: 'c$turn',
+            toolName: 'read_knowledge_file',
+          ),
+        );
       }
 
       final session = sessionWith(systemPromptChars: 100, history: history);
-      final measured =
-          PromptOptimizerAgent.measureContext(session, contextWindowTokens: 131072)
-              .slices[ContextUsageSlice.history]!;
+      final measured = PromptOptimizerAgent.measureContext(
+        session,
+        contextWindowTokens: 131072,
+      ).slices[ContextUsageSlice.history]!;
       final raw = PromptOptimizerAgent.occupiedChars('', session.history);
 
       expect(measured, lessThan(raw));
@@ -125,19 +129,14 @@ void main() {
       // Once the provider has billed a request, the window in *characters* is
       // known rather than assumed — a Chinese conversation genuinely fits fewer
       // of them, and the bar should fill faster to say so.
-      final session = sessionWith(systemPromptChars: 1000)
-        ..observedCharsPerToken = 1.2;
-      final usage =
-          PromptOptimizerAgent.measureContext(session, contextWindowTokens: 100000);
+      final session = sessionWith(systemPromptChars: 1000)..observedCharsPerToken = 1.2;
+      final usage = PromptOptimizerAgent.measureContext(session, contextWindowTokens: 100000);
 
       expect(usage.windowChars, 120000);
       // …and carries that ratio, so the card prints the window the user set.
       expect(usage.charsPerToken, 1.2);
       expect(usage.tokensOf(usage.windowChars), 100000);
-      expect(
-        usage.windowChars,
-        lessThan((100000 * ContextBudget.charsPerToken).round()),
-      );
+      expect(usage.windowChars, lessThan((100000 * ContextBudget.charsPerToken).round()));
     });
 
     test('an unset window is drawn against the default, and labelled as assumed', () {

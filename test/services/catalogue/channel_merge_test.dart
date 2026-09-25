@@ -13,13 +13,7 @@ void main() {
     String type, {
     String endpoint = 'https://relay.example.com/v1',
     String key = 'sk-shared',
-  }) => LLMChannel(
-    id: id,
-    displayName: 'c$id',
-    endpoint: endpoint,
-    apiKey: key,
-    type: type,
-  );
+  }) => LLMChannel(id: id, displayName: 'c$id', endpoint: endpoint, apiKey: key, type: type);
 
   LLMModel model(
     int id,
@@ -48,11 +42,7 @@ void main() {
   // A New API relay split the pre-routes way: one channel per protocol.
   final openai = channel(1, Vendors.newApiOpenAI);
   final claude = channel(2, Vendors.newApiAnthropic);
-  final gemini = channel(
-    3,
-    Vendors.newApiGemini,
-    endpoint: 'https://relay.example.com/v1beta',
-  );
+  final gemini = channel(3, Vendors.newApiGemini, endpoint: 'https://relay.example.com/v1beta');
 
   group('detection', () {
     test('one key, one host, disjoint routes → a candidate, earlier kept', () {
@@ -83,21 +73,13 @@ void main() {
         Vendors.newApiAnthropic,
         endpoint: 'https://other.example.com/v1',
       );
-      final official = channel(
-        2,
-        Vendors.anthropicRest,
-        endpoint: 'https://api.anthropic.com/v1',
-      );
+      final official = channel(2, Vendors.anthropicRest, endpoint: 'https://api.anthropic.com/v1');
       expect(ChannelMerge.candidates([openai, elsewhere], const []), isEmpty);
       expect(ChannelMerge.candidates([openai, official], const []), isEmpty);
     });
 
     test('the host is compared without case', () {
-      final shouty = channel(
-        2,
-        Vendors.newApiAnthropic,
-        endpoint: 'https://RELAY.example.com/v1',
-      );
+      final shouty = channel(2, Vendors.newApiAnthropic, endpoint: 'https://RELAY.example.com/v1');
       expect(ChannelMerge.candidates([openai, shouty], const []), hasLength(1));
     });
 
@@ -106,18 +88,8 @@ void main() {
       final b = channel(2, Vendors.newApiAnthropic, key: '');
       expect(ChannelMerge.candidates([a, b], const []), hasLength(1));
       expect(ChannelMerge.candidates([a, claude], const []), isEmpty);
-      final hostless = channel(
-        1,
-        Vendors.newApiOpenAI,
-        endpoint: 'relay',
-        key: '',
-      );
-      final hostless2 = channel(
-        2,
-        Vendors.newApiAnthropic,
-        endpoint: 'relay',
-        key: '',
-      );
+      final hostless = channel(1, Vendors.newApiOpenAI, endpoint: 'relay', key: '');
+      final hostless2 = channel(2, Vendors.newApiAnthropic, endpoint: 'relay', key: '');
       expect(ChannelMerge.candidates([hostless, hostless2], const []), isEmpty);
     });
 
@@ -151,10 +123,7 @@ void main() {
       final written = plan.updates.single;
       expect(written.id, 10);
       expect(written.maxOutputTokens, 4096);
-      expect(
-        ModelRoutes.parked(written)[RouteKind.anthropic]?.maxOutputTokens,
-        64000,
-      );
+      expect(ModelRoutes.parked(written)[RouteKind.anthropic]?.maxOutputTokens, 64000);
     });
 
     test("the kept model's own parameters for a route win", () {
@@ -195,11 +164,7 @@ void main() {
     });
 
     test('an absorbed route keeps its address byte for byte', () {
-      final shouty = channel(
-        2,
-        Vendors.newApiAnthropic,
-        endpoint: 'https://RELAY.example.com/v1',
-      );
+      final shouty = channel(2, Vendors.newApiAnthropic, endpoint: 'https://RELAY.example.com/v1');
       final plan = ChannelMerge.plan(openai, shouty, const [])!;
       expect(
         RoutedChannel.routesOf(plan.channel).addressOf(RouteKind.anthropic),

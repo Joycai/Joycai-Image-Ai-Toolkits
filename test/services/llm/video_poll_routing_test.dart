@@ -30,11 +30,15 @@ void main() {
       paths.add(request.uri.path);
       request.response
         ..headers.contentType = ContentType.json
-        ..write(jsonEncode(request.uri.path.contains('/tasks/')
-            ? {
-                'output': {'task_status': 'RUNNING'}
-              }
-            : {'status': 'in_progress'}));
+        ..write(
+          jsonEncode(
+            request.uri.path.contains('/tasks/')
+                ? {
+                    'output': {'task_status': 'RUNNING'},
+                  }
+                : {'status': 'in_progress'},
+          ),
+        );
       await request.response.close();
     });
   });
@@ -42,25 +46,23 @@ void main() {
   tearDown(() => server.close(force: true));
 
   LLMModelConfig config(String channelType) => LLMModelConfig(
-        modelId: 'wan2.2-t2v-plus',
-        channelType: channelType,
-        endpoint: 'http://127.0.0.1:${server.port}/v1',
-        apiKey: 'k',
-      );
+    modelId: 'wan2.2-t2v-plus',
+    channelType: channelType,
+    endpoint: 'http://127.0.0.1:${server.port}/v1',
+    apiKey: 'k',
+  );
 
   test('a Sora-style id keeps polling the OpenAI video surface', () async {
     // DashScope declares a native video protocol, and its own poll would take
     // this id to `/tasks/video_abc`. The prefix says where it came from.
-    await LLMDispatcher()
-        .checkOperation(config(Vendors.dashscope), 'video_abc');
+    await LLMDispatcher().checkOperation(config(Vendors.dashscope), 'video_abc');
     expect(paths.single, '/v1/videos/video_abc');
   });
 
   test('a native task id still goes to the native surface', () async {
     // The other half of the rule: everything that is *not* a Sora id keeps
     // following the vendor's declared video protocol.
-    await LLMDispatcher()
-        .checkOperation(config(Vendors.dashscope), 'a1b2c3d4-task');
+    await LLMDispatcher().checkOperation(config(Vendors.dashscope), 'a1b2c3d4-task');
     expect(paths.single, contains('/tasks/a1b2c3d4-task'));
   });
 
@@ -69,14 +71,12 @@ void main() {
     // not, so editing a channel's supplier to minimax-anthropic mid-poll
     // handed the in-flight `video_…` id to MiniMax's /v2 query, where it
     // resolves to nothing and the task fails permanently.
-    await LLMDispatcher()
-        .checkOperation(config(Vendors.minimaxAnthropic), 'video_abc');
+    await LLMDispatcher().checkOperation(config(Vendors.minimaxAnthropic), 'video_abc');
     expect(paths.single, endsWith('/videos/video_abc'));
   });
 
   test('the guard holds on a channel re-pointed at dashscope-native', () async {
-    await LLMDispatcher()
-        .checkOperation(config(Vendors.dashscopeNative), 'video_abc');
+    await LLMDispatcher().checkOperation(config(Vendors.dashscopeNative), 'video_abc');
     expect(paths.single, endsWith('/videos/video_abc'));
   });
 
@@ -131,8 +131,7 @@ void main() {
 
   test('a ④ vendor still polls its own ids natively', () async {
     try {
-      await LLMDispatcher()
-          .checkOperation(config(Vendors.minimaxAnthropic), '260900000000000');
+      await LLMDispatcher().checkOperation(config(Vendors.minimaxAnthropic), '260900000000000');
     } on Exception {
       // The stub's body is not a MiniMax task object; only the routing —
       // which path the poll went out on — is what this test pins.

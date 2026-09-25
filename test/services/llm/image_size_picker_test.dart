@@ -3,7 +3,8 @@ import 'package:joycai_image_ai_toolkits/services/llm/image_size_rules.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/model_capabilities.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/model_family.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/output_spec.dart';
-import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendor_profile.dart' show WireProtocol;
+import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendor_profile.dart'
+    show WireProtocol;
 
 /// Covers the gpt-image-2 size picker's ratio calculator: "16:9 at 3840"
 /// has to come back as a size that passes all four of OpenAI's rules, with
@@ -78,8 +79,11 @@ void main() {
       for (final ratio in ['1:1', '4:3', '3:2', '16:9', '21:9', '3:1', '9:16', '2:3']) {
         for (final long in [200, 1024, 1500, 2048, 3000, 3830, 3840]) {
           final (w, h) = compute(ratio, long);
-          expect(kOpenAIImage2SizeRules.isValidSize('${w}x$h'), isTrue,
-              reason: '$ratio @ $long → ${w}x$h');
+          expect(
+            kOpenAIImage2SizeRules.isValidSize('${w}x$h'),
+            isTrue,
+            reason: '$ratio @ $long → ${w}x$h',
+          );
         }
       }
     });
@@ -94,15 +98,16 @@ void main() {
   });
 
   group('per-endpoint rules', () {
-    ParamSpec sizeSpec(String modelId) => ModelCapabilities.forModel(modelId)
-        .imageParams
-        .firstWhere((p) => p.key == 'imageSize');
+    ParamSpec sizeSpec(String modelId) =>
+        ModelCapabilities.forModel(modelId).imageParams.firstWhere((p) => p.key == 'imageSize');
 
     test('an endpoint with no edge ceiling has no edge rule to show', () {
       final keys = kDashscopeQwenSizeRules.check(1024, 1024).map((r) => r.labelKey);
       expect(keys, isNot(contains('sizeRuleMaxEdge')));
-      expect(kOpenAIImage2SizeRules.check(1024, 1024).map((r) => r.labelKey),
-          contains('sizeRuleMaxEdge'));
+      expect(
+        kOpenAIImage2SizeRules.check(1024, 1024).map((r) => r.labelKey),
+        contains('sizeRuleMaxEdge'),
+      );
     });
 
     test('qwen takes the 8:1 strip gpt-image-2 refuses, inside its own area', () {
@@ -184,8 +189,11 @@ void main() {
       for (final bad in ['4096x512', '1024x256', '2064x1024']) {
         expect(spec.isValid(bad), isFalse, reason: bad);
       }
-      expect(kDashscopeQwenSizeRules.isValidSize('4096x512'), isTrue,
-          reason: 'what the shared area rules used to let through');
+      expect(
+        kDashscopeQwenSizeRules.isValidSize('4096x512'),
+        isTrue,
+        reason: 'what the shared area rules used to let through',
+      );
       expect(spec.isValid('2048x512'), isTrue);
       // The calculator stays inside the edges too.
       final (w, h) = kDashscopeQwenEditSizeRules.sizeFor(parseAspectRatio('4:1')!, 4096);
@@ -193,9 +201,9 @@ void main() {
     });
 
     test('an unidentified DashScope model gets the box every family accepts', () {
-      final spec = ModelCapabilities.forProtocol(WireProtocol.dashscopeImagesSync)
-          .imageParams
-          .firstWhere((p) => p.key == 'imageSize');
+      final spec = ModelCapabilities.forProtocol(
+        WireProtocol.dashscopeImagesSync,
+      ).imageParams.firstWhere((p) => p.key == 'imageSize');
       expect(spec.sizeRules, kDashscopeCommonSizeRules);
       for (final o in spec.options) {
         final wxh = parseWxH(o.value);
@@ -239,15 +247,13 @@ void main() {
       const floor = 768 * 768;
       const ceiling = 2048 * 2048;
       // Just under the floor, just over the ceiling, and both bounds exactly.
-      expect(formatPixelRange(589568, floor, ceiling),
-          (value: '0.58', min: '0.59', max: '4.19'));
+      expect(formatPixelRange(589568, floor, ceiling), (value: '0.58', min: '0.59', max: '4.19'));
       expect(formatPixelRange(4227072, floor, ceiling).value, '4.23');
       expect(formatPixelRange(4194305, floor, ceiling).value, '4.20');
       expect(formatPixelRange(floor, floor, ceiling).value, '0.59');
       expect(formatPixelRange(ceiling, floor, ceiling).value, '4.19');
       // gpt-image-2's floor rounds up past a passing value: it is held inside.
-      expect(formatPixelRange(655360, 655360, 8294400),
-          (value: '0.66', min: '0.66', max: '8.29'));
+      expect(formatPixelRange(655360, 655360, 8294400), (value: '0.66', min: '0.66', max: '8.29'));
     });
   });
 }

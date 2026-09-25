@@ -108,8 +108,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deselectAllDirectories => 'Deselect all directories';
 
   @override
-  String get aiRenameInstructionsHint =>
-      'e.g. Keep original extensions, convert to Pinyin...';
+  String get aiRenameInstructionsHint => 'e.g. Keep original extensions, convert to Pinyin...';
 
   @override
   String get noTemplateSelected => 'No template selected';
@@ -140,8 +139,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Please use the system \'Files\' app to manage your generated images.';
 
   @override
-  String get fileBrowserAndroidHint =>
-      'Please use your device\'s file manager to organize files.';
+  String get fileBrowserAndroidHint => 'Please use your device\'s file manager to organize files.';
 
   @override
   String get stagingArea => 'Staging';
@@ -495,8 +493,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get conflictPending => 'Undecided';
 
   @override
-  String get conflictOverwriteWarning =>
-      'The file there will be replaced. This cannot be undone.';
+  String get conflictOverwriteWarning => 'The file there will be replaced. This cannot be undone.';
 
   @override
   String conflictApplyRestCount(int count) {
@@ -531,8 +528,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trashFolderTitle => 'Move to trash?';
 
   @override
-  String get deleteFolderEmptyDesc =>
-      'This folder is empty. Deleting it cannot be undone.';
+  String get deleteFolderEmptyDesc => 'This folder is empty. Deleting it cannot be undone.';
 
   @override
   String get trashFolderEmptyDesc =>
@@ -664,8 +660,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get moveFolderSameParent => 'The folder is already there';
 
   @override
-  String get moveFolderTargetExists =>
-      'The destination already has an entry with this name';
+  String get moveFolderTargetExists => 'The destination already has an entry with this name';
 
   @override
   String dragMoveFolderHint(String name) {
@@ -784,12 +779,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get browserDragFootnote =>
-      'Drag onto a folder to move · hold Ctrl to copy';
+  String get browserDragFootnote => 'Drag onto a folder to move · hold Ctrl to copy';
 
   @override
-  String get stagingDropHint =>
-      'Drop files on a folder in the left column to stage them';
+  String get stagingDropHint => 'Drop files on a folder in the left column to stage them';
 
   @override
   String renameBatchFailedTitle(int batch) {
@@ -1178,8 +1171,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dropRejectNameTaken => 'A folder with this name is already here';
 
   @override
-  String get browserDragFootnoteMac =>
-      'Drag onto a folder to move · hold ⌥ to copy';
+  String get browserDragFootnoteMac => 'Drag onto a folder to move · hold ⌥ to copy';
 
   @override
   String get folderOutlineLabel => 'Folder outline';
@@ -1238,12 +1230,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get urlRequired => 'Please enter a valid Website URL.';
 
   @override
-  String get requirementRequired =>
-      'Please enter what images you want to find (Requirements).';
+  String get requirementRequired => 'Please enter what images you want to find (Requirements).';
 
   @override
-  String get manualHtmlRequired =>
-      'Please paste the HTML content in Manual Mode.';
+  String get manualHtmlRequired => 'Please paste the HTML content in Manual Mode.';
 
   @override
   String get findImages => 'Find Images';
@@ -1260,8 +1250,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get setOutputDirFirst =>
-      'Please set output directory in settings first.';
+  String get setOutputDirFirst => 'Please set output directory in settings first.';
 
   @override
   String get cookiesHint => 'Cookies (Raw or Netscape format)';
@@ -1336,8 +1325,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get downloaderAdvancedSubtitle =>
-      'Only applies to downloads from this screen';
+  String get downloaderAdvancedSubtitle => 'Only applies to downloads from this screen';
 
   @override
   String get copyImageUrl => 'Copy Image URL';
@@ -1430,8 +1418,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cacheHitRate => 'Cache Hit Rate';
 
   @override
-  String get cacheHitRateHint =>
-      'Share of input tokens served from the prompt cache';
+  String get cacheHitRateHint => 'Share of input tokens served from the prompt cache';
 
   @override
   String get estimatedCost => 'Estimated Cost';
@@ -1608,8 +1595,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Connected — this endpoint has no model list, which is normal for some relays.';
 
   @override
-  String get probeAuthFailed =>
-      'The endpoint answered, but rejected the API key.';
+  String get probeAuthFailed => 'The endpoint answered, but rejected the API key.';
 
   @override
   String get probeNotAnApi =>
@@ -1619,8 +1605,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get probeUnreachable => 'No answer from the endpoint';
 
   @override
-  String get probeNotSupported =>
-      'Connection test is not available for this channel type.';
+  String get probeNotSupported => 'Connection test is not available for this channel type.';
 
   @override
   String get enableDiscovery => 'Enable Model Discovery';
@@ -1716,16 +1701,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cacheInputPrice => 'Cached Input Price (\$/M Tokens)';
 
   @override
-  String get cacheInputPriceHint =>
-      'Leave empty to bill cache hits at the input price';
+  String get cacheInputPriceHint => 'Leave empty to bill cache hits at the input price';
 
   @override
-  String get requestPriceHint =>
-      'Billed per successful request, independent of token usage.';
+  String get requestPriceHint => 'Billed per successful request, independent of token usage.';
 
   @override
-  String get cachePriceFollowsInput =>
-      'Cache hits are billed at the input price';
+  String get cachePriceFollowsInput => 'Cache hits are billed at the input price';
 
   @override
   String get outputPrice => 'Output Price (\$/M Tokens)';
@@ -1805,8 +1787,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get protocolMidjourney => 'Midjourney Proxy';
 
   @override
-  String get protocolMidjourneyDesc =>
-      'midjourney-proxy / NewAPI /mj/* surface';
+  String get protocolMidjourneyDesc => 'midjourney-proxy / NewAPI /mj/* surface';
 
   @override
   String get protocolAnthropicDesc => 'Native /v1/messages surface (Claude)';
@@ -1848,15 +1829,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get protocolXai => 'xAI (Grok) API';
 
   @override
-  String get providerXaiOfficialDesc =>
-      'api.x.ai · Grok chat + native Imagine video';
+  String get providerXaiOfficialDesc => 'api.x.ai · Grok chat + native Imagine video';
 
   @override
   String get providerNewApiOpenAI => 'New API (OpenAI format)';
 
   @override
-  String get providerNewApiOpenAIResponses =>
-      'New API (OpenAI Responses format)';
+  String get providerNewApiOpenAIResponses => 'New API (OpenAI Responses format)';
 
   @override
   String get providerNewApiGemini => 'New API (Gemini format)';
@@ -1874,31 +1853,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get providerMiniMaxDesc => 'OpenAI-compatible /v1 endpoint';
 
   @override
-  String get providerVolcengineArkDesc =>
-      'Seedream image generation · Doubao chat';
+  String get providerVolcengineArkDesc => 'Seedream image generation · Doubao chat';
 
   @override
   String get newApiBaseUrl => 'New API Base URL';
 
   @override
-  String get newApiBaseHint =>
-      'Enter your New API host; the version path is added automatically';
+  String get newApiBaseHint => 'Enter your New API host; the version path is added automatically';
 
   @override
-  String get openaiV1Hint =>
-      'Hint: OpenAI compatible endpoints usually end with \'/v1\'';
+  String get openaiV1Hint => 'Hint: OpenAI compatible endpoints usually end with \'/v1\'';
 
   @override
-  String get googleV1BetaHint =>
-      'Hint: Google GenAI endpoints usually end with \'/v1beta\'';
+  String get googleV1BetaHint => 'Hint: Google GenAI endpoints usually end with \'/v1beta\'';
 
   @override
-  String get anthropicV1Hint =>
-      'Hint: Anthropic endpoints usually end with \'/v1\'';
+  String get anthropicV1Hint => 'Hint: Anthropic endpoints usually end with \'/v1\'';
 
   @override
-  String get dashscopeApiV1Hint =>
-      'Hint: DashScope native endpoints end with \'/api/v1\'';
+  String get dashscopeApiV1Hint => 'Hint: DashScope native endpoints end with \'/api/v1\'';
 
   @override
   String get apiKeyStorageNotice =>
@@ -1908,8 +1881,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nameHint => 'e.g. My Production API';
 
   @override
-  String get enableDiscoveryDesc =>
-      'Automatically list available models from this endpoint';
+  String get enableDiscoveryDesc => 'Automatically list available models from this endpoint';
 
   @override
   String get tagHint => 'e.g. GPT4, Local, etc.';
@@ -1959,15 +1931,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get supportsStreaming => 'Supports Streaming';
 
   @override
-  String get supportsStreamingDesc =>
-      'Enable if the model supports server-sent events';
+  String get supportsStreamingDesc => 'Enable if the model supports server-sent events';
 
   @override
   String get supportsStandardRequest => 'Supports Standard Request';
 
   @override
-  String get supportsStandardRequestDesc =>
-      'Enable for standard JSON/REST requests';
+  String get supportsStandardRequestDesc => 'Enable for standard JSON/REST requests';
 
   @override
   String get contextWindow => 'Context Window';
@@ -2150,8 +2120,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noProviderMatch => 'No provider matches this search';
 
   @override
-  String get apiKeyRequired =>
-      'This provider needs an API key before the channel can be added';
+  String get apiKeyRequired => 'This provider needs an API key before the channel can be added';
 
   @override
   String get endpointRequired => 'Enter the endpoint URL for this channel';
@@ -2241,16 +2210,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get providerNeedKeyless => 'No key';
 
   @override
-  String get providerCustomOpenAIDesc =>
-      'Any host serving the OpenAI chat surface';
+  String get providerCustomOpenAIDesc => 'Any host serving the OpenAI chat surface';
 
   @override
-  String get providerCustomGoogleDesc =>
-      'Any host serving the Google GenAI surface';
+  String get providerCustomGoogleDesc => 'Any host serving the Google GenAI surface';
 
   @override
-  String get providerCustomAnthropicDesc =>
-      'Any host serving the Anthropic Messages surface';
+  String get providerCustomAnthropicDesc => 'Any host serving the Anthropic Messages surface';
 
   @override
   String get variantTitleGoogle => 'Access method';
@@ -2435,8 +2401,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get protocolImageAsync => 'Async task';
 
   @override
-  String get protocolImageAsyncDesc =>
-      'Submit, then poll for the result; cancellable while queued';
+  String get protocolImageAsyncDesc => 'Submit, then poll for the result; cancellable while queued';
 
   @override
   String get protocolChatImage => 'Image via chat reply';
@@ -2446,15 +2411,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Images come back in the chat reply; how most relays serve image models';
 
   @override
-  String get protocolImagesApiDesc =>
-      'OpenAI\'s image endpoint, the gpt-image family';
+  String get protocolImagesApiDesc => 'OpenAI\'s image endpoint, the gpt-image family';
 
   @override
   String get protocolImagenDesc => 'Google\'s dedicated image endpoint';
 
   @override
-  String get protocolVideosApiDesc =>
-      'OpenAI\'s video task endpoint (Sora-style)';
+  String get protocolVideosApiDesc => 'OpenAI\'s video task endpoint (Sora-style)';
 
   @override
   String get protocolVeoDesc => 'Google\'s video task endpoint';
@@ -2564,8 +2527,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get channelReorderHandleTooltip => 'Drag to reorder';
 
   @override
-  String get channelOrderSaveFailed =>
-      'Could not save the order; the previous one is back.';
+  String get channelOrderSaveFailed => 'Could not save the order; the previous one is back.';
 
   @override
   String wizardStepCounter(int current, int total) {
@@ -2573,8 +2535,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get wizardStepsAdaptNote =>
-      'Steps adjust to the provider\'s access method';
+  String get wizardStepsAdaptNote => 'Steps adjust to the provider\'s access method';
 
   @override
   String providerNoMatchHint(String query) {
@@ -2585,8 +2546,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get providerUseCustom => 'Add as custom';
 
   @override
-  String get probeSkippableNote =>
-      'Optional; you can still set the name and tag next';
+  String get probeSkippableNote => 'Optional; you can still set the name and tag next';
 
   @override
   String endpointPresetValue(String endpoint) {
@@ -2604,20 +2564,17 @@ class AppLocalizationsEn extends AppLocalizations {
       'Endpoint and key work, but the model list is empty. Add a Model ID by hand.';
 
   @override
-  String get probeAuthFailedNext =>
-      'Check the key was copied in full and hasn\'t expired.';
+  String get probeAuthFailedNext => 'Check the key was copied in full and hasn\'t expired.';
 
   @override
   String get probeNotAnApiNext =>
       'An HTML page came back, probably a console URL. API endpoints usually end in /v1 or /v1beta.';
 
   @override
-  String get probeUnreachableNext =>
-      'DNS failed or timed out. Check the URL, proxy and network.';
+  String get probeUnreachableNext => 'DNS failed or timed out. Check the URL, proxy and network.';
 
   @override
-  String get probeUpstreamError =>
-      'The endpoint answered but is refusing requests for now';
+  String get probeUpstreamError => 'The endpoint answered but is refusing requests for now';
 
   @override
   String get probeUpstreamErrorNext =>
@@ -2628,8 +2585,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'This protocol has no model list; it can only be verified by submitting a task.';
 
   @override
-  String get previewEmptyKeyNote =>
-      'No key yet. You can add it later in Edit Channel.';
+  String get previewEmptyKeyNote => 'No key yet. You can add it later in Edit Channel.';
 
   @override
   String get presetShortHint => 'Fills endpoint and protocol in one tap';
@@ -2638,8 +2594,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteChannel => 'Delete channel';
 
   @override
-  String get discoveryOffEffect =>
-      'When off, Fetch Models is disabled for this channel';
+  String get discoveryOffEffect => 'When off, Fetch Models is disabled for this channel';
 
   @override
   String get protocolUnavailable => 'Unavailable';
@@ -2656,15 +2611,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'It\'s the only required field; a blank name uses the ID as the display name.';
 
   @override
-  String get contextSpecifyInvalid =>
-      'Enter a positive whole number; blank or 0 can\'t be saved.';
+  String get contextSpecifyInvalid => 'Enter a positive whole number; blank or 0 can\'t be saved.';
 
   @override
   String get addModelSubtitle => 'When adding by hand, only the ID is required';
 
   @override
-  String get addModelIdHelper =>
-      'Leaving this blank blocks saving; a blank name uses the ID.';
+  String get addModelIdHelper => 'Leaving this blank blocks saving; a blank name uses the ID.';
 
   @override
   String get addModelDefaultsNote =>
@@ -2684,15 +2637,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Hover for the handle · drag to reorder · right-click or Alt+↑/↓ does the same';
 
   @override
-  String get noModelsConfiguredHint =>
-      'Use Fetch Models to discover them, or add one by hand.';
+  String get noModelsConfiguredHint => 'Use Fetch Models to discover them, or add one by hand.';
 
   @override
   String get addModelManually => 'Add manually';
 
   @override
-  String get selectAChannelHint =>
-      'Pick a channel on the left to see its models here.';
+  String get selectAChannelHint => 'Pick a channel on the left to see its models here.';
 
   @override
   String noModelsMatchQuery(String query) {
@@ -2703,8 +2654,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noFeeGroupsHint => 'Create a group, then point models at it.';
 
   @override
-  String get noNewModelsFoundHint =>
-      'Every model this channel returned is already in the list.';
+  String get noNewModelsFoundHint => 'Every model this channel returned is already in the list.';
 
   @override
   String get discoveryCapabilitiesNote =>
@@ -2737,8 +2687,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get channelDefaultFeeGroup => 'Default fee group';
 
   @override
-  String get channelDefaultFeeGroupHint =>
-      'Models added to this channel start in this group';
+  String get channelDefaultFeeGroupHint => 'Models added to this channel start in this group';
 
   @override
   String get modelIdTakenTitle => 'This channel already has this Model ID';
@@ -2869,12 +2818,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get specOtherBlankHint =>
-      'Leave blank and unlisted specs are billed at 0.';
+  String get specOtherBlankHint => 'Leave blank and unlisted specs are billed at 0.';
 
   @override
-  String get specOnlyOtherHint =>
-      'With only \"Other specs\", this works the same as Per request.';
+  String get specOnlyOtherHint => 'With only \"Other specs\", this works the same as Per request.';
 
   @override
   String get specSwitchToRequest => 'Switch to Per request';
@@ -2923,8 +2870,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Reordering is off while filtering; the order saves on release.';
 
   @override
-  String get feeGroupReorderHint =>
-      'Hold a group to drag it; the order saves on release.';
+  String get feeGroupReorderHint => 'Hold a group to drag it; the order saves on release.';
 
   @override
   String get deleteGroup => 'Delete group';
@@ -2948,8 +2894,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get discardChangesTitle => 'Discard unsaved changes?';
 
   @override
-  String get discardChangesBody =>
-      'Switching to another group drops the edits made here.';
+  String get discardChangesBody => 'Switching to another group drops the edits made here.';
 
   @override
   String get discard => 'Discard';
@@ -2964,8 +2909,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get modelSortDefault => 'Default order';
 
   @override
-  String get modelSortDefaultHint =>
-      'As the channel returned them, or as arranged by hand';
+  String get modelSortDefaultHint => 'As the channel returned them, or as arranged by hand';
 
   @override
   String get modelSortName => 'Name';
@@ -2991,8 +2935,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get modelGroupByChannel => 'Group by channel';
 
   @override
-  String get modelGroupByChannelHint =>
-      'Off, every channel\'s models run as one list';
+  String get modelGroupByChannelHint => 'Off, every channel\'s models run as one list';
 
   @override
   String get routeDashScopeShort => 'DashScope';
@@ -3026,8 +2969,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get channelMergeBannerReason =>
-      'Same platform, host and key — only the protocol differs';
+  String get channelMergeBannerReason => 'Same platform, host and key — only the protocol differs';
 
   @override
   String get channelMergeBannerAction => 'Review';
@@ -3036,12 +2978,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mergeDialogTitle => 'Merge channels';
 
   @override
-  String mergeDialogProgress(
-    int index,
-    int total,
-    String platform,
-    String host,
-  ) {
+  String mergeDialogProgress(int index, int total, String platform, String host) {
     return '$index / $total · $platform · $host';
   }
 
@@ -3136,12 +3073,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get routeHost => 'Host';
 
   @override
-  String get routeHostHint =>
-      'Scheme, host and port only. Each route\'s path is set below.';
+  String get routeHostHint => 'Scheme, host and port only. Each route\'s path is set below.';
 
   @override
-  String get routeTableCaption =>
-      'At most one per protocol · the first is primary';
+  String get routeTableCaption => 'At most one per protocol · the first is primary';
 
   @override
   String routePathDefault(String path) {
@@ -3236,8 +3171,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get routeFeaturePromptCache => 'Prompt caching';
 
   @override
-  String get routesToCreateHint =>
-      'You can turn off unused ones later in the channel editor';
+  String get routesToCreateHint => 'You can turn off unused ones later in the channel editor';
 
   @override
   String get routeKeyShared => 'One key, shared by every route';
@@ -3277,8 +3211,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get routeWebSearchCannot => 'This route can\'t send it';
 
   @override
-  String get routeWebSearchUntested =>
-      'Sent, but not yet tested on this platform';
+  String get routeWebSearchUntested => 'Sent, but not yet tested on this platform';
 
   @override
   String get routeWebSearchUntestedNote =>
@@ -3385,8 +3318,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bulkCategorize => 'Bulk Categorize';
 
   @override
-  String get selectCategoriesToApply =>
-      'Select categories to apply to the selected prompts:';
+  String get selectCategoriesToApply => 'Select categories to apply to the selected prompts:';
 
   @override
   String deleteNPromptsConfirm(int count) {
@@ -3408,8 +3340,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get moveToBottom => 'Move to Bottom';
 
   @override
-  String get addSystemTemplateHint =>
-      'Add system templates for the Refiner or Batch Rename here.';
+  String get addSystemTemplateHint => 'Add system templates for the Refiner or Batch Rename here.';
 
   @override
   String importFailed(String error) {
@@ -3441,8 +3372,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get promptEditorSubtitle =>
-      'Once saved, apply it from the workbench in one click';
+  String get promptEditorSubtitle => 'Once saved, apply it from the workbench in one click';
 
   @override
   String get categoryColorHint => 'Colour only tells categories apart';
@@ -3576,8 +3506,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fontDownloading => 'Downloading font…';
 
   @override
-  String get fontDownloadFailed =>
-      'Font download failed. Check your connection and try again.';
+  String get fontDownloadFailed => 'Font download failed. Check your connection and try again.';
 
   @override
   String get renderingGpu => 'Rendering GPU';
@@ -3654,8 +3583,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get includeDirectories => 'Include Directory Config';
 
   @override
-  String get includeDirectoriesDesc =>
-      'Workbench/Browser directories and output path';
+  String get includeDirectoriesDesc => 'Workbench/Browser directories and output path';
 
   @override
   String get includePrompts => 'Include Prompts';
@@ -3849,15 +3777,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aboutThirdParty => 'Third-party licenses';
 
   @override
-  String get aboutThirdPartyNote =>
-      'The open-source components this app is built on';
+  String get aboutThirdPartyNote => 'The open-source components this app is built on';
 
   @override
   String get aboutFeedback => 'Report an issue';
 
   @override
-  String get aboutFeedbackNote =>
-      'Please attach the runtime info below and a log excerpt';
+  String get aboutFeedbackNote => 'Please attach the runtime info below and a log excerpt';
 
   @override
   String get aboutActionOpen => 'Open';
@@ -3869,8 +3795,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aboutRuntime => 'Runtime info';
 
   @override
-  String get aboutRuntimeHint =>
-      'Copy this whole block into the issue when you report a problem.';
+  String get aboutRuntimeHint => 'Copy this whole block into the issue when you report a problem.';
 
   @override
   String get aboutRuntimeCopied => 'Runtime info copied';
@@ -3916,16 +3841,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get customAccentDerived => 'Derived pair';
 
   @override
-  String get customAccentPassed =>
-      'White labels hold; the button keeps white text.';
+  String get customAccentPassed => 'White labels hold; the button keeps white text.';
 
   @override
   String get customAccentInkFallback =>
       'White can\'t hold on this shade, so the button uses a deep ink of the same hue.';
 
   @override
-  String get customAccentFailed =>
-      'This colour can\'t meet the contrast floor.';
+  String get customAccentFailed => 'This colour can\'t meet the contrast floor.';
 
   @override
   String get fontFollowSystem => 'Follows the operating system';
@@ -3944,8 +3867,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Directories, prompts and usage are optional; API keys are never included';
 
   @override
-  String get clearTempFilesNote =>
-      'Masks · crop copies · downloader cache · video thumbnails';
+  String get clearTempFilesNote => 'Masks · crop copies · downloader cache · video thumbnails';
 
   @override
   String get resetAllSettingsNote => 'Back to the first-run state';
@@ -4083,8 +4005,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noTasksInQueue => 'No tasks in queue';
 
   @override
-  String get submitTaskFromWorkbench =>
-      'Submit a task from the Workbench to see it here.';
+  String get submitTaskFromWorkbench => 'Submit a task from the Workbench to see it here.';
 
   @override
   String taskId(String id) {
@@ -4196,8 +4117,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noTaskLog => 'No log recorded for this task.';
 
   @override
-  String get noTaskLogHint =>
-      'Tasks that ran before this update did not keep their logs.';
+  String get noTaskLogHint => 'Tasks that ran before this update did not keep their logs.';
 
   @override
   String get taskLogCopied => 'Log copied to clipboard';
@@ -4308,8 +4228,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Running tasks are left alone. Generated files stay in the output folder; only the queue\'s records are cleared.';
 
   @override
-  String get taskNoOutputsFailed =>
-      'No outputs. The task failed before writing any.';
+  String get taskNoOutputsFailed => 'No outputs. The task failed before writing any.';
 
   @override
   String get noTaskLogCancelledHint =>
@@ -4319,8 +4238,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get setupWizardTitle => 'Welcome Setup';
 
   @override
-  String get welcomeMessage =>
-      'Welcome to Joycai Image AI Toolkits! Let\'s get you set up.';
+  String get welcomeMessage => 'Welcome to Joycai Image AI Toolkits! Let\'s get you set up.';
 
   @override
   String get getStarted => 'Get Started';
@@ -4335,16 +4253,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get skip => 'Skip';
 
   @override
-  String get storageLocationDesc =>
-      'Select where generated images will be saved.';
+  String get storageLocationDesc => 'Select where generated images will be saved.';
 
   @override
-  String get addChannelOptional =>
-      'Add your first AI provider channel (Optional).';
+  String get addChannelOptional => 'Add your first AI provider channel (Optional).';
 
   @override
-  String get configureModelOptional =>
-      'Configure a model for your new channel (Optional).';
+  String get configureModelOptional => 'Configure a model for your new channel (Optional).';
 
   @override
   String get filenamePrefix => 'Filename Prefix';
@@ -4392,8 +4307,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noFolders => 'No folders added';
 
   @override
-  String get clickAddFolder =>
-      'Click \"Add Folder\" to start scanning for images.';
+  String get clickAddFolder => 'Click \"Add Folder\" to start scanning for images.';
 
   @override
   String get noImagesFound => 'No images found';
@@ -4581,15 +4495,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get usePrompt => 'Use This Prompt';
 
   @override
-  String get applyPromptWarning =>
-      'This will replace the prompt currently in the editor.';
+  String get applyPromptWarning => 'This will replace the prompt currently in the editor.';
 
   @override
   String get clearPromptHistory => 'Clear History';
 
   @override
-  String get clearPromptHistoryConfirm =>
-      'Remove all recent prompts? This cannot be undone.';
+  String get clearPromptHistoryConfirm => 'Remove all recent prompts? This cannot be undone.';
 
   @override
   String get timeJustNow => 'Just now';
@@ -4769,8 +4681,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get overwriteConfirmSubtitle => 'This action cannot be undone.';
 
   @override
-  String get overwriteConfirmKeepOriginalHint =>
-      'To keep the original, use Save Copy instead.';
+  String get overwriteConfirmKeepOriginalHint => 'To keep the original, use Save Copy instead.';
 
   @override
   String overwriteUnsupportedFormat(String format) {
@@ -5017,8 +4928,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get openInSystemPlayer => 'Open in System Player';
 
   @override
-  String get dropVideoReferenceHere =>
-      'Drop images here for style/content reference';
+  String get dropVideoReferenceHere => 'Drop images here for style/content reference';
 
   @override
   String get executionLogs => 'EXECUTION LOGS';
@@ -5058,8 +4968,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get goToGallery => 'Go to Gallery';
 
   @override
-  String get binaryModeActive =>
-      'Binary mode active — background hidden for clean mask export';
+  String get binaryModeActive => 'Binary mode active — background hidden for clean mask export';
 
   @override
   String get imageSizeAuto => 'Auto';
@@ -5249,8 +5158,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get optDistillAlreadyPending =>
-      'A distill request is already waiting to run.';
+  String get optDistillAlreadyPending => 'A distill request is already waiting to run.';
 
   @override
   String get optResultImages => 'Results';
@@ -5488,8 +5396,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Long-press a card, then drag to reorder. The numbers are the order the assistant receives.';
 
   @override
-  String get optRefReorderLocked =>
-      'The assistant is replying — reorder once it finishes.';
+  String get optRefReorderLocked => 'The assistant is replying — reorder once it finishes.';
 
   @override
   String get optRunning => 'Running';
@@ -5521,8 +5428,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get optChatBusyHint =>
-      'The agent is working — you can type again when it finishes...';
+  String get optChatBusyHint => 'The agent is working — you can type again when it finishes...';
 
   @override
   String get optAbort => 'Stop';
@@ -5555,8 +5461,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get optSysPromptSaved => 'Preset saved';
 
   @override
-  String get optSysPromptHint =>
-      'Write the instructions the assistant should follow...';
+  String get optSysPromptHint => 'Write the instructions the assistant should follow...';
 
   @override
   String optSysPromptChars(int count) {
@@ -5685,8 +5590,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get selectionReorderHint =>
-      'Drag to reorder · the number is the order sent to the model';
+  String get selectionReorderHint => 'Drag to reorder · the number is the order sent to the model';
 
   @override
   String get videoPlay => 'Play';
@@ -5732,8 +5636,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get optTimelineCurrent => 'current';
 
   @override
-  String get optKbPathInvalidDesc =>
-      'The path is no longer valid or can\'t be accessed';
+  String get optKbPathInvalidDesc => 'The path is no longer valid or can\'t be accessed';
 
   @override
   String optKbEntryMissingShort(String file) {
@@ -5840,8 +5743,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get layerSetUnavailable =>
-      'The files of this layer set are no longer there';
+  String get layerSetUnavailable => 'The files of this layer set are no longer there';
 
   @override
   String get menuOpenLayers => 'Open layers';
@@ -5932,8 +5834,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get imageSizeOutOfRange =>
-      'This size is outside what the model accepts';
+  String get imageSizeOutOfRange => 'This size is outside what the model accepts';
 
   @override
   String imageSizeFixTo(String value) {
@@ -6109,8 +6010,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'The assistant reads the knowledge base’s file map first, then opens only the rule documents this request needs.';
 
   @override
-  String get optEmptyKbExample1 =>
-      'Following the knowledge base’s rules, write me a prompt for: ';
+  String get optEmptyKbExample1 => 'Following the knowledge base’s rules, write me a prompt for: ';
 
   @override
   String get optEmptyKbExample2 =>
@@ -6159,8 +6059,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get optPresetOutputPromptValue => 'Prompt · delivered as a card';
 
   @override
-  String get optPresetOutputAnalysisValue =>
-      'Analysis text · answered in the chat';
+  String get optPresetOutputAnalysisValue => 'Analysis text · answered in the chat';
 
   @override
   String get optEmptyAnalysisTitle => 'What should it look at?';
@@ -6177,12 +6076,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Using reference images 1 and 2, describe how the garment is constructed';
 
   @override
-  String get optEmptyAnalysisExample3 =>
-      'Beyond the images, here is what else you should know: ';
+  String get optEmptyAnalysisExample3 => 'Beyond the images, here is what else you should know: ';
 
   @override
-  String get optChatHintAnalysis =>
-      'Say which image to look at and what to pull out…';
+  String get optChatHintAnalysis => 'Say which image to look at and what to pull out…';
 
   @override
   String optResultMeta(int count) {

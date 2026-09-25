@@ -222,8 +222,7 @@ String? tierOfSize(
 }
 
 /// The ratio [w]×[h] is, as the picker reasons with it.
-AspectRatioSpec ratioOf(int w, int h) =>
-    AspectRatioSpec(w >= h ? w / h : h / w, h > w);
+AspectRatioSpec ratioOf(int w, int h) => AspectRatioSpec(w >= h ? w / h : h / w, h > w);
 
 /// How a ratio reads: a chip's own label when it is one of [chips] (either
 /// orientation as written), else two decimals `w/h:1` (`2.50:1`, `0.80:1`) —
@@ -266,9 +265,7 @@ class SizeFix {
   /// The limit ratio to switch to (`3:1`), for a ratio no size can satisfy.
   final String? ratio;
 
-  const SizeFix.size(int w, int h)
-      : size = (w, h),
-        ratio = null;
+  const SizeFix.size(int w, int h) : size = (w, h), ratio = null;
   const SizeFix.ratio(String this.ratio) : size = null;
 
   String get label => ratio ?? '${size!.$1} × ${size!.$2}';

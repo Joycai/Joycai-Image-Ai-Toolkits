@@ -9,22 +9,33 @@ import 'package:joycai_image_ai_toolkits/widgets/models/model_edit_controls.dart
 /// `D2a`: the parameter summary's guide line takes the accent (35%) while a
 /// protocol is pinned, and eases there (M2).
 void main() {
-  final theme = buildAppTheme(accent: ThemeAccent.fromSeed(Colors.indigo), brightness: Brightness.light);
+  final theme = buildAppTheme(
+    accent: ThemeAccent.fromSeed(Colors.indigo),
+    brightness: Brightness.light,
+  );
 
-  Future<void> pump(WidgetTester tester, bool governed) => tester.pumpWidget(MaterialApp(
-        theme: theme,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: Scaffold(
-          body: ModelEditParamBlock(items: const ['size: auto'], governed: governed),
-        ),
-      ));
+  Future<void> pump(WidgetTester tester, bool governed) => tester.pumpWidget(
+    MaterialApp(
+      theme: theme,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Scaffold(
+        body: ModelEditParamBlock(items: const ['size: auto'], governed: governed),
+      ),
+    ),
+  );
 
   Color rail(WidgetTester tester) {
-    final box = tester.widget<Container>(find.descendant(
-      of: find.byType(ModelEditParamBlock),
-      matching: find.byWidgetPredicate((w) => w is Container && w.decoration is BoxDecoration),
-    ).first);
+    final box = tester.widget<Container>(
+      find
+          .descendant(
+            of: find.byType(ModelEditParamBlock),
+            matching: find.byWidgetPredicate(
+              (w) => w is Container && w.decoration is BoxDecoration,
+            ),
+          )
+          .first,
+    );
     final border = (box.decoration! as BoxDecoration).border! as BorderDirectional;
     return border.start.color;
   }

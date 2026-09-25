@@ -82,19 +82,21 @@ void main() {
       tester.view.physicalSize = const Size(800, 1000);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
-      await tester.pumpWidget(MultiProvider(
-        providers: [
-          ChangeNotifierProvider<AppState>.value(value: appState),
-          ChangeNotifierProvider<WorkbenchUIState>.value(value: wui),
-        ],
-        child: const MaterialApp(
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          home: Scaffold(
-            body: SizedBox(width: 240, height: 900, child: OptimizerReferencePanel()),
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<AppState>.value(value: appState),
+            ChangeNotifierProvider<WorkbenchUIState>.value(value: wui),
+          ],
+          child: const MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(
+              body: SizedBox(width: 240, height: 900, child: OptimizerReferencePanel()),
+            ),
           ),
         ),
-      ));
+      );
       await tester.pump();
       return wui;
     }
@@ -116,17 +118,27 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    testWidgets('a drag moves the image in the list the next turn sends', (tester) async {
-      final wui = await pumpPanel(tester, ['a.png', 'b.png', 'c.png']);
-      final l10n = await en();
-      final touch = defaultTargetPlatform == TargetPlatform.android;
-      expect(find.text(touch ? l10n.optRefReorderHintTouch : l10n.optRefReorderHint), findsOneWidget);
+    testWidgets(
+      'a drag moves the image in the list the next turn sends',
+      (tester) async {
+        final wui = await pumpPanel(tester, ['a.png', 'b.png', 'c.png']);
+        final l10n = await en();
+        final touch = defaultTargetPlatform == TargetPlatform.android;
+        expect(
+          find.text(touch ? l10n.optRefReorderHintTouch : l10n.optRefReorderHint),
+          findsOneWidget,
+        );
 
-      await dragUp(tester, 'c.png');
+        await dragUp(tester, 'c.png');
 
-      expect(_names(wui), ['c.png', 'a.png', 'b.png']);
-      expect(tester.takeException(), isNull);
-    }, variant: const TargetPlatformVariant(<TargetPlatform>{TargetPlatform.macOS, TargetPlatform.android}));
+        expect(_names(wui), ['c.png', 'a.png', 'b.png']);
+        expect(tester.takeException(), isNull);
+      },
+      variant: const TargetPlatformVariant(<TargetPlatform>{
+        TargetPlatform.macOS,
+        TargetPlatform.android,
+      }),
+    );
 
     testWidgets('a running turn locks the order and says so', (tester) async {
       final wui = await pumpPanel(tester, ['a.png', 'b.png', 'c.png']);

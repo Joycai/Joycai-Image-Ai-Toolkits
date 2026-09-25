@@ -18,11 +18,7 @@ class VideoPreviewHandler implements PreviewHandler {
   bool canHandle(String path) => AppConstants.isVideoFile(path);
 
   @override
-  Widget buildContent(
-    BuildContext context, {
-    required String path,
-    required bool isActive,
-  }) {
+  Widget buildContent(BuildContext context, {required String path, required bool isActive}) {
     // Key by path so the pager rebuilds (and disposes the old player) when the
     // underlying file at this page changes.
     return _VideoPreviewContent(key: ValueKey(path), path: path, isActive: isActive);
@@ -143,28 +139,31 @@ class _VideoPreviewContentState extends State<_VideoPreviewContent> {
     final controller = VideoPlayerController.file(file);
     _controller = controller;
 
-    controller.initialize().then((_) {
-      if (!mounted || _controller != controller) {
-        controller.dispose();
-        return;
-      }
-      setState(() {});
-      if (widget.isActive) {
-        controller.play();
-      }
-      controller.setLooping(true);
-      controller.addListener(_onControllerPlayStatusChanged);
-      _startHideTimer();
-    }).catchError((error) {
-      if (!mounted || _controller != controller) {
-        controller.dispose();
-        return;
-      }
-      setState(() {
-        _hasError = true;
-        _errorMessage = error.toString();
-      });
-    });
+    controller
+        .initialize()
+        .then((_) {
+          if (!mounted || _controller != controller) {
+            controller.dispose();
+            return;
+          }
+          setState(() {});
+          if (widget.isActive) {
+            controller.play();
+          }
+          controller.setLooping(true);
+          controller.addListener(_onControllerPlayStatusChanged);
+          _startHideTimer();
+        })
+        .catchError((error) {
+          if (!mounted || _controller != controller) {
+            controller.dispose();
+            return;
+          }
+          setState(() {
+            _hasError = true;
+            _errorMessage = error.toString();
+          });
+        });
   }
 
   void _disposePlayer() {
@@ -202,11 +201,7 @@ class _VideoPreviewContentState extends State<_VideoPreviewContent> {
   Widget build(BuildContext context) {
     // The Focus node wraps every state (loading/error/ready) so it stays
     // attached across player lifecycle changes.
-    return Focus(
-      focusNode: _focusNode,
-      onKeyEvent: _handleKeyEvent,
-      child: _buildBody(context),
-    );
+    return Focus(focusNode: _focusNode, onKeyEvent: _handleKeyEvent, child: _buildBody(context));
   }
 
   Widget _buildBody(BuildContext context) {
@@ -230,11 +225,7 @@ class _VideoPreviewContentState extends State<_VideoPreviewContent> {
       return Stack(
         alignment: Alignment.center,
         children: [
-          VideoThumbnail(
-            videoPath: widget.path,
-            fit: BoxFit.contain,
-            showPlayIcon: false,
-          ),
+          VideoThumbnail(videoPath: widget.path, fit: BoxFit.contain, showPlayIcon: false),
           const Center(child: CircularProgressIndicator()),
         ],
       );
@@ -291,10 +282,7 @@ class _VideoPreviewContentState extends State<_VideoPreviewContent> {
                   child: Container(
                     width: 72,
                     height: 72,
-                    decoration: const BoxDecoration(
-                      color: Colors.black45,
-                      shape: BoxShape.circle,
-                    ),
+                    decoration: const BoxDecoration(color: Colors.black45, shape: BoxShape.circle),
                     child: const Icon(Icons.play_arrow, size: 48, color: Colors.white),
                   ),
                 ),
@@ -372,8 +360,7 @@ class _VideoControlBarState extends State<_VideoControlBar> {
             final durationMs = value.duration.inMilliseconds.toDouble();
             final maxMs = durationMs > 0 ? durationMs : 1.0;
             final positionMs = value.position.inMilliseconds.toDouble();
-            final sliderMs =
-                (_dragging ? _dragValueMs : positionMs).clamp(0.0, maxMs);
+            final sliderMs = (_dragging ? _dragValueMs : positionMs).clamp(0.0, maxMs);
 
             return Column(
               mainAxisSize: MainAxisSize.min,

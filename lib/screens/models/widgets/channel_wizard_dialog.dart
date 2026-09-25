@@ -54,11 +54,7 @@ class ChannelWizardDialog extends StatefulWidget {
   final AppLocalizations l10n;
   final AppState appState;
 
-  const ChannelWizardDialog({
-    super.key,
-    required this.l10n,
-    required this.appState,
-  });
+  const ChannelWizardDialog({super.key, required this.l10n, required this.appState});
 
   @override
   State<ChannelWizardDialog> createState() => _ChannelWizardDialogState();
@@ -137,15 +133,14 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
   /// Whether the preset's ways in are a real choice. Variants that are
   /// routes are not: the channel gets every route (`D1f · 4b`), so only
   /// Ark's two addresses — one protocol, two keys — still ask.
-  bool get _choosesVariant =>
-      _preset.hasVariants && !channelPresetVariantsAreRoutes(_preset);
+  bool get _choosesVariant => _preset.hasVariants && !channelPresetVariantsAreRoutes(_preset);
 
   List<_WizardStep> get _steps => [
-        _WizardStep.provider,
-        if (_choosesVariant) _WizardStep.variant,
-        _WizardStep.connection,
-        _WizardStep.appearance,
-      ];
+    _WizardStep.provider,
+    if (_choosesVariant) _WizardStep.variant,
+    _WizardStep.connection,
+    _WizardStep.appearance,
+  ];
 
   _WizardStep get _step {
     final steps = _steps;
@@ -180,8 +175,7 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
   /// replaces it rather than leaving the previous provider's host behind,
   /// which would otherwise ship a channel pointed at the wrong company.
   void _applyPresetEndpoint() {
-    _endpointCtrl.text =
-        _variant?.defaultEndpoint ?? _preset.defaultEndpoint ?? '';
+    _endpointCtrl.text = _variant?.defaultEndpoint ?? _preset.defaultEndpoint ?? '';
   }
 
   void _selectProvider(String id) {
@@ -270,8 +264,7 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
     return '$base$suffix';
   }
 
-  String get _endpointSuffix =>
-      _variant?.endpointSuffix ?? _preset.endpointSuffix;
+  String get _endpointSuffix => _variant?.endpointSuffix ?? _preset.endpointSuffix;
 
   String _resolvedEndpoint() {
     final suffix = _endpointSuffix;
@@ -289,19 +282,14 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
 
   /// The routes the channel will be created with — what the connection step
   /// previews and what is stored.
-  ChannelRoutes get _plannedRoutes => plannedChannelRoutes(
-        _preset,
-        _resolvedChannelType(),
-        _resolvedEndpoint(),
-      );
+  ChannelRoutes get _plannedRoutes =>
+      plannedChannelRoutes(_preset, _resolvedChannelType(), _resolvedEndpoint());
 
-  String _resolvedName() => _nameCtrl.text.trim().isEmpty
-      ? _selectedProviderId
-      : _nameCtrl.text.trim();
+  String _resolvedName() =>
+      _nameCtrl.text.trim().isEmpty ? _selectedProviderId : _nameCtrl.text.trim();
 
-  String _resolvedTag() => _tagCtrl.text.trim().isEmpty
-      ? _selectedProviderId.split('-').first
-      : _tagCtrl.text.trim();
+  String _resolvedTag() =>
+      _tagCtrl.text.trim().isEmpty ? _selectedProviderId.split('-').first : _tagCtrl.text.trim();
 
   // --- Flow ------------------------------------------------------------------
 
@@ -339,16 +327,18 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
     setState(() => _submitting = true);
     try {
       final routes = _plannedRoutes;
-      await widget.appState.addChannel(LLMChannel(
-        displayName: _resolvedName(),
-        endpoint: routes.primaryAddress,
-        apiKey: _apiKeyCtrl.text.trim(),
-        type: routes.primaryVendorId,
-        routes: routes.encode(),
-        enableDiscovery: _enableDiscovery,
-        tag: _resolvedTag(),
-        tagColor: _tagColor,
-      ));
+      await widget.appState.addChannel(
+        LLMChannel(
+          displayName: _resolvedName(),
+          endpoint: routes.primaryAddress,
+          apiKey: _apiKeyCtrl.text.trim(),
+          type: routes.primaryVendorId,
+          routes: routes.encode(),
+          enableDiscovery: _enableDiscovery,
+          tag: _resolvedTag(),
+          tagColor: _tagColor,
+        ),
+      );
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -380,19 +370,17 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
   // --- Labels ----------------------------------------------------------------
 
   String _stepName(AppLocalizations l10n, _WizardStep step) => switch (step) {
-        _WizardStep.provider => l10n.stepProvider,
-        _WizardStep.variant => channelProviderVariantTitle(l10n, _preset.id),
-        _WizardStep.connection => l10n.stepConnection,
-        _WizardStep.appearance => l10n.tagAndAppearance,
-      };
+    _WizardStep.provider => l10n.stepProvider,
+    _WizardStep.variant => channelProviderVariantTitle(l10n, _preset.id),
+    _WizardStep.connection => l10n.stepConnection,
+    _WizardStep.appearance => l10n.tagAndAppearance,
+  };
 
   String _nextLabel(AppLocalizations l10n) {
     if (_isLastStep) return l10n.addChannel;
     // A local runtime's key is optional: moving on with the box empty is
     // skipping it, and the button says so.
-    if (_step == _WizardStep.connection &&
-        _keyOptional &&
-        _apiKeyCtrl.text.trim().isEmpty) {
+    if (_step == _WizardStep.connection && _keyOptional && _apiKeyCtrl.text.trim().isEmpty) {
       return l10n.skip;
     }
     return l10n.next;

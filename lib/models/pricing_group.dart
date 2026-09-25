@@ -59,8 +59,7 @@ class PricingGroup {
   /// surface does, and xAI prices each at \$0.01 beside its per-second rate —
   /// and so does a request-billed group. A token-billed group never does:
   /// its inputs are the image tokens inside its prompt total.
-  bool get chargesInputImages =>
-      (isSpecBilled || isRequestBilled) && inputUnitPrice > 0;
+  bool get chargesInputImages => (isSpecBilled || isRequestBilled) && inputUnitPrice > 0;
 
   factory PricingGroup.fromMap(Map<String, dynamic> map) {
     return PricingGroup(

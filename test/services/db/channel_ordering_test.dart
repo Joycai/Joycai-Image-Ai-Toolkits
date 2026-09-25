@@ -11,8 +11,7 @@ import '../../screenshots/harness/fixture_env.dart';
 /// position, and the stored arrangement must survive everything that touches
 /// a channel afterwards.
 void main() {
-  final TestWidgetsFlutterBinding binding =
-      TestWidgetsFlutterBinding.ensureInitialized();
+  final TestWidgetsFlutterBinding binding = TestWidgetsFlutterBinding.ensureInitialized();
 
   group('v37 migration', () {
     sqfliteFfiInit();
@@ -45,13 +44,11 @@ void main() {
     }
 
     Future<List<String>> orderedNames(Database db) async {
-      final rows =
-          await db.query('llm_channels', orderBy: 'sort_order ASC, id ASC');
+      final rows = await db.query('llm_channels', orderBy: 'sort_order ASC, id ASC');
       return [for (final r in rows) r['display_name'] as String];
     }
 
-    test('backfills so the rail looks exactly as it did before the upgrade',
-        () async {
+    test('backfills so the rail looks exactly as it did before the upgrade', () async {
       final db = await preV37Database(['A', 'B', 'C']);
       // Only the v37 step: the fixture table is post-v36 in every other way.
       await DatabaseMigration.migrate(db, 36, 37);
@@ -59,20 +56,26 @@ void main() {
       expect(await orderedNames(db), ['A', 'B', 'C']);
       final rows = await db.query('llm_channels', orderBy: 'id');
       for (final row in rows) {
-        expect(row['sort_order'], row['id'],
-            reason: 'seeded with the id, so rowid order is preserved');
+        expect(
+          row['sort_order'],
+          row['id'],
+          reason: 'seeded with the id, so rowid order is preserved',
+        );
       }
       await db.close();
     });
 
-    test('a later migrate() run does not clobber a user-made arrangement',
-        () async {
+    test('a later migrate() run does not clobber a user-made arrangement', () async {
       final db = await preV37Database(['A', 'B', 'C']);
       await DatabaseMigration.migrate(db, 36, 37);
 
       // The user drags C to the top.
-      await db.update('llm_channels', {'sort_order': 0},
-          where: 'display_name = ?', whereArgs: ['C']);
+      await db.update(
+        'llm_channels',
+        {'sort_order': 0},
+        where: 'display_name = ?',
+        whereArgs: ['C'],
+      );
       expect(await orderedNames(db), ['C', 'A', 'B']);
 
       // A build that re-runs the step (a downgrade/upgrade round-trip, a
@@ -95,23 +98,26 @@ void main() {
 
     tearDownAll(() => env.dispose());
 
-    Future<int> addChannel(String name) => db.addChannel(LLMChannel(
-          displayName: name,
-          endpoint: 'https://example.com/v1',
-          apiKey: 'k',
-          type: 'openai-api-rest',
-        ));
+    Future<int> addChannel(String name) => db.addChannel(
+      LLMChannel(
+        displayName: name,
+        endpoint: 'https://example.com/v1',
+        apiKey: 'k',
+        type: 'openai-api-rest',
+      ),
+    );
 
-    Future<List<String>> names() async =>
-        [for (final c in await db.getChannels()) c.displayName];
+    Future<List<String>> names() async => [for (final c in await db.getChannels()) c.displayName];
 
-    test('new channels append, reorder persists, and later adds still append',
-        () async {
+    test('new channels append, reorder persists, and later adds still append', () async {
       final a = await addChannel('A');
       final b = await addChannel('B');
       final c = await addChannel('C');
-      expect(await names(), ['A', 'B', 'C'],
-          reason: 'a new channel belongs at the end of the rail');
+      expect(await names(), [
+        'A',
+        'B',
+        'C',
+      ], reason: 'a new channel belongs at the end of the rail');
 
       await db.updateChannelOrder([c, a, b]);
       expect(await names(), ['C', 'A', 'B']);

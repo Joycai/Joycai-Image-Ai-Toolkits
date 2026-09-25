@@ -12,13 +12,12 @@ enum TaskFilter { all, running, pending, done, failed }
 
 extension TaskFilterMatch on TaskFilter {
   bool matches(TaskItem task) => switch (this) {
-        TaskFilter.all => true,
-        TaskFilter.running => task.status == TaskStatus.processing,
-        TaskFilter.pending => task.status == TaskStatus.pending,
-        TaskFilter.done => task.status == TaskStatus.completed,
-        TaskFilter.failed =>
-          task.status == TaskStatus.failed || task.status == TaskStatus.cancelled,
-      };
+    TaskFilter.all => true,
+    TaskFilter.running => task.status == TaskStatus.processing,
+    TaskFilter.pending => task.status == TaskStatus.pending,
+    TaskFilter.done => task.status == TaskStatus.completed,
+    TaskFilter.failed => task.status == TaskStatus.failed || task.status == TaskStatus.cancelled,
+  };
 }
 
 /// Which way the list runs along its one sort key, [TaskItem.createdAt].

@@ -30,10 +30,7 @@ class VideoThumbnailService {
 
   /// Waits between extraction attempts: three tries over about seven seconds,
   /// long enough for a sync client to release a freshly written file.
-  static const List<Duration> retryDelays = [
-    Duration(seconds: 2),
-    Duration(seconds: 5),
-  ];
+  static const List<Duration> retryDelays = [Duration(seconds: 2), Duration(seconds: 5)];
 
   /// Thumbnails not accessed within this window are eligible for pruning.
   static const Duration _maxAge = Duration(days: 14);
@@ -58,8 +55,7 @@ class VideoThumbnailService {
 
   /// Test seam: how a retry waits. Defaults to a real delay.
   @visibleForTesting
-  Future<void> Function(Duration delay) wait =
-      Future<void>.delayed;
+  Future<void> Function(Duration delay) wait = Future<void>.delayed;
 
   Future<Directory> _getCacheDir() async {
     final cached = cacheDirOverride ?? _cacheDir;
@@ -87,7 +83,7 @@ class VideoThumbnailService {
   }
 
   Future<String?> _getThumbnailWithRetry(String videoPath) async {
-    for (var attempt = 0;; attempt++) {
+    for (var attempt = 0; ; attempt++) {
       final result = await _tryGetThumbnail(videoPath);
       if (result.path != null || !result.retryable) return result.path;
       if (attempt >= retryDelays.length) return null;
@@ -102,8 +98,7 @@ class VideoThumbnailService {
 
       final cacheDir = await _getCacheDir();
       final stat = await file.stat();
-      final key =
-          '${videoPath}_${stat.modified.millisecondsSinceEpoch}_${stat.size}';
+      final key = '${videoPath}_${stat.modified.millisecondsSinceEpoch}_${stat.size}';
       final hash = md5.convert(utf8.encode(key)).toString();
       final cachePath = '${cacheDir.path}/$hash.jpg';
       final cacheFile = File(cachePath);
@@ -189,9 +184,7 @@ class VideoThumbnailService {
 
       // Enforce the hard file-count cap, deleting oldest first.
       if (survivors.length > _maxFiles) {
-        survivors.sort(
-          (a, b) => a.statSync().modified.compareTo(b.statSync().modified),
-        );
+        survivors.sort((a, b) => a.statSync().modified.compareTo(b.statSync().modified));
         final excess = survivors.length - _maxFiles;
         for (var i = 0; i < excess; i++) {
           try {

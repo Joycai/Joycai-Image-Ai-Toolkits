@@ -18,12 +18,12 @@ void main() {
   usePrivateDataDir('joycai_remove_task_test');
 
   TaskItem task(String id, TaskStatus status) => TaskItem(
-        id: id,
-        imagePaths: const <String>[],
-        modelId: 'test-model',
-        parameters: const <String, dynamic>{'prompt': 'p'},
-        status: status,
-      );
+    id: id,
+    imagePaths: const <String>[],
+    modelId: 'test-model',
+    parameters: const <String, dynamic>{'prompt': 'p'},
+    status: status,
+  );
 
   Future<Set<String>> storedIds() async =>
       (await DatabaseService().getRecentTasks(50)).map((task) => task.id).toSet();
@@ -38,7 +38,11 @@ void main() {
       await DatabaseService().saveTask(task(id, TaskStatus.completed));
     }
     final service = TaskQueueService();
-    for (var i = 0; i < 100 && !tasks.keys.every((id) => service.queue.any((t) => t.id == id)); i++) {
+    for (
+      var i = 0;
+      i < 100 && !tasks.keys.every((id) => service.queue.any((t) => t.id == id));
+      i++
+    ) {
       await Future<void>.delayed(const Duration(milliseconds: 10));
     }
     for (final item in service.queue) {
@@ -54,8 +58,11 @@ void main() {
     await service.removeTask('waiting-1');
 
     expect(service.queue.any((t) => t.id == 'waiting-1'), isTrue);
-    expect(await storedIds(), contains('waiting-1'),
-        reason: 'the row was deleted while the task stayed queued');
+    expect(
+      await storedIds(),
+      contains('waiting-1'),
+      reason: 'the row was deleted while the task stayed queued',
+    );
   });
 
   test('a running task keeps both its place in the queue and its row', () async {

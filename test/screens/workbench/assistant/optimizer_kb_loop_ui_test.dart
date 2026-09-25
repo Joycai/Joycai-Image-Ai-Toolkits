@@ -11,8 +11,7 @@ import 'package:provider/provider.dart';
 /// feedback entry card, the distill request entry, the composer's distill
 /// chip states, and the wrap-up card's appearance rules.
 void main() {
-  Future<AppLocalizations> l10nEn() =>
-      AppLocalizations.delegate.load(const Locale('en'));
+  Future<AppLocalizations> l10nEn() => AppLocalizations.delegate.load(const Locale('en'));
 
   /// A knowledge session restored from a canned history — the same path a
   /// real restart uses, so `promptVersions`/`refinedPrompt` derive exactly as
@@ -25,20 +24,20 @@ void main() {
       );
 
   List<LLMMessage> submitTurn(String prompt, {String? note}) => [
-        LLMMessage(role: LLMRole.assistant, content: '', toolCalls: [
-          LLMToolCall(
-            id: 'c1',
-            name: 'submit_prompt',
-            arguments: {'prompt': prompt, 'note': ?note},
-          ),
-        ]),
-        LLMMessage(
-          role: LLMRole.tool,
-          content: '{"status":"ok"}',
-          toolCallId: 'c1',
-          toolName: 'submit_prompt',
-        ),
-      ];
+    LLMMessage(
+      role: LLMRole.assistant,
+      content: '',
+      toolCalls: [
+        LLMToolCall(id: 'c1', name: 'submit_prompt', arguments: {'prompt': prompt, 'note': ?note}),
+      ],
+    ),
+    LLMMessage(
+      role: LLMRole.tool,
+      content: '{"status":"ok"}',
+      toolCallId: 'c1',
+      toolName: 'submit_prompt',
+    ),
+  ];
 
   Future<void> pumpChat(
     WidgetTester tester,
@@ -54,27 +53,29 @@ void main() {
     final ui = WorkbenchUIState();
     ui.optimizerSession = session;
 
-    await tester.pumpWidget(ChangeNotifierProvider<WorkbenchUIState>.value(
-      value: ui,
-      child: MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: Scaffold(
-          body: PromptOptimizerChatView(
-            inputCtrl: TextEditingController(),
-            onSend: () {},
-            onRetry: () {},
-            onApplyPrompt: (_) {},
-            onApplyKbEdit: (_) {},
-            onRejectKbEdit: (_) {},
-            onAnswerAskUser: (_, _) {},
-            onDistill: onDistill,
-            onSaveFinalPrompt: onSaveFinalPrompt,
-            isBusy: isBusy,
+    await tester.pumpWidget(
+      ChangeNotifierProvider<WorkbenchUIState>.value(
+        value: ui,
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: PromptOptimizerChatView(
+              inputCtrl: TextEditingController(),
+              onSend: () {},
+              onRetry: () {},
+              onApplyPrompt: (_) {},
+              onApplyKbEdit: (_) {},
+              onRejectKbEdit: (_) {},
+              onAnswerAskUser: (_, _) {},
+              onDistill: onDistill,
+              onSaveFinalPrompt: onSaveFinalPrompt,
+              isBusy: isBusy,
+            ),
           ),
         ),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
   }
 
@@ -84,11 +85,7 @@ void main() {
         LLMMessage(role: LLMRole.user, content: '优化'),
         ...submitTurn('a prompt'),
       ]);
-      session.addResultFeedback(
-        imageName: 'gen_1.png',
-        promptVersion: 1,
-        feedback: '裙摆褶皱少了一层',
-      );
+      session.addResultFeedback(imageName: 'gen_1.png', promptVersion: 1, feedback: '裙摆褶皱少了一层');
 
       await pumpChat(tester, session);
       final l10n = await l10nEn();
@@ -105,10 +102,7 @@ void main() {
       final session = sessionFromHistory([
         LLMMessage(role: LLMRole.user, content: '优化'),
         ...submitTurn('a prompt'),
-        LLMMessage(
-          role: LLMRole.user,
-          content: '${PromptOptimizerAgent.kbDistillMarker} go',
-        ),
+        LLMMessage(role: LLMRole.user, content: '${PromptOptimizerAgent.kbDistillMarker} go'),
       ]);
 
       await pumpChat(tester, session);
@@ -130,8 +124,7 @@ void main() {
       expect(find.text(l10n.optDistillAction), findsNothing);
     });
 
-    testWidgets('disabled with no versions, enabled and tappable after one',
-        (tester) async {
+    testWidgets('disabled with no versions, enabled and tappable after one', (tester) async {
       final empty = PromptOptimizerSession(mode: AssistantMode.knowledgeBase);
       empty.addUserTurn('hi');
       var fired = 0;
@@ -159,16 +152,12 @@ void main() {
       final session = sessionFromHistory([
         LLMMessage(role: LLMRole.user, content: '优化'),
         ...submitTurn('final prompt text'),
-        LLMMessage(
-          role: LLMRole.user,
-          content: '${PromptOptimizerAgent.kbDistillMarker} go',
-        ),
+        LLMMessage(role: LLMRole.user, content: '${PromptOptimizerAgent.kbDistillMarker} go'),
       ]);
       return session;
     }
 
-    testWidgets('appears once every staged edit is decided, with line counts',
-        (tester) async {
+    testWidgets('appears once every staged edit is decided, with line counts', (tester) async {
       final session = distilledSession();
       final id = session.stageKbEditForTest(
         relPath: 'lessons.md',
@@ -195,11 +184,7 @@ void main() {
 
     testWidgets('stays hidden while an edit is still pending', (tester) async {
       final session = distilledSession();
-      session.stageKbEditForTest(
-        relPath: 'lessons.md',
-        newContent: 'a\nb\n',
-        oldContent: 'a\n',
-      );
+      session.stageKbEditForTest(relPath: 'lessons.md', newContent: 'a\nb\n', oldContent: 'a\n');
 
       await pumpChat(tester, session);
       final l10n = await l10nEn();

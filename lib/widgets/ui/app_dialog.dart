@@ -24,10 +24,10 @@ const double appDialogRadius = AppRadius.dialog;
 /// span it opened in. Shortening that would take a `DialogRoute` subclass and a
 /// hand-rolled `showDialog`, which is more machinery than the 112ms is worth.
 AnimationStyle appDialogAnimation(BuildContext context) => AnimationStyle(
-      duration: AppMotion.sceneOf(context),
-      curve: AppMotion.emphasized,
-      reverseCurve: AppMotion.quick,
-    );
+  duration: AppMotion.sceneOf(context),
+  curve: AppMotion.emphasized,
+  reverseCurve: AppMotion.quick,
+);
 
 /// The app's dialog shell (`01 · 1h`).
 ///
@@ -122,8 +122,10 @@ class AppDialog extends StatelessWidget {
     this.divided = true,
     this.dividedHeading,
     this.dividedFooter,
-  }) : assert(title == null || titleWidget == null,
-            'Give AppDialog a title or a titleWidget, not both');
+  }) : assert(
+         title == null || titleWidget == null,
+         'Give AppDialog a title or a titleWidget, not both',
+       );
 
   /// Shows an [AppDialog] and returns whatever the caller pops with.
   static Future<T?> show<T>(
@@ -188,7 +190,8 @@ class AppDialog extends StatelessWidget {
     Widget body = scrollable ? SingleChildScrollView(child: content) : content;
 
     body = Padding(
-      padding: contentPadding ??
+      padding:
+          contentPadding ??
           EdgeInsets.only(
             left: _pad,
             right: _pad,
@@ -232,7 +235,12 @@ class AppDialog extends StatelessWidget {
                   children: [
                     if (heading != null) ...[
                       Padding(
-                        padding: EdgeInsets.fromLTRB(_pad, _pad, _pad, ruleAboveBody ? 16 : AppSpace.s6),
+                        padding: EdgeInsets.fromLTRB(
+                          _pad,
+                          _pad,
+                          _pad,
+                          ruleAboveBody ? 16 : AppSpace.s6,
+                        ),
                         child: heading,
                       ),
                       if (ruleAboveBody) const Divider(height: 1),
@@ -275,10 +283,7 @@ class AppDialog extends StatelessWidget {
         Text(title!, style: textTheme.titleLarge),
         if (subtitle != null) ...[
           const SizedBox(height: 2),
-          Text(
-            subtitle!,
-            style: textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
-          ),
+          Text(subtitle!, style: textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant)),
         ],
       ],
     );
@@ -288,7 +293,9 @@ class AppDialog extends StatelessWidget {
     final accent = iconColor ?? scheme.primary;
     // The error plate is the opaque `--err-bg`, as `1h` draws it; any other
     // mood is its colour's 12% wash.
-    final plate = accent == scheme.error ? scheme.errorContainer : accent.withValues(alpha: AppAlpha.tint);
+    final plate = accent == scheme.error
+        ? scheme.errorContainer
+        : accent.withValues(alpha: AppAlpha.tint);
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,

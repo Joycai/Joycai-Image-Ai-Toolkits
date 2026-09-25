@@ -105,8 +105,7 @@ class ThemeAccent {
   Color darkTone(double tone) => _atTone(Hct.fromInt(dark.toARGB32()), tone);
 
   /// The half this brightness draws.
-  Color forBrightness(Brightness brightness) =>
-      brightness == Brightness.dark ? dark : light;
+  Color forBrightness(Brightness brightness) => brightness == Brightness.dark ? dark : light;
 
   /// Ink drawn *on* [light] — the CTA's label, a badge's digits.
   ///
@@ -148,8 +147,7 @@ class ThemeAccent {
   /// like the spec's 主色深 (`#3355C4` ≈ 40 under `#4A72E8` ≈ 51).
   Color get lightOnTint => lightTone(30);
 
-  static Color _atTone(Hct hct, double tone) =>
-      Color(Hct.from(hct.hue, hct.chroma, tone).toInt());
+  static Color _atTone(Hct hct, double tone) => Color(Hct.from(hct.hue, hct.chroma, tone).toInt());
 
   static double _contrast(Color a, Color b) {
     final double la = a.computeLuminance();
@@ -168,8 +166,7 @@ class ThemeAccent {
   int get hashCode => Object.hash(light.toARGB32(), dark.toARGB32());
 
   @override
-  String toString() =>
-      'ThemeAccent(light: ${_hex(light)}, dark: ${_hex(dark)})';
+  String toString() => 'ThemeAccent(light: ${_hex(light)}, dark: ${_hex(dark)})';
 
   static String _hex(Color c) =>
       '#${(c.toARGB32() & 0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}';

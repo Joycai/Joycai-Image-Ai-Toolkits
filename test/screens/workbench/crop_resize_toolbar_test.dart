@@ -104,7 +104,9 @@ void main() {
     // The glass toolbar weighs its tool switch's labels against this number;
     // if the row sheds anything at it, the number is a lie.
     await pumpAtWidth(tester, 2800);
-    final preferred = CropResizeToolbar.preferredWidth(tester.element(find.byType(CropResizeToolbar)));
+    final preferred = CropResizeToolbar.preferredWidth(
+      tester.element(find.byType(CropResizeToolbar)),
+    );
     await pumpAtWidth(tester, preferred);
     final l10n = await en();
 
@@ -124,13 +126,22 @@ void main() {
     final l10n = await en();
 
     final samplerDropped = await widthWhereDropped(tester, find.text(samplerName));
-    final hintDropped = await widthWhereDropped(tester, find.text(l10n.cropResizeSaveDestinationHint));
+    final hintDropped = await widthWhereDropped(
+      tester,
+      find.text(l10n.cropResizeSaveDestinationHint),
+    );
     final labelDropped = await widthWhereDropped(tester, find.text(l10n.overwriteSource));
 
-    expect(labelDropped, lessThan(samplerDropped),
-        reason: 'the overwrite label went at the same width as the resampler name, or before it');
-    expect(labelDropped, lessThan(hintDropped),
-        reason: 'the overwrite label went before the save button dropped its destination subtitle');
+    expect(
+      labelDropped,
+      lessThan(samplerDropped),
+      reason: 'the overwrite label went at the same width as the resampler name, or before it',
+    );
+    expect(
+      labelDropped,
+      lessThan(hintDropped),
+      reason: 'the overwrite label went before the save button dropped its destination subtitle',
+    );
   });
 
   testWidgets('an action label outlives the portrait presets', (tester) async {
@@ -142,7 +153,9 @@ void main() {
     expect(labelDropped, lessThan(portraitDropped));
   });
 
-  testWidgets('a genuinely narrow bar still reaches overwrite, still marked destructive', (tester) async {
+  testWidgets('a genuinely narrow bar still reaches overwrite, still marked destructive', (
+    tester,
+  ) async {
     await pumpAtWidth(tester, 620);
     final l10n = await en();
 
@@ -182,8 +195,11 @@ void main() {
   testWidgets('the ratio presets are a segmented control, not the old chip row', (tester) async {
     await pumpAtWidth(tester, 2800);
 
-    expect(find.byType(ChoiceChip), findsNothing,
-        reason: 'the chip row this redesign replaced is back');
+    expect(
+      find.byType(ChoiceChip),
+      findsNothing,
+      reason: 'the chip row this redesign replaced is back',
+    );
     expect(find.text('16:9'), findsOneWidget);
     expect(find.text('9:16'), findsOneWidget);
   });
@@ -198,8 +214,11 @@ void main() {
     await tester.tap(find.text(l10n.custom));
     await tester.pumpAndSettle();
 
-    expect(find.byType(TextField), findsNWidgets(4),
-        reason: 'choosing Custom did not unfold the X:Y pair');
+    expect(
+      find.byType(TextField),
+      findsNWidgets(4),
+      reason: 'choosing Custom did not unfold the X:Y pair',
+    );
   });
 
   testWidgets('the bare dimension boxes still say what they are', (tester) async {
@@ -235,10 +254,16 @@ void main() {
 
       final bar = tester.getRect(find.byType(CropResizeToolbar));
       final rect = tester.getRect(save);
-      expect(rect.right, lessThanOrEqualTo(bar.right + 0.01),
-          reason: 'the save action is clipped off the right edge at ${width}px');
-      expect(rect.left, greaterThanOrEqualTo(bar.left),
-          reason: 'the save action starts before the bar does at ${width}px');
+      expect(
+        rect.right,
+        lessThanOrEqualTo(bar.right + 0.01),
+        reason: 'the save action is clipped off the right edge at ${width}px',
+      );
+      expect(
+        rect.left,
+        greaterThanOrEqualTo(bar.left),
+        reason: 'the save action starts before the bar does at ${width}px',
+      );
     }
   });
 }

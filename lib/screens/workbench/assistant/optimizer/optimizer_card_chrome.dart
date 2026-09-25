@@ -10,10 +10,7 @@ extension _CardChrome on _PromptOptimizerChatViewState {
       width: _PromptOptimizerChatViewState._avatarSize,
       height: _PromptOptimizerChatViewState._avatarSize,
       alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: ground,
-        borderRadius: BorderRadius.circular(AppRadius.sm),
-      ),
+      decoration: BoxDecoration(color: ground, borderRadius: BorderRadius.circular(AppRadius.sm)),
       child: Icon(icon, size: AppSize.iconMd, color: ink),
     );
   }
@@ -71,8 +68,11 @@ extension _CardChrome on _PromptOptimizerChatViewState {
     final semantic = context.semantic;
     final count = int.tryParse(entry.note ?? '') ?? 0;
     return _besideAvatar(
-      _avatar(Icons.visibility_off_outlined,
-          ground: semantic.warningContainer, ink: semantic.warning),
+      _avatar(
+        Icons.visibility_off_outlined,
+        ground: semantic.warningContainer,
+        ink: semantic.warning,
+      ),
       Container(
         width: double.infinity,
         padding: const EdgeInsets.all(12),
@@ -126,7 +126,9 @@ extension _CardChrome on _PromptOptimizerChatViewState {
           child: Align(
             alignment: Alignment.topLeft,
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: _PromptOptimizerChatViewState._bodyMaxWidth),
+              constraints: const BoxConstraints(
+                maxWidth: _PromptOptimizerChatViewState._bodyMaxWidth,
+              ),
               child: content,
             ),
           ),
@@ -182,11 +184,7 @@ extension _CardChrome on _PromptOptimizerChatViewState {
   /// large text scale grows instead of overflowing. The right inset is 8, not
   /// 12, because the trailing element is nearly always a text action or a
   /// button with its own padding.
-  Widget _cardHeader({
-    required IconData icon,
-    Color? iconColor,
-    required List<Widget> children,
-  }) {
+  Widget _cardHeader({required IconData icon, Color? iconColor, required List<Widget> children}) {
     final colorScheme = Theme.of(context).colorScheme;
     return Container(
       constraints: const BoxConstraints(minHeight: _PromptOptimizerChatViewState._cardHeaderHeight),
@@ -205,13 +203,13 @@ extension _CardChrome on _PromptOptimizerChatViewState {
   }
 
   TextStyle? get _cardTitleStyle => Theme.of(context).textTheme.bodySmall?.copyWith(
-        fontWeight: FontWeight.w600,
-        color: Theme.of(context).colorScheme.onSurface,
-      );
+    fontWeight: FontWeight.w600,
+    color: Theme.of(context).colorScheme.onSurface,
+  );
 
-  TextStyle? get _cardMetaStyle => Theme.of(context).textTheme.labelSmall?.copyWith(
-        color: Theme.of(context).colorScheme.onSurfaceVariant,
-      );
+  TextStyle? get _cardMetaStyle => Theme.of(
+    context,
+  ).textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant);
 
   /// A deep-ink text action — "Show all 8 steps", "Show full text". Smaller
   /// than a compact [AppButton] on purpose: it sits inside a 40px header or
@@ -259,10 +257,7 @@ extension _CardChrome on _PromptOptimizerChatViewState {
   Widget _statusBadge(String label, {required Color ground, required Color ink}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-      decoration: BoxDecoration(
-        color: ground,
-        borderRadius: BorderRadius.circular(AppRadius.xs),
-      ),
+      decoration: BoxDecoration(color: ground, borderRadius: BorderRadius.circular(AppRadius.xs)),
       child: Text(
         label,
         maxLines: 1,

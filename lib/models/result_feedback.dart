@@ -14,11 +14,7 @@ class ResultFeedback {
   /// The free-text critique, trimmed; may be empty.
   final String note;
 
-  const ResultFeedback({
-    required this.satisfied,
-    this.reasons = const [],
-    this.note = '',
-  });
+  const ResultFeedback({required this.satisfied, this.reasons = const [], this.note = ''});
 }
 
 /// The reason tags under 「不满意」 (`3b`), with the ids they travel under in

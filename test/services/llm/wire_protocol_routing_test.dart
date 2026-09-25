@@ -12,8 +12,7 @@ import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 /// importantly — that every (vendor, model) combination that existed before
 /// the refactor still resolves to the same route.
 void main() {
-  LLMModelConfig config(String modelId, String channelType,
-          {String? wireProtocol}) =>
+  LLMModelConfig config(String modelId, String channelType, {String? wireProtocol}) =>
       LLMModelConfig(
         modelId: modelId,
         channelType: channelType,
@@ -22,8 +21,7 @@ void main() {
         wireProtocol: wireProtocol,
       );
 
-  List<WireProtocol> menuFor(String channelType, String modelId,
-          {String? tag}) =>
+  List<WireProtocol> menuFor(String channelType, String modelId, {String? tag}) =>
       LLMDispatcher.protocolMenu(channelType, modelId, tag: tag).options;
 
   group('surfaceForModel', () {
@@ -39,51 +37,38 @@ void main() {
 
   group('protocolMenu', () {
     test('DashScope chat models offer all three faces, compatible first', () {
-      expect(
-        menuFor(Vendors.dashscope, 'qwen-max'),
-        [
-          WireProtocol.openaiChat,
-          WireProtocol.anthropicChat,
-          WireProtocol.dashscopeChat,
-        ],
-      );
+      expect(menuFor(Vendors.dashscope, 'qwen-max'), [
+        WireProtocol.openaiChat,
+        WireProtocol.anthropicChat,
+        WireProtocol.dashscopeChat,
+      ]);
     });
 
     test('the native vendor offers the same three, native first', () {
-      expect(
-        menuFor(Vendors.dashscopeNative, 'qwen-max'),
-        [
-          WireProtocol.dashscopeChat,
-          WireProtocol.openaiChat,
-          WireProtocol.anthropicChat,
-        ],
-      );
+      expect(menuFor(Vendors.dashscopeNative, 'qwen-max'), [
+        WireProtocol.dashscopeChat,
+        WireProtocol.openaiChat,
+        WireProtocol.anthropicChat,
+      ]);
     });
 
     test('the native vendor keeps the same image and video menus', () {
-      expect(
-        menuFor(Vendors.dashscopeNative, 'wan2.7-image'),
-        [WireProtocol.dashscopeImagesSync, WireProtocol.dashscopeImagesAsync],
-      );
-      expect(
-        menuFor(Vendors.dashscopeNative, 'wan3.0-video'),
-        [WireProtocol.dashscopeVideo],
-      );
+      expect(menuFor(Vendors.dashscopeNative, 'wan2.7-image'), [
+        WireProtocol.dashscopeImagesSync,
+        WireProtocol.dashscopeImagesAsync,
+      ]);
+      expect(menuFor(Vendors.dashscopeNative, 'wan3.0-video'), [WireProtocol.dashscopeVideo]);
     });
 
     test('wan2.7 image offers sync + async, sync first', () {
-      expect(
-        menuFor(Vendors.dashscope, 'wan2.7-image'),
-        [WireProtocol.dashscopeImagesSync, WireProtocol.dashscopeImagesAsync],
-      );
+      expect(menuFor(Vendors.dashscope, 'wan2.7-image'), [
+        WireProtocol.dashscopeImagesSync,
+        WireProtocol.dashscopeImagesAsync,
+      ]);
     });
 
-    test('qwen-image is sync-only — the async entry is filtered by layer 3',
-        () {
-      expect(
-        menuFor(Vendors.dashscope, 'qwen-image-3.0'),
-        [WireProtocol.dashscopeImagesSync],
-      );
+    test('qwen-image is sync-only — the async entry is filtered by layer 3', () {
+      expect(menuFor(Vendors.dashscope, 'qwen-image-3.0'), [WireProtocol.dashscopeImagesSync]);
     });
 
     test('a relay listing qwen-image still rides chat on auto', () {
@@ -97,108 +82,109 @@ void main() {
       ]) {
         final menu = LLMDispatcher.protocolMenu(vendor, id);
         expect(menu.auto, WireProtocol.chatImage, reason: '$id on $vendor');
-        expect(menu.options,
-            [WireProtocol.openaiImages, WireProtocol.chatImage],
-            reason: '$id on $vendor');
+        expect(menu.options, [
+          WireProtocol.openaiImages,
+          WireProtocol.chatImage,
+        ], reason: '$id on $vendor');
       }
     });
 
     test('video is a single fixed route per vendor', () {
-      expect(
-        menuFor(Vendors.dashscope, 'wan3.0-video'),
-        [WireProtocol.dashscopeVideo],
-      );
+      expect(menuFor(Vendors.dashscope, 'wan3.0-video'), [WireProtocol.dashscopeVideo]);
       // A relay's single entry is its family default: one option, so still
       // no selector.
-      expect(
-        menuFor(Vendors.openAIRest, 'sora-2'),
-        [WireProtocol.openaiVideos],
-      );
+      expect(menuFor(Vendors.openAIRest, 'sora-2'), [WireProtocol.openaiVideos]);
     });
 
     test('single-face vendors degrade to a single-entry chat menu', () {
-      expect(menuFor(Vendors.anthropicRest, 'claude-x'),
-          [WireProtocol.anthropicChat]);
-      expect(menuFor(Vendors.ollama, 'llama3'),
-          [WireProtocol.openaiChat]);
-      expect(menuFor(Vendors.officialGoogle, 'gemini-2.5-pro'),
-          [WireProtocol.geminiChat]);
+      expect(menuFor(Vendors.anthropicRest, 'claude-x'), [WireProtocol.anthropicChat]);
+      expect(menuFor(Vendors.ollama, 'llama3'), [WireProtocol.openaiChat]);
+      expect(menuFor(Vendors.officialGoogle, 'gemini-2.5-pro'), [WireProtocol.geminiChat]);
     });
 
     test('xAI image models have a fixed native route, no menu beyond it', () {
       // The menu is only rendered when length > 1; xAI's single entry is a
       // routing fact, not a user choice. xAI serves no generic image
       // surface, so nothing joins it.
-      expect(
-        menuFor(Vendors.xaiApi, 'grok-imagine-image'),
-        [WireProtocol.xaiImages],
-      );
+      expect(menuFor(Vendors.xaiApi, 'grok-imagine-image'), [WireProtocol.xaiImages]);
     });
   });
 
   group('isStaleProtocolSelection', () {
     test('null/empty is never stale', () {
       expect(
-          LLMDispatcher.isStaleProtocolSelection(
-              Vendors.dashscope, 'wan2.7-image', null),
-          isFalse);
+        LLMDispatcher.isStaleProtocolSelection(Vendors.dashscope, 'wan2.7-image', null),
+        isFalse,
+      );
       expect(
-          LLMDispatcher.isStaleProtocolSelection(
-              Vendors.dashscope, 'wan2.7-image', ''),
-          isFalse);
+        LLMDispatcher.isStaleProtocolSelection(Vendors.dashscope, 'wan2.7-image', ''),
+        isFalse,
+      );
     });
 
     test('a valid selection is not stale', () {
       expect(
-          LLMDispatcher.isStaleProtocolSelection(
-              Vendors.dashscope, 'wan2.7-image', 'dashscope-images-async'),
-          isFalse);
+        LLMDispatcher.isStaleProtocolSelection(
+          Vendors.dashscope,
+          'wan2.7-image',
+          'dashscope-images-async',
+        ),
+        isFalse,
+      );
       expect(
-          LLMDispatcher.isStaleProtocolSelection(
-              Vendors.dashscope, 'qwen-max', 'anthropic-chat'),
-          isFalse);
+        LLMDispatcher.isStaleProtocolSelection(Vendors.dashscope, 'qwen-max', 'anthropic-chat'),
+        isFalse,
+      );
     });
 
     test('the channel changing suppliers strands the selection', () {
       expect(
-          LLMDispatcher.isStaleProtocolSelection(
-              Vendors.openAIRest, 'wan2.7-image', 'dashscope-images-async'),
-          isTrue);
+        LLMDispatcher.isStaleProtocolSelection(
+          Vendors.openAIRest,
+          'wan2.7-image',
+          'dashscope-images-async',
+        ),
+        isTrue,
+      );
       expect(
-          LLMDispatcher.isStaleProtocolSelection(
-              Vendors.openAIRest, 'qwen-max', 'anthropic-chat'),
-          isTrue);
+        LLMDispatcher.isStaleProtocolSelection(Vendors.openAIRest, 'qwen-max', 'anthropic-chat'),
+        isTrue,
+      );
     });
 
     test('unknown ids (a newer build) and unsupported models are stale', () {
       expect(
-          LLMDispatcher.isStaleProtocolSelection(
-              Vendors.dashscope, 'qwen-max', 'quantum-chat'),
-          isTrue);
+        LLMDispatcher.isStaleProtocolSelection(Vendors.dashscope, 'qwen-max', 'quantum-chat'),
+        isTrue,
+      );
       // qwen-image cannot do the async task — a selection naming it is stale.
       expect(
-          LLMDispatcher.isStaleProtocolSelection(
-              Vendors.dashscope, 'qwen-image-3.0', 'dashscope-images-async'),
-          isTrue);
+        LLMDispatcher.isStaleProtocolSelection(
+          Vendors.dashscope,
+          'qwen-image-3.0',
+          'dashscope-images-async',
+        ),
+        isTrue,
+      );
     });
   });
 
   group('routing stays put for pinned + auto (behavior preservation)', () {
     test('async pin lifts generateTimeout above the sync guard', () {
       final dispatcher = LLMDispatcher();
-      final sync = dispatcher.generateTimeout(
-          config('wan2.7-image', Vendors.dashscope));
-      final async = dispatcher.generateTimeout(config(
-          'wan2.7-image', Vendors.dashscope,
-          wireProtocol: 'dashscope-images-async'));
+      final sync = dispatcher.generateTimeout(config('wan2.7-image', Vendors.dashscope));
+      final async = dispatcher.generateTimeout(
+        config('wan2.7-image', Vendors.dashscope, wireProtocol: 'dashscope-images-async'),
+      );
       expect(async, greaterThan(sync));
     });
 
     test('a stale pin does not change the timeout (routes as auto)', () {
       final dispatcher = LLMDispatcher();
       expect(
-        dispatcher.generateTimeout(config('wan2.7-image', Vendors.openAIRest,
-            wireProtocol: 'dashscope-images-async')),
+        dispatcher.generateTimeout(
+          config('wan2.7-image', Vendors.openAIRest, wireProtocol: 'dashscope-images-async'),
+        ),
         dispatcher.generateTimeout(config('wan2.7-image', Vendors.openAIRest)),
       );
     });
@@ -212,15 +198,17 @@ void main() {
       // request to the synchronous path, where the entire generation has to
       // land inside one deadline instead of resetting a guard per chunk.
       for (final vendor in [Vendors.dashscope, Vendors.dashscopeNative]) {
-        expect(dispatcher.streamSupportsTools(config('qwen-max', vendor)),
-            isTrue,
-            reason: 'auto face on $vendor');
+        expect(
+          dispatcher.streamSupportsTools(config('qwen-max', vendor)),
+          isTrue,
+          reason: 'auto face on $vendor',
+        );
         for (final pin in ['openai-chat', 'anthropic-chat', 'dashscope-chat']) {
           expect(
-              dispatcher.streamSupportsTools(
-                  config('qwen-max', vendor, wireProtocol: pin)),
-              isTrue,
-              reason: '$pin pinned on $vendor');
+            dispatcher.streamSupportsTools(config('qwen-max', vendor, wireProtocol: pin)),
+            isTrue,
+            reason: '$pin pinned on $vendor',
+          );
         }
       }
     });
@@ -248,8 +236,10 @@ void main() {
       // Both generic alternates are served on another base of the same host,
       // so both are derived — a channel storing `…/api/v1` still reaches the
       // ① and ④ faces, and discovery (which only exists on ①) still works.
-      expect(native.protocolBases.keys,
-          containsAll([WireProtocol.openaiChat, WireProtocol.anthropicChat]));
+      expect(
+        native.protocolBases.keys,
+        containsAll([WireProtocol.openaiChat, WireProtocol.anthropicChat]),
+      );
     });
 
     test('both MiniMax faces declare the same two native surfaces', () {
@@ -264,16 +254,11 @@ void main() {
         expect(v.videoProtocol, WireProtocol.minimaxVideo, reason: id);
       }
       expect(Vendors.byId(Vendors.minimax).family, ProtocolFamily.openai);
-      expect(Vendors.byId(Vendors.minimaxAnthropic).family,
-          ProtocolFamily.anthropic);
+      expect(Vendors.byId(Vendors.minimaxAnthropic).family, ProtocolFamily.anthropic);
     });
 
     test('everyone else keeps empty menus (family defaults)', () {
-      for (final id in [
-        Vendors.deepseek,
-        Vendors.anthropicRest,
-        Vendors.ollama,
-      ]) {
+      for (final id in [Vendors.deepseek, Vendors.anthropicRest, Vendors.ollama]) {
         final v = Vendors.byId(id);
         expect(v.chatMenu, isEmpty, reason: id);
         expect(v.imageMenu, isEmpty, reason: id);
@@ -283,9 +268,7 @@ void main() {
       // (2026-09-14); Chat Completions stays first, so auto is unchanged.
       for (final id in [Vendors.openAIRest, Vendors.newApiOpenAI]) {
         final v = Vendors.byId(id);
-        expect(v.chatMenu,
-            [WireProtocol.openaiChat, WireProtocol.openaiResponses],
-            reason: id);
+        expect(v.chatMenu, [WireProtocol.openaiChat, WireProtocol.openaiResponses], reason: id);
         expect(v.imageMenu, isEmpty, reason: id);
         expect(v.videoProtocol, isNull, reason: id);
       }
@@ -294,31 +277,22 @@ void main() {
 
   group('layer 3 additions', () {
     test('wan3.0 video ids classify as async video-task models', () {
-      expect(ModelFamilyClassifier.classify('wan3.0-video'),
-          ModelFamily.openaiVideo);
-      expect(ModelFamilyClassifier.classify('wan3.0-video-prime'),
-          ModelFamily.openaiVideo);
+      expect(ModelFamilyClassifier.classify('wan3.0-video'), ModelFamily.openaiVideo);
+      expect(ModelFamilyClassifier.classify('wan3.0-video-prime'), ModelFamily.openaiVideo);
     });
 
     test('wan2.6-image is parked in the DashScope image family', () {
-      expect(ModelFamilyClassifier.classify('wan2.6-image'),
-          ModelFamily.dashscopeImage);
+      expect(ModelFamilyClassifier.classify('wan2.6-image'), ModelFamily.dashscopeImage);
     });
 
     test('existing video ids are untouched by the new rules', () {
-      expect(ModelFamilyClassifier.classify('wan2.5-t2v-plus'),
-          ModelFamily.openaiVideo);
-      expect(ModelFamilyClassifier.classify('wan2.7-image'),
-          ModelFamily.dashscopeImage);
+      expect(ModelFamilyClassifier.classify('wan2.5-t2v-plus'), ModelFamily.openaiVideo);
+      expect(ModelFamilyClassifier.classify('wan2.7-image'), ModelFamily.dashscopeImage);
     });
 
     test('async-task support is declared per model, not per family', () {
-      expect(
-          ModelCapabilities.forModel('wan2.7-image').supportsAsyncImageTask,
-          isTrue);
-      expect(
-          ModelCapabilities.forModel('qwen-image-edit').supportsAsyncImageTask,
-          isFalse);
+      expect(ModelCapabilities.forModel('wan2.7-image').supportsAsyncImageTask, isTrue);
+      expect(ModelCapabilities.forModel('qwen-image-edit').supportsAsyncImageTask, isFalse);
     });
 
     test('wan3 video exposes the billed audio toggle', () {
@@ -345,8 +319,7 @@ void main() {
 
     test('keys off the path only — the intl host works unchanged', () {
       expect(
-        dashscopeAnthropicBase(
-            'https://dashscope-intl.aliyuncs.com/compatible-mode/v1'),
+        dashscopeAnthropicBase('https://dashscope-intl.aliyuncs.com/compatible-mode/v1'),
         'https://dashscope-intl.aliyuncs.com/apps/anthropic/v1',
       );
     });
@@ -386,27 +359,21 @@ void main() {
   });
 
   group('MiniMax surfaces', () {
-    LLMModelConfig mm(String modelId, String channelType,
-            {String endpoint = 'https://api.minimaxi.com/anthropic/v1'}) =>
-        LLMModelConfig(
-          modelId: modelId,
-          channelType: channelType,
-          endpoint: endpoint,
-          apiKey: 'k',
-        );
+    LLMModelConfig mm(
+      String modelId,
+      String channelType, {
+      String endpoint = 'https://api.minimaxi.com/anthropic/v1',
+    }) =>
+        LLMModelConfig(modelId: modelId, channelType: channelType, endpoint: endpoint, apiKey: 'k');
 
     test('image-01 is its own family; MiniMax-M3 stays chat', () {
-      expect(ModelFamilyClassifier.classify('image-01'),
-          ModelFamily.minimaxImage);
-      expect(ModelFamilyClassifier.classify('image-01-live'),
-          ModelFamily.minimaxImage);
+      expect(ModelFamilyClassifier.classify('image-01'), ModelFamily.minimaxImage);
+      expect(ModelFamilyClassifier.classify('image-01-live'), ModelFamily.minimaxImage);
       // One letter apart, two surfaces. H3 is the video model; M3 is chat and
       // must not be dragged onto the video route by a loose prefix rule.
-      expect(ModelFamilyClassifier.classify('MiniMax-H3'),
-          ModelFamily.openaiVideo);
+      expect(ModelFamilyClassifier.classify('MiniMax-H3'), ModelFamily.openaiVideo);
       expect(ModelFamilyClassifier.classify('MiniMax-M3'), ModelFamily.other);
-      expect(ModelFamilyClassifier.classify('MiniMax-M2.7-highspeed'),
-          ModelFamily.other);
+      expect(ModelFamilyClassifier.classify('MiniMax-M2.7-highspeed'), ModelFamily.other);
     });
 
     test('Hailuo-generation ids are video models on every channel', () {
@@ -425,15 +392,10 @@ void main() {
         'I2V-01-live',
         'S2V-01',
       ]) {
-        expect(ModelFamilyClassifier.classify(id), ModelFamily.openaiVideo,
-            reason: id);
+        expect(ModelFamilyClassifier.classify(id), ModelFamily.openaiVideo, reason: id);
         expect(ModelFamilyClassifier.inferTag(id), 'video', reason: id);
         // The picker's gate, on both MiniMax faces and a generic relay.
-        for (final channel in [
-          Vendors.minimax,
-          Vendors.minimaxAnthropic,
-          Vendors.newApiOpenAI,
-        ]) {
+        for (final channel in [Vendors.minimax, Vendors.minimaxAnthropic, Vendors.newApiOpenAI]) {
           expect(
             LLMDispatcher().canRunVideoJob(mm(id, channel)),
             isTrue,
@@ -443,8 +405,7 @@ void main() {
       }
       // The neighbouring non-video ids must stay out: `video-01` is a rule
       // away from `image-01`, and the chat models share the MiniMax prefix.
-      expect(ModelFamilyClassifier.classify('image-01'),
-          ModelFamily.minimaxImage);
+      expect(ModelFamilyClassifier.classify('image-01'), ModelFamily.minimaxImage);
       expect(ModelFamilyClassifier.classify('MiniMax-M3'), ModelFamily.other);
     });
 
@@ -453,17 +414,13 @@ void main() {
       // surface", and the dispatcher used to throw/route to chat on the
       // family alone. A ④ *vendor* can still declare one.
       expect(LLMDispatcher.surfaceForModel('image-01'), Surface.imageGen);
-      expect(
-        menuFor(Vendors.minimaxAnthropic, 'image-01'),
-        [WireProtocol.minimaxImages],
-      );
-      expect(
-        menuFor(Vendors.minimax, 'image-01'),
-        [WireProtocol.minimaxImages],
-      );
+      expect(menuFor(Vendors.minimaxAnthropic, 'image-01'), [WireProtocol.minimaxImages]);
+      expect(menuFor(Vendors.minimax, 'image-01'), [WireProtocol.minimaxImages]);
       // Single entry means no selector renders, but the route still exists.
-      expect(LLMDispatcher.autoProtocolFor(Vendors.minimax, 'image-01'),
-          WireProtocol.minimaxImages);
+      expect(
+        LLMDispatcher.autoProtocolFor(Vendors.minimax, 'image-01'),
+        WireProtocol.minimaxImages,
+      );
     });
 
     test('a relay listing image-01 keeps routing it through chat', () {
@@ -476,8 +433,7 @@ void main() {
         expect(menu.auto, WireProtocol.chatImage, reason: id);
         // Relays never offer a vendor's native surface — only their family's
         // generic ones.
-        expect(menu.options, isNot(contains(WireProtocol.minimaxImages)),
-            reason: id);
+        expect(menu.options, isNot(contains(WireProtocol.minimaxImages)), reason: id);
       }
     });
 
@@ -494,35 +450,31 @@ void main() {
         (Vendors.minimax, 'qwen-image'),
         (Vendors.dashscope, 'image-01'),
       ]) {
-        expect(LLMDispatcher.autoProtocolFor(vendor, id),
-            WireProtocol.chatImage,
-            reason: '$id on $vendor');
         expect(
-            dispatcher.streamIsSingleShot(LLMModelConfig(
-                modelId: id, channelType: vendor, endpoint: 'https://x', apiKey: 'k')),
-            isFalse,
-            reason: '$id on $vendor rides chat');
+          LLMDispatcher.autoProtocolFor(vendor, id),
+          WireProtocol.chatImage,
+          reason: '$id on $vendor',
+        );
+        expect(
+          dispatcher.streamIsSingleShot(
+            LLMModelConfig(modelId: id, channelType: vendor, endpoint: 'https://x', apiKey: 'k'),
+          ),
+          isFalse,
+          reason: '$id on $vendor rides chat',
+        );
       }
     });
 
     test('an image model declares no streaming tools on either face', () {
       final dispatcher = LLMDispatcher();
       for (final id in [Vendors.minimax, Vendors.minimaxAnthropic]) {
-        expect(dispatcher.streamSupportsTools(mm('image-01', id)), isFalse,
-            reason: id);
-        expect(dispatcher.streamIsSingleShot(mm('image-01', id)), isTrue,
-            reason: id);
+        expect(dispatcher.streamSupportsTools(mm('image-01', id)), isFalse, reason: id);
+        expect(dispatcher.streamIsSingleShot(mm('image-01', id)), isTrue, reason: id);
       }
       // Chat on the same channels is untouched.
-      expect(dispatcher.streamSupportsTools(mm('MiniMax-M3', Vendors.minimax)),
-          isTrue);
-      expect(
-          dispatcher
-              .streamSupportsTools(mm('MiniMax-M3', Vendors.minimaxAnthropic)),
-          isTrue);
-      expect(
-          dispatcher.streamIsSingleShot(mm('MiniMax-M3', Vendors.minimax)),
-          isFalse);
+      expect(dispatcher.streamSupportsTools(mm('MiniMax-M3', Vendors.minimax)), isTrue);
+      expect(dispatcher.streamSupportsTools(mm('MiniMax-M3', Vendors.minimaxAnthropic)), isTrue);
+      expect(dispatcher.streamIsSingleShot(mm('MiniMax-M3', Vendors.minimax)), isFalse);
     });
 
     test('the sync image surface gets a generation-sized deadline', () {
@@ -531,17 +483,14 @@ void main() {
       final dispatcher = LLMDispatcher();
       expect(
         dispatcher.generateTimeout(mm('image-01', Vendors.minimaxAnthropic)),
-        greaterThan(
-            dispatcher.generateTimeout(mm('MiniMax-M3', Vendors.minimax))),
+        greaterThan(dispatcher.generateTimeout(mm('MiniMax-M3', Vendors.minimax))),
       );
     });
 
     test('the video route survives on the anthropic-led face', () {
       expect(LLMDispatcher.surfaceForModel('MiniMax-H3'), Surface.videoJob);
       for (final id in [Vendors.minimax, Vendors.minimaxAnthropic]) {
-        expect(menuFor(id, 'MiniMax-H3'),
-            [WireProtocol.minimaxVideo],
-            reason: id);
+        expect(menuFor(id, 'MiniMax-H3'), [WireProtocol.minimaxVideo], reason: id);
       }
     });
 
@@ -553,113 +502,87 @@ void main() {
       // list. AppState now asks this method instead of re-deriving the rule.
       final dispatcher = LLMDispatcher();
       for (final id in [Vendors.minimax, Vendors.minimaxAnthropic]) {
-        expect(dispatcher.canRunVideoJob(mm('MiniMax-H3', id)), isTrue,
-            reason: id);
+        expect(dispatcher.canRunVideoJob(mm('MiniMax-H3', id)), isTrue, reason: id);
         // A chat id on the same channel must not slip into the picker.
-        expect(dispatcher.canRunVideoJob(mm('MiniMax-M3', id)), isFalse,
-            reason: id);
+        expect(dispatcher.canRunVideoJob(mm('MiniMax-M3', id)), isFalse, reason: id);
       }
       // A ④ vendor with no video surface declared still cannot.
-      expect(
-          dispatcher.canRunVideoJob(mm('MiniMax-H3', Vendors.anthropicRest)),
-          isFalse);
+      expect(dispatcher.canRunVideoJob(mm('MiniMax-H3', Vendors.anthropicRest)), isFalse);
       // Every family that could before still can.
-      expect(dispatcher.canRunVideoJob(mm('veo-3.0', Vendors.officialGoogle)),
-          isTrue);
-      expect(dispatcher.canRunVideoJob(mm('sora-2', Vendors.openAIRest)),
-          isTrue);
-      expect(
-          dispatcher.canRunVideoJob(mm('wan3.0-video', Vendors.dashscopeNative)),
-          isTrue);
-      expect(dispatcher.canRunVideoJob(mm('gpt-4o', Vendors.openAIRest)),
-          isFalse);
-      expect(dispatcher.canRunVideoJob(mm('mj_imagine', Vendors.midjourneyProxy)),
-          isFalse);
+      expect(dispatcher.canRunVideoJob(mm('veo-3.0', Vendors.officialGoogle)), isTrue);
+      expect(dispatcher.canRunVideoJob(mm('sora-2', Vendors.openAIRest)), isTrue);
+      expect(dispatcher.canRunVideoJob(mm('wan3.0-video', Vendors.dashscopeNative)), isTrue);
+      expect(dispatcher.canRunVideoJob(mm('gpt-4o', Vendors.openAIRest)), isFalse);
+      expect(dispatcher.canRunVideoJob(mm('mj_imagine', Vendors.midjourneyProxy)), isFalse);
     });
   });
 
   group('self-hosted MiniMax H3 (SGLang H3-Base)', () {
     LLMModelConfig h3(String modelId, String channelType) => LLMModelConfig(
-          modelId: modelId,
-          channelType: channelType,
-          endpoint: 'http://127.0.0.1:30010/v1',
-          apiKey: '',
-        );
+      modelId: modelId,
+      channelType: channelType,
+      endpoint: 'http://127.0.0.1:30010/v1',
+      apiKey: '',
+    );
 
     test('the HuggingFace repo path classifies as an async video model', () {
       // The id a self-hosted SGLang service loads and expects on the wire.
-      expect(ModelFamilyClassifier.classify('MiniMaxAI/MiniMax-H3'),
-          ModelFamily.openaiVideo);
+      expect(ModelFamilyClassifier.classify('MiniMaxAI/MiniMax-H3'), ModelFamily.openaiVideo);
       // The M3/H3 one-letter caution, repeated for the repo-path spelling:
       // the chat model is self-hostable too and must stay off the video
       // route.
-      expect(ModelFamilyClassifier.classify('MiniMaxAI/MiniMax-M3'),
-          ModelFamily.other);
+      expect(ModelFamilyClassifier.classify('MiniMaxAI/MiniMax-M3'), ModelFamily.other);
     });
 
-    test('the vendor declares exactly one surface: its native video wire',
-        () {
+    test('the vendor declares exactly one surface: its native video wire', () {
       final v = Vendors.byId(Vendors.minimaxH3Base);
       expect(v.family, ProtocolFamily.openai);
       expect(v.keyOptional, isTrue);
       expect(v.videoProtocol, WireProtocol.minimaxH3BaseVideo);
       expect(v.chatMenu, isEmpty);
       expect(v.imageMenu, isEmpty);
-      expect(
-        menuFor(
-            Vendors.minimaxH3Base, 'MiniMaxAI/MiniMax-H3'),
-        [WireProtocol.minimaxH3BaseVideo],
-      );
+      expect(menuFor(Vendors.minimaxH3Base, 'MiniMaxAI/MiniMax-H3'), [
+        WireProtocol.minimaxH3BaseVideo,
+      ]);
     });
 
     test('the model picker agrees with the router', () {
       final dispatcher = LLMDispatcher();
-      expect(
-          dispatcher
-              .canRunVideoJob(h3('MiniMaxAI/MiniMax-H3', Vendors.minimaxH3Base)),
-          isTrue);
+      expect(dispatcher.canRunVideoJob(h3('MiniMaxAI/MiniMax-H3', Vendors.minimaxH3Base)), isTrue);
       // A chat id on the same channel must not slip into the picker, and the
       // cloud id on a text-runtime channel keeps the ① `/v1/videos` fallback
       // (family default), exactly as before this vendor existed.
-      expect(
-          dispatcher
-              .canRunVideoJob(h3('MiniMaxAI/MiniMax-M3', Vendors.minimaxH3Base)),
-          isFalse);
-      expect(dispatcher.canRunVideoJob(h3('MiniMax-H3', Vendors.lmStudio)),
-          isTrue);
+      expect(dispatcher.canRunVideoJob(h3('MiniMaxAI/MiniMax-M3', Vendors.minimaxH3Base)), isFalse);
+      expect(dispatcher.canRunVideoJob(h3('MiniMax-H3', Vendors.lmStudio)), isTrue);
     });
 
-    test('the local table drops the resolution knob the open weights lack',
-        () {
+    test('the local table drops the resolution knob the open weights lack', () {
       final local = ModelCapabilities.forModel('MiniMaxAI/MiniMax-H3');
       expect(local.isVideoGenerator, isTrue);
-      expect(local.videoParams.map((p) => p.key),
-          isNot(contains('resolution')));
-      expect(local.videoParams.map((p) => p.key),
-          containsAll(['aspectRatio', 'seconds']));
+      expect(local.videoParams.map((p) => p.key), isNot(contains('resolution')));
+      expect(local.videoParams.map((p) => p.key), containsAll(['aspectRatio', 'seconds']));
       // The cloud id keeps its two-tier control.
-      expect(ModelCapabilities.forModel('MiniMax-H3').videoParams
-          .map((p) => p.key), contains('resolution'));
+      expect(
+        ModelCapabilities.forModel('MiniMax-H3').videoParams.map((p) => p.key),
+        contains('resolution'),
+      );
     });
 
     test('discovery still lists the model when the listing cannot', () {
       // An H3-Base process serves no chat models, so whatever its /models
       // returns (often nothing usable), the vendor catalog appends the id
       // the generation endpoint actually accepts.
-      final merged =
-          mergeUnlistedModels(Vendors.byId(Vendors.minimaxH3Base), []);
+      final merged = mergeUnlistedModels(Vendors.byId(Vendors.minimaxH3Base), []);
       expect(merged.map((m) => m.modelId), contains('MiniMaxAI/MiniMax-H3'));
       // A listing that already names it (case-insensitively) is not doubled.
       final listed = [
         DiscoveredModel(
-            modelId: 'minimaxai/minimax-h3',
-            displayName: 'minimaxai/minimax-h3',
-            rawData: const {}),
+          modelId: 'minimaxai/minimax-h3',
+          displayName: 'minimaxai/minimax-h3',
+          rawData: const {},
+        ),
       ];
-      expect(
-          mergeUnlistedModels(Vendors.byId(Vendors.minimaxH3Base), listed)
-              .length,
-          1);
+      expect(mergeUnlistedModels(Vendors.byId(Vendors.minimaxH3Base), listed).length, 1);
     });
   });
 

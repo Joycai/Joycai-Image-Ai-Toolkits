@@ -44,16 +44,16 @@ Future<void> _pumpWizard(WidgetTester tester, {double width = 1400}) async {
 }
 
 /// The provider search box, by its role rather than its full wording.
-Finder _searchField() => find.byWidgetPredicate(
-      (w) => w is ChannelField && (w.hint ?? '').contains('Search providers'),
-    );
+Finder _searchField() =>
+    find.byWidgetPredicate((w) => w is ChannelField && (w.hint ?? '').contains('Search providers'));
 
 /// On the connection step the only two fields are the endpoint and the key;
 /// the key is the one that can be masked.
 Finder _endpointField() => find.byWidgetPredicate((w) => w is ChannelField && !w.obscurable);
 Finder _keyField() => find.byWidgetPredicate((w) => w is ChannelField && w.obscurable);
 
-String _textOf(WidgetTester tester, Finder field) => tester.widget<ChannelField>(field).controller.text;
+String _textOf(WidgetTester tester, Finder field) =>
+    tester.widget<ChannelField>(field).controller.text;
 
 Future<void> _typeInto(WidgetTester tester, Finder field, String text) async {
   await tester.enterText(find.descendant(of: field, matching: find.byType(TextField)), text);
@@ -188,10 +188,14 @@ void main() {
 
       // The step body's own slide: the one wrapping the switcher's keyed child.
       double shiftOf(Finder inside) => tester
-          .widget<SlideTransition>(find.ancestor(
-            of: inside,
-            matching: find.byWidgetPredicate((w) => w is SlideTransition && w.child is KeyedSubtree),
-          ))
+          .widget<SlideTransition>(
+            find.ancestor(
+              of: inside,
+              matching: find.byWidgetPredicate(
+                (w) => w is SlideTransition && w.child is KeyedSubtree,
+              ),
+            ),
+          )
           .position
           .value
           .dx;
@@ -210,8 +214,9 @@ void main() {
       await tester.pumpAndSettle();
     });
 
-    testWidgets('back before the forward move finishes: each copy keeps its own way',
-        (tester) async {
+    testWidgets('back before the forward move finishes: each copy keeps its own way', (
+      tester,
+    ) async {
       await _pumpWizard(tester);
       await _selectProvider(tester, 'DeepSeek');
 
@@ -255,8 +260,7 @@ void main() {
   // `D1f · 4b`: a preset whose ways in are protocols gets every route of its
   // platform, so it no longer asks which one — it previews them instead.
   group('providers with several routes', () {
-    testWidgets('MiniMax goes straight to its host and lists both routes',
-        (tester) async {
+    testWidgets('MiniMax goes straight to its host and lists both routes', (tester) async {
       await _pumpWizard(tester);
       await _selectProvider(tester, 'MiniMax');
       await _tapText(tester, 'Next');
@@ -265,22 +269,16 @@ void main() {
       expect(find.text('OpenAI interface'), findsNothing);
       expect(_textOf(tester, _endpointField()), 'https://api.minimaxi.com/v1');
       expect(find.text('Routes to create'), findsOneWidget);
-      expect(find.text('POST https://api.minimaxi.com/v1/chat/completions'),
-          findsOneWidget);
-      expect(
-        find.text('POST https://api.minimaxi.com/anthropic/v1/messages'),
-        findsOneWidget,
-      );
+      expect(find.text('POST https://api.minimaxi.com/v1/chat/completions'), findsOneWidget);
+      expect(find.text('POST https://api.minimaxi.com/anthropic/v1/messages'), findsOneWidget);
     });
 
-    testWidgets('Google lists its native and OpenAI-compatible routes',
-        (tester) async {
+    testWidgets('Google lists its native and OpenAI-compatible routes', (tester) async {
       await _pumpWizard(tester);
       await _selectProvider(tester, 'Google GenAI');
       await _toConnection(tester);
 
-      expect(_textOf(tester, _endpointField()),
-          'https://generativelanguage.googleapis.com/v1beta');
+      expect(_textOf(tester, _endpointField()), 'https://generativelanguage.googleapis.com/v1beta');
       expect(find.text('Gemini · Primary'), findsOneWidget);
       expect(
         find.text('POST https://generativelanguage.googleapis.com/v1beta/openai/chat/completions'),
@@ -288,8 +286,7 @@ void main() {
       );
     });
 
-    testWidgets('NewAPI puts every route on the host the user typed',
-        (tester) async {
+    testWidgets('NewAPI puts every route on the host the user typed', (tester) async {
       await _pumpWizard(tester);
       await _selectProvider(tester, 'NewAPI');
       await _toConnection(tester);
@@ -327,7 +324,10 @@ void main() {
       expect(Vendors.byId(Vendors.ollama).keyOptional, isTrue);
 
       await _tapText(tester, 'Skip');
-      expect(find.text('This provider needs an API key before the channel can be added'), findsNothing);
+      expect(
+        find.text('This provider needs an API key before the channel can be added'),
+        findsNothing,
+      );
       expect(_keyField(), findsNothing, reason: 'an optional key must not block the next step');
     });
 

@@ -121,9 +121,7 @@ class WorkbenchLayoutState {
     }
     final scaffold = scaffoldKey.currentState;
     if (scaffold == null) return;
-    scaffold.isEndDrawerOpen
-        ? scaffold.closeEndDrawer()
-        : scaffold.openEndDrawer();
+    scaffold.isEndDrawerOpen ? scaffold.closeEndDrawer() : scaffold.openEndDrawer();
   }
 
   // Value equality: this is handed to `Provider.value` from a build method,
@@ -144,8 +142,17 @@ class WorkbenchLayoutState {
           rightSheetOpener == other.rightSheetOpener;
 
   @override
-  int get hashCode => Object.hash(scaffoldKey, contentWidth, hasLeftPanel, leftInDrawer, rightInDrawer,
-      canShowRightPanel, topClearance, bottomClearance, rightSheetOpener);
+  int get hashCode => Object.hash(
+    scaffoldKey,
+    contentWidth,
+    hasLeftPanel,
+    leftInDrawer,
+    rightInDrawer,
+    canShowRightPanel,
+    topClearance,
+    bottomClearance,
+    rightSheetOpener,
+  );
 }
 
 typedef WorkbenchRightPanelBuilder = Widget Function(ScrollController? scrollController);
@@ -286,14 +293,11 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
 
   /// A column exists on this tab and the tab wants it — whether or not a
   /// preference is currently keeping it off screen.
-  bool get _canShowRight =>
-      _hasRight && (widget.rightPanelAvailable ?? widget.showRightPanel);
+  bool get _canShowRight => _hasRight && (widget.rightPanelAvailable ?? widget.showRightPanel);
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) => _build(context, constraints.maxWidth),
-    );
+    return LayoutBuilder(builder: (context, constraints) => _build(context, constraints.maxWidth));
   }
 
   Widget _build(BuildContext context, double available) {
@@ -351,44 +355,44 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
       child: FocusScope(
         onKeyEvent: widget.onKeyEvent,
         child: Scaffold(
-        key: _scaffoldKey,
-        backgroundColor: Colors.transparent,
-        body: Column(
-          children: [
-            Expanded(
-              child: Stack(
-                children: [
-                  Positioned.fill(child: _buildColumns(context, panels, center)),
-                  if (widget.toolbarBuilder != null)
-                    Positioned(
-                      left: WorkbenchGlassToolbar.inset,
-                      right: WorkbenchGlassToolbar.inset,
-                      top: WorkbenchGlassToolbar.inset,
-                      child: widget.toolbarBuilder!(false),
-                    ),
-                ],
-              ),
-            ),
-            if (widget.bottomPanel != null) widget.bottomPanel!,
-          ],
-        ),
-        drawer: leftInDrawer
-            ? Drawer(
-                width: (available * 0.75).clamp(200.0, 300.0),
-                shape: const RoundedRectangleBorder(),
-                child: widget.leftPanel,
-              )
-            : null,
-        endDrawer: rightInDrawer
-            ? Drawer(
-                width: (available * 0.9).clamp(280.0, 350.0),
-                shape: const RoundedRectangleBorder(),
-                child: _DrawerWithHeader(
-                  title: widget.rightPanelTitle,
-                  child: widget.rightPanelBuilder!(null),
+          key: _scaffoldKey,
+          backgroundColor: Colors.transparent,
+          body: Column(
+            children: [
+              Expanded(
+                child: Stack(
+                  children: [
+                    Positioned.fill(child: _buildColumns(context, panels, center)),
+                    if (widget.toolbarBuilder != null)
+                      Positioned(
+                        left: WorkbenchGlassToolbar.inset,
+                        right: WorkbenchGlassToolbar.inset,
+                        top: WorkbenchGlassToolbar.inset,
+                        child: widget.toolbarBuilder!(false),
+                      ),
+                  ],
                 ),
-              )
-            : null,
+              ),
+              if (widget.bottomPanel != null) widget.bottomPanel!,
+            ],
+          ),
+          drawer: leftInDrawer
+              ? Drawer(
+                  width: (available * 0.75).clamp(200.0, 300.0),
+                  shape: const RoundedRectangleBorder(),
+                  child: widget.leftPanel,
+                )
+              : null,
+          endDrawer: rightInDrawer
+              ? Drawer(
+                  width: (available * 0.9).clamp(280.0, 350.0),
+                  shape: const RoundedRectangleBorder(),
+                  child: _DrawerWithHeader(
+                    title: widget.rightPanelTitle,
+                    child: widget.rightPanelBuilder!(null),
+                  ),
+                )
+              : null,
         ),
       ),
     );
@@ -448,9 +452,10 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
               setState(() {
                 _rightWidth = _rightWidth.clamp(kRightPanelMin, panels.rightMax);
               });
-              Provider.of<AppState>(context, listen: false)
-                  .uiPrefs
-                  .savePanelWidth(UiPanel.workbenchRightPanel, _rightWidth);
+              Provider.of<AppState>(
+                context,
+                listen: false,
+              ).uiPrefs.savePanelWidth(UiPanel.workbenchRightPanel, _rightWidth);
             },
           ),
           PanelCard(
@@ -466,11 +471,7 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
   /// The selection bar's height, its 12px lift and a gutter.
   static const double _overlayClearance = 44 + 12 + AppSpace.s10;
 
-  _PanelWidths _resolvePanels(
-    double row, {
-    required bool wantsLeft,
-    required bool wantsRight,
-  }) {
+  _PanelWidths _resolvePanels(double row, {required bool wantsLeft, required bool wantsRight}) {
     final double gutter = PanelResizer.thicknessOf(PanelShape.column);
     final double rightMax = (row * 0.40).clamp(kRightPanelMin, 600.0);
 
@@ -501,12 +502,16 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
     }
 
     final double leftCeiling = leftInline
-        ? (row - right - (rightInline ? gutter : 0) - gutter - kMinCenterWidth)
-            .clamp(kLeftPanelMin, kLeftPanelMax)
+        ? (row - right - (rightInline ? gutter : 0) - gutter - kMinCenterWidth).clamp(
+            kLeftPanelMin,
+            kLeftPanelMax,
+          )
         : kLeftPanelMax;
     final double rightCeiling = rightInline
-        ? (row - left - (leftInline ? gutter : 0) - gutter - kMinCenterWidth)
-            .clamp(kRightPanelMin, rightMax)
+        ? (row - left - (leftInline ? gutter : 0) - gutter - kMinCenterWidth).clamp(
+            kRightPanelMin,
+            rightMax,
+          )
         : rightMax;
 
     return _PanelWidths(
@@ -543,70 +548,76 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
       child: FocusScope(
         onKeyEvent: widget.onKeyEvent,
         child: Scaffold(
-        key: _scaffoldKey,
-        backgroundColor: Colors.transparent,
-        drawer: _hasLeft
-            ? Drawer(
-                width: (screenWidth * 0.80).clamp(200.0, 300.0),
-                shape: const RoundedRectangleBorder(),
-                child: widget.leftPanel,
-              )
-            : null,
-        body: MediaQuery.removePadding(
-          context: context,
-          removeBottom: true,
-          child: Padding(
-            padding: EdgeInsets.only(bottom: dockClearance),
-            child: Column(
-              children: [
-                Expanded(
-                  child: Stack(
-                    children: [
-                      Positioned.fill(
-                        child: _grounded(
-                          widget.centerScrollsUnderToolbar || widget.toolbarBuilder == null
-                              ? widget.centerContent
-                              : Padding(
-                                  padding: const EdgeInsets.only(top: WorkbenchGlassToolbar.phoneHeight),
-                                  child: widget.centerContent,
-                                ),
-                        ),
-                      ),
-                      if (widget.toolbarBuilder != null)
-                        Positioned(left: 0, right: 0, top: 0, child: widget.toolbarBuilder!(true)),
-                      if (widget.centerOverlay != null)
-                        Positioned(
-                          left: AppSpace.s10,
-                          right: AppSpace.s10,
-                          bottom: 12,
-                          child: Center(child: widget.centerOverlay),
-                        ),
-                      if (showFab)
-                        Positioned(
-                          right: AppSpace.s16,
-                          bottom: AppSpace.s16,
-                          child: GlassFab(
-                            icon: widget.fabIcon!,
-                            tooltip: widget.rightPanelTitle,
-                            onPressed: () => _showPhoneSheet(context, layoutState),
+          key: _scaffoldKey,
+          backgroundColor: Colors.transparent,
+          drawer: _hasLeft
+              ? Drawer(
+                  width: (screenWidth * 0.80).clamp(200.0, 300.0),
+                  shape: const RoundedRectangleBorder(),
+                  child: widget.leftPanel,
+                )
+              : null,
+          body: MediaQuery.removePadding(
+            context: context,
+            removeBottom: true,
+            child: Padding(
+              padding: EdgeInsets.only(bottom: dockClearance),
+              child: Column(
+                children: [
+                  Expanded(
+                    child: Stack(
+                      children: [
+                        Positioned.fill(
+                          child: _grounded(
+                            widget.centerScrollsUnderToolbar || widget.toolbarBuilder == null
+                                ? widget.centerContent
+                                : Padding(
+                                    padding: const EdgeInsets.only(
+                                      top: WorkbenchGlassToolbar.phoneHeight,
+                                    ),
+                                    child: widget.centerContent,
+                                  ),
                           ),
                         ),
-                    ],
+                        if (widget.toolbarBuilder != null)
+                          Positioned(
+                            left: 0,
+                            right: 0,
+                            top: 0,
+                            child: widget.toolbarBuilder!(true),
+                          ),
+                        if (widget.centerOverlay != null)
+                          Positioned(
+                            left: AppSpace.s10,
+                            right: AppSpace.s10,
+                            bottom: 12,
+                            child: Center(child: widget.centerOverlay),
+                          ),
+                        if (showFab)
+                          Positioned(
+                            right: AppSpace.s16,
+                            bottom: AppSpace.s16,
+                            child: GlassFab(
+                              icon: widget.fabIcon!,
+                              tooltip: widget.rightPanelTitle,
+                              onPressed: () => _showPhoneSheet(context, layoutState),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
-                ),
-                if (widget.bottomPanel != null) widget.bottomPanel!,
-              ],
+                  if (widget.bottomPanel != null) widget.bottomPanel!,
+                ],
+              ),
             ),
           ),
         ),
-          ),
-        ),
+      ),
     );
   }
 
-  Widget _grounded(Widget child) => widget.centerGround == null
-      ? child
-      : Material(color: widget.centerGround, child: child);
+  Widget _grounded(Widget child) =>
+      widget.centerGround == null ? child : Material(color: widget.centerGround, child: child);
 
   /// `01 · 1h` phone sheet: a G2 glass shell (top corners 28, grab handle)
   /// holding an opaque panel at r22.
@@ -643,36 +654,40 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
             edges: GlassEdges.top,
             shadow: false,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
-            child: Builder(builder: (ctx) {
-              final handle = GlassInk.maybeOf(ctx)?.ink2 ?? scheme.onSurfaceVariant;
-              return Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(0, 8, 0, 6),
-                    child: Container(
-                      width: 36,
-                      height: 5,
-                      decoration: BoxDecoration(
-                        color: handle,
-                        borderRadius: BorderRadius.circular(AppRadius.pill),
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: AppSpace.s6),
-                      child: ClipRRect(
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.dialog)),
-                        child: Material(
-                          color: scheme.surface,
-                          child: widget.rightPanelBuilder!(scrollController),
+            child: Builder(
+              builder: (ctx) {
+                final handle = GlassInk.maybeOf(ctx)?.ink2 ?? scheme.onSurfaceVariant;
+                return Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(0, 8, 0, 6),
+                      child: Container(
+                        width: 36,
+                        height: 5,
+                        decoration: BoxDecoration(
+                          color: handle,
+                          borderRadius: BorderRadius.circular(AppRadius.pill),
                         ),
                       ),
                     ),
-                  ),
-                ],
-              );
-            }),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpace.s6),
+                        child: ClipRRect(
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(AppRadius.dialog),
+                          ),
+                          child: Material(
+                            color: scheme.surface,
+                            child: widget.rightPanelBuilder!(scrollController),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
           ),
         ),
       ),
@@ -710,7 +725,9 @@ class _DrawerWithHeader extends StatelessWidget {
                     title ?? '',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleMedium!.copyWith(fontWeight: FontWeight.w600),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.titleMedium!.copyWith(fontWeight: FontWeight.w600),
                   ),
                 ),
                 IconButton(

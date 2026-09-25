@@ -34,6 +34,10 @@ class ChannelAvatar extends StatelessWidget {
         child: Icon(Icons.cloud_queue, size: size * 0.55, color: Colors.white),
       );
     }
-    return TagAvatar(tag, color: Color(channel.tagColor ?? AppConstants.defaultTagColor), size: size);
+    return TagAvatar(
+      tag,
+      color: Color(channel.tagColor ?? AppConstants.defaultTagColor),
+      size: size,
+    );
   }
 }

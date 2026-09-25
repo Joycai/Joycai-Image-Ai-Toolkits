@@ -44,7 +44,9 @@ void main() {
   late TabController lastController;
 
   /// The tab strip (`00e · 1b`): the one five-item segmented control.
-  final tabStrip = find.byWidgetPredicate((w) => w is GlassSegmented<int> && w.segments.length == 5);
+  final tabStrip = find.byWidgetPredicate(
+    (w) => w is GlassSegmented<int> && w.segments.length == 5,
+  );
 
   /// Renders the toolbar at [barWidth] inside a desktop-sized window, which is
   /// the situation that matters: a wide screen, a squeezed centre column.
@@ -126,8 +128,7 @@ void main() {
   /// The view switch (全部来源 / 全部结果 / 工作区): the one three-item
   /// segmented control, found by shape because it may be showing icons.
   final viewSwitch = find.byWidgetPredicate((w) => w is GlassSegmented && w.segments.length == 3);
-  bool viewLabelsShown(WidgetTester tester) =>
-      tester.widget<GlassSegmented>(viewSwitch).showLabels;
+  bool viewLabelsShown(WidgetTester tester) => tester.widget<GlassSegmented>(viewSwitch).showLabels;
 
   Future<void> openMore(WidgetTester tester) async {
     await tester.tap(find.byTooltip('More'));
@@ -161,19 +162,31 @@ void main() {
       await pumpAtWidth(tester, width);
 
       expect(tester.takeException(), isNull, reason: 'Overflow at ${width}px');
-      expect(toolLabelsShown() && !refreshInline(), isFalse,
-          reason: 'At ${width}px an icon folded while the labels were still shown');
-      expect(toolsCollapsed() && refreshInline(), isFalse,
-          reason: 'At ${width}px the tools collapsed while refresh was still inline');
-      expect(!viewLabelsShown(tester) && !toolsCollapsed(), isFalse,
-          reason: 'At ${width}px the view switch lost its labels before the tools collapsed');
+      expect(
+        toolLabelsShown() && !refreshInline(),
+        isFalse,
+        reason: 'At ${width}px an icon folded while the labels were still shown',
+      );
+      expect(
+        toolsCollapsed() && refreshInline(),
+        isFalse,
+        reason: 'At ${width}px the tools collapsed while refresh was still inline',
+      );
+      expect(
+        !viewLabelsShown(tester) && !toolsCollapsed(),
+        isFalse,
+        reason: 'At ${width}px the view switch lost its labels before the tools collapsed',
+      );
 
       // The view switch is never pushed outside the bar.
       final bar = tester.getRect(find.byKey(barKey));
       final toggle = tester.getRect(viewSwitch);
       expect(toggle.left, greaterThanOrEqualTo(bar.left - 0.01), reason: 'at ${width}px');
-      expect(bar.right + 0.01, greaterThanOrEqualTo(tester.getRect(find.byTooltip('More')).right),
-          reason: 'More fell off the bar at ${width}px');
+      expect(
+        bar.right + 0.01,
+        greaterThanOrEqualTo(tester.getRect(find.byTooltip('More')).right),
+        reason: 'More fell off the bar at ${width}px',
+      );
     }
   });
 
@@ -192,9 +205,11 @@ void main() {
   testWidgets('the collapsed tools menu still offers every tool by its full name', (tester) async {
     await pumpAtWidth(tester, 420);
 
-    await tester.tap(find.byIcon(Icons.handyman_outlined).evaluate().isNotEmpty
-        ? find.byIcon(Icons.handyman_outlined)
-        : find.text('Tools'));
+    await tester.tap(
+      find.byIcon(Icons.handyman_outlined).evaluate().isNotEmpty
+          ? find.byIcon(Icons.handyman_outlined)
+          : find.text('Tools'),
+    );
     await tester.pumpAndSettle();
 
     for (final name in ['Comparator', 'Mask Editor', 'Crop & Resize', 'Prompt Assistant']) {
@@ -202,7 +217,9 @@ void main() {
     }
   });
 
-  testWidgets('the workspace view gets its own segment and can be cleared, with a question', (tester) async {
+  testWidgets('the workspace view gets its own segment and can be cleared, with a question', (
+    tester,
+  ) async {
     final appState = await pumpAtWidth(tester, 1700, workspaceCount: 3);
 
     expect(find.text('Workspace'), findsOneWidget);
@@ -214,12 +231,16 @@ void main() {
     expect(find.byType(AppDialog), findsOneWidget);
     expect(appState.galleryState.droppedImages, hasLength(3), reason: 'asked, not done');
 
-    await tester.tap(find.descendant(of: find.byType(AppDialog), matching: find.text('Clear Workspace')));
+    await tester.tap(
+      find.descendant(of: find.byType(AppDialog), matching: find.text('Clear Workspace')),
+    );
     await tester.pumpAndSettle();
     expect(appState.galleryState.droppedImages, isEmpty);
   });
 
-  testWidgets('the workspace segment stays after leaving the workspace, and leads back', (tester) async {
+  testWidgets('the workspace segment stays after leaving the workspace, and leads back', (
+    tester,
+  ) async {
     final appState = await pumpAtWidth(tester, 1700, workspaceCount: 3);
 
     await tester.tap(find.text('All Sources'));
@@ -278,21 +299,36 @@ void main() {
       // switch takes its last step — it scrolls.
       if (width >= 390) {
         final viewport = tester.getSize(
-            find.ancestor(of: viewSwitch, matching: find.byType(SingleChildScrollView)).first);
-        expect(viewport.width, greaterThanOrEqualTo(tester.getSize(viewSwitch).width - 0.01),
-            reason: 'the view switch scrolls at ${width}px');
+          find.ancestor(of: viewSwitch, matching: find.byType(SingleChildScrollView)).first,
+        );
+        expect(
+          viewport.width,
+          greaterThanOrEqualTo(tester.getSize(viewSwitch).width - 0.01),
+          reason: 'the view switch scrolls at ${width}px',
+        );
       }
-      final workspace = viewLabelsShown(tester) ? find.text('Workspace') : find.byTooltip('Temp Workspace');
+      final workspace = viewLabelsShown(tester)
+          ? find.text('Workspace')
+          : find.byTooltip('Temp Workspace');
       expect(workspace, findsOneWidget, reason: 'at ${width}px');
     }
   });
 
-  testWidgets('a phone tool bar names the tool, and its back returns to the gallery', (tester) async {
+  testWidgets('a phone tool bar names the tool, and its back returns to the gallery', (
+    tester,
+  ) async {
     // `A4 · 1b` / `A3a · 1d`: no strip on a phone.
     for (final width in [360.0, 390.0, 430.0]) {
       for (final tab in [WorkbenchTab.comparator, WorkbenchTab.mask, WorkbenchTab.crop]) {
-        await pumpAtWidth(tester, width, phone: true, tab: tab, hasLeftPanel: false,
-            controls: const SizedBox.expand(), controlsWidth: 300);
+        await pumpAtWidth(
+          tester,
+          width,
+          phone: true,
+          tab: tab,
+          hasLeftPanel: false,
+          controls: const SizedBox.expand(),
+          controlsWidth: 300,
+        );
         expect(tester.takeException(), isNull, reason: 'tab $tab at ${width}px');
         expect(tabStrip, findsNothing);
         expect(find.byTooltip('Back'), findsOneWidget);
@@ -368,7 +404,11 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.text('TOOL CONTROLS'), findsOneWidget);
-      expect(find.text('Crop'), findsOneWidget, reason: 'room for both, so the switch keeps its labels');
+      expect(
+        find.text('Crop'),
+        findsOneWidget,
+        reason: 'room for both, so the switch keeps its labels',
+      );
     });
 
     testWidgets('the strip does not resize for what the controls ask for', (tester) async {
@@ -414,8 +454,11 @@ void main() {
         final bar = tester.getRect(find.byKey(barKey));
         final apply = tester.getRect(find.text('Apply to Workbench'));
         // Bar padding 6 + the tinted action's own 12.
-        expect(bar.right - apply.right, lessThanOrEqualTo(6 + 12 + 0.5),
-            reason: 'running: $running — the actions stopped short of the right edge');
+        expect(
+          bar.right - apply.right,
+          lessThanOrEqualTo(6 + 12 + 0.5),
+          reason: 'running: $running — the actions stopped short of the right edge',
+        );
       }
     });
 

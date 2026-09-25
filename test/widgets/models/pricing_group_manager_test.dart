@@ -55,49 +55,55 @@ void main() {
       for (final existing in [...state.allPricingGroups]) {
         await state.deletePricingGroup(existing.id!);
       }
-      final tokenGroupId = await state.addPricingGroup(PricingGroup(
-        name: 'Gemini 2.5 Pro Long Context Tier With A Deliberately Wordy Name',
-        billingMode: 'token',
-        inputPrice: 1.25,
-        cacheInputPrice: cachePrice,
-        outputPrice: 10.0,
-      ));
+      final tokenGroupId = await state.addPricingGroup(
+        PricingGroup(
+          name: 'Gemini 2.5 Pro Long Context Tier With A Deliberately Wordy Name',
+          billingMode: 'token',
+          inputPrice: 1.25,
+          cacheInputPrice: cachePrice,
+          outputPrice: 10.0,
+        ),
+      );
       // Bracketed: the row shows 「MJ」 as a badge beside the name.
-      await state.addPricingGroup(PricingGroup(
-        name: 'Midjourney Relax [MJ]',
-        billingMode: 'request',
-        requestPrice: 0.04,
-      ));
+      await state.addPricingGroup(
+        PricingGroup(name: 'Midjourney Relax [MJ]', billingMode: 'request', requestPrice: 0.04),
+      );
       // A spec-billed video group (`D2b`): per second, three rows and a
       // catch-all — the shape the summary chip and the editor's table are
       // pinned against below.
-      await state.addPricingGroup(PricingGroup(
-        name: 'Veo 3 Video',
-        billingMode: 'spec',
-        outputUnit: OutputUnit.second,
-        outputRates: const [
-          SpecRate(size: '1080p', quality: 'high', price: 0.5),
-          SpecRate(size: '1080p', price: 0.3),
-          SpecRate(size: '720p', price: 0.15),
-          SpecRate(price: 0.1),
-        ],
-      ));
+      await state.addPricingGroup(
+        PricingGroup(
+          name: 'Veo 3 Video',
+          billingMode: 'spec',
+          outputUnit: OutputUnit.second,
+          outputRates: const [
+            SpecRate(size: '1080p', quality: 'high', price: 0.5),
+            SpecRate(size: '1080p', price: 0.3),
+            SpecRate(size: '720p', price: 0.15),
+            SpecRate(price: 0.1),
+          ],
+        ),
+      );
       // Attached to a real channel: a model with a null channel is not a state
       // the app can produce.
-      final channelId = await state.addChannel(LLMChannel(
-        displayName: 'Fee Group Test Channel',
-        type: 'openai-api-rest',
-        endpoint: 'https://example.invalid/v1',
-        apiKey: 'key-test',
-      ));
+      final channelId = await state.addChannel(
+        LLMChannel(
+          displayName: 'Fee Group Test Channel',
+          type: 'openai-api-rest',
+          endpoint: 'https://example.invalid/v1',
+          apiKey: 'key-test',
+        ),
+      );
       for (final name in ['claude-sonnet-5', 'claude-opus-4-6']) {
-        await state.addModel(LLMModel(
-          modelId: name,
-          modelName: name,
-          tag: 'chat',
-          channelId: channelId,
-          feeGroupId: tokenGroupId,
-        ));
+        await state.addModel(
+          LLMModel(
+            modelId: name,
+            modelName: name,
+            tag: 'chat',
+            channelId: channelId,
+            feeGroupId: tokenGroupId,
+          ),
+        );
       }
       return state;
     });
@@ -128,9 +134,7 @@ void main() {
         child: MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          home: Scaffold(
-            body: fill ? manager : SingleChildScrollView(child: manager),
-          ),
+          home: Scaffold(body: fill ? manager : SingleChildScrollView(child: manager)),
         ),
       ),
     );
@@ -173,7 +177,9 @@ void main() {
     expect(find.text('Midjourney Relax [MJ]'), findsNothing);
   });
 
-  testWidgets('edit and delete sit at the row\'s right edge, whatever the tags need', (tester) async {
+  testWidgets('edit and delete sit at the row\'s right edge, whatever the tags need', (
+    tester,
+  ) async {
     final appState = await seedState(tester);
     await pumpManager(tester, appState, const Size(1920, 1080));
 
@@ -181,7 +187,9 @@ void main() {
     // buttons end at the row's inner edge on both rather than trailing the
     // tags wherever they stop.
     for (final name in ['Midjourney Relax', 'Gemini 2.5 Pro']) {
-      final row = find.ancestor(of: find.textContaining(name), matching: find.byType(FeeGroupRow)).first;
+      final row = find
+          .ancestor(of: find.textContaining(name), matching: find.byType(FeeGroupRow))
+          .first;
       final delete = find.descendant(of: row, matching: find.byTooltip('Delete'));
       expect(
         tester.getRect(row).right - tester.getRect(delete).right,
@@ -246,8 +254,7 @@ void main() {
     // fixed slice of wall time: 300 ms was enough locally and not on a busy
     // CI runner, where the editor was still open when the assertion ran.
     for (var i = 0; i < 50 && find.text('Edit group').evaluate().isNotEmpty; i++) {
-      await tester.runAsync(
-          () => Future<void>.delayed(const Duration(milliseconds: 100)));
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
       await tester.pump(const Duration(milliseconds: 100));
     }
     for (var i = 0; i < 5; i++) {
@@ -319,20 +326,29 @@ void main() {
     });
   }
 
-  testWidgets('a spec-billed group is summarised in one tag, with the table a hover away', (tester) async {
+  testWidgets('a spec-billed group is summarised in one tag, with the table a hover away', (
+    tester,
+  ) async {
     final appState = await seedState(tester);
     await pumpManager(tester, appState, const Size(1920, 1080));
 
     // One summary however many rows: unit, priced rows, price range.
     expect(find.text('Per second · 4 rates · \$0.10–0.50'), findsOneWidget);
     final tooltip = tester.widget<Tooltip>(
-      find.ancestor(of: find.text('Per second · 4 rates · \$0.10–0.50'), matching: find.byType(Tooltip)).first,
+      find
+          .ancestor(
+            of: find.text('Per second · 4 rates · \$0.10–0.50'),
+            matching: find.byType(Tooltip),
+          )
+          .first,
     );
     expect(tooltip.message, contains('1080p · high  \$0.5000/s'));
     expect(tooltip.message, contains('Other specs  \$0.1000/s'));
   });
 
-  testWidgets('the spec editor opens on the rate table, and a new row blocks saving until priced', (tester) async {
+  testWidgets('the spec editor opens on the rate table, and a new row blocks saving until priced', (
+    tester,
+  ) async {
     final appState = await seedState(tester);
     await pumpManager(tester, appState, const Size(1920, 1080));
     await openEditor(tester, find.text('Veo 3 Video'));
@@ -345,7 +361,10 @@ void main() {
     expect(find.text('Price \$/s'), findsOneWidget);
     expect(find.widgetWithText(TextField, '0.1000'), findsOneWidget);
     expect(find.textContaining('Blank means "any"'), findsOneWidget);
-    expect(tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Save')).onPressed, isNotNull);
+    expect(
+      tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Save')).onPressed,
+      isNotNull,
+    );
 
     await tester.tap(find.text('Add rate'));
     for (var i = 0; i < 5; i++) {
@@ -355,7 +374,10 @@ void main() {
     // The new row is all 「Any」 with an empty price, and the table says which
     // row is unpriced rather than outlining the field red.
     expect(find.text('Row 4 has no price yet. Add one before saving.'), findsOneWidget);
-    expect(tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Save')).onPressed, isNull);
+    expect(
+      tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Save')).onPressed,
+      isNull,
+    );
   });
 
   for (final entry in {
@@ -422,7 +444,10 @@ void main() {
     // the edited row and the next, which moves down for it.
     expect(find.text('Pick a group to edit'), findsNothing);
     final title = tester.getRect(find.text('Edit group'));
-    expect(title.top, greaterThan(tester.getRect(find.textContaining('Gemini 2.5 Pro').first).bottom));
+    expect(
+      title.top,
+      greaterThan(tester.getRect(find.textContaining('Gemini 2.5 Pro').first).bottom),
+    );
     expect(title.bottom, lessThan(tester.getRect(find.text('Midjourney Relax')).top));
     expect(tester.getRect(find.text('Midjourney Relax')).top, greaterThan(relaxBefore.top));
   });
@@ -439,7 +464,10 @@ void main() {
     expect(find.text('Midjourney Relax'), findsNothing);
     expect(find.text('Veo 3 Video'), findsOneWidget);
     // `1g`: a filtered list cannot be reordered, and says so.
-    expect(find.text('Reordering is off while filtering; the order saves on release.'), findsOneWidget);
+    expect(
+      find.text('Reordering is off while filtering; the order saves on release.'),
+      findsOneWidget,
+    );
     final sort = tester.widget<IconButton>(
       find.ancestor(of: find.byTooltip('Reorder'), matching: find.byType(IconButton)),
     );
@@ -466,7 +494,10 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
     }
     expect(appState.allPricingGroups.first.name, 'Veo 3 Video');
-    expect(tester.getRect(find.text('Veo 3 Video')).top, lessThan(tester.getRect(find.text('Midjourney Relax')).top));
+    expect(
+      tester.getRect(find.text('Veo 3 Video')).top,
+      lessThan(tester.getRect(find.text('Midjourney Relax')).top),
+    );
 
     await tester.runAsync(appState.refreshDataCache);
     final names = appState.allPricingGroups.map((g) => g.name).toList();
@@ -479,29 +510,41 @@ void main() {
     final ids = await tester.runAsync(() async {
       final ids = <int>[];
       for (var i = 0; i < 30; i++) {
-        ids.add(await appState.addPricingGroup(PricingGroup(
-          name: 'Extra Group $i',
-          billingMode: 'request',
-          requestPrice: 0.01 * (i + 1),
-        )));
+        ids.add(
+          await appState.addPricingGroup(
+            PricingGroup(
+              name: 'Extra Group $i',
+              billingMode: 'request',
+              requestPrice: 0.01 * (i + 1),
+            ),
+          ),
+        );
       }
       return ids;
     });
     return ids!.last;
   }
 
-  testWidgets('on a desktop the list scrolls in its column and the editor stays in view', (tester) async {
+  testWidgets('on a desktop the list scrolls in its column and the editor stays in view', (
+    tester,
+  ) async {
     final appState = await seedState(tester);
     await seedManyGroups(tester, appState);
     await pumpManager(tester, appState, const Size(1920, 1080), fill: true);
 
     final heading = tester.getRect(find.text('New Group'));
     final placeholder = tester.getRect(find.text('Pick a group to edit'));
-    expect(tester.getRect(find.text('Extra Group 29')).top, greaterThan(1080), reason: 'the last group starts below the fold');
+    expect(
+      tester.getRect(find.text('Extra Group 29')).top,
+      greaterThan(1080),
+      reason: 'the last group starts below the fold',
+    );
 
     // Scroll the list column — the outer scrollable, not the reorder list's
     // own inert one — until the last row is on screen, and open it.
-    final column = find.descendant(of: find.byType(SingleChildScrollView).first, matching: find.byType(Scrollable)).first;
+    final column = find
+        .descendant(of: find.byType(SingleChildScrollView).first, matching: find.byType(Scrollable))
+        .first;
     await tester.scrollUntilVisible(find.text('Extra Group 29'), 400, scrollable: column);
     await tester.pump();
     await openEditor(tester, find.text('Extra Group 29'));
@@ -517,7 +560,13 @@ void main() {
   testWidgets('a group opened from elsewhere is scrolled into view', (tester) async {
     final appState = await seedState(tester);
     final lastId = await seedManyGroups(tester, appState);
-    await pumpManager(tester, appState, const Size(1920, 1080), fill: true, initialEditGroupId: lastId);
+    await pumpManager(
+      tester,
+      appState,
+      const Size(1920, 1080),
+      fill: true,
+      initialEditGroupId: lastId,
+    );
     for (var i = 0; i < 5; i++) {
       await tester.pump(const Duration(milliseconds: 100));
     }
@@ -547,7 +596,11 @@ void main() {
 
   group('SpecTableIssues', () {
     test('names the first unpriced row, 1-based', () {
-      final rows = [SpecRateDraft(size: '1K', price: '0.03'), SpecRateDraft(size: '2K'), SpecRateDraft(size: '4K')];
+      final rows = [
+        SpecRateDraft(size: '1K', price: '0.03'),
+        SpecRateDraft(size: '2K'),
+        SpecRateDraft(size: '4K'),
+      ];
       expect(SpecTableIssues.of(rows).missingPriceRow, 2);
       expect(SpecTableIssues.of(rows).blocksSave, isTrue);
     });

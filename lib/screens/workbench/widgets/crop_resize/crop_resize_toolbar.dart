@@ -71,9 +71,9 @@ class CropResizeToolbar extends StatefulWidget {
     final widestSampling = _kSamplingLabels.values.reduce(
       (a, b) =>
           measureGlassText(context, a, GlassIconButton.labelStyle(context)) >=
-                  measureGlassText(context, b, GlassIconButton.labelStyle(context))
-              ? a
-              : b,
+              measureGlassText(context, b, GlassIconButton.labelStyle(context))
+          ? a
+          : b,
     );
     final fit = _Fit()..saveSubtitle = _saveSubtitleFitsHeight(context);
     return _measureRow(
@@ -194,15 +194,20 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
     _isAutoUpdating = true;
     if (ratio != null) {
       if (ratio == 1.0) {
-        _ratioXController.text = '1'; _ratioYController.text = '1';
+        _ratioXController.text = '1';
+        _ratioYController.text = '1';
       } else if (ratio > 1.3 && ratio < 1.4) {
-        _ratioXController.text = '4'; _ratioYController.text = '3';
+        _ratioXController.text = '4';
+        _ratioYController.text = '3';
       } else if (ratio > 1.7 && ratio < 1.8) {
-        _ratioXController.text = '16'; _ratioYController.text = '9';
+        _ratioXController.text = '16';
+        _ratioYController.text = '9';
       } else if (ratio > 0.7 && ratio < 0.8) {
-        _ratioXController.text = '3'; _ratioYController.text = '4';
+        _ratioXController.text = '3';
+        _ratioYController.text = '4';
       } else if (ratio > 0.5 && ratio < 0.6) {
-        _ratioXController.text = '9'; _ratioYController.text = '16';
+        _ratioXController.text = '9';
+        _ratioYController.text = '16';
       }
     } else {
       _ratioXController.clear();
@@ -321,11 +326,9 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
       final confirmed = await _confirmOverwrite(
         l10n: l10n,
         fileName: sourceImage.name,
-        originalSize:
-            originalMeta != null ? '${originalMeta.width}×${originalMeta.height}' : '–',
+        originalSize: originalMeta != null ? '${originalMeta.width}×${originalMeta.height}' : '–',
         outputSize: '$outputWidth×$outputHeight',
-        copyDestination:
-            '${l10n.cropResizeTempWorkspaceLabel} / ${copyTarget.fileName}',
+        copyDestination: '${l10n.cropResizeTempWorkspaceLabel} / ${copyTarget.fileName}',
       );
 
       if (confirmed == null) return;
@@ -338,10 +341,14 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
     try {
       SamplingMethod sampling;
       switch (uiState.samplingMethod) {
-        case 'nearest': sampling = SamplingMethod.nearest;
-        case 'linear': sampling = SamplingMethod.linear;
-        case 'cubic': sampling = SamplingMethod.cubic;
-        default: sampling = SamplingMethod.lanczos;
+        case 'nearest':
+          sampling = SamplingMethod.nearest;
+        case 'linear':
+          sampling = SamplingMethod.linear;
+        case 'cubic':
+          sampling = SamplingMethod.cubic;
+        default:
+          sampling = SamplingMethod.lanczos;
       }
 
       // Resolved before the work, not after: the encoder is chosen from the

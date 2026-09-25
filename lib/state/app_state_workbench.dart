@@ -47,8 +47,9 @@ extension AppStateWorkbench on AppState {
     }
     if (compressReferenceImages != null) {
       this.compressReferenceImages = compressReferenceImages;
-      writes.add(_db.saveSetting(
-          'workbench_compress_reference_images', compressReferenceImages.toString()));
+      writes.add(
+        _db.saveSetting('workbench_compress_reference_images', compressReferenceImages.toString()),
+      );
     }
 
     notify();
@@ -105,7 +106,9 @@ extension AppStateWorkbench on AppState {
         final decoded = jsonDecode(raw) as Map<String, dynamic>;
         _imageParamStore = decoded.map((k, v) => MapEntry(k, v.toString()));
         return;
-      } catch (_) {/* fall through to legacy migration */}
+      } catch (_) {
+        /* fall through to legacy migration */
+      }
     }
     // Migrate the old single-set params into the nanoBanana namespace.
     final legacyAr = await _db.getSetting('last_aspect_ratio');
@@ -149,10 +152,7 @@ extension AppStateWorkbench on AppState {
   }
 
   Future<void> setImageParam(LLMModel model, String paramKey, String value) async {
-    _imageParamStore = {
-      ..._imageParamStore,
-      '${_familyKey(model)}.$paramKey': value,
-    };
+    _imageParamStore = {..._imageParamStore, '${_familyKey(model)}.$paramKey': value};
     imageParamsRevision++;
     await _db.saveSetting('workbench_image_params', jsonEncode(_imageParamStore));
     notify();
@@ -176,7 +176,9 @@ extension AppStateWorkbench on AppState {
       try {
         final decoded = jsonDecode(raw) as Map<String, dynamic>;
         _videoParamStore = decoded.map((k, v) => MapEntry(k, v.toString()));
-      } catch (_) {/* ignore malformed */}
+      } catch (_) {
+        /* ignore malformed */
+      }
     }
     _videoParamStore = {
       ..._videoParamStore,
@@ -190,10 +192,7 @@ extension AppStateWorkbench on AppState {
   }
 
   Future<void> setVideoParam(LLMModel model, String paramKey, String value) async {
-    _videoParamStore = {
-      ..._videoParamStore,
-      '${_familyKey(model)}.$paramKey': value,
-    };
+    _videoParamStore = {..._videoParamStore, '${_familyKey(model)}.$paramKey': value};
     videoParamsRevision++;
     await _db.saveSetting('workbench_video_params', jsonEncode(_videoParamStore));
     notify();
@@ -211,10 +210,7 @@ extension AppStateWorkbench on AppState {
     return result;
   }
 
-  Future<void> updateVideoConfig({
-    String? modelId,
-    String? prompt,
-  }) async {
+  Future<void> updateVideoConfig({String? modelId, String? prompt}) async {
     if (modelId != null) {
       lastVideoModelId = modelId;
       await _db.saveSetting('last_video_model_id', modelId);
@@ -226,7 +222,11 @@ extension AppStateWorkbench on AppState {
     notify();
   }
 
-  Future<void> submitTask(dynamic modelIdentifier, Map<String, dynamic> params, {String? modelIdDisplay}) async {
+  Future<void> submitTask(
+    dynamic modelIdentifier,
+    Map<String, dynamic> params, {
+    String? modelIdDisplay,
+  }) async {
     final prompt = params['prompt'] as String? ?? '';
     final isVideoTask = params['taskType'] == TaskType.videoGenerate.name;
 
@@ -297,7 +297,11 @@ extension AppStateWorkbench on AppState {
     return null;
   }
 
-  Future<void> submitVideoTask(dynamic modelIdentifier, Map<String, dynamic> params, {String? modelIdDisplay}) async {
+  Future<void> submitVideoTask(
+    dynamic modelIdentifier,
+    Map<String, dynamic> params, {
+    String? modelIdDisplay,
+  }) async {
     if (!isVideoCompatibleModel(modelIdentifier is int ? modelIdentifier : null)) {
       addLog('Error: Selected model is not compatible with video generation.', level: 'ERROR');
       return;

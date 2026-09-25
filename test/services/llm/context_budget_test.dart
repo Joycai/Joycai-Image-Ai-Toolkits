@@ -36,11 +36,12 @@ void main() {
 
   group('budgetChars', () {
     test('scales with the window and the ratio', () {
-      expect(ContextBudget.budgetChars(131072, 0.6),
-          (131072 * 0.6 * ContextBudget.charsPerToken).round());
+      expect(
+        ContextBudget.budgetChars(131072, 0.6),
+        (131072 * 0.6 * ContextBudget.charsPerToken).round(),
+      );
       // Halving the ratio halves the budget.
-      expect(ContextBudget.budgetChars(131072, 0.3),
-          ContextBudget.budgetChars(131072, 0.6) ~/ 2);
+      expect(ContextBudget.budgetChars(131072, 0.3), ContextBudget.budgetChars(131072, 0.6) ~/ 2);
     });
 
     test('stays under the real window even if the text is pure CJK', () {
@@ -50,22 +51,28 @@ void main() {
       // ever fired. Chinese costs ~1 token/char, so the char budget is the
       // worst-case token count and must still fit.
       for (final window in [4096, 8192, 32768, 131072, 1048576]) {
-        expect(ContextBudget.budgetChars(window, 0.6), lessThan(window),
-            reason: 'a $window-token model must not be handed a budget whose '
-                'worst-case token cost exceeds the window');
+        expect(
+          ContextBudget.budgetChars(window, 0.6),
+          lessThan(window),
+          reason:
+              'a $window-token model must not be handed a budget whose '
+              'worst-case token cost exceeds the window',
+        );
       }
     });
 
     test('a bigger window earns a bigger budget', () {
-      expect(ContextBudget.budgetChars(1048576, 0.6),
-          greaterThan(ContextBudget.budgetChars(8192, 0.6)));
+      expect(
+        ContextBudget.budgetChars(1048576, 0.6),
+        greaterThan(ContextBudget.budgetChars(8192, 0.6)),
+      );
     });
 
     test('unset falls back to the conservative default window', () {
       expect(
-          ContextBudget.budgetChars(null, 0.6),
-          (ContextBudget.defaultWindowTokens * 0.6 * ContextBudget.charsPerToken)
-              .round());
+        ContextBudget.budgetChars(null, 0.6),
+        (ContextBudget.defaultWindowTokens * 0.6 * ContextBudget.charsPerToken).round(),
+      );
     });
 
     test('unlimited keeps the legacy threshold instead of collapsing to zero', () {
@@ -81,11 +88,12 @@ void main() {
       // The headroom above the ratio is what pays for reading a file in one
       // piece; compaction reclaims it at the next turn boundary.
       final total = (131072 * ContextBudget.charsPerToken).round();
-      expect(ContextBudget.readCapChars(131072, 0),
-          total - ContextBudget.reserveFor(total));
+      expect(ContextBudget.readCapChars(131072, 0), total - ContextBudget.reserveFor(total));
       // Strictly more than the ratio alone would allow.
-      expect(ContextBudget.readCapChars(131072, 0),
-          greaterThan(ContextBudget.budgetChars(131072, 0.6)));
+      expect(
+        ContextBudget.readCapChars(131072, 0),
+        greaterThan(ContextBudget.budgetChars(131072, 0.6)),
+      );
     });
 
     test('shrinks as the context fills', () {
@@ -103,8 +111,7 @@ void main() {
       // 4K-token model (8192 chars all in) went straight to zero and could
       // never read a knowledge file at all.
       expect(ContextBudget.readCapChars(4096, 0), greaterThan(2000));
-      expect(ContextBudget.readCapChars(8192, 0),
-          greaterThan(ContextBudget.readCapChars(4096, 0)));
+      expect(ContextBudget.readCapChars(8192, 0), greaterThan(ContextBudget.readCapChars(4096, 0)));
     });
 
     test('the reply reserve scales down for small windows but is capped for big ones', () {
@@ -120,15 +127,13 @@ void main() {
     });
 
     test('unset uses the conservative default window', () {
-      final total =
-          (ContextBudget.defaultWindowTokens * ContextBudget.charsPerToken).round();
+      final total = (ContextBudget.defaultWindowTokens * ContextBudget.charsPerToken).round();
       expect(ContextBudget.readCapChars(null, 0), total - ContextBudget.reserveFor(total));
     });
   });
 
   group('imageBatchSize', () {
-    int batch(int? w) =>
-        ContextBudget.imageBatchSize(w, defaultSize: 10, unlimitedSize: 1 << 30);
+    int batch(int? w) => ContextBudget.imageBatchSize(w, defaultSize: 10, unlimitedSize: 1 << 30);
 
     test('preserves the behaviour the scraper had before delegating', () {
       expect(batch(null), 10);

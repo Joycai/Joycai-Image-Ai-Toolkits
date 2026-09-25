@@ -6,7 +6,8 @@ const Duration _kDropNoteHold = Duration(seconds: 2);
 
 /// Whether an in-app drag carries a picture a slot takes. Gallery cards drag
 /// videos too, and those are refused with a reason rather than ignored.
-bool _isDroppableImage(Object? payload) => payload is AppImage && AppConstants.isImageFile(payload.path);
+bool _isDroppableImage(Object? payload) =>
+    payload is AppImage && AppConstants.isImageFile(payload.path);
 
 /// Reads a drop's result out, as its note says it (`00d` 无障碍).
 void _announceDrop(BuildContext context, String message) {
@@ -21,13 +22,7 @@ void _announceDrop(BuildContext context, String message) {
 /// rather than cut mid-word, so a narrow cell keeps its glyph alone. What was
 /// left out is still read to screen readers.
 class _DropSlot extends StatelessWidget {
-  const _DropSlot({
-    required this.state,
-    required this.icon,
-    this.title,
-    this.hint,
-    this.onTap,
-  });
+  const _DropSlot({required this.state, required this.icon, this.title, this.hint, this.onTap});
 
   final AppDropZoneState state;
 
@@ -58,7 +53,9 @@ class _DropSlot extends StatelessWidget {
       AppDropZoneState.full => Icons.layers_outlined,
       AppDropZoneState.rest || AppDropZoneState.armed => icon,
     };
-    final Color glyphInk = state == AppDropZoneState.rest ? colorScheme.outline : state.edge(context);
+    final Color glyphInk = state == AppDropZoneState.rest
+        ? colorScheme.outline
+        : state.edge(context);
     final TextStyle titleStyle = theme.textTheme.labelMedium!.copyWith(color: state.ink(context));
     final TextStyle hintStyle = theme.textTheme.labelSmall!.copyWith(
       fontWeight: FontWeight.w400,
@@ -76,8 +73,20 @@ class _DropSlot extends StatelessWidget {
             builder: (context, box) {
               final double width = math.max(0, box.maxWidth - _padding * 2);
               final double room = box.maxHeight - _padding * 2;
-              final double? titleHeight = _fittedTextHeight(context, title, titleStyle, width, maxLines: _maxLines);
-              final double? hintHeight = _fittedTextHeight(context, hint, hintStyle, width, maxLines: _maxLines);
+              final double? titleHeight = _fittedTextHeight(
+                context,
+                title,
+                titleStyle,
+                width,
+                maxLines: _maxLines,
+              );
+              final double? hintHeight = _fittedTextHeight(
+                context,
+                hint,
+                hintStyle,
+                width,
+                maxLines: _maxLines,
+              );
 
               double stacked({required bool glyph, required bool name, required bool second}) {
                 final parts = <double>[
@@ -92,7 +101,9 @@ class _DropSlot extends StatelessWidget {
               bool withTitle = titleHeight != null;
               bool withHint = hintHeight != null;
               bool withGlyph = true;
-              if (withHint && stacked(glyph: true, name: withTitle, second: true) > room) withHint = false;
+              if (withHint && stacked(glyph: true, name: withTitle, second: true) > room) {
+                withHint = false;
+              }
               if (stacked(glyph: true, name: withTitle, second: withHint) > room) withGlyph = false;
               if (withTitle && stacked(glyph: false, name: true, second: withHint) > room) {
                 withTitle = false;
@@ -181,15 +192,30 @@ class _PlateLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final TextStyle textStyle = Theme.of(context).textTheme.labelSmall!.copyWith(color: AppOverlay.onImagePlate);
+    final TextStyle textStyle = Theme.of(
+      context,
+    ).textTheme.labelSmall!.copyWith(color: AppOverlay.onImagePlate);
     final TextStyle hintStyle = textStyle.copyWith(fontWeight: FontWeight.w400);
 
     return LayoutBuilder(
       builder: (context, box) {
         final double width = math.max(0, box.maxWidth - _padding.horizontal);
-        final double? textHeight = _fittedTextHeight(context, text, textStyle, width, maxLines: _maxLines);
-        final double? hintHeight = _fittedTextHeight(context, hint, hintStyle, width, maxLines: _maxLines);
-        final bool withHint = textHeight != null &&
+        final double? textHeight = _fittedTextHeight(
+          context,
+          text,
+          textStyle,
+          width,
+          maxLines: _maxLines,
+        );
+        final double? hintHeight = _fittedTextHeight(
+          context,
+          hint,
+          hintStyle,
+          width,
+          maxLines: _maxLines,
+        );
+        final bool withHint =
+            textHeight != null &&
             hintHeight != null &&
             _padding.vertical + textHeight + _gap + hintHeight <= box.maxHeight;
 

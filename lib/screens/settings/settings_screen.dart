@@ -24,11 +24,9 @@ enum SettingsCategory { appearance, keyboard, connectivity, application, data, a
 /// is not greyed out there — it is not there. A setting that cannot apply is
 /// worse than a missing one: it invites the question of how to turn it on.
 List<SettingsCategory> get _categories => <SettingsCategory>[
-      for (final category in SettingsCategory.values)
-        if (category != SettingsCategory.keyboard ||
-            AppShortcuts.registersShortcuts)
-          category,
-    ];
+  for (final category in SettingsCategory.values)
+    if (category != SettingsCategory.keyboard || AppShortcuts.registersShortcuts) category,
+];
 
 /// Settings — design `E1`.
 ///
@@ -53,34 +51,34 @@ class SettingsScreen extends StatelessWidget {
 // ── Category metadata ──────────────────────────────────────────────────────
 
 String _categoryLabel(SettingsCategory category, AppLocalizations l10n) => switch (category) {
-      SettingsCategory.appearance => l10n.appearance,
-      SettingsCategory.keyboard => l10n.shortcutsTitle,
-      SettingsCategory.connectivity => l10n.connectivity,
-      SettingsCategory.application => l10n.application,
-      SettingsCategory.data => l10n.dataManagement,
-      SettingsCategory.about => l10n.about,
-    };
+  SettingsCategory.appearance => l10n.appearance,
+  SettingsCategory.keyboard => l10n.shortcutsTitle,
+  SettingsCategory.connectivity => l10n.connectivity,
+  SettingsCategory.application => l10n.application,
+  SettingsCategory.data => l10n.dataManagement,
+  SettingsCategory.about => l10n.about,
+};
 
 /// The second line under a category's name — what is inside it, composed from
 /// the names of the settings themselves so it is translated wherever they are.
 String _categoryNote(SettingsCategory category, AppLocalizations l10n) => switch (category) {
-      SettingsCategory.appearance => '${l10n.themeColor} · ${l10n.font} · ${l10n.language}',
-      SettingsCategory.keyboard =>
-        '${l10n.shortcutsGroupGlobal} · ${l10n.shortcutsGroupFiles}',
-      SettingsCategory.connectivity => '${l10n.proxySettings} · ${l10n.mcpServerSettings}',
-      SettingsCategory.application => '${l10n.outputDirectory} · ${l10n.knowledgeBaseFolder}',
-      SettingsCategory.data => '${l10n.exportSettings} · ${l10n.importSettings} · ${l10n.resetAllSettings}',
-      SettingsCategory.about => '${l10n.aboutGithubRepo} · ${l10n.aboutLicense}',
-    };
+  SettingsCategory.appearance => '${l10n.themeColor} · ${l10n.font} · ${l10n.language}',
+  SettingsCategory.keyboard => '${l10n.shortcutsGroupGlobal} · ${l10n.shortcutsGroupFiles}',
+  SettingsCategory.connectivity => '${l10n.proxySettings} · ${l10n.mcpServerSettings}',
+  SettingsCategory.application => '${l10n.outputDirectory} · ${l10n.knowledgeBaseFolder}',
+  SettingsCategory.data =>
+    '${l10n.exportSettings} · ${l10n.importSettings} · ${l10n.resetAllSettings}',
+  SettingsCategory.about => '${l10n.aboutGithubRepo} · ${l10n.aboutLicense}',
+};
 
 Widget _categoryContent(SettingsCategory category, {required bool phone}) => switch (category) {
-      SettingsCategory.appearance => const AppearanceSection(),
-      SettingsCategory.keyboard => const KeyboardSection(),
-      SettingsCategory.connectivity => ConnectivitySection(isMobile: phone),
-      SettingsCategory.application => const ApplicationSection(),
-      SettingsCategory.data => DataSection(isMobile: phone),
-      SettingsCategory.about => const AboutSection(),
-    };
+  SettingsCategory.appearance => const AppearanceSection(),
+  SettingsCategory.keyboard => const KeyboardSection(),
+  SettingsCategory.connectivity => ConnectivitySection(isMobile: phone),
+  SettingsCategory.application => const ApplicationSection(),
+  SettingsCategory.data => DataSection(isMobile: phone),
+  SettingsCategory.about => const AboutSection(),
+};
 
 /// The app's version, once the platform reports it, handed to [builder].
 class _VersionText extends StatefulWidget {
@@ -113,9 +111,9 @@ class _VersionTextState extends State<_VersionText> {
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
       style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
-            fontWeight: FontWeight.w400,
-            color: colorScheme.outline,
-          ),
+        fontWeight: FontWeight.w400,
+        color: colorScheme.outline,
+      ),
     );
   }
 }
@@ -152,7 +150,9 @@ class _TwoPaneViewState extends State<_TwoPaneView> {
               child: _Card(child: _buildNav(context, desktop: desktop)),
             ),
             SizedBox(width: desktop ? AppSpace.s16 : 12),
-            Expanded(child: _Card(child: _buildContent(context, desktop: desktop))),
+            Expanded(
+              child: _Card(child: _buildContent(context, desktop: desktop)),
+            ),
           ],
         ),
       ),
@@ -330,8 +330,8 @@ class _NavRowState extends State<_NavRow> {
               color: selected
                   ? colorScheme.accentTint
                   : _hovered
-                      ? colorScheme.surfaceContainerLow
-                      : Colors.transparent,
+                  ? colorScheme.surfaceContainerLow
+                  : Colors.transparent,
               borderRadius: BorderRadius.circular(AppRadius.control),
               border: Border.all(color: selected ? colorScheme.primary : Colors.transparent),
             ),

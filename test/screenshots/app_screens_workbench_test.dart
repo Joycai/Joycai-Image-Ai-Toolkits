@@ -70,13 +70,13 @@ void main() {
   // A card's context menu (`A1 · 2a`): the quick block, the 「设为」 grid, the
   // two submenu rows and the destructive tail — with 「文件 ▸」 opened, so the
   // submenu's placement beside the panel, level with its row, is on film.
-  Finder menuItem(String label) => find.descendant(
-        of: find.byType(AppGlassMenu),
-        matching: find.text(label),
-      );
+  Finder menuItem(String label) =>
+      find.descendant(of: find.byType(AppGlassMenu), matching: find.text(label));
 
   for (final Brightness brightness in Brightness.values) {
-    testWidgets('workbench · contextMenu @ desktop ${brightness.name}', (WidgetTester tester) async {
+    testWidgets('workbench · contextMenu @ desktop ${brightness.name}', (
+      WidgetTester tester,
+    ) async {
       await shoot(
         tester,
         env: env,
@@ -143,13 +143,11 @@ void main() {
   // controls its table declares.
   for (final (String modelId, String suffix, Brightness brightness)
       in const <(String, String, Brightness)>[
-    ('doubao-seedream-5-0-pro-260628', 'seedreamPro', Brightness.light),
-    ('doubao-seedream-5-0-pro-260628', 'seedreamPro', Brightness.dark),
-    ('doubao-seedream-5.0-lite', 'seedreamLite', Brightness.light),
-  ]) {
-    testWidgets('workbench · $suffix @ desktop ${brightness.name}', (
-      WidgetTester tester,
-    ) async {
+        ('doubao-seedream-5-0-pro-260628', 'seedreamPro', Brightness.light),
+        ('doubao-seedream-5-0-pro-260628', 'seedreamPro', Brightness.dark),
+        ('doubao-seedream-5.0-lite', 'seedreamLite', Brightness.light),
+      ]) {
+    testWidgets('workbench · $suffix @ desktop ${brightness.name}', (WidgetTester tester) async {
       await shoot(
         tester,
         env: env,
@@ -185,14 +183,12 @@ void main() {
   // that matters for fit: "Medium" is the widest label a half-cell holds.
   for (final (String modelId, String suffix, Brightness brightness, Locale locale)
       in const <(String, String, Brightness, Locale)>[
-    ('grok-imagine-image-2.0', 'xaiImage2', Brightness.light, Locale('zh')),
-    ('grok-imagine-image-2.0', 'xaiImage2', Brightness.dark, Locale('zh')),
-    ('grok-imagine-image-2.0', 'xaiImage2En', Brightness.light, Locale('en')),
-    ('grok-imagine-image', 'xaiImage1', Brightness.light, Locale('zh')),
-  ]) {
-    testWidgets('workbench · $suffix @ desktop ${brightness.name}', (
-      WidgetTester tester,
-    ) async {
+        ('grok-imagine-image-2.0', 'xaiImage2', Brightness.light, Locale('zh')),
+        ('grok-imagine-image-2.0', 'xaiImage2', Brightness.dark, Locale('zh')),
+        ('grok-imagine-image-2.0', 'xaiImage2En', Brightness.light, Locale('en')),
+        ('grok-imagine-image', 'xaiImage1', Brightness.light, Locale('zh')),
+      ]) {
+    testWidgets('workbench · $suffix @ desktop ${brightness.name}', (WidgetTester tester) async {
       await shoot(
         tester,
         env: env,
@@ -212,9 +208,9 @@ void main() {
           for (int p = 0; p < 5; p++) {
             await tester.pump(const Duration(milliseconds: 120));
           }
-          await tester.tap(find
-              .text(locale.languageCode == 'en' ? 'Model Selection' : '模型选择')
-              .last);
+          await tester.tap(
+            find.text(locale.languageCode == 'en' ? 'Model Selection' : '模型选择').last,
+          );
           for (int p = 0; p < 5; p++) {
             await tester.pump(const Duration(milliseconds: 120));
           }
@@ -230,7 +226,9 @@ void main() {
     (const ShotSize('desktop', Size(1440, 1100)), Brightness.dark),
     (const ShotSize('ipad', Size(1024, 900)), Brightness.light),
   ]) {
-    testWidgets('workbench · sizePicker @ ${size.label} ${brightness.name}', (WidgetTester tester) async {
+    testWidgets('workbench · sizePicker @ ${size.label} ${brightness.name}', (
+      WidgetTester tester,
+    ) async {
       await shoot(
         tester,
         env: env,

@@ -93,8 +93,8 @@ Future<void> runFileDelete(
         outcome.deleted.length == 1
             ? (toTrash ? l10n.fileTrashed(name) : l10n.fileDeleted(name))
             : (toTrash
-                ? l10n.filesTrashed(outcome.deleted.length)
-                : l10n.filesDeleted(outcome.deleted.length)),
+                  ? l10n.filesTrashed(outcome.deleted.length)
+                  : l10n.filesDeleted(outcome.deleted.length)),
       );
     } else {
       AppSnackBar.error(
@@ -139,10 +139,10 @@ class _FileDeleteDialog extends StatelessWidget {
     final String subtitle = single
         ? transferShortPath(files.first.path)
         : (folder != null
-            ? transferShortPath(folder)
-            : l10n.deleteFromFolders(
-                files.map((BrowserFile f) => p.dirname(f.path)).toSet().length,
-              ));
+              ? transferShortPath(folder)
+              : l10n.deleteFromFolders(
+                  files.map((BrowserFile f) => p.dirname(f.path)).toSet().length,
+                ));
 
     final String confirmLabel = toTrash
         ? (single ? l10n.moveToTrash : l10n.trashFileCount(count))
@@ -190,11 +190,7 @@ class _FileDeleteDialog extends StatelessWidget {
             autofocus: true,
             onPressed: () => Navigator.pop(context, false),
           ),
-          AppButton(
-            label: confirmLabel,
-            variant: AppButtonVariant.destructive,
-            onPressed: confirm,
-          ),
+          AppButton(label: confirmLabel, variant: AppButtonVariant.destructive, onPressed: confirm),
         ],
       ),
     );

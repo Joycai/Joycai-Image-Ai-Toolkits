@@ -38,7 +38,12 @@ class PromptSelectionCapsule extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            GlassIconButton(icon: Icons.close, tooltip: l10n.cancel, size: AppSize.large, onPressed: onClose),
+            GlassIconButton(
+              icon: Icons.close,
+              tooltip: l10n.cancel,
+              size: AppSize.large,
+              onPressed: onClose,
+            ),
             const SizedBox(width: AppSpace.s4),
             Flexible(
               child: Text(
@@ -46,9 +51,9 @@ class PromptSelectionCapsule extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: scheme.onAccentTint,
-                    ),
+                  fontWeight: FontWeight.w600,
+                  color: scheme.onAccentTint,
+                ),
               ),
             ),
             const SizedBox(width: 12),

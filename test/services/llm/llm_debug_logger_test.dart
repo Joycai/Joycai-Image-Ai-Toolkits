@@ -46,7 +46,13 @@ void main() {
         'body': {'password': 'hunter2', 'api_key': 'sk-secret-4'},
       });
 
-      for (final secret in ['sk-secret-1', 'sk-secret-2', 'sk-secret-3', 'sk-secret-4', 'hunter2']) {
+      for (final secret in [
+        'sk-secret-1',
+        'sk-secret-2',
+        'sk-secret-3',
+        'sk-secret-4',
+        'hunter2',
+      ]) {
         expect(text, isNot(contains(secret)));
       }
       expect(text, contains('***MASKED***'));
@@ -70,9 +76,7 @@ void main() {
 
     test('a key embedded in a URL is still caught', () async {
       // Key-name masking cannot see this one: the URL lives under `url`.
-      final text = await write({
-        'url': 'https://host/v1/models?key=AIzaSecret&alt=sse',
-      });
+      final text = await write({'url': 'https://host/v1/models?key=AIzaSecret&alt=sse'});
 
       expect(text, isNot(contains('AIzaSecret')));
       expect(text, contains('alt=sse'));
@@ -127,10 +131,7 @@ void main() {
       await LLMDebugLogger.finish(log);
 
       final text = log!.file.readAsStringSync();
-      final lines = text
-          .split('\n')
-          .where((l) => l.startsWith('data:'))
-          .toList();
+      final lines = text.split('\n').where((l) => l.startsWith('data:')).toList();
       expect(lines, hasLength(200));
       expect(lines.first, 'data: {"i":0}');
       expect(lines.last, 'data: {"i":199}');

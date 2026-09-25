@@ -181,14 +181,10 @@ class ImageDeduper {
 /// that merely cites a URL must not cause the app to go download it.
 List<String> imageUrlsInText(String text) {
   final urls = <String>{};
-  for (final m in RegExp(
-    r'!\[[^\]]*\]\((https?://[^\s)]+)\)',
-  ).allMatches(text)) {
+  for (final m in RegExp(r'!\[[^\]]*\]\((https?://[^\s)]+)\)').allMatches(text)) {
     urls.add(m.group(1)!);
   }
-  for (final m in RegExp(
-    r'https?://storage\.googleapis\.com/[^\s"\]\)]+',
-  ).allMatches(text)) {
+  for (final m in RegExp(r'https?://storage\.googleapis\.com/[^\s"\]\)]+').allMatches(text)) {
     urls.add(m.group(0)!);
   }
   return urls.toList();

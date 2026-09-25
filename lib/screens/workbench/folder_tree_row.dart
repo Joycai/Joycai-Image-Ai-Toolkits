@@ -155,9 +155,10 @@ class FolderTreeMetrics {
 
   /// A row's count: mono 11 (12 in the drawer) at regular weight, untracked.
   TextStyle countStyle(TextTheme textTheme) =>
-      ((touch ? textTheme.bodySmall : textTheme.labelSmall) ?? const TextStyle())
-          .mono
-          .copyWith(fontWeight: FontWeight.w400, letterSpacing: 0);
+      ((touch ? textTheme.bodySmall : textTheme.labelSmall) ?? const TextStyle()).mono.copyWith(
+        fontWeight: FontWeight.w400,
+        letterSpacing: 0,
+      );
 }
 
 /// One row of the folder column — `A1 1a`.
@@ -266,21 +267,38 @@ class _FolderTreeRowState extends State<FolderTreeRow> {
     final semantic = context.semantic;
     final (Color? dropGround, Color? dropEdge, Color? dropInk) = switch (widget.dropTone) {
       null => (null, null, null),
-      FolderDropTone.move => (colorScheme.accentTint, colorScheme.primary, colorScheme.onAccentTint),
-      FolderDropTone.copy => (semantic.successContainer, semantic.success, semantic.onSuccessContainer),
-      FolderDropTone.reject => (colorScheme.errorContainer, colorScheme.error, colorScheme.onErrorContainer),
+      FolderDropTone.move => (
+        colorScheme.accentTint,
+        colorScheme.primary,
+        colorScheme.onAccentTint,
+      ),
+      FolderDropTone.copy => (
+        semantic.successContainer,
+        semantic.success,
+        semantic.onSuccessContainer,
+      ),
+      FolderDropTone.reject => (
+        colorScheme.errorContainer,
+        colorScheme.error,
+        colorScheme.onErrorContainer,
+      ),
     };
 
-    final Color ground = dropGround ??
+    final Color ground =
+        dropGround ??
         (selected
             ? colorScheme.accentTint
             : (_hovered && !editing
-                ? colorScheme.onSurface.withValues(alpha: 0.06)
-                : colorScheme.onSurface.withValues(alpha: 0)));
+                  ? colorScheme.onSurface.withValues(alpha: 0.06)
+                  : colorScheme.onSurface.withValues(alpha: 0)));
     final Color iconColor =
-        dropEdge ?? widget.iconColor ?? (selected ? colorScheme.primary : colorScheme.onSurfaceVariant);
+        dropEdge ??
+        widget.iconColor ??
+        (selected ? colorScheme.primary : colorScheme.onSurfaceVariant);
     final Color labelColor =
-        dropInk ?? widget.labelColor ?? (selected ? colorScheme.onAccentTint : colorScheme.onSurface);
+        dropInk ??
+        widget.labelColor ??
+        (selected ? colorScheme.onAccentTint : colorScheme.onSurface);
     final Color countColor = selected ? colorScheme.onAccentTint : colorScheme.onSurfaceVariant;
 
     final bool showAction =
@@ -289,12 +307,17 @@ class _FolderTreeRowState extends State<FolderTreeRow> {
     final children = <Widget>[
       if (widget.disclosure != null) _disclosure(colorScheme, band, gap),
       if (widget.marker != null) ...[
-        SizedBox(height: band, child: Center(child: widget.marker)),
+        SizedBox(
+          height: band,
+          child: Center(child: widget.marker),
+        ),
         if (metrics.markerGap > 0) SizedBox(width: metrics.markerGap),
       ],
       SizedBox(
         height: band,
-        child: Center(child: Icon(widget.icon, size: metrics.icon, color: iconColor)),
+        child: Center(
+          child: Icon(widget.icon, size: metrics.icon, color: iconColor),
+        ),
       ),
       SizedBox(width: gap),
       if (editing)
@@ -316,15 +339,17 @@ class _FolderTreeRowState extends State<FolderTreeRow> {
             maxLines: 1,
             softWrap: false,
             overflow: TextOverflow.ellipsis,
-            style: metrics.labelStyle(theme.textTheme).copyWith(
-                  color: labelColor,
-                  fontWeight: selected ? FontWeight.w500 : null,
-                ),
+            style: metrics
+                .labelStyle(theme.textTheme)
+                .copyWith(color: labelColor, fontWeight: selected ? FontWeight.w500 : null),
           ),
         ),
         if (widget.count != null) ...[
           SizedBox(width: gap),
-          Text(widget.count!, style: metrics.countStyle(theme.textTheme).copyWith(color: countColor)),
+          Text(
+            widget.count!,
+            style: metrics.countStyle(theme.textTheme).copyWith(color: countColor),
+          ),
         ],
         if (widget.hoverAction != null) ...[
           const SizedBox(width: AppSpace.s4),
@@ -355,10 +380,7 @@ class _FolderTreeRowState extends State<FolderTreeRow> {
         metrics.padding,
         vertical,
       ),
-      decoration: BoxDecoration(
-        color: ground,
-        borderRadius: BorderRadius.circular(AppRadius.sm),
-      ),
+      decoration: BoxDecoration(color: ground, borderRadius: BorderRadius.circular(AppRadius.sm)),
       // Foreground, so the edge does not push the content over by its width;
       // drawn inside the ground (`outline-offset: -2`), so it frames the row
       // and not the gutter. Always 2px, only the colour changes, so the M1
@@ -366,10 +388,9 @@ class _FolderTreeRowState extends State<FolderTreeRow> {
       foregroundDecoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppRadius.sm),
         border: Border.all(
-          color: dropEdge ??
-              (widget.focused
-                  ? colorScheme.primary
-                  : colorScheme.primary.withValues(alpha: 0)),
+          color:
+              dropEdge ??
+              (widget.focused ? colorScheme.primary : colorScheme.primary.withValues(alpha: 0)),
           width: 2,
         ),
       ),
@@ -401,14 +422,14 @@ class _FolderTreeRowState extends State<FolderTreeRow> {
     final Widget glyph = switch (disclosure) {
       TreeDisclosure.none => const SizedBox.shrink(),
       TreeDisclosure.loading => SizedBox.square(
-          dimension: 10,
-          child: CircularProgressIndicator(strokeWidth: 1.5, color: colorScheme.outline),
-        ),
+        dimension: 10,
+        child: CircularProgressIndicator(strokeWidth: 1.5, color: colorScheme.outline),
+      ),
       TreeDisclosure.collapsed || TreeDisclosure.expanded => AppDisclosureChevron(
-          open: disclosure == TreeDisclosure.expanded,
-          size: FolderTreeMetrics.disclosureSize,
-          color: colorScheme.outline,
-        ),
+        open: disclosure == TreeDisclosure.expanded,
+        size: FolderTreeMetrics.disclosureSize,
+        color: colorScheme.outline,
+      ),
     };
 
     // The gap after the chevron is part of its hit area: a 14px glyph alone
@@ -425,16 +446,13 @@ class _FolderTreeRowState extends State<FolderTreeRow> {
       ),
     );
 
-    final interactive = widget.onToggle != null &&
+    final interactive =
+        widget.onToggle != null &&
         (disclosure == TreeDisclosure.collapsed || disclosure == TreeDisclosure.expanded);
     if (!interactive) return slot;
     return MouseRegion(
       cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: widget.onToggle,
-        child: slot,
-      ),
+      child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: widget.onToggle, child: slot),
     );
   }
 }
@@ -526,11 +544,18 @@ class _DropNoteSlot extends StatelessWidget {
       fontWeight: FontWeight.w500,
       height: AppType.tightHeight,
     );
-    final name = Text(label, maxLines: 1, softWrap: false, overflow: TextOverflow.ellipsis, style: labelStyle);
+    final name = Text(
+      label,
+      maxLines: 1,
+      softWrap: false,
+      overflow: TextOverflow.ellipsis,
+      style: labelStyle,
+    );
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final double chipWidth = (measureGlassText(context, note, noteStyle) + AppSpace.s6 * 2).ceilToDouble();
+        final double chipWidth = (measureGlassText(context, note, noteStyle) + AppSpace.s6 * 2)
+            .ceilToDouble();
         final double nameWidth = measureGlassText(context, label, labelStyle);
         final double room = constraints.maxWidth - chipWidth - gap;
         final bool fits = room >= math.min(nameWidth, constraints.maxWidth / 2);
@@ -557,7 +582,13 @@ class _DropNoteSlot extends StatelessWidget {
                   color: theme.colorScheme.surface,
                   borderRadius: BorderRadius.circular(AppRadius.xs),
                 ),
-                child: Text(note, maxLines: 1, softWrap: false, overflow: TextOverflow.ellipsis, style: noteStyle),
+                child: Text(
+                  note,
+                  maxLines: 1,
+                  softWrap: false,
+                  overflow: TextOverflow.ellipsis,
+                  style: noteStyle,
+                ),
               ),
             ),
           ],

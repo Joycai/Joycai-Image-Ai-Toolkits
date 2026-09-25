@@ -26,19 +26,16 @@ class _RecordingStore implements MergeStore {
   }
 
   @override
-  Future<void> remapSelections(Map<int, int> idMap) async =>
-      calls.add('selections');
+  Future<void> remapSelections(Map<int, int> idMap) async => calls.add('selections');
 
   @override
   Future<void> remapHistory(Map<int, int> idMap) async => calls.add('history');
 
   @override
-  Future<void> remapConversations(Map<int, int> idMap) async =>
-      calls.add('conversations');
+  Future<void> remapConversations(Map<int, int> idMap) async => calls.add('conversations');
 
   @override
-  Future<MergeReferences> countReferences(Iterable<int> ids) async =>
-      const MergeReferences();
+  Future<MergeReferences> countReferences(Iterable<int> ids) async => const MergeReferences();
 }
 
 MergePlan _plan(Map<int, int> idMap) => MergePlan(
@@ -76,10 +73,7 @@ void main() {
 
     test('a failed transaction rewrites no reference', () async {
       final store = _RecordingStore()..failWrite = true;
-      await expectLater(
-        ChannelMergeExecutor(store).run(_plan({20: 10})),
-        throwsStateError,
-      );
+      await expectLater(ChannelMergeExecutor(store).run(_plan({20: 10})), throwsStateError);
       expect(store.calls, ['write']);
     });
   });
@@ -89,37 +83,37 @@ void main() {
 
     test('merges, moves, deletes and rewrites every reference', () async {
       final db = DatabaseService();
-      final keepId = await db.addChannel(LLMChannel(
-        displayName: 'Relay',
-        type: Vendors.newApiOpenAI,
-        endpoint: 'https://relay.example.com/v1',
-        apiKey: 'sk-shared',
-      ));
-      final absorbId = await db.addChannel(LLMChannel(
-        displayName: 'Relay (Claude)',
-        type: Vendors.newApiAnthropic,
-        endpoint: 'https://relay.example.com/v1',
-        apiKey: 'sk-shared',
-      ));
-      final keptModel = await db.addModel(LLMModel(
-        modelId: 'claude-sonnet-4-5',
-        modelName: 'Sonnet',
-        tag: 'chat',
-        channelId: keepId,
-      ));
-      final twin = await db.addModel(LLMModel(
-        modelId: 'claude-sonnet-4-5',
-        modelName: 'Sonnet (Claude)',
-        tag: 'chat',
-        channelId: absorbId,
-        maxOutputTokens: 64000,
-      ));
-      final lone = await db.addModel(LLMModel(
-        modelId: 'claude-opus-4-1',
-        modelName: 'Opus',
-        tag: 'chat',
-        channelId: absorbId,
-      ));
+      final keepId = await db.addChannel(
+        LLMChannel(
+          displayName: 'Relay',
+          type: Vendors.newApiOpenAI,
+          endpoint: 'https://relay.example.com/v1',
+          apiKey: 'sk-shared',
+        ),
+      );
+      final absorbId = await db.addChannel(
+        LLMChannel(
+          displayName: 'Relay (Claude)',
+          type: Vendors.newApiAnthropic,
+          endpoint: 'https://relay.example.com/v1',
+          apiKey: 'sk-shared',
+        ),
+      );
+      final keptModel = await db.addModel(
+        LLMModel(modelId: 'claude-sonnet-4-5', modelName: 'Sonnet', tag: 'chat', channelId: keepId),
+      );
+      final twin = await db.addModel(
+        LLMModel(
+          modelId: 'claude-sonnet-4-5',
+          modelName: 'Sonnet (Claude)',
+          tag: 'chat',
+          channelId: absorbId,
+          maxOutputTokens: 64000,
+        ),
+      );
+      final lone = await db.addModel(
+        LLMModel(modelId: 'claude-opus-4-1', modelName: 'Opus', tag: 'chat', channelId: absorbId),
+      );
       await db.saveSetting('last_model_id', '$twin');
       await db.saveSetting('last_video_model_id', '$lone');
       final raw = await db.database;
@@ -130,8 +124,7 @@ void main() {
       });
       await raw.insert('tasks', {'id': 't1', 'model_pk': twin});
       final sessions = AssistantSessionRepository();
-      await sessions.upsertSession(
-          id: 's1', mode: AssistantMode.systemPrompt, refImages: const []);
+      await sessions.upsertSession(id: 's1', mode: AssistantMode.systemPrompt, refImages: const []);
       await sessions.appendMessages('s1', 0, [
         LLMMessage(role: LLMRole.user, content: 'hi'),
         LLMMessage(role: LLMRole.assistant, content: 'a', modelDbId: twin),
@@ -139,42 +132,32 @@ void main() {
       ]);
 
       final channels = await db.getChannels();
-      final plan = ChannelMerge.candidates(
-        channels,
-        await db.getModels(),
-      ).single.plan;
+      final plan = ChannelMerge.candidates(channels, await db.getModels()).single.plan;
       final executor = ChannelMergeExecutor();
       // Two usage/task rows, one selection and one conversation link name
       // the merged-away model.
       final refs = await executor.referenceCount(plan);
-      expect(
-        (refs.selections, refs.records, refs.links),
-        (1, 2, 1),
-      );
+      expect((refs.selections, refs.records, refs.links), (1, 2, 1));
 
       // Written after the plan was computed, e.g. by a task finishing while
       // the preview is open: the merge must not revert it.
-      await raw.update('llm_models', {'est_mean_ms': 1234.0},
-          where: 'id = ?', whereArgs: [keptModel]);
+      await raw.update(
+        'llm_models',
+        {'est_mean_ms': 1234.0},
+        where: 'id = ?',
+        whereArgs: [keptModel],
+      );
 
       await executor.run(plan);
 
       final after = await db.getChannels();
       expect(after.map((c) => c.id), [keepId]);
-      expect(
-        RoutedChannel.routesOf(after.single).has(RouteKind.anthropic),
-        isTrue,
-      );
+      expect(RoutedChannel.routesOf(after.single).has(RouteKind.anthropic), isTrue);
       final models = {for (final m in await db.getModels()) m.id!: m};
       expect(models.keys.toSet(), {keptModel, lone});
       expect(models[lone]!.channelId, keepId);
       expect(models[lone]!.activeRoute, 'anthropic');
-      expect(
-        ModelRoutes.parked(
-          models[keptModel]!,
-        )[RouteKind.anthropic]?.maxOutputTokens,
-        64000,
-      );
+      expect(ModelRoutes.parked(models[keptModel]!)[RouteKind.anthropic]?.maxOutputTokens, 64000);
 
       expect(models[keptModel]!.estMeanMs, 1234.0);
 
@@ -185,9 +168,7 @@ void main() {
       expect(usage.single['model_pk'], keptModel);
       final tasks = await raw.query('tasks');
       expect(tasks.single['model_pk'], keptModel);
-      final replies = [
-        for (final m in await sessions.loadMessages('s1')) m.message.modelDbId,
-      ];
+      final replies = [for (final m in await sessions.loadMessages('s1')) m.message.modelDbId];
       // The twin's link follows it; the moved model's id never changed.
       expect(replies, [null, keptModel, lone]);
     });

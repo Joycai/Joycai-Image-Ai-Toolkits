@@ -68,11 +68,7 @@ class LLMChannel {
 
   /// This channel with its flat primary-route columns and route document
   /// replaced — what the repository writes after normalizing.
-  LLMChannel withRoutes({
-    required String type,
-    required String endpoint,
-    required String routes,
-  }) =>
+  LLMChannel withRoutes({required String type, required String endpoint, required String routes}) =>
       LLMChannel(
         id: id,
         displayName: displayName,

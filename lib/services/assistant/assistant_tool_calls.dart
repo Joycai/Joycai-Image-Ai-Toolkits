@@ -36,7 +36,8 @@ Future<Map<String, dynamic>> _executeDelegate(
   if (!availableKinds.contains(kind)) {
     return {
       'status': 'error',
-      'message': 'Delegate kind "$kind" is not available here'
+      'message':
+          'Delegate kind "$kind" is not available here'
           '${availableKinds.isEmpty ? '' : ' (available: ${availableKinds.join(', ')})'}. '
           '"knowledge" needs a knowledge-base session; "draft" needs '
           'reference images and an image-capable sub-agent model.',
@@ -46,7 +47,8 @@ Future<Map<String, dynamic>> _executeDelegate(
   if (task.isEmpty) {
     return {
       'status': 'error',
-      'message': 'The task argument must not be empty. Write a '
+      'message':
+          'The task argument must not be empty. Write a '
           'self-contained brief — the sub-agent sees nothing of this '
           'conversation.',
     };
@@ -76,11 +78,13 @@ Future<Map<String, dynamic>> _executeDelegate(
   ];
 
   onLog?.call('Tool call: delegate (knowledge) — ${_clipPreview(task)}');
-  session._addEntry(OptimizerChatEntry(
-    kind: OptimizerEntryKind.tool,
-    text: _clipPreview(task),
-    toolName: 'delegate',
-  ));
+  session._addEntry(
+    OptimizerChatEntry(
+      kind: OptimizerEntryKind.tool,
+      text: _clipPreview(task),
+      toolName: 'delegate',
+    ),
+  );
 
   final result = await SubAgentRunner.run(
     modelIdentifier: modelIdentifier,
@@ -100,8 +104,7 @@ Future<Map<String, dynamic>> _executeDelegate(
   return _finishDelegateRun(session, db, task, result, onLog);
 }
 
-String _clipPreview(String task) =>
-    task.length > 120 ? '${task.substring(0, 120)}…' : task;
+String _clipPreview(String task) => task.length > 120 ? '${task.substring(0, 120)}…' : task;
 
 /// One `draft` run: a single-shot sub-agent over exactly one reference
 /// image. No tools and one turn — the whole point is that the image and
@@ -118,12 +121,12 @@ Future<Map<String, dynamic>> _runDraftDelegate(
   bool Function()? isCancelled,
 }) async {
   final rawImageId = call.arguments['image_id'];
-  final imageId =
-      rawImageId is int ? rawImageId : int.tryParse(rawImageId?.toString() ?? '');
+  final imageId = rawImageId is int ? rawImageId : int.tryParse(rawImageId?.toString() ?? '');
   if (imageId == null || imageId < 1 || imageId > referenceImages.length) {
     return {
       'status': 'error',
-      'message': 'Pass image_id between 1 and ${referenceImages.length} — '
+      'message':
+          'Pass image_id between 1 and ${referenceImages.length} — '
           'the ids list_reference_images shows. One image per draft run.',
     };
   }
@@ -137,11 +140,13 @@ Future<Map<String, dynamic>> _runDraftDelegate(
   }
 
   onLog?.call('Tool call: delegate (draft, image #$imageId) — ${_clipPreview(task)}');
-  session._addEntry(OptimizerChatEntry(
-    kind: OptimizerEntryKind.tool,
-    text: '[draft #$imageId] ${_clipPreview(task)}',
-    toolName: 'delegate',
-  ));
+  session._addEntry(
+    OptimizerChatEntry(
+      kind: OptimizerEntryKind.tool,
+      text: '[draft #$imageId] ${_clipPreview(task)}',
+      toolName: 'delegate',
+    ),
+  );
 
   final result = await SubAgentRunner.run(
     modelIdentifier: modelIdentifier,
@@ -183,7 +188,8 @@ Future<Map<String, dynamic>> _finishDelegateRun(
   if (result.cancelled) {
     return {
       'status': 'cancelled',
-      'message': 'The user cancelled the task while the sub-agent was '
+      'message':
+          'The user cancelled the task while the sub-agent was '
           'running.',
     };
   }
@@ -191,12 +197,15 @@ Future<Map<String, dynamic>> _finishDelegateRun(
   if (output.isEmpty) {
     return {
       'status': 'error',
-      'message': 'The sub-agent returned nothing. Try a narrower or more '
+      'message':
+          'The sub-agent returned nothing. Try a narrower or more '
           'specific task, or do the work yourself with your own tools.',
     };
   }
-  onLog?.call('Sub-agent finished in ${result.turnsUsed} turn(s), '
-      '${output.length} chars of findings.');
+  onLog?.call(
+    'Sub-agent finished in ${result.turnsUsed} turn(s), '
+    '${output.length} chars of findings.',
+  );
 
   // Full findings go to the session's note store; the main context gets a
   // digest and the note id. Best-effort: a storage failure downgrades to
@@ -216,11 +225,10 @@ Future<Map<String, dynamic>> _finishDelegateRun(
   return {
     'status': 'ok',
     if (note != null) 'note_id': note.id,
-    'summary': truncated
-        ? '${output.substring(0, _delegateSummaryChars)}…'
-        : output,
+    'summary': truncated ? '${output.substring(0, _delegateSummaryChars)}…' : output,
     if (note != null && truncated)
-      'hint': 'Full findings (${output.length} chars) are saved as note '
+      'hint':
+          'Full findings (${output.length} chars) are saved as note '
           '${note.id} — call read_note with that note_id when you need the '
           'detail.',
   };
@@ -244,44 +252,43 @@ Future<Map<String, dynamic>> _executeReadNote(
   if (noteId == null) {
     return {
       'status': 'error',
-      'message':
-          'Pass note_id — the integer id a delegate result returned.',
+      'message': 'Pass note_id — the integer id a delegate result returned.',
     };
   }
   final rawPage = call.arguments['page'];
-  final page =
-      rawPage is int ? rawPage : int.tryParse(rawPage?.toString() ?? '') ?? 1;
+  final page = rawPage is int ? rawPage : int.tryParse(rawPage?.toString() ?? '') ?? 1;
   onLog?.call('Tool call: read_note #$noteId (page $page)');
 
   final cap = _readCapNow(session, systemPrompt, contextWindow);
   if (cap < _minReadChars) {
     return {
       'status': 'error',
-      'message': 'Not enough context left to read the note — work with the '
+      'message':
+          'Not enough context left to read the note — work with the '
           'summary you already have.',
     };
   }
 
-  final note =
-      await AssistantNoteRepository(db: db).get(noteId, sessionId: session.id);
+  final note = await AssistantNoteRepository(db: db).get(noteId, sessionId: session.id);
   if (note == null) {
     return {
       'status': 'error',
-      'message': 'No note $noteId in this conversation. Use the note_id a '
+      'message':
+          'No note $noteId in this conversation. Use the note_id a '
           'delegate result returned.',
     };
   }
-  session._addEntry(OptimizerChatEntry(
-    kind: OptimizerEntryKind.tool,
-    text: '#$noteId ${note.title}',
-    toolName: 'read_note',
-  ));
+  session._addEntry(
+    OptimizerChatEntry(
+      kind: OptimizerEntryKind.tool,
+      text: '#$noteId ${note.title}',
+      toolName: 'read_note',
+    ),
+  );
 
   // Paged like knowledge reads: a fixed page size keeps page numbers
   // stable across reads; only a window tighter than one page shrinks it.
-  final pageSize = cap < KnowledgeBaseService.pageSize
-      ? cap
-      : KnowledgeBaseService.pageSize;
+  final pageSize = cap < KnowledgeBaseService.pageSize ? cap : KnowledgeBaseService.pageSize;
   final content = note.content;
   final bounds = KnowledgeBaseService.pageBoundaries(content, pageSize);
   final total = bounds.length;
@@ -294,7 +301,8 @@ Future<Map<String, dynamic>> _executeReadNote(
     'total_pages': total,
     'content': content.substring(start, end),
     if (total > idx)
-      'note': 'Note continues — request the next page only if this part '
+      'note':
+          'Note continues — request the next page only if this part '
           'is not enough.',
   };
 }
@@ -318,7 +326,9 @@ Map<String, dynamic> _executeSubAgentKbTool(
       onLog?.call('[KB sub-agent] list_knowledge_files (${dir ?? '.'})');
       try {
         final files = KnowledgeBaseService().listFiles(knowledgeRoot, dir: dir);
-        return {'files': [for (final f in files) f.toJson()]};
+        return {
+          'files': [for (final f in files) f.toJson()],
+        };
       } on KbPathException catch (e) {
         return {'status': 'error', 'message': e.message};
       } catch (e) {
@@ -327,28 +337,33 @@ Map<String, dynamic> _executeSubAgentKbTool(
     case 'read_knowledge_file':
       final relPath = call.arguments['path']?.toString() ?? '';
       final rawPage = call.arguments['page'];
-      final page =
-          rawPage is int ? rawPage : int.tryParse(rawPage?.toString() ?? '') ?? 1;
+      final page = rawPage is int ? rawPage : int.tryParse(rawPage?.toString() ?? '') ?? 1;
       onLog?.call('[KB sub-agent] read_knowledge_file $relPath (page $page)');
       final cap = ContextBudget.readCapChars(contextWindow, occupiedChars);
       if (cap < _minReadChars) {
         return {
           'status': 'error',
-          'message': 'Not enough context left in this research run to read '
+          'message':
+              'Not enough context left in this research run to read '
               'more. Write your findings now from what you have already '
               'read.',
         };
       }
       try {
-        final result = KnowledgeBaseService().readFile(knowledgeRoot, relPath,
-            page: page, maxChars: cap);
+        final result = KnowledgeBaseService().readFile(
+          knowledgeRoot,
+          relPath,
+          page: page,
+          maxChars: cap,
+        );
         return {
           'path': relPath,
           'page': result.page,
           'total_pages': result.totalPages,
           'content': result.content,
           if (result.totalPages > result.page)
-            'note': 'File continues — request the next page only if this '
+            'note':
+                'File continues — request the next page only if this '
                 'part is not enough.',
         };
       } on KbPathException catch (e) {
@@ -359,7 +374,8 @@ Map<String, dynamic> _executeSubAgentKbTool(
     default:
       return {
         'status': 'error',
-        'message': 'Unknown tool "${call.name}". Available tools: '
+        'message':
+            'Unknown tool "${call.name}". Available tools: '
             'list_knowledge_files, read_knowledge_file.',
       };
   }
@@ -441,14 +457,16 @@ Future<Map<String, dynamic>> _executeWriteKnowledge(
   if (!session.writePolicy.allowWrites) {
     return {
       'status': 'error',
-      'message': 'The user has turned off knowledge-base writing for this '
+      'message':
+          'The user has turned off knowledge-base writing for this '
           'session. Do not retry — say what you would have changed instead.',
     };
   }
   if (!session.canWriteKnowledge) {
     return {
       'status': 'error',
-      'message': 'This session is read-only. Knowledge files can only be '
+      'message':
+          'This session is read-only. Knowledge files can only be '
           'edited in the knowledge-base maintenance mode.',
     };
   }
@@ -459,10 +477,13 @@ Future<Map<String, dynamic>> _executeWriteKnowledge(
   // silently staging a 30-byte fragment as the whole file — is the very
   // failure the modes exist to end, and the default is the one destructive
   // choice.
-  final mode = call.arguments['mode']?.toString() ??
+  final mode =
+      call.arguments['mode']?.toString() ??
       (section != null && section.isNotEmpty ? 'replace_section' : 'replace_file');
-  onLog?.call('Tool call: write_knowledge_file $writePath '
-      '(${writeContent.length} chars, $mode${section == null || section.isEmpty ? '' : ' "$section"'})');
+  onLog?.call(
+    'Tool call: write_knowledge_file $writePath '
+    '(${writeContent.length} chars, $mode${section == null || section.isEmpty ? '' : ' "$section"'})',
+  );
   if (writePath.trim().isEmpty) {
     return {'status': 'error', 'message': 'The path argument must not be empty.'};
   }
@@ -471,7 +492,8 @@ Future<Map<String, dynamic>> _executeWriteKnowledge(
   if (writeContent.trim().isEmpty) {
     return {
       'status': 'error',
-      'message': 'The content argument must not be empty. Pass the complete '
+      'message':
+          'The content argument must not be empty. Pass the complete '
           '${mode == 'replace_file' ? 'file' : 'section'} content.',
     };
   }
@@ -484,7 +506,8 @@ Future<Map<String, dynamic>> _executeWriteKnowledge(
   if (mode == 'replace_section' && (section == null || section.isEmpty)) {
     return {
       'status': 'error',
-      'message': 'replace_section needs a section: the heading line exactly as '
+      'message':
+          'replace_section needs a section: the heading line exactly as '
           'the file spells it (for example "## Lighting").',
     };
   }
@@ -494,7 +517,8 @@ Future<Map<String, dynamic>> _executeWriteKnowledge(
     if (mode != 'replace_file' && existing == null) {
       return {
         'status': 'error',
-        'message': '$writePath does not exist, so there is no section to '
+        'message':
+            '$writePath does not exist, so there is no section to '
             '$mode into. Create it with the whole-file mode.',
       };
     }
@@ -508,7 +532,8 @@ Future<Map<String, dynamic>> _executeWriteKnowledge(
     if (existing != null && livePages.isEmpty) {
       return {
         'status': 'error',
-        'message': 'Read $writePath with read_knowledge_file first — you '
+        'message':
+            'Read $writePath with read_knowledge_file first — you '
             'must not overwrite a file you have not read.',
       };
     }
@@ -532,11 +557,18 @@ Future<Map<String, dynamic>> _executeWriteKnowledge(
       // section on an unread page would be rewritten from a guess. A read
       // that came back whole covers every heading.
       if (sectionOrNull != null && pendingBase == null) {
-        final unread = _sectionOnUnreadPage(session, writePath, existing!, sectionOrNull, livePages);
+        final unread = _sectionOnUnreadPage(
+          session,
+          writePath,
+          existing!,
+          sectionOrNull,
+          livePages,
+        );
         if (unread != null) {
           return {
             'status': 'error',
-            'message': 'The section "$sectionOrNull" of $writePath is on page '
+            'message':
+                'The section "$sectionOrNull" of $writePath is on page '
                 '$unread, which you have not read — read that page first.',
           };
         }
@@ -573,13 +605,15 @@ Future<Map<String, dynamic>> _executeWriteKnowledge(
       await PromptOptimizerAgent.applyStagedKbEdit(session: session, editId: editId);
       return {
         'status': 'ok',
-        'message': 'Wrote $writePath. Per-edit confirmation is off for this '
+        'message':
+            'Wrote $writePath. Per-edit confirmation is off for this '
             'session, so the change is already on disk.',
       };
     }
     return {
       'status': 'ok',
-      'message': 'Edit to $writePath staged for user approval. It is NOT '
+      'message':
+          'Edit to $writePath staged for user approval. It is NOT '
           'written yet — do not assume it was applied, and do not re-read '
           'the file expecting your new content.',
     };
@@ -607,14 +641,18 @@ Map<String, dynamic> _executeTool(
       if (knowledgeRoot == null) return _kbUnavailable();
       final dir = call.arguments['dir']?.toString();
       onLog?.call('Tool call: list_knowledge_files (${dir ?? '.'})');
-      session._addEntry(OptimizerChatEntry(
-        kind: OptimizerEntryKind.tool,
-        text: dir ?? '',
-        toolName: 'list_knowledge_files',
-      ));
+      session._addEntry(
+        OptimizerChatEntry(
+          kind: OptimizerEntryKind.tool,
+          text: dir ?? '',
+          toolName: 'list_knowledge_files',
+        ),
+      );
       try {
         final files = KnowledgeBaseService().listFiles(knowledgeRoot, dir: dir);
-        return {'files': [for (final f in files) f.toJson()]};
+        return {
+          'files': [for (final f in files) f.toJson()],
+        };
       } on KbPathException catch (e) {
         return {'status': 'error', 'message': e.message};
       } catch (e) {
@@ -640,11 +678,16 @@ Map<String, dynamic> _executeTool(
           // went on. `_liveReadPages` is unaffected: it requires a non-null
           // `content` (see the invariant it documents), which this lacks.
           'path': relPath,
-          'note': 'This page is already in the conversation — refer to the earlier result instead of re-reading it.',
+          'note':
+              'This page is already in the conversation — refer to the earlier result instead of re-reading it.',
         };
       }
-      final cap = _readCapNow(session, systemPrompt, contextWindow,
-          keepCurrentTurnImages: forceViewAllImages);
+      final cap = _readCapNow(
+        session,
+        systemPrompt,
+        contextWindow,
+        keepCurrentTurnImages: forceViewAllImages,
+      );
       if (cap < _minReadChars) {
         // Returning a sliver instead would be worse than refusing: the model
         // would keep asking for more, and every retry is another full-window
@@ -652,23 +695,34 @@ Map<String, dynamic> _executeTool(
         // tool away rather than let the loop grind through its remaining
         // iterations.
         onContextExhausted();
-        onLog?.call('Context exhausted (~$cap chars free) — knowledge reading '
-            'disabled for the rest of this turn.');
+        onLog?.call(
+          'Context exhausted (~$cap chars free) — knowledge reading '
+          'disabled for the rest of this turn.',
+        );
         return {
           'status': 'error',
-          'message': 'Not enough context left to read more of the knowledge '
+          'message':
+              'Not enough context left to read more of the knowledge '
               'base. Work with what you have already read, or tell the user '
               'to start a new conversation for a fresh context.',
         };
       }
       try {
-        final result = KnowledgeBaseService()
-            .readFile(knowledgeRoot, relPath, page: page, maxChars: cap);
-        session._addEntry(OptimizerChatEntry(
-          kind: OptimizerEntryKind.tool,
-          text: result.totalPages > 1 ? '$relPath (${result.page}/${result.totalPages})' : relPath,
-          toolName: 'read_knowledge_file',
-        ));
+        final result = KnowledgeBaseService().readFile(
+          knowledgeRoot,
+          relPath,
+          page: page,
+          maxChars: cap,
+        );
+        session._addEntry(
+          OptimizerChatEntry(
+            kind: OptimizerEntryKind.tool,
+            text: result.totalPages > 1
+                ? '$relPath (${result.page}/${result.totalPages})'
+                : relPath,
+            toolName: 'read_knowledge_file',
+          ),
+        );
         return {
           'path': relPath,
           'page': result.page,
@@ -684,11 +738,13 @@ Map<String, dynamic> _executeTool(
       }
     case 'list_reference_images':
       onLog?.call('Tool call: list_reference_images (${referenceImages.length} images)');
-      session._addEntry(OptimizerChatEntry(
-        kind: OptimizerEntryKind.tool,
-        text: '',
-        toolName: 'list_reference_images',
-      ));
+      session._addEntry(
+        OptimizerChatEntry(
+          kind: OptimizerEntryKind.tool,
+          text: '',
+          toolName: 'list_reference_images',
+        ),
+      );
       if (referenceImages.isEmpty) {
         return {'images': [], 'note': 'The user attached no reference images.'};
       }
@@ -726,7 +782,8 @@ Map<String, dynamic> _executeTool(
         onLog?.call('Tool call rejected: unknown image id "$rawId"');
         return {
           'status': 'error',
-          'message': 'Unknown id. Use an id exactly as returned by '
+          'message':
+              'Unknown id. Use an id exactly as returned by '
               'list_reference_images (1..${referenceImages.length}).',
         };
       }
@@ -738,50 +795,48 @@ Map<String, dynamic> _executeTool(
       // still inside the recent window and therefore actually part of the
       // next request. Once _trimForSend has elided it (or compaction folded
       // it), the model may legitimately ask to see the image again.
-      if (_liveViewedPaths(session, keepCurrentTurnImages: forceViewAllImages)
-              .contains(path) ||
+      if (_liveViewedPaths(session, keepCurrentTurnImages: forceViewAllImages).contains(path) ||
           alreadyAttached) {
         return {
           'status': 'ok',
-          'note': 'Image #$id was already attached earlier in this '
+          'note':
+              'Image #$id was already attached earlier in this '
               'conversation — refer to that attachment.',
         };
       }
       if (!File(path).existsSync()) {
-        return {
-          'status': 'error',
-          'message': 'Image #$id no longer exists on disk.',
-        };
+        return {'status': 'error', 'message': 'Image #$id no longer exists on disk.'};
       }
       pendingViews.add({'id': '$id', 'name': image['name'] ?? '', 'path': path});
       session._markViewed(path);
-      session._addEntry(OptimizerChatEntry(
-        kind: OptimizerEntryKind.tool,
-        text: image['name'] ?? '',
-        toolName: 'view_image',
-      ));
+      session._addEntry(
+        OptimizerChatEntry(
+          kind: OptimizerEntryKind.tool,
+          text: image['name'] ?? '',
+          toolName: 'view_image',
+        ),
+      );
       final unviewed = [
         for (int i = 0; i < referenceImages.length; i++)
-          if (!session.viewedImagePaths.contains(referenceImages[i]['path']))
-            i + 1,
+          if (!session.viewedImagePaths.contains(referenceImages[i]['path'])) i + 1,
       ];
       return {
         'status': 'ok',
         'note': 'Image #$id is attached in the next message.',
         if (forceViewAllImages && unviewed.isNotEmpty)
-          'reminder': 'Still unviewed image ids: ${unviewed.join(', ')}. '
+          'reminder':
+              'Still unviewed image ids: ${unviewed.join(', ')}. '
               'View them all before calling submit_prompt.',
       };
 
     case 'submit_prompt':
       final prompt = call.arguments['prompt']?.toString() ?? '';
       if (prompt.trim().isEmpty) {
-        return {
-          'status': 'error',
-          'message': 'The prompt argument must not be empty.',
-        };
+        return {'status': 'error', 'message': 'The prompt argument must not be empty.'};
       }
-      onLog?.call('Tool call: submit_prompt (v${session.promptVersions + 1}, ${prompt.length} chars)');
+      onLog?.call(
+        'Tool call: submit_prompt (v${session.promptVersions + 1}, ${prompt.length} chars)',
+      );
       session._stagePrompt(prompt, call.arguments['note']?.toString());
       return {
         'status': 'ok',
@@ -791,7 +846,8 @@ Map<String, dynamic> _executeTool(
     default:
       return {
         'status': 'error',
-        'message': 'Unknown tool "${call.name}". Available tools: '
+        'message':
+            'Unknown tool "${call.name}". Available tools: '
             'list_reference_images, view_image, submit_prompt, ask_user'
             '${knowledgeRoot != null ? ', list_knowledge_files, read_knowledge_file' : ''}'
             '${session.canWriteKnowledge ? ', write_knowledge_file' : ''}.',
@@ -800,9 +856,9 @@ Map<String, dynamic> _executeTool(
 }
 
 Map<String, dynamic> _kbUnavailable() => {
-      'status': 'error',
-      'message': 'The knowledge base is not available in this session.',
-    };
+  'status': 'error',
+  'message': 'The knowledge base is not available in this session.',
+};
 
 int _fileSizeKb(String? path) {
   if (path == null) return 0;

@@ -17,20 +17,15 @@ import 'package:joycai_image_ai_toolkits/widgets/shell/shell_cover.dart';
 const Duration _reveal = Duration(milliseconds: 120);
 
 /// Whether the subtree under [key] is still ticking.
-bool _ticking(GlobalKey key) =>
-    TickerMode.valuesOf(key.currentContext!).enabled;
+bool _ticking(GlobalKey key) => TickerMode.valuesOf(key.currentContext!).enabled;
 
 FullScreenCoverRoute<void> _coverRoute() => FullScreenCoverRoute<void>(
-      fullscreenDialog: true,
-      transitionDuration: _reveal,
-      reverseTransitionDuration: _reveal,
-      pageBuilder: (_, _, _) => const Scaffold(
-        backgroundColor: Colors.black,
-        body: SizedBox.expand(),
-      ),
-      transitionsBuilder: (_, animation, _, child) =>
-          FadeTransition(opacity: animation, child: child),
-    );
+  fullscreenDialog: true,
+  transitionDuration: _reveal,
+  reverseTransitionDuration: _reveal,
+  pageBuilder: (_, _, _) => const Scaffold(backgroundColor: Colors.black, body: SizedBox.expand()),
+  transitionsBuilder: (_, animation, _, child) => FadeTransition(opacity: animation, child: child),
+);
 
 void main() {
   testWidgets('the shell below stops ticking once the cover settles, and '
@@ -40,13 +35,14 @@ void main() {
     final GlobalKey belowKey = GlobalKey();
     final GlobalKey<NavigatorState> navKey = GlobalKey<NavigatorState>();
 
-    await tester.pumpWidget(MaterialApp(
-      debugShowCheckedModeBanner: false,
-      navigatorKey: navKey,
-      builder: (context, child) =>
-          ShellCover(controller: controller, child: child!),
-      home: SizedBox.expand(key: belowKey),
-    ));
+    await tester.pumpWidget(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        navigatorKey: navKey,
+        builder: (context, child) => ShellCover(controller: controller, child: child!),
+        home: SizedBox.expand(key: belowKey),
+      ),
+    );
 
     // `TickerMode` is the observable side of the Overlay's opaque handling: an
     // opaque entry makes everything below it offstage, which stops its paint,
@@ -61,8 +57,7 @@ void main() {
     // Mid-flight the shell must still be live — that is what the Hero flies
     // over, and the whole reason the route cannot just be born opaque.
     await tester.pump(_reveal ~/ 2);
-    expect(_ticking(belowKey), isTrue,
-        reason: 'the grid has to stay visible under the fade');
+    expect(_ticking(belowKey), isTrue, reason: 'the grid has to stay visible under the fade');
     expect(controller.covered, isFalse);
 
     await tester.pumpAndSettle();
@@ -72,9 +67,13 @@ void main() {
     navKey.currentState!.pop();
     // One pump is the first frame of the exit: by then the shell must be back.
     await tester.pump();
-    expect(_ticking(belowKey), isTrue,
-        reason: 'didPop fires when the pop starts — a shell that came back '
-            'only at the end would flash in for the last frame');
+    expect(
+      _ticking(belowKey),
+      isTrue,
+      reason:
+          'didPop fires when the pop starts — a shell that came back '
+          'only at the end would flash in for the last frame',
+    );
     expect(controller.covered, isFalse);
 
     await tester.pumpAndSettle();
@@ -87,13 +86,14 @@ void main() {
     addTearDown(controller.dispose);
     final GlobalKey<NavigatorState> navKey = GlobalKey<NavigatorState>();
 
-    await tester.pumpWidget(MaterialApp(
-      debugShowCheckedModeBanner: false,
-      navigatorKey: navKey,
-      builder: (context, child) =>
-          ShellCover(controller: controller, child: child!),
-      home: const SizedBox.expand(),
-    ));
+    await tester.pumpWidget(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        navigatorKey: navKey,
+        builder: (context, child) => ShellCover(controller: controller, child: child!),
+        home: const SizedBox.expand(),
+      ),
+    );
 
     navKey.currentState!.push(_coverRoute());
     await tester.pumpAndSettle();
@@ -113,13 +113,14 @@ void main() {
     addTearDown(controller.dispose);
     final GlobalKey<NavigatorState> navKey = GlobalKey<NavigatorState>();
 
-    await tester.pumpWidget(MaterialApp(
-      debugShowCheckedModeBanner: false,
-      navigatorKey: navKey,
-      builder: (context, child) =>
-          ShellCover(controller: controller, child: child!),
-      home: const SizedBox.expand(),
-    ));
+    await tester.pumpWidget(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        navigatorKey: navKey,
+        builder: (context, child) => ShellCover(controller: controller, child: child!),
+        home: const SizedBox.expand(),
+      ),
+    );
 
     navKey.currentState!.push(_coverRoute());
     await tester.pumpAndSettle();
@@ -129,16 +130,16 @@ void main() {
 
     navKey.currentState!.pop();
     await tester.pumpAndSettle();
-    expect(controller.covered, isTrue,
-        reason: 'the first cover is still there');
+    expect(controller.covered, isTrue, reason: 'the first cover is still there');
 
     navKey.currentState!.pop();
     await tester.pumpAndSettle();
     expect(controller.covered, isFalse);
   });
 
-  testWidgets('the window ground shrinks to the title-bar strip while covered',
-      (WidgetTester tester) async {
+  testWidgets('the window ground shrinks to the title-bar strip while covered', (
+    WidgetTester tester,
+  ) async {
     final controller = ShellCoverController();
     addTearDown(controller.dispose);
 
@@ -151,27 +152,31 @@ void main() {
     // the app's providers and localizations and has nothing to do with what is
     // under test; the controller is driven directly, and the route that drives
     // it for real is covered above.
-    await tester.pumpWidget(MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: ShellCover(
-        controller: controller,
-        child: const Stack(children: [WindowGround()]),
+    await tester.pumpWidget(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: ShellCover(
+          controller: controller,
+          child: const Stack(children: [WindowGround()]),
+        ),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
 
     Size groundSize() => tester.getSize(find.byType(AuroraBackdrop));
 
-    expect(groundSize(), const Size(1200, 800),
-        reason: 'uncovered, the wall is the whole window');
+    expect(groundSize(), const Size(1200, 800), reason: 'uncovered, the wall is the whole window');
 
     // The title bar sits above the Navigator, so no route can cover it and it
     // is still real glass with something to refract. Everything below is
     // behind opaque black.
     controller.enter();
     await tester.pumpAndSettle();
-    expect(groundSize(), const Size(1200, kTitleBarHeight),
-        reason: 'covered, only the strip behind the title bar still shows');
+    expect(
+      groundSize(),
+      const Size(1200, kTitleBarHeight),
+      reason: 'covered, only the strip behind the title bar still shows',
+    );
 
     controller.leave();
     await tester.pumpAndSettle();

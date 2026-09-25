@@ -12,12 +12,12 @@ import 'package:joycai_image_ai_toolkits/services/llm/turn_continuation.dart';
 /// answers with `MISSING_THOUGHT_SIGNATURE` rather than a 400.
 void main() {
   Map<String, dynamic> chunk(List<Map<String, dynamic>> parts) => {
-        'candidates': [
-          {
-            'content': {'role': 'model', 'parts': parts},
-          },
-        ],
-      };
+    'candidates': [
+      {
+        'content': {'role': 'model', 'parts': parts},
+      },
+    ],
+  };
 
   final thought = <String, dynamic>{'text': 'plan', 'thought': true};
   final lead = <String, dynamic>{'text': 'Let me check.'};
@@ -40,14 +40,15 @@ void main() {
     });
 
     test('a turn without a function call carries nothing', () {
-      final collector = GeminiModelPartsCollector()
-        ..feed(chunk([thought, lead]));
+      final collector = GeminiModelPartsCollector()..feed(chunk([thought, lead]));
       expect(collector.toolTurnParts, isNull);
     });
 
     test('a usage-only chunk adds nothing', () {
       final collector = GeminiModelPartsCollector()
-        ..feed({'usageMetadata': {'promptTokenCount': 3}})
+        ..feed({
+          'usageMetadata': {'promptTokenCount': 3},
+        })
         ..feed(chunk([call]));
       expect(collector.toolTurnParts, [call]);
     });
@@ -66,32 +67,40 @@ void main() {
 
   group('replay', () {
     LLMMessage turn({String? producer, bool withCalls = true}) => LLMMessage(
-          role: LLMRole.assistant,
-          content: 'Let me check.',
-          rawThinkingModelId: producer,
-          rawModelParts: [thought, lead, call, trailingSig],
-          toolCalls: withCalls
-              ? [
-                  LLMToolCall(
-                    id: 'gtc_1',
-                    name: 'list_files',
-                    arguments: const {'dir': '.'},
-                    thoughtSignature: 'sig-call',
-                  ),
-                ]
-              : const [],
-        );
+      role: LLMRole.assistant,
+      content: 'Let me check.',
+      rawThinkingModelId: producer,
+      rawModelParts: [thought, lead, call, trailingSig],
+      toolCalls: withCalls
+          ? [
+              LLMToolCall(
+                id: 'gtc_1',
+                name: 'list_files',
+                arguments: const {'dir': '.'},
+                thoughtSignature: 'sig-call',
+              ),
+            ]
+          : const [],
+    );
 
     List modelParts(LLMMessage m, String target) =>
-        ((prepareGooglePayload([
-          LLMMessage(role: LLMRole.user, content: 'go'),
-          m,
-        ], null, null, modelId: target)['contents'] as List)[1] as Map)['parts']
+        ((prepareGooglePayload(
+                      [LLMMessage(role: LLMRole.user, content: 'go'), m],
+                      null,
+                      null,
+                      modelId: target,
+                    )['contents']
+                    as List)[1]
+                as Map)['parts']
             as List;
 
     test('the producing model gets the whole parts array back verbatim', () {
-      expect(modelParts(turn(producer: 'gemini-3-pro'), 'gemini-3-pro'),
-          [thought, lead, call, trailingSig]);
+      expect(modelParts(turn(producer: 'gemini-3-pro'), 'gemini-3-pro'), [
+        thought,
+        lead,
+        call,
+        trailingSig,
+      ]);
     });
 
     test('another model gets a rebuild with no signature and no thought', () {
@@ -108,8 +117,7 @@ void main() {
     });
 
     test('a turn without tool calls is never replayed verbatim', () {
-      final parts = modelParts(
-          turn(producer: 'gemini-3-pro', withCalls: false), 'gemini-3-pro');
+      final parts = modelParts(turn(producer: 'gemini-3-pro', withCalls: false), 'gemini-3-pro');
       expect(parts, [
         {'text': 'Let me check.'},
       ]);
@@ -139,10 +147,9 @@ void main() {
 
     test('absent stays absent in JSON', () {
       expect(
-          LLMMessage(role: LLMRole.assistant, content: 'x')
-              .toJson()
-              .containsKey('rawModelParts'),
-          isFalse);
+        LLMMessage(role: LLMRole.assistant, content: 'x').toJson().containsKey('rawModelParts'),
+        isFalse,
+      );
     });
 
     test('a merged turn keeps the parts of the part that called the tools', () {

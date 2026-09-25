@@ -20,19 +20,19 @@ void main() {
 
   Future<void> pump(WidgetTester tester, AssistantMode mode) async {
     final ui = WorkbenchUIState()..optimizerSession = PromptOptimizerSession(mode: mode);
-    await tester.pumpWidget(MultiProvider(
-      providers: [
-        ChangeNotifierProvider<AppState>.value(value: AppState()),
-        ChangeNotifierProvider<WorkbenchUIState>.value(value: ui),
-      ],
-      child: const MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: Scaffold(
-          body: SizedBox(width: 250, child: OptimizerLeftPanel(kbPath: null)),
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<AppState>.value(value: AppState()),
+          ChangeNotifierProvider<WorkbenchUIState>.value(value: ui),
+        ],
+        child: const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(body: SizedBox(width: 250, child: OptimizerLeftPanel(kbPath: null))),
         ),
       ),
-    ));
+    );
     await tester.pump();
   }
 

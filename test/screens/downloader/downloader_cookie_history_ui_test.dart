@@ -26,6 +26,7 @@ void main() {
     await AppState().downloaderState.saveCookie('a.example', 'sid=1; x=2');
     await AppState().downloaderState.saveCookie('b.example', 'sid=3');
   }
+
   tearDownAll(() => env.dispose());
 
   // The tap goes through real async so the database work it starts belongs
@@ -35,7 +36,11 @@ void main() {
   // needs a real reply *and then* a pump to run its continuation, so a fixed
   // number of pumps is a bet on the disk: a loaded CI runner lost it, and the
   // row being asserted gone was still on screen.
-  Future<void> tapAndAwaitDb(WidgetTester tester, Finder target, {required bool Function() until}) async {
+  Future<void> tapAndAwaitDb(
+    WidgetTester tester,
+    Finder target, {
+    required bool Function() until,
+  }) async {
     await inRealAsyncUntil(tester, () => tester.tap(target), until: until);
     await tester.pumpAndSettle();
   }
@@ -54,29 +59,31 @@ void main() {
       final cookies = TextEditingController();
       addTearDown(prefix.dispose);
       addTearDown(cookies.dispose);
-      await tester.pumpWidget(ChangeNotifierProvider<AppState>.value(
-        value: appState,
-        child: MaterialApp(
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          locale: const Locale('en'),
-          home: Builder(
-            builder: (context) => Scaffold(
-              body: Center(
-                child: TextButton(
-                  onPressed: () => showDownloaderAdvancedDialog(
-                    context,
-                    prefixController: prefix,
-                    cookieController: cookies,
-                    onImportCookie: () {},
+      await tester.pumpWidget(
+        ChangeNotifierProvider<AppState>.value(
+          value: appState,
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: const Locale('en'),
+            home: Builder(
+              builder: (context) => Scaffold(
+                body: Center(
+                  child: TextButton(
+                    onPressed: () => showDownloaderAdvancedDialog(
+                      context,
+                      prefixController: prefix,
+                      cookieController: cookies,
+                      onImportCookie: () {},
+                    ),
+                    child: const Text('open'),
                   ),
-                  child: const Text('open'),
                 ),
               ),
             ),
           ),
         ),
-      ));
+      );
       await tester.tap(find.text('open'));
       await tester.pumpAndSettle();
       final l10n = await AppLocalizations.delegate.load(const Locale('en'));
@@ -88,11 +95,19 @@ void main() {
       expect(tester.takeException(), isNull);
 
       // The innermost row holding a.example that holds one remove button.
-      final rowOfA = find.ancestor(of: find.text('a.example'), matching: find.byType(Row)).evaluate().firstWhere(
-            (row) => find
-                .descendant(of: find.byElementPredicate((e) => e == row), matching: find.byTooltip(l10n.cookieHistoryForget))
-                .evaluate()
-                .length == 1,
+      final rowOfA = find
+          .ancestor(of: find.text('a.example'), matching: find.byType(Row))
+          .evaluate()
+          .firstWhere(
+            (row) =>
+                find
+                    .descendant(
+                      of: find.byElementPredicate((e) => e == row),
+                      matching: find.byTooltip(l10n.cookieHistoryForget),
+                    )
+                    .evaluate()
+                    .length ==
+                1,
           );
       final removeA = find.descendant(
         of: find.byElementPredicate((e) => e == rowOfA),
@@ -100,14 +115,21 @@ void main() {
       );
       await tester.ensureVisible(removeA);
       await tester.pumpAndSettle();
-      await tapAndAwaitDb(tester, removeA,
-          until: () => state.cookieHistory.every((row) => row['host'] != 'a.example'));
+      await tapAndAwaitDb(
+        tester,
+        removeA,
+        until: () => state.cookieHistory.every((row) => row['host'] != 'a.example'),
+      );
       expect(find.text('a.example'), findsNothing);
       expect(find.text('b.example'), findsOneWidget);
 
       await tester.ensureVisible(find.text(l10n.cookieRetentionOff));
       await tester.pumpAndSettle();
-      await tapAndAwaitDb(tester, find.text(l10n.cookieRetentionOff), until: () => state.cookieHistory.isEmpty);
+      await tapAndAwaitDb(
+        tester,
+        find.text(l10n.cookieRetentionOff),
+        until: () => state.cookieHistory.isEmpty,
+      );
       expect(find.text('b.example'), findsNothing);
       expect(state.cookieRetention, CookieRetention.off);
       expect(tester.takeException(), isNull);

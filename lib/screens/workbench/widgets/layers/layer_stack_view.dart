@@ -110,10 +110,7 @@ class LayerStackView extends StatelessWidget {
                       child: GestureDetector(
                         behavior: HitTestBehavior.opaque,
                         onTapUp: (d) => onSelect(_hit(d.localPosition / scale)),
-                        child: SizedBox.fromSize(
-                          size: size,
-                          child: _stack(context, scheme, scale),
-                        ),
+                        child: SizedBox.fromSize(size: size, child: _stack(context, scheme, scale)),
                       ),
                     ),
                   ),
@@ -129,12 +126,7 @@ class LayerStackView extends StatelessWidget {
   Widget _stack(BuildContext context, ColorScheme scheme, double scale) {
     Rect onScreen(ImageLayer l) {
       final r = _boxOf(l);
-      return Rect.fromLTWH(
-        r.left * scale,
-        r.top * scale,
-        r.width * scale,
-        r.height * scale,
-      );
+      return Rect.fromLTWH(r.left * scale, r.top * scale, r.width * scale, r.height * scale);
     }
 
     final base = set.base;
@@ -190,11 +182,7 @@ class LayerStackView extends StatelessWidget {
               Positioned.fromRect(
                 rect: onScreen(layer),
                 child: IgnorePointer(
-                  child: DashedBorder(
-                    color: scheme.accentRule,
-                    radius: 0,
-                    strokeWidth: 1,
-                  ),
+                  child: DashedBorder(color: scheme.accentRule, radius: 0, strokeWidth: 1),
                 ),
               ),
         if (chosen != null && !hidden.contains(chosen.path))
@@ -229,16 +217,12 @@ class _Selection extends StatelessWidget {
           right: -3,
           bottom: -3,
           child: DecoratedBox(
-            decoration: BoxDecoration(
-              border: Border.all(color: scheme.accentRing, width: 3),
-            ),
+            decoration: BoxDecoration(border: Border.all(color: scheme.accentRing, width: 3)),
           ),
         ),
         Positioned.fill(
           child: DecoratedBox(
-            decoration: BoxDecoration(
-              border: Border.all(color: scheme.primary, width: 1.5),
-            ),
+            decoration: BoxDecoration(border: Border.all(color: scheme.primary, width: 1.5)),
           ),
         ),
         if (label != null)
@@ -274,11 +258,7 @@ class _Selection extends StatelessWidget {
 
 /// The transparency ground (`A7`: card / column in 16px squares).
 class CheckerboardPainter extends CustomPainter {
-  const CheckerboardPainter({
-    required this.light,
-    required this.dark,
-    this.cell = 16,
-  });
+  const CheckerboardPainter({required this.light, required this.dark, this.cell = 16});
 
   final Color light;
   final Color dark;

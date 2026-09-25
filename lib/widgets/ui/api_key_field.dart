@@ -73,7 +73,9 @@ class _ApiKeyFieldState extends State<ApiKeyField> {
               iconSize: AppSize.iconMd,
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints.tightFor(
-                  width: AppSize.compact, height: AppSize.compact),
+                width: AppSize.compact,
+                height: AppSize.compact,
+              ),
               style: IconButton.styleFrom(
                 minimumSize: Size.zero,
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,

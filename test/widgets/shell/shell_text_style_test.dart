@@ -49,12 +49,10 @@ void main() {
     return hits;
   }
 
-  for (final (label, size) in const [
-    ('desktop', Size(1440, 900)),
-    ('phone', Size(390, 844)),
-  ]) {
-    testWidgets('no shell text wears the missing-Material underline on $label',
-        (WidgetTester tester) async {
+  for (final (label, size) in const [('desktop', Size(1440, 900)), ('phone', Size(390, 844))]) {
+    testWidgets('no shell text wears the missing-Material underline on $label', (
+      WidgetTester tester,
+    ) async {
       await mountApp(
         tester,
         env: env,

@@ -92,7 +92,9 @@ class ImageCompressor {
   /// it was written for — a re-encode at unchanged resolution that was
   /// supposed to be a pure win and wasn't.
   static ({Uint8List bytes, String mimeType}) compressForViewing(
-      Uint8List original, String mimeType) {
+    Uint8List original,
+    String mimeType,
+  ) {
     final decoder = img.findDecoderForData(original);
     final info = decoder?.startDecode(original);
     if (decoder == null || info == null) {
@@ -125,8 +127,7 @@ class ImageCompressor {
       sized = decoded;
     }
 
-    final jpg =
-        Uint8List.fromList(img.encodeJpg(_flattenAlpha(sized), quality: _jpegQuality));
+    final jpg = Uint8List.fromList(img.encodeJpg(_flattenAlpha(sized), quality: _jpegQuality));
     if (!oversized && jpg.length >= original.length) {
       return (bytes: original, mimeType: mimeType);
     }
@@ -181,8 +182,7 @@ class ImageCompressor {
     final decoded = img.decodeImage(original);
     if (decoded == null) return (bytes: original, mimeType: mimeType);
     return (
-      bytes: Uint8List.fromList(
-          img.encodeJpg(_flattenAlpha(decoded), quality: _jpegQuality)),
+      bytes: Uint8List.fromList(img.encodeJpg(_flattenAlpha(decoded), quality: _jpegQuality)),
       mimeType: 'image/jpeg',
     );
   }

@@ -30,18 +30,20 @@ void main() {
   final at = DateTime(2026, 9, 1, 12);
 
   test('a recorded row reads back as the same usage', () async {
-    await usage.recordTokenUsage(TokenUsage(
-      taskId: 'req_1',
-      modelId: 'm',
-      modelDbId: 7,
-      timestamp: at,
-      inputTokens: 10,
-      cacheTokens: 4,
-      outputTokens: 6,
-      inputPrice: 2.0,
-      cachePrice: 0.5,
-      outputPrice: 8.0,
-    ));
+    await usage.recordTokenUsage(
+      TokenUsage(
+        taskId: 'req_1',
+        modelId: 'm',
+        modelDbId: 7,
+        timestamp: at,
+        inputTokens: 10,
+        cacheTokens: 4,
+        outputTokens: 6,
+        inputPrice: 2.0,
+        cachePrice: 0.5,
+        outputPrice: 8.0,
+      ),
+    );
 
     final row = (await usage.getTokenUsage()).single;
 
@@ -57,7 +59,8 @@ void main() {
   test('the range and the page are applied in SQL, newest first', () async {
     for (var day = 1; day <= 5; day++) {
       await usage.recordTokenUsage(
-          TokenUsage(taskId: 'd$day', modelId: 'm', timestamp: DateTime(2026, 9, day)));
+        TokenUsage(taskId: 'd$day', modelId: 'm', timestamp: DateTime(2026, 9, day)),
+      );
     }
 
     final page = await usage.getTokenUsage(
@@ -71,21 +74,23 @@ void main() {
   });
 
   test('settling a video re-prices the row its submit recorded', () async {
-    await usage.recordTokenUsage(TokenUsage(
-      taskId: 'video:op-1',
-      modelId: 'veo',
-      timestamp: at,
-      billingMode: 'spec',
-      spec: const UsageSpecBilling(
-        unit: OutputUnit.second,
-        units: 8,
-        unitPrice: 0.3,
-        snapshot: UsageSpecSnapshot(size: '1080p', seconds: 8),
-        inputImages: 1,
-        inputUnits: 1,
-        inputUnitPrice: 0.05,
+    await usage.recordTokenUsage(
+      TokenUsage(
+        taskId: 'video:op-1',
+        modelId: 'veo',
+        timestamp: at,
+        billingMode: 'spec',
+        spec: const UsageSpecBilling(
+          unit: OutputUnit.second,
+          units: 8,
+          unitPrice: 0.3,
+          snapshot: UsageSpecSnapshot(size: '1080p', seconds: 8),
+          inputImages: 1,
+          inputUnits: 1,
+          inputUnitPrice: 0.05,
+        ),
       ),
-    ));
+    );
 
     final matched = await usage.updateSpecBilling(
       'video:op-1',
@@ -105,21 +110,26 @@ void main() {
     expect(row.spec!.inputImages, 1);
     expect(row.costParts.specInput, closeTo(0.05, 1e-9));
     expect(row.specLabel, '1080p · 10s');
-    expect(await usage.updateSpecBilling('video:nobody', const UsageSpecBilling(units: 1, unitPrice: 1)), 0);
+    expect(
+      await usage.updateSpecBilling('video:nobody', const UsageSpecBilling(units: 1, unitPrice: 1)),
+      0,
+    );
   });
 
   test('settling leaves what the provider reported the row cost', () async {
     // The settle is a partial update of the output four and must stay one:
     // a report on the row is the provider's word, and re-pricing the
     // seconds is not a reason to lose it.
-    await usage.recordTokenUsage(TokenUsage(
-      taskId: 'video:op-2',
-      modelId: 'v',
-      timestamp: at,
-      billingMode: 'spec',
-      spec: const UsageSpecBilling(unit: OutputUnit.second, units: 8, unitPrice: 0.3),
-      reportedCost: 1.25,
-    ));
+    await usage.recordTokenUsage(
+      TokenUsage(
+        taskId: 'video:op-2',
+        modelId: 'v',
+        timestamp: at,
+        billingMode: 'spec',
+        spec: const UsageSpecBilling(unit: OutputUnit.second, units: 8, unitPrice: 0.3),
+        reportedCost: 1.25,
+      ),
+    );
 
     await usage.updateSpecBilling(
       'video:op-2',
@@ -135,20 +145,22 @@ void main() {
   test('a reported cost lands on the submit row and touches nothing else', () async {
     // xAI's terminal poll: the charge, on a row the submit recorded with
     // the frames it sent and the fee group's estimate.
-    await usage.recordTokenUsage(TokenUsage(
-      taskId: 'video:op-3',
-      modelId: 'v',
-      timestamp: at,
-      billingMode: 'spec',
-      spec: const UsageSpecBilling(
-        unit: OutputUnit.second,
-        units: 1,
-        unitPrice: 0.08,
-        inputImages: 2,
-        inputUnits: 2,
-        inputUnitPrice: 0.01,
+    await usage.recordTokenUsage(
+      TokenUsage(
+        taskId: 'video:op-3',
+        modelId: 'v',
+        timestamp: at,
+        billingMode: 'spec',
+        spec: const UsageSpecBilling(
+          unit: OutputUnit.second,
+          units: 1,
+          unitPrice: 0.08,
+          inputImages: 2,
+          inputUnits: 2,
+          inputUnitPrice: 0.01,
+        ),
       ),
-    ));
+    );
 
     // A figure the table would not produce, so the estimate is told apart.
     expect(await usage.updateReportedCost('video:op-3', 0.12), 1);
@@ -163,15 +175,17 @@ void main() {
   test('the latest checkpoint comes back whole', () async {
     expect(await usage.getLatestUsageCheckpoint(), isNull);
     await usage.saveUsageCheckpoint(UsageCheckpoint(timestamp: DateTime(2026, 8, 1), totalCost: 1));
-    await usage.saveUsageCheckpoint(UsageCheckpoint(
-      timestamp: at,
-      totalInputTokens: 10,
-      totalCacheTokens: 2,
-      totalOutputTokens: 5,
-      totalRequestCount: 3,
-      totalCost: 1.25,
-      groupCosts: const {42: 1.25},
-    ));
+    await usage.saveUsageCheckpoint(
+      UsageCheckpoint(
+        timestamp: at,
+        totalInputTokens: 10,
+        totalCacheTokens: 2,
+        totalOutputTokens: 5,
+        totalRequestCount: 3,
+        totalCost: 1.25,
+        groupCosts: const {42: 1.25},
+      ),
+    );
 
     final last = (await usage.getLatestUsageCheckpoint())!;
 
@@ -182,18 +196,20 @@ void main() {
 
   test('a saved task reads back as the same task', () async {
     final tasks = TaskRepository(db: db);
-    await tasks.saveTask(TaskItem(
-      id: 't1',
-      type: TaskType.videoGenerate,
-      imagePaths: const ['a.png'],
-      modelId: 'veo',
-      modelDbId: 7,
-      parameters: const {'prompt': 'p', 'assistantSessionId': 's1'},
-      status: TaskStatus.completed,
-      resultPaths: const ['out.mp4'],
-      operationName: 'op-1',
-      createdAt: at,
-    ));
+    await tasks.saveTask(
+      TaskItem(
+        id: 't1',
+        type: TaskType.videoGenerate,
+        imagePaths: const ['a.png'],
+        modelId: 'veo',
+        modelDbId: 7,
+        parameters: const {'prompt': 'p', 'assistantSessionId': 's1'},
+        status: TaskStatus.completed,
+        resultPaths: const ['out.mp4'],
+        operationName: 'op-1',
+        createdAt: at,
+      ),
+    );
 
     final back = (await tasks.getRecentTasks(10)).single;
 

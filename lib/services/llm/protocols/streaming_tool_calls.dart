@@ -31,8 +31,7 @@ class StreamingToolCallAccumulator {
 
   /// Argument characters assembled so far, across every call — measured on
   /// the merged text, so a cumulative dialect's restated frames count once.
-  int get argumentChars =>
-      _calls.values.fold(0, (sum, call) => sum + call.arguments.length);
+  int get argumentChars => _calls.values.fold(0, (sum, call) => sum + call.arguments.length);
 
   /// Consume one chunk's `tool_calls` array. Anything else is ignored — the
   /// field is absent from most chunks of a tool-bearing stream.
@@ -45,9 +44,7 @@ class StreamingToolCallAccumulator {
       // the field, the fallback is resolved from the call's own identity —
       // see [_slotForIndexless] for why bare array position is not enough.
       final rawIndex = tc['index'];
-      final index = rawIndex is num
-          ? rawIndex.toInt()
-          : _slotForIndexless(tc, position);
+      final index = rawIndex is num ? rawIndex.toInt() : _slotForIndexless(tc, position);
       final pending = _calls.putIfAbsent(index, _PendingToolCall.new);
       pending.id = _merge(pending.id, tc['id']);
       final fn = tc['function'];
@@ -69,9 +66,7 @@ class StreamingToolCallAccumulator {
       final rawId = tc['id'];
       final frameHasId = rawId is String && rawId.isNotEmpty;
       final isNamelessDelta =
-          pending.name.isNotEmpty &&
-          !frameHasId &&
-          (rawName is! String || rawName.isEmpty);
+          pending.name.isNotEmpty && !frameHasId && (rawName is! String || rawName.isEmpty);
       pending.name = _merge(pending.name, rawName);
       final rawArgs = fn['arguments'];
       if (rawArgs is Map<String, dynamic>) {
@@ -143,8 +138,7 @@ class StreamingToolCallAccumulator {
           id: resolveToolCallId(pending.id, index),
           name: pending.name,
           arguments:
-              pending.decodedArguments ??
-              decodeToolArguments(pending.arguments, logger: logger),
+              pending.decodedArguments ?? decodeToolArguments(pending.arguments, logger: logger),
         ),
       );
     }

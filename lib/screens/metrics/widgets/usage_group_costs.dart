@@ -47,11 +47,12 @@ class UsageGroupCosts extends StatelessWidget {
 
     // Groups deleted since their usage was recorded keep their cost in the
     // stats but have no name left to show, so they only survive in the total.
-    final entries = stats.groupCosts.entries
-        .where((e) => byId.containsKey(e.key))
-        .map((e) => (group: byId[e.key]!, cost: e.value, usage: stats.groupUsage[e.key]))
-        .toList()
-      ..sort((a, b) => b.cost.compareTo(a.cost));
+    final entries =
+        stats.groupCosts.entries
+            .where((e) => byId.containsKey(e.key))
+            .map((e) => (group: byId[e.key]!, cost: e.value, usage: stats.groupUsage[e.key]))
+            .toList()
+          ..sort((a, b) => b.cost.compareTo(a.cost));
 
     if (entries.isEmpty) return const SizedBox.shrink();
 
@@ -89,7 +90,9 @@ class UsageGroupCosts extends StatelessWidget {
       children: [
         SizedBox(width: _nameWidth, child: _name(context, group)),
         const SizedBox(width: _gap),
-        Expanded(child: _GroupBar(share: _shareOf(cost), usage: usage)),
+        Expanded(
+          child: _GroupBar(share: _shareOf(cost), usage: usage),
+        ),
         const SizedBox(width: _gap),
         SizedBox(width: _costWidth, child: _cost(context, cost, TextAlign.end)),
         const SizedBox(width: _gap),
@@ -117,7 +120,12 @@ class UsageGroupCosts extends StatelessWidget {
   }
 
   /// 「n 次请求未匹配任何档位，按 0 计 · 去补档位」.
-  Widget _unmatched(BuildContext context, AppLocalizations l10n, PricingGroup group, GroupUsage usage) {
+  Widget _unmatched(
+    BuildContext context,
+    AppLocalizations l10n,
+    PricingGroup group,
+    GroupUsage usage,
+  ) {
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final onFix = onFixRates;
@@ -169,7 +177,9 @@ class UsageGroupCosts extends StatelessWidget {
         const SizedBox(height: AppSpace.s6),
         Row(
           children: [
-            Expanded(child: _GroupBar(share: _shareOf(cost), usage: usage)),
+            Expanded(
+              child: _GroupBar(share: _shareOf(cost), usage: usage),
+            ),
             if (usage != null) ...[
               const SizedBox(width: AppSpace.s10),
               _requests(context, l10n, usage, TextAlign.end),
@@ -217,9 +227,9 @@ class UsageGroupCosts extends StatelessWidget {
       '\$${cost.toStringAsFixed(4)}',
       textAlign: align,
       maxLines: 1,
-      style: Theme.of(context).textTheme.bodySmall?.mono.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
+      style: Theme.of(
+        context,
+      ).textTheme.bodySmall?.mono.copyWith(color: Theme.of(context).colorScheme.onSurface),
     );
   }
 
@@ -229,9 +239,9 @@ class UsageGroupCosts extends StatelessWidget {
       textAlign: align,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
+      style: Theme.of(
+        context,
+      ).textTheme.labelSmall?.mono.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
     );
   }
 }

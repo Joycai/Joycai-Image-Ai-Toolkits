@@ -59,9 +59,9 @@ class _UsageViewMobileState extends State<UsageViewMobile> {
   }
 
   UsageController _createController() => UsageController(
-        models: () => Provider.of<AppState>(context, listen: false).allModels,
-        pageSize: _pageSize,
-      );
+    models: () => Provider.of<AppState>(context, listen: false).allModels,
+    pageSize: _pageSize,
+  );
 
   @override
   void dispose() {
@@ -129,11 +129,7 @@ class _UsageViewMobileState extends State<UsageViewMobile> {
     final segments = AppSegmentedControl<String>(
       segments: [
         for (final preset in usagePresets)
-          AppSegment(
-            value: preset,
-            label: usagePresetLabel(l10n, preset),
-            enabled: !c.isLoading,
-          ),
+          AppSegment(value: preset, label: usagePresetLabel(l10n, preset), enabled: !c.isLoading),
       ],
       value: c.preset,
       onChanged: c.selectPreset,

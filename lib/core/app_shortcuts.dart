@@ -137,7 +137,8 @@ class ShortcutKey {
   int get hashCode => Object.hash(key, primary, shift, alt, macOSOnly);
 
   @override
-  String toString() => '${primary ? 'Primary+' : ''}${shift ? 'Shift+' : ''}'
+  String toString() =>
+      '${primary ? 'Primary+' : ''}${shift ? 'Shift+' : ''}'
       '${alt ? 'Alt+' : ''}${key.keyLabel}${macOSOnly ? ' (macOS only)' : ''}';
 }
 
@@ -317,7 +318,6 @@ abstract final class AppShortcuts {
   // elsewhere for drag-to-copy. That is the platform's drag convention, not a
   // shortcut — it has no key-down action and never appears in the panel.
 
-
   /// The table. Order is the reading order of the `⌘/` panel and of the
   /// settings section.
   static const List<AppShortcut> all = <AppShortcut>[
@@ -391,18 +391,14 @@ abstract final class AppShortcuts {
       layer: ShortcutLayer.screen,
       labelKey: 'shortcutToggleStaging',
       screens: {ShortcutScreen.fileBrowser},
-      keys: [
-        ShortcutKey(LogicalKeyboardKey.backslash, primary: true, shift: true),
-      ],
+      keys: [ShortcutKey(LogicalKeyboardKey.backslash, primary: true, shift: true)],
     ),
     AppShortcut(
       id: AppShortcutIds.toggleConfigPanel,
       layer: ShortcutLayer.screen,
       labelKey: 'shortcutToggleConfigPanel',
       screens: {ShortcutScreen.workbench},
-      keys: [
-        ShortcutKey(LogicalKeyboardKey.backslash, primary: true, shift: true),
-      ],
+      keys: [ShortcutKey(LogicalKeyboardKey.backslash, primary: true, shift: true)],
     ),
     AppShortcut(
       id: AppShortcutIds.exitSearch,
@@ -434,10 +430,7 @@ abstract final class AppShortcuts {
       labelKey: 'shortcutPreview',
       screens: _bothFileScreens,
       panes: {ShortcutPane.grid},
-      keys: [
-        ShortcutKey(LogicalKeyboardKey.enter),
-        ShortcutKey(LogicalKeyboardKey.numpadEnter),
-      ],
+      keys: [ShortcutKey(LogicalKeyboardKey.enter), ShortcutKey(LogicalKeyboardKey.numpadEnter)],
     ),
     AppShortcut(
       id: AppShortcutIds.rename,
@@ -528,38 +521,25 @@ abstract final class AppShortcuts {
   static AppShortcut byId(String id) => all.firstWhere((s) => s.id == id);
 
   /// The app-level rows, in table order.
-  static Iterable<AppShortcut> get appLevel =>
-      all.where((s) => s.layer == ShortcutLayer.app);
+  static Iterable<AppShortcut> get appLevel => all.where((s) => s.layer == ShortcutLayer.app);
 
   /// The rows [screen] claims at screen level.
-  static Iterable<AppShortcut> forScreen(ShortcutScreen screen) => all.where(
-      (s) => s.layer == ShortcutLayer.screen && s.screens.contains(screen));
+  static Iterable<AppShortcut> forScreen(ShortcutScreen screen) =>
+      all.where((s) => s.layer == ShortcutLayer.screen && s.screens.contains(screen));
 
   /// The rows the [pane] of [screen] claims.
-  static Iterable<AppShortcut> forPane(
-    ShortcutScreen screen,
-    ShortcutPane pane,
-  ) =>
-      all.where((s) =>
-          s.layer == ShortcutLayer.pane &&
-          s.screens.contains(screen) &&
-          s.panes.contains(pane));
+  static Iterable<AppShortcut> forPane(ShortcutScreen screen, ShortcutPane pane) => all.where(
+    (s) => s.layer == ShortcutLayer.pane && s.screens.contains(screen) && s.panes.contains(pane),
+  );
 
   /// The destination [event] jumps to (`⌘1…8`), or -1.
-  static int navigationIndexFor(
-    KeyEvent event, {
-    bool? macOS,
-    HardwareKeyboard? keyboard,
-  }) =>
-      byId(AppShortcutIds.navigateToDestination).keys.indexWhere(
-          (k) => k.matches(event, macOS: macOS, keyboard: keyboard));
+  static int navigationIndexFor(KeyEvent event, {bool? macOS, HardwareKeyboard? keyboard}) => byId(
+    AppShortcutIds.navigateToDestination,
+  ).keys.indexWhere((k) => k.matches(event, macOS: macOS, keyboard: keyboard));
 
   /// The workbench tool tab [event] selects (`⌘⌥1…5`), or -1.
-  static int workbenchToolIndexFor(
-    KeyEvent event, {
-    bool? macOS,
-    HardwareKeyboard? keyboard,
-  }) =>
-      byId(AppShortcutIds.selectWorkbenchTool).keys.indexWhere(
-          (k) => k.matches(event, macOS: macOS, keyboard: keyboard));
+  static int workbenchToolIndexFor(KeyEvent event, {bool? macOS, HardwareKeyboard? keyboard}) =>
+      byId(
+        AppShortcutIds.selectWorkbenchTool,
+      ).keys.indexWhere((k) => k.matches(event, macOS: macOS, keyboard: keyboard));
 }

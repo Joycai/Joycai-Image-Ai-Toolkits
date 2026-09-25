@@ -56,11 +56,7 @@ class MidjourneyProtocol implements ChatProtocol {
     LLMLogger? logger,
   }) async {
     final result = await _runImagine(target, history, options: options, logger: logger);
-    return LLMResponse(
-      text: '',
-      generatedImages: result.images,
-      metadata: result.metadata,
-    );
+    return LLMResponse(text: '', generatedImages: result.images, metadata: result.metadata);
   }
 
   /// Midjourney has no tool calling at all.
@@ -98,9 +94,9 @@ class MidjourneyProtocol implements ChatProtocol {
           // With the count of sources it was made from: an MJ task is billed
           // at submit, and a consumer that leaves after this chunk never sees
           // the closing one (same rule as `LLMDispatcher._asChunks`).
-          controller.add(LLMResponseChunk(
-              imagePart: img,
-              metadata: inputImageCountEntry(result.metadata)));
+          controller.add(
+            LLMResponseChunk(imagePart: img, metadata: inputImageCountEntry(result.metadata)),
+          );
         }
         if (!controller.isClosed) {
           controller.add(LLMResponseChunk(metadata: result.metadata, isDone: true));
@@ -117,10 +113,7 @@ class MidjourneyProtocol implements ChatProtocol {
 
   /// Fetch the raw `/mj/task/{id}/fetch` status for [taskId]. Exposed for the
   /// dispatcher's `checkOperation` surface.
-  Future<Map<String, dynamic>> fetchTaskStatus(
-    LLMTarget target,
-    String taskId,
-  ) async {
+  Future<Map<String, dynamic>> fetchTaskStatus(LLMTarget target, String taskId) async {
     final client = target.config.createClient();
     try {
       return await _fetchTask(client, target, taskId);
@@ -141,10 +134,7 @@ class MidjourneyProtocol implements ChatProtocol {
     void Function(String message)? onProgress,
   }) async {
     final config = target.config;
-    final userMsg = history.lastWhere(
-      (m) => m.role == LLMRole.user,
-      orElse: () => history.last,
-    );
+    final userMsg = history.lastWhere((m) => m.role == LLMRole.user, orElse: () => history.last);
     final prompt = _buildPrompt(userMsg.content, options);
     final base64Images = await _encodeAttachments(userMsg.attachments);
     final isBlend = base64Images.length >= 2;
@@ -171,8 +161,13 @@ class MidjourneyProtocol implements ChatProtocol {
         'state': '',
       };
 
-      logger?.call('Submitting Midjourney ${isBlend ? "blend" : "imagine"} to: ${endpoint.host}', level: 'DEBUG');
-      onProgress?.call('Submitting to Midjourney (${botType == 'NIJI_JOURNEY' ? "Niji" : "MJ"}, mode=$mode)…');
+      logger?.call(
+        'Submitting Midjourney ${isBlend ? "blend" : "imagine"} to: ${endpoint.host}',
+        level: 'DEBUG',
+      );
+      onProgress?.call(
+        'Submitting to Midjourney (${botType == 'NIJI_JOURNEY' ? "Niji" : "MJ"}, mode=$mode)…',
+      );
 
       if (LLMDebugLogger.enabled) {
         debugFile = await LLMDebugLogger.startLog(config.modelId, 'Midjourney (Submit)', {
@@ -181,18 +176,20 @@ class MidjourneyProtocol implements ChatProtocol {
         });
       }
 
-      final submitResp = await sendJsonRequest(client, endpoint,
-          headers: target.headers(),
-          body: jsonEncode(body),
-          options: options);
+      final submitResp = await sendJsonRequest(
+        client,
+        endpoint,
+        headers: target.headers(),
+        body: jsonEncode(body),
+        options: options,
+      );
 
       if (debugFile != null) {
         await LLMDebugLogger.appendLine(debugFile, 'Status: ${submitResp.statusCode}');
         await LLMDebugLogger.appendLine(debugFile, 'Body: ${submitResp.body}');
       }
 
-      final submitData =
-          decodeJsonBody(submitResp, apiName: 'Midjourney submit');
+      final submitData = decodeJsonBody(submitResp, apiName: 'Midjourney submit');
       final submitCode = submitData['code'];
       // code 1 = success, 22 = queued (also acceptable — task is created).
       if (submitCode != 1 && submitCode != 22) {
@@ -224,8 +221,7 @@ class MidjourneyProtocol implements ChatProtocol {
         logger: logger,
         fetch: () => _fetchTask(client, target, taskId, options: options),
         interpret: (task) async {
-          final status = requireJobStatus(task['status'],
-              job: 'Midjourney task', jobId: taskId);
+          final status = requireJobStatus(task['status'], job: 'Midjourney task', jobId: taskId);
           final progress = _parseProgress(task['progress']);
           if (status != lastStatus || progress != lastProgress) {
             lastStatus = status;
@@ -233,19 +229,23 @@ class MidjourneyProtocol implements ChatProtocol {
             final pct = progress >= 0 ? ' ($progress%)' : '';
             onProgress?.call('MJ status: $status$pct');
             logger?.call(
-                'Midjourney task $taskId status=$status progress=$progress',
-                level: 'DEBUG');
+              'Midjourney task $taskId status=$status progress=$progress',
+              level: 'DEBUG',
+            );
           }
 
           if (status == 'SUCCESS') {
             final imageUrl = task['imageUrl']?.toString();
             if (imageUrl == null || imageUrl.isEmpty) {
-              throw LLMApiException(
-                  'Midjourney task $taskId succeeded but returned no imageUrl');
+              throw LLMApiException('Midjourney task $taskId succeeded but returned no imageUrl');
             }
             onProgress?.call('Downloading image…');
-            final bytes = await _downloadImage(client, imageUrl, logger,
-                abortTrigger: abortTriggerOf(options));
+            final bytes = await _downloadImage(
+              client,
+              imageUrl,
+              logger,
+              abortTrigger: abortTriggerOf(options),
+            );
             return _MjResult(
               images: [bytes],
               metadata: {
@@ -259,8 +259,7 @@ class MidjourneyProtocol implements ChatProtocol {
             );
           }
           if (status == 'FAILURE') {
-            throw LLMApiException(
-                'Midjourney task $taskId failed: ${task['failReason'] ?? task}');
+            throw LLMApiException('Midjourney task $taskId failed: ${task['failReason'] ?? task}');
           }
           return null;
         },
@@ -278,29 +277,34 @@ class MidjourneyProtocol implements ChatProtocol {
   }) async {
     final baseUrl = trimBaseUrl(target.config.endpoint);
     final url = Uri.parse('$baseUrl/mj/task/$taskId/fetch');
-    final resp = await sendJsonRequest(client, url,
-        headers: target.headers(),
-        body: '',
-        options: options,
-        method: 'GET');
+    final resp = await sendJsonRequest(
+      client,
+      url,
+      headers: target.headers(),
+      body: '',
+      options: options,
+      method: 'GET',
+    );
     // checkEnvelope: false — the task JSON is a status record
     // (status/progress/failReason), and FAILURE is handled by the polling
     // loop with the task id in its message.
-    return decodeJsonBody(resp,
-        apiName: 'Midjourney fetch', checkEnvelope: false);
+    return decodeJsonBody(resp, apiName: 'Midjourney fetch', checkEnvelope: false);
   }
 
   /// Through the shared resolver: one retry, and a body that is not an image
   /// (an expired CDN link's HTML page) is refused rather than saved.
   Future<Uint8List> _downloadImage(
-      http.Client client, String url, LLMLogger? logger,
-      {Future<void>? abortTrigger}) async {
-    final bytes = await resolveImageRef(url, client, logger,
-        abortTrigger: abortTrigger);
+    http.Client client,
+    String url,
+    LLMLogger? logger, {
+    Future<void>? abortTrigger,
+  }) async {
+    final bytes = await resolveImageRef(url, client, logger, abortTrigger: abortTrigger);
     if (bytes == null) {
       throw LLMApiException(
-          'Midjourney image download failed for $url — no image after one '
-          'retry (see the log). The task itself succeeded upstream.');
+        'Midjourney image download failed for $url — no image after one '
+        'retry (see the log). The task itself succeeded upstream.',
+      );
     }
     return bytes;
   }
@@ -377,12 +381,14 @@ class MidjourneyDiscoveryProtocol implements DiscoveryProtocol {
   @override
   Future<List<DiscoveredModel>> fetchModels(LLMTarget target) async {
     return MidjourneyProtocol.builtinModels
-        .map((m) => DiscoveredModel(
-              modelId: m['id']!,
-              displayName: m['name']!,
-              description: m['desc']!,
-              rawData: m,
-            ))
+        .map(
+          (m) => DiscoveredModel(
+            modelId: m['id']!,
+            displayName: m['name']!,
+            description: m['desc']!,
+            rawData: m,
+          ),
+        )
         .toList();
   }
 }

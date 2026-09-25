@@ -67,9 +67,9 @@ void main() {
     );
   }
 
-  Future<List<LLMResponseChunk>> run() => OpenAIChatProtocol()
-      .generateStream(target(), [LLMMessage(role: LLMRole.user, content: 'hi')])
-      .toList();
+  Future<List<LLMResponseChunk>> run() => OpenAIChatProtocol().generateStream(target(), [
+    LLMMessage(role: LLMRole.user, content: 'hi'),
+  ]).toList();
 
   setUp(() async {
     binding.defaultBinaryMessenger.setMockMethodCallHandler(
@@ -82,8 +82,7 @@ void main() {
     HttpOverrides.global = null;
     server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     server.listen((request) async {
-      request.response.headers.contentType =
-          ContentType('text', 'event-stream');
+      request.response.headers.contentType = ContentType('text', 'event-stream');
       for (final line in sseLines) {
         request.response.write('$line\n\n');
       }
@@ -110,16 +109,22 @@ void main() {
 
     // One keepalive per tool-bearing frame: no text, no call yet — just a
     // pulse for the idle guard.
-    final keepalives = chunks.where((c) =>
-        c.textPart == null &&
-        c.reasoningPart == null &&
-        c.imagePart == null &&
-        c.toolCallPart == null &&
-        c.metadata == null &&
-        !c.isDone);
-    expect(keepalives.length, 2,
-        reason: 'each tool_calls frame must yield a chunk or the idle guard '
-            'times the stream out mid-delivery');
+    final keepalives = chunks.where(
+      (c) =>
+          c.textPart == null &&
+          c.reasoningPart == null &&
+          c.imagePart == null &&
+          c.toolCallPart == null &&
+          c.metadata == null &&
+          !c.isDone,
+    );
+    expect(
+      keepalives.length,
+      2,
+      reason:
+          'each tool_calls frame must yield a chunk or the idle guard '
+          'times the stream out mid-delivery',
+    );
 
     // The call itself still arrives whole, after the loop.
     final call = chunks.singleWhere((c) => c.toolCallPart != null).toolCallPart!;
@@ -138,10 +143,14 @@ void main() {
 
     final reasoning = chunks.singleWhere((c) => c.reasoningPart != null);
     expect(reasoning.reasoningPart, 'thinking');
-    expect(reasoning.reasoningFieldName, 'reasoning_content',
-        reason: 'the echo-back key must reach the stream consumer, or the '
-            'replayed history drops the reasoning and DeepSeek rejects the '
-            'next request of a tool conversation');
+    expect(
+      reasoning.reasoningFieldName,
+      'reasoning_content',
+      reason:
+          'the echo-back key must reach the stream consumer, or the '
+          'replayed history drops the reasoning and DeepSeek rejects the '
+          'next request of a tool conversation',
+    );
 
     // The alternate spelling is remembered as itself, not normalized.
     sseLines = [
@@ -169,8 +178,7 @@ void main() {
   });
 
   group('end-of-stream integrity', () {
-    test('a finish reason reaches metadata even when no usage was sent',
-        () async {
+    test('a finish reason reaches metadata even when no usage was sent', () async {
       // llama.cpp, LM Studio and many relays send no usage block; the
       // metadata chunk used to be gated on usage alone, so `length` never
       // reached the truncation warning on exactly those hosts.
@@ -183,8 +191,7 @@ void main() {
       expect(metadata, {'finish_reason': 'length'});
     });
 
-    test('content_filter without usage reaches the content-block check',
-        () async {
+    test('content_filter without usage reaches the content-block check', () async {
       sseLines = [
         'data: {"choices":[{"delta":{"content":"partial"},'
             '"finish_reason":"content_filter"}]}',
@@ -203,16 +210,12 @@ void main() {
       ];
       await expectLater(
         run(),
-        throwsA(isA<LLMApiException>().having(
-            (e) => e.message, 'message', contains('truncated'))),
+        throwsA(isA<LLMApiException>().having((e) => e.message, 'message', contains('truncated'))),
       );
     });
 
-    test('text cut before its finish reason is delivered as truncated',
-        () async {
-      sseLines = [
-        'data: {"choices":[{"delta":{"content":"the answer so f"}}]}',
-      ];
+    test('text cut before its finish reason is delivered as truncated', () async {
+      sseLines = ['data: {"choices":[{"delta":{"content":"the answer so f"}}]}'];
       final chunks = await run();
       expect(chunks.map((c) => c.textPart).nonNulls.join(), 'the answer so f');
       final metadata = chunks.map((c) => c.metadata).nonNulls.single;
@@ -220,8 +223,7 @@ void main() {
       expect(metadata['stream_incomplete'], isTrue);
     });
 
-    test('chunks with nothing in them are not a successful empty reply',
-        () async {
+    test('chunks with nothing in them are not a successful empty reply', () async {
       sseLines = [
         'data: {"choices":[{"delta":{"role":"assistant"}}]}',
         'data: {"choices":[{"delta":{},"finish_reason":"stop"}]}',
@@ -230,14 +232,15 @@ void main() {
       ];
       await expectLater(
         run(),
-        throwsA(isA<LLMApiException>()
-            .having((e) => e.message, 'message', contains('no content'))
-            .having((e) => e.message, 'message', contains('stop'))),
+        throwsA(
+          isA<LLMApiException>()
+              .having((e) => e.message, 'message', contains('no content'))
+              .having((e) => e.message, 'message', contains('stop')),
+        ),
       );
     });
 
-    test('a caller that declared an empty ending gets it delivered, not thrown',
-        () async {
+    test('a caller that declared an empty ending gets it delivered, not thrown', () async {
       // The turn after submit_prompt: GPT-5.x answers `stop` with an empty
       // delta and a handful of completion tokens. The agent loop declares
       // that legitimate; the guard stands for every other caller.
@@ -262,13 +265,11 @@ void main() {
       // it is still the failure pinned above.
       await expectLater(
         run(),
-        throwsA(isA<LLMApiException>()
-            .having((e) => e.message, 'message', contains('no content'))),
+        throwsA(isA<LLMApiException>().having((e) => e.message, 'message', contains('no content'))),
       );
     });
 
-    test('inline <think> text never joins the echoable reasoning field',
-        () async {
+    test('inline <think> text never joins the echoable reasoning field', () async {
       // The field's text goes back under `reasoning_content`; an inline span
       // merged into it would be replayed into a key the host reads as its own.
       sseLines = [
@@ -277,15 +278,15 @@ void main() {
             '"content":"<think>inline thought</think>answer"},'
             '"finish_reason":"stop"}]}',
       ];
-      final response = await OpenAIChatProtocol().generate(
-          target(), [LLMMessage(role: LLMRole.user, content: 'hi')]);
+      final response = await OpenAIChatProtocol().generate(target(), [
+        LLMMessage(role: LLMRole.user, content: 'hi'),
+      ]);
       expect(response.text, 'answer');
       expect(response.reasoningFieldName, 'reasoning_content');
       expect(response.reasoningContent, 'native thought');
     });
 
-    test('an empty reasoning_content does not hide a non-empty reasoning',
-        () async {
+    test('an empty reasoning_content does not hide a non-empty reasoning', () async {
       // `reasoning_content ?? reasoning` picked "" because "" is not null;
       // the thought was dropped and the echo key was wrong.
       sseLines = [
@@ -293,8 +294,9 @@ void main() {
             '"reasoning":"real thought","content":"answer"},'
             '"finish_reason":"stop"}]}',
       ];
-      final response = await OpenAIChatProtocol().generate(
-          target(), [LLMMessage(role: LLMRole.user, content: 'hi')]);
+      final response = await OpenAIChatProtocol().generate(target(), [
+        LLMMessage(role: LLMRole.user, content: 'hi'),
+      ]);
       expect(response.reasoningContent, 'real thought');
       expect(response.reasoningFieldName, 'reasoning');
 
@@ -317,11 +319,15 @@ void main() {
             '"completion_tokens":5,"prompt_cache_hit_tokens":80,'
             '"prompt_cache_miss_tokens":20}}',
       ];
-      final response = await OpenAIChatProtocol().generate(
-          target(), [LLMMessage(role: LLMRole.user, content: 'hi')]);
+      final response = await OpenAIChatProtocol().generate(target(), [
+        LLMMessage(role: LLMRole.user, content: 'hi'),
+      ]);
       expect(response.metadata['prompt_tokens_details'], {'cached_tokens': 80});
-      expect(response.metadata['prompt_cache_hit_tokens'], 80,
-          reason: 'the raw field rides along untouched');
+      expect(
+        response.metadata['prompt_cache_hit_tokens'],
+        80,
+        reason: 'the raw field rides along untouched',
+      );
 
       sseLines = [
         'data: {"choices":[{"delta":{"content":"ok"},"finish_reason":"stop"}]}',
@@ -339,8 +345,9 @@ void main() {
             '"prompt_tokens_details":{"cached_tokens":64},'
             '"prompt_cache_hit_tokens":80}}',
       ];
-      final both = await OpenAIChatProtocol().generate(
-          target(), [LLMMessage(role: LLMRole.user, content: 'hi')]);
+      final both = await OpenAIChatProtocol().generate(target(), [
+        LLMMessage(role: LLMRole.user, content: 'hi'),
+      ]);
       expect(both.metadata['prompt_tokens_details'], {'cached_tokens': 64});
     });
 
@@ -352,16 +359,18 @@ void main() {
             '"reasoning_content":"thought","content":"answer"},'
             '"finish_reason":"stop"}]}',
       ];
-      final response = await OpenAIChatProtocol().generate(
-          target(), [LLMMessage(role: LLMRole.user, content: 'hi')]);
+      final response = await OpenAIChatProtocol().generate(target(), [
+        LLMMessage(role: LLMRole.user, content: 'hi'),
+      ]);
       expect(response.rawThinkingModelId, 'test-model');
 
       sseLines = [
         '{"choices":[{"message":{"role":"assistant","content":"answer"},'
             '"finish_reason":"stop"}]}',
       ];
-      final plain = await OpenAIChatProtocol().generate(
-          target(), [LLMMessage(role: LLMRole.user, content: 'hi')]);
+      final plain = await OpenAIChatProtocol().generate(target(), [
+        LLMMessage(role: LLMRole.user, content: 'hi'),
+      ]);
       expect(plain.rawThinkingModelId, isNull);
     });
 
@@ -371,16 +380,16 @@ void main() {
             '"finish_reason":"stop"}],"usage":{"prompt_tokens":4}}',
       ];
       await expectLater(
-        OpenAIChatProtocol().generate(
-            target(), [LLMMessage(role: LLMRole.user, content: 'hi')]),
-        throwsA(isA<LLMApiException>()
-            .having((e) => e.message, 'message', contains('no content'))),
+        OpenAIChatProtocol().generate(target(), [LLMMessage(role: LLMRole.user, content: 'hi')]),
+        throwsA(isA<LLMApiException>().having((e) => e.message, 'message', contains('no content'))),
       );
 
       // …unless the caller declared an empty ending legitimate.
       final declared = await OpenAIChatProtocol().generate(
-          target(), [LLMMessage(role: LLMRole.user, content: 'hi')],
-          options: const {emptyReplyEndsTurnKey: true});
+        target(),
+        [LLMMessage(role: LLMRole.user, content: 'hi')],
+        options: const {emptyReplyEndsTurnKey: true},
+      );
       expect(declared.text, isEmpty);
       expect(declared.toolCalls, isEmpty);
       expect(declared.metadata['finish_reason'], 'stop');
@@ -390,8 +399,9 @@ void main() {
         '{"choices":[{"message":{"role":"assistant","content":""},'
             '"finish_reason":"length"}]}',
       ];
-      final truncated = await OpenAIChatProtocol().generate(
-          target(), [LLMMessage(role: LLMRole.user, content: 'hi')]);
+      final truncated = await OpenAIChatProtocol().generate(target(), [
+        LLMMessage(role: LLMRole.user, content: 'hi'),
+      ]);
       expect(truncated.metadata['finish_reason'], 'length');
     });
 
@@ -411,21 +421,17 @@ void main() {
         model: ModelDescriptor.of(config.modelId),
       );
       await expectLater(
-        GeminiChatProtocol().generateStream(
-            gemini, [LLMMessage(role: LLMRole.user, content: 'hi')]).toList(),
-        throwsA(isA<LLMApiException>()
-            .having((e) => e.isNonJsonBody, 'isNonJsonBody', isTrue)),
+        GeminiChatProtocol().generateStream(gemini, [
+          LLMMessage(role: LLMRole.user, content: 'hi'),
+        ]).toList(),
+        throwsA(isA<LLMApiException>().having((e) => e.isNonJsonBody, 'isNonJsonBody', isTrue)),
       );
     });
 
-    test('an empty reply that ran out of tokens is still a length ending',
-        () async {
+    test('an empty reply that ran out of tokens is still a length ending', () async {
       // All budget spent elsewhere: routed to the truncation handling, not
       // reported as a broken endpoint.
-      sseLines = [
-        'data: {"choices":[{"delta":{},"finish_reason":"length"}]}',
-        'data: [DONE]',
-      ];
+      sseLines = ['data: {"choices":[{"delta":{},"finish_reason":"length"}]}', 'data: [DONE]'];
       final metadata = (await run()).map((c) => c.metadata).nonNulls.single;
       expect(metadata['finish_reason'], 'length');
     });

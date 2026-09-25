@@ -30,10 +30,9 @@ void main() {
         ],
       };
 
-      final calls = parseGoogleChunks(chunk)
-          .map((c) => c.toolCallPart)
-          .whereType<LLMToolCall>()
-          .toList();
+      final calls = parseGoogleChunks(
+        chunk,
+      ).map((c) => c.toolCallPart).whereType<LLMToolCall>().toList();
 
       expect(calls, hasLength(2));
       expect(calls[0].name, 'list_files');
@@ -54,11 +53,7 @@ void main() {
               arguments: {'dir': '.'},
               thoughtSignature: 'sig-abc123',
             ),
-            LLMToolCall(
-              id: 'call_read_file_1',
-              name: 'read_file',
-              arguments: {'path': 'a.png'},
-            ),
+            LLMToolCall(id: 'call_read_file_1', name: 'read_file', arguments: {'path': 'a.png'}),
           ],
         ),
         LLMMessage(
@@ -82,38 +77,34 @@ void main() {
 
   group('thought signatures are model-scoped (reasoning 03 §5)', () {
     List<LLMMessage> history(String? producer) => [
-          LLMMessage(role: LLMRole.user, content: 'go'),
-          LLMMessage(
-            role: LLMRole.assistant,
-            content: '',
-            rawThinkingModelId: producer,
-            toolCalls: [
-              LLMToolCall(
-                id: 'g1',
-                name: 'list_files',
-                arguments: const {},
-                thoughtSignature: 'sig-x',
-              ),
-            ],
-          ),
-        ];
+      LLMMessage(role: LLMRole.user, content: 'go'),
+      LLMMessage(
+        role: LLMRole.assistant,
+        content: '',
+        rawThinkingModelId: producer,
+        toolCalls: [
+          LLMToolCall(id: 'g1', name: 'list_files', arguments: const {}, thoughtSignature: 'sig-x'),
+        ],
+      ),
+    ];
 
     Map signedPart(String? producer, String target) =>
-        (((prepareGooglePayload(history(producer), null, null,
-                    modelId: target)['contents'] as List)[1] as Map)['parts']
-                as List)
-            .single as Map;
+        (((prepareGooglePayload(history(producer), null, null, modelId: target)['contents']
+                            as List)[1]
+                        as Map)['parts']
+                    as List)
+                .single
+            as Map;
 
     test('the producing model gets the signature back', () {
-      expect(signedPart('gemini-3-pro', 'gemini-3-pro')['thoughtSignature'],
-          'sig-x');
+      expect(signedPart('gemini-3-pro', 'gemini-3-pro')['thoughtSignature'], 'sig-x');
     });
 
     test('another model does not', () {
       expect(
-          signedPart('gemini-3-pro', 'gemini-2.5-flash')
-              .containsKey('thoughtSignature'),
-          isFalse);
+        signedPart('gemini-3-pro', 'gemini-2.5-flash').containsKey('thoughtSignature'),
+        isFalse,
+      );
     });
 
     test('a turn with no recorded producer still replays it', () {
@@ -123,19 +114,19 @@ void main() {
 
   group('synthesized call ids (protocol 02 §3.2)', () {
     Map<String, dynamic> callChunk(List<String> names) => {
-          'candidates': [
-            {
-              'content': {
-                'parts': [
-                  for (final n in names)
-                    {
-                      'functionCall': {'name': n, 'args': <String, dynamic>{}}
-                    }
-                ]
-              }
-            }
-          ]
-        };
+      'candidates': [
+        {
+          'content': {
+            'parts': [
+              for (final n in names)
+                {
+                  'functionCall': {'name': n, 'args': <String, dynamic>{}},
+                },
+            ],
+          },
+        },
+      ],
+    };
 
     List<String> idsOf(Iterable<LLMResponseChunk> chunks) =>
         chunks.map((c) => c.toolCallPart?.id).nonNulls.toList();
@@ -152,8 +143,7 @@ void main() {
       // on every chunk, so `call_read_0` named two different calls.
       final state = GeminiToolCallIds();
       final first = idsOf(parseGoogleChunks(callChunk(['read']), callIds: state));
-      final second =
-          idsOf(parseGoogleChunks(callChunk(['read']), callIds: state));
+      final second = idsOf(parseGoogleChunks(callChunk(['read']), callIds: state));
       expect(first.single, isNot(second.single));
     });
 
@@ -168,26 +158,26 @@ void main() {
 
   group('history shape (protocol 02 §2.2)', () {
     List<Map> contentsOf(List<LLMMessage> history) =>
-        (prepareGooglePayload(history, null, null)['contents'] as List)
-            .cast<Map>();
+        (prepareGooglePayload(history, null, null)['contents'] as List).cast<Map>();
 
     test('parallel tool results travel in one user content', () {
       final contents = contentsOf([
         LLMMessage(role: LLMRole.user, content: 'do both'),
-        LLMMessage(role: LLMRole.assistant, content: '', toolCalls: [
-          LLMToolCall(id: 'g1', name: 'a', arguments: const {}),
-          LLMToolCall(id: 'g2', name: 'b', arguments: const {}),
-        ]),
         LLMMessage(
-            role: LLMRole.tool, content: '{"r":1}', toolCallId: 'g1', toolName: 'a'),
-        LLMMessage(
-            role: LLMRole.tool, content: '{"r":2}', toolCallId: 'g2', toolName: 'b'),
+          role: LLMRole.assistant,
+          content: '',
+          toolCalls: [
+            LLMToolCall(id: 'g1', name: 'a', arguments: const {}),
+            LLMToolCall(id: 'g2', name: 'b', arguments: const {}),
+          ],
+        ),
+        LLMMessage(role: LLMRole.tool, content: '{"r":1}', toolCallId: 'g1', toolName: 'a'),
+        LLMMessage(role: LLMRole.tool, content: '{"r":2}', toolCallId: 'g2', toolName: 'b'),
       ]);
       expect(contents, hasLength(3));
       final parts = contents.last['parts'] as List;
       expect(contents.last['role'], 'user');
-      expect(
-          parts.map((p) => (p as Map)['functionResponse']['name']), ['a', 'b']);
+      expect(parts.map((p) => (p as Map)['functionResponse']['name']), ['a', 'b']);
     });
 
     test('a user turn after the results stays its own content', () {
@@ -195,18 +185,19 @@ void main() {
       // as a separate user turn carrying the picture; it is not a result.
       final contents = contentsOf([
         LLMMessage(role: LLMRole.user, content: 'look'),
-        LLMMessage(role: LLMRole.assistant, content: '', toolCalls: [
-          LLMToolCall(id: 'g1', name: 'view_image', arguments: const {}),
-        ]),
         LLMMessage(
-            role: LLMRole.tool, content: 'ok', toolCallId: 'g1', toolName: 'view_image'),
+          role: LLMRole.assistant,
+          content: '',
+          toolCalls: [LLMToolCall(id: 'g1', name: 'view_image', arguments: const {})],
+        ),
+        LLMMessage(role: LLMRole.tool, content: 'ok', toolCallId: 'g1', toolName: 'view_image'),
         LLMMessage(
-            role: LLMRole.user,
-            content: '[view_image result] Reference image #1 is attached.'),
+          role: LLMRole.user,
+          content: '[view_image result] Reference image #1 is attached.',
+        ),
       ]);
       expect(contents, hasLength(4));
-      expect((contents[2]['parts'] as List).single,
-          contains('functionResponse'));
+      expect((contents[2]['parts'] as List).single, contains('functionResponse'));
       expect((contents[3]['parts'] as List).single, contains('text'));
     });
 
@@ -220,17 +211,17 @@ void main() {
       expect(contents.map((c) => c['role']), ['user', 'user']);
     });
 
-    test('a result missing its tool name takes it from the call it answers',
-        () {
+    test('a result missing its tool name takes it from the call it answers', () {
       final contents = contentsOf([
         LLMMessage(role: LLMRole.user, content: 'go'),
-        LLMMessage(role: LLMRole.assistant, content: '', toolCalls: [
-          LLMToolCall(id: 'g1', name: 'list_files', arguments: const {}),
-        ]),
+        LLMMessage(
+          role: LLMRole.assistant,
+          content: '',
+          toolCalls: [LLMToolCall(id: 'g1', name: 'list_files', arguments: const {})],
+        ),
         LLMMessage(role: LLMRole.tool, content: '[]', toolCallId: 'g1'),
       ]);
-      final fr = ((contents.last['parts'] as List).single
-          as Map)['functionResponse'] as Map;
+      final fr = ((contents.last['parts'] as List).single as Map)['functionResponse'] as Map;
       expect(fr['name'], 'list_files');
     });
   });
@@ -248,7 +239,7 @@ void main() {
         parameters: const {
           'type': 'object',
           'properties': {
-            'path': {'type': 'string'}
+            'path': {'type': 'string'},
           },
           'required': ['path'],
         },

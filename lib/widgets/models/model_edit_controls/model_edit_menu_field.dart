@@ -84,121 +84,126 @@ class _ModelEditMenuFieldState<T> extends State<ModelEditMenuField<T>> {
     };
 
     Widget face(VoidCallback? onTap) => Material(
-          color: metrics.fill(scheme),
-          shape: RoundedRectangleBorder(borderRadius: radius, side: BorderSide(color: stroke)),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: onTap,
-            child: ConstrainedBox(
-              // The stroke is the shape's side, painted inside the box rather
-              // than added to it, so the face takes the whole field height.
-              // Taking 2 off for it left the menu 30 beside 32px fields.
-              constraints: widget.autoHeight
-                  ? BoxConstraints(minHeight: metrics.fieldHeight)
-                  : BoxConstraints.tightFor(height: metrics.fieldHeight),
-              child: Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: metrics.phone ? 12 : AppSpace.s10,
-                  vertical: widget.autoHeight ? AppSpace.s10 : 0,
-                ),
-                child: Row(
-                  children: [
-                    if (widget.leading != null) ...[
-                      widget.leading!,
-                      const SizedBox(width: 8),
-                    ],
-                    Expanded(child: widget.child),
-                    const SizedBox(width: AppSpace.s6),
-                    Icon(Icons.expand_more, size: AppSize.iconMd, color: scheme.outline),
-                  ],
-                ),
-              ),
+      color: metrics.fill(scheme),
+      shape: RoundedRectangleBorder(
+        borderRadius: radius,
+        side: BorderSide(color: stroke),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: ConstrainedBox(
+          // The stroke is the shape's side, painted inside the box rather
+          // than added to it, so the face takes the whole field height.
+          // Taking 2 off for it left the menu 30 beside 32px fields.
+          constraints: widget.autoHeight
+              ? BoxConstraints(minHeight: metrics.fieldHeight)
+              : BoxConstraints.tightFor(height: metrics.fieldHeight),
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: metrics.phone ? 12 : AppSpace.s10,
+              vertical: widget.autoHeight ? AppSpace.s10 : 0,
+            ),
+            child: Row(
+              children: [
+                if (widget.leading != null) ...[widget.leading!, const SizedBox(width: 8)],
+                Expanded(child: widget.child),
+                const SizedBox(width: AppSpace.s6),
+                Icon(Icons.expand_more, size: AppSize.iconMd, color: scheme.outline),
+              ],
             ),
           ),
-        );
+        ),
+      ),
+    );
 
     if (widget.onTap != null) return face(widget.onTap);
 
-    return LayoutBuilder(builder: (context, constraints) {
-      // The menu's padding (6) and each row's (10) come out of the field's
-      // width, so the open menu lines up with the box it dropped from.
-      final rowWidth = (constraints.maxWidth < _minMenuWidth ? _minMenuWidth : constraints.maxWidth) -
-          2 * AppSpace.s6 -
-          2 * AppSpace.s10;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // The menu's padding (6) and each row's (10) come out of the field's
+        // width, so the open menu lines up with the box it dropped from.
+        final rowWidth =
+            (constraints.maxWidth < _minMenuWidth ? _minMenuWidth : constraints.maxWidth) -
+            2 * AppSpace.s6 -
+            2 * AppSpace.s10;
 
-      return MenuAnchor(
-        controller: _controller,
-        alignmentOffset: const Offset(0, AppSpace.s4),
-        menuChildren: [
-          for (final entry in widget.entries)
-            MenuItemButton(
-              onPressed: () => widget.onSelected?.call(entry.value),
-              style: MenuItemButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpace.s10, vertical: AppSpace.s6),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
-                backgroundColor: entry.value == widget.selected ? scheme.accentTint : null,
-              ),
-              child: SizedBox(
-                width: rowWidth,
-                child: Row(
-                  children: [
-                    if (entry.leading != null) ...[
-                      entry.leading!,
-                      const SizedBox(width: 8),
-                    ],
-                    Expanded(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            entry.label,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w500,
-                              color: entry.value == widget.selected ? scheme.onAccentTint : scheme.onSurface,
-                            ),
-                          ),
-                          if (entry.description != null)
+        return MenuAnchor(
+          controller: _controller,
+          alignmentOffset: const Offset(0, AppSpace.s4),
+          menuChildren: [
+            for (final entry in widget.entries)
+              MenuItemButton(
+                onPressed: () => widget.onSelected?.call(entry.value),
+                style: MenuItemButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpace.s10,
+                    vertical: AppSpace.s6,
+                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
+                  backgroundColor: entry.value == widget.selected ? scheme.accentTint : null,
+                ),
+                child: SizedBox(
+                  width: rowWidth,
+                  child: Row(
+                    children: [
+                      if (entry.leading != null) ...[entry.leading!, const SizedBox(width: 8)],
+                      Expanded(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
                             Text(
-                              entry.description!,
-                              maxLines: 2,
+                              entry.label,
+                              maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: textTheme.labelSmall?.copyWith(
-                                fontWeight: FontWeight.w400,
-                                color: scheme.onSurfaceVariant,
+                              style: textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w500,
+                                color: entry.value == widget.selected
+                                    ? scheme.onAccentTint
+                                    : scheme.onSurface,
                               ),
                             ),
-                        ],
+                            if (entry.description != null)
+                              Text(
+                                entry.description!,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: textTheme.labelSmall?.copyWith(
+                                  fontWeight: FontWeight.w400,
+                                  color: scheme.onSurfaceVariant,
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
-                    ),
-                    if (entry.trailing != null) ...[
-                      const SizedBox(width: 12),
-                      Text(
-                        entry.trailing!,
-                        style: textTheme.labelSmall?.mono.copyWith(color: scheme.outline),
+                      if (entry.trailing != null) ...[
+                        const SizedBox(width: 12),
+                        Text(
+                          entry.trailing!,
+                          style: textTheme.labelSmall?.mono.copyWith(color: scheme.outline),
+                        ),
+                      ],
+                      // `D2a`: the current value carries a check beside its wash.
+                      // The slot is kept on every row so the labels do not shift
+                      // when the selection moves.
+                      const SizedBox(width: AppSpace.s6),
+                      SizedBox.square(
+                        dimension: AppSize.iconSm,
+                        child: entry.value == widget.selected
+                            ? Icon(Icons.check, size: AppSize.iconSm, color: scheme.onAccentTint)
+                            : null,
                       ),
                     ],
-                    // `D2a`: the current value carries a check beside its wash.
-                    // The slot is kept on every row so the labels do not shift
-                    // when the selection moves.
-                    const SizedBox(width: AppSpace.s6),
-                    SizedBox.square(
-                      dimension: AppSize.iconSm,
-                      child: entry.value == widget.selected
-                          ? Icon(Icons.check, size: AppSize.iconSm, color: scheme.onAccentTint)
-                          : null,
-                    ),
-                  ],
+                  ),
                 ),
               ),
-            ),
-        ],
-        builder: (context, controller, _) => face(() {
-          controller.isOpen ? controller.close() : controller.open();
-        }),
-      );
-    });
+          ],
+          builder: (context, controller, _) => face(() {
+            controller.isOpen ? controller.close() : controller.open();
+          }),
+        );
+      },
+    );
   }
 }

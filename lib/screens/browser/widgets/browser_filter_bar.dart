@@ -35,23 +35,19 @@ typedef _FilterInputs = ({
 });
 
 _FilterInputs _filterInputs(FileBrowserState s) => (
-      viewMode: s.viewMode,
-      currentFilter: s.currentFilter,
-      sortField: s.sortField,
-      sortAscending: s.sortAscending,
-      thumbnailSize: s.thumbnailSize,
-      groupByFolder: s.groupByFolder,
-      canGroup: s.activeDirectories.length > 1,
-    );
-
+  viewMode: s.viewMode,
+  currentFilter: s.currentFilter,
+  sortField: s.sortField,
+  sortAscending: s.sortAscending,
+  thumbnailSize: s.thumbnailSize,
+  groupByFolder: s.groupByFolder,
+  canGroup: s.activeDirectories.length > 1,
+);
 
 class BrowserFilterBar extends StatelessWidget {
   final FileBrowserState state;
 
-  const BrowserFilterBar({
-    super.key,
-    required this.state,
-  });
+  const BrowserFilterBar({super.key, required this.state});
 
   static const double height = 40;
 
@@ -81,8 +77,15 @@ class BrowserFilterBar extends StatelessWidget {
           }
           final sortWidth = _SortChip.widthFor(context, _sortFieldLabel(inputs.sortField, l10n));
           final sliderWidth = _ThumbnailSizeSlider.widthFor(context);
-          final showSlider = isGrid &&
-              chipsWidth + _groupGap + sortWidth + _groupGap + sliderWidth + AppSpace.s4 + AppSize.compact <=
+          final showSlider =
+              isGrid &&
+              chipsWidth +
+                      _groupGap +
+                      sortWidth +
+                      _groupGap +
+                      sliderWidth +
+                      AppSpace.s4 +
+                      AppSize.compact <=
                   constraints.maxWidth;
 
           return Row(
@@ -195,14 +198,14 @@ class _CategoryChip extends StatefulWidget {
   static const double _height = 24;
   static const double _padding = AppSpace.s10;
 
-  static TextStyle _style(BuildContext context, {required bool selected}) =>
-      Theme.of(context).textTheme.bodySmall!.copyWith(
-            fontWeight: selected ? FontWeight.w500 : FontWeight.w400,
-          );
+  static TextStyle _style(BuildContext context, {required bool selected}) => Theme.of(
+    context,
+  ).textTheme.bodySmall!.copyWith(fontWeight: selected ? FontWeight.w500 : FontWeight.w400);
 
   /// Measured at the selected weight, so choosing one never widens the row.
   static double widthFor(BuildContext context, String label) =>
-      (_padding * 2 + measureGlassText(context, label, _style(context, selected: true))).ceilToDouble();
+      (_padding * 2 + measureGlassText(context, label, _style(context, selected: true)))
+          .ceilToDouble();
 
   @override
   State<_CategoryChip> createState() => _CategoryChipState();
@@ -235,15 +238,18 @@ class _CategoryChipState extends State<_CategoryChip> {
             decoration: BoxDecoration(
               color: selected
                   ? scheme.accentTint
-                  : (_hovered ? scheme.onSurface.withValues(alpha: 0.06) : scheme.onSurface.withValues(alpha: 0)),
+                  : (_hovered
+                        ? scheme.onSurface.withValues(alpha: 0.06)
+                        : scheme.onSurface.withValues(alpha: 0)),
               borderRadius: BorderRadius.circular(AppRadius.sm),
             ),
             child: Text(
               widget.label,
               maxLines: 1,
-              style: _CategoryChip._style(context, selected: selected).copyWith(
-                color: selected ? scheme.onAccentTint : scheme.onSurfaceVariant,
-              ),
+              style: _CategoryChip._style(
+                context,
+                selected: selected,
+              ).copyWith(color: selected ? scheme.onAccentTint : scheme.onSurfaceVariant),
             ),
           ),
         ),
@@ -360,8 +366,14 @@ class _SortChip extends StatelessWidget {
   static TextStyle _style(BuildContext context) => Theme.of(context).textTheme.bodySmall!;
 
   static double widthFor(BuildContext context, String label) =>
-      (2 + AppSpace.s10 + AppSize.iconSm + AppSpace.s6 + measureGlassText(context, label, _style(context)) +
-              AppSpace.s4 + AppSize.iconSm + AppSpace.s10)
+      (2 +
+              AppSpace.s10 +
+              AppSize.iconSm +
+              AppSpace.s6 +
+              measureGlassText(context, label, _style(context)) +
+              AppSpace.s4 +
+              AppSize.iconSm +
+              AppSpace.s10)
           .ceilToDouble();
 
   @override

@@ -39,9 +39,9 @@ void main() {
     );
   }
 
-  Future<List<LLMResponseChunk>> run() => DashScopeChatProtocol()
-      .generateStream(target(), [LLMMessage(role: LLMRole.user, content: 'hi')])
-      .toList();
+  Future<List<LLMResponseChunk>> run() => DashScopeChatProtocol().generateStream(target(), [
+    LLMMessage(role: LLMRole.user, content: 'hi'),
+  ]).toList();
 
   String frame(String message, {String finish = 'null'}) =>
       'data: {"output":{"choices":[{"message":$message,'
@@ -55,8 +55,7 @@ void main() {
     HttpOverrides.global = null;
     server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     server.listen((request) async {
-      request.response.headers.contentType =
-          ContentType('text', 'event-stream');
+      request.response.headers.contentType = ContentType('text', 'event-stream');
       for (final line in sseLines) {
         request.response.write('$line\n\n');
       }
@@ -71,22 +70,20 @@ void main() {
 
   test('a stream cut mid tool call fails instead of executing it', () async {
     sseLines = [
-      frame('{"role":"assistant","content":"","tool_calls":[{"index":0,'
-          '"id":"call_1","function":{"name":"submit_prompt",'
-          '"arguments":"{\\"prompt\\": \\"half"}}]}'),
+      frame(
+        '{"role":"assistant","content":"","tool_calls":[{"index":0,'
+        '"id":"call_1","function":{"name":"submit_prompt",'
+        '"arguments":"{\\"prompt\\": \\"half"}}]}',
+      ),
     ];
     await expectLater(
       run(),
-      throwsA(isA<LLMApiException>()
-          .having((e) => e.message, 'message', contains('truncated'))),
+      throwsA(isA<LLMApiException>().having((e) => e.message, 'message', contains('truncated'))),
     );
   });
 
-  test('text cut before its finish reason is delivered as truncated',
-      () async {
-    sseLines = [
-      frame('{"role":"assistant","content":"the answer so f"}'),
-    ];
+  test('text cut before its finish reason is delivered as truncated', () async {
+    sseLines = [frame('{"role":"assistant","content":"the answer so f"}')];
     final chunks = await run();
     expect(chunks.map((c) => c.textPart).nonNulls.join(), 'the answer so f');
     final metadata = chunks.map((c) => c.metadata).nonNulls.single;
@@ -95,16 +92,12 @@ void main() {
   });
 
   test('a finished stream is not marked incomplete', () async {
-    sseLines = [
-      frame('{"role":"assistant","content":"done"}', finish: 'stop'),
-    ];
-    final metadata =
-        (await run()).map((c) => c.metadata).nonNulls.single;
+    sseLines = [frame('{"role":"assistant","content":"done"}', finish: 'stop')];
+    final metadata = (await run()).map((c) => c.metadata).nonNulls.single;
     expect(metadata, {'finish_reason': 'stop'});
   });
 
-  test('a usage frame naming the app\'s own keys is not taken at its word',
-      () async {
+  test('a usage frame naming the app\'s own keys is not taken at its word', () async {
     // The usage recorder reads these two keys for every vendor; the stream
     // face spreads the frame's usage block, so it must go through
     // `upstreamUsage` like the synchronous face does.
@@ -114,8 +107,7 @@ void main() {
           '"usage":{"input_tokens":3,"output_tokens":1,'
           '"$reportedCostKey":99,"$inputImageCountKey":7}}',
     ];
-    final metadata =
-        (await run()).map((c) => c.metadata).nonNulls.single;
+    final metadata = (await run()).map((c) => c.metadata).nonNulls.single;
     expect(metadata['input_tokens'], 3);
     expect(metadata.containsKey(reportedCostKey), isFalse);
     expect(metadata.containsKey(inputImageCountKey), isFalse);

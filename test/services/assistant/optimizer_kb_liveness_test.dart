@@ -21,35 +21,37 @@ import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 void main() {
   /// Appends the assistant call + tool result pair the agent writes for one
   /// `read_knowledge_file`, matching production's shape.
-  void recordRead(PromptOptimizerSession session, String path, int page,
-      {String content = 'rule body'}) {
+  void recordRead(
+    PromptOptimizerSession session,
+    String path,
+    int page, {
+    String content = 'rule body',
+  }) {
     final callId = 'call_${session.history.length}';
-    session.history.add(LLMMessage(
-      role: LLMRole.assistant,
-      content: '',
-      toolCalls: [
-        LLMToolCall(
-          id: callId,
-          name: 'read_knowledge_file',
-          arguments: {'path': path, 'page': page},
-        ),
-      ],
-    ));
-    session.history.add(LLMMessage(
-      role: LLMRole.tool,
-      content: jsonEncode({
-        'path': path,
-        'page': page,
-        'total_pages': 1,
-        'content': content,
-      }),
-      toolCallId: callId,
-      toolName: 'read_knowledge_file',
-    ));
+    session.history.add(
+      LLMMessage(
+        role: LLMRole.assistant,
+        content: '',
+        toolCalls: [
+          LLMToolCall(
+            id: callId,
+            name: 'read_knowledge_file',
+            arguments: {'path': path, 'page': page},
+          ),
+        ],
+      ),
+    );
+    session.history.add(
+      LLMMessage(
+        role: LLMRole.tool,
+        content: jsonEncode({'path': path, 'page': page, 'total_pages': 1, 'content': content}),
+        toolCallId: callId,
+        toolName: 'read_knowledge_file',
+      ),
+    );
   }
 
-  PromptOptimizerSession newSession() =>
-      PromptOptimizerSession(mode: AssistantMode.knowledgeBase);
+  PromptOptimizerSession newSession() => PromptOptimizerSession(mode: AssistantMode.knowledgeBase);
 
   Set<int> live(PromptOptimizerSession s, String path) =>
       PromptOptimizerAgent.liveReadPagesForTest(s, path);
@@ -69,12 +71,14 @@ void main() {
       session.addUserTurn('go');
       // What a failed read leaves behind. Restore used to replay tool *calls*
       // rather than results, resurrecting these as cache hits.
-      session.history.add(LLMMessage(
-        role: LLMRole.tool,
-        content: jsonEncode({'status': 'error', 'message': 'File not found: a.md'}),
-        toolCallId: 'c0',
-        toolName: 'read_knowledge_file',
-      ));
+      session.history.add(
+        LLMMessage(
+          role: LLMRole.tool,
+          content: jsonEncode({'status': 'error', 'message': 'File not found: a.md'}),
+          toolCallId: 'c0',
+          toolName: 'read_knowledge_file',
+        ),
+      );
 
       expect(live(session, 'a.md'), isEmpty);
     });
@@ -86,17 +90,19 @@ void main() {
       // conversation" for every single read.
       final session = newSession();
       session.addUserTurn('go');
-      session.history.add(LLMMessage(
-        role: LLMRole.assistant,
-        content: '',
-        toolCalls: [
-          LLMToolCall(
-            id: 'c0',
-            name: 'read_knowledge_file',
-            arguments: {'path': 'a.md', 'page': 1},
-          ),
-        ],
-      ));
+      session.history.add(
+        LLMMessage(
+          role: LLMRole.assistant,
+          content: '',
+          toolCalls: [
+            LLMToolCall(
+              id: 'c0',
+              name: 'read_knowledge_file',
+              arguments: {'path': 'a.md', 'page': 1},
+            ),
+          ],
+        ),
+      );
 
       expect(live(session, 'a.md'), isEmpty);
     });
@@ -112,9 +118,13 @@ void main() {
         session.addUserTurn('turn $i');
       }
 
-      expect(live(session, 'a.md'), isEmpty,
-          reason: 'the model can no longer see this read, so it must be allowed '
-              'to fetch the file again');
+      expect(
+        live(session, 'a.md'),
+        isEmpty,
+        reason:
+            'the model can no longer see this read, so it must be allowed '
+            'to fetch the file again',
+      );
     });
 
     test('a read still inside the recent window keeps counting', () {
@@ -135,10 +145,12 @@ void main() {
       // summary that deliberately drops raw tool results.
       session.history
         ..clear()
-        ..add(LLMMessage(
-          role: LLMRole.user,
-          content: '${PromptOptimizerAgent.summaryMarker}\nEarlier: read a.md.',
-        ));
+        ..add(
+          LLMMessage(
+            role: LLMRole.user,
+            content: '${PromptOptimizerAgent.summaryMarker}\nEarlier: read a.md.',
+          ),
+        );
 
       expect(live(session, 'a.md'), isEmpty);
     });

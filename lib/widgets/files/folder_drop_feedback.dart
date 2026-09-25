@@ -27,12 +27,12 @@ enum FolderDropRejection {
 extension FolderDropRejectionLabel on FolderDropRejection {
   /// The reason, as the row's chip and the follower say it.
   String label(AppLocalizations l10n) => switch (this) {
-        FolderDropRejection.intoItself => l10n.dropRejectIntoItself,
-        FolderDropRejection.sameFolder => l10n.dropRejectSameFolder,
-        FolderDropRejection.root => l10n.dropRejectRoot,
-        FolderDropRejection.readOnly => l10n.dropRejectReadOnly,
-        FolderDropRejection.nameTaken => l10n.dropRejectNameTaken,
-      };
+    FolderDropRejection.intoItself => l10n.dropRejectIntoItself,
+    FolderDropRejection.sameFolder => l10n.dropRejectSameFolder,
+    FolderDropRejection.root => l10n.dropRejectRoot,
+    FolderDropRejection.readOnly => l10n.dropRejectReadOnly,
+    FolderDropRejection.nameTaken => l10n.dropRejectNameTaken,
+  };
 }
 
 /// The refusal of the folder row under the pointer, told to the drag follower
@@ -84,7 +84,11 @@ class FolderDropFollower extends StatelessWidget {
       valueListenable: FolderDropFeedback.rejection,
       builder: (context, why, _) {
         if (why != null) {
-          return AppDragFollower(icon: Icons.block, label: why.label(l10n), tone: AppDragTone.reject);
+          return AppDragFollower(
+            icon: Icons.block,
+            label: why.label(l10n),
+            tone: AppDragTone.reject,
+          );
         }
         return ValueListenableBuilder<bool>(
           valueListenable: AppCopyModifier.instance,

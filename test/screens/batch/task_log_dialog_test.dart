@@ -23,11 +23,13 @@ void main() {
   }
 
   Future<void> pumpDialog(WidgetTester tester, TaskItem item) async {
-    await tester.pumpWidget(MaterialApp(
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: Scaffold(body: TaskLogDialog(task: item)),
-    ));
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: TaskLogDialog(task: item)),
+      ),
+    );
     await tester.pumpAndSettle();
   }
 
@@ -63,7 +65,10 @@ void main() {
   });
 
   testWidgets('the error line is called out against the ordinary ones', (tester) async {
-    await pumpDialog(tester, task(TaskStatus.failed, ['Start processing', 'Error: quota exceeded']));
+    await pumpDialog(
+      tester,
+      task(TaskStatus.failed, ['Start processing', 'Error: quota exceeded']),
+    );
 
     final errorLine = tester.widget<Text>(find.textContaining('Error: quota exceeded'));
     final plainLine = tester.widget<Text>(find.textContaining('Start processing'));

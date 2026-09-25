@@ -37,10 +37,7 @@ class DashScopeImagesProtocol implements ImageGenProtocol {
     LLMLogger? logger,
   }) async {
     final config = target.config;
-    final userMsg = history.lastWhere(
-      (m) => m.role == LLMRole.user,
-      orElse: () => history.last,
-    );
+    final userMsg = history.lastWhere((m) => m.role == LLMRole.user, orElse: () => history.last);
 
     // Cap the reference images to what the model accepts (qwen: 3, wan2.7: 9).
     final inputImages = capReferenceImages(
@@ -57,16 +54,18 @@ class DashScopeImagesProtocol implements ImageGenProtocol {
       // The first input's proportions drive the default size of an edit —
       // see [dashscopeQwenDefaultSize] for why "no size" is not an option.
       inputSize ??= ImageCompressor.dimensionsOf(bytes);
-      imageRefs.add(
-          'data:${resolveImageMime(bytes, att.mimeType)};base64,${base64Encode(bytes)}');
+      imageRefs.add('data:${resolveImageMime(bytes, att.mimeType)};base64,${base64Encode(bytes)}');
     }
 
-    final url = Uri.parse('${dashscopeNativeBase(config.endpoint)}'
-        '/services/aigc/multimodal-generation/generation');
+    final url = Uri.parse(
+      '${dashscopeNativeBase(config.endpoint)}'
+      '/services/aigc/multimodal-generation/generation',
+    );
     final isEdit = imageRefs.isNotEmpty;
     logger?.call(
-        'Preparing DashScope image request (${isEdit ? 'edit' : 'generate'}) to: ${url.host}',
-        level: 'DEBUG');
+      'Preparing DashScope image request (${isEdit ? 'edit' : 'generate'}) to: ${url.host}',
+      level: 'DEBUG',
+    );
 
     final payload = buildDashScopeImagePayload(
       modelId: config.modelId,
@@ -113,23 +112,29 @@ class DashScopeImagesProtocol implements ImageGenProtocol {
       throwIfDashScopeError(data);
 
       final images = await resolveImageRefs(
-          dashscopeImageRefs(data), client, logger,
-          source: 'DashScope Images API',
-          abortTrigger: abortTriggerOf(options));
+        dashscopeImageRefs(data),
+        client,
+        logger,
+        source: 'DashScope Images API',
+        abortTrigger: abortTriggerOf(options),
+      );
 
       if (images.isEmpty) {
         // One deliverable, so nothing to return is a failure, not an empty
         // success — the task executor cannot tell those apart and would
         // report a generation that produced no file as done.
         final body = response.body;
-        throw LLMApiException('DashScope Images API returned no image: '
-            '${body.length > 500 ? '${body.substring(0, 500)}…' : body}');
+        throw LLMApiException(
+          'DashScope Images API returned no image: '
+          '${body.length > 500 ? '${body.substring(0, 500)}…' : body}',
+        );
       }
 
       logger?.call(
-          'DashScope parse complete. Images: ${images.length} '
-          '(downloaded inline; upstream URLs expire in $_urlLifetimeNote)',
-          level: 'DEBUG');
+        'DashScope parse complete. Images: ${images.length} '
+        '(downloaded inline; upstream URLs expire in $_urlLifetimeNote)',
+        level: 'DEBUG',
+      );
 
       // The image count backstops a missing `usage` block: an empty metadata
       // map skips usage recording on the non-streaming path, which turns a
@@ -191,9 +196,7 @@ Map<String, dynamic> dashscopeImageMetadata({
   int inputImages = 0,
 }) {
   final rawUsage = data['usage'];
-  final usage = rawUsage is Map
-      ? rawUsage.cast<String, dynamic>()
-      : const <String, dynamic>{};
+  final usage = rawUsage is Map ? rawUsage.cast<String, dynamic>() : const <String, dynamic>{};
   final width = usage['width'];
   final height = usage['height'];
   final usageSize = usage['size'];

@@ -35,8 +35,9 @@ void main() {
     });
 
     test('charges for attachments even though they carry no characters', () {
-      final bare = PromptOptimizerAgent.occupiedChars(
-          '', [LLMMessage(role: LLMRole.user, content: 'look')]);
+      final bare = PromptOptimizerAgent.occupiedChars('', [
+        LLMMessage(role: LLMRole.user, content: 'look'),
+      ]);
       final withImage = PromptOptimizerAgent.occupiedChars('', [
         LLMMessage(
           role: LLMRole.user,
@@ -51,22 +52,22 @@ void main() {
   group('shouldCompact', () {
     test('fires once occupancy reaches the budget', () {
       expect(
-          PromptOptimizerAgent.shouldCompact(
-              occupied: 999, budgetChars: 1000, messageCount: 1),
-          isFalse);
+        PromptOptimizerAgent.shouldCompact(occupied: 999, budgetChars: 1000, messageCount: 1),
+        isFalse,
+      );
       expect(
-          PromptOptimizerAgent.shouldCompact(
-              occupied: 1000, budgetChars: 1000, messageCount: 1),
-          isTrue);
+        PromptOptimizerAgent.shouldCompact(occupied: 1000, budgetChars: 1000, messageCount: 1),
+        isTrue,
+      );
     });
 
     test('message count is an independent trigger', () {
       // A long conversation of short turns costs little context but still
       // slows every request down.
       expect(
-          PromptOptimizerAgent.shouldCompact(
-              occupied: 0, budgetChars: 1000000, messageCount: 500),
-          isTrue);
+        PromptOptimizerAgent.shouldCompact(occupied: 0, budgetChars: 1000000, messageCount: 500),
+        isTrue,
+      );
     });
 
     test('an unlimited model does not summarize on every single turn', () {
@@ -75,9 +76,9 @@ void main() {
       // conversation away every turn.
       final budget = ContextBudget.budgetChars(0, 0.6);
       expect(
-          PromptOptimizerAgent.shouldCompact(
-              occupied: 5000, budgetChars: budget, messageCount: 1),
-          isFalse);
+        PromptOptimizerAgent.shouldCompact(occupied: 5000, budgetChars: budget, messageCount: 1),
+        isFalse,
+      );
     });
 
     test('a real window drives the trigger, unlike the old fixed threshold', () {
@@ -85,17 +86,21 @@ void main() {
       // big one must not. Before this, both used one hardcoded 192000.
       const occupied = 20000;
       expect(
-          PromptOptimizerAgent.shouldCompact(
-              occupied: occupied,
-              budgetChars: ContextBudget.budgetChars(8192, 0.6),
-              messageCount: 1),
-          isTrue);
+        PromptOptimizerAgent.shouldCompact(
+          occupied: occupied,
+          budgetChars: ContextBudget.budgetChars(8192, 0.6),
+          messageCount: 1,
+        ),
+        isTrue,
+      );
       expect(
-          PromptOptimizerAgent.shouldCompact(
-              occupied: occupied,
-              budgetChars: ContextBudget.budgetChars(1048576, 0.6),
-              messageCount: 1),
-          isFalse);
+        PromptOptimizerAgent.shouldCompact(
+          occupied: occupied,
+          budgetChars: ContextBudget.budgetChars(1048576, 0.6),
+          messageCount: 1,
+        ),
+        isFalse,
+      );
     });
   });
 
@@ -103,11 +108,20 @@ void main() {
     test('③ adds the thinking tokens ① and ④ already include', () {
       // candidatesTokenCount is the answer alone; the thinking sits beside
       // it. Reading the former alone recorded "think 5k, answer 500" as 500.
-      expect(LLMService.outputTokensOf({'candidatesTokenCount': 500, 'thoughtsTokenCount': 5000}), 5500);
+      expect(
+        LLMService.outputTokensOf({'candidatesTokenCount': 500, 'thoughtsTokenCount': 5000}),
+        5500,
+      );
       expect(LLMService.outputTokensOf({'candidatesTokenCount': 500}), 500);
       // ① and ④ count thinking inside the total already; the details block
       // is a breakdown, not an addition.
-      expect(LLMService.outputTokensOf({'completion_tokens': 700, 'completion_tokens_details': {'reasoning_tokens': 200}}), 700);
+      expect(
+        LLMService.outputTokensOf({
+          'completion_tokens': 700,
+          'completion_tokens_details': {'reasoning_tokens': 200},
+        }),
+        700,
+      );
       expect(LLMService.outputTokensOf({'output_tokens': 300}), 300);
     });
   });
@@ -135,8 +149,7 @@ void main() {
       // 4 chars/token — an English conversation.
       expect(ContextBudget.calibrate(charsSent: 40000, promptTokens: 10000), 4.0);
       // ~1.2 chars/token — a Chinese one. One constant cannot serve both.
-      expect(ContextBudget.calibrate(charsSent: 12000, promptTokens: 10000),
-          closeTo(1.2, 0.001));
+      expect(ContextBudget.calibrate(charsSent: 12000, promptTokens: 10000), closeTo(1.2, 0.001));
     });
 
     test('falls back to null when the provider reported nothing', () {
@@ -154,10 +167,8 @@ void main() {
       // budget we meant, whatever the content actually costs.
       const window = 131072;
       const ratio = 0.6;
-      final observed =
-          ContextBudget.calibrate(charsSent: 12000, promptTokens: 10000)!;
-      final budget = ContextBudget.budgetChars(window, ratio,
-          observedCharsPerToken: observed);
+      final observed = ContextBudget.calibrate(charsSent: 12000, promptTokens: 10000)!;
+      final budget = ContextBudget.budgetChars(window, ratio, observedCharsPerToken: observed);
       expect(budget / observed, closeTo(window * ratio, 1));
     });
 
@@ -165,11 +176,13 @@ void main() {
       final chinese = ContextBudget.calibrate(charsSent: 12000, promptTokens: 10000);
       final english = ContextBudget.calibrate(charsSent: 40000, promptTokens: 10000);
       expect(
-          ContextBudget.budgetChars(131072, 0.6, observedCharsPerToken: chinese),
-          lessThan(ContextBudget.budgetChars(131072, 0.6)));
+        ContextBudget.budgetChars(131072, 0.6, observedCharsPerToken: chinese),
+        lessThan(ContextBudget.budgetChars(131072, 0.6)),
+      );
       expect(
-          ContextBudget.budgetChars(131072, 0.6, observedCharsPerToken: english),
-          greaterThan(ContextBudget.budgetChars(131072, 0.6)));
+        ContextBudget.budgetChars(131072, 0.6, observedCharsPerToken: english),
+        greaterThan(ContextBudget.budgetChars(131072, 0.6)),
+      );
     });
   });
 }

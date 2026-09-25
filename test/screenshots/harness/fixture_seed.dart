@@ -112,153 +112,180 @@ class _Catalog {
 }
 
 Future<_Catalog> _seedCatalog(DatabaseService db) async {
-  final int googleId = await db.addChannel(LLMChannel(
-    displayName: 'Google AI Studio',
-    endpoint: 'https://generativelanguage.googleapis.com',
-    apiKey: 'fixture-key-google',
-    type: Vendors.googleRest,
-    tag: '官方',
-    tagColor: 0xFF4285F4,
-  ));
+  final int googleId = await db.addChannel(
+    LLMChannel(
+      displayName: 'Google AI Studio',
+      endpoint: 'https://generativelanguage.googleapis.com',
+      apiKey: 'fixture-key-google',
+      type: Vendors.googleRest,
+      tag: '官方',
+      tagColor: 0xFF4285F4,
+    ),
+  );
 
-  final int openaiId = await db.addChannel(LLMChannel(
-    displayName: '中转 · OpenAI 兼容',
-    endpoint: 'https://api.example-relay.com/v1',
-    apiKey: 'fixture-key-relay',
-    type: Vendors.openAIRest,
-    tag: '中转',
-    tagColor: 0xFF00897B,
-  ));
+  final int openaiId = await db.addChannel(
+    LLMChannel(
+      displayName: '中转 · OpenAI 兼容',
+      endpoint: 'https://api.example-relay.com/v1',
+      apiKey: 'fixture-key-relay',
+      type: Vendors.openAIRest,
+      tag: '中转',
+      tagColor: 0xFF00897B,
+    ),
+  );
 
   // The one multi-face vendor (D2 17/18): its models exercise the protocol
   // menu, the pinned-protocol chip and the channel capability subline —
   // nothing else in the fixture has a menu longer than one entry.
-  final int dashscopeId = await db.addChannel(LLMChannel(
-    displayName: '阿里云百炼',
-    endpoint: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
-    apiKey: 'fixture-key-dashscope',
-    type: Vendors.dashscope,
-    tag: '官方',
-    tagColor: 0xFFFF6A00,
-  ));
+  final int dashscopeId = await db.addChannel(
+    LLMChannel(
+      displayName: '阿里云百炼',
+      endpoint: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+      apiKey: 'fixture-key-dashscope',
+      type: Vendors.dashscope,
+      tag: '官方',
+      tagColor: 0xFFFF6A00,
+    ),
+  );
 
   // A Claude-format relay (D2a 20e): the one fixture channel with no generic
   // media surface, so a video-kind model on it opens the editor on the
   // "this channel has no video endpoint" note.
-  final int claudeRelayId = await db.addChannel(LLMChannel(
-    displayName: 'Claude 格式中转',
-    endpoint: 'https://claude.example-relay.com/v1',
-    apiKey: 'fixture-key-claude-relay',
-    type: Vendors.newApiAnthropic,
-    tag: '中转',
-    tagColor: 0xFF6D4C41,
-  ));
+  final int claudeRelayId = await db.addChannel(
+    LLMChannel(
+      displayName: 'Claude 格式中转',
+      endpoint: 'https://claude.example-relay.com/v1',
+      apiKey: 'fixture-key-claude-relay',
+      type: Vendors.newApiAnthropic,
+      tag: '中转',
+      tagColor: 0xFF6D4C41,
+    ),
+  );
 
   // Volcengine Ark on its subscription-plan base (D1e): the channel the
   // Seedream parameter cards are photographed on.
-  final int arkId = await db.addChannel(LLMChannel(
-    displayName: '火山方舟',
-    endpoint: 'https://ark.cn-beijing.volces.com/api/plan/v3',
-    apiKey: 'fixture-key-ark',
-    type: Vendors.volcengineArk,
-    tag: '官方',
-    tagColor: 0xFF2196F3,
-  ));
+  final int arkId = await db.addChannel(
+    LLMChannel(
+      displayName: '火山方舟',
+      endpoint: 'https://ark.cn-beijing.volces.com/api/plan/v3',
+      apiKey: 'fixture-key-ark',
+      type: Vendors.volcengineArk,
+      tag: '官方',
+      tagColor: 0xFF2196F3,
+    ),
+  );
 
   // A1f 4a: xAI's own API — the channel grok-imagine-image-2.0's three
   // controls (ratio · quality · three-tier size) are photographed on.
-  final int xaiId = await db.addChannel(LLMChannel(
-    displayName: 'xAI',
-    endpoint: 'https://api.x.ai/v1',
-    apiKey: 'fixture-key-xai',
-    type: Vendors.xaiApi,
-    tag: '官方',
-    tagColor: 0xFF212121,
-  ));
+  final int xaiId = await db.addChannel(
+    LLMChannel(
+      displayName: 'xAI',
+      endpoint: 'https://api.x.ai/v1',
+      apiKey: 'fixture-key-xai',
+      type: Vendors.xaiApi,
+      tag: '官方',
+      tagColor: 0xFF212121,
+    ),
+  );
 
   // D1f 4a / 4f: one New API relay split the way it had to be before routes
   // — OpenAI format and Gemini format, one host, one key — so the rail offers
   // a merge, and its review has a namesake to join and a model to move.
-  final int newApiId = await db.addChannel(LLMChannel(
-    displayName: 'NewAPI 中转',
-    endpoint: 'https://relay.example.com/v1',
-    apiKey: 'fixture-key-newapi',
-    type: Vendors.newApiOpenAI,
-    tag: '中转',
-    tagColor: 0xFF009688,
-  ));
+  final int newApiId = await db.addChannel(
+    LLMChannel(
+      displayName: 'NewAPI 中转',
+      endpoint: 'https://relay.example.com/v1',
+      apiKey: 'fixture-key-newapi',
+      type: Vendors.newApiOpenAI,
+      tag: '中转',
+      tagColor: 0xFF009688,
+    ),
+  );
 
-  final int newApiGeminiId = await db.addChannel(LLMChannel(
-    displayName: 'NewAPI · Gemini 格式',
-    endpoint: 'https://relay.example.com/v1beta',
-    apiKey: 'fixture-key-newapi',
-    type: Vendors.newApiGemini,
-    tag: '中转',
-    tagColor: 0xFF795548,
-  ));
+  final int newApiGeminiId = await db.addChannel(
+    LLMChannel(
+      displayName: 'NewAPI · Gemini 格式',
+      endpoint: 'https://relay.example.com/v1beta',
+      apiKey: 'fixture-key-newapi',
+      type: Vendors.newApiGemini,
+      tag: '中转',
+      tagColor: 0xFF795548,
+    ),
+  );
 
-  final int flashFee = await db.addPricingGroup(PricingGroup(
-    name: 'Gemini Flash',
-    inputPrice: 0.075,
-    cacheInputPrice: 0.01875,
-    outputPrice: 0.30,
-  ));
+  final int flashFee = await db.addPricingGroup(
+    PricingGroup(
+      name: 'Gemini Flash',
+      inputPrice: 0.075,
+      cacheInputPrice: 0.01875,
+      outputPrice: 0.30,
+    ),
+  );
 
-  final int proFee = await db.addPricingGroup(PricingGroup(
-    name: 'Gemini Pro',
-    inputPrice: 1.25,
-    outputPrice: 10.0,
-  ));
+  final int proFee = await db.addPricingGroup(
+    PricingGroup(name: 'Gemini Pro', inputPrice: 1.25, outputPrice: 10.0),
+  );
 
-  final int perImageFee = await db.addPricingGroup(PricingGroup(
-    // Bracketed on purpose: the fee-group row shows 「中转」 as a badge.
-    name: '[中转] 按次计费 · 图片',
-    billingMode: 'request',
-    requestPrice: 0.04,
-    // D2e: a request group charging references too — the editor's row and
-    // the card's tag under 按次.
-    inputUnitPrice: 0.01,
-  ));
+  final int perImageFee = await db.addPricingGroup(
+    PricingGroup(
+      // Bracketed on purpose: the fee-group row shows 「中转」 as a badge.
+      name: '[中转] 按次计费 · 图片',
+      billingMode: 'request',
+      requestPrice: 0.04,
+      // D2e: a request group charging references too — the editor's row and
+      // the card's tag under 按次.
+      inputUnitPrice: 0.01,
+    ),
+  );
 
   // D2b: a spec-billed video group — per second, three tiers and a catch-all.
-  final int veoFee = await db.addPricingGroup(PricingGroup(
-    name: 'Veo 3 视频',
-    billingMode: 'spec',
-    outputUnit: OutputUnit.second,
-    outputRates: const <SpecRate>[
-      SpecRate(size: '1080p', quality: 'high', price: 0.5),
-      SpecRate(size: '1080p', price: 0.3),
-      SpecRate(size: '720p', price: 0.15),
-      SpecRate(price: 0.1),
-    ],
-  ));
+  final int veoFee = await db.addPricingGroup(
+    PricingGroup(
+      name: 'Veo 3 视频',
+      billingMode: 'spec',
+      outputUnit: OutputUnit.second,
+      outputRates: const <SpecRate>[
+        SpecRate(size: '1080p', quality: 'high', price: 0.5),
+        SpecRate(size: '1080p', price: 0.3),
+        SpecRate(size: '720p', price: 0.15),
+        SpecRate(price: 0.1),
+      ],
+    ),
+  );
 
   // D2c: a per-image group that also charges for reference images — the
   // editor's 「输入图」 row, the row's input tag and the usage page's input
   // count all hang off it.
-  final int seedreamFee = await db.addPricingGroup(PricingGroup(
-    name: 'Seedream 5.0 pro',
-    billingMode: 'spec',
-    outputRates: const <SpecRate>[SpecRate(size: '2K', price: 0.3), SpecRate(price: 0.3)],
-    inputUnitPrice: 0.02,
-    inputFreeUnits: 1,
-  ));
+  final int seedreamFee = await db.addPricingGroup(
+    PricingGroup(
+      name: 'Seedream 5.0 pro',
+      billingMode: 'spec',
+      outputRates: const <SpecRate>[
+        SpecRate(size: '2K', price: 0.3),
+        SpecRate(price: 0.3),
+      ],
+      inputUnitPrice: 0.02,
+      inputFreeUnits: 1,
+    ),
+  );
 
   // A1f 4e: xAI's six-cell matrix, copied off the pricing page — the table
   // a `1K · low` row can only land on now that the app sends `quality`.
-  final int xaiFee = await db.addPricingGroup(PricingGroup(
-    name: 'xAI Imagine 2.0',
-    billingMode: 'spec',
-    outputRates: const <SpecRate>[
-      SpecRate(size: '1K', quality: 'low', price: 0.04),
-      SpecRate(size: '1.5K', quality: 'low', price: 0.05),
-      SpecRate(size: '2K', quality: 'low', price: 0.06),
-      SpecRate(size: '1K', quality: 'medium', price: 0.06),
-      SpecRate(size: '1.5K', quality: 'medium', price: 0.07),
-      SpecRate(size: '2K', quality: 'medium', price: 0.08),
-    ],
-    inputUnitPrice: 0.01,
-  ));
+  final int xaiFee = await db.addPricingGroup(
+    PricingGroup(
+      name: 'xAI Imagine 2.0',
+      billingMode: 'spec',
+      outputRates: const <SpecRate>[
+        SpecRate(size: '1K', quality: 'low', price: 0.04),
+        SpecRate(size: '1.5K', quality: 'low', price: 0.05),
+        SpecRate(size: '2K', quality: 'low', price: 0.06),
+        SpecRate(size: '1K', quality: 'medium', price: 0.06),
+        SpecRate(size: '1.5K', quality: 'medium', price: 0.07),
+        SpecRate(size: '2K', quality: 'medium', price: 0.08),
+      ],
+      inputUnitPrice: 0.01,
+    ),
+  );
 
   final List<LLMModel> models = <LLMModel>[
     LLMModel(
@@ -464,11 +491,14 @@ Future<_Catalog> _seedCatalog(DatabaseService db) async {
 
 Future<void> _seedPrompts(DatabaseService db) async {
   final int portraitTag = await db.addPromptTag(
-      PromptTag(name: '人像', color: 0xFF8E24AA, sortOrder: 0));
+    PromptTag(name: '人像', color: 0xFF8E24AA, sortOrder: 0),
+  );
   final int productTag = await db.addPromptTag(
-      PromptTag(name: '电商', color: 0xFF1E88E5, sortOrder: 1));
+    PromptTag(name: '电商', color: 0xFF1E88E5, sortOrder: 1),
+  );
   final int styleTag = await db.addPromptTag(
-      PromptTag(name: '风格化', color: 0xFFF4511E, sortOrder: 2));
+    PromptTag(name: '风格化', color: 0xFFF4511E, sortOrder: 2),
+  );
 
   final List<(String, String, List<int>)> prompts = <(String, String, List<int>)>[
     (
@@ -570,11 +600,7 @@ Future<void> _seedPrompts(DatabaseService db) async {
     );
   }
 
-  for (final String entry in <String>[
-    '把背景换成纯白，主体不变',
-    '增加一点暖色调，模拟黄昏光线',
-    '保留原始构图，只提升清晰度和对比度',
-  ]) {
+  for (final String entry in <String>['把背景换成纯白，主体不变', '增加一点暖色调，模拟黄昏光线', '保留原始构图，只提升清晰度和对比度']) {
     await db.addPromptHistory(PromptHistoryType.image, entry);
   }
   await db.addPromptHistory(PromptHistoryType.video, '镜头缓慢推近，背景虚化');
@@ -596,7 +622,8 @@ Future<void> _seedKnowledgeBase(DatabaseService db, FixtureEnv env) async {
     '05_服装分层与材质.md': '# 服装分层与材质\n\n由外到内描述服装层次，材质写在层次之后。\n',
     '06_场景动作镜头组合库.md': '# 场景动作镜头组合库\n\n常用的场景与动作搭配，按主题分组。\n',
     '07_footwear/07a_鞋型与材质.md': '# 鞋型与材质\n\n鞋型、鞋跟高度与材质的写法。\n',
-    '07_footwear/07b_叠穿袜子与高跟鞋.md': '# 叠穿袜子与高跟鞋\n\n## 二、叠穿组合\n  - 白色过膝袜 + 玛丽珍鞋：适合校园与制服主题。\n  - 黑色短袜 + 高跟鞋：注意脚踝处袜口不要压出褶皱。\n',
+    '07_footwear/07b_叠穿袜子与高跟鞋.md':
+        '# 叠穿袜子与高跟鞋\n\n## 二、叠穿组合\n  - 白色过膝袜 + 玛丽珍鞋：适合校园与制服主题。\n  - 黑色短袜 + 高跟鞋：注意脚踝处袜口不要压出褶皱。\n',
     '08_易错结构与修正方案.md': '# 易错结构与修正方案\n\n模型常见的误解与对应的改写方式。\n',
     '09_负面词表.md': '# 负面词表\n\n按题材分组的负面提示词。\n',
   };
@@ -724,10 +751,7 @@ TaskItem _task({
     modelDbId: catalog.modelPks[modelIndex],
     channelTag: modelIndex == 4 ? '中转' : '官方',
     channelColor: modelIndex == 4 ? 0xFF00897B : 0xFF4285F4,
-    parameters: <String, dynamic>{
-      'prompt': '把背景换成纯白，主体保持不变，保留发丝细节',
-      'aspect_ratio': '1:1',
-    },
+    parameters: <String, dynamic>{'prompt': '把背景换成纯白，主体保持不变，保留发丝细节', 'aspect_ratio': '1:1'},
     status: status,
     resultPaths: List<String>.from(resultPaths),
     createdAt: created,
@@ -874,7 +898,8 @@ void seedOptimizerSession(AppState appState) {
   // below it the card renders in full and the folded branch — the one that has
   // to clip a long prompt without laying it out inside the fold height — never
   // appears in a screenshot at all. A real refined prompt is this long anyway.
-  const String refined = '任务：修复并增强这张人像照片的画质，并按下列设定重绘服装。\n\n'
+  const String refined =
+      '任务：修复并增强这张人像照片的画质，并按下列设定重绘服装。\n\n'
       '**模特设定**\n'
       '· **面部与眼镜：**严格继承参考图的面部特征、神态与笑容，保留黑色圆框眼镜。\n'
       '· **发型：**青蓝色直发，额前平刘海，发梢自然内扣，避免出现结块与锯齿边缘。\n'
@@ -924,7 +949,12 @@ void seedOptimizerSession(AppState appState) {
       ],
     ),
     for (final String id in <String>['c1', 'c2', 'c3', 'c4', 'c5'])
-      LLMMessage(role: LLMRole.tool, content: 'ok', toolCallId: id, toolName: 'read_knowledge_file'),
+      LLMMessage(
+        role: LLMRole.tool,
+        content: 'ok',
+        toolCallId: id,
+        toolName: 'read_knowledge_file',
+      ),
     LLMMessage(
       role: LLMRole.assistant,
       content: '',
@@ -942,7 +972,8 @@ void seedOptimizerSession(AppState appState) {
     LLMMessage(role: LLMRole.tool, content: 'ok', toolCallId: 'c6', toolName: 'submit_prompt'),
     LLMMessage(
       role: LLMRole.assistant,
-      content: '已完成图 1 与图 2 的融合，重点保留了眼镜与五官继承、服装分层与环境融合规则。'
+      content:
+          '已完成图 1 与图 2 的融合，重点保留了眼镜与五官继承、服装分层与环境融合规则。'
           '如需微调细节，直接告诉我。',
     ),
     // One generation-feedback round (`20b`): a marker-encoded user turn, in
@@ -953,7 +984,8 @@ void seedOptimizerSession(AppState appState) {
     // which is also on the reference list, so the card's thumbnail resolves.
     LLMMessage(
       role: LLMRole.user,
-      content: '[result_feedback] '
+      content:
+          '[result_feedback] '
           '{"prompt_version":1,"image":"${images.last.name}"}\n'
           '裙摆的褶皱层数比设定图少了一层，腰封的金属扣完全没有出现，环境光偏冷。',
     ),
@@ -1002,7 +1034,12 @@ void seedOptimizerRunning(AppState appState) {
       ],
     ),
     for (final String id in <String>['r1', 'r2', 'r3'])
-      LLMMessage(role: LLMRole.tool, content: 'ok', toolCallId: id, toolName: 'read_knowledge_file'),
+      LLMMessage(
+        role: LLMRole.tool,
+        content: 'ok',
+        toolCallId: id,
+        toolName: 'read_knowledge_file',
+      ),
   ];
 
   final PromptOptimizerSession session = PromptOptimizerSession.fromStored(
@@ -1068,7 +1105,8 @@ Future<void> seedOptimizerAnalysis(AppState appState) async {
       LLMMessage(role: LLMRole.user, content: '结合参考图 1 和 2，描述一下服装的设计结构'),
       LLMMessage(
         role: LLMRole.assistant,
-        content: '## 总览\n图 1 是一件**短款收腰西装外套**，图 2 是同系列的高腰直筒裤。两件同料，合起来是一套偏正式的套装。\n\n'
+        content:
+            '## 总览\n图 1 是一件**短款收腰西装外套**，图 2 是同系列的高腰直筒裤。两件同料，合起来是一套偏正式的套装。\n\n'
             '## 部件\n- 领：戗驳领，领面较宽，驳口落在胸线上方\n- 袖：两片袖，袖口三粒装饰扣\n- 门襟：单排一粒扣，扣位在腰线\n\n'
             '## 不确定处\n图 2 的后腰被手臂挡住，有没有松紧看不出来。',
         deliverable: true,
@@ -1078,14 +1116,24 @@ Future<void> seedOptimizerAnalysis(AppState appState) async {
         role: LLMRole.assistant,
         content: '',
         toolCalls: <LLMToolCall>[
-          LLMToolCall(id: 'fx-a1', name: 'submit_prompt', arguments: const <String, dynamic>{
-            'prompt': '一位模特身穿炭灰色戗驳领短款收腰西装外套，单排一粒扣，两片袖、袖口三粒装饰扣，'
-                '搭配同料高腰直筒裤；棚拍，柔和正面光，浅灰无缝背景，全身构图。',
-            'note': '按上面的结构分析反推。',
-          }),
+          LLMToolCall(
+            id: 'fx-a1',
+            name: 'submit_prompt',
+            arguments: const <String, dynamic>{
+              'prompt':
+                  '一位模特身穿炭灰色戗驳领短款收腰西装外套，单排一粒扣，两片袖、袖口三粒装饰扣，'
+                  '搭配同料高腰直筒裤；棚拍，柔和正面光，浅灰无缝背景，全身构图。',
+              'note': '按上面的结构分析反推。',
+            },
+          ),
         ],
       ),
-      LLMMessage(role: LLMRole.tool, content: '{"status":"ok"}', toolCallId: 'fx-a1', toolName: 'submit_prompt'),
+      LLMMessage(
+        role: LLMRole.tool,
+        content: '{"status":"ok"}',
+        toolCallId: 'fx-a1',
+        toolName: 'submit_prompt',
+      ),
     ],
   );
   appState.workbenchUIState.adoptOptimizerSession(session, images);
@@ -1105,7 +1153,8 @@ Future<void> seedOptimizerAnalysis(AppState appState) async {
 void seedOptimizerKbEdit(AppState appState) {
   final List<AppImage> images = _galleryImages(appState).take(2).toList();
 
-  const String header = '# 07b 叠穿袜子与高跟鞋\n'
+  const String header =
+      '# 07b 叠穿袜子与高跟鞋\n'
       '\n'
       '## 一、适用场景\n'
       '- 制服 / 校园主题的半身与全身构图。\n'
@@ -1113,15 +1162,18 @@ void seedOptimizerKbEdit(AppState appState) {
       '\n'
       '## 二、叠穿组合\n'
       '  - 白色过膝袜 + 玛丽珍鞋：适合校园与制服主题。\n';
-  const String footer = '\n'
+  const String footer =
+      '\n'
       '## 三、常见问题\n'
       '- 袜口过紧会在脚踝留下压痕，写提示词时明确「无压痕」。\n'
       '- 网袜的孔径要写具体尺寸，否则模型会给出装饰性花纹。\n';
 
-  const String before = '$header'
+  const String before =
+      '$header'
       '  - 黑色短袜 + 高跟鞋：注意脚踝处袜口不要压出褶皱。\n'
       '$footer';
-  const String after = '$header'
+  const String after =
+      '$header'
       '  - 黑色短袜 + 高跟鞋：袜口停在踝骨上方 2–3 cm，避免压出褶皱；\n'
       '    袜口与鞋帮之间留出一段裸露皮肤，形成断色。\n'
       '  - 网袜叠穿纯色短袜：先写外层网袜的孔径，再写内层袜色。\n'
@@ -1129,7 +1181,8 @@ void seedOptimizerKbEdit(AppState appState) {
       '提示：叠穿写法一律「由外到内」，与服装分层规则保持一致。\n'
       '$footer';
 
-  const String created = '# 04b 证件照模版\n'
+  const String created =
+      '# 04b 证件照模版\n'
       '\n'
       '## 用途\n'
       '一寸 / 二寸证件照的标准化提示词模版。\n'
@@ -1141,10 +1194,7 @@ void seedOptimizerKbEdit(AppState appState) {
       '4. 输出 —— 不裁切、不磨皮、不做美颜。\n';
 
   final List<LLMMessage> history = <LLMMessage>[
-    LLMMessage(
-      role: LLMRole.user,
-      content: '把刚才那条 cosplay 提示词里关于袜子叠穿的经验补进知识库，并给证件照单独建一个模版。',
-    ),
+    LLMMessage(role: LLMRole.user, content: '把刚才那条 cosplay 提示词里关于袜子叠穿的经验补进知识库，并给证件照单独建一个模版。'),
     LLMMessage(
       role: LLMRole.assistant,
       content: '',
@@ -1162,7 +1212,12 @@ void seedOptimizerKbEdit(AppState appState) {
       ],
     ),
     for (final String id in <String>['e1', 'e2'])
-      LLMMessage(role: LLMRole.tool, content: 'ok', toolCallId: id, toolName: 'read_knowledge_file'),
+      LLMMessage(
+        role: LLMRole.tool,
+        content: 'ok',
+        toolCallId: id,
+        toolName: 'read_knowledge_file',
+      ),
   ];
 
   final PromptOptimizerSession session = PromptOptimizerSession.fromStored(
@@ -1190,8 +1245,7 @@ void seedOptimizerKbEdit(AppState appState) {
 
 /// Whatever the gallery is actually showing, so a seeded selection matches the
 /// tiles in the same shot rather than some other folder's files.
-List<AppImage> _galleryImages(AppState appState) =>
-    appState.galleryState.currentViewImages;
+List<AppImage> _galleryImages(AppState appState) => appState.galleryState.currentViewImages;
 
 AppImage? _firstGalleryImage(AppState appState) {
   final List<AppImage> images = _galleryImages(appState);
@@ -1231,44 +1285,54 @@ Future<void> _seedUsage(DatabaseService db, _Catalog catalog) async {
         final String size = tier == 3 ? '1440p' : (tier == 2 ? '720p' : '1080p');
         final String? quality = tier == 0 ? 'high' : null;
         final double price = tier == 0 ? 0.5 : (tier == 1 ? 0.3 : (tier == 2 ? 0.15 : 0.0));
-        await db.recordTokenUsage(TokenUsage(
+        await db.recordTokenUsage(
+          TokenUsage(
+            taskId: 'fixture-usage-$day-$r',
+            modelId: catalog.modelIds[m],
+            modelDbId: catalog.modelPks[m],
+            timestamp: ts,
+            billingMode: 'spec',
+            spec: UsageSpecBilling(
+              unit: OutputUnit.second,
+              units: 8.0,
+              unitPrice: price,
+              snapshot: UsageSpecSnapshot(
+                size: size,
+                quality: quality,
+                seconds: 8,
+                matched: tier != 3,
+              ),
+            ),
+          ),
+        );
+        continue;
+      }
+      await db.recordTokenUsage(
+        TokenUsage(
           taskId: 'fixture-usage-$day-$r',
           modelId: catalog.modelIds[m],
           modelDbId: catalog.modelPks[m],
           timestamp: ts,
-          billingMode: 'spec',
-          spec: UsageSpecBilling(
-            unit: OutputUnit.second,
-            units: 8.0,
-            unitPrice: price,
-            snapshot: UsageSpecSnapshot(
-              size: size,
-              quality: quality,
-              seconds: 8,
-              matched: tier != 3,
-            ),
-          ),
-        ));
-        continue;
-      }
-      await db.recordTokenUsage(TokenUsage(
-        taskId: 'fixture-usage-$day-$r',
-        modelId: catalog.modelIds[m],
-        modelDbId: catalog.modelPks[m],
-        timestamp: ts,
-        inputTokens: inputTokens,
-        cacheTokens: cacheTokens,
-        outputTokens: outputTokens,
-        inputPrice: 0.075,
-        cachePrice: 0.01875,
-        outputPrice: 0.30,
-        requestPrice: 0.04,
-        billingMode: m == 0 || m == 3 ? 'request' : 'token',
-        // D2e: the relay's request-billed edits sent two references each.
-        spec: m == 3
-            ? const UsageSpecBilling(units: 0, unitPrice: 0, inputImages: 2, inputUnits: 2, inputUnitPrice: 0.01)
-            : null,
-      ));
+          inputTokens: inputTokens,
+          cacheTokens: cacheTokens,
+          outputTokens: outputTokens,
+          inputPrice: 0.075,
+          cachePrice: 0.01875,
+          outputPrice: 0.30,
+          requestPrice: 0.04,
+          billingMode: m == 0 || m == 3 ? 'request' : 'token',
+          // D2e: the relay's request-billed edits sent two references each.
+          spec: m == 3
+              ? const UsageSpecBilling(
+                  units: 0,
+                  unitPrice: 0,
+                  inputImages: 2,
+                  inputUnits: 2,
+                  inputUnitPrice: 0.01,
+                )
+              : null,
+        ),
+      );
     }
   }
 
@@ -1278,22 +1342,24 @@ Future<void> _seedUsage(DatabaseService db, _Catalog catalog) async {
   final int seedream = catalog.modelIds.indexOf('doubao-seedream-5-0-pro-260628');
   if (seedream >= 0) {
     for (final (int i, int sent) in const <int>[3, 1, 5].indexed) {
-      await db.recordTokenUsage(TokenUsage(
-        taskId: 'fixture-usage-seedream-$i',
-        modelId: catalog.modelIds[seedream],
-        modelDbId: catalog.modelPks[seedream],
-        timestamp: kSeedNow.subtract(Duration(hours: 1 + i, minutes: 7 * i)),
-        billingMode: 'spec',
-        spec: UsageSpecBilling(
-          unit: OutputUnit.image,
-          units: 1,
-          unitPrice: 0.3,
-          snapshot: const UsageSpecSnapshot(size: '2K'),
-          inputImages: sent,
-          inputUnits: (sent - 1).toDouble(),
-          inputUnitPrice: 0.02,
+      await db.recordTokenUsage(
+        TokenUsage(
+          taskId: 'fixture-usage-seedream-$i',
+          modelId: catalog.modelIds[seedream],
+          modelDbId: catalog.modelPks[seedream],
+          timestamp: kSeedNow.subtract(Duration(hours: 1 + i, minutes: 7 * i)),
+          billingMode: 'spec',
+          spec: UsageSpecBilling(
+            unit: OutputUnit.image,
+            units: 1,
+            unitPrice: 0.3,
+            snapshot: const UsageSpecSnapshot(size: '2K'),
+            inputImages: sent,
+            inputUnits: (sent - 1).toDouble(),
+            inputUnitPrice: 0.02,
+          ),
         ),
-      ));
+      );
     }
   }
 
@@ -1306,23 +1372,25 @@ Future<void> _seedUsage(DatabaseService db, _Catalog catalog) async {
       ('low', 0.04, 0, 0.04),
       ('medium', 0.06, 1, 0.05),
     ].indexed) {
-      await db.recordTokenUsage(TokenUsage(
-        taskId: 'fixture-usage-xai-$i',
-        modelId: catalog.modelIds[xai],
-        modelDbId: catalog.modelPks[xai],
-        timestamp: kSeedNow.subtract(Duration(hours: 2 + i, minutes: 11 * i)),
-        billingMode: 'spec',
-        spec: UsageSpecBilling(
-          unit: OutputUnit.image,
-          units: 1,
-          unitPrice: unitPrice,
-          snapshot: UsageSpecSnapshot(size: '1K', quality: quality),
-          inputImages: sent,
-          inputUnits: sent.toDouble(),
-          inputUnitPrice: 0.01,
+      await db.recordTokenUsage(
+        TokenUsage(
+          taskId: 'fixture-usage-xai-$i',
+          modelId: catalog.modelIds[xai],
+          modelDbId: catalog.modelPks[xai],
+          timestamp: kSeedNow.subtract(Duration(hours: 2 + i, minutes: 11 * i)),
+          billingMode: 'spec',
+          spec: UsageSpecBilling(
+            unit: OutputUnit.image,
+            units: 1,
+            unitPrice: unitPrice,
+            snapshot: UsageSpecSnapshot(size: '1K', quality: quality),
+            inputImages: sent,
+            inputUnits: sent.toDouble(),
+            inputUnitPrice: 0.01,
+          ),
+          reportedCost: reported,
         ),
-        reportedCost: reported,
-      ));
+      );
     }
   }
 }
@@ -1368,8 +1436,9 @@ Future<_Images> _writeImages(FixtureEnv env) async {
   // Non-image types so the browser's category filters and icon fallbacks are
   // actually exercised. These are stubs; they are meant to be listed, not played.
   for (final String name in <String>['clip_a.mp4', 'clip_b.mov', 'notes.txt', 'voice.mp3']) {
-    File(p.join(env.browserDir.path, name))
-        .writeAsBytesSync(utf8.encode('fixture placeholder for $name'));
+    File(
+      p.join(env.browserDir.path, name),
+    ).writeAsBytesSync(utf8.encode('fixture placeholder for $name'));
   }
 
   return _Images(source, output);
@@ -1395,10 +1464,7 @@ Future<String> _writePng(
   ];
   final int argb = palette[index % palette.length];
   final img.Image image = img.Image(width: width, height: height);
-  img.fill(
-    image,
-    color: img.ColorRgb8((argb >> 16) & 0xFF, (argb >> 8) & 0xFF, argb & 0xFF),
-  );
+  img.fill(image, color: img.ColorRgb8((argb >> 16) & 0xFF, (argb >> 8) & 0xFF, argb & 0xFF));
   img.drawString(
     image,
     '$name\n$width×$height',
@@ -1434,12 +1500,7 @@ Future<void> writeBulkGalleryImages(FixtureEnv env, int count) async =>
 Future<void> writeBulkBrowserFiles(FixtureEnv env, int count) async =>
     _writeBulk(env, env.browserDir, count, 'bulkfile');
 
-Future<void> _writeBulk(
-  FixtureEnv env,
-  Directory dir,
-  int count,
-  String prefix,
-) async {
+Future<void> _writeBulk(FixtureEnv env, Directory dir, int count, String prefix) async {
   final List<String> seeds = env.fixtureImagePaths
       .where((String path) => path.startsWith(dir.path))
       .toList();

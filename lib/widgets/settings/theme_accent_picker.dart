@@ -63,8 +63,7 @@ class ThemeAccentPicker extends StatelessWidget {
   /// Called with the seed the custom-colour dialog was applied with.
   final ValueChanged<Color>? onCustomSeed;
 
-  bool get _customActive =>
-      !AppConstants.presetThemes.values.contains(selected);
+  bool get _customActive => !AppConstants.presetThemes.values.contains(selected);
 
   Future<void> _openCustom(BuildContext context) async {
     final Color? seed = await showCustomAccentDialog(
@@ -97,9 +96,9 @@ class _Hint extends StatelessWidget {
       child: Text(
         text,
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-              height: AppType.proseHeight,
-            ),
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+          height: AppType.proseHeight,
+        ),
       ),
     );
   }

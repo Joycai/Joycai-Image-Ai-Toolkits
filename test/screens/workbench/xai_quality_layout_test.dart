@@ -21,10 +21,18 @@ void main() {
   Widget host(String modelId, Locale locale, {double width = kRightPanelDefault - 20}) {
     final m = LLMModel(id: 1, modelId: modelId, modelName: modelId, tag: 'image', channelId: 1);
     final ch = LLMChannel(
-        id: 1, displayName: 'xAI', endpoint: 'https://api.x.ai/v1', apiKey: 'k', type: 'xai-api');
+      id: 1,
+      displayName: 'xAI',
+      endpoint: 'https://api.x.ai/v1',
+      apiKey: 'k',
+      type: 'xai-api',
+    );
     return MaterialApp(
       locale: locale,
-      theme: buildAppTheme(accent: ThemeAccent.fromSeed(Colors.indigo), brightness: Brightness.light),
+      theme: buildAppTheme(
+        accent: ThemeAccent.fromSeed(Colors.indigo),
+        brightness: Brightness.light,
+      ),
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
@@ -62,8 +70,11 @@ void main() {
     for (final p in paragraphs) {
       if (p.maxLines != 1) continue;
       final painter = TextPainter(text: p.text, textDirection: TextDirection.ltr)..layout();
-      expect(p.size.width + 0.01, greaterThanOrEqualTo(painter.width),
-          reason: '"${p.text.toPlainText()}" was elided at the panel width');
+      expect(
+        p.size.width + 0.01,
+        greaterThanOrEqualTo(painter.width),
+        reason: '"${p.text.toPlainText()}" was elided at the panel width',
+      );
     }
   }
 
@@ -107,11 +118,13 @@ void main() {
     await tester.pumpWidget(host('grok-imagine-image-2.0', const Locale('en')));
     await tester.pump();
     final medium = tester.renderObject<RenderParagraph>(
-        find.descendant(of: find.text('Medium'), matching: find.byType(RichText)));
+      find.descendant(of: find.text('Medium'), matching: find.byType(RichText)),
+    );
     expect(medium.size.width, greaterThanOrEqualTo(46));
     for (final label in ['Low', '1k', '1.5k', '2k']) {
       final p = tester.renderObject<RenderParagraph>(
-          find.descendant(of: find.text(label), matching: find.byType(RichText)));
+        find.descendant(of: find.text(label), matching: find.byType(RichText)),
+      );
       final painter = TextPainter(text: p.text, textDirection: TextDirection.ltr)..layout();
       expect(p.size.width + 0.01, greaterThanOrEqualTo(painter.width), reason: label);
     }
@@ -122,11 +135,14 @@ void main() {
     // (45.8px) no longer fits its 43px slot — the one label that elides,
     // and only below ~245px, where gpt-image-2's four-rung track loses its
     // "Medium" too. The full-width size track is never in question.
-    await tester.pumpWidget(host('grok-imagine-image-2.0', const Locale('en'), width: kRightPanelMin - 20));
+    await tester.pumpWidget(
+      host('grok-imagine-image-2.0', const Locale('en'), width: kRightPanelMin - 20),
+    );
     await tester.pump();
     for (final label in ['1k', '1.5k', '2k']) {
       final p = tester.renderObject<RenderParagraph>(
-          find.descendant(of: find.text(label), matching: find.byType(RichText)));
+        find.descendant(of: find.text(label), matching: find.byType(RichText)),
+      );
       final painter = TextPainter(text: p.text, textDirection: TextDirection.ltr)..layout();
       expect(p.size.width + 0.01, greaterThanOrEqualTo(painter.width), reason: label);
     }

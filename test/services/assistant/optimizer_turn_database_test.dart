@@ -55,8 +55,7 @@ void main() {
     ];
   }
 
-  test('read_note reads the note store of the database the turn was given',
-      () async {
+  test('read_note reads the note store of the database the turn was given', () async {
     final session = PromptOptimizerSession();
     session.addUserTurn('go');
 
@@ -72,9 +71,12 @@ void main() {
       requests++;
       if (requests == 1) {
         expect(tools!.map((t) => t.name), contains('read_note'));
-        return LLMResponse(text: '', toolCalls: [
-          LLMToolCall(id: 'n1', name: 'read_note', arguments: {'note_id': note.id}),
-        ]);
+        return LLMResponse(
+          text: '',
+          toolCalls: [
+            LLMToolCall(id: 'n1', name: 'read_note', arguments: {'note_id': note.id}),
+          ],
+        );
       }
       followUp = List.of(messages);
       return LLMResponse(text: 'ok');
@@ -90,8 +92,11 @@ void main() {
 
     final result = followUp!.lastWhere((m) => m.role == LLMRole.tool);
     final decoded = jsonDecode(result.content) as Map;
-    expect(decoded['status'], isNot('error'),
-        reason: 'the note store must be the injected database: $decoded');
+    expect(
+      decoded['status'],
+      isNot('error'),
+      reason: 'the note store must be the injected database: $decoded',
+    );
     expect(decoded['content'], contains('teal gradient'));
   });
 
@@ -99,8 +104,8 @@ void main() {
     final session = PromptOptimizerSession();
     session.addUserTurn('go');
 
-    PromptOptimizerAgent.debugRequestOverride =
-        (messages, tools, options) async => LLMResponse(text: 'ok');
+    PromptOptimizerAgent.debugRequestOverride = (messages, tools, options) async =>
+        LLMResponse(text: 'ok');
 
     await PromptOptimizerAgent.runTurn(
       session: session,
@@ -110,11 +115,17 @@ void main() {
     );
 
     final raw = await db.database;
-    final sessions = await raw.query('assistant_sessions',
-        where: 'id = ?', whereArgs: [session.id]);
+    final sessions = await raw.query(
+      'assistant_sessions',
+      where: 'id = ?',
+      whereArgs: [session.id],
+    );
     expect(sessions, hasLength(1));
-    final messages = await raw.query('assistant_messages',
-        where: 'session_id = ?', whereArgs: [session.id]);
+    final messages = await raw.query(
+      'assistant_messages',
+      where: 'session_id = ?',
+      whereArgs: [session.id],
+    );
     expect(messages, isNotEmpty);
   });
 }

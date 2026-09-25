@@ -49,14 +49,28 @@ void main() {
         request.response.headers.contentType = ContentType.json;
         final payload = switch (request.uri.pathSegments.first) {
           'openai' => {
-              'data': [null, 7, {}, {'id': ' '}, {'id': 'gpt-x'}],
-            },
+            'data': [
+              null,
+              7,
+              {},
+              {'id': ' '},
+              {'id': 'gpt-x'},
+            ],
+          },
           'anthropic' => {
-              'data': ['bad', {'id': ''}, {'id': 'claude-x'}],
-            },
+            'data': [
+              'bad',
+              {'id': ''},
+              {'id': 'claude-x'},
+            ],
+          },
           _ => {
-              'models': [false, {'name': 'models/'}, {'name': 'models/gemini-x'}],
-            },
+            'models': [
+              false,
+              {'name': 'models/'},
+              {'name': 'models/gemini-x'},
+            ],
+          },
         };
         request.response.write(jsonEncode(payload));
         await request.response.close();
@@ -76,12 +90,15 @@ void main() {
         );
       }
 
-      final openai = await OpenAIDiscoveryProtocol()
-          .fetchModels(target(Vendors.openAIRest, 'openai'));
-      final anthropic = await AnthropicDiscoveryProtocol()
-          .fetchModels(target(Vendors.anthropicRest, 'anthropic'));
-      final gemini = await GeminiDiscoveryProtocol()
-          .fetchModels(target(Vendors.googleRest, 'gemini'));
+      final openai = await OpenAIDiscoveryProtocol().fetchModels(
+        target(Vendors.openAIRest, 'openai'),
+      );
+      final anthropic = await AnthropicDiscoveryProtocol().fetchModels(
+        target(Vendors.anthropicRest, 'anthropic'),
+      );
+      final gemini = await GeminiDiscoveryProtocol().fetchModels(
+        target(Vendors.googleRest, 'gemini'),
+      );
 
       expect(openai.map((m) => m.modelId), ['gpt-x']);
       expect(anthropic.map((m) => m.modelId), ['claude-x']);

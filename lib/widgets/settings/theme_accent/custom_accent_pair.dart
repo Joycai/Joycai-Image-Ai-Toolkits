@@ -20,77 +20,79 @@ class _PairPanel extends StatelessWidget {
 
     return Theme(
       data: theme,
-      child: Builder(builder: (context) {
-        final scheme = Theme.of(context).colorScheme;
-        final textTheme = Theme.of(context).textTheme;
-        return ExcludeFocus(
-          child: IgnorePointer(
-            child: Container(
-              padding: const EdgeInsets.all(AppSpace.s10),
-              decoration: BoxDecoration(
-                color: scheme.surface,
-                borderRadius: BorderRadius.circular(AppRadius.control),
-                border: Border.all(color: scheme.outlineVariant),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          brightness == Brightness.light ? l10n.themeLight : l10n.themeDark,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
-                        ),
-                      ),
-                      Text(
-                        _hex(scheme.primary),
-                        style: textTheme.labelSmall?.mono.copyWith(
-                          fontWeight: FontWeight.w400,
-                          color: scheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpace.s6),
-                  AppButton(
-                    label: l10n.processPrompt,
-                    size: AppButtonSize.compact,
-                    fullWidth: true,
-                    onPressed: () {},
-                  ),
-                  const SizedBox(height: AppSpace.s6),
-                  Row(
-                    children: [
-                      AppSwitch(value: true, onChanged: (_) {}),
-                      const SizedBox(width: AppSpace.s6),
-                      Expanded(
-                        child: Container(
-                          height: 24,
-                          alignment: Alignment.centerLeft,
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          decoration: BoxDecoration(
-                            color: scheme.accentTint,
-                            borderRadius: BorderRadius.circular(AppRadius.sm),
-                          ),
+      child: Builder(
+        builder: (context) {
+          final scheme = Theme.of(context).colorScheme;
+          final textTheme = Theme.of(context).textTheme;
+          return ExcludeFocus(
+            child: IgnorePointer(
+              child: Container(
+                padding: const EdgeInsets.all(AppSpace.s10),
+                decoration: BoxDecoration(
+                  color: scheme.surface,
+                  borderRadius: BorderRadius.circular(AppRadius.control),
+                  border: Border.all(color: scheme.outlineVariant),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
                           child: Text(
-                            l10n.custom,
+                            brightness == Brightness.light ? l10n.themeLight : l10n.themeDark,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: textTheme.labelSmall?.copyWith(color: scheme.onAccentTint),
+                            style: textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                        Text(
+                          _hex(scheme.primary),
+                          style: textTheme.labelSmall?.mono.copyWith(
+                            fontWeight: FontWeight.w400,
+                            color: scheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpace.s6),
+                    AppButton(
+                      label: l10n.processPrompt,
+                      size: AppButtonSize.compact,
+                      fullWidth: true,
+                      onPressed: () {},
+                    ),
+                    const SizedBox(height: AppSpace.s6),
+                    Row(
+                      children: [
+                        AppSwitch(value: true, onChanged: (_) {}),
+                        const SizedBox(width: AppSpace.s6),
+                        Expanded(
+                          child: Container(
+                            height: 24,
+                            alignment: Alignment.centerLeft,
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            decoration: BoxDecoration(
+                              color: scheme.accentTint,
+                              borderRadius: BorderRadius.circular(AppRadius.sm),
+                            ),
+                            child: Text(
+                              l10n.custom,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: textTheme.labelSmall?.copyWith(color: scheme.onAccentTint),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        );
-      }),
+          );
+        },
+      ),
     );
   }
 }
@@ -143,10 +145,9 @@ class _Ratio extends StatelessWidget {
       children: [
         Text(
           '${check.ratio.toStringAsFixed(1)}:1',
-          style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
-                fontWeight: FontWeight.w400,
-                color: ink,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.labelSmall?.mono.copyWith(fontWeight: FontWeight.w400, color: ink),
         ),
         const SizedBox(width: 2),
         Icon(check.passes ? Icons.check : Icons.close, size: 12, color: ink),

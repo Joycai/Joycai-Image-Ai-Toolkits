@@ -11,11 +11,7 @@ class ImagePreviewHandler implements PreviewHandler {
   bool canHandle(String path) => true;
 
   @override
-  Widget buildContent(
-    BuildContext context, {
-    required String path,
-    required bool isActive,
-  }) {
+  Widget buildContent(BuildContext context, {required String path, required bool isActive}) {
     return InteractiveViewer(
       minScale: 0.5,
       maxScale: 5.0,
@@ -30,10 +26,6 @@ class ImagePreviewHandler implements PreviewHandler {
 
   @override
   Widget buildThumbnail(BuildContext context, {required String path}) {
-    return Image.file(
-      File(path),
-      fit: BoxFit.cover,
-      cacheWidth: 120,
-    );
+    return Image.file(File(path), fit: BoxFit.cover, cacheWidth: 120);
   }
 }

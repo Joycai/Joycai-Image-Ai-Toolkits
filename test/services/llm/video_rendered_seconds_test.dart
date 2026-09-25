@@ -16,28 +16,61 @@ import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 void main() {
   group('videoDoneEnvelope', () {
     test('carries a reported length', () {
-      final done = videoDoneEnvelope('op', 'https://x/v.mp4',
-          requiresAuth: false, renderedSeconds: 7);
+      final done = videoDoneEnvelope(
+        'op',
+        'https://x/v.mp4',
+        requiresAuth: false,
+        renderedSeconds: 7,
+      );
       expect(done[videoRenderedSecondsKey], 7);
-      expect(videoDoneEnvelope('op', 'u', requiresAuth: false,
-          renderedSeconds: '5')[videoRenderedSecondsKey], 5);
+      expect(
+        videoDoneEnvelope(
+          'op',
+          'u',
+          requiresAuth: false,
+          renderedSeconds: '5',
+        )[videoRenderedSecondsKey],
+        5,
+      );
     });
 
     test('an absent or zero length is left out', () {
-      expect(videoDoneEnvelope('op', 'u', requiresAuth: false)
-          .containsKey(videoRenderedSecondsKey), isFalse);
-      expect(videoDoneEnvelope('op', 'u', requiresAuth: false, renderedSeconds: 0)
-          .containsKey(videoRenderedSecondsKey), isFalse);
+      expect(
+        videoDoneEnvelope('op', 'u', requiresAuth: false).containsKey(videoRenderedSecondsKey),
+        isFalse,
+      );
+      expect(
+        videoDoneEnvelope(
+          'op',
+          'u',
+          requiresAuth: false,
+          renderedSeconds: 0,
+        ).containsKey(videoRenderedSecondsKey),
+        isFalse,
+      );
     });
 
     test('carries a reported cost under the images protocols\' key', () {
       final done = videoDoneEnvelope('op', 'u', requiresAuth: false, reportedCost: 0.09);
       expect(reportedCostOf(done), 0.09);
-      expect(videoDoneEnvelope('op', 'u', requiresAuth: false).containsKey(reportedCostKey), isFalse);
-      expect(videoDoneEnvelope('op', 'u', requiresAuth: false, reportedCost: -1)
-          .containsKey(reportedCostKey), isFalse);
-      expect(reportedCostOf(videoDoneEnvelope('op', 'u', requiresAuth: false, reportedCost: 0)), 0,
-          reason: 'a reported zero is a report');
+      expect(
+        videoDoneEnvelope('op', 'u', requiresAuth: false).containsKey(reportedCostKey),
+        isFalse,
+      );
+      expect(
+        videoDoneEnvelope(
+          'op',
+          'u',
+          requiresAuth: false,
+          reportedCost: -1,
+        ).containsKey(reportedCostKey),
+        isFalse,
+      );
+      expect(
+        reportedCostOf(videoDoneEnvelope('op', 'u', requiresAuth: false, reportedCost: 0)),
+        0,
+        reason: 'a reported zero is a report',
+      );
     });
   });
 
@@ -46,17 +79,17 @@ void main() {
     late List<(String, double)> costs;
 
     LLMModelConfig config(String billingMode) => LLMModelConfig(
-          modelId: 'wan3.0-video',
-          channelType: Vendors.dashscopeNative,
-          endpoint: 'https://dashscope.aliyuncs.com/api/v1',
-          apiKey: 'k',
-          billingMode: billingMode,
-          outputUnit: OutputUnit.second,
-          outputRates: const [
-            SpecRate(size: '1080p', price: 0.2),
-            SpecRate(size: '1080p', seconds: 10, price: 0.15),
-          ],
-        );
+      modelId: 'wan3.0-video',
+      channelType: Vendors.dashscopeNative,
+      endpoint: 'https://dashscope.aliyuncs.com/api/v1',
+      apiKey: 'k',
+      billingMode: billingMode,
+      outputUnit: OutputUnit.second,
+      outputRates: const [
+        SpecRate(size: '1080p', price: 0.2),
+        SpecRate(size: '1080p', seconds: 10, price: 0.15),
+      ],
+    );
 
     setUp(() {
       updates = [];

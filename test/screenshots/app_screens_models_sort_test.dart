@@ -80,7 +80,11 @@ void main() {
         if (group.evaluate().isEmpty) return;
         await actInRealAsync(tester, () => tester.tap(group, warnIfMissed: false));
         await actInRealAsync(
-            tester, () => tester.tap(sortButton().evaluate().isEmpty ? find.byIcon(Icons.arrow_upward) : sortButton()));
+          tester,
+          () => tester.tap(
+            sortButton().evaluate().isEmpty ? find.byIcon(Icons.arrow_upward) : sortButton(),
+          ),
+        );
         final Finder kind = find.text('类型').last;
         if (kind.evaluate().isEmpty) return;
         await actInRealAsync(tester, () => tester.tap(kind, warnIfMissed: false));

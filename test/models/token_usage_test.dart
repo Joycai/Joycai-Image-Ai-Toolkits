@@ -153,13 +153,19 @@ void main() {
       final back = UsageSpecBilling.fromMap(billing.toMap())!;
       expect(back.inputImages, 2);
       expect(back.inputCost, closeTo(0.02, 1e-9));
-      expect(billing.toOutputMap().keys,
-          unorderedEquals(['output_units', 'output_unit_price', 'output_unit', 'output_spec']));
+      expect(
+        billing.toOutputMap().keys,
+        unorderedEquals(['output_units', 'output_unit_price', 'output_unit', 'output_spec']),
+      );
     });
 
     test('a row that says something only in its input columns still has a spec', () {
       // Free output (an unmatched spec) with a charged input is a real row.
-      final spec = UsageSpecBilling.fromMap({'input_images': 1, 'input_units': 1.0, 'input_unit_price': 0.01});
+      final spec = UsageSpecBilling.fromMap({
+        'input_images': 1,
+        'input_units': 1.0,
+        'input_unit_price': 0.01,
+      });
 
       expect(spec, isNotNull);
       expect(spec!.inputCost, closeTo(0.01, 1e-9));
@@ -255,8 +261,11 @@ void main() {
       expect(TokenUsage.fromMap(none.toMap()).reportedCost, isNull);
 
       for (final cell in ['0.07', -1.0, double.nan, double.infinity]) {
-        expect(TokenUsage.fromMap({'model_id': 'm', 'reported_cost': cell}).reportedCost, isNull,
-            reason: '$cell');
+        expect(
+          TokenUsage.fromMap({'model_id': 'm', 'reported_cost': cell}).reportedCost,
+          isNull,
+          reason: '$cell',
+        );
       }
     });
 
@@ -265,7 +274,11 @@ void main() {
         modelId: 'grok',
         timestamp: at,
         billingMode: 'spec',
-        spec: const UsageSpecBilling(units: 1, unitPrice: 0, snapshot: UsageSpecSnapshot(matched: false)),
+        spec: const UsageSpecBilling(
+          units: 1,
+          unitPrice: 0,
+          snapshot: UsageSpecSnapshot(matched: false),
+        ),
         reportedCost: 0.04,
       );
 
@@ -276,11 +289,11 @@ void main() {
 
   group('unmatched and specLabel', () {
     TokenUsage row(String mode, UsageSpecSnapshot? snapshot) => TokenUsage(
-          modelId: 'm',
-          timestamp: at,
-          billingMode: mode,
-          spec: UsageSpecBilling(units: 1, unitPrice: 0, snapshot: snapshot),
-        );
+      modelId: 'm',
+      timestamp: at,
+      billingMode: mode,
+      spec: UsageSpecBilling(units: 1, unitPrice: 0, snapshot: snapshot),
+    );
 
     test('only a spec row whose snapshot says so is unmatched', () {
       expect(row('spec', const UsageSpecSnapshot(matched: false)).unmatched, isTrue);
@@ -496,8 +509,7 @@ void main() {
 
     test('unreadable metadata is no breakdown, not an error', () {
       for (final raw in ['junk', '[]', 7, null]) {
-        final back = UsageCheckpoint.fromMap(
-            {'timestamp': at.toIso8601String(), 'metadata': raw});
+        final back = UsageCheckpoint.fromMap({'timestamp': at.toIso8601String(), 'metadata': raw});
         expect(back.groupCosts, isEmpty, reason: '$raw');
       }
     });

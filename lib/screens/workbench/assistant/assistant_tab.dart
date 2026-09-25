@@ -32,48 +32,47 @@ extension _AssistantTab on _WorkbenchScreenState {
                     (t) =>
                         t!.type == TaskType.promptRefine &&
                         t.parameters['sessionId'] == session.id &&
-                        (t.status == TaskStatus.pending ||
-                            t.status == TaskStatus.processing),
+                        (t.status == TaskStatus.pending || t.status == TaskStatus.processing),
                     orElse: () => null,
                   )
                   ?.id,
               builder: (context, runningTaskId, _) {
                 final isBusy = session.isRunning || runningTaskId != null;
                 return _optIsLoadingData
-                          ? const Center(child: CircularProgressIndicator())
-                          : PromptOptimizerChatView(
-                              inputCtrl: _optInputCtrl,
-                              onSend: _handleOptimizerSend,
-                              onRetry: _handleOptimizerRetry,
-                              onApplyPrompt: _handleOptimizerApply,
-                              onApplyKbEdit: (editId) => _handleKbEditApply(session, editId),
-                              onRejectKbEdit: (editId) => _handleKbEditReject(session, editId),
-                              onAnswerAskUser: _handleAskUserAnswer,
-                              onDistill:
-                                  session.usesKnowledgeBase ? _handleKbDistill : null,
-                              onSaveFinalPrompt: _handleSaveFinalPrompt,
-                              onOpenModelSettings: _handleOpenOptimizerModelSettings,
-                              isBusy: isBusy,
-                              presetChoices: OptimizerPresetChoices(
-                                presets: _optSysPrompts,
-                                selectedId: _loadedPreset(wui)?.id,
-                                builtinSelected: _loadedPreset(wui) == null &&
-                                    (wui.optSelectedSysPrompt ?? '').trim().isEmpty,
-                                selectedKind: wui.effectivePresetOutputKind,
-                                onPick: _handlePickPreset,
-                                onShowAll: _handleShowAllPresets,
-                                onManage: _handleManagePresets,
-                              ),
-                              // Only while there is a task to stop. A
-                              // session whose `isRunning` outlived its
-                              // task — the failure mode a crashed turn
-                              // leaves behind — has nothing to cancel, and
-                              // offering the button there would produce a
-                              // control that does nothing when pressed.
-                              onAbort: runningTaskId == null
-                                  ? null
-                                  : () => _handleOptimizerAbort(runningTaskId),
-                            );
+                    ? const Center(child: CircularProgressIndicator())
+                    : PromptOptimizerChatView(
+                        inputCtrl: _optInputCtrl,
+                        onSend: _handleOptimizerSend,
+                        onRetry: _handleOptimizerRetry,
+                        onApplyPrompt: _handleOptimizerApply,
+                        onApplyKbEdit: (editId) => _handleKbEditApply(session, editId),
+                        onRejectKbEdit: (editId) => _handleKbEditReject(session, editId),
+                        onAnswerAskUser: _handleAskUserAnswer,
+                        onDistill: session.usesKnowledgeBase ? _handleKbDistill : null,
+                        onSaveFinalPrompt: _handleSaveFinalPrompt,
+                        onOpenModelSettings: _handleOpenOptimizerModelSettings,
+                        isBusy: isBusy,
+                        presetChoices: OptimizerPresetChoices(
+                          presets: _optSysPrompts,
+                          selectedId: _loadedPreset(wui)?.id,
+                          builtinSelected:
+                              _loadedPreset(wui) == null &&
+                              (wui.optSelectedSysPrompt ?? '').trim().isEmpty,
+                          selectedKind: wui.effectivePresetOutputKind,
+                          onPick: _handlePickPreset,
+                          onShowAll: _handleShowAllPresets,
+                          onManage: _handleManagePresets,
+                        ),
+                        // Only while there is a task to stop. A
+                        // session whose `isRunning` outlived its
+                        // task — the failure mode a crashed turn
+                        // leaves behind — has nothing to cancel, and
+                        // offering the button there would produce a
+                        // control that does nothing when pressed.
+                        onAbort: runningTaskId == null
+                            ? null
+                            : () => _handleOptimizerAbort(runningTaskId),
+                      );
               },
             );
           },
@@ -98,36 +97,29 @@ extension _AssistantTab on _WorkbenchScreenState {
                   (t) =>
                       t!.type == TaskType.promptRefine &&
                       t.parameters['sessionId'] == session.id &&
-                      (t.status == TaskStatus.pending ||
-                          t.status == TaskStatus.processing),
+                      (t.status == TaskStatus.pending || t.status == TaskStatus.processing),
                   orElse: () => null,
                 )
                 ?.id,
             builder: (context, runningTaskId, _) {
               final isBusy = session.isRunning || runningTaskId != null;
               return PromptOptimizerToolbar(
-                      onNewSession: () => wui.newOptimizerSession(),
-                      onHistory: _showAssistantHistory,
-                      onApply: () => _handleOptimizerApply(session.refinedPrompt ?? ''),
-                      isRefining: isBusy,
-                      runningSteps:
-                          isBusy ? PromptOptimizerAgent.currentTurnSteps(session) : null,
-                      canApply: session.refinedPrompt != null,
-                      pendingKbEdits:
-                          PromptOptimizerAgent.pendingKbEdits(session).length,
-                      onWriteAllKbEdits: isBusy
-                          ? null
-                          : () => _handleKbEditApplyAll(session),
-                      onDiscardAllKbEdits: isBusy
-                          ? null
-                          : () => _handleKbEditRejectAll(session),
-                      modeLabel: _assistantBadgeLabel(AppLocalizations.of(context)!, wui),
-                      modeIcon: switch (session.mode) {
-                        AssistantMode.systemPrompt => Icons.notes_outlined,
-                        AssistantMode.knowledgeBase => Icons.menu_book_outlined,
-                        AssistantMode.knowledgeEdit => Icons.edit_note_outlined,
-                      },
-                    );
+                onNewSession: () => wui.newOptimizerSession(),
+                onHistory: _showAssistantHistory,
+                onApply: () => _handleOptimizerApply(session.refinedPrompt ?? ''),
+                isRefining: isBusy,
+                runningSteps: isBusy ? PromptOptimizerAgent.currentTurnSteps(session) : null,
+                canApply: session.refinedPrompt != null,
+                pendingKbEdits: PromptOptimizerAgent.pendingKbEdits(session).length,
+                onWriteAllKbEdits: isBusy ? null : () => _handleKbEditApplyAll(session),
+                onDiscardAllKbEdits: isBusy ? null : () => _handleKbEditRejectAll(session),
+                modeLabel: _assistantBadgeLabel(AppLocalizations.of(context)!, wui),
+                modeIcon: switch (session.mode) {
+                  AssistantMode.systemPrompt => Icons.notes_outlined,
+                  AssistantMode.knowledgeBase => Icons.menu_book_outlined,
+                  AssistantMode.knowledgeEdit => Icons.edit_note_outlined,
+                },
+              );
             },
           ),
         );
@@ -166,9 +158,7 @@ extension _AssistantTab on _WorkbenchScreenState {
           onModeChanged: _handleAssistantModeChange,
           onScaffoldKb: _handleScaffoldKb,
           sysPrompts: _optSysPrompts,
-          citedKnowledgeFiles: PromptOptimizerAgent.citedKnowledgeFiles(
-            wui.optimizerSession,
-          ),
+          citedKnowledgeFiles: PromptOptimizerAgent.citedKnowledgeFiles(wui.optimizerSession),
           transcript: wui.optimizerSession.transcript,
           contextUsageListenable: wui.optimizerSession,
           contextUsageOf: () => PromptOptimizerAgent.measureContext(
@@ -179,10 +169,7 @@ extension _AssistantTab on _WorkbenchScreenState {
             // asking when they switch.
             contextWindowTokens: appState.allModels
                 .cast<LLMModel?>()
-                .firstWhere(
-                  (m) => m?.id == wui.optSelectedModelDbId,
-                  orElse: () => null,
-                )
+                .firstWhere((m) => m?.id == wui.optSelectedModelDbId, orElse: () => null)
                 ?.contextWindow,
           ),
           onModelChanged: (v) => wui.setOptimizerModel(v),

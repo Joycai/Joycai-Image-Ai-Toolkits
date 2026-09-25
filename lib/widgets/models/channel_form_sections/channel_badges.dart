@@ -42,14 +42,11 @@ class ChannelBadge extends StatelessWidget {
     final semantic = context.semantic;
     final (Color background, Color foreground) = switch (tone) {
       ChannelBadgeTone.neutral => (
-          onTint ? colorScheme.surface : colorScheme.surfaceContainer,
-          colorScheme.onSurfaceVariant,
-        ),
+        onTint ? colorScheme.surface : colorScheme.surfaceContainer,
+        colorScheme.onSurfaceVariant,
+      ),
       ChannelBadgeTone.info => (semantic.infoContainer, semantic.onInfoContainer),
-      ChannelBadgeTone.warning => (
-          semantic.warningContainer,
-          semantic.onWarningContainer,
-        ),
+      ChannelBadgeTone.warning => (semantic.warningContainer, semantic.onWarningContainer),
     };
     final slot = theme.textTheme.labelSmall;
 
@@ -82,8 +79,7 @@ class ChannelNoteStrip extends StatelessWidget {
     final theme = Theme.of(context);
     final semantic = context.semantic;
     return Container(
-      padding: const EdgeInsets.symmetric(
-          horizontal: AppSpace.s10, vertical: AppSpace.s6 + 2),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpace.s10, vertical: AppSpace.s6 + 2),
       decoration: BoxDecoration(
         color: semantic.warningContainer,
         borderRadius: BorderRadius.circular(AppRadius.control),
@@ -93,15 +89,13 @@ class ChannelNoteStrip extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.only(top: 1),
-            child: Icon(icon,
-                size: AppSize.iconMd, color: semantic.onWarningContainer),
+            child: Icon(icon, size: AppSize.iconMd, color: semantic.onWarningContainer),
           ),
           const SizedBox(width: AppSpace.s6 + 2),
           Expanded(
             child: Text(
               text,
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: semantic.onWarningContainer),
+              style: theme.textTheme.bodySmall?.copyWith(color: semantic.onWarningContainer),
             ),
           ),
         ],
@@ -132,7 +126,11 @@ class ChannelToggleCard extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     return Container(
       padding: const EdgeInsets.fromLTRB(
-          AppSpace.s10 + 2, AppSpace.s10, AppSpace.s10, AppSpace.s10),
+        AppSpace.s10 + 2,
+        AppSpace.s10,
+        AppSpace.s10,
+        AppSpace.s10,
+      ),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(AppRadius.control),

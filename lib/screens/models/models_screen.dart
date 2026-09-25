@@ -110,17 +110,17 @@ class _ModelsScreenState extends State<ModelsScreen> {
   }
 
   ModelsActions _actionsFor(AppLocalizations l10n, AppState appState) => ModelsActions(
-        addChannel: () => _showChannelDialog(l10n, appState),
-        editChannel: (channel) => _showChannelDialog(l10n, appState, channel: channel),
-        deleteChannel: (channel) => _confirmDeleteChannel(l10n, channel, appState),
-        fetchModels: (channel) => _showDiscoveryDialog(l10n, channel, appState),
-        addModel: (channelId) => _showModelDialog(l10n, appState, preChannelId: channelId),
-        editModel: (model) => _showModelDialog(l10n, appState, model: model),
-        deleteModel: (model) => _confirmDeleteModel(l10n, model, appState),
-        moveChannel: (oldIndex, newIndex) => _reorderChannels(l10n, appState, oldIndex, newIndex),
-        openFeeManager: _showFeeGroupManager,
-        reviewMerges: () => reviewChannelMerges(context, appState),
-      );
+    addChannel: () => _showChannelDialog(l10n, appState),
+    editChannel: (channel) => _showChannelDialog(l10n, appState, channel: channel),
+    deleteChannel: (channel) => _confirmDeleteChannel(l10n, channel, appState),
+    fetchModels: (channel) => _showDiscoveryDialog(l10n, channel, appState),
+    addModel: (channelId) => _showModelDialog(l10n, appState, preChannelId: channelId),
+    editModel: (model) => _showModelDialog(l10n, appState, model: model),
+    deleteModel: (model) => _confirmDeleteModel(l10n, model, appState),
+    moveChannel: (oldIndex, newIndex) => _reorderChannels(l10n, appState, oldIndex, newIndex),
+    openFeeManager: _showFeeGroupManager,
+    reviewMerges: () => reviewChannelMerges(context, appState),
+  );
 
   // --- Two columns (tablet + desktop) ---------------------------------------
 
@@ -133,9 +133,9 @@ class _ModelsScreenState extends State<ModelsScreen> {
     final channels = appState.allChannels;
     _ensureSelection(channels);
     final selected = channels.cast<LLMChannel?>().firstWhere(
-          (c) => c?.id == _selectedChannelId,
-          orElse: () => null,
-        );
+      (c) => c?.id == _selectedChannelId,
+      orElse: () => null,
+    );
 
     final query = _channelQuery.trim().toLowerCase();
     final visible = query.isEmpty
@@ -188,8 +188,10 @@ class _ModelsScreenState extends State<ModelsScreen> {
         PanelResizer(
           shape: PanelShape.column,
           onDrag: (dx) => setState(() {
-            _dragSidebarWidth = ((_dragSidebarWidth ?? width) + dx)
-                .clamp(_minSidebarWidth - _kDragSlack, _maxSidebarWidth + _kDragSlack);
+            _dragSidebarWidth = ((_dragSidebarWidth ?? width) + dx).clamp(
+              _minSidebarWidth - _kDragSlack,
+              _maxSidebarWidth + _kDragSlack,
+            );
             _sidebarWidth = _dragSidebarWidth!.clamp(_minSidebarWidth, _maxSidebarWidth);
           }),
           onDragEnd: () {
@@ -265,7 +267,8 @@ class _ModelsScreenState extends State<ModelsScreen> {
   /// Plain lowercase substring match of a channel's name and tag against an
   /// already-lowercased [query].
   static bool _matchesQuery(LLMChannel channel, String query) =>
-      channel.displayName.toLowerCase().contains(query) || (channel.tag ?? '').toLowerCase().contains(query);
+      channel.displayName.toLowerCase().contains(query) ||
+      (channel.tag ?? '').toLowerCase().contains(query);
 
   /// Alt+↑/↓ and Ctrl+↑/↓ on the selected channel: one place in the stored
   /// order — the move the row menu makes, so like the menu it works while a
@@ -337,10 +340,12 @@ class _ModelsScreenState extends State<ModelsScreen> {
   void _showChannelDialog(AppLocalizations l10n, AppState appState, {LLMChannel? channel}) {
     if (channel == null) {
       if (Responsive.isMobile(context)) {
-        Navigator.of(context).push(MaterialPageRoute(
-          builder: (context) => ChannelWizardDialog(l10n: l10n, appState: appState),
-          fullscreenDialog: true,
-        ));
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => ChannelWizardDialog(l10n: l10n, appState: appState),
+            fullscreenDialog: true,
+          ),
+        );
       } else {
         showDialog(
           context: context,
@@ -386,13 +391,19 @@ class _ModelsScreenState extends State<ModelsScreen> {
     );
   }
 
-  void _showModelDialog(AppLocalizations l10n, AppState appState, {LLMModel? model, int? preChannelId}) {
+  void _showModelDialog(
+    AppLocalizations l10n,
+    AppState appState, {
+    LLMModel? model,
+    int? preChannelId,
+  }) {
     showDialog(
       context: context,
       // The editor is a full-screen page on a phone and handles the insets
       // itself; the route's own safe area would leave scrim strips around it.
       useSafeArea: false,
-      builder: (context) => ModelEditDialog(l10n: l10n, appState: appState, model: model, preChannelId: preChannelId),
+      builder: (context) =>
+          ModelEditDialog(l10n: l10n, appState: appState, model: model, preChannelId: preChannelId),
     );
   }
 
@@ -409,12 +420,8 @@ class _ModelsScreenState extends State<ModelsScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => DiscoveryDialog(
-        channel: channel,
-        config: config,
-        appState: appState,
-        l10n: l10n,
-      ),
+      builder: (context) =>
+          DiscoveryDialog(channel: channel, config: config, appState: appState, l10n: l10n),
     );
   }
 }

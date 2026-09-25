@@ -49,8 +49,8 @@ class PickerOption<T> {
   final IconData? markerIcon;
 
   /// Everything this option can be matched on, folded once.
-  late final String searchText =
-      '$label ${secondary ?? ''} ${badge ?? ''} ${marker ?? ''}'.toLowerCase();
+  late final String searchText = '$label ${secondary ?? ''} ${badge ?? ''} ${marker ?? ''}'
+      .toLowerCase();
 }
 
 /// A field that opens a searchable list instead of a dropdown menu.
@@ -206,27 +206,34 @@ class _SearchablePickerFieldState<T> extends State<SearchablePickerField<T>> {
     final size = widget.size;
 
     // The size's type — 500 weight either way, as `10a` sets a select's value.
-    final valueStyle = size.valueStyle(textTheme)?.copyWith(
-      color: enabled ? colorScheme.onSurface : colorScheme.onSurface.withValues(alpha: AppAlpha.disabled),
-    );
+    final valueStyle = size
+        .valueStyle(textTheme)
+        ?.copyWith(
+          color: enabled
+              ? colorScheme.onSurface
+              : colorScheme.onSurface.withValues(alpha: AppAlpha.disabled),
+        );
     // The theme's vertical inset with the size's horizontal one, unless the
     // caller's decoration brought its own. The trailing chevron carries the
     // right-hand inset itself (below), so the content stops at zero there.
-    final themeInset = theme.inputDecorationTheme.contentPadding?.resolve(Directionality.of(context)) ??
+    final themeInset =
+        theme.inputDecorationTheme.contentPadding?.resolve(Directionality.of(context)) ??
         const EdgeInsets.symmetric(horizontal: 12, vertical: 10);
     final pinned = widget.height ?? size.height;
     // A pinned box centres its content (below), so it takes no vertical inset
     // of its own. The theme's 10/10 inside a 32px box left a 12px band, and
     // both the value line and the tag chip were clipped at the bottom.
-    final contentPadding = widget.decoration.contentPadding ??
+    final contentPadding =
+        widget.decoration.contentPadding ??
         (pinned != null
             ? EdgeInsetsDirectional.fromSTEB(size.inset, 0, 0, 0)
             : EdgeInsetsDirectional.fromSTEB(size.inset, themeInset.top, 0, themeInset.bottom));
     // Disabled *and* empty is the common state of these fields — they are
     // empty precisely when there is nothing to choose from — so the hint has
     // to dim with the border and the glyph instead of keeping its enabled tone.
-    final outline =
-        enabled ? colorScheme.outline : colorScheme.outline.withValues(alpha: AppAlpha.disabled);
+    final outline = enabled
+        ? colorScheme.outline
+        : colorScheme.outline.withValues(alpha: AppAlpha.disabled);
 
     return Semantics(
       button: true,
@@ -240,69 +247,83 @@ class _SearchablePickerFieldState<T> extends State<SearchablePickerField<T>> {
         child: SizedBox(
           height: pinned,
           child: InputDecorator(
-          // Border and radius are the caller's decoration or, by default, the
-          // theme's; the insets and the trailing glyph are the size's.
-          decoration: widget.decoration.copyWith(
-            enabled: enabled,
-            contentPadding: contentPadding,
-            // expand_more, not unfold_more: the design draws a single
-            // downward chevron on every select-like field, and this is the one
-            // widget behind all of them. It brings the gap before it and the
-            // inset after it, so both are exactly the size's.
-            suffixIcon: Padding(
-              padding: EdgeInsetsDirectional.only(start: size.chevronGap, end: size.inset),
-              child: Icon(Icons.expand_more, size: size.chevron, color: outline),
+            // Border and radius are the caller's decoration or, by default, the
+            // theme's; the insets and the trailing glyph are the size's.
+            decoration: widget.decoration.copyWith(
+              enabled: enabled,
+              contentPadding: contentPadding,
+              // expand_more, not unfold_more: the design draws a single
+              // downward chevron on every select-like field, and this is the one
+              // widget behind all of them. It brings the gap before it and the
+              // inset after it, so both are exactly the size's.
+              suffixIcon: Padding(
+                padding: EdgeInsetsDirectional.only(start: size.chevronGap, end: size.inset),
+                child: Icon(Icons.expand_more, size: size.chevron, color: outline),
+              ),
+              suffixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
             ),
-            suffixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
-          ),
-          isFocused: _focused,
-          isHovering: _hovered,
-          // A pinned box is filled and the value centred in it; an unpinned
-          // one is sized by its line of type, as an AppTextField is.
-          expands: pinned != null,
-          textAlignVertical: pinned != null ? TextAlignVertical.center : null,
-          // Never "empty", even with nothing selected: this field always draws
-          // something in its content area — the value or [hint] — so a
-          // decoration that carries a `labelText` must float it rather than
-          // lay it over the top.
-          isEmpty: false,
-          child: value == null
-              ? Text(widget.hint, style: valueStyle?.copyWith(color: outline), overflow: TextOverflow.ellipsis)
-              : LayoutBuilder(
-                  builder: (context, constraints) => Row(
-                    children: [
-                      if (value.badge != null) ...[
-                        if (widget.badgeStyle == PickerBadge.dot)
-                          // No cap needed: a dot is a dot.
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: value.badgeColor ?? colorScheme.primary,
-                              shape: BoxShape.circle,
+            isFocused: _focused,
+            isHovering: _hovered,
+            // A pinned box is filled and the value centred in it; an unpinned
+            // one is sized by its line of type, as an AppTextField is.
+            expands: pinned != null,
+            textAlignVertical: pinned != null ? TextAlignVertical.center : null,
+            // Never "empty", even with nothing selected: this field always draws
+            // something in its content area — the value or [hint] — so a
+            // decoration that carries a `labelText` must float it rather than
+            // lay it over the top.
+            isEmpty: false,
+            child: value == null
+                ? Text(
+                    widget.hint,
+                    style: valueStyle?.copyWith(color: outline),
+                    overflow: TextOverflow.ellipsis,
+                  )
+                : LayoutBuilder(
+                    builder: (context, constraints) => Row(
+                      children: [
+                        if (value.badge != null) ...[
+                          if (widget.badgeStyle == PickerBadge.dot)
+                            // No cap needed: a dot is a dot.
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: value.badgeColor ?? colorScheme.primary,
+                                shape: BoxShape.circle,
+                              ),
+                            )
+                          else if (widget.badgeStyle == PickerBadge.avatar)
+                            // Fixed-size, so the free-text cap below does not
+                            // apply: a disc shows one letter no matter how long
+                            // the tag is.
+                            TagAvatar(value.badge!, color: value.badgeColor, size: 20)
+                          else
+                            ConstrainedBox(
+                              // A third of the field, at most. The channel tag is
+                              // free text with no length limit, and unbounded it
+                              // took the whole row at mobile width and left
+                              // `Expanded` nothing — a RenderFlex overflow with
+                              // the name ellipsized away to start with.
+                              constraints: BoxConstraints(maxWidth: constraints.maxWidth / 3),
+                              child: ModelTagChip(
+                                value.badge!,
+                                color: value.badgeColor,
+                                uppercase: false,
+                              ),
                             ),
-                          )
-                        else if (widget.badgeStyle == PickerBadge.avatar)
-                          // Fixed-size, so the free-text cap below does not
-                          // apply: a disc shows one letter no matter how long
-                          // the tag is.
-                          TagAvatar(value.badge!, color: value.badgeColor, size: 20)
-                        else
-                          ConstrainedBox(
-                            // A third of the field, at most. The channel tag is
-                            // free text with no length limit, and unbounded it
-                            // took the whole row at mobile width and left
-                            // `Expanded` nothing — a RenderFlex overflow with
-                            // the name ellipsized away to start with.
-                            constraints: BoxConstraints(maxWidth: constraints.maxWidth / 3),
-                            child: ModelTagChip(value.badge!, color: value.badgeColor, uppercase: false),
+                          const SizedBox(width: 8),
+                        ],
+                        Expanded(
+                          child: Text(
+                            value.label,
+                            style: valueStyle,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        const SizedBox(width: 8),
+                        ),
                       ],
-                      Expanded(child: Text(value.label, style: valueStyle, overflow: TextOverflow.ellipsis)),
-                    ],
+                    ),
                   ),
-                ),
           ),
         ),
       ),
@@ -408,8 +429,9 @@ class _SearchablePickerDialogState<T> extends State<_SearchablePickerDialog<T>> 
     _filtered = widget.options;
     _hasSecondary = widget.options.any((o) => o.secondary != null && o.secondary!.isNotEmpty);
     // A marker is a chip of the badge's height, so it sizes the row the same.
-    _hasBadge = widget.options.any((o) =>
-        (o.badge != null && o.badge!.isNotEmpty) || (o.marker != null && o.marker!.isNotEmpty));
+    _hasBadge = widget.options.any(
+      (o) => (o.badge != null && o.badge!.isNotEmpty) || (o.marker != null && o.marker!.isNotEmpty),
+    );
     _searchCtrl.addListener(_onQueryChanged);
   }
 
@@ -425,18 +447,18 @@ class _SearchablePickerDialogState<T> extends State<_SearchablePickerDialog<T>> 
     final scaler = MediaQuery.textScalerOf(context);
 
     double lineHeight(TextStyle? style) => (TextPainter(
-          // Ascender and descender both, so the measurement is the font's full
-          // line box rather than the tallest glyph in some particular name. The
-          // CJK glyph is there for the mono line: a Chinese model name falls
-          // back from the mono face to the UI font, whose line box is taller.
-          text: TextSpan(text: 'Ag国', style: style),
-          textDirection: TextDirection.ltr,
-          textScaler: scaler,
-          maxLines: 1,
-        )..layout())
-            .height;
+      // Ascender and descender both, so the measurement is the font's full
+      // line box rather than the tallest glyph in some particular name. The
+      // CJK glyph is there for the mono line: a Chinese model name falls
+      // back from the mono face to the UI font, whose line box is taller.
+      text: TextSpan(text: 'Ag国', style: style),
+      textDirection: TextDirection.ltr,
+      textScaler: scaler,
+      maxLines: 1,
+    )..layout()).height;
 
-    final text = lineHeight(textTheme.bodySmall) +
+    final text =
+        lineHeight(textTheme.bodySmall) +
         (_hasSecondary ? lineHeight(textTheme.labelSmall?.mono) : 0);
     // A chip is taller than the single line it sits beside — its own padding
     // and ring on top of `labelSmall` — so a row of channels, which carries a
@@ -444,7 +466,7 @@ class _SearchablePickerDialogState<T> extends State<_SearchablePickerDialog<T>> 
     // Left out, the chip was silently squeezed instead of the row growing.
     final badge = _hasBadge
         ? lineHeight(textTheme.labelSmall) +
-            math.max(ModelTagChip.chromeHeight, AppNeutralMarker.chromeHeight)
+              math.max(ModelTagChip.chromeHeight, AppNeutralMarker.chromeHeight)
         : 0.0;
 
     return (math.max(text, badge) + _rowChrome).ceilToDouble();
@@ -469,8 +491,9 @@ class _SearchablePickerDialogState<T> extends State<_SearchablePickerDialog<T>> 
     // clamps an offset past the end for us.
     final index = widget.options.indexWhere((o) => o.value == widget.selected);
     _scrollCtrl = ScrollController(
-      initialScrollOffset:
-          index <= 0 ? 0.0 : (index * _rowExtent - _rowExtent * 2).clamp(0.0, double.infinity),
+      initialScrollOffset: index <= 0
+          ? 0.0
+          : (index * _rowExtent - _rowExtent * 2).clamp(0.0, double.infinity),
     );
   }
 
@@ -631,7 +654,11 @@ class _PickerRow<T> extends StatelessWidget {
                       // a long channel tag would otherwise take the row and
                       // leave `Expanded` nothing to put the name in.
                       constraints: const BoxConstraints(maxWidth: 120),
-                      child: ModelTagChip(option.badge!, color: option.badgeColor, uppercase: false),
+                      child: ModelTagChip(
+                        option.badge!,
+                        color: option.badgeColor,
+                        uppercase: false,
+                      ),
                     ),
                     const SizedBox(width: 8),
                   ],

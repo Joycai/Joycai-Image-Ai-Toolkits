@@ -32,10 +32,7 @@ class XaiImagesProtocol implements ImageGenProtocol {
     LLMLogger? logger,
   }) async {
     final config = target.config;
-    final userMsg = history.lastWhere(
-      (m) => m.role == LLMRole.user,
-      orElse: () => history.last,
-    );
+    final userMsg = history.lastWhere((m) => m.role == LLMRole.user, orElse: () => history.last);
     final prompt = userMsg.content;
 
     // Cap the reference images to what the model accepts (5).
@@ -48,7 +45,10 @@ class XaiImagesProtocol implements ImageGenProtocol {
     final isEdit = inputImages.isNotEmpty;
     final baseUrl = trimBaseUrl(config.endpoint);
     final url = Uri.parse('$baseUrl/images/${isEdit ? 'edits' : 'generations'}');
-    logger?.call('Preparing xAI Images request (${isEdit ? 'edit' : 'generate'}) to: ${url.host}', level: 'DEBUG');
+    logger?.call(
+      'Preparing xAI Images request (${isEdit ? 'edit' : 'generate'}) to: ${url.host}',
+      level: 'DEBUG',
+    );
 
     final payload = <String, dynamic>{
       'model': config.modelId,
@@ -67,7 +67,9 @@ class XaiImagesProtocol implements ImageGenProtocol {
     // legacy default; a quality the table does not declare is simply not
     // sent, and upstream serves its medium.
     final resolution = readStringOption(
-        optionsWithCheckedSize(target, options, logger: logger), 'imageSize');
+      optionsWithCheckedSize(target, options, logger: logger),
+      'imageSize',
+    );
     if (const {'1k', '1.5k', '2k'}.contains(resolution)) {
       payload['resolution'] = resolution;
     }
@@ -99,14 +101,18 @@ class XaiImagesProtocol implements ImageGenProtocol {
 
     LLMDebugLog? debugFile;
     if (LLMDebugLogger.enabled) {
-      debugFile = await LLMDebugLogger.startLog(config.modelId, 'xAI (Image ${isEdit ? 'Edit' : 'Generate'})', {
-        'url': redactUrl(url),
-        'body': {
-          ...payload,
-          if (payload.containsKey('image')) 'image': '[base64 data]',
-          if (payload.containsKey('images')) 'images': '[$encodedCount base64 image(s)]',
+      debugFile = await LLMDebugLogger.startLog(
+        config.modelId,
+        'xAI (Image ${isEdit ? 'Edit' : 'Generate'})',
+        {
+          'url': redactUrl(url),
+          'body': {
+            ...payload,
+            if (payload.containsKey('image')) 'image': '[base64 data]',
+            if (payload.containsKey('images')) 'images': '[$encodedCount base64 image(s)]',
+          },
         },
-      });
+      );
     }
 
     final client = config.createClient();
@@ -136,20 +142,24 @@ class XaiImagesProtocol implements ImageGenProtocol {
       final refs = <String>[
         for (final item in items)
           if (item is Map)
-            if (item['b64_json'] is String &&
-                (item['b64_json'] as String).isNotEmpty)
+            if (item['b64_json'] is String && (item['b64_json'] as String).isNotEmpty)
               item['b64_json'] as String
-            else if (item['url'] is String &&
-                (item['url'] as String).isNotEmpty)
+            else if (item['url'] is String && (item['url'] as String).isNotEmpty)
               item['url'] as String,
       ];
-      final images = await resolveImageRefs(refs, client, logger,
-          source: 'xAI Images API',
-          abortTrigger: abortTriggerOf(options));
+      final images = await resolveImageRefs(
+        refs,
+        client,
+        logger,
+        source: 'xAI Images API',
+        abortTrigger: abortTriggerOf(options),
+      );
 
       if (images.isEmpty) {
         // e.g. respect_moderation=false leaves url/b64 empty.
-        throw LLMApiException('xAI Images API returned no image data (possibly filtered by moderation): ${response.body}');
+        throw LLMApiException(
+          'xAI Images API returned no image data (possibly filtered by moderation): ${response.body}',
+        );
       }
 
       logger?.call('xAI Images parse complete. Images: ${images.length}', level: 'DEBUG');

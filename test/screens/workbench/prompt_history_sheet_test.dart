@@ -10,27 +10,25 @@ import 'package:joycai_image_ai_toolkits/widgets/ui/app_dialog.dart';
 /// the confirmation step is the point of the feature — these pin it down.
 void main() {
   PromptHistoryEntry entry(String content, {int minutesAgo = 5}) => PromptHistoryEntry(
-        id: content.hashCode,
-        type: PromptHistoryType.image,
-        content: content,
-        usedAt: DateTime.now().subtract(Duration(minutes: minutesAgo)),
-      );
+    id: content.hashCode,
+    type: PromptHistoryType.image,
+    content: content,
+    usedAt: DateTime.now().subtract(Duration(minutes: minutesAgo)),
+  );
 
   /// Pumps the sheet inline (not via `show`) so the test drives the sheet's own
   /// widget tree rather than a route.
   Future<List<String>> pumpSheet(WidgetTester tester, List<PromptHistoryEntry> entries) async {
     final applied = <String>[];
-    await tester.pumpWidget(MaterialApp(
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: Scaffold(
-        body: PromptHistorySheet(
-          entries: entries,
-          onApply: applied.add,
-          onClear: () {},
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: PromptHistorySheet(entries: entries, onApply: applied.add, onClear: () {}),
         ),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
     return applied;
   }
@@ -82,10 +80,7 @@ void main() {
   });
 
   testWidgets('entries are listed with a relative timestamp', (tester) async {
-    await pumpSheet(tester, [
-      entry('newest', minutesAgo: 0),
-      entry('older', minutesAgo: 30),
-    ]);
+    await pumpSheet(tester, [entry('newest', minutesAgo: 0), entry('older', minutesAgo: 30)]);
 
     expect(find.text('Just now'), findsOneWidget);
     expect(find.text('30 min ago'), findsOneWidget);
@@ -100,17 +95,19 @@ void main() {
 
   testWidgets('clear asks before wiping and only fires on confirm', (tester) async {
     var cleared = 0;
-    await tester.pumpWidget(MaterialApp(
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: Scaffold(
-        body: PromptHistorySheet(
-          entries: [entry('a watercolour cat')],
-          onApply: (_) {},
-          onClear: () => cleared++,
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: PromptHistorySheet(
+            entries: [entry('a watercolour cat')],
+            onApply: (_) {},
+            onClear: () => cleared++,
+          ),
         ),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.byIcon(Icons.delete_sweep_outlined));

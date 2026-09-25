@@ -88,8 +88,11 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
     if (current == index) return;
     if ((current - index).abs() == 1) {
       // `move`, not `enter`: both endpoints of a page slide are visible.
-      _pageController.animateToPage(index,
-          duration: AppMotion.durationOf(context, AppMotion.reveal), curve: AppMotion.move);
+      _pageController.animateToPage(
+        index,
+        duration: AppMotion.durationOf(context, AppMotion.reveal),
+        curve: AppMotion.move,
+      );
     } else {
       _pageController.jumpToPage(index);
     }
@@ -132,7 +135,11 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
 
   Future<void> _shareFile(AppImage file, AppLocalizations l10n) async {
     try {
-      final xFile = XFile(file.path, name: file.name, mimeType: AppConstants.getMimeType(file.path));
+      final xFile = XFile(
+        file.path,
+        name: file.name,
+        mimeType: AppConstants.getMimeType(file.path),
+      );
       // ignore: deprecated_member_use
       await Share.shareXFiles([xFile], subject: file.name);
     } catch (e) {
@@ -160,8 +167,7 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
         bindings: {
           // Bound here because this is a PageRoute now: showDialog's barrier
           // used to translate Escape into a pop for free, a PageRoute doesn't.
-          const SingleActivator(LogicalKeyboardKey.escape): () =>
-              Navigator.maybePop(context),
+          const SingleActivator(LogicalKeyboardKey.escape): () => Navigator.maybePop(context),
           const SingleActivator(LogicalKeyboardKey.arrowLeft): _prevImage,
           const SingleActivator(LogicalKeyboardKey.arrowRight): () => _nextImage(images.length),
           const SingleActivator(LogicalKeyboardKey.home): () => _jumpToPage(0),
@@ -244,22 +250,18 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
                             Flexible(
                               child: Text(
                                 activeFile.name,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
-                                    ?.mono
-                                    .copyWith(color: Colors.white),
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.bodyMedium?.mono.copyWith(color: Colors.white),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
                             const SizedBox(width: 10),
                             Text(
                               '${activeIndex + 1} / ${images.length}',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelMedium
-                                  ?.mono
-                                  .copyWith(color: Colors.white54),
+                              style: Theme.of(
+                                context,
+                              ).textTheme.labelMedium?.mono.copyWith(color: Colors.white54),
                             ),
                             const Spacer(),
                             IconButton(
@@ -289,9 +291,7 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
                       top: 0,
                       bottom: 0,
                       child: _controlsLayer(
-                        Center(
-                          child: _buildNavButton(Icons.chevron_left, _prevImage),
-                        ),
+                        Center(child: _buildNavButton(Icons.chevron_left, _prevImage)),
                       ),
                     ),
                   if (activeIndex < images.length - 1)
@@ -301,7 +301,10 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
                       bottom: 0,
                       child: _controlsLayer(
                         Center(
-                          child: _buildNavButton(Icons.chevron_right, () => _nextImage(images.length)),
+                          child: _buildNavButton(
+                            Icons.chevron_right,
+                            () => _nextImage(images.length),
+                          ),
                         ),
                       ),
                     ),
@@ -344,7 +347,9 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
                                   ),
                                 ),
                                 clipBehavior: Clip.antiAlias,
-                                child: PreviewRegistry.resolve(path).buildThumbnail(context, path: path),
+                                child: PreviewRegistry.resolve(
+                                  path,
+                                ).buildThumbnail(context, path: path),
                               ),
                             );
                           },
@@ -430,8 +435,12 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
 /// same screen that tagged its thumbnails, or nothing from a view with no
 /// thumbnail to fly to. A tagged tile that has been scrolled out of view or
 /// filtered away simply has no match, and the route's own fade covers it.
-void showMediaPreview(BuildContext context,
-    {required List<AppImage> galleryImages, required int initialIndex, String? heroScope}) {
+void showMediaPreview(
+  BuildContext context, {
+  required List<AppImage> galleryImages,
+  required int initialIndex,
+  String? heroScope,
+}) {
   final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
   workbenchUIState.setPreviewList(galleryImages, initialIndex);
 
@@ -447,12 +456,14 @@ void showMediaPreview(BuildContext context,
   // gallery, its glass toolbar and the task capsule keep painting under the
   // black for as long as the preview is open — about 3ms of GPU time a frame
   // on an integrated GPU at 4K. See lib/widgets/shell/shell_cover.dart.
-  Navigator.of(context).push(FullScreenCoverRoute(
-    fullscreenDialog: true,
-    transitionDuration: AppMotion.durationOf(context, AppMotion.reveal),
-    reverseTransitionDuration: AppMotion.durationOf(context, AppMotion.reveal),
-    pageBuilder: (_, _, _) => MediaPreviewDialog(heroScope: heroScope),
-    transitionsBuilder: (_, animation, _, child) =>
-        FadeTransition(opacity: animation, child: child),
-  ));
+  Navigator.of(context).push(
+    FullScreenCoverRoute(
+      fullscreenDialog: true,
+      transitionDuration: AppMotion.durationOf(context, AppMotion.reveal),
+      reverseTransitionDuration: AppMotion.durationOf(context, AppMotion.reveal),
+      pageBuilder: (_, _, _) => MediaPreviewDialog(heroScope: heroScope),
+      transitionsBuilder: (_, animation, _, child) =>
+          FadeTransition(opacity: animation, child: child),
+    ),
+  );
 }

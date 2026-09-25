@@ -5,10 +5,7 @@ import 'folder_list.dart';
 class UnifiedSidebar extends StatelessWidget {
   final bool useFileBrowserState;
 
-  const UnifiedSidebar({
-    super.key,
-    this.useFileBrowserState = false,
-  });
+  const UnifiedSidebar({super.key, this.useFileBrowserState = false});
 
   @override
   Widget build(BuildContext context) {

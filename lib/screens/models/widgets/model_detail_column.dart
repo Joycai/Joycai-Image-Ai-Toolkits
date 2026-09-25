@@ -168,8 +168,9 @@ class _ModelDetailColumnState extends State<ModelDetailColumn> {
   /// the picked weight and holds that width in both states, so picking one
   /// does not shove the row — on Windows a CJK bold is synthesised wider
   /// than its regular.
-  TextStyle _chipLabelStyle(BuildContext context, {required bool selected}) =>
-      Theme.of(context).textTheme.bodySmall!.copyWith(fontWeight: selected ? FontWeight.w600 : FontWeight.w400);
+  TextStyle _chipLabelStyle(BuildContext context, {required bool selected}) => Theme.of(
+    context,
+  ).textTheme.bodySmall!.copyWith(fontWeight: selected ? FontWeight.w600 : FontWeight.w400);
 
   /// The count is the label's own size in mono — `1a` sets only the family —
   /// so the digits sit on the label's baseline rather than a smaller slot's.
@@ -211,7 +212,10 @@ class _ModelDetailColumnState extends State<ModelDetailColumn> {
               _chipInset +
               (kind == null ? 0 : AppSpace.s6 + AppSpace.s6) +
               measureGlassText(context, label, _chipLabelStyle(context, selected: true)) +
-              (withCount ? AppSpace.s6 + measureGlassText(context, '${countOf(kind)}', _chipCountStyle(context)) : 0) +
+              (withCount
+                  ? AppSpace.s6 +
+                        measureGlassText(context, '${countOf(kind)}', _chipCountStyle(context))
+                  : 0) +
               _chipInset;
           double chipsWidth(bool withCount) =>
               kinds.fold<double>(0, (sum, k) => sum + chipWidth(k.$1, k.$2, withCount)) +
@@ -384,10 +388,8 @@ class _SortButton extends StatelessWidget {
       tooltip: l10n.modelSortTooltip(label, modelSortDirectionLabel(l10n, listState.sortDirection)),
       // The same menu the phone opens, minus its grouping row — one builder,
       // so the two surfaces cannot drift into two dialects (`D1d · 2e`).
-      onPressed: () => showAppGlassMenuBelow(
-        context,
-        entries: modelSortMenuItems(l10n, listState: listState),
-      ),
+      onPressed: () =>
+          showAppGlassMenuBelow(context, entries: modelSortMenuItems(l10n, listState: listState)),
     );
   }
 }
@@ -423,8 +425,12 @@ class _ChannelHeader extends StatelessWidget {
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final nameNeed = math.min(measureGlassText(context, channel.displayName, nameStyle), _nameFloor);
-          final labelled = (fetch ? ModelsActionButton.widthFor(context, l10n.fetchModels) + _gap : 0) +
+          final nameNeed = math.min(
+            measureGlassText(context, channel.displayName, nameStyle),
+            _nameFloor,
+          );
+          final labelled =
+              (fetch ? ModelsActionButton.widthFor(context, l10n.fetchModels) + _gap : 0) +
               ModelsActionButton.widthFor(context, l10n.edit) +
               _gap +
               AppSize.iconButton;
@@ -440,7 +446,12 @@ class _ChannelHeader extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(channel.displayName, maxLines: 1, overflow: TextOverflow.ellipsis, style: nameStyle),
+                    Text(
+                      channel.displayName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: nameStyle,
+                    ),
                     // `D1f · 4a`: platform · host · routes. The vendor id and
                     // full endpoint it replaces were implementation details;
                     // the host is entered once and each route owns its path.
@@ -573,7 +584,13 @@ class _KindChip extends StatelessWidget {
                         maintainSize: true,
                         maintainState: true,
                         maintainAnimation: true,
-                        child: Text(label, maxLines: 1, softWrap: false, style: picked, strutStyle: strut),
+                        child: Text(
+                          label,
+                          maxLines: 1,
+                          softWrap: false,
+                          style: picked,
+                          strutStyle: strut,
+                        ),
                       ),
                       Text(
                         label,

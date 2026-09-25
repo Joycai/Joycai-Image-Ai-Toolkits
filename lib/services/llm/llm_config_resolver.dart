@@ -74,7 +74,10 @@ class LLMConfigResolver {
     );
   }
 
-  Future<LLMModelConfig> resolveConfig(dynamic modelIdentifier, {Function(String, {String level})? logger}) async {
+  Future<LLMModelConfig> resolveConfig(
+    dynamic modelIdentifier, {
+    Function(String, {String level})? logger,
+  }) async {
     final models = await _db.getModels();
 
     LLMModel modelData;
@@ -83,17 +86,19 @@ class LLMConfigResolver {
       modelData = models.firstWhere(
         (m) => m.id == modelIdentifier,
         orElse: () => throw LLMConfigException(
-            LLMConfigErrorKind.modelNotFound,
-            'Model with PK $modelIdentifier not found (it may have been '
-            'deleted).'),
+          LLMConfigErrorKind.modelNotFound,
+          'Model with PK $modelIdentifier not found (it may have been '
+          'deleted).',
+        ),
       );
     } else {
       // Fallback for legacy string IDs (takes the first match)
       modelData = models.firstWhere(
         (m) => m.modelId == modelIdentifier,
         orElse: () => throw LLMConfigException(
-            LLMConfigErrorKind.modelNotFound,
-            'Model $modelIdentifier not found in database.'),
+          LLMConfigErrorKind.modelNotFound,
+          'Model $modelIdentifier not found in database.',
+        ),
       );
     }
 
@@ -111,7 +116,10 @@ class LLMConfigResolver {
 
     if (pricingGroupId != null) {
       final pricingGroups = await _db.getPricingGroups();
-      final group = pricingGroups.cast<PricingGroup?>().firstWhere((g) => g?.id == pricingGroupId, orElse: () => null);
+      final group = pricingGroups.cast<PricingGroup?>().firstWhere(
+        (g) => g?.id == pricingGroupId,
+        orElse: () => null,
+      );
       if (group != null) {
         inputFee = group.inputPrice;
         cacheInputFee = group.cacheInputPrice;
@@ -132,14 +140,18 @@ class LLMConfigResolver {
     final channelId = modelData.channelId;
 
     if (channelId == null) {
-      throw LLMConfigException(LLMConfigErrorKind.noChannel,
-          'Model $modelId has no associated channel.');
+      throw LLMConfigException(
+        LLMConfigErrorKind.noChannel,
+        'Model $modelId has no associated channel.',
+      );
     }
 
     final channelData = await _db.getChannel(channelId);
     if (channelData == null) {
-      throw LLMConfigException(LLMConfigErrorKind.channelNotFound,
-          'Channel for model $modelId not found (it may have been deleted).');
+      throw LLMConfigException(
+        LLMConfigErrorKind.channelNotFound,
+        'Channel for model $modelId not found (it may have been deleted).',
+      );
     }
 
     // The channel as this model's route sees it — never the flat columns,
@@ -147,10 +159,11 @@ class LLMConfigResolver {
     final routed = RoutedChannel.forModel(channelData, modelData);
     if (routed.missing) {
       throw LLMConfigException(
-          LLMConfigErrorKind.routeNotFound,
-          'Model $modelId is set to the "${modelData.activeRoute}" route, '
-          'which channel "${channelData.displayName}" no longer offers. '
-          'Choose one of its routes in the model settings.');
+        LLMConfigErrorKind.routeNotFound,
+        'Model $modelId is set to the "${modelData.activeRoute}" route, '
+        'which channel "${channelData.displayName}" no longer offers. '
+        'Choose one of its routes in the model settings.',
+      );
     }
     final endpoint = routed.endpoint;
     final apiKey = channelData.apiKey;

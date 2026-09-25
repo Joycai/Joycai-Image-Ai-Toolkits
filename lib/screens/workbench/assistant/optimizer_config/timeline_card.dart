@@ -8,7 +8,11 @@ extension _TimelineCard on _OptimizerConfigPanelState {
   /// under its heading is noise. No tap-to-jump (the transcript is a lazy list,
   /// and a control that promises navigation it cannot deliver is worse than
   /// none), and no time column: transcript entries carry no timestamp.
-  Widget? _buildIterationTimeline(AppLocalizations l10n, ColorScheme colorScheme, TextTheme textTheme) {
+  Widget? _buildIterationTimeline(
+    AppLocalizations l10n,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+  ) {
     final nodes = <(OptimizerEntryKind, String, int?)>[
       for (final e in widget.transcript)
         if (e.kind == OptimizerEntryKind.prompt)
@@ -49,8 +53,8 @@ extension _TimelineCard on _OptimizerConfigPanelState {
         : (isCurrent ? colorScheme.onAccentTint : colorScheme.onSurface);
     final label = isVersion
         ? (isCurrent
-            ? 'v${node.$3 ?? '?'} · ${l10n.optTimelineCurrent} · ${node.$2}'
-            : 'v${node.$3 ?? '?'} · ${node.$2}')
+              ? 'v${node.$3 ?? '?'} · ${l10n.optTimelineCurrent} · ${node.$2}'
+              : 'v${node.$3 ?? '?'} · ${node.$2}')
         : '${l10n.optFeedbackShort} · ${node.$2}';
 
     final row = Row(

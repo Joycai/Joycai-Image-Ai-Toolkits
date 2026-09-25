@@ -114,8 +114,7 @@ class _AboutSectionState extends State<AboutSection> {
             context: context,
             applicationName: l10n.appTitle,
             applicationVersion: _info?.versionLine ?? '',
-            applicationLegalese:
-                l10n.aboutCopyright(DateTime.now().year, _copyrightHolder),
+            applicationLegalese: l10n.aboutCopyright(DateTime.now().year, _copyrightHolder),
           ),
         ),
         _LinkRow(
@@ -219,9 +218,7 @@ class _Identity extends StatelessWidget {
     // a wrong build number in a bug report is worse than a missing one.
     final Widget version = Text(
       info == null ? '' : l10n.aboutVersionBuild(info!.version, info!.buildNumber),
-      style: theme.textTheme.bodySmall?.mono.copyWith(
-        color: theme.colorScheme.onSurfaceVariant,
-      ),
+      style: theme.textTheme.bodySmall?.mono.copyWith(color: theme.colorScheme.onSurfaceVariant),
     );
 
     if (phone) {
@@ -244,7 +241,11 @@ class _Identity extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
-            children: [name, const SizedBox(height: AppSpace.s4), version],
+            children: [
+              name,
+              const SizedBox(height: AppSpace.s4),
+              version,
+            ],
           ),
         ),
       ],

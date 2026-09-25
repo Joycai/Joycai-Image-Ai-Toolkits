@@ -69,12 +69,14 @@ void showFolderContextMenu({
         AppGlassMenuItem(
           icon: Icons.drive_file_move_outlined,
           label: l10n.moveCountHere(staged),
-          onSelected: () => runStagingPaste(context, mode: FileTransferMode.move, destination: path),
+          onSelected: () =>
+              runStagingPaste(context, mode: FileTransferMode.move, destination: path),
         ),
         AppGlassMenuItem(
           icon: Icons.content_copy_outlined,
           label: l10n.copyCountHere(staged),
-          onSelected: () => runStagingPaste(context, mode: FileTransferMode.copy, destination: path),
+          onSelected: () =>
+              runStagingPaste(context, mode: FileTransferMode.copy, destination: path),
         ),
       ],
       const AppGlassMenuDivider(),

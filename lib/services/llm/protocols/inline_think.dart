@@ -1,7 +1,3 @@
-
-
-
-
 /// Result of separating inline `<think>…</think>` chain-of-thought from
 /// model text.
 class InlineThinkResult {
@@ -33,13 +29,12 @@ InlineThinkResult stripInlineThink(String raw) {
   final body = raw.trimLeft();
   if (!body.startsWith(_thinkOpenTag)) return InlineThinkResult(raw, null);
   final close = body.indexOf(_thinkCloseTag, _thinkOpenTag.length);
-  final thought = (close == -1
-          ? body.substring(_thinkOpenTag.length)
-          : body.substring(_thinkOpenTag.length, close))
-      .trim();
-  final text = close == -1
-      ? ''
-      : body.substring(close + _thinkCloseTag.length).trimLeft();
+  final thought =
+      (close == -1
+              ? body.substring(_thinkOpenTag.length)
+              : body.substring(_thinkOpenTag.length, close))
+          .trim();
+  final text = close == -1 ? '' : body.substring(close + _thinkCloseTag.length).trimLeft();
   return InlineThinkResult(text, thought.isEmpty ? null : thought);
 }
 

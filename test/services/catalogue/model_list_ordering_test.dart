@@ -12,11 +12,11 @@ import 'package:joycai_image_ai_toolkits/services/catalogue/model_list_ordering.
 
 void main() {
   LLMModel model(int id, String name, String tag, {String? modelId}) => LLMModel(
-        id: id,
-        modelId: modelId ?? name.toLowerCase().replaceAll(' ', '-'),
-        modelName: name,
-        tag: tag,
-      );
+    id: id,
+    modelId: modelId ?? name.toLowerCase().replaceAll(' ', '-'),
+    modelName: name,
+    tag: tag,
+  );
 
   List<String> names(Iterable<LLMModel> models) => models.map((m) => m.modelName).toList();
 
@@ -24,8 +24,7 @@ void main() {
     List<LLMModel> models,
     ModelSortKey key, [
     ModelSortDirection direction = ModelSortDirection.ascending,
-  ]) =>
-      sortModels(models, key: key, direction: direction);
+  ]) => sortModels(models, key: key, direction: direction);
 
   // Stored order, deliberately neither alphabetical nor grouped by kind, and
   // with ids that do not follow it either — a channel whose models were added
@@ -65,10 +64,10 @@ void main() {
       model(1, 'Nano Banana', 'image', modelId: 'relay/nano-banana'),
       model(2, 'Nano Banana', 'image', modelId: 'google/nano-banana'),
     ];
-    expect(
-      sorted(twins, ModelSortKey.name).map((m) => m.modelId).toList(),
-      ['google/nano-banana', 'relay/nano-banana'],
-    );
+    expect(sorted(twins, ModelSortKey.name).map((m) => m.modelId).toList(), [
+      'google/nano-banana',
+      'relay/nano-banana',
+    ]);
   });
 
   test('kind groups in the filter chips order, not alphabetically', () {

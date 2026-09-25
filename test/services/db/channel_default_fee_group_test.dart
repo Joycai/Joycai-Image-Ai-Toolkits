@@ -16,12 +16,12 @@ void main() {
   usePrivateDataDir('joycai_default_fee_group_test');
 
   LLMChannel channel(String name, {int? group}) => LLMChannel(
-        displayName: name,
-        endpoint: 'https://example.com/v1',
-        apiKey: 'k',
-        type: 'openai-api-rest',
-        defaultFeeGroupId: group,
-      );
+    displayName: name,
+    endpoint: 'https://example.com/v1',
+    apiKey: 'k',
+    type: 'openai-api-rest',
+    defaultFeeGroupId: group,
+  );
 
   test('a channel keeps its default group through an edit, and an edit can clear it', () async {
     final db = DatabaseService();

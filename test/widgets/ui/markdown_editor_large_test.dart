@@ -149,7 +149,12 @@ void main() {
 
   testWidgets('Tab indents and tells the caller; read-only it does nothing', (tester) async {
     final changes = <String>[];
-    final controller = await open(tester, const Size(1440, 900), text: 'ab', onChanged: changes.add);
+    final controller = await open(
+      tester,
+      const Size(1440, 900),
+      text: 'ab',
+      onChanged: changes.add,
+    );
     await tester.tap(inDialog(find.byType(TextField)));
     controller.selection = const TextSelection.collapsed(offset: 0);
     await tester.sendKeyEvent(LogicalKeyboardKey.tab);
@@ -158,7 +163,9 @@ void main() {
     expect(changes, ['  ab']);
   });
 
-  testWidgets('read-only: Tab leaves the text alone, and the preview follows the controller', (tester) async {
+  testWidgets('read-only: Tab leaves the text alone, and the preview follows the controller', (
+    tester,
+  ) async {
     final controller = await open(tester, const Size(1440, 900), isRefined: true, text: 'first');
     expect(inDialog(find.text('first')), findsOneWidget);
     controller.text = 'second';
@@ -174,7 +181,9 @@ void main() {
     expect(controller.text, 'second');
   });
 
-  testWidgets('resizing across the phone breakpoint switches form and keeps the editor', (tester) async {
+  testWidgets('resizing across the phone breakpoint switches form and keeps the editor', (
+    tester,
+  ) async {
     await open(tester, const Size(1440, 900));
     final before = tester.state(inDialog(find.byType(EditableText)));
     tester.view.physicalSize = const Size(500, 900);
@@ -186,7 +195,10 @@ void main() {
 
   testWidgets('phone: copying is confirmed on the menu button', (tester) async {
     await open(tester, const Size(390, 844));
-    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (_) async => null);
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (_) async => null,
+    );
     await tester.tap(inDialog(find.byIcon(Icons.more_vert)));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Copy all'));
@@ -203,7 +215,13 @@ void main() {
 
     await tester.tap(inDialog(find.text('Preview')));
     await tester.pumpAndSettle();
-    expect(tester.widget<EditableText>(find.byType(EditableText, skipOffstage: false).last).focusNode.hasFocus, isFalse);
+    expect(
+      tester
+          .widget<EditableText>(find.byType(EditableText, skipOffstage: false).last)
+          .focusNode
+          .hasFocus,
+      isFalse,
+    );
 
     await tester.tap(inDialog(find.text('Edit')));
     await tester.pumpAndSettle();
@@ -227,7 +245,10 @@ void main() {
       find.descendant(of: label, matching: find.byType(RichText)),
     );
     expect(paragraph.didExceedMaxLines, isFalse);
-    expect(paragraph.size.width, greaterThanOrEqualTo(paragraph.getMaxIntrinsicWidth(double.infinity)));
+    expect(
+      paragraph.size.width,
+      greaterThanOrEqualTo(paragraph.getMaxIntrinsicWidth(double.infinity)),
+    );
   });
 
   testWidgets('the word Markdown is part of the switch', (tester) async {
@@ -275,30 +296,36 @@ void main() {
     expect(identical(header(), before), isTrue);
   });
 
-  testWidgets('the pop-out open, a swapped-in controller is still coloured by the switch', (tester) async {
+  testWidgets('the pop-out open, a swapped-in controller is still coloured by the switch', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(1440, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     TextEditingController controller = MarkdownTextEditingController(text: '## a');
     late StateSetter rebuild;
-    await tester.pumpWidget(MaterialApp(
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: Scaffold(
-        body: StatefulBuilder(builder: (context, setState) {
-          rebuild = setState;
-          return SizedBox(
-            width: 340,
-            child: MarkdownEditor(
-              controller: controller,
-              label: 'Prompt',
-              isMarkdown: false,
-              onMarkdownChanged: (_) {},
-            ),
-          );
-        }),
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: StatefulBuilder(
+            builder: (context, setState) {
+              rebuild = setState;
+              return SizedBox(
+                width: 340,
+                child: MarkdownEditor(
+                  controller: controller,
+                  label: 'Prompt',
+                  isMarkdown: false,
+                  onMarkdownChanged: (_) {},
+                ),
+              );
+            },
+          ),
+        ),
       ),
-    ));
+    );
     await tester.tap(find.byIcon(Icons.open_in_full));
     await tester.pumpAndSettle();
 
@@ -310,22 +337,31 @@ void main() {
     expect(swapped.highlight, isFalse);
   });
 
-  testWidgets('closing keeps what the pop-out asked for until the caller says otherwise', (tester) async {
+  testWidgets('closing keeps what the pop-out asked for until the caller says otherwise', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(1440, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     final controller = MarkdownTextEditingController(text: '## a');
-    await tester.pumpWidget(MaterialApp(
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: Scaffold(
-        body: SizedBox(
-          width: 340,
-          // A caller that saves first and has not rebuilt by the time of close.
-          child: MarkdownEditor(controller: controller, label: 'Prompt', isMarkdown: true, onMarkdownChanged: (_) {}),
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: SizedBox(
+            width: 340,
+            // A caller that saves first and has not rebuilt by the time of close.
+            child: MarkdownEditor(
+              controller: controller,
+              label: 'Prompt',
+              isMarkdown: true,
+              onMarkdownChanged: (_) {},
+            ),
+          ),
         ),
       ),
-    ));
+    );
     await tester.tap(find.byIcon(Icons.open_in_full));
     await tester.pumpAndSettle();
     await tester.tap(inDialog(find.byType(AppSwitch)));
@@ -341,26 +377,30 @@ void main() {
     addTearDown(tester.view.reset);
     final controller = MarkdownTextEditingController(text: '## Subject');
     bool markdown = true;
-    await tester.pumpWidget(MaterialApp(
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: Scaffold(
-        body: StatefulBuilder(
-          builder: (context, setState) => SizedBox(
-            width: 340,
-            child: MarkdownEditor(
-              controller: controller,
-              label: 'Prompt',
-              isMarkdown: markdown,
-              onMarkdownChanged: (v) => setState(() => markdown = v),
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: StatefulBuilder(
+            builder: (context, setState) => SizedBox(
+              width: 340,
+              child: MarkdownEditor(
+                controller: controller,
+                label: 'Prompt',
+                isMarkdown: markdown,
+                onMarkdownChanged: (v) => setState(() => markdown = v),
+              ),
             ),
           ),
         ),
       ),
-    ));
+    );
     bool coloured(Finder editable) {
       final state = tester.state<EditableTextState>(editable);
-      return (state.buildTextSpan().children ?? const []).any((c) => c.style?.fontWeight == FontWeight.bold);
+      return (state.buildTextSpan().children ?? const []).any(
+        (c) => c.style?.fontWeight == FontWeight.bold,
+      );
     }
 
     expect(coloured(find.byType(EditableText)), isTrue);
@@ -375,12 +415,20 @@ void main() {
       composing: TextRange(start: 3, end: 10),
     );
     await tester.pump();
-    final spans = tester.state<EditableTextState>(find.byType(EditableText)).buildTextSpan().children!;
+    final spans = tester
+        .state<EditableTextState>(find.byType(EditableText))
+        .buildTextSpan()
+        .children!;
     expect(spans.map((c) => (c as TextSpan).text).join(), '## Subject');
-    final run = spans.cast<TextSpan>().singleWhere((c) => c.style?.decoration == TextDecoration.underline);
+    final run = spans.cast<TextSpan>().singleWhere(
+      (c) => c.style?.decoration == TextDecoration.underline,
+    );
     expect(run.text, 'Subject');
     expect(run.style?.fontWeight, FontWeight.bold);
-    controller.value = const TextEditingValue(text: '## Subject', selection: TextSelection.collapsed(offset: 10));
+    controller.value = const TextEditingValue(
+      text: '## Subject',
+      selection: TextSelection.collapsed(offset: 10),
+    );
     await tester.pump();
 
     await tester.tap(find.byIcon(Icons.open_in_full));
@@ -402,9 +450,13 @@ void main() {
       composing: TextRange(start: 3, end: 10),
     );
     await tester.pump();
-    final composing = tester.state<EditableTextState>(field).buildTextSpan().children ?? const <InlineSpan>[];
+    final composing =
+        tester.state<EditableTextState>(field).buildTextSpan().children ?? const <InlineSpan>[];
     expect(composing.any((c) => c.style?.decoration == TextDecoration.underline), isTrue);
-    controller.value = const TextEditingValue(text: '## Subject', selection: TextSelection.collapsed(offset: 10));
+    controller.value = const TextEditingValue(
+      text: '## Subject',
+      selection: TextSelection.collapsed(offset: 10),
+    );
 
     // Set from outside a build, it repaints on its own.
     int notified = 0;

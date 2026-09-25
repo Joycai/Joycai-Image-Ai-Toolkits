@@ -117,78 +117,91 @@ class _ContextWindowSliderState extends State<ContextWindowSlider> {
           SingleActivator(LogicalKeyboardKey.arrowUp): _StopIntent(1),
           SingleActivator(LogicalKeyboardKey.arrowLeft): _StopIntent(-1),
           SingleActivator(LogicalKeyboardKey.arrowDown): _StopIntent(-1),
-          SingleActivator(LogicalKeyboardKey.arrowRight, shift: true): _StopIntent(1, majorOnly: true),
+          SingleActivator(LogicalKeyboardKey.arrowRight, shift: true): _StopIntent(
+            1,
+            majorOnly: true,
+          ),
           SingleActivator(LogicalKeyboardKey.arrowUp, shift: true): _StopIntent(1, majorOnly: true),
-          SingleActivator(LogicalKeyboardKey.arrowLeft, shift: true): _StopIntent(-1, majorOnly: true),
-          SingleActivator(LogicalKeyboardKey.arrowDown, shift: true): _StopIntent(-1, majorOnly: true),
+          SingleActivator(LogicalKeyboardKey.arrowLeft, shift: true): _StopIntent(
+            -1,
+            majorOnly: true,
+          ),
+          SingleActivator(LogicalKeyboardKey.arrowDown, shift: true): _StopIntent(
+            -1,
+            majorOnly: true,
+          ),
         },
         actions: {
-          _StopIntent: CallbackAction<_StopIntent>(onInvoke: (intent) {
-            _step(intent.direction, majorOnly: intent.majorOnly);
-            return null;
-          }),
+          _StopIntent: CallbackAction<_StopIntent>(
+            onInvoke: (intent) {
+              _step(intent.direction, majorOnly: intent.majorOnly);
+              return null;
+            },
+          ),
         },
-        child: LayoutBuilder(builder: (context, constraints) {
-          final width = constraints.maxWidth;
-          final span = math.max(0.0, width - widget.inset * 2);
-          double xOf(int stop) => widget.inset + stop / _last * span;
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final width = constraints.maxWidth;
+            final span = math.max(0.0, width - widget.inset * 2);
+            double xOf(int stop) => widget.inset + stop / _last * span;
 
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTapDown: enabled ? (d) => _seek(d.localPosition.dx, width) : null,
-                onHorizontalDragStart: enabled ? (d) => _seek(d.localPosition.dx, width) : null,
-                onHorizontalDragUpdate: enabled ? (d) => _seek(d.localPosition.dx, width) : null,
-                child: SizedBox(
-                  height: _trackBand,
-                  child: CustomPaint(
-                    painter: _TieredTrackPainter(
-                      value: value,
-                      inset: widget.inset,
-                      enabled: enabled,
-                      focused: _focused && enabled,
-                      track: scheme.outlineVariant,
-                      majorTick: scheme.outline,
-                      active: scheme.primary,
-                      thumb: enabled ? scheme.primary : scheme.surfaceContainer,
-                      thumbEdge: scheme.surface,
-                      ring: scheme.accentRing,
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTapDown: enabled ? (d) => _seek(d.localPosition.dx, width) : null,
+                  onHorizontalDragStart: enabled ? (d) => _seek(d.localPosition.dx, width) : null,
+                  onHorizontalDragUpdate: enabled ? (d) => _seek(d.localPosition.dx, width) : null,
+                  child: SizedBox(
+                    height: _trackBand,
+                    child: CustomPaint(
+                      painter: _TieredTrackPainter(
+                        value: value,
+                        inset: widget.inset,
+                        enabled: enabled,
+                        focused: _focused && enabled,
+                        track: scheme.outlineVariant,
+                        majorTick: scheme.outline,
+                        active: scheme.primary,
+                        thumb: enabled ? scheme.primary : scheme.surfaceContainer,
+                        thumbEdge: scheme.surface,
+                        ring: scheme.accentRing,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: _labelGap),
-              SizedBox(
-                height: _labelBand,
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    for (var i = 0; i < _stopCount; i++)
-                      Positioned(
-                        left: xOf(i) - _labelSlot / 2,
-                        width: _labelSlot,
-                        top: 0,
-                        height: _labelBand,
-                        child: Center(
-                          child: _TickLabel(
-                            text: ContextWindowScale.label(ContextWindowScale.stops[i]),
-                            major: ContextWindowScale.isMajor(i),
-                            selected: enabled && onStop == i,
-                            enabled: enabled,
-                            style: labelBase,
-                            onTap: enabled ? () => _emit(i.toDouble()) : null,
+                const SizedBox(height: _labelGap),
+                SizedBox(
+                  height: _labelBand,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      for (var i = 0; i < _stopCount; i++)
+                        Positioned(
+                          left: xOf(i) - _labelSlot / 2,
+                          width: _labelSlot,
+                          top: 0,
+                          height: _labelBand,
+                          child: Center(
+                            child: _TickLabel(
+                              text: ContextWindowScale.label(ContextWindowScale.stops[i]),
+                              major: ContextWindowScale.isMajor(i),
+                              selected: enabled && onStop == i,
+                              enabled: enabled,
+                              style: labelBase,
+                              onTap: enabled ? () => _emit(i.toDouble()) : null,
+                            ),
                           ),
                         ),
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          );
-        }),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -227,10 +240,10 @@ class _TickLabel extends StatelessWidget {
     final color = !enabled
         ? scheme.outline
         : selected
-            ? scheme.onAccentTint
-            : major
-                ? scheme.onSurface
-                : scheme.outline;
+        ? scheme.onAccentTint
+        : major
+        ? scheme.onSurface
+        : scheme.outline;
 
     return Semantics(
       button: true,
@@ -297,10 +310,16 @@ class _TieredTrackPainter extends CustomPainter {
     double xOf(double stop) => inset + stop / last * span;
     const cap = Radius.circular(2);
 
-    canvas.drawRRect(RRect.fromLTRBR(inset, cy - 2, inset + span, cy + 2, cap), Paint()..color = track);
+    canvas.drawRRect(
+      RRect.fromLTRBR(inset, cy - 2, inset + span, cy + 2, cap),
+      Paint()..color = track,
+    );
     final thumbX = xOf(value);
     if (enabled) {
-      canvas.drawRRect(RRect.fromLTRBR(inset, cy - 2, thumbX, cy + 2, cap), Paint()..color = active);
+      canvas.drawRRect(
+        RRect.fromLTRBR(inset, cy - 2, thumbX, cy + 2, cap),
+        Paint()..color = active,
+      );
     }
     for (var i = 0; i < ContextWindowScale.stops.length; i++) {
       final major = ContextWindowScale.isMajor(i);
@@ -376,13 +395,18 @@ class ContextWindowPresetMenu extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final textTheme = theme.textTheme;
-    final labelStyle = textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500, color: scheme.onAccentTint);
+    final labelStyle = textTheme.bodyMedium?.copyWith(
+      fontWeight: FontWeight.w500,
+      color: scheme.onAccentTint,
+    );
 
     return MenuAnchor(
       alignmentOffset: const Offset(0, AppSpace.s4),
       style: MenuStyle(
         padding: const WidgetStatePropertyAll(EdgeInsets.all(AppSpace.s4)),
-        shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.control))),
+        shape: WidgetStatePropertyAll(
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.control)),
+        ),
       ),
       menuChildren: [
         for (var i = 0; i < ContextWindowScale.stops.length; i++)
@@ -411,7 +435,11 @@ class ContextWindowPresetMenu extends StatelessWidget {
                   children: [
                     Text(label, style: labelStyle),
                     const SizedBox(width: AppSpace.s4),
-                    Icon(open ? Icons.expand_less : Icons.expand_more, size: AppSize.iconMd, color: scheme.onAccentTint),
+                    Icon(
+                      open ? Icons.expand_less : Icons.expand_more,
+                      size: AppSize.iconMd,
+                      color: scheme.onAccentTint,
+                    ),
                   ],
                 ),
               ),
@@ -432,8 +460,8 @@ class ContextWindowPresetMenu extends StatelessWidget {
     final ink = on
         ? scheme.onAccentTint
         : major
-            ? scheme.onSurface
-            : scheme.onSurfaceVariant;
+        ? scheme.onSurface
+        : scheme.onSurfaceVariant;
 
     return MenuItemButton(
       onPressed: () => onSelected(index),
@@ -449,7 +477,10 @@ class ContextWindowPresetMenu extends StatelessWidget {
           Container(
             width: dotSize,
             height: dotSize,
-            decoration: BoxDecoration(shape: BoxShape.circle, color: major ? scheme.primary : scheme.outline),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: major ? scheme.primary : scheme.outline,
+            ),
           ),
           const SizedBox(width: 8),
           Expanded(

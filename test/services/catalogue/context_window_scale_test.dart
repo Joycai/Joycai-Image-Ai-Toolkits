@@ -12,8 +12,17 @@ void main() {
     });
 
     test('labels are 8k through 512k, then 1M', () {
-      expect(ContextWindowScale.stops.map(ContextWindowScale.label).toList(),
-          ['8k', '16k', '32k', '64k', '96k', '128k', '256k', '512k', '1M']);
+      expect(ContextWindowScale.stops.map(ContextWindowScale.label).toList(), [
+        '8k',
+        '16k',
+        '32k',
+        '64k',
+        '96k',
+        '128k',
+        '256k',
+        '512k',
+        '1M',
+      ]);
     });
 
     test('a typed value between two stops sits in proportion between them', () {
@@ -33,7 +42,10 @@ void main() {
       for (var p = 0.0; p <= ContextWindowScale.maxPosition; p += 0.037) {
         final tokens = ContextWindowScale.tokensAt(p);
         expect(tokens % ContextWindowScale.step, 0, reason: 'at $p');
-        expect(tokens, inInclusiveRange(ContextWindowScale.stops.first, ContextWindowScale.stops.last));
+        expect(
+          tokens,
+          inInclusiveRange(ContextWindowScale.stops.first, ContextWindowScale.stops.last),
+        );
       }
       expect(ContextWindowScale.tokensAt(-3), ContextWindowScale.stops.first);
       expect(ContextWindowScale.tokensAt(99), ContextWindowScale.stops.last);

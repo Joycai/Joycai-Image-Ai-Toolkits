@@ -94,6 +94,7 @@ class FileBrowserState extends ChangeNotifier {
   List<String> sourceDirectories = [];
   List<String> activeDirectories = [];
   Set<String> unreachableDirectories = {};
+
   /// Bumped on every rescan — both as the scan generation this file guards
   /// its async work with, and as the signal the directory tree's rows drop
   /// their cached children on. See [GalleryState.refreshTick] for why the
@@ -159,14 +160,8 @@ class FileBrowserState extends ChangeNotifier {
       // this class hands out is the only signal a selector holding it has.
       sourceDirectories = <String>[...sourceDirectories, path];
       activeDirectories = <String>[...activeDirectories, path];
-      await _db.saveSetting(
-        'browser_source_directories',
-        sourceDirectories.join('|'),
-      );
-      await _db.saveSetting(
-        'browser_active_directories',
-        activeDirectories.join('|'),
-      );
+      await _db.saveSetting('browser_source_directories', sourceDirectories.join('|'));
+      await _db.saveSetting('browser_active_directories', activeDirectories.join('|'));
       unawaited(refresh());
       notifyListeners();
     }
@@ -176,17 +171,9 @@ class FileBrowserState extends ChangeNotifier {
     if (sourceDirectories.contains(path)) {
       sourceDirectories = List<String>.of(sourceDirectories)..remove(path);
       activeDirectories = List<String>.of(activeDirectories)
-        ..removeWhere(
-          (candidate) => p.equals(candidate, path) || p.isWithin(path, candidate),
-        );
-      await _db.saveSetting(
-        'browser_source_directories',
-        sourceDirectories.join('|'),
-      );
-      await _db.saveSetting(
-        'browser_active_directories',
-        activeDirectories.join('|'),
-      );
+        ..removeWhere((candidate) => p.equals(candidate, path) || p.isWithin(path, candidate));
+      await _db.saveSetting('browser_source_directories', sourceDirectories.join('|'));
+      await _db.saveSetting('browser_active_directories', activeDirectories.join('|'));
       unawaited(refresh());
       notifyListeners();
     }
@@ -196,10 +183,7 @@ class FileBrowserState extends ChangeNotifier {
     activeDirectories = activeDirectories.contains(path)
         ? (List<String>.of(activeDirectories)..remove(path))
         : <String>[...activeDirectories, path];
-    await _db.saveSetting(
-      'browser_active_directories',
-      activeDirectories.join('|'),
-    );
+    await _db.saveSetting('browser_active_directories', activeDirectories.join('|'));
     unawaited(refresh());
   }
 
@@ -212,10 +196,7 @@ class FileBrowserState extends ChangeNotifier {
 
   Future<void> setExclusiveDirectory(String path) async {
     activeDirectories = [path];
-    await _db.saveSetting(
-      'browser_active_directories',
-      activeDirectories.join('|'),
-    );
+    await _db.saveSetting('browser_active_directories', activeDirectories.join('|'));
     unawaited(refresh());
   }
 
@@ -225,26 +206,18 @@ class FileBrowserState extends ChangeNotifier {
   /// Does not rescan: the caller refreshes once after every list is in step.
   Future<void> rewritePathPrefix(String from, String to) async {
     List<String> rewrite(List<String> paths) => [
-      for (final path in paths)
-        FileUtils.rebasePath(path, from: from, to: to) ?? path,
+      for (final path in paths) FileUtils.rebasePath(path, from: from, to: to) ?? path,
     ];
     final newSources = rewrite(sourceDirectories);
     final newActive = rewrite(activeDirectories);
     final changed =
-        !listEquals(newSources, sourceDirectories) ||
-        !listEquals(newActive, activeDirectories);
+        !listEquals(newSources, sourceDirectories) || !listEquals(newActive, activeDirectories);
     if (!changed) return;
 
     sourceDirectories = newSources;
     activeDirectories = newActive;
-    await _db.saveSetting(
-      'browser_source_directories',
-      sourceDirectories.join('|'),
-    );
-    await _db.saveSetting(
-      'browser_active_directories',
-      activeDirectories.join('|'),
-    );
+    await _db.saveSetting('browser_source_directories', sourceDirectories.join('|'));
+    await _db.saveSetting('browser_active_directories', activeDirectories.join('|'));
     notifyListeners();
   }
 
@@ -260,16 +233,11 @@ class FileBrowserState extends ChangeNotifier {
 
     final kept = activeDirectories.where((d) => !removed.contains(d)).toList();
     final parent = p.dirname(path);
-    final parentInTree = sourceDirectories.any(
-      (r) => p.equals(r, parent) || p.isWithin(r, parent),
-    );
+    final parentInTree = sourceDirectories.any((r) => p.equals(r, parent) || p.isWithin(r, parent));
     if (parentInTree && !kept.any((d) => p.equals(d, parent))) kept.add(parent);
 
     activeDirectories = kept;
-    await _db.saveSetting(
-      'browser_active_directories',
-      activeDirectories.join('|'),
-    );
+    await _db.saveSetting('browser_active_directories', activeDirectories.join('|'));
     notifyListeners();
   }
 
@@ -287,8 +255,10 @@ class FileBrowserState extends ChangeNotifier {
   /// whole-state notifications — one to set, one to clear 1.5s later — that
   /// rebuilt the file grid, the filter bar and every other row for a pulse
   /// none of them draw.
-  final ValueNotifier<FolderFlash> flashCue =
-      ValueNotifier<FolderFlash>((path: null, expanded: false));
+  final ValueNotifier<FolderFlash> flashCue = ValueNotifier<FolderFlash>((
+    path: null,
+    expanded: false,
+  ));
 
   Timer? _flashTimer;
 
@@ -335,8 +305,7 @@ class FileBrowserState extends ChangeNotifier {
     final permission = FilePermissionService();
     final checks = await Future.wait(
       sourceDirectories.map(
-        (path) async =>
-            MapEntry(path, await permission.isPathUnreachableAsync(path)),
+        (path) async => MapEntry(path, await permission.isPathUnreachableAsync(path)),
       ),
     );
     if (_disposed || scan != refreshCounter) return;
@@ -444,23 +413,18 @@ class FileBrowserState extends ChangeNotifier {
   /// gallery lists its sources in, and the order the tree shows siblings.
   /// Not the user's sort direction: flipping "date descending" should reverse
   /// the files, not shuffle which folder comes first.
-  static int _compareFolders(String a, String b) =>
-      a.toLowerCase().compareTo(b.toLowerCase());
+  static int _compareFolders(String a, String b) => a.toLowerCase().compareTo(b.toLowerCase());
 
   void _applyFilterAndSort() {
     if (currentFilter == FileCategory.all) {
       filteredFiles = List.from(allFiles);
     } else {
-      filteredFiles = allFiles
-          .where((f) => f.category == currentFilter)
-          .toList();
+      filteredFiles = allFiles.where((f) => f.category == currentFilter).toList();
     }
 
     if (searchQuery.isNotEmpty) {
       final q = searchQuery.toLowerCase();
-      filteredFiles = filteredFiles
-          .where((f) => f.name.toLowerCase().contains(q))
-          .toList();
+      filteredFiles = filteredFiles.where((f) => f.name.toLowerCase().contains(q)).toList();
     }
 
     if (isGrouped) {
@@ -478,8 +442,11 @@ class FileBrowserState extends ChangeNotifier {
           sections.add((path: folder, start: i, count: 1));
         } else {
           final last = sections.last;
-          sections[sections.length - 1] =
-              (path: last.path, start: last.start, count: last.count + 1);
+          sections[sections.length - 1] = (
+            path: last.path,
+            start: last.start,
+            count: last.count + 1,
+          );
         }
       }
       folderSections = sections;

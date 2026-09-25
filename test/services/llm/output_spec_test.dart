@@ -16,7 +16,11 @@ void main() {
     });
 
     test('video: size from resolution, quality from videoQuality, seconds parsed', () {
-      final s = OutputSpec.from({'resolution': '1080p', 'videoQuality': 'standard', 'seconds': '8'});
+      final s = OutputSpec.from({
+        'resolution': '1080p',
+        'videoQuality': 'standard',
+        'seconds': '8',
+      });
       expect(s.size, '1080p');
       expect(s.quality, 'standard');
       expect(s.seconds, 8);
@@ -96,10 +100,8 @@ void main() {
     test('the OpenAI Images size keeps an explicit * size', () {
       // Only lowercase x used to match, so a size carried over from a
       // DashScope selection was dropped and the upstream default rendered.
-      expect(OpenAIImagesProtocol.resolveImageSize({'imageSize': '1536*1024'}),
-          '1536x1024');
-      expect(OpenAIImagesProtocol.resolveImageSize({'imageSize': '1024X1536'}),
-          '1024x1536');
+      expect(OpenAIImagesProtocol.resolveImageSize({'imageSize': '1536*1024'}), '1536x1024');
+      expect(OpenAIImagesProtocol.resolveImageSize({'imageSize': '1024X1536'}), '1024x1536');
     });
 
     test('the video size keeps an explicit * size', () {

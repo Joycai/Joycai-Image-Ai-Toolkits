@@ -27,25 +27,21 @@ void main() {
     },
   ];
 
-  PromptOptimizerSession newSession() =>
-      PromptOptimizerSession(mode: AssistantMode.systemPrompt);
+  PromptOptimizerSession newSession() => PromptOptimizerSession(mode: AssistantMode.systemPrompt);
 
   /// Appends the assistant message carrying a (dangling) ask_user call,
   /// matching the shape runTurn leaves behind when it suspends.
-  String recordAsk(PromptOptimizerSession session,
-      {Object? questions = validQuestions}) {
+  String recordAsk(PromptOptimizerSession session, {Object? questions = validQuestions}) {
     final callId = 'call_${session.history.length}';
-    session.history.add(LLMMessage(
-      role: LLMRole.assistant,
-      content: '',
-      toolCalls: [
-        LLMToolCall(
-          id: callId,
-          name: 'ask_user',
-          arguments: {'questions': questions},
-        ),
-      ],
-    ));
+    session.history.add(
+      LLMMessage(
+        role: LLMRole.assistant,
+        content: '',
+        toolCalls: [
+          LLMToolCall(id: callId, name: 'ask_user', arguments: {'questions': questions}),
+        ],
+      ),
+    );
     return callId;
   }
 
@@ -80,25 +76,27 @@ void main() {
       expect(AskUserQuestion.tryParse(null), isNull);
       expect(AskUserQuestion.tryParse('questions'), isNull);
       expect(AskUserQuestion.tryParse([]), isNull);
-      expect(
-        AskUserQuestion.tryParse(List.filled(5, validQuestions.first)),
-        isNull,
-      );
+      expect(AskUserQuestion.tryParse(List.filled(5, validQuestions.first)), isNull);
     });
 
     test('rejects option counts outside 2-4 and blank strings', () {
       Map<String, Object> question({List<Object>? options, String header = 'H'}) => {
-            'header': header,
-            'question': 'Q?',
-            'options': options ??
-                [
-                  {'label': 'a'},
-                  {'label': 'b'},
-                ],
-          };
+        'header': header,
+        'question': 'Q?',
+        'options':
+            options ??
+            [
+              {'label': 'a'},
+              {'label': 'b'},
+            ],
+      };
       expect(
         AskUserQuestion.tryParse([
-          question(options: [{'label': 'only one'}]),
+          question(
+            options: [
+              {'label': 'only one'},
+            ],
+          ),
         ]),
         isNull,
       );
@@ -111,10 +109,12 @@ void main() {
       expect(AskUserQuestion.tryParse([question(header: '  ')]), isNull);
       expect(
         AskUserQuestion.tryParse([
-          question(options: [
-            {'label': 'a'},
-            {'label': '   '},
-          ]),
+          question(
+            options: [
+              {'label': 'a'},
+              {'label': '   '},
+            ],
+          ),
         ]),
         isNull,
       );
@@ -137,12 +137,14 @@ void main() {
       final session = newSession();
       session.addUserTurn('go');
       final callId = recordAsk(session);
-      session.history.add(LLMMessage(
-        role: LLMRole.tool,
-        content: jsonEncode({'status': 'ok', 'answers': []}),
-        toolCallId: callId,
-        toolName: 'ask_user',
-      ));
+      session.history.add(
+        LLMMessage(
+          role: LLMRole.tool,
+          content: jsonEncode({'status': 'ok', 'answers': []}),
+          toolCallId: callId,
+          toolName: 'ask_user',
+        ),
+      );
 
       expect(session.pendingAskUser, isNull);
     });
@@ -154,7 +156,9 @@ void main() {
       PromptOptimizerAgent.answerAskUser(
         session: session,
         callId: callId,
-        answers: const [AskUserAnswer(header: '鞋型', selected: ['一体袜靴'])],
+        answers: const [
+          AskUserAnswer(header: '鞋型', selected: ['一体袜靴']),
+        ],
       );
       session.history.add(LLMMessage(role: LLMRole.assistant, content: 'ok, thanks'));
       session.addUserTurn('再改一下');
@@ -167,20 +171,24 @@ void main() {
       session.addUserTurn('go');
       // One assistant message carrying two ask_user calls: the first was
       // malformed and error-answered immediately (D6), the second is live.
-      session.history.add(LLMMessage(
-        role: LLMRole.assistant,
-        content: '',
-        toolCalls: [
-          LLMToolCall(id: 'bad', name: 'ask_user', arguments: {'questions': []}),
-          LLMToolCall(id: 'good', name: 'ask_user', arguments: {'questions': validQuestions}),
-        ],
-      ));
-      session.history.add(LLMMessage(
-        role: LLMRole.tool,
-        content: jsonEncode({'status': 'error', 'message': 'invalid'}),
-        toolCallId: 'bad',
-        toolName: 'ask_user',
-      ));
+      session.history.add(
+        LLMMessage(
+          role: LLMRole.assistant,
+          content: '',
+          toolCalls: [
+            LLMToolCall(id: 'bad', name: 'ask_user', arguments: {'questions': []}),
+            LLMToolCall(id: 'good', name: 'ask_user', arguments: {'questions': validQuestions}),
+          ],
+        ),
+      );
+      session.history.add(
+        LLMMessage(
+          role: LLMRole.tool,
+          content: jsonEncode({'status': 'error', 'message': 'invalid'}),
+          toolCallId: 'bad',
+          toolName: 'ask_user',
+        ),
+      );
 
       expect(session.pendingAskUser?.callId, 'good');
     });
@@ -224,7 +232,9 @@ void main() {
       PromptOptimizerAgent.answerAskUser(
         session: session,
         callId: 'not_the_pending_one',
-        answers: const [AskUserAnswer(header: 'x', selected: ['y'])],
+        answers: const [
+          AskUserAnswer(header: 'x', selected: ['y']),
+        ],
       );
 
       expect(session.history.length, lengthBefore);
@@ -236,10 +246,7 @@ void main() {
       session.addUserTurn('go');
       final callId = recordAsk(session);
 
-      PromptOptimizerAgent.resolvePendingAskUserAsFreeText(
-        session: session,
-        callId: callId,
-      );
+      PromptOptimizerAgent.resolvePendingAskUserAsFreeText(session: session, callId: callId);
 
       final result = session.history.last;
       expect(result.role, LLMRole.tool);
@@ -284,7 +291,8 @@ void main() {
         expect(
           prev.role == LLMRole.tool || prev.toolCalls.isNotEmpty,
           isTrue,
-          reason: 'tool message at $i is separated from its assistant batch by '
+          reason:
+              'tool message at $i is separated from its assistant batch by '
               'a ${prev.role.name} message',
         );
       }
@@ -304,28 +312,30 @@ void main() {
     /// ask_user, the view's result, and the viewed image appended as a **user**
     /// message — with the question still dangling behind it.
     String recordPreRailBatch(PromptOptimizerSession session) {
-      session.history.add(LLMMessage(
-        role: LLMRole.assistant,
-        content: '',
-        toolCalls: [
-          LLMToolCall(id: 'view1', name: 'view_image', arguments: {'id': 1}),
-          LLMToolCall(
-            id: 'ask1',
-            name: 'ask_user',
-            arguments: {'questions': validQuestions},
-          ),
-        ],
-      ));
-      session.history.add(LLMMessage(
-        role: LLMRole.tool,
-        content: jsonEncode({'status': 'ok'}),
-        toolCallId: 'view1',
-        toolName: 'view_image',
-      ));
-      session.history.add(LLMMessage(
-        role: LLMRole.user,
-        content: '${PromptOptimizerAgent.viewResultMarker} Reference image #1 attached.',
-      ));
+      session.history.add(
+        LLMMessage(
+          role: LLMRole.assistant,
+          content: '',
+          toolCalls: [
+            LLMToolCall(id: 'view1', name: 'view_image', arguments: {'id': 1}),
+            LLMToolCall(id: 'ask1', name: 'ask_user', arguments: {'questions': validQuestions}),
+          ],
+        ),
+      );
+      session.history.add(
+        LLMMessage(
+          role: LLMRole.tool,
+          content: jsonEncode({'status': 'ok'}),
+          toolCallId: 'view1',
+          toolName: 'view_image',
+        ),
+      );
+      session.history.add(
+        LLMMessage(
+          role: LLMRole.user,
+          content: '${PromptOptimizerAgent.viewResultMarker} Reference image #1 attached.',
+        ),
+      );
       return 'ask1';
     }
 
@@ -339,13 +349,17 @@ void main() {
       // view_image is the killer: its attachment is appended in the *user*
       // role after the batch, so the answer could never land adjacent again.
       expect(
-        PromptOptimizerAgent.canStageAskUser(
-            [LLMToolCall(id: 'v', name: 'view_image', arguments: const {'id': 1}), ask]),
+        PromptOptimizerAgent.canStageAskUser([
+          LLMToolCall(id: 'v', name: 'view_image', arguments: const {'id': 1}),
+          ask,
+        ]),
         isFalse,
       );
       expect(
-        PromptOptimizerAgent.canStageAskUser(
-            [ask, LLMToolCall(id: 'b', name: 'ask_user', arguments: const {})]),
+        PromptOptimizerAgent.canStageAskUser([
+          ask,
+          LLMToolCall(id: 'b', name: 'ask_user', arguments: const {}),
+        ]),
         isFalse,
       );
     });
@@ -353,12 +367,13 @@ void main() {
     test('the three solo pairing paths all keep the ordering valid', () {
       for (final pair in <void Function(PromptOptimizerSession, String)>[
         (s, id) => PromptOptimizerAgent.answerAskUser(
-              session: s,
-              callId: id,
-              answers: const [AskUserAnswer(header: '鞋型', selected: ['一体袜靴'])],
-            ),
-        (s, id) => PromptOptimizerAgent.resolvePendingAskUserAsFreeText(
-            session: s, callId: id),
+          session: s,
+          callId: id,
+          answers: const [
+            AskUserAnswer(header: '鞋型', selected: ['一体袜靴']),
+          ],
+        ),
+        (s, id) => PromptOptimizerAgent.resolvePendingAskUserAsFreeText(session: s, callId: id),
         (s, _) => PromptOptimizerAgent.cancelDanglingAskUserForTest(s),
       ]) {
         final session = newSession();
@@ -390,10 +405,7 @@ void main() {
       );
       // Only the unanswerable call goes: the view_image it was batched with
       // is untouched (and expectWireValidOrdering re-checks it is paired).
-      expect(
-        session.history.any((m) => m.toolCalls.any((c) => c.id == 'view1')),
-        isTrue,
-      );
+      expect(session.history.any((m) => m.toolCalls.any((c) => c.id == 'view1')), isTrue);
       expect(session.pendingAskUser, isNull);
       expectWireValidOrdering(session.history);
     });
@@ -406,7 +418,9 @@ void main() {
       PromptOptimizerAgent.answerAskUser(
         session: session,
         callId: callId,
-        answers: const [AskUserAnswer(header: '鞋型', selected: ['一体袜靴'])],
+        answers: const [
+          AskUserAnswer(header: '鞋型', selected: ['一体袜靴']),
+        ],
       );
 
       final last = session.history.last;
@@ -423,9 +437,7 @@ void main() {
       live.addUserTurn('go');
       recordAsk(live);
       // Round-trip through JSON like the repository does.
-      final restoredHistory = [
-        for (final m in live.history) LLMMessage.fromJson(m.toJson()),
-      ];
+      final restoredHistory = [for (final m in live.history) LLMMessage.fromJson(m.toJson())];
 
       final restored = PromptOptimizerSession.fromStored(
         id: 'restored',
@@ -433,8 +445,7 @@ void main() {
         history: restoredHistory,
       );
 
-      final card = restored.transcript
-          .singleWhere((e) => e.kind == OptimizerEntryKind.askUser);
+      final card = restored.transcript.singleWhere((e) => e.kind == OptimizerEntryKind.askUser);
       expect(card.askState, AskUserState.pending);
       expect(card.askQuestions!.single.header, '鞋型');
       // Actionable: the same pendingAskUser/answerAskUser path works.
@@ -443,7 +454,9 @@ void main() {
       PromptOptimizerAgent.answerAskUser(
         session: restored,
         callId: pending!.callId,
-        answers: const [AskUserAnswer(header: '鞋型', selected: ['普通短靴'])],
+        answers: const [
+          AskUserAnswer(header: '鞋型', selected: ['普通短靴']),
+        ],
       );
       expect(restored.pendingAskUser, isNull);
     });
@@ -455,7 +468,9 @@ void main() {
       PromptOptimizerAgent.answerAskUser(
         session: live,
         callId: callId,
-        answers: const [AskUserAnswer(header: '鞋型', selected: ['一体袜靴'])],
+        answers: const [
+          AskUserAnswer(header: '鞋型', selected: ['一体袜靴']),
+        ],
       );
       final restored = PromptOptimizerSession.fromStored(
         id: 'restored',
@@ -463,8 +478,7 @@ void main() {
         history: [for (final m in live.history) LLMMessage.fromJson(m.toJson())],
       );
 
-      final card = restored.transcript
-          .singleWhere((e) => e.kind == OptimizerEntryKind.askUser);
+      final card = restored.transcript.singleWhere((e) => e.kind == OptimizerEntryKind.askUser);
       expect(card.askState, AskUserState.answered);
       expect(card.askAnswers!.single.selected, ['一体袜靴']);
       expect(restored.pendingAskUser, isNull);
@@ -474,18 +488,14 @@ void main() {
       final live = newSession();
       live.addUserTurn('go');
       final callId = recordAsk(live);
-      PromptOptimizerAgent.resolvePendingAskUserAsFreeText(
-        session: live,
-        callId: callId,
-      );
+      PromptOptimizerAgent.resolvePendingAskUserAsFreeText(session: live, callId: callId);
       final restored = PromptOptimizerSession.fromStored(
         id: 'restored',
         mode: AssistantMode.systemPrompt,
         history: [for (final m in live.history) LLMMessage.fromJson(m.toJson())],
       );
 
-      final card = restored.transcript
-          .singleWhere((e) => e.kind == OptimizerEntryKind.askUser);
+      final card = restored.transcript.singleWhere((e) => e.kind == OptimizerEntryKind.askUser);
       expect(card.askState, AskUserState.dismissed);
       expect(card.askAnswers, isNull);
     });
@@ -500,10 +510,7 @@ void main() {
         history: [for (final m in live.history) LLMMessage.fromJson(m.toJson())],
       );
 
-      expect(
-        restored.transcript.where((e) => e.kind == OptimizerEntryKind.askUser),
-        isEmpty,
-      );
+      expect(restored.transcript.where((e) => e.kind == OptimizerEntryKind.askUser), isEmpty);
     });
   });
 }

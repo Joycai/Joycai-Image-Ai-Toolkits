@@ -225,8 +225,8 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
       }
 
       // Sort alphabetically
-      subDirs.sort((a, b) =>
-        p.basename(a.path).toLowerCase().compareTo(p.basename(b.path).toLowerCase())
+      subDirs.sort(
+        (a, b) => p.basename(a.path).toLowerCase().compareTo(p.basename(b.path).toLowerCase()),
       );
 
       if (mounted) {
@@ -274,7 +274,9 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
     return switch (error) {
       null => null,
       FolderNameError.empty => l10n.folderNameEmpty,
-      FolderNameError.illegalChars => l10n.folderNameIllegalChars(FolderOperationsService.illegalChars()),
+      FolderNameError.illegalChars => l10n.folderNameIllegalChars(
+        FolderOperationsService.illegalChars(),
+      ),
       FolderNameError.reservedName => l10n.folderNameReserved,
       FolderNameError.exists => l10n.folderNameExists,
       FolderNameError.registered => l10n.folderPathRegistered,
@@ -429,22 +431,27 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
     // never fire.
     final isSelected = widget.useFileBrowserState
         ? context.select<FileBrowserState, bool>(
-            (state) => state.activeDirectories.contains(widget.path))
+            (state) => state.activeDirectories.contains(widget.path),
+          )
         : context.select<GalleryState, bool>(
-            (state) => state.activeSourceDirectories.contains(widget.path));
+            (state) => state.activeSourceDirectories.contains(widget.path),
+          );
 
     // Both trees work the same way: the checkbox adds a folder to or drops it
     // from the merged view, and tapping the name browses just that folder. The
     // row highlight tracks "you are here" (viewing), distinct from the
     // checkbox — in the browser, that is being the only active folder.
     final isViewing = widget.useFileBrowserState
-        ? context.select<FileBrowserState, bool>((state) =>
-            state.activeDirectories.length == 1 &&
-            state.activeDirectories.first == widget.path)
-        : context.select<GalleryState, bool>((state) =>
-            state.viewMode == GalleryViewMode.folder &&
-            !state.folderViewIsResult &&
-            state.viewSourcePath == widget.path);
+        ? context.select<FileBrowserState, bool>(
+            (state) =>
+                state.activeDirectories.length == 1 && state.activeDirectories.first == widget.path,
+          )
+        : context.select<GalleryState, bool>(
+            (state) =>
+                state.viewMode == GalleryViewMode.folder &&
+                !state.folderViewIsResult &&
+                state.viewSourcePath == widget.path,
+          );
     final highlight = isViewing;
 
     final appState = Provider.of<AppState>(context, listen: false);
@@ -497,14 +504,13 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
       );
     }
 
-    final canExpand = !isUnreachable &&
-        !renaming &&
-        (_subDirectories == null || _subDirectories!.isNotEmpty);
+    final canExpand =
+        !isUnreachable && !renaming && (_subDirectories == null || _subDirectories!.isNotEmpty);
     final TreeDisclosure disclosure = !canExpand
         ? TreeDisclosure.none
         : _isLoading
-            ? TreeDisclosure.loading
-            : (_isExpanded ? TreeDisclosure.expanded : TreeDisclosure.collapsed);
+        ? TreeDisclosure.loading
+        : (_isExpanded ? TreeDisclosure.expanded : TreeDisclosure.collapsed);
 
     void onTap() {
       _focusNode.requestFocus();
@@ -522,50 +528,51 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
     // to take it shows open — the glyph it will have once the drop goes in —
     // and one refusing it shows the block glyph.
     Widget row(_RowDrop? drop) => FolderTreeRow(
-          depth: widget.depth,
-          disclosure: disclosure,
-          onToggle: () => _handleExpansionChanged(!_isExpanded),
-          marker: marker,
-          icon: switch (drop?.tone) {
-            null => Icons.folder_outlined,
-            FolderDropTone.reject => Icons.block,
-            FolderDropTone.move || FolderDropTone.copy => Icons.folder_open_outlined,
-          },
-          iconColor: isUnreachable ? colorScheme.error.withValues(alpha: AppAlpha.disabled) : null,
-          label: folderName,
-          labelColor: isUnreachable ? colorScheme.error : null,
-          selected: highlight,
-          // Only where the keys behind it exist: the workbench shares this
-          // tree with folder management switched off, and a keyboard ring
-          // there would advertise an F2 that does nothing.
-          focused: _focused && widget.useFileBrowserState,
-          dropTone: drop?.tone,
-          dropNote: drop?.note,
-          // The workbench has no context menu, so this is its only way to
-          // take a folder off the list.
-          hoverAction: _isRegisteredRoot && widget.onRemove != null && _edit == null
-              ? FolderTreeRowAction(
-                  icon: Icons.close,
-                  tooltip: l10n.remove,
-                  onPressed: () => widget.onRemove!(widget.path, folderName),
-                )
-              : null,
-          editor: renaming
-              ? FolderNameEditor(
-                  initialName: folderName,
-                  validate: (name) => _nameError(l10n, p.dirname(widget.path), name, currentPath: widget.path),
-                  onSubmit: _commitRename,
-                  onCancel: _cancelEdit,
-                )
-              : null,
-          onTap: renaming ? null : onTap,
-          // The file browser's paste target is named on the folder's own
-          // context menu (`12d`); the workbench's copy of this tree has no
-          // staging area behind it.
-          onSecondaryTapDown: widget.useFileBrowserState && _edit == null
-              ? (details) => _showMenu(details.globalPosition)
-              : null,
-        );
+      depth: widget.depth,
+      disclosure: disclosure,
+      onToggle: () => _handleExpansionChanged(!_isExpanded),
+      marker: marker,
+      icon: switch (drop?.tone) {
+        null => Icons.folder_outlined,
+        FolderDropTone.reject => Icons.block,
+        FolderDropTone.move || FolderDropTone.copy => Icons.folder_open_outlined,
+      },
+      iconColor: isUnreachable ? colorScheme.error.withValues(alpha: AppAlpha.disabled) : null,
+      label: folderName,
+      labelColor: isUnreachable ? colorScheme.error : null,
+      selected: highlight,
+      // Only where the keys behind it exist: the workbench shares this
+      // tree with folder management switched off, and a keyboard ring
+      // there would advertise an F2 that does nothing.
+      focused: _focused && widget.useFileBrowserState,
+      dropTone: drop?.tone,
+      dropNote: drop?.note,
+      // The workbench has no context menu, so this is its only way to
+      // take a folder off the list.
+      hoverAction: _isRegisteredRoot && widget.onRemove != null && _edit == null
+          ? FolderTreeRowAction(
+              icon: Icons.close,
+              tooltip: l10n.remove,
+              onPressed: () => widget.onRemove!(widget.path, folderName),
+            )
+          : null,
+      editor: renaming
+          ? FolderNameEditor(
+              initialName: folderName,
+              validate: (name) =>
+                  _nameError(l10n, p.dirname(widget.path), name, currentPath: widget.path),
+              onSubmit: _commitRename,
+              onCancel: _cancelEdit,
+            )
+          : null,
+      onTap: renaming ? null : onTap,
+      // The file browser's paste target is named on the folder's own
+      // context menu (`12d`); the workbench's copy of this tree has no
+      // staging area behind it.
+      onSecondaryTapDown: widget.useFileBrowserState && _edit == null
+          ? (details) => _showMenu(details.globalPosition)
+          : null,
+    );
 
     final rowWidget = Padding(
       padding: EdgeInsets.symmetric(horizontal: metrics.margin),

@@ -115,8 +115,9 @@ class _ReferenceImagesSectionState extends State<_ReferenceImagesSection> {
   }
 
   /// 「已加入参考图 · 3 / 3」, or the bare count when the model sets no ceiling.
-  static String _addedMessage(AppLocalizations l10n, int count, int? max) =>
-      max == null ? l10n.dropAddedToReferencesUnlimited(count) : l10n.dropAddedToReferences(count, max);
+  static String _addedMessage(AppLocalizations l10n, int count, int? max) => max == null
+      ? l10n.dropAddedToReferencesUnlimited(count)
+      : l10n.dropAddedToReferences(count, max);
 
   @override
   Widget build(BuildContext context) {
@@ -149,7 +150,9 @@ class _ReferenceImagesSectionState extends State<_ReferenceImagesSection> {
               state = AppDropZoneState.hover;
             } else if (rejectedData.isNotEmpty) {
               // A picture turned away can only have met the ceiling.
-              state = _isDroppableImage(rejectedData.first) ? AppDropZoneState.full : AppDropZoneState.reject;
+              state = _isDroppableImage(rejectedData.first)
+                  ? AppDropZoneState.full
+                  : AppDropZoneState.reject;
             } else if (_osDragging) {
               // What the OS carries is unknown until the release; the ceiling
               // is known now.
@@ -163,14 +166,18 @@ class _ReferenceImagesSectionState extends State<_ReferenceImagesSection> {
             final String zoneTitle = switch (state) {
               AppDropZoneState.hover => l10n.dropRelease,
               AppDropZoneState.reject => l10n.dropImagesOnly,
-              AppDropZoneState.full => max != null && max > 0
-                  ? l10n.dropReferenceLimit(max)
-                  : l10n.referenceImagesNotSupported,
-              AppDropZoneState.rest || AppDropZoneState.armed => max != null && max > 0
-                  ? l10n.videoReferenceDropMax(max)
-                  : l10n.dropVideoReferenceHere,
+              AppDropZoneState.full =>
+                max != null && max > 0
+                    ? l10n.dropReferenceLimit(max)
+                    : l10n.referenceImagesNotSupported,
+              AppDropZoneState.rest || AppDropZoneState.armed =>
+                max != null && max > 0
+                    ? l10n.videoReferenceDropMax(max)
+                    : l10n.dropVideoReferenceHere,
             };
-            final IconData zoneIcon = images.isEmpty ? Icons.add_photo_alternate_outlined : Icons.add;
+            final IconData zoneIcon = images.isEmpty
+                ? Icons.add_photo_alternate_outlined
+                : Icons.add;
 
             final String? count = max != null && max > 0
                 ? '${images.length} / $max'
@@ -241,7 +248,9 @@ class _ReferenceImagesSectionState extends State<_ReferenceImagesSection> {
                               key: ValueKey(img.path),
                               image: img,
                               size: _kReferenceCell,
-                              confirmTrigger: _confirmedPaths.contains(img.path) ? _confirmToken : null,
+                              confirmTrigger: _confirmedPaths.contains(img.path)
+                                  ? _confirmToken
+                                  : null,
                               onRemove: () => widget.onRemove(img),
                             ),
                           // Under the ceiling the drop cell is always there;

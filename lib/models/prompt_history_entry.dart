@@ -12,12 +12,7 @@ class PromptHistoryEntry {
   final String content;
   final DateTime usedAt;
 
-  PromptHistoryEntry({
-    this.id,
-    required this.type,
-    required this.content,
-    required this.usedAt,
-  });
+  PromptHistoryEntry({this.id, required this.type, required this.content, required this.usedAt});
 
   factory PromptHistoryEntry.fromMap(Map<String, dynamic> map) {
     return PromptHistoryEntry(

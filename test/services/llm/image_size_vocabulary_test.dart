@@ -46,7 +46,13 @@ void main() {
     });
 
     test('every cell every model offers is legal on that model', () {
-      for (final id in ['gpt-image-2', 'qwen-image-3.0', 'qwen-image-edit-plus', 'wan2.7-image', 'wan2.7-image-pro']) {
+      for (final id in [
+        'gpt-image-2',
+        'qwen-image-3.0',
+        'qwen-image-edit-plus',
+        'wan2.7-image',
+        'wan2.7-image-pro',
+      ]) {
         final spec = sizeSpec(id);
         final rules = spec.sizeRules!;
         final vocab = spec.sizeVocabulary!;
@@ -100,7 +106,10 @@ void main() {
   group('SizeValue.parse', () {
     test('sorts a value into sentinel, keyword or pixels', () {
       const tiers = ['1K', '2K', '4K'];
-      expect(SizeValue.parse('not_set', sentinel: 'not_set', tiers: tiers), isA<SizeSentinelValue>());
+      expect(
+        SizeValue.parse('not_set', sentinel: 'not_set', tiers: tiers),
+        isA<SizeSentinelValue>(),
+      );
       expect(SizeValue.parse('2K', sentinel: 'not_set', tiers: tiers), isA<SizeTierValue>());
       final dims = SizeValue.parse('2688x1536', sentinel: 'not_set', tiers: tiers);
       expect(dims, isA<SizeDimsValue>());

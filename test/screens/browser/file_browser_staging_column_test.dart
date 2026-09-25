@@ -17,8 +17,7 @@ import '../../screenshots/harness/fixture_seed.dart';
 import '../../screenshots/harness/shoot.dart';
 
 void main() {
-  final TestWidgetsFlutterBinding binding =
-      TestWidgetsFlutterBinding.ensureInitialized();
+  final TestWidgetsFlutterBinding binding = TestWidgetsFlutterBinding.ensureInitialized();
   late FixtureEnv env;
 
   setUpAll(() async {
@@ -31,51 +30,60 @@ void main() {
 
   tearDownAll(() => env.dispose());
 
-  testWidgets(
-    'the staging column opens with the first staged file and closes when '
-    'the list is emptied',
-    (WidgetTester tester) async {
-      await mountApp(
-        tester,
-        env: env,
-        screen: AppScreen.fileBrowser,
-        size: const Size(1440, 900),
-        label: 'staging-column-auto',
-      );
+  testWidgets('the staging column opens with the first staged file and closes when '
+      'the list is emptied', (WidgetTester tester) async {
+    await mountApp(
+      tester,
+      env: env,
+      screen: AppScreen.fileBrowser,
+      size: const Size(1440, 900),
+      label: 'staging-column-auto',
+    );
 
-      final browser = AppState().fileBrowserState;
-      final staging = AppState().fileStagingState;
+    final browser = AppState().fileBrowserState;
+    final staging = AppState().fileStagingState;
 
-      // Every mutation persists through sqflite, whose lock arms a 10s
-      // timeout: started under the fake clock it outlives the test. Run the
-      // whole chain on the real loop, then pump the rebuild it left behind.
-      Future<void> mutate(void Function() change) async {
-        await tester.runAsync(() async {
-          change();
-          await Future<void>.delayed(const Duration(milliseconds: 200));
-        });
-        await tester.pump();
-      }
+    // Every mutation persists through sqflite, whose lock arms a 10s
+    // timeout: started under the fake clock it outlives the test. Run the
+    // whole chain on the real loop, then pump the rebuild it left behind.
+    Future<void> mutate(void Function() change) async {
+      await tester.runAsync(() async {
+        change();
+        await Future<void>.delayed(const Duration(milliseconds: 200));
+      });
+      await tester.pump();
+    }
 
-      expect(browser.filteredFiles, isNotEmpty,
-          reason: 'the fixture browser must list files to stage');
-      expect(staging.isEmpty, isTrue);
-      expect(find.byType(BrowserStagingPanel), findsNothing,
-          reason: 'nothing staged — the grid keeps the full width');
+    expect(
+      browser.filteredFiles,
+      isNotEmpty,
+      reason: 'the fixture browser must list files to stage',
+    );
+    expect(staging.isEmpty, isTrue);
+    expect(
+      find.byType(BrowserStagingPanel),
+      findsNothing,
+      reason: 'nothing staged — the grid keeps the full width',
+    );
 
-      await mutate(() => staging.add(browser.filteredFiles.first));
-      expect(find.byType(BrowserStagingPanel), findsOneWidget,
-          reason: 'the column earns its width the moment something is in it');
+    await mutate(() => staging.add(browser.filteredFiles.first));
+    expect(
+      find.byType(BrowserStagingPanel),
+      findsOneWidget,
+      reason: 'the column earns its width the moment something is in it',
+    );
 
-      await mutate(staging.clear);
-      expect(find.byType(BrowserStagingPanel), findsNothing,
-          reason: 'what opened on its own closes on its own once emptied');
+    await mutate(staging.clear);
+    expect(
+      find.byType(BrowserStagingPanel),
+      findsNothing,
+      reason: 'what opened on its own closes on its own once emptied',
+    );
 
-      // And the cycle repeats: the next staged file opens it again.
-      await mutate(() => staging.add(browser.filteredFiles.first));
-      expect(find.byType(BrowserStagingPanel), findsOneWidget);
+    // And the cycle repeats: the next staged file opens it again.
+    await mutate(() => staging.add(browser.filteredFiles.first));
+    expect(find.byType(BrowserStagingPanel), findsOneWidget);
 
-      await mutate(staging.clear);
-    },
-  );
+    await mutate(staging.clear);
+  });
 }

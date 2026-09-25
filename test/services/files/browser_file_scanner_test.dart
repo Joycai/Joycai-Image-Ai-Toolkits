@@ -42,7 +42,11 @@ void main() {
     }
     final reports = <int>[];
 
-    final files = await scanBrowserFiles([dir.path], onProgress: reports.add, progressInterval: Duration.zero);
+    final files = await scanBrowserFiles(
+      [dir.path],
+      onProgress: reports.add,
+      progressInterval: Duration.zero,
+    );
 
     expect(files, hasLength(40));
     expect(reports, isNotEmpty, reason: 'the scan never reported a count');

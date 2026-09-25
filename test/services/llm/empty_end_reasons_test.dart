@@ -18,8 +18,7 @@ void main() {
 
     test('the standard spellings pass through unchanged', () {
       expect(openaiFinishMetadata('stop'), {'finish_reason': 'stop'});
-      expect(openaiFinishMetadata('content_filter'),
-          {'finish_reason': 'content_filter'});
+      expect(openaiFinishMetadata('content_filter'), {'finish_reason': 'content_filter'});
       expect(openaiFinishMetadata(null), isEmpty);
       expect(openaiFinishMetadata(''), isEmpty);
     });
@@ -28,38 +27,40 @@ void main() {
   group("Bailian's native face: an empty reply", () {
     test('fails on a normal end', () {
       expect(
-        dashscopeEmptyReplyFailure(
-            sawOutput: false, finishReason: 'stop', options: null),
+        dashscopeEmptyReplyFailure(sawOutput: false, finishReason: 'stop', options: null),
         isA<LLMApiException>(),
       );
       expect(
-        dashscopeEmptyReplyFailure(
-            sawOutput: false, finishReason: null, options: null),
+        dashscopeEmptyReplyFailure(sawOutput: false, finishReason: null, options: null),
         isA<LLMApiException>(),
       );
     });
 
     test('passes with output, on length or a block, or when declared', () {
       expect(
-          dashscopeEmptyReplyFailure(
-              sawOutput: true, finishReason: 'stop', options: null),
-          isNull);
+        dashscopeEmptyReplyFailure(sawOutput: true, finishReason: 'stop', options: null),
+        isNull,
+      );
       expect(
-          dashscopeEmptyReplyFailure(
-              sawOutput: false, finishReason: 'length', options: null),
-          isNull);
+        dashscopeEmptyReplyFailure(sawOutput: false, finishReason: 'length', options: null),
+        isNull,
+      );
       expect(
-          dashscopeEmptyReplyFailure(
-              sawOutput: false,
-              finishReason: contentFilterFinishReason,
-              options: null),
-          isNull);
+        dashscopeEmptyReplyFailure(
+          sawOutput: false,
+          finishReason: contentFilterFinishReason,
+          options: null,
+        ),
+        isNull,
+      );
       expect(
-          dashscopeEmptyReplyFailure(
-              sawOutput: false,
-              finishReason: 'stop',
-              options: const {emptyReplyEndsTurnKey: true}),
-          isNull);
+        dashscopeEmptyReplyFailure(
+          sawOutput: false,
+          finishReason: 'stop',
+          options: const {emptyReplyEndsTurnKey: true},
+        ),
+        isNull,
+      );
     });
   });
 }

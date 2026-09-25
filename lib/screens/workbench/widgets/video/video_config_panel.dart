@@ -185,7 +185,10 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
         } else {
           _promptController.text = content;
         }
-        Provider.of<AppState>(context, listen: false).updateVideoConfig(prompt: _promptController.text);
+        Provider.of<AppState>(
+          context,
+          listen: false,
+        ).updateVideoConfig(prompt: _promptController.text);
       },
     );
   }
@@ -331,78 +334,78 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
     // leaves; only the desktop column passes it — the bottom sheet is scrolled
     // from above, where a flex child throws.
     Widget buildPrompt({required bool fill}) => _PanelCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisSize: fill ? MainAxisSize.max : MainAxisSize.min,
-            children: [
-              // Pinned to its height: [PromptHistoryButton] brings a 32px
-              // target, which the row clamps to 28 instead of growing.
-              SizedBox(
-                height: _kPromptHeaderRow,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        l10n.prompt,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: captionStyle,
-                      ),
-                    ),
-                    // The history button is shared and styles its own box;
-                    // the theme is how its glyph takes the deep ink `1a` draws.
-                    IconButtonTheme(
-                      data: IconButtonThemeData(
-                        style: _cardIconStyle(colorScheme, colorScheme.onAccentTint),
-                      ),
-                      child: PromptHistoryButton(
-                        entries: appState.videoPromptHistory,
-                        type: PromptHistoryType.video,
-                        onApply: (content) {
-                          _promptController.text = content;
-                          appState.updateVideoConfig(prompt: content);
-                        },
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.library_books_outlined),
-                      tooltip: l10n.library,
-                      style: _cardIconStyle(colorScheme, colorScheme.onAccentTint),
-                      onPressed: _allUserPrompts.isEmpty ? null : _showPromptPickerMenu,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: _kCardInnerGap),
-              _fillable(
-                fill: fill,
-                child: ConstrainedBox(
-                  // A floor for the bottom sheet; under the desktop
-                  // [Expanded] the height is already tight.
-                  constraints: const BoxConstraints(minHeight: _kMinPromptEditorHeight),
-                  child: _EditorWell(
-                    child: MarkdownEditor(
-                      controller: _promptController,
-                      label: l10n.prompt,
-                      isMarkdown: appState.isMarkdownWorkbench,
-                      onMarkdownChanged: appState.setIsMarkdownWorkbench,
-                      maxLines: 8,
-                      hint: l10n.promptHint,
-                      // Silent draft path — typing here must not notify the whole app.
-                      // See AppStateWorkbench.setVideoPromptDraft.
-                      onChanged: appState.setVideoPromptDraft,
-                      expand: fill,
-                      probeAvailableHeight: !fill,
-                      // The well is the frame; the editor draws its markdown
-                      // row inside it over a hairline.
-                      bordered: false,
-                    ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: fill ? MainAxisSize.max : MainAxisSize.min,
+        children: [
+          // Pinned to its height: [PromptHistoryButton] brings a 32px
+          // target, which the row clamps to 28 instead of growing.
+          SizedBox(
+            height: _kPromptHeaderRow,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    l10n.prompt,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: captionStyle,
                   ),
                 ),
-              ),
-            ],
+                // The history button is shared and styles its own box;
+                // the theme is how its glyph takes the deep ink `1a` draws.
+                IconButtonTheme(
+                  data: IconButtonThemeData(
+                    style: _cardIconStyle(colorScheme, colorScheme.onAccentTint),
+                  ),
+                  child: PromptHistoryButton(
+                    entries: appState.videoPromptHistory,
+                    type: PromptHistoryType.video,
+                    onApply: (content) {
+                      _promptController.text = content;
+                      appState.updateVideoConfig(prompt: content);
+                    },
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.library_books_outlined),
+                  tooltip: l10n.library,
+                  style: _cardIconStyle(colorScheme, colorScheme.onAccentTint),
+                  onPressed: _allUserPrompts.isEmpty ? null : _showPromptPickerMenu,
+                ),
+              ],
+            ),
           ),
-        );
+          const SizedBox(height: _kCardInnerGap),
+          _fillable(
+            fill: fill,
+            child: ConstrainedBox(
+              // A floor for the bottom sheet; under the desktop
+              // [Expanded] the height is already tight.
+              constraints: const BoxConstraints(minHeight: _kMinPromptEditorHeight),
+              child: _EditorWell(
+                child: MarkdownEditor(
+                  controller: _promptController,
+                  label: l10n.prompt,
+                  isMarkdown: appState.isMarkdownWorkbench,
+                  onMarkdownChanged: appState.setIsMarkdownWorkbench,
+                  maxLines: 8,
+                  hint: l10n.promptHint,
+                  // Silent draft path — typing here must not notify the whole app.
+                  // See AppStateWorkbench.setVideoPromptDraft.
+                  onChanged: appState.setVideoPromptDraft,
+                  expand: fill,
+                  probeAvailableHeight: !fill,
+                  // The well is the frame; the editor draws its markdown
+                  // row inside it over a hairline.
+                  bordered: false,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
 
     final bool hasModels = videoModels.isNotEmpty;
     // 40 in the column, the touch 44 in the phone sheet (`1d`).
@@ -420,14 +423,18 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppRadius.control),
             boxShadow: enabled
-                ? [BoxShadow(color: colorScheme.accentRing, blurRadius: 12, offset: const Offset(0, 4))]
+                ? [
+                    BoxShadow(
+                      color: colorScheme.accentRing,
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
                 : null,
           ),
           child: FilledButton(
             onPressed: enabled ? _handleSubmit : null,
-            style: FilledButton.styleFrom(
-              minimumSize: Size(double.infinity, actionHeight),
-            ),
+            style: FilledButton.styleFrom(minimumSize: Size(double.infinity, actionHeight)),
             child: Text(l10n.generateVideo, maxLines: 1, overflow: TextOverflow.ellipsis),
           ),
         );
@@ -481,7 +488,12 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
         mainAxisSize: MainAxisSize.max,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(AppSpace.s16, AppSpace.s16, AppSpace.s16, AppSpace.s10),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpace.s16,
+              AppSpace.s16,
+              AppSpace.s16,
+              AppSpace.s10,
+            ),
             child: actionArea,
           ),
           Expanded(
@@ -557,9 +569,7 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
                   children: [
                     ConstrainedBox(
                       constraints: BoxConstraints(maxHeight: headRoom),
-                      child: ScrollEdgeFade(
-                        child: SingleChildScrollView(child: measuredHead),
-                      ),
+                      child: ScrollEdgeFade(child: SingleChildScrollView(child: measuredHead)),
                     ),
                     const SizedBox(height: _kCardGap),
                     Expanded(child: buildPrompt(fill: true)),
@@ -582,16 +592,15 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
   /// A 28px bare icon action inside a card: a 16px glyph in [ink], the muted
   /// ink when disabled.
   static ButtonStyle _cardIconStyle(ColorScheme colorScheme, Color ink) => IconButton.styleFrom(
-        foregroundColor: ink,
-        disabledForegroundColor: colorScheme.outline,
-        iconSize: AppSize.iconMd,
-        fixedSize: const Size.square(AppSize.compact),
-        minimumSize: const Size.square(AppSize.compact),
-        maximumSize: const Size.square(AppSize.compact),
-        padding: EdgeInsets.zero,
-        visualDensity: VisualDensity.standard,
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.control)),
-      );
-
+    foregroundColor: ink,
+    disabledForegroundColor: colorScheme.outline,
+    iconSize: AppSize.iconMd,
+    fixedSize: const Size.square(AppSize.compact),
+    minimumSize: const Size.square(AppSize.compact),
+    maximumSize: const Size.square(AppSize.compact),
+    padding: EdgeInsets.zero,
+    visualDensity: VisualDensity.standard,
+    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.control)),
+  );
 }

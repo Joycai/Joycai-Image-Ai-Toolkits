@@ -59,12 +59,14 @@ DiscoveredLimits discoveredLimitsOf(DiscoveredModel model) {
       : (modelWindow < providerWindow ? modelWindow : providerWindow);
   final anthropicShape = raw['max_input_tokens'] != null;
   return DiscoveredLimits(
-    contextWindow: _positiveInt(raw['max_input_tokens']) ??
+    contextWindow:
+        _positiveInt(raw['max_input_tokens']) ??
         _positiveInt(raw['inputTokenLimit']) ??
         openRouterWindow ??
         _positiveInt(raw['max_context_length']) ??
         _positiveInt(raw['context_window']),
-    maxOutputTokens: (anthropicShape ? _positiveInt(raw['max_tokens']) : null) ??
+    maxOutputTokens:
+        (anthropicShape ? _positiveInt(raw['max_tokens']) : null) ??
         _positiveInt(raw['outputTokenLimit']) ??
         _positiveInt(raw['max_output_tokens']) ??
         _positiveInt(raw['max_completion_tokens']) ??

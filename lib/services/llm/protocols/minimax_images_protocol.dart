@@ -34,10 +34,7 @@ class MiniMaxImagesProtocol implements ImageGenProtocol {
     LLMLogger? logger,
   }) async {
     final config = target.config;
-    final userMsg = history.lastWhere(
-      (m) => m.role == LLMRole.user,
-      orElse: () => history.last,
-    );
+    final userMsg = history.lastWhere((m) => m.role == LLMRole.user, orElse: () => history.last);
 
     final inputImages = capReferenceImages(
       userMsg.attachments,
@@ -62,13 +59,13 @@ class MiniMaxImagesProtocol implements ImageGenProtocol {
       options: options,
     );
 
-    final url =
-        Uri.parse('${minimaxOpenAIBase(config.endpoint)}/image_generation');
+    final url = Uri.parse('${minimaxOpenAIBase(config.endpoint)}/image_generation');
     final isReference = subjectRefs.isNotEmpty;
     logger?.call(
-        'Preparing MiniMax image request '
-        '(${isReference ? 'subject reference' : 'text-to-image'}) to: ${url.host}',
-        level: 'DEBUG');
+      'Preparing MiniMax image request '
+      '(${isReference ? 'subject reference' : 'text-to-image'}) to: ${url.host}',
+      level: 'DEBUG',
+    );
 
     final client = config.createClient();
     try {
@@ -94,8 +91,7 @@ class MiniMaxImagesProtocol implements ImageGenProtocol {
       );
 
       if (debugFile != null) {
-        await LLMDebugLogger.appendLine(
-            debugFile, 'Status: ${response.statusCode}');
+        await LLMDebugLogger.appendLine(debugFile, 'Status: ${response.statusCode}');
         await LLMDebugLogger.appendLine(debugFile, 'Body: ${response.body}');
       }
 
@@ -112,23 +108,29 @@ class MiniMaxImagesProtocol implements ImageGenProtocol {
       // resolver also takes a data URI and a bare base64 payload — nothing
       // guarantees which spelling a relay fronting this surface uses.
       final images = await resolveImageRefs(
-          minimaxImageRefs(data), client, logger,
-          source: 'MiniMax Images API',
-          abortTrigger: abortTriggerOf(options));
+        minimaxImageRefs(data),
+        client,
+        logger,
+        source: 'MiniMax Images API',
+        abortTrigger: abortTriggerOf(options),
+      );
 
       if (images.isEmpty) {
         // One deliverable, so nothing to return is a failure, not an empty
         // success — the task executor cannot tell those apart and would
         // report a generation that produced no file as done.
         final body = response.body;
-        throw LLMApiException('MiniMax Images API returned no image: '
-            '${body.length > 500 ? '${body.substring(0, 500)}…' : body}');
+        throw LLMApiException(
+          'MiniMax Images API returned no image: '
+          '${body.length > 500 ? '${body.substring(0, 500)}…' : body}',
+        );
       }
 
       logger?.call(
-          'MiniMax parse complete. Images: ${images.length} '
-          '(downloaded inline; upstream URLs expire in $_urlLifetime)',
-          level: 'DEBUG');
+        'MiniMax parse complete. Images: ${images.length} '
+        '(downloaded inline; upstream URLs expire in $_urlLifetime)',
+        level: 'DEBUG',
+      );
 
       // No usage block on this surface — MiniMax bills images per call, and
       // its `metadata` carries success/failure counts (as strings) rather
@@ -155,10 +157,6 @@ class MiniMaxImagesProtocol implements ImageGenProtocol {
   /// The payload with reference images replaced by a count.
   Map<String, dynamic> _payloadForLog(Map<String, dynamic> payload, int refs) {
     if (refs == 0) return payload;
-    return {
-      ...payload,
-      'subject_reference': '[$refs base64 reference image(s)]',
-    };
+    return {...payload, 'subject_reference': '[$refs base64 reference image(s)]'};
   }
-
 }

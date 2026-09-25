@@ -47,17 +47,18 @@ class LLMApiException implements Exception {
   /// (`TaskQueueService.canResumeVideoJob`).
   final bool isJobEnded;
 
-  LLMApiException(this.message,
-      {this.statusCode,
-      this.isEnvelope = false,
-      this.isNonJsonBody = false,
-      this.isContentBlocked = false,
-      this.retryAfter,
-      this.isJobEnded = false});
+  LLMApiException(
+    this.message, {
+    this.statusCode,
+    this.isEnvelope = false,
+    this.isNonJsonBody = false,
+    this.isContentBlocked = false,
+    this.retryAfter,
+    this.isJobEnded = false,
+  });
 
   bool get isTransient =>
-      statusCode != null &&
-      (statusCode == 429 || (statusCode! >= 500 && statusCode! < 600));
+      statusCode != null && (statusCode == 429 || (statusCode! >= 500 && statusCode! < 600));
 
   @override
   String toString() => message;
@@ -82,8 +83,7 @@ const String contentFilterFinishReason = 'content_filter';
 /// read `content_filter` at all and every wire returned the partial reply as a
 /// success.
 LLMApiException? contentBlockedFailure(Map<String, dynamic>? metadata) {
-  if (metadata == null ||
-      metadata['finish_reason'] != contentFilterFinishReason) {
+  if (metadata == null || metadata['finish_reason'] != contentFilterFinishReason) {
     return null;
   }
   final raw = metadata['finish_reason_raw'] ?? metadata['stop_reason'];

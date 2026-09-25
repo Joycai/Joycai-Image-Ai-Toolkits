@@ -51,11 +51,7 @@ class FileUtils {
   /// what pointed at it" pass — the browser's directory lists, the staging
   /// marks, the workbench's registered sources. Segment-aware: `D:\\ai_res`
   /// does not match `D:\\ai_res2`, which a bare `startsWith` would.
-  static String? rebasePath(
-    String path, {
-    required String from,
-    required String to,
-  }) {
+  static String? rebasePath(String path, {required String from, required String to}) {
     if (p.equals(path, from)) return to;
     if (!p.isWithin(from, path)) return null;
     return p.join(to, p.relative(path, from: from));

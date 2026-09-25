@@ -93,11 +93,7 @@ class ContextBudget {
 
   /// A floor estimate of one request's prompt tokens: [chars] of message
   /// text, [toolSchemaChars] of declared tools, and [images] attachments.
-  static int estimateRequestTokens({
-    required int chars,
-    int toolSchemaChars = 0,
-    int images = 0,
-  }) =>
+  static int estimateRequestTokens({required int chars, int toolSchemaChars = 0, int images = 0}) =>
       ((chars + toolSchemaChars) / preflightCharsPerToken).ceil() +
       images * preflightTokensPerImage;
 
@@ -107,8 +103,7 @@ class ContextBudget {
   /// assumption, not a limit, and unlimited is the user's claim. Past the
   /// window by more than [preflightMargin], strictly.
   static bool exceedsWindow(int estimatedTokens, int? window) =>
-      modeOf(window) == ContextWindowMode.specified &&
-      estimatedTokens > window! * preflightMargin;
+      modeOf(window) == ContextWindowMode.specified && estimatedTokens > window! * preflightMargin;
 
   /// Assumed window when the model does not declare one.
   static const int defaultWindowTokens = 32768;
@@ -154,10 +149,10 @@ class ContextBudget {
   /// Encodes [mode] back into the column. [tokens] is ignored unless [mode] is
   /// [ContextWindowMode.specified].
   static int? store(ContextWindowMode mode, int tokens) => switch (mode) {
-        ContextWindowMode.unset => null,
-        ContextWindowMode.unlimited => 0,
-        ContextWindowMode.specified => tokens,
-      };
+    ContextWindowMode.unset => null,
+    ContextWindowMode.unlimited => 0,
+    ContextWindowMode.specified => tokens,
+  };
 
   /// The configured window for [modelIdentifier], or null when it is unset,
   /// unknown, or unreadable. Accepts both a DB primary key and a legacy string
@@ -166,10 +161,7 @@ class ContextBudget {
   /// [database] defaults to the app's, like every other service here; a caller
   /// that already holds one passes it so the window is read from the same
   /// models table the rest of its work uses.
-  static Future<int?> resolveWindow(
-    dynamic modelIdentifier, {
-    DatabaseService? database,
-  }) async {
+  static Future<int?> resolveWindow(dynamic modelIdentifier, {DatabaseService? database}) async {
     try {
       final models = await (database ?? DatabaseService()).getModels();
       for (final m in models) {
@@ -210,11 +202,9 @@ class ContextBudget {
   static int readCapChars(int? window, int occupiedChars, {double? observedCharsPerToken}) {
     if (modeOf(window) == ContextWindowMode.unlimited) return unlimitedReadCapChars;
     final perToken = observedCharsPerToken ?? charsPerToken;
-    final total = ((modeOf(window) == ContextWindowMode.unset
-                ? defaultWindowTokens
-                : window!) *
-            perToken)
-        .round();
+    final total =
+        ((modeOf(window) == ContextWindowMode.unset ? defaultWindowTokens : window!) * perToken)
+            .round();
     final cap = total - occupiedChars - reserveFor(total);
     return cap < 0 ? 0 : cap;
   }

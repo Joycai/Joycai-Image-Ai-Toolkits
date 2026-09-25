@@ -110,12 +110,8 @@ class AssistantKbDistill {
     // is never mutated after construction, so the type stays safely
     // const-constructible — a `const IterationLedgerEntry(feedback: [])`
     // would otherwise throw on the first `.add` here (unmodifiable list).
-    final versions = <({
-      int version,
-      String? note,
-      String prompt,
-      List<IterationFeedback> feedback,
-    })>[];
+    final versions =
+        <({int version, String? note, String prompt, List<IterationFeedback> feedback})>[];
     final seenPrompts = <String>{};
     for (final m in history) {
       switch (m.role) {
@@ -136,14 +132,17 @@ class AssistantKbDistill {
           final parsed = PromptOptimizerAgent.tryParseResultFeedback(m.content);
           if (parsed == null || versions.isEmpty) continue;
           final target = versions.last;
-          final duplicate = target.feedback.any((f) =>
-              f.imageName == parsed.imageName && f.feedback == parsed.feedback);
+          final duplicate = target.feedback.any(
+            (f) => f.imageName == parsed.imageName && f.feedback == parsed.feedback,
+          );
           if (duplicate) continue;
-          target.feedback.add(IterationFeedback(
-            statedVersion: parsed.promptVersion,
-            imageName: parsed.imageName,
-            feedback: parsed.feedback,
-          ));
+          target.feedback.add(
+            IterationFeedback(
+              statedVersion: parsed.promptVersion,
+              imageName: parsed.imageName,
+              feedback: parsed.feedback,
+            ),
+          );
         case LLMRole.tool:
         case LLMRole.system:
           break;
@@ -178,7 +177,9 @@ class AssistantKbDistill {
       if (isFinal) buffer.write(' (final)');
       if (entry.note != null) buffer.write(' — ${entry.note}');
       buffer.writeln();
-      buffer.writeln('  prompt: ${_excerpt(entry.prompt, isFinal ? finalPromptExcerptChars : earlierPromptExcerptChars)}');
+      buffer.writeln(
+        '  prompt: ${_excerpt(entry.prompt, isFinal ? finalPromptExcerptChars : earlierPromptExcerptChars)}',
+      );
       for (final f in entry.feedback) {
         final versionTag = (f.statedVersion != null && f.statedVersion != entry.version)
             ? ' on v${f.statedVersion}'

@@ -32,7 +32,9 @@ Future<bool> confirmDeleteFeeGroup(
           const SizedBox(height: 6),
           Text(
             l10n.deleteFeeGroupInUse(modelCount),
-            style: textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+            style: textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
         ],
       ],

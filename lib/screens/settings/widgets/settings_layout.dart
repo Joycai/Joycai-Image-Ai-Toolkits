@@ -92,9 +92,7 @@ class SettingsGroup extends StatelessWidget {
           children: [
             for (final (int i, Widget child) in children.indexed) ...[
               if (i > 0)
-                ruled
-                    ? const Divider(height: 1, indent: 12, endIndent: 12)
-                    : SizedBox(height: gap),
+                ruled ? const Divider(height: 1, indent: 12, endIndent: 12) : SizedBox(height: gap),
               child,
             ],
           ],
@@ -111,12 +109,7 @@ class SettingsGroup extends StatelessWidget {
 /// exactly where it is, filled with the track colour, its caption and text in
 /// the muted ink, and takes no input or focus.
 class SettingsField extends StatelessWidget {
-  const SettingsField({
-    super.key,
-    required this.label,
-    required this.child,
-    this.enabled = true,
-  });
+  const SettingsField({super.key, required this.label, required this.child, this.enabled = true});
 
   final String label;
   final Widget child;
@@ -129,9 +122,9 @@ class SettingsField extends StatelessWidget {
     final Color ink = enabled ? colorScheme.onSurface : colorScheme.outline;
 
     OutlineInputBorder hair() => OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadius.control),
-          borderSide: BorderSide(color: colorScheme.outlineVariant),
-        );
+      borderRadius: BorderRadius.circular(AppRadius.control),
+      borderSide: BorderSide(color: colorScheme.outlineVariant),
+    );
 
     Widget field = Theme(
       data: theme.copyWith(

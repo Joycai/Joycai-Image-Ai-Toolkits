@@ -55,38 +55,41 @@ class TransferToneColors {
     final scheme = Theme.of(context).colorScheme;
     final semantic = context.semantic;
     return switch (tone) {
-      TransferTone.accent =>
-        TransferToneColors(background: scheme.accentTint, ink: scheme.onAccentTint, glyph: scheme.primary),
+      TransferTone.accent => TransferToneColors(
+        background: scheme.accentTint,
+        ink: scheme.onAccentTint,
+        glyph: scheme.primary,
+      ),
       TransferTone.ok => TransferToneColors(
-          background: semantic.successContainer,
-          ink: semantic.onSuccessContainer,
-          glyph: semantic.success,
-        ),
+        background: semantic.successContainer,
+        ink: semantic.onSuccessContainer,
+        glyph: semantic.success,
+      ),
       TransferTone.warn => TransferToneColors(
-          background: semantic.warningContainer,
-          ink: semantic.onWarningContainer,
-          glyph: semantic.warning,
-        ),
+        background: semantic.warningContainer,
+        ink: semantic.onWarningContainer,
+        glyph: semantic.warning,
+      ),
       TransferTone.info => TransferToneColors(
-          background: semantic.infoContainer,
-          ink: semantic.onInfoContainer,
-          glyph: semantic.info,
-        ),
+        background: semantic.infoContainer,
+        ink: semantic.onInfoContainer,
+        glyph: semantic.info,
+      ),
       TransferTone.err => TransferToneColors(
-          background: scheme.errorContainer,
-          ink: scheme.onErrorContainer,
-          glyph: scheme.error,
-        ),
+        background: scheme.errorContainer,
+        ink: scheme.onErrorContainer,
+        glyph: scheme.error,
+      ),
       TransferTone.neutral => TransferToneColors(
-          background: scheme.surfaceContainer,
-          ink: scheme.onSurfaceVariant,
-          glyph: scheme.onSurfaceVariant,
-        ),
+        background: scheme.surfaceContainer,
+        ink: scheme.onSurfaceVariant,
+        glyph: scheme.onSurfaceVariant,
+      ),
       TransferTone.track => TransferToneColors(
-          background: scheme.surfaceContainerHighest,
-          ink: scheme.onSurfaceVariant,
-          glyph: scheme.onSurfaceVariant,
-        ),
+        background: scheme.surfaceContainerHighest,
+        ink: scheme.onSurfaceVariant,
+        glyph: scheme.onSurfaceVariant,
+      ),
     };
   }
 }
@@ -167,7 +170,12 @@ class TransferDialogHeading extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: textTheme.titleLarge, maxLines: 2, overflow: TextOverflow.ellipsis),
+              Text(
+                title,
+                style: textTheme.titleLarge,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
               if (sub != null) ...[const SizedBox(height: 2), sub],
             ],
           ),
@@ -192,7 +200,10 @@ class TransferDialogCloseButton extends StatelessWidget {
       tooltip: AppLocalizations.of(context)?.close,
       onPressed: onPressed,
       padding: EdgeInsets.zero,
-      constraints: const BoxConstraints.tightFor(width: AppSize.iconButton, height: AppSize.iconButton),
+      constraints: const BoxConstraints.tightFor(
+        width: AppSize.iconButton,
+        height: AppSize.iconButton,
+      ),
       style: IconButton.styleFrom(
         foregroundColor: scheme.onSurfaceVariant,
         shape: RoundedRectangleBorder(
@@ -320,12 +331,7 @@ class TransferNote extends StatelessWidget {
 /// A zero is drawn neutral whatever its tone. An untouched counter in green
 /// or red would be as loud as a real result.
 class TransferStatCell extends StatelessWidget {
-  const TransferStatCell({
-    super.key,
-    required this.value,
-    required this.label,
-    required this.tone,
-  });
+  const TransferStatCell({super.key, required this.value, required this.label, required this.tone});
 
   final int value;
   final String label;
@@ -347,7 +353,10 @@ class TransferStatCell extends StatelessWidget {
         children: [
           Text(
             '$value',
-            style: textTheme.headlineSmall!.mono.copyWith(color: colors.ink, height: AppType.displayHeight),
+            style: textTheme.headlineSmall!.mono.copyWith(
+              color: colors.ink,
+              height: AppType.displayHeight,
+            ),
           ),
           const SizedBox(height: AppSpace.s4),
           Text(
@@ -383,15 +392,27 @@ class TransferStatTiles extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(
-          child: TransferStatCell(value: transferred, label: l10n.pasteStatSucceeded, tone: TransferTone.ok),
+          child: TransferStatCell(
+            value: transferred,
+            label: l10n.pasteStatSucceeded,
+            tone: TransferTone.ok,
+          ),
         ),
         const SizedBox(width: 8),
         Expanded(
-          child: TransferStatCell(value: skipped, label: l10n.pasteStatSkipped, tone: TransferTone.neutral),
+          child: TransferStatCell(
+            value: skipped,
+            label: l10n.pasteStatSkipped,
+            tone: TransferTone.neutral,
+          ),
         ),
         const SizedBox(width: 8),
         Expanded(
-          child: TransferStatCell(value: failed, label: l10n.pasteStatFailed, tone: TransferTone.err),
+          child: TransferStatCell(
+            value: failed,
+            label: l10n.pasteStatFailed,
+            tone: TransferTone.err,
+          ),
         ),
       ],
     );
@@ -451,7 +472,10 @@ class TransferThumb extends StatelessWidget {
         color: scheme.surfaceContainerHighest,
         child: category == FileCategory.image
             ? Image(
-                image: ResizeImage(imageProvider ?? FileImage(File(path)), width: (size * 2).round()),
+                image: ResizeImage(
+                  imageProvider ?? FileImage(File(path)),
+                  width: (size * 2).round(),
+                ),
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stack) => glyph,
               )

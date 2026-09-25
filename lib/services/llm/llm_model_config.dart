@@ -192,23 +192,17 @@ class LLMModelConfig {
   /// DashScope's Anthropic-compatible chat under `/apps/anthropic/v1`), so
   /// the protocol itself stays vendor-blind. Everything else is carried over
   /// verbatim.
-  LLMModelConfig withEndpoint(String newEndpoint) =>
-      _copy(endpoint: newEndpoint);
+  LLMModelConfig withEndpoint(String newEndpoint) => _copy(endpoint: newEndpoint);
 
   /// This config with the model's web-search switch off, for one call that
   /// must not reach for server-side tools ([llmNoServerToolsKey]).
-  LLMModelConfig withoutServerTools() =>
-      enableWebSearch ? _copy(enableWebSearch: false) : this;
+  LLMModelConfig withoutServerTools() => enableWebSearch ? _copy(enableWebSearch: false) : this;
 
   /// This config asking for model [newModelId] — everything else, the route
   /// ([wireProtocol], [faceBases]) included, carried over.
   LLMModelConfig withModelId(String newModelId) => _copy(modelId: newModelId);
 
-  LLMModelConfig _copy({
-    String? modelId,
-    String? endpoint,
-    bool? enableWebSearch,
-  }) =>
+  LLMModelConfig _copy({String? modelId, String? endpoint, bool? enableWebSearch}) =>
       LLMModelConfig(
         id: id,
         modelId: modelId ?? this.modelId,
@@ -302,7 +296,12 @@ class LLMModelConfig {
 
     if (proxyUsername != null && proxyUsername!.isNotEmpty && proxyPassword != null) {
       httpClient.authenticateProxy = (host, port, scheme, realm) {
-        httpClient.addProxyCredentials(host, port, realm ?? '', HttpClientBasicCredentials(proxyUsername!, proxyPassword!));
+        httpClient.addProxyCredentials(
+          host,
+          port,
+          realm ?? '',
+          HttpClientBasicCredentials(proxyUsername!, proxyPassword!),
+        );
         return Future.value(true);
       };
     }
@@ -362,8 +361,7 @@ class LLMClientPool {
   /// gate eviction, and a count that silently sticks above zero is a client
   /// that never closes.
   @visibleForTesting
-  static int? inFlightFor(String connectionKey) =>
-      _clients[connectionKey]?.inFlight;
+  static int? inFlightFor(String connectionKey) => _clients[connectionKey]?.inFlight;
 }
 
 /// One pooled connection, plus a count of the *leases* still riding on it.
@@ -472,8 +470,7 @@ class _SharedClient extends http.BaseClient {
   /// [source] with [done] called once it can carry nothing more: drained, or
   /// cancelled by a caller that gave up — an idle guard tearing down its
   /// subscription is the common one, and `onDone` never fires for it.
-  static Stream<List<int>> _releaseWhenDone(
-      Stream<List<int>> source, void Function() done) {
+  static Stream<List<int>> _releaseWhenDone(Stream<List<int>> source, void Function() done) {
     late final StreamController<List<int>> controller;
     StreamSubscription<List<int>>? sub;
     controller = StreamController<List<int>>(

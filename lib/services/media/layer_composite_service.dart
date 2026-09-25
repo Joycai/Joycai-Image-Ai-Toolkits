@@ -19,16 +19,10 @@ class LayerCompositeService {
   /// [width]×[height] transparent canvas and returns PNG bytes. Runs in an
   /// isolate: a decode and a resize per layer at several megapixels would
   /// stall the UI.
-  static Future<Uint8List> composite(
-      List<ImageLayer> layers, int width, int height) {
+  static Future<Uint8List> composite(List<ImageLayer> layers, int width, int height) {
     final input = [
       for (final l in layers)
-        (
-          l.path,
-          l.box == null
-              ? null
-              : [l.box!.left, l.box!.top, l.box!.width, l.box!.height],
-        ),
+        (l.path, l.box == null ? null : [l.box!.left, l.box!.top, l.box!.width, l.box!.height]),
     ];
     return compute(_composite, (input, width, height));
   }
@@ -47,8 +41,7 @@ class LayerCompositeService {
   }
 }
 
-Uint8List _composite(
-    (List<(String, List<int>?)>, int, int) args) {
+Uint8List _composite((List<(String, List<int>?)>, int, int) args) {
   final (layers, width, height) = args;
   final canvas = img.Image(width: width, height: height, numChannels: 4);
   for (final (path, box) in layers) {

@@ -19,12 +19,10 @@ String _systemPromptFor({
       // model still runs the review but must present findings as text.
       ? _buildKnowledgeDistillSystemPrompt(knowledgeEntryContent!, canWrite: editMode)
       : editMode
-          ? _buildKnowledgeEditSystemPrompt(
-              knowledgeEntryContent!, refCount, forceView)
-          : knowledgeMode
-              ? _buildKnowledgeSystemPrompt(
-                  knowledgeEntryContent!, refCount, forceView)
-              : _buildSystemPrompt(systemPrompt, refCount, forceView, outputKind);
+      ? _buildKnowledgeEditSystemPrompt(knowledgeEntryContent!, refCount, forceView)
+      : knowledgeMode
+      ? _buildKnowledgeSystemPrompt(knowledgeEntryContent!, refCount, forceView)
+      : _buildSystemPrompt(systemPrompt, refCount, forceView, outputKind);
 }
 
 /// Warns, once per turn, when the knowledge base's file map alone fills a
@@ -42,16 +40,20 @@ void _warnIfSystemPromptCrowds(
   // warning, not a failure: with the window itself picked off a preset
   // slider, refusing to run would break setups that work today.
   if (knowledgeMode && contextWindow != null && contextWindow > 0) {
-    final windowChars = contextWindow *
-        (session.observedCharsPerToken ?? ContextBudget.charsPerToken);
+    final windowChars =
+        contextWindow * (session.observedCharsPerToken ?? ContextBudget.charsPerToken);
     if (systemPromptText.length > windowChars * _systemPromptWarnShare) {
-      onLog?.call('The knowledge base file map fills '
-          '${(systemPromptText.length / windowChars * 100).round()}% of this '
-          "model's context window, and is re-sent every request.");
-      session._addEntry(OptimizerChatEntry(
-        kind: OptimizerEntryKind.notice,
-        text: PromptOptimizerAgent.kbEntryTooLargeNoticeToken,
-      ));
+      onLog?.call(
+        'The knowledge base file map fills '
+        '${(systemPromptText.length / windowChars * 100).round()}% of this '
+        "model's context window, and is re-sent every request.",
+      );
+      session._addEntry(
+        OptimizerChatEntry(
+          kind: OptimizerEntryKind.notice,
+          text: PromptOptimizerAgent.kbEntryTooLargeNoticeToken,
+        ),
+      );
     }
   }
 }
@@ -150,7 +152,8 @@ Future<Map<String, dynamic>?> _dispatchToolCall(
     onLog?.call('Tool call rejected: "${call.name}" was not offered in this request.');
     result = {
       'status': 'error',
-      'message': 'Tool "${call.name}" was not offered in this request, so it '
+      'message':
+          'Tool "${call.name}" was not offered in this request, so it '
           'did not run. '
           '${offered.isEmpty ? 'No tools are available right now — answer in plain text.' : 'Available tools: ${offered.join(', ')}.'}',
     };
@@ -158,7 +161,8 @@ Future<Map<String, dynamic>?> _dispatchToolCall(
     if (!PromptOptimizerAgent.canStageAskUser(batch)) {
       result = {
         'status': 'error',
-        'message': 'ask_user must be the only tool call in a message, '
+        'message':
+            'ask_user must be the only tool call in a message, '
             'so this question was NOT shown to the user. The other '
             'calls in this message ran normally — ask again on its own '
             'in your next message.',
@@ -168,13 +172,16 @@ Future<Map<String, dynamic>?> _dispatchToolCall(
       if (questions == null) {
         result = {
           'status': 'error',
-          'message': 'Invalid questions payload. Pass 1-4 questions, '
+          'message':
+              'Invalid questions payload. Pass 1-4 questions, '
               'each with a non-empty header, a non-empty question, and '
               '2-4 options with non-empty labels.',
         };
       } else {
-        onLog?.call('Tool call: ask_user (${questions.length} question(s)) '
-            '— waiting for the user.');
+        onLog?.call(
+          'Tool call: ask_user (${questions.length} question(s)) '
+          '— waiting for the user.',
+        );
         session._stageAskUser(call.id, questions);
         return null; // Deliberately NO paired result — the caller skips pairing.
       }
@@ -195,19 +202,14 @@ Future<Map<String, dynamic>?> _dispatchToolCall(
         db: db,
         availableKinds: delegateKinds,
         referenceImages: referenceImages,
-        contextWindow: kbSubAgentModelIdentifier != null
-            ? kbSubAgentContextWindow
-            : contextWindow,
+        contextWindow: kbSubAgentModelIdentifier != null ? kbSubAgentContextWindow : contextWindow,
         contextId: contextId,
         onLog: onLog,
         isCancelled: isCancelled,
       );
     } catch (e) {
       onLog?.call('Tool delegate failed: $e');
-      result = {
-        'status': 'error',
-        'message': 'Tool delegate failed: $e',
-      };
+      result = {'status': 'error', 'message': 'Tool delegate failed: $e'};
     }
   } else if (call.name == 'write_knowledge_file') {
     // Async once per-edit confirmation can be off, so it sits here
@@ -217,10 +219,7 @@ Future<Map<String, dynamic>?> _dispatchToolCall(
       result = await _executeWriteKnowledge(call, session, knowledgeRoot, onLog);
     } catch (e) {
       onLog?.call('Tool write_knowledge_file failed: $e');
-      result = {
-        'status': 'error',
-        'message': 'Tool write_knowledge_file failed: $e',
-      };
+      result = {'status': 'error', 'message': 'Tool write_knowledge_file failed: $e'};
     }
   } else if (call.name == 'read_note') {
     // Async (note store lives in SQLite), so alongside delegate
@@ -236,10 +235,7 @@ Future<Map<String, dynamic>?> _dispatchToolCall(
       );
     } catch (e) {
       onLog?.call('Tool read_note failed: $e');
-      result = {
-        'status': 'error',
-        'message': 'Tool read_note failed: $e',
-      };
+      result = {'status': 'error', 'message': 'Tool read_note failed: $e'};
     }
   } else {
     try {
@@ -257,10 +253,7 @@ Future<Map<String, dynamic>?> _dispatchToolCall(
       );
     } catch (e) {
       onLog?.call('Tool ${call.name} failed: $e');
-      result = {
-        'status': 'error',
-        'message': 'Tool ${call.name} failed: $e',
-      };
+      result = {'status': 'error', 'message': 'Tool ${call.name} failed: $e'};
     }
   }
   return result;

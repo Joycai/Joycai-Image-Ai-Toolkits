@@ -131,8 +131,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get featureLimitedOnMobile => '功能受限于移动端';
 
   @override
-  String get fileBrowserDesktopOnlyDesc =>
-      '由于操作系统沙盒限制，高级文件浏览器和批量重命名功能仅在桌面版本上可用。';
+  String get fileBrowserDesktopOnlyDesc => '由于操作系统沙盒限制，高级文件浏览器和批量重命名功能仅在桌面版本上可用。';
 
   @override
   String get fileBrowseriOSHint => '请使用系统文件 App 来管理您的生成图像。';
@@ -159,8 +158,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get stagingEmptyTitle => '暂存区是空的';
 
   @override
-  String get stagingEmptyDesc =>
-      '选中文件后点「加入暂存区」，把要搬运的文件先记在这里 —— 只做标记，不移动任何文件。切换目录、筛选或重启应用都不会丢。';
+  String get stagingEmptyDesc => '选中文件后点「加入暂存区」，把要搬运的文件先记在这里 —— 只做标记，不移动任何文件。切换目录、筛选或重启应用都不会丢。';
 
   @override
   String get stagingTarget => '目标目录';
@@ -169,8 +167,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get stagingNoTarget => '未指定';
 
   @override
-  String get stagingTargetHint =>
-      '在左栏勾选要浏览的文件夹，它就会成为目标目录；也可以在文件夹上右键「移动 / 复制到此」，或把文件直接拖到文件夹上。';
+  String get stagingTargetHint => '在左栏勾选要浏览的文件夹，它就会成为目标目录；也可以在文件夹上右键「移动 / 复制到此」，或把文件直接拖到文件夹上。';
 
   @override
   String stagingRestored(int count) {
@@ -386,15 +383,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get renameConflictAutoRename => '改名';
 
   @override
-  String get renameOverwriteDuplicateHint =>
-      '这个名字是列表里另一行要用的——磁盘上还没有这个文件，没有东西可覆盖。请给其中一行改名或跳过。';
+  String get renameOverwriteDuplicateHint => '这个名字是列表里另一行要用的——磁盘上还没有这个文件，没有东西可覆盖。请给其中一行改名或跳过。';
 
   @override
   String get renameNoModelsTitle => '没有可用的语言模型';
 
   @override
-  String get renameNoModelsDesc =>
-      '批量重命名需要一个对话模型来阅读图片并生成名字。请先在「模型与渠道」里配置至少一个可用渠道。';
+  String get renameNoModelsDesc => '批量重命名需要一个对话模型来阅读图片并生成名字。请先在「模型与渠道」里配置至少一个可用渠道。';
 
   @override
   String get renameGoToSettings => '前往设置';
@@ -437,8 +432,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get pasteRollbackNote =>
-      '跨磁盘移动按「复制 + 删除」执行；取消时正在复制中的那份副本会被删除，其源文件保持不动。';
+  String get pasteRollbackNote => '跨磁盘移动按「复制 + 删除」执行；取消时正在复制中的那份副本会被删除，其源文件保持不动。';
 
   @override
   String get pasteRunInBackground => '后台运行';
@@ -685,8 +679,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get folderMoveCrossVolumeNote =>
-      '不同磁盘 · 先复制再删除，源目录会在全部到达后才移除，取消不会丢失任何内容。';
+  String get folderMoveCrossVolumeNote => '不同磁盘 · 先复制再删除，源目录会在全部到达后才移除，取消不会丢失任何内容。';
 
   @override
   String get folderMoveCancelledTitle => '已取消移动';
@@ -709,8 +702,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get folderMoveStatSourceKept => '源目录保留';
 
   @override
-  String get folderMoveCancelledDesc =>
-      '源目录完整保留，未删除任何文件。已复制到目标的项保留在目标位置，可稍后重新拖动，同名项会逐项处理。';
+  String get folderMoveCancelledDesc => '源目录完整保留，未删除任何文件。已复制到目标的项保留在目标位置，可稍后重新拖动，同名项会逐项处理。';
 
   @override
   String get showDestinationInSystem => '在系统中显示目标';
@@ -1744,8 +1736,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get protocolAnthropicDesc => 'Claude 原生 /v1/messages 接口';
 
   @override
-  String get midjourneyEndpointHint =>
-      '填写主机根地址（如 https://your-newapi.com），/mj/* 路径将自动补全。';
+  String get midjourneyEndpointHint => '填写主机根地址（如 https://your-newapi.com），/mj/* 路径将自动补全。';
 
   @override
   String get providerDashScopeDesc =>
@@ -1825,8 +1816,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get dashscopeApiV1Hint => '提示：DashScope 原生接口以 \'/api/v1\' 结尾';
 
   @override
-  String get apiKeyStorageNotice =>
-      '密钥以明文保存在本机的应用数据库中，只受系统账户的文件权限保护；不会写入备份，只发送给该服务商。';
+  String get apiKeyStorageNotice => '密钥以明文保存在本机的应用数据库中，只受系统账户的文件权限保护；不会写入备份，只发送给该服务商。';
 
   @override
   String get nameHint => '例如：生产环境 API';
@@ -1968,8 +1958,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get outputCapThinkingHint =>
-      '该模型已开启推理，思考 token 先于正文计入此上限——请在正文所需之上留出余量。';
+  String get outputCapThinkingHint => '该模型已开启推理，思考 token 先于正文计入此上限——请在正文所需之上留出余量。';
 
   @override
   String outputCapStarvesThinking(String min) {
@@ -2055,8 +2044,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get enableWebSearchDesc => '允许服务商在作答过程中自行搜索网页。按额外 token 计费，并会代你抓取网页。';
 
   @override
-  String get enableWebSearchTracelessHint =>
-      '此协议下搜索是无痕的：不返回来源或角标，也无从判断是否真的搜索过。';
+  String get enableWebSearchTracelessHint => '此协议下搜索是无痕的：不返回来源或角标，也无从判断是否真的搜索过。';
 
   @override
   String get noProviderMatch => '没有匹配的提供商';
@@ -2185,8 +2173,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get variantHintMiniMax => 'MiniMax 同时提供两套接口，选一套即可，之后仍可改。';
 
   @override
-  String get variantHintArk =>
-      '两种密钥不通用：套餐密钥只认 /api/plan/v3，按量密钥只认 /api/v3。切换只改写地址。';
+  String get variantHintArk => '两种密钥不通用：套餐密钥只认 /api/plan/v3，按量密钥只认 /api/v3。切换只改写地址。';
 
   @override
   String get variantHintNewApi => 'host 由你填，尾段跟着你选的格式走。';
@@ -2240,8 +2227,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get presetUnmatched => '未匹配预设';
 
   @override
-  String get presetUnmatchedHint =>
-      '这条渠道用的是旧版本创建的类型，已不在预设列表里。保持不动即可继续使用；点「更换预设」会覆盖下面的字段。';
+  String get presetUnmatchedHint => '这条渠道用的是旧版本创建的类型，已不在预设列表里。保持不动即可继续使用；点「更换预设」会覆盖下面的字段。';
 
   @override
   String get presetEndpointModified => '地址已改过';
@@ -2309,8 +2295,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get protocolOpenAIResponses => 'OpenAI Responses';
 
   @override
-  String get protocolOpenAIResponsesDesc =>
-      'OpenAI 的新接口，同一地址与密钥。工具调用之间保留模型的推理。';
+  String get protocolOpenAIResponsesDesc => 'OpenAI 的新接口，同一地址与密钥。工具调用之间保留模型的推理。';
 
   @override
   String get reasoningEffortResponsesHint =>
@@ -2494,8 +2479,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get probeAuthFailedNext => '检查是否复制完整、是否过期。';
 
   @override
-  String get probeNotAnApiNext =>
-      '返回了 HTML 页面。多半填了控制台地址，API 端点通常以 /v1 或 /v1beta 结尾。';
+  String get probeNotAnApiNext => '返回了 HTML 页面。多半填了控制台地址，API 端点通常以 /v1 或 /v1beta 结尾。';
 
   @override
   String get probeUnreachableNext => 'DNS 解析失败或超时。检查网址、代理设置与网络。';
@@ -2525,8 +2509,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get protocolUnavailable => '不可用';
 
   @override
-  String get reasoningEffortUnsupported =>
-      '该模型不接受推理参数，滑块固定在「关闭」——换成支持推理的模型时它会亮起来。';
+  String get reasoningEffortUnsupported => '该模型不接受推理参数，滑块固定在「关闭」——换成支持推理的模型时它会亮起来。';
 
   @override
   String get modelIdRequiredTitle => 'Model ID 不能为空';
@@ -2544,8 +2527,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get addModelIdHelper => '留空会阻止保存；名称留空则用 ID 当显示名。';
 
   @override
-  String get addModelDefaultsNote =>
-      '协议、上下文窗口、能力开关都保持 Auto / 默认；先添加，跑通一次再按需固定。';
+  String get addModelDefaultsNote => '协议、上下文窗口、能力开关都保持 Auto / 默认；先添加，跑通一次再按需固定。';
 
   @override
   String get modelNameOptionalHint => '可留空';
@@ -2593,8 +2575,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get deleteChannelBody =>
-      '工作台里正在引用这些模型的配置会变成「未选择模型」，已提交的任务不受影响。用量记录按模型名保留。';
+  String get deleteChannelBody => '工作台里正在引用这些模型的配置会变成「未选择模型」，已提交的任务不受影响。用量记录按模型名保留。';
 
   @override
   String get newFeeGroup => '新建组';
@@ -2886,12 +2867,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get mergeDialogTitle => '合并渠道';
 
   @override
-  String mergeDialogProgress(
-    int index,
-    int total,
-    String platform,
-    String host,
-  ) {
+  String mergeDialogProgress(int index, int total, String platform, String host) {
     return '$index / $total 组 · $platform · $host';
   }
 
@@ -3089,8 +3065,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get routeWebSearchUntested => '会发出，但还没在这个平台上实测过';
 
   @override
-  String get routeWebSearchUntestedNote =>
-      '当前线路会发出联网搜索，但这个平台是否照做还没实测过。回复里看不出搜索过的话，换到实测过的线路。';
+  String get routeWebSearchUntestedNote => '当前线路会发出联网搜索，但这个平台是否照做还没实测过。回复里看不出搜索过的话，换到实测过的线路。';
 
   @override
   String get platformDashScope => '阿里云百炼';
@@ -3295,8 +3270,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get presetOutputPromptHelp => '助手把结果做成提示词卡交付，带版本，可一键应用到工作台。';
 
   @override
-  String get presetOutputAnalysisHelp =>
-      '助手按这条预设规定的结构直接在对话里回答，结果可复制。你明确要的时候，它仍然可以另给一条提示词。';
+  String get presetOutputAnalysisHelp => '助手按这条预设规定的结构直接在对话里回答，结果可复制。你明确要的时候，它仍然可以另给一条提示词。';
 
   @override
   String get settings => '设置';
@@ -3345,8 +3319,7 @@ class AppLocalizationsZh extends AppLocalizations {
       '每张卡左半是亮色模式、右半是暗色模式，里面的按钮、开关、选中行都用该模式实际会画出的那个色号。两个色号各自校准过：亮色偏深保白字可读，暗色偏亮偏饱和，压在主色上的字改用同色相深墨。';
 
   @override
-  String get themeColorHintDots =>
-      '每套主题色含亮色 / 暗色两个经过校准的色号：亮色模式用较深的那一个，暗色模式换成较亮、较饱和的那一个。长按色块可看色号。';
+  String get themeColorHintDots => '每套主题色含亮色 / 暗色两个经过校准的色号：亮色模式用较深的那一个，暗色模式换成较亮、较饱和的那一个。长按色块可看色号。';
 
   @override
   String themeColorPair(String light, String dark) {
@@ -3474,8 +3447,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get notInBackup => '备份文件中不包含此项';
 
   @override
-  String get importSettingsConfirm =>
-      '这将替换您当前所有的模型、渠道和分类。\n\n注意：提示词库不受此导入影响。请在提示词页面管理提示词数据。';
+  String get importSettingsConfirm => '这将替换您当前所有的模型、渠道和分类。\n\n注意：提示词库不受此导入影响。请在提示词页面管理提示词数据。';
 
   @override
   String get importAndReplace => '导入并替换';
@@ -3572,8 +3544,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get assistantContextRatio => '助手摘要阈值';
 
   @override
-  String get assistantContextRatioDesc =>
-      '提示词助手在上下文占用达到模型窗口的该比例时自动摘要对话，腾出空间继续工作。仅对已设置上下文大小的模型生效。';
+  String get assistantContextRatioDesc => '提示词助手在上下文占用达到模型窗口的该比例时自动摘要对话，腾出空间继续工作。仅对已设置上下文大小的模型生效。';
 
   @override
   String get kbSubAgent => '知识库子代理';
@@ -3836,8 +3807,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get shortcutsInactiveRegion => '当前不活动';
 
   @override
-  String get shortcutsActiveRegionNote =>
-      '这一组只作用于活动区，也就是上面点名的那一块。点某个区即可把键盘交给它——正在听键的那个区，选中项画成强调色。';
+  String get shortcutsActiveRegionNote => '这一组只作用于活动区，也就是上面点名的那一块。点某个区即可把键盘交给它——正在听键的那个区，选中项画成强调色。';
 
   @override
   String get shortcutsClose => '关闭';
@@ -4804,8 +4774,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get mobileSandboxActive => '移动端存储限制生效';
 
   @override
-  String get mobileSandboxDesc =>
-      '在移动设备上，直接访问文件夹可能受限。建议使用上方工具栏的“从系统图库导入”按钮将图片添加到临时工作区。';
+  String get mobileSandboxDesc => '在移动设备上，直接访问文件夹可能受限。建议使用上方工具栏的“从系统图库导入”按钮将图片添加到临时工作区。';
 
   @override
   String get tapToPick => '点击选取';
@@ -4838,8 +4807,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get safetySettings => '安全设置';
 
   @override
-  String get safetySettingsDesc =>
-      'Gemini 内容过滤阈值，随每个请求发送（从严格到宽松）。Veo/Imagen 不支持。';
+  String get safetySettingsDesc => 'Gemini 内容过滤阈值，随每个请求发送（从严格到宽松）。Veo/Imagen 不支持。';
 
   @override
   String get safetyCategoryHarassment => '骚扰内容';
@@ -4905,8 +4873,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get optCompactedNotice => '较早的对话已压缩为摘要，以节省上下文。';
 
   @override
-  String get optRoundLimitNotice =>
-      '助手在这条消息上已用完步骤上限，尚未给出最终答复。发送一条后续消息（例如“继续”）即可让它接着做。';
+  String get optRoundLimitNotice => '助手在这条消息上已用完步骤上限，尚未给出最终答复。发送一条后续消息（例如“继续”）即可让它接着做。';
 
   @override
   String get optTruncatedTail => '回复在输出上限处被截断';
@@ -5757,8 +5724,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get optModeSwitchBody =>
-      '任务预设和知识库的对话不能接在一起，切换会开始一个新会话。当前会话已保存，可以随时从「历史会话」回来。';
+  String get optModeSwitchBody => '任务预设和知识库的对话不能接在一起，切换会开始一个新会话。当前会话已保存，可以随时从「历史会话」回来。';
 
   @override
   String get optModeSwitchStart => '开始新会话';
@@ -6024,8 +5990,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get featureLimitedOnMobile => '功能受限於行動裝置';
 
   @override
-  String get fileBrowserDesktopOnlyDesc =>
-      '由於作業系統沙盒限制，進階檔案瀏覽器和批次重新命名功能僅適用於桌面版本。';
+  String get fileBrowserDesktopOnlyDesc => '由於作業系統沙盒限制，進階檔案瀏覽器和批次重新命名功能僅適用於桌面版本。';
 
   @override
   String get fileBrowseriOSHint => '請使用系統「檔案」App 來管理您產生的圖像。';
@@ -6052,8 +6017,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get stagingEmptyTitle => '暫存區是空的';
 
   @override
-  String get stagingEmptyDesc =>
-      '選取檔案後點「加入暫存區」，把要搬運的檔案先記在這裡 —— 只做標記，不移動任何檔案。切換目錄、篩選或重新啟動應用都不會丟。';
+  String get stagingEmptyDesc => '選取檔案後點「加入暫存區」，把要搬運的檔案先記在這裡 —— 只做標記，不移動任何檔案。切換目錄、篩選或重新啟動應用都不會丟。';
 
   @override
   String get stagingTarget => '目標目錄';
@@ -6062,8 +6026,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get stagingNoTarget => '未指定';
 
   @override
-  String get stagingTargetHint =>
-      '在左欄勾選要瀏覽的資料夾，它就會成為目標目錄；也可以在資料夾上按右鍵「移動 / 複製到此」，或把檔案直接拖到資料夾上。';
+  String get stagingTargetHint => '在左欄勾選要瀏覽的資料夾，它就會成為目標目錄；也可以在資料夾上按右鍵「移動 / 複製到此」，或把檔案直接拖到資料夾上。';
 
   @override
   String stagingRestored(int count) {
@@ -6279,15 +6242,13 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get renameConflictAutoRename => '改名';
 
   @override
-  String get renameOverwriteDuplicateHint =>
-      '這個名稱是清單裡另一列要用的——磁碟上還沒有這個檔案，沒有東西可覆蓋。請替其中一列改名或跳過。';
+  String get renameOverwriteDuplicateHint => '這個名稱是清單裡另一列要用的——磁碟上還沒有這個檔案，沒有東西可覆蓋。請替其中一列改名或跳過。';
 
   @override
   String get renameNoModelsTitle => '沒有可用的語言模型';
 
   @override
-  String get renameNoModelsDesc =>
-      '批次重新命名需要一個對話模型來閱讀圖片並產生名字。請先在「模型與通道」裡設定至少一個可用通道。';
+  String get renameNoModelsDesc => '批次重新命名需要一個對話模型來閱讀圖片並產生名字。請先在「模型與通道」裡設定至少一個可用通道。';
 
   @override
   String get renameGoToSettings => '前往設定';
@@ -6330,8 +6291,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   }
 
   @override
-  String get pasteRollbackNote =>
-      '跨磁碟移動按「複製 + 刪除」執行；取消時正在複製中的那份副本會被刪除，其來源檔案保持不動。';
+  String get pasteRollbackNote => '跨磁碟移動按「複製 + 刪除」執行；取消時正在複製中的那份副本會被刪除，其來源檔案保持不動。';
 
   @override
   String get pasteRunInBackground => '背景執行';
@@ -6578,8 +6538,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   }
 
   @override
-  String get folderMoveCrossVolumeNote =>
-      '不同磁碟 · 先複製再刪除，來源目錄會在全部到達後才移除，取消不會遺失任何內容。';
+  String get folderMoveCrossVolumeNote => '不同磁碟 · 先複製再刪除，來源目錄會在全部到達後才移除，取消不會遺失任何內容。';
 
   @override
   String get folderMoveCancelledTitle => '已取消移動';
@@ -6602,8 +6561,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get folderMoveStatSourceKept => '來源目錄保留';
 
   @override
-  String get folderMoveCancelledDesc =>
-      '來源目錄完整保留，未刪除任何檔案。已複製到目標的項目保留在目標位置，可稍後重新拖曳，同名項目會逐項處理。';
+  String get folderMoveCancelledDesc => '來源目錄完整保留，未刪除任何檔案。已複製到目標的項目保留在目標位置，可稍後重新拖曳，同名項目會逐項處理。';
 
   @override
   String get showDestinationInSystem => '在系統中顯示目標';
@@ -7637,8 +7595,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get protocolAnthropicDesc => 'Claude 原生 /v1/messages 介面';
 
   @override
-  String get midjourneyEndpointHint =>
-      '填寫主機根位址（如 https://your-newapi.com），/mj/* 路徑將自動補全。';
+  String get midjourneyEndpointHint => '填寫主機根位址（如 https://your-newapi.com），/mj/* 路徑將自動補全。';
 
   @override
   String get providerDashScopeDesc =>
@@ -7718,8 +7675,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get dashscopeApiV1Hint => '提示：DashScope 原生端點以「/api/v1」結尾';
 
   @override
-  String get apiKeyStorageNotice =>
-      '金鑰以明文儲存在本機的應用程式資料庫中，只受系統帳戶的檔案權限保護；不會寫入備份，只會傳送給該服務商。';
+  String get apiKeyStorageNotice => '金鑰以明文儲存在本機的應用程式資料庫中，只受系統帳戶的檔案權限保護；不會寫入備份，只會傳送給該服務商。';
 
   @override
   String get nameHint => '例如：我的正式版 API';
@@ -7861,8 +7817,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   }
 
   @override
-  String get outputCapThinkingHint =>
-      '該模型已開啟推理，思考 token 先於正文計入此上限——請在正文所需之上留出餘量。';
+  String get outputCapThinkingHint => '該模型已開啟推理，思考 token 先於正文計入此上限——請在正文所需之上留出餘量。';
 
   @override
   String outputCapStarvesThinking(String min) {
@@ -7948,8 +7903,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get enableWebSearchDesc => '允許服務商在作答過程中自行搜尋網頁。按額外 token 計費，並會代你抓取網頁。';
 
   @override
-  String get enableWebSearchTracelessHint =>
-      '此協議下搜尋是無痕的：不回傳來源或角標，也無從判斷是否真的搜尋過。';
+  String get enableWebSearchTracelessHint => '此協議下搜尋是無痕的：不回傳來源或角標，也無從判斷是否真的搜尋過。';
 
   @override
   String get noProviderMatch => '沒有符合的提供商';
@@ -8078,8 +8032,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get variantHintMiniMax => 'MiniMax 同時提供兩套介面，選一套即可，之後仍可改。';
 
   @override
-  String get variantHintArk =>
-      '兩種金鑰不通用：套餐金鑰只認 /api/plan/v3，按量金鑰只認 /api/v3。切換只改寫位址。';
+  String get variantHintArk => '兩種金鑰不通用：套餐金鑰只認 /api/plan/v3，按量金鑰只認 /api/v3。切換只改寫位址。';
 
   @override
   String get variantHintNewApi => 'host 由你填，尾段跟著你選的格式走。';
@@ -8133,8 +8086,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get presetUnmatched => '未匹配預設';
 
   @override
-  String get presetUnmatchedHint =>
-      '這條頻道用的是舊版本建立的類型，已不在預設清單裡。保持不動即可繼續使用；點「更換預設」會覆蓋下面的欄位。';
+  String get presetUnmatchedHint => '這條頻道用的是舊版本建立的類型，已不在預設清單裡。保持不動即可繼續使用；點「更換預設」會覆蓋下面的欄位。';
 
   @override
   String get presetEndpointModified => '位址已改過';
@@ -8202,8 +8154,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get protocolOpenAIResponses => 'OpenAI Responses';
 
   @override
-  String get protocolOpenAIResponsesDesc =>
-      'OpenAI 的新介面，同一位址與金鑰。工具呼叫之間保留模型的推理。';
+  String get protocolOpenAIResponsesDesc => 'OpenAI 的新介面，同一位址與金鑰。工具呼叫之間保留模型的推理。';
 
   @override
   String get reasoningEffortResponsesHint =>
@@ -8387,8 +8338,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get probeAuthFailedNext => '檢查是否複製完整、是否過期。';
 
   @override
-  String get probeNotAnApiNext =>
-      '回傳了 HTML 頁面。多半填了主控台網址，API 端點通常以 /v1 或 /v1beta 結尾。';
+  String get probeNotAnApiNext => '回傳了 HTML 頁面。多半填了主控台網址，API 端點通常以 /v1 或 /v1beta 結尾。';
 
   @override
   String get probeUnreachableNext => 'DNS 解析失敗或逾時。檢查網址、代理設定與網路。';
@@ -8418,8 +8368,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get protocolUnavailable => '不可用';
 
   @override
-  String get reasoningEffortUnsupported =>
-      '該模型不接受推理參數，滑桿固定在「關閉」——換成支援推理的模型時它會亮起來。';
+  String get reasoningEffortUnsupported => '該模型不接受推理參數，滑桿固定在「關閉」——換成支援推理的模型時它會亮起來。';
 
   @override
   String get modelIdRequiredTitle => 'Model ID 不能為空';
@@ -8437,8 +8386,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get addModelIdHelper => '留空會阻止儲存；名稱留空則用 ID 當顯示名稱。';
 
   @override
-  String get addModelDefaultsNote =>
-      '協定、上下文視窗、能力開關都保持 Auto / 預設；先新增，跑通一次再按需固定。';
+  String get addModelDefaultsNote => '協定、上下文視窗、能力開關都保持 Auto / 預設；先新增，跑通一次再按需固定。';
 
   @override
   String get modelNameOptionalHint => '可留空';
@@ -8486,8 +8434,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   }
 
   @override
-  String get deleteChannelBody =>
-      '工作台裡正在引用這些模型的設定會變成「未選擇模型」，已提交的任務不受影響。用量紀錄依模型名稱保留。';
+  String get deleteChannelBody => '工作台裡正在引用這些模型的設定會變成「未選擇模型」，已提交的任務不受影響。用量紀錄依模型名稱保留。';
 
   @override
   String get newFeeGroup => '新增組';
@@ -8779,12 +8726,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get mergeDialogTitle => '合併渠道';
 
   @override
-  String mergeDialogProgress(
-    int index,
-    int total,
-    String platform,
-    String host,
-  ) {
+  String mergeDialogProgress(int index, int total, String platform, String host) {
     return '$index / $total 組 · $platform · $host';
   }
 
@@ -8982,8 +8924,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get routeWebSearchUntested => '會發出，但還沒在這個平台上實測過';
 
   @override
-  String get routeWebSearchUntestedNote =>
-      '當前線路會發出聯網搜尋，但這個平台是否照做還沒實測過。回覆裡看不出搜尋過的話，換到實測過的線路。';
+  String get routeWebSearchUntestedNote => '當前線路會發出聯網搜尋，但這個平台是否照做還沒實測過。回覆裡看不出搜尋過的話，換到實測過的線路。';
 
   @override
   String get platformDashScope => '阿里雲百煉';
@@ -9188,8 +9129,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get presetOutputPromptHelp => '助手把結果做成提示詞卡交付，帶版本，可一鍵套用到工作台。';
 
   @override
-  String get presetOutputAnalysisHelp =>
-      '助手按這條預設規定的結構直接在對話裡回答，結果可複製。你明確要求時，它仍然可以另給一條提示詞。';
+  String get presetOutputAnalysisHelp => '助手按這條預設規定的結構直接在對話裡回答，結果可複製。你明確要求時，它仍然可以另給一條提示詞。';
 
   @override
   String get settings => '設定';
@@ -9238,8 +9178,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
       '每張卡左半是淺色模式、右半是深色模式，裡面的按鈕、開關、選取列都用該模式實際會畫出的那個色號。兩個色號各自校準過：淺色偏深保白字可讀，深色偏亮偏飽和，壓在主色上的字改用同色相深墨。';
 
   @override
-  String get themeColorHintDots =>
-      '每套主題色含淺色 / 深色兩個經過校準的色號：淺色模式用較深的那一個，深色模式換成較亮、較飽和的那一個。長按色塊可看色號。';
+  String get themeColorHintDots => '每套主題色含淺色 / 深色兩個經過校準的色號：淺色模式用較深的那一個，深色模式換成較亮、較飽和的那一個。長按色塊可看色號。';
 
   @override
   String themeColorPair(String light, String dark) {
@@ -9367,8 +9306,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get notInBackup => '備份檔案中不可用';
 
   @override
-  String get importSettingsConfirm =>
-      '這將會取代您目前所有的模型、通道和類別。\n\n注意：獨立的提示庫不受此匯入影響。請使用「提示」畫面進行提示資料管理。';
+  String get importSettingsConfirm => '這將會取代您目前所有的模型、通道和類別。\n\n注意：獨立的提示庫不受此匯入影響。請使用「提示」畫面進行提示資料管理。';
 
   @override
   String get importAndReplace => '匯入並取代';
@@ -9441,8 +9379,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get enableApiDebug => '啟用 API 偵錯記錄';
 
   @override
-  String get apiDebugDesc =>
-      '將原始 API 要求和回應記錄到檔案中以進行疑難排解。警告：如果未遮罩，API 金鑰等敏感資料可能會被記錄。';
+  String get apiDebugDesc => '將原始 API 要求和回應記錄到檔案中以進行疑難排解。警告：如果未遮罩，API 金鑰等敏感資料可能會被記錄。';
 
   @override
   String get openLogFolder => '開啟記錄資料夾';
@@ -9466,8 +9403,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get assistantContextRatio => '助手摘要閾值';
 
   @override
-  String get assistantContextRatioDesc =>
-      '提示詞助手在上下文佔用達到模型視窗的該比例時自動摘要對話，騰出空間繼續工作。僅對已設定上下文大小的模型生效。';
+  String get assistantContextRatioDesc => '提示詞助手在上下文佔用達到模型視窗的該比例時自動摘要對話，騰出空間繼續工作。僅對已設定上下文大小的模型生效。';
 
   @override
   String get kbSubAgent => '知識庫子代理';
@@ -9730,8 +9666,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get shortcutsInactiveRegion => '目前不活動';
 
   @override
-  String get shortcutsActiveRegionNote =>
-      '這一組只作用於活動區，也就是上面點名的那一塊。點某個區即可把鍵盤交給它——正在聽鍵的那個區，選取項畫成強調色。';
+  String get shortcutsActiveRegionNote => '這一組只作用於活動區，也就是上面點名的那一塊。點某個區即可把鍵盤交給它——正在聽鍵的那個區，選取項畫成強調色。';
 
   @override
   String get shortcutsClose => '關閉';
@@ -10698,8 +10633,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get mobileSandboxActive => '行動裝置儲存限制';
 
   @override
-  String get mobileSandboxDesc =>
-      '在行動裝置上，操作系統可能會限制直接存取資料夾。建議使用頂部工具列中的「從圖庫匯入」按鈕。';
+  String get mobileSandboxDesc => '在行動裝置上，操作系統可能會限制直接存取資料夾。建議使用頂部工具列中的「從圖庫匯入」按鈕。';
 
   @override
   String get tapToPick => '點擊選取';
@@ -10732,8 +10666,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get safetySettings => '安全設定';
 
   @override
-  String get safetySettingsDesc =>
-      'Gemini 內容過濾閾值，隨每個請求送出（由嚴格到寬鬆）。Veo/Imagen 不支援。';
+  String get safetySettingsDesc => 'Gemini 內容過濾閾值，隨每個請求送出（由嚴格到寬鬆）。Veo/Imagen 不支援。';
 
   @override
   String get safetyCategoryHarassment => '騷擾內容';
@@ -10799,8 +10732,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get optCompactedNotice => '較早的對話已壓縮為摘要，以節省上下文。';
 
   @override
-  String get optRoundLimitNotice =>
-      '助手在這則訊息上已用完步驟上限，尚未給出最終答覆。傳送一則後續訊息（例如「繼續」）即可讓它接著做。';
+  String get optRoundLimitNotice => '助手在這則訊息上已用完步驟上限，尚未給出最終答覆。傳送一則後續訊息（例如「繼續」）即可讓它接著做。';
 
   @override
   String get optTruncatedTail => '回覆在輸出上限處被截斷';
@@ -11651,8 +11583,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   }
 
   @override
-  String get optModeSwitchBody =>
-      '任務預設和知識庫的對話不能接在一起，切換會開始一個新對話。目前的對話已儲存，可以隨時從「歷史對話」回來。';
+  String get optModeSwitchBody => '任務預設和知識庫的對話不能接在一起，切換會開始一個新對話。目前的對話已儲存，可以隨時從「歷史對話」回來。';
 
   @override
   String get optModeSwitchStart => '開始新對話';

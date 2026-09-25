@@ -128,7 +128,6 @@ class AppConstants {
     Color(0xFF009688), // Teal
     Color(0xFFE91E63), // Pink
     Color(0xFF3F51B5), // Indigo
-
     // Extended palette
     Color(0xFFFFEB3B), // Yellow
     Color(0xFF00BCD4), // Cyan
@@ -138,7 +137,6 @@ class AppConstants {
     Color(0xFF03A9F4), // Light Blue
     Color(0xFFCDDC39), // Lime
     Color(0xFFFFC107), // Amber
-
     // Neutral tones
     Color(0xFF795548), // Brown
     Color(0xFF607D8B), // Blue Grey
@@ -148,22 +146,22 @@ class AppConstants {
 
   static bool isImageFile(String path) {
     final ext = path.toLowerCase();
-    return ext.endsWith('.jpg') || 
-           ext.endsWith('.jpeg') || 
-           ext.endsWith('.png') || 
-           ext.endsWith('.gif') || 
-           ext.endsWith('.webp') || 
-           ext.endsWith('.bmp') ||
-           ext.endsWith('.avif');
+    return ext.endsWith('.jpg') ||
+        ext.endsWith('.jpeg') ||
+        ext.endsWith('.png') ||
+        ext.endsWith('.gif') ||
+        ext.endsWith('.webp') ||
+        ext.endsWith('.bmp') ||
+        ext.endsWith('.avif');
   }
 
   static bool isVideoFile(String path) {
     final ext = path.toLowerCase();
-    return ext.endsWith('.mp4') || 
-           ext.endsWith('.mkv') || 
-           ext.endsWith('.mov') || 
-           ext.endsWith('.avi') || 
-           ext.endsWith('.webm');
+    return ext.endsWith('.mp4') ||
+        ext.endsWith('.mkv') ||
+        ext.endsWith('.mov') ||
+        ext.endsWith('.avi') ||
+        ext.endsWith('.webm');
   }
 
   static bool isSupportedFile(String path) {
@@ -173,19 +171,19 @@ class AppConstants {
   static String formatAspectRatio(int width, int height) {
     if (width == 0 || height == 0) return '';
     final double ratio = width / height;
-    
+
     // Standard ratios and their decimal values
     final Map<String, double> standardRatios = {
       '1:1': 1.0,
-      '2:3': 2/3,
-      '3:2': 3/2,
-      '4:3': 4/3,
-      '3:4': 3/4,
+      '2:3': 2 / 3,
+      '3:2': 3 / 2,
+      '4:3': 4 / 3,
+      '3:4': 3 / 4,
       '5:4': 1.25,
       '4:5': 0.8,
-      '16:9': 16/9,
-      '9:16': 9/16,
-      '21:9': 21/9,
+      '16:9': 16 / 9,
+      '9:16': 9 / 16,
+      '21:9': 21 / 9,
     };
 
     String? bestMatch;

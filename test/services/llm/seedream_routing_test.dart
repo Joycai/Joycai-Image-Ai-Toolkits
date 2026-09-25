@@ -17,18 +17,20 @@ void main() {
   const pro = 'doubao-seedream-5-0-pro-260628';
   const lite = 'doubao-seedream-5.0-lite';
 
-  LLMModelConfig config(String channelType, String modelId,
-          {String endpoint = 'https://ark.cn-beijing.volces.com/api/v3',
-          String? tag,
-          String? wireProtocol}) =>
-      LLMModelConfig(
-        modelId: modelId,
-        channelType: channelType,
-        endpoint: endpoint,
-        apiKey: 'k',
-        tag: tag,
-        wireProtocol: wireProtocol,
-      );
+  LLMModelConfig config(
+    String channelType,
+    String modelId, {
+    String endpoint = 'https://ark.cn-beijing.volces.com/api/v3',
+    String? tag,
+    String? wireProtocol,
+  }) => LLMModelConfig(
+    modelId: modelId,
+    channelType: channelType,
+    endpoint: endpoint,
+    apiKey: 'k',
+    tag: tag,
+    wireProtocol: wireProtocol,
+  );
 
   group('menus and auto', () {
     test('on Ark: one route, Ark images, auto', () {
@@ -58,44 +60,51 @@ void main() {
 
     test('Ark endpoint id tagged image: unrecognized, Ark pinnable', () {
       final menu = LLMDispatcher.protocolMenu(
-          Vendors.volcengineArk, 'ep-20260918-abcde',
-          tag: 'image');
+        Vendors.volcengineArk,
+        'ep-20260918-abcde',
+        tag: 'image',
+      );
       expect(menu.recognized, isFalse);
       expect(menu.options, contains(WireProtocol.arkImages));
       // Pinned, it becomes a Seedream model with the protocol's table.
       final d = LLMDispatcher.descriptorFor(
-          channelType: Vendors.volcengineArk,
-          modelId: 'ep-20260918-abcde',
-          tag: 'image',
-          wireProtocol: WireProtocol.arkImages.id);
+        channelType: Vendors.volcengineArk,
+        modelId: 'ep-20260918-abcde',
+        tag: 'image',
+        wireProtocol: WireProtocol.arkImages.id,
+      );
       expect(d.family, ModelFamily.seedreamImage);
       expect(d.capabilities.isImageGenerator, isTrue);
-      expect(d.capabilities.imageParams.map((p) => p.key),
-          containsAll(['imageSize', 'aspectRatio', 'watermark']));
+      expect(
+        d.capabilities.imageParams.map((p) => p.key),
+        containsAll(['imageSize', 'aspectRatio', 'watermark']),
+      );
     });
 
     test('pins on a relay re-describe the model into that route', () {
       final chat = LLMDispatcher.descriptorFor(
-          channelType: Vendors.newApiOpenAI,
-          modelId: lite,
-          wireProtocol: WireProtocol.chatImage.id);
+        channelType: Vendors.newApiOpenAI,
+        modelId: lite,
+        wireProtocol: WireProtocol.chatImage.id,
+      );
       expect(chat.family, ModelFamily.other);
       expect(chat.capabilities.isImageGenerator, isTrue);
 
       final images = LLMDispatcher.descriptorFor(
-          channelType: Vendors.newApiOpenAI,
-          modelId: lite,
-          wireProtocol: WireProtocol.openaiImages.id);
+        channelType: Vendors.newApiOpenAI,
+        modelId: lite,
+        wireProtocol: WireProtocol.openaiImages.id,
+      );
       expect(images.family, ModelFamily.openaiImage);
 
       // Pinning auto's own route keeps the precise table.
       final ark = LLMDispatcher.descriptorFor(
-          channelType: Vendors.newApiOpenAI,
-          modelId: lite,
-          wireProtocol: WireProtocol.arkImages.id);
+        channelType: Vendors.newApiOpenAI,
+        modelId: lite,
+        wireProtocol: WireProtocol.arkImages.id,
+      );
       expect(ark.family, ModelFamily.seedreamImage);
-      expect(ark.capabilities.imageParams.map((p) => p.key),
-          contains('webSearch'));
+      expect(ark.capabilities.imageParams.map((p) => p.key), contains('webSearch'));
     });
   });
 
@@ -109,24 +118,32 @@ void main() {
       ]) {
         expect(dispatcher.streamIsSingleShot(c), isTrue, reason: c.channelType);
         expect(dispatcher.isBilledOnSubmit(c), isTrue, reason: c.channelType);
-        expect(dispatcher.streamSupportsTools(c), isFalse,
-            reason: c.channelType);
+        expect(dispatcher.streamSupportsTools(c), isFalse, reason: c.channelType);
       }
     });
 
     test('the deadline widens with the images one request may draw', () {
       final c = config(Vendors.volcengineArk, lite);
       expect(dispatcher.generateTimeout(c), const Duration(minutes: 5));
-      expect(dispatcher.generateTimeout(c, options: {'maxImages': '1'}),
-          const Duration(minutes: 5));
-      expect(dispatcher.generateTimeout(c, options: {'maxImages': '4'}),
-          const Duration(minutes: 7));
-      expect(dispatcher.generateTimeout(c, options: {'maxImages': '15'}),
-          const Duration(minutes: 14, seconds: 20));
       expect(
-          dispatcher.generateTimeout(config(Vendors.volcengineArk, pro),
-              options: {'imageTask': 'layers'}),
-          const Duration(minutes: 15));
+        dispatcher.generateTimeout(c, options: {'maxImages': '1'}),
+        const Duration(minutes: 5),
+      );
+      expect(
+        dispatcher.generateTimeout(c, options: {'maxImages': '4'}),
+        const Duration(minutes: 7),
+      );
+      expect(
+        dispatcher.generateTimeout(c, options: {'maxImages': '15'}),
+        const Duration(minutes: 14, seconds: 20),
+      );
+      expect(
+        dispatcher.generateTimeout(
+          config(Vendors.volcengineArk, pro),
+          options: {'imageTask': 'layers'},
+        ),
+        const Duration(minutes: 15),
+      );
     });
   });
 
@@ -152,32 +169,33 @@ void main() {
         ));
         request.response.headers.contentType = ContentType.json;
         final base = 'http://127.0.0.1:${server.port}';
-        request.response.write(jsonEncode({
-          'model': 'doubao-seedream-5-0-lite',
-          'created': 1,
-          'data': [
-            {'url': '$base/img/1.png', 'size': '2848x1600'},
-            {
-              'error': {
-                'code': 'OutputImageSensitiveContentDetected',
-                'message': 'blocked',
+        request.response.write(
+          jsonEncode({
+            'model': 'doubao-seedream-5-0-lite',
+            'created': 1,
+            'data': [
+              {'url': '$base/img/1.png', 'size': '2848x1600'},
+              {
+                'error': {'code': 'OutputImageSensitiveContentDetected', 'message': 'blocked'},
               },
-            },
-            {'url': '$base/img/2.png', 'size': '2848x1600'},
-          ],
-          'usage': {'generated_images': 2, 'output_tokens': 35600},
-        }));
+              {'url': '$base/img/2.png', 'size': '2848x1600'},
+            ],
+            'usage': {'generated_images': 2, 'output_tokens': 35600},
+          }),
+        );
         await request.response.close();
       });
     });
 
     tearDown(() => server.close(force: true));
 
-    test('Ark channel: POST {base}/images/generations with Ark\'s body',
-        () async {
+    test('Ark channel: POST {base}/images/generations with Ark\'s body', () async {
       final response = await LLMDispatcher().generate(
-        config(Vendors.volcengineArk, lite,
-            endpoint: 'http://127.0.0.1:${server.port}/api/plan/v3'),
+        config(
+          Vendors.volcengineArk,
+          lite,
+          endpoint: 'http://127.0.0.1:${server.port}/api/plan/v3',
+        ),
         [
           LLMMessage(
             role: LLMRole.user,
@@ -219,8 +237,7 @@ void main() {
 
     test('relay: the same body at the relay\'s Images path', () async {
       await LLMDispatcher().generate(
-        config(Vendors.newApiOpenAI, lite,
-            endpoint: 'http://127.0.0.1:${server.port}/v1'),
+        config(Vendors.newApiOpenAI, lite, endpoint: 'http://127.0.0.1:${server.port}/v1'),
         [LLMMessage(role: LLMRole.user, content: 'a poster')],
         options: {'imageSize': '2K', 'watermark': 'off'},
       );
@@ -239,8 +256,11 @@ void main() {
       final live = config(Vendors.volcengineArk, lite);
       expect(dispatcher.streamIsSingleShot(live), isFalse);
       expect(dispatcher.imageStreamChunkGap(live), const Duration(minutes: 5));
-      expect(dispatcher.isBilledOnSubmit(live), isTrue,
-          reason: 'still a billed generation: no retry after acceptance');
+      expect(
+        dispatcher.isBilledOnSubmit(live),
+        isTrue,
+        reason: 'still a billed generation: no retry after acceptance',
+      );
       expect(dispatcher.streamSupportsTools(live), isFalse);
 
       for (final c in [
@@ -273,51 +293,60 @@ void main() {
           await request.response.close();
           return;
         }
-        bodies.add((jsonDecode(await utf8.decodeStream(request)) as Map)
-            .cast<String, dynamic>());
+        bodies.add((jsonDecode(await utf8.decodeStream(request)) as Map).cast<String, dynamic>());
         final base = 'http://127.0.0.1:${server.port}';
         switch (answer) {
           case 'error':
             request.response.statusCode = 400;
             request.response.headers.contentType = ContentType.json;
-            request.response.write(jsonEncode({
-              'error': {
-                'code': 'InvalidParameter',
-                'message': 'size is invalid',
-                'param': 'size',
-                'type': 'BadRequest',
-              },
-            }));
+            request.response.write(
+              jsonEncode({
+                'error': {
+                  'code': 'InvalidParameter',
+                  'message': 'size is invalid',
+                  'param': 'size',
+                  'type': 'BadRequest',
+                },
+              }),
+            );
           case 'layers':
             // A decomposition, out of order, whose middle layer's link is
             // dead: the survivors must keep their own layer records.
             request.response.headers.contentType = ContentType.json;
-            request.response.write(jsonEncode({
-              'data': [
-                {
-                  'url': '$base/img/top.png',
-                  'z_index': 2,
-                  'name': 'top',
-                  'bounding_box': {'absolute': [10, 20, 30, 40]},
-                },
-                {'url': '$base/img/base.png', 'z_index': 0},
-                {
-                  'url': '$base/gone/mid.png',
-                  'z_index': 1,
-                  'name': 'mid',
-                  'bounding_box': {'absolute': [0, 0, 5, 5]},
-                },
-              ],
-              'usage': {'generated_images': 3},
-            }));
+            request.response.write(
+              jsonEncode({
+                'data': [
+                  {
+                    'url': '$base/img/top.png',
+                    'z_index': 2,
+                    'name': 'top',
+                    'bounding_box': {
+                      'absolute': [10, 20, 30, 40],
+                    },
+                  },
+                  {'url': '$base/img/base.png', 'z_index': 0},
+                  {
+                    'url': '$base/gone/mid.png',
+                    'z_index': 1,
+                    'name': 'mid',
+                    'bounding_box': {
+                      'absolute': [0, 0, 5, 5],
+                    },
+                  },
+                ],
+                'usage': {'generated_images': 3},
+              }),
+            );
           case 'json':
             request.response.headers.contentType = ContentType.json;
-            request.response.write(jsonEncode({
-              'data': [
-                {'url': '$base/img/1.png'},
-              ],
-              'usage': {'generated_images': 1},
-            }));
+            request.response.write(
+              jsonEncode({
+                'data': [
+                  {'url': '$base/img/1.png'},
+                ],
+                'usage': {'generated_images': 1},
+              }),
+            );
           default:
             // 'sse-gone': links that 404 when fetched.
             final dir = answer == 'sse-gone' ? 'gone' : 'img';
@@ -341,10 +370,7 @@ void main() {
             event({
               'type': 'image_generation.partial_failed',
               'image_index': 1,
-              'error': {
-                'code': 'OutputImageSensitiveContentDetected',
-                'message': 'blocked',
-              },
+              'error': {'code': 'OutputImageSensitiveContentDetected', 'message': 'blocked'},
             });
             event({
               'type': 'image_generation.partial_succeeded',
@@ -364,15 +390,21 @@ void main() {
 
     tearDown(() => server.close(force: true));
 
-    LLMModelConfig ark() => config(Vendors.volcengineArk, lite,
-        endpoint: 'http://127.0.0.1:${server.port}/api/plan/v3');
+    LLMModelConfig ark() => config(
+      Vendors.volcengineArk,
+      lite,
+      endpoint: 'http://127.0.0.1:${server.port}/api/plan/v3',
+    );
 
     Future<List<LLMResponseChunk>> run(LLMModelConfig c) => dispatcher
-        .generateStream(c, [LLMMessage(role: LLMRole.user, content: 'two')],
-            options: {'maxImages': '3', 'watermark': 'off'}).toList();
+        .generateStream(
+          c,
+          [LLMMessage(role: LLMRole.user, content: 'two')],
+          options: {'maxImages': '3', 'watermark': 'off'},
+        )
+        .toList();
 
-    test('each image arrives as its own chunk; failures and usage at the end',
-        () async {
+    test('each image arrives as its own chunk; failures and usage at the end', () async {
       final chunks = await run(ark());
       expect(bodies.single['stream'], isTrue);
       final images = chunks.where((c) => c.imagePart != null).toList();
@@ -381,51 +413,49 @@ void main() {
       expect(last.isDone, isTrue);
       expect(last.metadata?['image_count'], 2);
       expect(last.metadata?['failed_images'], 1);
-      expect(last.metadata?['ark_usage'], {
-        'generated_images': 2,
-        'output_tokens': 32448,
-      });
+      expect(last.metadata?['ark_usage'], {'generated_images': 2, 'output_tokens': 32448});
       expect(last.metadata?.containsKey('output_tokens'), isFalse);
     });
 
-    test('the closing chunk says how many references the stream request carried',
-        () async {
+    test('the closing chunk says how many references the stream request carried', () async {
       final chunks = await dispatcher.generateStream(ark(), [
-        LLMMessage(role: LLMRole.user, content: 'two', attachments: [
-          LLMAttachment.fromBytes(_png, 'image/png'),
-          LLMAttachment.fromBytes(_png, 'image/png'),
-        ]),
+        LLMMessage(
+          role: LLMRole.user,
+          content: 'two',
+          attachments: [
+            LLMAttachment.fromBytes(_png, 'image/png'),
+            LLMAttachment.fromBytes(_png, 'image/png'),
+          ],
+        ),
       ]).toList();
       expect(chunks.last.metadata?[inputImageCountKey], 2);
       // And a text-to-image stream says nothing.
-      expect((await run(ark())).last.metadata?.containsKey(inputImageCountKey),
-          isFalse);
+      expect((await run(ark())).last.metadata?.containsKey(inputImageCountKey), isFalse);
     });
 
-    test('SSE is recognised by its body, whatever the Content-Type says',
-        () async {
+    test('SSE is recognised by its body, whatever the Content-Type says', () async {
       answer = 'sse-octet';
       final chunks = await run(ark());
       expect(chunks.where((c) => c.imagePart != null), hasLength(2));
       expect(chunks.last.metadata?['image_count'], 2);
     });
 
-    test('a JSON answer to a stream request is read as the synchronous one',
-        () async {
+    test('a JSON answer to a stream request is read as the synchronous one', () async {
       answer = 'json';
       final chunks = await run(ark());
       expect(chunks.where((c) => c.imagePart != null), hasLength(1));
       expect(chunks.last.metadata?['image_count'], 1);
     });
 
-    test('a parameter error is the plain 400 envelope, not an event',
-        () async {
+    test('a parameter error is the plain 400 envelope, not an event', () async {
       answer = 'error';
       await expectLater(
         run(ark()),
-        throwsA(isA<LLMApiException>()
-            .having((e) => e.statusCode, 'status', 400)
-            .having((e) => e.message, 'message', contains('size is invalid'))),
+        throwsA(
+          isA<LLMApiException>()
+              .having((e) => e.statusCode, 'status', 400)
+              .having((e) => e.message, 'message', contains('size is invalid')),
+        ),
       );
     });
 
@@ -433,19 +463,22 @@ void main() {
       answer = 'sse-gone';
       await expectLater(
         run(ark()),
-        throwsA(isA<LLMApiException>()
-            .having((e) => e.message, 'message', contains('none of which'))),
+        throwsA(
+          isA<LLMApiException>().having((e) => e.message, 'message', contains('none of which')),
+        ),
       );
     });
 
     test('a decomposition keeps each image paired with its layer', () async {
       answer = 'layers';
-      final c = config(Vendors.volcengineArk, pro,
-          endpoint: 'http://127.0.0.1:${server.port}/api/plan/v3');
+      final c = config(
+        Vendors.volcengineArk,
+        pro,
+        endpoint: 'http://127.0.0.1:${server.port}/api/plan/v3',
+      );
       final history = [LLMMessage(role: LLMRole.user, content: 'split')];
 
-      final whole = await dispatcher.generate(c, history,
-          options: {'watermark': 'off'});
+      final whole = await dispatcher.generate(c, history, options: {'watermark': 'off'});
       expect(whole.generatedImages, hasLength(2));
       expect([for (final l in whole.imageLayers) l?.zIndex], [0, 2]);
       expect(whole.imageLayers.last!.name, 'top');
@@ -467,8 +500,7 @@ void main() {
 
     test('a relay gets the synchronous body — no `stream`', () async {
       answer = 'json';
-      await run(config(Vendors.newApiOpenAI, lite,
-          endpoint: 'http://127.0.0.1:${server.port}/v1'));
+      await run(config(Vendors.newApiOpenAI, lite, endpoint: 'http://127.0.0.1:${server.port}/v1'));
       expect(bodies.single.containsKey('stream'), isFalse);
     });
   });
@@ -476,4 +508,5 @@ void main() {
 
 /// A 1×1 transparent PNG — enough for the byte-sniffing download check.
 final Uint8List _png = base64Decode(
-    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==');
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+);

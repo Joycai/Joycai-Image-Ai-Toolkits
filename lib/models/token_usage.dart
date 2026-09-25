@@ -26,10 +26,10 @@ enum UsageBilling {
   /// anything a hand-edited fee group might hold — bills by request, which is
   /// how the usage page has always read an unknown mode.
   static UsageBilling parse(String? raw) => switch (raw ?? 'token') {
-        'token' => UsageBilling.token,
-        'spec' => UsageBilling.spec,
-        _ => UsageBilling.request,
-      };
+    'token' => UsageBilling.token,
+    'spec' => UsageBilling.spec,
+    _ => UsageBilling.request,
+  };
 }
 
 /// The `token_usage.output_spec` column, decoded: the output spec one
@@ -45,12 +45,7 @@ class UsageSpecSnapshot {
   /// without the flag cannot say, so reads as matched.
   final bool matched;
 
-  const UsageSpecSnapshot({
-    this.size,
-    this.quality,
-    this.seconds,
-    this.matched = true,
-  });
+  const UsageSpecSnapshot({this.size, this.quality, this.seconds, this.matched = true});
 
   /// Null for a missing, blank or malformed column.
   static UsageSpecSnapshot? tryDecode(Object? raw) {
@@ -74,19 +69,15 @@ class UsageSpecSnapshot {
   }
 
   String encode() => jsonEncode({
-        if (size != null) 'size': size,
-        if (quality != null) 'quality': quality,
-        if (seconds != null) 'seconds': seconds,
-        'matched': matched,
-      });
+    if (size != null) 'size': size,
+    if (quality != null) 'quality': quality,
+    if (seconds != null) 'seconds': seconds,
+    'matched': matched,
+  });
 
   /// As the usage table's 「规格」 column spells it: `1080p · high · 8s`, the
   /// absent dimensions left out — empty for a request that carried no spec.
-  String get label => [
-        ?size,
-        ?quality,
-        if (seconds != null) '${seconds}s',
-      ].join(' · ');
+  String get label => [?size, ?quality, if (seconds != null) '${seconds}s'].join(' · ');
 }
 
 /// The columns a spec-billed request leaves on its usage row: the output
@@ -135,22 +126,22 @@ class UsageSpecBilling {
 
   /// The row as inserted: all seven columns.
   Map<String, dynamic> toMap() => {
-        ...toOutputMap(),
-        'input_images': inputImages,
-        'input_units': inputUnits,
-        'input_unit_price': inputUnitPrice,
-      };
+    ...toOutputMap(),
+    'input_images': inputImages,
+    'input_units': inputUnits,
+    'input_unit_price': inputUnitPrice,
+  };
 
   /// The output four alone — what re-pricing a row writes. A video settle
   /// knows the seconds that were rendered and nothing about the images the
   /// submit sent, so writing the input three from it would zero what the
   /// submit recorded.
   Map<String, dynamic> toOutputMap() => {
-        'output_units': units,
-        'output_unit_price': unitPrice,
-        'output_unit': unit?.name,
-        'output_spec': snapshot?.encode(),
-      };
+    'output_units': units,
+    'output_unit_price': unitPrice,
+    'output_unit': unit?.name,
+    'output_spec': snapshot?.encode(),
+  };
 
   /// Null when [map] says nothing in any of the seven columns — every row of
   /// the other two billing modes. "Nothing" is NULL *or zero* for the five
@@ -301,34 +292,34 @@ class TokenUsage {
     }
     return switch (billing) {
       UsageBilling.spec => (
-          input: 0.0,
-          cache: 0.0,
-          output: 0.0,
-          request: 0.0,
-          spec: spec?.cost ?? 0.0,
-          specInput: spec?.inputCost ?? 0.0,
-          reported: 0.0,
-        ),
+        input: 0.0,
+        cache: 0.0,
+        output: 0.0,
+        request: 0.0,
+        spec: spec?.cost ?? 0.0,
+        specInput: spec?.inputCost ?? 0.0,
+        reported: 0.0,
+      ),
       // A request-billed group can charge reference images too (`D2e`):
       // the row's input three are then set, its output four empty.
       UsageBilling.request => (
-          input: 0.0,
-          cache: 0.0,
-          output: 0.0,
-          request: requestCount * requestPrice,
-          spec: 0.0,
-          specInput: spec?.inputCost ?? 0.0,
-          reported: 0.0,
-        ),
+        input: 0.0,
+        cache: 0.0,
+        output: 0.0,
+        request: requestCount * requestPrice,
+        spec: 0.0,
+        specInput: spec?.inputCost ?? 0.0,
+        reported: 0.0,
+      ),
       UsageBilling.token => (
-          input: inputTokens * inputPrice / 1000000,
-          cache: cacheTokens * effectiveCachePrice / 1000000,
-          output: outputTokens * outputPrice / 1000000,
-          request: 0.0,
-          spec: 0.0,
-          specInput: 0.0,
-          reported: 0.0,
-        ),
+        input: inputTokens * inputPrice / 1000000,
+        cache: cacheTokens * effectiveCachePrice / 1000000,
+        output: outputTokens * outputPrice / 1000000,
+        request: 0.0,
+        spec: 0.0,
+        specInput: 0.0,
+        reported: 0.0,
+      ),
     };
   }
 
@@ -370,67 +361,64 @@ class TokenUsage {
   /// the nudge to go and add the row would be sending the user to fix
   /// nothing.
   bool get unmatched =>
-      billing == UsageBilling.spec &&
-      spec?.snapshot?.matched == false &&
-      reportedCost == null;
+      billing == UsageBilling.spec && spec?.snapshot?.matched == false && reportedCost == null;
 
   /// The spec this row was billed at; null for a row of another mode or one
   /// without the snapshot, empty for a request that carried no spec at all.
-  String? get specLabel =>
-      billing == UsageBilling.spec ? spec?.snapshot?.label : null;
+  String? get specLabel => billing == UsageBilling.spec ? spec?.snapshot?.label : null;
 
   factory TokenUsage.fromMap(Map<String, dynamic> map) => TokenUsage(
-        id: _int(map['id']),
-        taskId: _text(map['task_id']),
-        modelId: _text(map['model_id']) ?? '',
-        modelDbId: _int(map['model_pk']),
-        timestamp: DateTime.tryParse(_text(map['timestamp']) ?? '') ??
-            DateTime.fromMillisecondsSinceEpoch(0),
-        inputTokens: _int(map['input_tokens']) ?? 0,
-        cacheTokens: _int(map['cache_tokens']) ?? 0,
-        outputTokens: _int(map['output_tokens']) ?? 0,
-        inputPrice: _double(map['input_price']) ?? 0.0,
-        outputPrice: _double(map['output_price']) ?? 0.0,
-        cachePrice: _double(map['cache_price']),
-        requestCount: _int(map['request_count']) ?? 1,
-        requestPrice: _double(map['request_price']) ?? 0.0,
-        billingMode: _text(map['billing_mode']) ?? 'token',
-        spec: UsageSpecBilling.fromMap(map),
-        // A negative or non-finite cell is nobody's report.
-        reportedCost: switch (_double(map['reported_cost'])) {
-          final v? when v.isFinite && v >= 0 => v,
-          _ => null,
-        },
-      );
+    id: _int(map['id']),
+    taskId: _text(map['task_id']),
+    modelId: _text(map['model_id']) ?? '',
+    modelDbId: _int(map['model_pk']),
+    timestamp:
+        DateTime.tryParse(_text(map['timestamp']) ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0),
+    inputTokens: _int(map['input_tokens']) ?? 0,
+    cacheTokens: _int(map['cache_tokens']) ?? 0,
+    outputTokens: _int(map['output_tokens']) ?? 0,
+    inputPrice: _double(map['input_price']) ?? 0.0,
+    outputPrice: _double(map['output_price']) ?? 0.0,
+    cachePrice: _double(map['cache_price']),
+    requestCount: _int(map['request_count']) ?? 1,
+    requestPrice: _double(map['request_price']) ?? 0.0,
+    billingMode: _text(map['billing_mode']) ?? 'token',
+    spec: UsageSpecBilling.fromMap(map),
+    // A negative or non-finite cell is nobody's report.
+    reportedCost: switch (_double(map['reported_cost'])) {
+      final v? when v.isFinite && v >= 0 => v,
+      _ => null,
+    },
+  );
 
   /// The row as inserted. A row without [spec] writes its seven columns as
   /// NULL, so it prices exactly as it did before spec billing existed; one
   /// without a reported cost writes NULL there too.
   Map<String, dynamic> toMap() => {
-        if (id != null) 'id': id,
-        'task_id': taskId,
-        'model_id': modelId,
-        'model_pk': modelDbId,
-        'timestamp': timestamp.toIso8601String(),
-        'input_tokens': inputTokens,
-        'cache_tokens': cacheTokens,
-        'output_tokens': outputTokens,
-        'input_price': inputPrice,
-        'cache_price': cachePrice,
-        'output_price': outputPrice,
-        'request_count': requestCount,
-        'request_price': requestPrice,
-        'billing_mode': billingMode,
-        ...spec?.toMap() ??
-            const {
-              'output_units': null,
-              'output_unit_price': null,
-              'output_unit': null,
-              'output_spec': null,
-              'input_images': null,
-              'input_units': null,
-              'input_unit_price': null,
-            },
-        'reported_cost': reportedCost,
-      };
+    if (id != null) 'id': id,
+    'task_id': taskId,
+    'model_id': modelId,
+    'model_pk': modelDbId,
+    'timestamp': timestamp.toIso8601String(),
+    'input_tokens': inputTokens,
+    'cache_tokens': cacheTokens,
+    'output_tokens': outputTokens,
+    'input_price': inputPrice,
+    'cache_price': cachePrice,
+    'output_price': outputPrice,
+    'request_count': requestCount,
+    'request_price': requestPrice,
+    'billing_mode': billingMode,
+    ...spec?.toMap() ??
+        const {
+          'output_units': null,
+          'output_unit_price': null,
+          'output_unit': null,
+          'output_spec': null,
+          'input_images': null,
+          'input_units': null,
+          'input_unit_price': null,
+        },
+    'reported_cost': reportedCost,
+  };
 }

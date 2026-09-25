@@ -112,11 +112,13 @@ class _ResultFeedbackDialogState extends State<ResultFeedbackDialog> {
   void _submit() {
     final satisfied = _satisfied;
     if (satisfied == null) return;
-    Navigator.of(context).pop<ResultFeedback>(ResultFeedback(
-      satisfied: satisfied,
-      reasons: satisfied ? const [] : _reasons.toList(),
-      note: _controller.text.trim(),
-    ));
+    Navigator.of(context).pop<ResultFeedback>(
+      ResultFeedback(
+        satisfied: satisfied,
+        reasons: satisfied ? const [] : _reasons.toList(),
+        note: _controller.text.trim(),
+      ),
+    );
   }
 
   void _rate(bool satisfied) {
@@ -132,10 +134,10 @@ class _ResultFeedbackDialogState extends State<ResultFeedbackDialog> {
   }
 
   String _hint(AppLocalizations l10n) => switch (_satisfied) {
-        true => l10n.optFeedbackHintSatisfied,
-        false => l10n.optFeedbackHintUnsatisfied,
-        null => l10n.optResultFeedbackHint,
-      };
+    true => l10n.optFeedbackHintSatisfied,
+    false => l10n.optFeedbackHintUnsatisfied,
+    null => l10n.optResultFeedbackHint,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -343,9 +345,7 @@ class _Heading extends StatelessWidget {
             height: AppSize.iconButton,
           ),
           style: IconButton.styleFrom(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadius.control),
-            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.control)),
           ),
         ),
       ],
@@ -489,10 +489,7 @@ class _VerdictTile extends StatelessWidget {
             decoration: BoxDecoration(
               color: selected ? scheme.accentTint : ink.withValues(alpha: 0.08),
               borderRadius: radius,
-              border: Border.all(
-                width: 2,
-                color: selected ? scheme.primary : Colors.transparent,
-              ),
+              border: Border.all(width: 2, color: selected ? scheme.primary : Colors.transparent),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -526,11 +523,7 @@ class _VerdictTile extends StatelessWidget {
 /// `3b` 原因标签: a 26px pill. Off, the glass ink at 8%; on, the accent at
 /// 22% with a 1px accent ring and the deep accent ink.
 class _ReasonPill extends StatelessWidget {
-  const _ReasonPill({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
+  const _ReasonPill({required this.label, required this.selected, required this.onTap});
 
   final String label;
   final bool selected;
@@ -562,9 +555,7 @@ class _ReasonPill extends StatelessWidget {
                   ? scheme.primary.withValues(alpha: 0.22)
                   : ink.withValues(alpha: 0.08),
               borderRadius: radius,
-              border: Border.all(
-                color: selected ? scheme.primary : Colors.transparent,
-              ),
+              border: Border.all(color: selected ? scheme.primary : Colors.transparent),
             ),
             // A Row, not an aligned Container: alignment makes a Container
             // fill its constraints, and under a Wrap that is the whole row.
@@ -641,9 +632,7 @@ class _NoteField extends StatelessWidget {
                 cursorWidth: 1.5,
                 style: body.copyWith(color: ink),
                 decoration: null,
-                inputFormatters: [
-                  LengthLimitingTextInputFormatter(kResultFeedbackMaxLength),
-                ],
+                inputFormatters: [LengthLimitingTextInputFormatter(kResultFeedbackMaxLength)],
               ),
             ),
             if (controller.text.isEmpty)
@@ -736,10 +725,7 @@ class _ShortcutHint extends StatelessWidget {
       l10n.optFeedbackSendShortcut(modifier),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      style: textTheme.labelSmall!.metricsOnly.copyWith(
-        fontWeight: FontWeight.w400,
-        color: ink2,
-      ),
+      style: textTheme.labelSmall!.metricsOnly.copyWith(fontWeight: FontWeight.w400, color: ink2),
     );
   }
 }

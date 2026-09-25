@@ -29,15 +29,12 @@ class ChannelSectionLabel extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    letterSpacing: AppType.trackedLabelSpacing,
-                    color: colorScheme.accentText,
-                  ),
+                letterSpacing: AppType.trackedLabelSpacing,
+                color: colorScheme.accentText,
+              ),
             ),
           ),
-          if (trailing != null) ...[
-            const SizedBox(width: AppSpace.s6),
-            trailing!,
-          ],
+          if (trailing != null) ...[const SizedBox(width: AppSpace.s6), trailing!],
         ],
       ),
     );
@@ -71,21 +68,16 @@ class ChannelFieldLabel extends StatelessWidget {
                     text,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.labelMedium
-                        ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
-                if (badge != null) ...[
-                  const SizedBox(width: AppSpace.s6),
-                  badge!,
-                ],
+                if (badge != null) ...[const SizedBox(width: AppSpace.s6), badge!],
               ],
             ),
           ),
-          if (trailing != null) ...[
-            const SizedBox(width: AppSpace.s6),
-            trailing!,
-          ],
+          if (trailing != null) ...[const SizedBox(width: AppSpace.s6), trailing!],
         ],
       ),
     );
@@ -186,15 +178,14 @@ class _ChannelFieldState extends State<ChannelField> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final base = theme.textTheme.bodyMedium ?? const TextStyle();
-    final style =
-        (widget.mono ? base.mono : base).copyWith(color: colorScheme.onSurface);
+    final style = (widget.mono ? base.mono : base).copyWith(color: colorScheme.onSurface);
     final vertical = pinnedFieldInset(context, style, AppSize.control);
     final hasError = widget.errorText != null;
 
     OutlineInputBorder stroke(Color color) => OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadius.control),
-          borderSide: BorderSide(color: color),
-        );
+      borderRadius: BorderRadius.circular(AppRadius.control),
+      borderSide: BorderSide(color: color),
+    );
 
     final field = TextField(
       controller: widget.controller,
@@ -218,19 +209,17 @@ class _ChannelFieldState extends State<ChannelField> {
         ),
         prefixIcon: widget.prefixIcon == null
             ? null
-            : Icon(widget.prefixIcon,
-                size: AppSize.iconMd, color: colorScheme.outline),
-        prefixIconConstraints:
-            const BoxConstraints(minWidth: AppSize.control, minHeight: 0),
+            : Icon(widget.prefixIcon, size: AppSize.iconMd, color: colorScheme.outline),
+        prefixIconConstraints: const BoxConstraints(minWidth: AppSize.control, minHeight: 0),
         suffixIcon: widget.obscurable
             ? IconButton(
-                icon: Icon(_obscured
-                    ? Icons.visibility_outlined
-                    : Icons.visibility_off_outlined),
+                icon: Icon(_obscured ? Icons.visibility_outlined : Icons.visibility_off_outlined),
                 iconSize: AppSize.iconMd,
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints.tightFor(
-                    width: AppSize.compact, height: AppSize.compact),
+                  width: AppSize.compact,
+                  height: AppSize.compact,
+                ),
                 style: IconButton.styleFrom(
                   foregroundColor: colorScheme.onSurfaceVariant,
                   minimumSize: Size.zero,
@@ -239,14 +228,11 @@ class _ChannelFieldState extends State<ChannelField> {
                 onPressed: () => setState(() => _obscured = !_obscured),
               )
             : null,
-        suffixIconConstraints:
-            const BoxConstraints(minWidth: AppSize.control, minHeight: 0),
+        suffixIconConstraints: const BoxConstraints(minWidth: AppSize.control, minHeight: 0),
         border: stroke(hasError ? colorScheme.error : colorScheme.outlineVariant),
-        enabledBorder:
-            stroke(hasError ? colorScheme.error : colorScheme.outlineVariant),
+        enabledBorder: stroke(hasError ? colorScheme.error : colorScheme.outlineVariant),
         focusedBorder: stroke(hasError ? colorScheme.error : colorScheme.primary),
-        disabledBorder: stroke(
-            colorScheme.outlineVariant.withValues(alpha: AppAlpha.disabled)),
+        disabledBorder: stroke(colorScheme.outlineVariant.withValues(alpha: AppAlpha.disabled)),
       ),
     );
 
@@ -274,12 +260,9 @@ class _ChannelFieldState extends State<ChannelField> {
                     duration: AppMotion.durationOf(context, AppMotion.hover),
                     curve: AppMotion.quick,
                     decoration: BoxDecoration(
-                      borderRadius:
-                          BorderRadius.circular(AppRadius.control + _ring),
+                      borderRadius: BorderRadius.circular(AppRadius.control + _ring),
                       border: Border.all(
-                        color: _focused && !hasError
-                            ? colorScheme.accentRing
-                            : Colors.transparent,
+                        color: _focused && !hasError ? colorScheme.accentRing : Colors.transparent,
                         width: _ring,
                       ),
                     ),

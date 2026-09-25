@@ -31,8 +31,8 @@ void main() {
     required bool seesImages,
     List<Map<String, String>> refs = _refs,
   }) async {
-    PromptOptimizerAgent.debugRequestOverride =
-        (messages, tools, options) async => LLMResponse(text: 'ok');
+    PromptOptimizerAgent.debugRequestOverride = (messages, tools, options) async =>
+        LLMResponse(text: 'ok');
     session.addUserTurn('what is in reference image 1?');
     await PromptOptimizerAgent.runTurn(
       session: session,
@@ -43,9 +43,9 @@ void main() {
   }
 
   List<OptimizerChatEntry> notices(PromptOptimizerSession session) => [
-        for (final e in session.transcript)
-          if (e.text == PromptOptimizerAgent.imagesNotOfferedNoticeToken) e,
-      ];
+    for (final e in session.transcript)
+      if (e.text == PromptOptimizerAgent.imagesNotOfferedNoticeToken) e,
+  ];
 
   test('a blind model with images to read says so, between the question and the answer', () async {
     final session = PromptOptimizerSession();
@@ -54,11 +54,10 @@ void main() {
     final notice = notices(session).single;
     expect(notice.note, '2');
     expect(notice.modelDbId, 7);
-    expect([for (final e in session.transcript) e.kind], [
-      OptimizerEntryKind.user,
-      OptimizerEntryKind.notice,
-      OptimizerEntryKind.assistant,
-    ]);
+    expect(
+      [for (final e in session.transcript) e.kind],
+      [OptimizerEntryKind.user, OptimizerEntryKind.notice, OptimizerEntryKind.assistant],
+    );
   });
 
   test('says it once per model, and again for another blind model', () async {
@@ -88,27 +87,29 @@ void main() {
     await tester.runAsync(() => turn(session, model: 7, seesImages: false));
 
     int? opened;
-    await tester.pumpWidget(ChangeNotifierProvider<WorkbenchUIState>.value(
-      value: WorkbenchUIState()..optimizerSession = session,
-      child: MaterialApp(
-        locale: const Locale('en'),
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: Scaffold(
-          body: PromptOptimizerChatView(
-            inputCtrl: TextEditingController(),
-            onSend: () {},
-            onRetry: () {},
-            onApplyPrompt: (_) {},
-            onApplyKbEdit: (_) {},
-            onRejectKbEdit: (_) {},
-            onAnswerAskUser: (_, _) {},
-            onOpenModelSettings: (id) => opened = id,
-            isBusy: false,
+    await tester.pumpWidget(
+      ChangeNotifierProvider<WorkbenchUIState>.value(
+        value: WorkbenchUIState()..optimizerSession = session,
+        child: MaterialApp(
+          locale: const Locale('en'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: PromptOptimizerChatView(
+              inputCtrl: TextEditingController(),
+              onSend: () {},
+              onRetry: () {},
+              onApplyPrompt: (_) {},
+              onApplyKbEdit: (_) {},
+              onRejectKbEdit: (_) {},
+              onAnswerAskUser: (_, _) {},
+              onOpenModelSettings: (id) => opened = id,
+              isBusy: false,
+            ),
           ),
         ),
       ),
-    ));
+    );
     await tester.pump();
 
     expect(find.text(l10n.optImagesNotOfferedTitle), findsOneWidget);

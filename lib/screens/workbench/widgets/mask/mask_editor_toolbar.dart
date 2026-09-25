@@ -79,8 +79,9 @@ class MaskEditorToolbar extends StatefulWidget {
   static TextStyle _captionStyle(BuildContext context) =>
       Theme.of(context).textTheme.labelSmall!.metricsOnly.copyWith(fontWeight: FontWeight.w400);
 
-  static TextStyle _monoStyle(BuildContext context) =>
-      Theme.of(context).textTheme.labelSmall!.metricsOnly.mono.copyWith(fontWeight: FontWeight.w400);
+  static TextStyle _monoStyle(BuildContext context) => Theme.of(
+    context,
+  ).textTheme.labelSmall!.metricsOnly.mono.copyWith(fontWeight: FontWeight.w400);
 
   static String _compactReadout(double brushSize, double opacity) =>
       '${brushSize.round()} px · ${(opacity * 100).round()}%';
@@ -100,7 +101,8 @@ class MaskEditorToolbar extends StatefulWidget {
     final source = Provider.of<WorkbenchUIState>(context, listen: false).maskEditorSourceImage;
     String? caption;
     if (source != null) {
-      caption = _caption(l10n, ImageMetadataService().peek(source.path)) ??
+      caption =
+          _caption(l10n, ImageMetadataService().peek(source.path)) ??
           l10n.maskSourceCaption(8888, 8888);
     }
     final metrics = _Metrics.of(context, caption: caption);
@@ -154,7 +156,8 @@ class _Metrics {
     final captionStyle = MaskEditorToolbar._captionStyle(context);
     final saveStyle = _TintedSaveButton.labelStyle(context);
     final subtitleStyle = _TintedSaveButton.subtitleStyle(context);
-    double width(String text, TextStyle style) => measureGlassText(context, text, style).ceilToDouble();
+    double width(String text, TextStyle style) =>
+        measureGlassText(context, text, style).ceilToDouble();
     double lineHeight(TextStyle style) {
       final painter = TextPainter(
         text: TextSpan(text: 'Ag', style: style),
@@ -205,7 +208,10 @@ class _Plan {
   /// The row's width under this plan. Mirrors `_buildRow` item for item.
   double widthWith(_Metrics m, {required int swatchCount}) {
     double slider(double label, double reserve) =>
-        (sliderLabels ? label + _GlassSlider.side : 0) + _GlassSlider.track + _GlassSlider.side + reserve;
+        (sliderLabels ? label + _GlassSlider.side : 0) +
+        _GlassSlider.track +
+        _GlassSlider.side +
+        reserve;
     double twoLine(double label) => subtitles ? math.max(label, m.subtitle) : label;
 
     final parts = <double>[
@@ -254,13 +260,10 @@ class _MaskEditorToolbarState extends State<MaskEditorToolbar> {
   /// flattened to one of the two extremes on export, so offering them there
   /// would be offering a choice the file cannot keep.
   List<(Color, String)> _swatches(AppLocalizations l10n) => [
-        (Colors.white, l10n.white),
-        (Colors.black, l10n.black),
-        if (!widget.isBinaryMode) ...[
-          (Colors.red, l10n.red),
-          (Colors.green, l10n.green),
-        ],
-      ];
+    (Colors.white, l10n.white),
+    (Colors.black, l10n.black),
+    if (!widget.isBinaryMode) ...[(Colors.red, l10n.red), (Colors.green, l10n.green)],
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -419,19 +422,18 @@ class _MaskEditorToolbarState extends State<MaskEditorToolbar> {
       required String label,
       required String readout,
       required Widget slider,
-    }) =>
-        SubmenuButton(
-          leadingIcon: Icon(icon, size: AppSize.iconLg),
-          menuChildren: [slider],
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(label),
-              const SizedBox(width: AppSpace.s16),
-              Text(readout, style: mono),
-            ],
-          ),
-        );
+    }) => SubmenuButton(
+      leadingIcon: Icon(icon, size: AppSize.iconLg),
+      menuChildren: [slider],
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(label),
+          const SizedBox(width: AppSpace.s16),
+          Text(readout, style: mono),
+        ],
+      ),
+    );
 
     return MenuAnchor(
       menuChildren: [
@@ -505,7 +507,8 @@ class _MaskEditorToolbarState extends State<MaskEditorToolbar> {
             child: Text(l10n.maskSaveComposite),
           ),
         if (p.foldClear) ...[
-          if (p.foldSliders || p.foldColors || p.foldBinary || p.foldComposite) const Divider(height: 9),
+          if (p.foldSliders || p.foldColors || p.foldBinary || p.foldComposite)
+            const Divider(height: 9),
           MenuItemButton(
             leadingIcon: Icon(
               Icons.delete_sweep_outlined,
@@ -513,10 +516,7 @@ class _MaskEditorToolbarState extends State<MaskEditorToolbar> {
               color: widget.hasPaths ? scheme.error : null,
             ),
             onPressed: widget.hasPaths ? widget.onClear : null,
-            child: Text(
-              l10n.clear,
-              style: widget.hasPaths ? TextStyle(color: scheme.error) : null,
-            ),
+            child: Text(l10n.clear, style: widget.hasPaths ? TextStyle(color: scheme.error) : null),
           ),
         ],
       ],
@@ -749,7 +749,9 @@ class _Swatches extends StatelessWidget {
                   // A faint inner edge so white reads on light glass and
                   // black on dark.
                   border: Border.all(color: ink.withValues(alpha: 0.15)),
-                  boxShadow: isSelected ? [BoxShadow(color: scheme.primary, spreadRadius: 2)] : null,
+                  boxShadow: isSelected
+                      ? [BoxShadow(color: scheme.primary, spreadRadius: 2)]
+                      : null,
                 ),
               ),
             ),
@@ -834,8 +836,9 @@ class _OutlinedSaveButtonState extends State<_OutlinedSaveButton> {
                         widget.subtitle!,
                         maxLines: 1,
                         softWrap: false,
-                        style: _TintedSaveButton.subtitleStyle(context)
-                            .copyWith(color: ink.withValues(alpha: ink.a * 0.7)),
+                        style: _TintedSaveButton.subtitleStyle(
+                          context,
+                        ).copyWith(color: ink.withValues(alpha: ink.a * 0.7)),
                       ),
                   ],
                 ),
@@ -866,17 +869,13 @@ class _TintedSaveButton extends StatelessWidget {
   /// Horizontal padding around the text, 12px a side.
   static const double chrome = 12 + 12;
 
-  static TextStyle labelStyle(BuildContext context) => Theme.of(context)
-      .textTheme
-      .bodySmall!
-      .metricsOnly
-      .copyWith(fontWeight: FontWeight.w600, height: 1.15);
+  static TextStyle labelStyle(BuildContext context) => Theme.of(
+    context,
+  ).textTheme.bodySmall!.metricsOnly.copyWith(fontWeight: FontWeight.w600, height: 1.15);
 
-  static TextStyle subtitleStyle(BuildContext context) => Theme.of(context)
-      .textTheme
-      .labelSmall!
-      .metricsOnly
-      .copyWith(fontWeight: FontWeight.w400, height: 1.15);
+  static TextStyle subtitleStyle(BuildContext context) => Theme.of(
+    context,
+  ).textTheme.labelSmall!.metricsOnly.copyWith(fontWeight: FontWeight.w400, height: 1.15);
 
   @override
   Widget build(BuildContext context) {
@@ -906,9 +905,9 @@ class _TintedSaveButton extends StatelessWidget {
                             subtitle!,
                             maxLines: 1,
                             softWrap: false,
-                            style: subtitleStyle(context).copyWith(
-                              color: scheme.onPrimary.withValues(alpha: 0.85),
-                            ),
+                            style: subtitleStyle(
+                              context,
+                            ).copyWith(color: scheme.onPrimary.withValues(alpha: 0.85)),
                           ),
                       ],
                     ),

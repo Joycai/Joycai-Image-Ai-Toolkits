@@ -45,9 +45,7 @@ void main() {
     env.dispose();
   });
 
-  testWidgets('the gallery deletes through the shared confirmation', (
-    WidgetTester tester,
-  ) async {
+  testWidgets('the gallery deletes through the shared confirmation', (WidgetTester tester) async {
     await mountApp(
       tester,
       env: env,
@@ -56,8 +54,7 @@ void main() {
       label: 'workbench-delete-scope',
     );
 
-    expect(find.byType(ImageCard), findsWidgets,
-        reason: 'the gallery needs something to delete');
+    expect(find.byType(ImageCard), findsWidgets, reason: 'the gallery needs something to delete');
 
     await tester.tap(find.byType(ImageCard).first, buttons: kSecondaryButton);
     await settle(tester);
@@ -66,9 +63,13 @@ void main() {
       of: find.byType(AppGlassMenu),
       matching: find.text('删除'),
     );
-    expect(deleteRow, findsOneWidget,
-        reason: 'the row no longer says 「移到回收站」 on Windows and 「删除」 '
-            'elsewhere — the dialog is what names the outcome now');
+    expect(
+      deleteRow,
+      findsOneWidget,
+      reason:
+          'the row no longer says 「移到回收站」 on Windows and 「删除」 '
+          'elsewhere — the dialog is what names the outcome now',
+    );
 
     // The shared run asks the filesystem whether a trash exists before it can
     // word the confirmation, and that answer only arrives out here.
@@ -85,16 +86,17 @@ void main() {
     // The shared dialog's heading — the old one-line workbench confirmation
     // had no such thing, so this is the proof the two paths are one.
     expect(
-      find.descendant(
-        of: find.byType(AppDialog),
-        matching: find.byType(TransferDialogHeading),
-      ),
+      find.descendant(of: find.byType(AppDialog), matching: find.byType(TransferDialogHeading)),
       findsOneWidget,
       reason: 'the workbench must be showing the browser\'s delete dialog',
     );
-    expect(find.text('删除文件？'), findsNothing,
-        reason: 'that was the old one-line confirmation, whose macOS branch '
-            'deleted permanently');
+    expect(
+      find.text('删除文件？'),
+      findsNothing,
+      reason:
+          'that was the old one-line confirmation, whose macOS branch '
+          'deleted permanently',
+    );
     // The point of the unification, in one assertion: where the platform has
     // a trash, the workbench offers the trash. The old implementation said
     // 「删除文件？」 here and then called `File.delete()` on everything but

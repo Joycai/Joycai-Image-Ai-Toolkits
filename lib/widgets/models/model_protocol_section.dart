@@ -30,8 +30,7 @@ String modelKindLabel(AppLocalizations l10n, String tag) {
 ///
 /// Read from the capability table the dispatcher resolves for the form as it
 /// stands, so a pin on the Images API lists the Images API's parameters.
-List<String> paramSummaryItems(
-    AppLocalizations l10n, ModelCapabilities caps, Surface surface) {
+List<String> paramSummaryItems(AppLocalizations l10n, ModelCapabilities caps, Surface surface) {
   final video = surface == Surface.videoJob;
   final seen = <String>{if (video) l10n.resolution, if (video) l10n.aspectRatio};
   final items = <String>[...seen];
@@ -48,19 +47,19 @@ List<String> paramSummaryItems(
 }
 
 String? _paramName(AppLocalizations l10n, String labelKey, bool video) => switch (labelKey) {
-      'resolution' => video ? l10n.resolution : l10n.imageSizeLabel,
-      'aspectRatio' => l10n.aspectRatio,
-      'quality' => l10n.quality,
-      'videoSeconds' => l10n.videoSeconds,
-      'promptExtend' => l10n.promptExtend,
-      'imageTask' => l10n.paramImageTask,
-      'maxImages' => l10n.paramMaxImages,
-      'outputFormat' => l10n.paramOutputFormat,
-      'optimizeMode' => l10n.paramOptimizeMode,
-      'webSearch' => l10n.paramWebSearch,
-      'watermark' => l10n.paramWatermark,
-      _ => null,
-    };
+  'resolution' => video ? l10n.resolution : l10n.imageSizeLabel,
+  'aspectRatio' => l10n.aspectRatio,
+  'quality' => l10n.quality,
+  'videoSeconds' => l10n.videoSeconds,
+  'promptExtend' => l10n.promptExtend,
+  'imageTask' => l10n.paramImageTask,
+  'maxImages' => l10n.paramMaxImages,
+  'outputFormat' => l10n.paramOutputFormat,
+  'optimizeMode' => l10n.paramOptimizeMode,
+  'webSearch' => l10n.paramWebSearch,
+  'watermark' => l10n.paramWatermark,
+  _ => null,
+};
 
 /// The model editor's 「请求方式 · 接口协议」 section (spec D1c `1a`, `1b`,
 /// `1e`).
@@ -131,18 +130,20 @@ class ModelProtocolSection extends StatelessWidget {
       // ④: nothing to choose — the field says 「不可用」 and opens nothing,
       // and the reason follows in the error tone.
       ProtocolSectionForm.notice => Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const ModelEditUnavailableField(),
-            const SizedBox(height: AppSpace.s6),
-            ModelEditNotice(
-              tone: ModelEditTone.error,
-              text: l10n.protocolNoSurface(
-                  protocolFamilyFormatName(channelFamily), modelKindLabel(l10n, kind)),
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const ModelEditUnavailableField(),
+          const SizedBox(height: AppSpace.s6),
+          ModelEditNotice(
+            tone: ModelEditTone.error,
+            text: l10n.protocolNoSurface(
+              protocolFamilyFormatName(channelFamily),
+              modelKindLabel(l10n, kind),
             ),
-          ],
-        ),
+          ),
+        ],
+      ),
       ProtocolSectionForm.readOnly => _readOnly(context, l10n),
       ProtocolSectionForm.dropdown =>
         metrics.phone ? _phoneField(context, l10n) : _desktopField(context, l10n),
@@ -153,9 +154,8 @@ class ModelProtocolSection extends StatelessWidget {
     final caveat = effective == null || form == ProtocolSectionForm.notice
         ? null
         : wireProtocolCaveat(l10n, effective, channelFamily);
-    final showParams = menu.surface != Surface.chat &&
-        effective != null &&
-        form != ProtocolSectionForm.notice;
+    final showParams =
+        menu.surface != Surface.chat && effective != null && form != ProtocolSectionForm.notice;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -244,10 +244,10 @@ class ModelProtocolSection extends StatelessWidget {
   }
 
   Widget _leadingIcon(BuildContext context) => Icon(
-        activePin != null ? Icons.route : Icons.auto_awesome,
-        size: AppSize.iconMd,
-        color: Theme.of(context).colorScheme.primary,
-      );
+    activePin != null ? Icons.route : Icons.auto_awesome,
+    size: AppSize.iconMd,
+    color: Theme.of(context).colorScheme.primary,
+  );
 
   /// `1a`: 「Auto」 at 500, then the resolution in mono and the secondary ink.
   ///
@@ -258,8 +258,7 @@ class ModelProtocolSection extends StatelessWidget {
     final theme = Theme.of(context);
     final auto = menu.auto;
     final prefix = l10n.protocolAuto;
-    final resolved =
-        auto == null ? null : l10n.protocolAutoResolved(wireProtocolLabel(l10n, auto));
+    final resolved = auto == null ? null : l10n.protocolAutoResolved(wireProtocolLabel(l10n, auto));
     final spans = resolved != null && resolved.startsWith(prefix)
         ? [
             TextSpan(text: prefix),
@@ -297,8 +296,9 @@ class ModelProtocolSection extends StatelessWidget {
         ModelEditMenuEntry(
           value: '',
           label: l10n.protocolAuto,
-          description:
-              auto == null ? null : l10n.protocolAutoMenuDesc(wireProtocolLabel(l10n, auto)),
+          description: auto == null
+              ? null
+              : l10n.protocolAutoMenuDesc(wireProtocolLabel(l10n, auto)),
         ),
         for (final p in menu.options)
           ModelEditMenuEntry(
@@ -338,18 +338,21 @@ class ModelProtocolSection extends StatelessWidget {
         const SizedBox(width: 8),
         Expanded(
           child: Text.rich(
-            TextSpan(children: [
-              TextSpan(
-                text: l10n.protocolSendVia(wireProtocolLabel(l10n, auto)),
-                style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
-              ),
-              const TextSpan(text: ' '),
-              TextSpan(
-                text: l10n.protocolOnlyOneWay,
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-              ),
-            ]),
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: l10n.protocolSendVia(wireProtocolLabel(l10n, auto)),
+                  style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+                ),
+                const TextSpan(text: ' '),
+                TextSpan(
+                  text: l10n.protocolOnlyOneWay,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ],
@@ -365,8 +368,8 @@ class ModelProtocolSection extends StatelessWidget {
     final title = pin != null
         ? wireProtocolLabel(l10n, pin)
         : (auto == null
-            ? l10n.protocolAuto
-            : l10n.protocolAutoResolved(wireProtocolLabel(l10n, auto)));
+              ? l10n.protocolAuto
+              : l10n.protocolAutoResolved(wireProtocolLabel(l10n, auto)));
     final path = pin == null ? null : wireProtocolPath(pin, channelFamily);
 
     return ModelEditMenuField<String>(
@@ -392,8 +395,9 @@ class ModelProtocolSection extends StatelessWidget {
               path,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.bodySmall?.mono
-                  .copyWith(color: theme.colorScheme.onSurfaceVariant),
+              style: theme.textTheme.bodySmall?.mono.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
         ],
       ),
@@ -463,13 +467,15 @@ class ProtocolPreviewValue extends StatelessWidget {
     final auto = menu.auto;
     if (auto == null) return const SizedBox.shrink();
     return Text.rich(
-      TextSpan(children: [
-        TextSpan(text: wireProtocolLabel(l10n, auto)),
-        TextSpan(
-          text: ' ${l10n.protocolAutoSuffix}',
-          style: TextStyle(color: colorScheme.outline, fontWeight: FontWeight.w400),
-        ),
-      ]),
+      TextSpan(
+        children: [
+          TextSpan(text: wireProtocolLabel(l10n, auto)),
+          TextSpan(
+            text: ' ${l10n.protocolAutoSuffix}',
+            style: TextStyle(color: colorScheme.outline, fontWeight: FontWeight.w400),
+          ),
+        ],
+      ),
       textAlign: TextAlign.end,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
@@ -521,8 +527,10 @@ class _ProtocolSheet extends StatelessWidget {
         title: Text(label, style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500)),
         subtitle: description == null
             ? null
-            : Text(description,
-                style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant)),
+            : Text(
+                description,
+                style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+              ),
         trailing: path == null
             ? null
             : Text(path, style: textTheme.labelSmall?.mono.copyWith(color: colorScheme.outline)),
@@ -541,8 +549,10 @@ class _ProtocolSheet extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(title, style: textTheme.titleMedium),
-                Text(subtitle,
-                    style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant)),
+                Text(
+                  subtitle,
+                  style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                ),
               ],
             ),
           ),

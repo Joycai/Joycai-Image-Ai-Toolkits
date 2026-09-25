@@ -73,16 +73,14 @@ class ImageLayerSet {
   final List<ImageLayer> layers;
 
   ImageLayerSet(this.setId, Iterable<ImageLayer> layers)
-      : layers = List.unmodifiable(
-            [...layers]..sort((a, b) => a.zIndex.compareTo(b.zIndex)));
+    : layers = List.unmodifiable([...layers]..sort((a, b) => a.zIndex.compareTo(b.zIndex)));
 
   /// The base, or null when its file is gone.
-  ImageLayer? get base =>
-      layers.isNotEmpty && layers.first.isBase ? layers.first : null;
+  ImageLayer? get base => layers.isNotEmpty && layers.first.isBase ? layers.first : null;
 
   /// Everything above the base.
   List<ImageLayer> get overlays => [
-        for (final l in layers)
-          if (!l.isBase) l,
-      ];
+    for (final l in layers)
+      if (!l.isBase) l,
+  ];
 }

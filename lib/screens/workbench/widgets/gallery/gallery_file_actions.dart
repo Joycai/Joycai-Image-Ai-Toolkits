@@ -73,11 +73,9 @@ Future<void> shareImageFiles(
   required Offset position,
 }) async {
   try {
-    final xFiles = filesToShare.map((f) => XFile(
-          f.path,
-          name: f.name,
-          mimeType: AppConstants.getMimeType(f.path),
-        )).toList();
+    final xFiles = filesToShare
+        .map((f) => XFile(f.path, name: f.name, mimeType: AppConstants.getMimeType(f.path)))
+        .toList();
 
     // ignore: deprecated_member_use
     await Share.shareXFiles(
@@ -102,13 +100,9 @@ Future<void> shareImageFiles(
 /// sends everything to the trash wherever the platform has one, says which it
 /// is going to do *before* the user decides, refuses to delete a registered
 /// source folder, and reports a partial failure instead of hiding it.
-Future<void> confirmAndDeleteImageFiles(
-  BuildContext context,
-  List<AppImage> images,
-) async {
+Future<void> confirmAndDeleteImageFiles(BuildContext context, List<AppImage> images) async {
   if (images.isEmpty) return;
-  final galleryState =
-      Provider.of<AppState>(context, listen: false).galleryState;
+  final galleryState = Provider.of<AppState>(context, listen: false).galleryState;
 
   // `BrowserFile` is "a file on disk with its stat", which is what the dialog
   // lists; the gallery's `AppImage` carries only path and name, so the stat
@@ -124,10 +118,7 @@ Future<void> confirmAndDeleteImageFiles(
     // `existsSync` answers "no" for a file the process cannot reach at all —
     // gone since the scan, a broken link, a folder it has no permission to
     // read — so silence here would look like a dead button. Say it instead.
-    AppSnackBar.error(
-      context,
-      AppLocalizations.of(context)!.deleteFailed(images.first.name),
-    );
+    AppSnackBar.error(context, AppLocalizations.of(context)!.deleteFailed(images.first.name));
     return;
   }
 
@@ -164,7 +155,8 @@ bool canSendResultFeedback(WorkbenchUIState workbenchUIState, String path) =>
 /// v2 gives feedback on v2 even after v3 was staged — that binding is the
 /// whole reason the tag exists. Null when the session has staged nothing.
 int? resultFeedbackVersion(WorkbenchUIState workbenchUIState, String path) {
-  final version = workbenchUIState.resultVersionByPath[path] ??
+  final version =
+      workbenchUIState.resultVersionByPath[path] ??
       workbenchUIState.optimizerSession.promptVersions;
   return version < 1 ? null : version;
 }
@@ -193,11 +185,7 @@ Future<void> sendResultFeedbackFromGallery(BuildContext context, AppImage image)
     promptText: _promptFirstLine(workbenchUIState.optimizerSession, version),
   );
   if (feedback == null) return;
-  if (!workbenchUIState.sendResultFeedback(
-    image,
-    feedback: feedback,
-    promptVersion: version,
-  )) {
+  if (!workbenchUIState.sendResultFeedback(image, feedback: feedback, promptVersion: version)) {
     return;
   }
   if (context.mounted) AppSnackBar.success(context, l10n.optResultFeedbackSent);
@@ -205,15 +193,18 @@ Future<void> sendResultFeedbackFromGallery(BuildContext context, AppImage image)
 
 /// 「gpt-image-1 · 今天 14:02」: the model the run used and when it started.
 String _describeRun(TaskItem task, AppState appState, AppLocalizations l10n) {
-  final model = appState.allModels
-      .cast<LLMModel?>()
-      .firstWhere((m) => m?.id == task.modelDbId, orElse: () => null);
+  final model = appState.allModels.cast<LLMModel?>().firstWhere(
+    (m) => m?.id == task.modelDbId,
+    orElse: () => null,
+  );
   final modelLabel = model?.modelName ?? task.modelId;
   final when = task.createdAt;
   final now = DateTime.now();
   final sameDay = when.year == now.year && when.month == now.month && when.day == now.day;
   final clock = DateFormat('HH:mm').format(when);
-  final timeLabel = sameDay ? l10n.optFeedbackRunToday(clock) : DateFormat('MM-dd HH:mm').format(when);
+  final timeLabel = sameDay
+      ? l10n.optFeedbackRunToday(clock)
+      : DateFormat('MM-dd HH:mm').format(when);
   return [if (modelLabel.isNotEmpty) modelLabel, timeLabel].join(' · ');
 }
 

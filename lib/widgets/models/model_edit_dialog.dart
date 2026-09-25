@@ -18,7 +18,8 @@ import '../../services/llm/context_budget.dart';
 import '../../services/llm/llm_dispatcher.dart';
 import '../../services/llm/llm_types.dart';
 import '../../services/llm/model_routes.dart';
-import '../../services/llm/protocols/anthropic_wire.dart' show anthropicDefaultMaxTokens, anthropicMinThinkingBudget;
+import '../../services/llm/protocols/anthropic_wire.dart'
+    show anthropicDefaultMaxTokens, anthropicMinThinkingBudget;
 import '../../services/llm/vendors/platforms.dart';
 import '../../services/llm/vendors/vendors.dart';
 import '../../state/app_state.dart';
@@ -167,16 +168,18 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
     final stored = widget.model;
     final storedChannel = stored == null
         ? null
-        : widget.appState.allChannels
-            .cast<LLMChannel?>()
-            .firstWhere((c) => c?.id == stored.channelId, orElse: () => null);
+        : widget.appState.allChannels.cast<LLMChannel?>().firstWhere(
+            (c) => c?.id == stored.channelId,
+            orElse: () => null,
+          );
     final model = stored == null || storedChannel == null
         ? stored
         : RouteSwitching.recoverMissingRoute(stored, RoutedChannel.routesOf(storedChannel));
     idCtrl = TextEditingController(text: model?.modelId ?? '');
     nameCtrl = TextEditingController(text: model?.modelName ?? '');
 
-    channelId = model?.channelId ??
+    channelId =
+        model?.channelId ??
         widget.preChannelId ??
         (widget.appState.allChannels.isNotEmpty ? widget.appState.allChannels.first.id : null);
     tag = model?.tag ?? 'chat';
@@ -188,7 +191,8 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
     forceViewAllImages = model?.forceViewAllImages ?? false;
     // Legacy rows carry only the boolean; show its effort equivalent so what
     // the chips display is what the request layer will actually do.
-    reasoningEffort = model?.reasoningEffort ?? ((model?.enableThinking ?? false) ? 'medium' : null);
+    reasoningEffort =
+        model?.reasoningEffort ?? ((model?.enableThinking ?? false) ? 'medium' : null);
     enableWebSearch = model?.enableWebSearch ?? false;
     wireProtocol = model?.wireProtocol;
     activeRoute = model?.activeRoute;
@@ -242,8 +246,7 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
   int? get _contextTokens => ContextWindowScale.parse(contextCtrl.text);
 
   /// Specify needs a positive whole number; blank or zero blocks saving.
-  bool get _contextValid =>
-      contextMode != ContextWindowMode.specified || (_contextTokens ?? 0) > 0;
+  bool get _contextValid => contextMode != ContextWindowMode.specified || (_contextTokens ?? 0) > 0;
 
   /// The output cap's Specify figure, in the context field's grammar.
   int? get _outputCapTokens => OutputCapScale.parse(outputCapCtrl.text);
@@ -262,15 +265,19 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
 
   /// The ID is the only required field — a blank name saves as the ID.
   bool get _canSave =>
-      channelId != null && idCtrl.text.trim().isNotEmpty && !_idTaken && _contextValid && _outputCapValid;
+      channelId != null &&
+      idCtrl.text.trim().isNotEmpty &&
+      !_idTaken &&
+      _contextValid &&
+      _outputCapValid;
 
   /// The ID is already on the selected channel, under another model.
   bool get _idTaken => isModelIdTaken(
-        widget.appState.allModels,
-        channelId: channelId,
-        modelId: idCtrl.text,
-        exceptId: widget.model?.id,
-      );
+    widget.appState.allModels,
+    channelId: channelId,
+    modelId: idCtrl.text,
+    exceptId: widget.model?.id,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -282,9 +289,10 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
   // --- The three forms ----------------------------------------------------
 
   /// The channel the form currently points at, or null when none is picked.
-  LLMChannel? get _selectedChannel => widget.appState.allChannels
-      .cast<LLMChannel?>()
-      .firstWhere((c) => c?.id == channelId, orElse: () => null);
+  LLMChannel? get _selectedChannel => widget.appState.allChannels.cast<LLMChannel?>().firstWhere(
+    (c) => c?.id == channelId,
+    orElse: () => null,
+  );
 
   /// The protocol family of the vendor serving the model — through its route
   /// for a chat model — or null when no channel is picked. Read-only Layer 2

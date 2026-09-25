@@ -163,9 +163,7 @@ class _CropResizeViewState extends State<CropResizeView> {
     // Published rather than kept: the toolbar's width/height fields stand at
     // these numbers until the user types over them, and this callback is the
     // only place they arrive.
-    uiState.setCropPixelSize(
-      pixelRect == null ? null : Size(pixelRect.width, pixelRect.height),
-    );
+    uiState.setCropPixelSize(pixelRect == null ? null : Size(pixelRect.width, pixelRect.height));
   }
 
   @override
@@ -238,7 +236,9 @@ class _CropResizeViewState extends State<CropResizeView> {
           top: (imageRect?.top ?? _kCanvasMargin) + CanvasBadge.inset,
           child: ConstrainedBox(
             constraints: BoxConstraints(
-              maxWidth: imageRect == null ? 360 : (imageRect.width - CanvasBadge.inset * 2).clamp(0, 360),
+              maxWidth: imageRect == null
+                  ? 360
+                  : (imageRect.width - CanvasBadge.inset * 2).clamp(0, 360),
             ),
             child: CanvasBadge(label: l10n.cropResizeCanvasLabel(sourceImage.name)),
           ),
@@ -247,7 +247,12 @@ class _CropResizeViewState extends State<CropResizeView> {
           _CropReadout(cropRect: _layerCropRect!, pixelRect: _pixelCropRect!),
         if (phone) ...[
           Positioned(top: _kCanvasMargin, right: _kCanvasMargin, child: zoomPill),
-          Positioned(left: _kPhoneCardInset, right: _kPhoneCardInset, bottom: _kPhoneCardInset, child: card),
+          Positioned(
+            left: _kPhoneCardInset,
+            right: _kPhoneCardInset,
+            bottom: _kPhoneCardInset,
+            child: card,
+          ),
         ] else ...[
           Positioned(left: _kCardInset, bottom: _kCardInset, child: zoomPill),
           Positioned(right: _kCardInset, bottom: _kCardInset, width: _kCardWidth, child: card),
@@ -270,7 +275,10 @@ class _CropResizeViewState extends State<CropResizeView> {
           Text(
             l10n.noImagesSelected,
             textAlign: TextAlign.center,
-            style: textTheme.bodySmall!.copyWith(fontWeight: FontWeight.w600, color: scheme.onSurface),
+            style: textTheme.bodySmall!.copyWith(
+              fontWeight: FontWeight.w600,
+              color: scheme.onSurface,
+            ),
           ),
           const SizedBox(height: 2),
           Text(
@@ -427,9 +435,7 @@ class _CropReadout extends StatelessWidget {
       left: cropRect.left,
       top: cropRect.top + CanvasBadge.inset,
       width: cropRect.width,
-      child: Center(
-        child: CanvasBadge(label: ratio == null ? '$w × $h' : '$w × $h · $ratio'),
-      ),
+      child: Center(child: CanvasBadge(label: ratio == null ? '$w × $h' : '$w × $h · $ratio')),
     );
   }
 

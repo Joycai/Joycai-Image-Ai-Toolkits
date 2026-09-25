@@ -45,9 +45,7 @@ Map<String, dynamic>? anthropicThinkingRequest(
       // itself below the floor there is no legal budget at all — asking for
       // one anyway is a 400, so the request simply goes out without thinking.
       final half = maxTokens ~/ 2;
-      final budget = half < anthropicMinThinkingBudget
-          ? anthropicMinThinkingBudget
-          : half;
+      final budget = half < anthropicMinThinkingBudget ? anthropicMinThinkingBudget : half;
       if (budget >= maxTokens) return null;
       return {'type': 'enabled', 'budget_tokens': budget};
   }
@@ -84,16 +82,15 @@ String? anthropicEffortWire(ReasoningEffort? effort) => switch (effort) {
 /// The two Anthropic spellings are each other's fallback; MiniMax's has none
 /// to fall to (a rejected `adaptive` there is a real error), and `none` stays
 /// `none`.
-ThinkingDialect? alternateAnthropicThinkingDialect(ThinkingDialect dialect) =>
-    switch (dialect) {
-      ThinkingDialect.anthropicAdaptive => ThinkingDialect.anthropicBudget,
-      ThinkingDialect.anthropicBudget => ThinkingDialect.anthropicAdaptive,
-      ThinkingDialect.adaptive ||
-      ThinkingDialect.none ||
-      ThinkingDialect.openaiThinkingObject ||
-      ThinkingDialect.openaiEnableThinking ||
-      ThinkingDialect.openaiAdaptiveObject => null,
-    };
+ThinkingDialect? alternateAnthropicThinkingDialect(ThinkingDialect dialect) => switch (dialect) {
+  ThinkingDialect.anthropicAdaptive => ThinkingDialect.anthropicBudget,
+  ThinkingDialect.anthropicBudget => ThinkingDialect.anthropicAdaptive,
+  ThinkingDialect.adaptive ||
+  ThinkingDialect.none ||
+  ThinkingDialect.openaiThinkingObject ||
+  ThinkingDialect.openaiEnableThinking ||
+  ThinkingDialect.openaiAdaptiveObject => null,
+};
 
 /// Dialects learned from a 400, keyed by endpoint and model, for the life of
 /// the process.
@@ -104,8 +101,7 @@ ThinkingDialect? alternateAnthropicThinkingDialect(ThinkingDialect dialect) =>
 /// kind of memory.
 final Map<String, ThinkingDialect> _learnedThinkingDialects = {};
 
-String _thinkingMemoKey(LLMTarget target) =>
-    '${target.config.endpoint}|${target.config.modelId}';
+String _thinkingMemoKey(LLMTarget target) => '${target.config.endpoint}|${target.config.modelId}';
 
 /// The thinking spelling this request goes out with.
 ///
@@ -138,8 +134,7 @@ ThinkingDialect declaredAnthropicThinkingDialect(
   required bool legacyModel,
 }) {
   final isAnthropicSpelling =
-      dialect == ThinkingDialect.anthropicAdaptive ||
-      dialect == ThinkingDialect.anthropicBudget;
+      dialect == ThinkingDialect.anthropicAdaptive || dialect == ThinkingDialect.anthropicBudget;
   if (isAnthropicSpelling && legacyModel) {
     return ThinkingDialect.anthropicBudget;
   }
@@ -148,10 +143,7 @@ ThinkingDialect declaredAnthropicThinkingDialect(
 
 /// Records that [rejected] was refused for this endpoint + model and returns
 /// the spelling to retry with, or null when there is none.
-ThinkingDialect? learnAnthropicThinkingDialect(
-  LLMTarget target,
-  ThinkingDialect rejected,
-) {
+ThinkingDialect? learnAnthropicThinkingDialect(LLMTarget target, ThinkingDialect rejected) {
   final alternate = alternateAnthropicThinkingDialect(rejected);
   if (alternate != null) {
     _learnedThinkingDialects[_thinkingMemoKey(target)] = alternate;
@@ -161,8 +153,7 @@ ThinkingDialect? learnAnthropicThinkingDialect(
 
 /// Forgets every learned dialect. Tests only.
 @visibleForTesting
-void resetAnthropicThinkingDialectsForTest() =>
-    _learnedThinkingDialects.clear();
+void resetAnthropicThinkingDialectsForTest() => _learnedThinkingDialects.clear();
 
 /// Whether [error] is the API refusing the *shape* of the thinking request —
 /// the one 400 worth answering with the other dialect.
@@ -217,5 +208,6 @@ const List<String> _notADialectProblem = [
 ];
 
 final RegExp _thinkingShapeComplaint = RegExp(
-    r'thinking\W[^.]*\b(type|tag|adaptive|enabled|disabled)\b|'
-    r'\b(adaptive|enabled) thinking\b');
+  r'thinking\W[^.]*\b(type|tag|adaptive|enabled|disabled)\b|'
+  r'\b(adaptive|enabled) thinking\b',
+);

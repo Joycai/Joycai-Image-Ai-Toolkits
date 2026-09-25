@@ -86,8 +86,7 @@ class _FileRenameDialogState extends State<FileRenameDialog> {
   /// unlocked it lives inside the field text instead.
   late String _extension = p.extension(widget.filePath);
   bool _extensionLocked = true;
-  late final TextEditingController
-  _controller = TextEditingController(text: _stem)
+  late final TextEditingController _controller = TextEditingController(text: _stem)
     // Opened with the stem selected: the common rename replaces the name
     // outright, and a caret at the end would make that two extra keystrokes.
     ..selection = TextSelection(baseOffset: 0, extentOffset: _stem.length);
@@ -205,11 +204,7 @@ class _FileRenameDialogState extends State<FileRenameDialog> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _Heading(
-                  dir: _dir,
-                  fileName: p.basename(widget.filePath),
-                  l10n: l10n,
-                ),
+                _Heading(dir: _dir, fileName: p.basename(widget.filePath), l10n: l10n),
                 const SizedBox(height: 12),
                 _NameField(
                   controller: _controller,
@@ -245,8 +240,7 @@ class _FileRenameDialogState extends State<FileRenameDialog> {
                           child: AppButton(
                             label: l10n.cancel,
                             variant: AppButtonVariant.text,
-                            onPressed: () =>
-                                Navigator.of(context).pop<String>(null),
+                            onPressed: () => Navigator.of(context).pop<String>(null),
                           ),
                         ),
                         const SizedBox(width: AppSpace.s4),
@@ -272,11 +266,7 @@ class _FileRenameDialogState extends State<FileRenameDialog> {
 /// `2b`: a lens-grade 40px plate carrying the rename glyph in the accent,
 /// the title, and under it the folder and the current name in mono.
 class _Heading extends StatelessWidget {
-  const _Heading({
-    required this.dir,
-    required this.fileName,
-    required this.l10n,
-  });
+  const _Heading({required this.dir, required this.fileName, required this.l10n});
 
   final String dir;
   final String fileName;
@@ -299,11 +289,7 @@ class _Heading extends StatelessWidget {
           child: SizedBox(
             width: 40,
             height: 40,
-            child: Icon(
-              Icons.drive_file_rename_outline,
-              size: 22,
-              color: scheme.primary,
-            ),
+            child: Icon(Icons.drive_file_rename_outline, size: 22, color: scheme.primary),
           ),
         ),
         const SizedBox(width: 12),
@@ -325,10 +311,7 @@ class _Heading extends StatelessWidget {
                 TextSpan(
                   text: '${p.basename(dir)} / ',
                   children: [
-                    TextSpan(
-                      text: fileName,
-                      style: textTheme.bodySmall!.mono.metricsOnly,
-                    ),
+                    TextSpan(text: fileName, style: textTheme.bodySmall!.mono.metricsOnly),
                   ],
                 ),
                 maxLines: 1,
@@ -390,10 +373,7 @@ class _NameField extends StatelessWidget {
           decoration: BoxDecoration(
             color: ink.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(AppRadius.control),
-            border: Border.all(
-              width: 2,
-              color: ringed ? accent : Colors.transparent,
-            ),
+            border: Border.all(width: 2, color: ringed ? accent : Colors.transparent),
           ),
           padding: const EdgeInsets.only(left: 8, right: 2),
           child: Row(
@@ -426,8 +406,7 @@ class _NameField extends StatelessWidget {
                         ),
                       ),
                     ),
-                    if (extensionLocked)
-                      Text(extension, style: mono.copyWith(color: ink2)),
+                    if (extensionLocked) Text(extension, style: mono.copyWith(color: ink2)),
                   ],
                 ),
               ),
@@ -466,9 +445,7 @@ class _LockToggle extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final glass = GlassInk.maybeOf(context);
-    final Color color = locked
-        ? (glass?.ink2 ?? scheme.onSurfaceVariant)
-        : scheme.primary;
+    final Color color = locked ? (glass?.ink2 ?? scheme.onSurfaceVariant) : scheme.primary;
 
     return Tooltip(
       message: tooltip,
@@ -536,19 +513,10 @@ class _HintRow extends StatelessWidget {
         children: [
           Expanded(
             child: problem == null
-                ? Text(
-                    hint,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: small,
-                  )
+                ? Text(hint, maxLines: 1, overflow: TextOverflow.ellipsis, style: small)
                 : Row(
                     children: [
-                      Icon(
-                        Icons.error_outline,
-                        size: AppSize.iconSm,
-                        color: scheme.error,
-                      ),
+                      Icon(Icons.error_outline, size: AppSize.iconSm, color: scheme.error),
                       const SizedBox(width: AppSpace.s4),
                       Expanded(
                         child: Text(

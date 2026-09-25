@@ -54,16 +54,14 @@ void main() {
         find.ancestor(of: refs, matching: find.byType(Scrollable)).first,
       );
       final bool holdsPrompt = find
-          .descendant(
-            of: find.byWidget(scrollable.widget),
-            matching: find.text('提示词'),
-          )
+          .descendant(of: find.byWidget(scrollable.widget), matching: find.text('提示词'))
           .evaluate()
           .isNotEmpty;
       expect(
         holdsPrompt || scrollable.position.maxScrollExtent == 0,
         isTrue,
-        reason: 'the head is pinned but taller than its room — it is clipped '
+        reason:
+            'the head is pinned but taller than its room — it is clipped '
             'inside its own scroller',
       );
       expect(tester.takeException(), isNull);

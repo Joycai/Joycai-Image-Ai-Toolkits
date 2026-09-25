@@ -32,13 +32,24 @@ class _DotGrid extends StatelessWidget {
               spacing: spacing,
               runSpacing: spacing,
               children: [
-                for (final MapEntry<String, ThemeAccent> preset in AppConstants.presetThemes.entries)
+                for (final MapEntry<String, ThemeAccent> preset
+                    in AppConstants.presetThemes.entries)
                   DualToneSwatch(
                     accent: preset.value,
                     name: preset.key,
                     pairLabel: l10n.themeColorPair(
-                      _hex(buildAppColorScheme(accent: preset.value, brightness: Brightness.light).primary),
-                      _hex(buildAppColorScheme(accent: preset.value, brightness: Brightness.dark).primary),
+                      _hex(
+                        buildAppColorScheme(
+                          accent: preset.value,
+                          brightness: Brightness.light,
+                        ).primary,
+                      ),
+                      _hex(
+                        buildAppColorScheme(
+                          accent: preset.value,
+                          brightness: Brightness.dark,
+                        ).primary,
+                      ),
                     ),
                     selected: picker.selected == preset.value,
                     onTap: () => picker.onSelect(preset.key),
@@ -67,18 +78,20 @@ class _DotGrid extends StatelessWidget {
                       child: Text(
                         l10n.themeColorCustom,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontWeight: picker._customActive ? FontWeight.w600 : FontWeight.w400,
-                              color: picker._customActive ? colorScheme.onAccentTint : colorScheme.onSurface,
-                            ),
+                          fontWeight: picker._customActive ? FontWeight.w600 : FontWeight.w400,
+                          color: picker._customActive
+                              ? colorScheme.onAccentTint
+                              : colorScheme.onSurface,
+                        ),
                       ),
                     ),
                     if (picker.customSeed != null && picker._customActive)
                       Text(
                         _hex(picker.customSeed!),
                         style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
-                              fontWeight: FontWeight.w400,
-                              color: colorScheme.onSurfaceVariant,
-                            ),
+                          fontWeight: FontWeight.w400,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
                       ),
                   ],
                 ),

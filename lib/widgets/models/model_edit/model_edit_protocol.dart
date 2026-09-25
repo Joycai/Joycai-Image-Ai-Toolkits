@@ -39,8 +39,7 @@ extension _ProtocolSections on _ModelEditDialogState {
     final thinkingOn = reasoningEffort != null && reasoningEffort != 'off';
     final search = _webSearch;
     final showThinking = _isAnthropicChannel;
-    final showSearch =
-        search != ServerWebSearch.unsupported || (_routeMode && _anyRouteSearches);
+    final showSearch = search != ServerWebSearch.unsupported || (_routeMode && _anyRouteSearches);
 
     return ModelEditCard(
       padding: const EdgeInsets.symmetric(horizontal: AppSpace.s10, vertical: AppSpace.s4),
@@ -57,7 +56,10 @@ extension _ProtocolSections on _ModelEditDialogState {
                 dimmed: !supported,
                 onChanged: !supported
                     ? null
-                    : (v) => _rebuild(() => reasoningEffort = v ? (thinkingOn ? reasoningEffort : 'medium') : null),
+                    : (v) => _rebuild(
+                        () =>
+                            reasoningEffort = v ? (thinkingOn ? reasoningEffort : 'medium') : null,
+                      ),
               ),
             ),
           if (showThinking && showSearch) const Divider(height: 1),
@@ -137,8 +139,7 @@ extension _ProtocolSections on _ModelEditDialogState {
   /// A chat model's protocol is its route (`D1f · 4e` ①): the route strip
   /// replaces this section for it. Image and video keep the dropdown — a
   /// dedicated endpoint is not a route.
-  bool get _showProtocolSection =>
-      !_usesRoutes && _protocolForm != ProtocolSectionForm.none;
+  bool get _showProtocolSection => !_usesRoutes && _protocolForm != ProtocolSectionForm.none;
 
   /// The pinned protocol when its route has no streaming form, else null.
   /// Asked of the dispatcher with the form as it stands, so the editor cannot
@@ -149,15 +150,17 @@ extension _ProtocolSections on _ModelEditDialogState {
     final channel = _selectedChannel;
     final routed = _routed;
     if (pin == null || channel == null || routed == null) return null;
-    final singleShot = LLMDispatcher().streamIsSingleShot(LLMModelConfig(
-      modelId: idCtrl.text.trim(),
-      channelType: routed.channelType,
-      endpoint: routed.endpoint,
-      apiKey: channel.apiKey,
-      tag: tag,
-      wireProtocol: pin.id,
-      faceBases: routed.faceBases,
-    ));
+    final singleShot = LLMDispatcher().streamIsSingleShot(
+      LLMModelConfig(
+        modelId: idCtrl.text.trim(),
+        channelType: routed.channelType,
+        endpoint: routed.endpoint,
+        apiKey: channel.apiKey,
+        tag: tag,
+        wireProtocol: pin.id,
+        faceBases: routed.faceBases,
+      ),
+    );
     return singleShot ? pin : null;
   }
 

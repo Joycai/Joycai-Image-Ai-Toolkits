@@ -24,8 +24,8 @@ Color channelPresetIdentityColor(ChannelProviderPreset preset) {
 
 /// The preset a search that found nothing falls back to: the first of the
 /// custom group, which is the "any host speaking the OpenAI dialect" row.
-ChannelProviderPreset channelFallbackCustomPreset() => kChannelProviderPresets
-    .firstWhere((p) => p.group == ChannelProviderGroup.custom);
+ChannelProviderPreset channelFallbackCustomPreset() =>
+    kChannelProviderPresets.firstWhere((p) => p.group == ChannelProviderGroup.custom);
 
 /// A group's caption in the provider list: the tracked group name and a mono
 /// count of its rows (`VENDORS 6`).
@@ -54,8 +54,9 @@ class ChannelProviderGroupCaption extends StatelessWidget {
         channelProviderGroupLabel(l10n, group),
         trailing: Text(
           '$count',
-          style: theme.textTheme.labelSmall?.mono
-              .copyWith(color: theme.colorScheme.onSurfaceVariant),
+          style: theme.textTheme.labelSmall?.mono.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
         ),
       ),
     );
@@ -97,9 +98,7 @@ class ChannelProviderRow extends StatelessWidget {
         color: selected ? colorScheme.accentTint : colorScheme.surfaceContainerLow,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.control),
-          side: BorderSide(
-            color: selected ? colorScheme.primary : colorScheme.outlineVariant,
-          ),
+          side: BorderSide(color: selected ? colorScheme.primary : colorScheme.outlineVariant),
         ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -110,10 +109,7 @@ class ChannelProviderRow extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: AppSpace.s10),
               child: Row(
                 children: [
-                  ChannelIdentityAvatar(
-                    label: title,
-                    color: channelPresetIdentityColor(preset),
-                  ),
+                  ChannelIdentityAvatar(label: title, color: channelPresetIdentityColor(preset)),
                   const SizedBox(width: AppSpace.s10),
                   Expanded(
                     child: Text(
@@ -121,24 +117,20 @@ class ChannelProviderRow extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.labelLarge?.metricsOnly.copyWith(
-                        color: selected
-                            ? colorScheme.onAccentTint
-                            : colorScheme.onSurface,
-                        fontWeight:
-                            selected ? FontWeight.w600 : FontWeight.w500,
+                        color: selected ? colorScheme.onAccentTint : colorScheme.onSurface,
+                        fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                       ),
                     ),
                   ),
                   // The routes a channel from this row gets (`D1f · 4b` ①),
                   // in place of the old count of ways in.
                   const SizedBox(width: AppSpace.s6),
-                  Flexible(child: _PresetRouteBadges(l10n: l10n, preset: preset)),
+                  Flexible(
+                    child: _PresetRouteBadges(l10n: l10n, preset: preset),
+                  ),
                   if (isDeprecatedChannelType(preset.channelType)) ...[
                     const SizedBox(width: AppSpace.s6),
-                    ChannelBadge(
-                      l10n.deprecatedLabel,
-                      tone: ChannelBadgeTone.warning,
-                    ),
+                    ChannelBadge(l10n.deprecatedLabel, tone: ChannelBadgeTone.warning),
                   ],
                   const SizedBox(width: AppSpace.s6),
                   trailing ??
@@ -193,27 +185,19 @@ class ChannelProviderNoMatch extends StatelessWidget {
             Text(
               l10n.noProviderMatch,
               textAlign: TextAlign.center,
-              style: theme.textTheme.titleSmall
-                  ?.copyWith(color: colorScheme.onSurface),
+              style: theme.textTheme.titleSmall?.copyWith(color: colorScheme.onSurface),
             ),
             const SizedBox(height: AppSpace.s4),
             ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 300),
               child: Text(
-                query.isEmpty
-                    ? l10n.providerGroupCustomHint
-                    : l10n.providerNoMatchHint(query),
+                query.isEmpty ? l10n.providerGroupCustomHint : l10n.providerNoMatchHint(query),
                 textAlign: TextAlign.center,
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: colorScheme.onSurfaceVariant),
+                style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
               ),
             ),
             const SizedBox(height: AppSpace.s16),
-            AppButton(
-              label: l10n.providerUseCustom,
-              icon: custom.icon,
-              onPressed: onUseCustom,
-            ),
+            AppButton(label: l10n.providerUseCustom, icon: custom.icon, onPressed: onUseCustom),
           ],
         ),
       ),
@@ -231,10 +215,8 @@ class _PresetRouteBadges extends StatelessWidget {
   Widget build(BuildContext context) {
     // A relay's host is the user's; any host shows which routes its
     // platform has.
-    final endpoint = preset.defaultEndpoint ??
-        'https://relay.invalid${preset.endpointSuffix}';
-    final routes =
-        plannedChannelRoutes(preset, preset.channelType, endpoint);
+    final endpoint = preset.defaultEndpoint ?? 'https://relay.invalid${preset.endpointSuffix}';
+    final routes = plannedChannelRoutes(preset, preset.channelType, endpoint);
     // One line, clipped where it runs out: a narrow row keeps its name.
     return SizedBox(
       height: RouteBadgeSize.small.height,
@@ -243,10 +225,7 @@ class _PresetRouteBadges extends StatelessWidget {
         clipBehavior: Clip.hardEdge,
         children: [
           for (final k in routes.kinds)
-            AppRouteBadge(
-              label: routeLabel(l10n, k, short: true),
-              state: RouteBadgeState.quiet,
-            ),
+            AppRouteBadge(label: routeLabel(l10n, k, short: true), state: RouteBadgeState.quiet),
         ],
       ),
     );

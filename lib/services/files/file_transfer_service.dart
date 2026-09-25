@@ -100,8 +100,7 @@ class FileTransferPlan {
 
   /// Whether this paste is a move that has to cross a volume, which means
   /// copy-then-delete rather than a rename: slow, and interruptible partway.
-  bool get crossVolume =>
-      mode == FileTransferMode.move && entries.any((e) => e.crossVolume);
+  bool get crossVolume => mode == FileTransferMode.move && entries.any((e) => e.crossVolume);
 }
 
 /// Where a running transfer has got to.
@@ -208,14 +207,16 @@ class FileTransferService {
       }
 
       plannedTargets.add(target);
-      entries.add(FileTransferEntry(
-        sourcePath: source,
-        name: name,
-        size: size,
-        targetPath: target,
-        conflict: conflict,
-        crossVolume: isLikelyCrossVolume(source, destination),
-      ));
+      entries.add(
+        FileTransferEntry(
+          sourcePath: source,
+          name: name,
+          size: size,
+          targetPath: target,
+          conflict: conflict,
+          crossVolume: isLikelyCrossVolume(source, destination),
+        ),
+      );
     }
 
     return FileTransferPlan(
@@ -262,13 +263,15 @@ class FileTransferService {
       }
 
       final entry = plan.entries[i];
-      onProgress?.call(FileTransferProgress(
-        index: i,
-        total: total,
-        name: entry.name,
-        bytesDone: bytesDone,
-        bytesTotal: bytesTotal,
-      ));
+      onProgress?.call(
+        FileTransferProgress(
+          index: i,
+          total: total,
+          name: entry.name,
+          bytesDone: bytesDone,
+          bytesTotal: bytesTotal,
+        ),
+      );
 
       var resolution = resolutions[entry.sourcePath];
       if (entry.hasConflict && resolution == null) {
@@ -304,8 +307,7 @@ class FileTransferService {
         skipped.add(entry.sourcePath);
         continue;
       }
-      if (resolution != FileConflictResolution.overwrite &&
-          await _entityExists(target)) {
+      if (resolution != FileConflictResolution.overwrite && await _entityExists(target)) {
         skipped.add(entry.sourcePath);
         continue;
       }
@@ -360,13 +362,15 @@ class FileTransferService {
       }
     }
 
-    onProgress?.call(FileTransferProgress(
-      index: total,
-      total: total,
-      name: '',
-      bytesDone: bytesDone,
-      bytesTotal: bytesTotal,
-    ));
+    onProgress?.call(
+      FileTransferProgress(
+        index: total,
+        total: total,
+        name: '',
+        bytesDone: bytesDone,
+        bytesTotal: bytesTotal,
+      ),
+    );
 
     return FileTransferOutcome(
       succeeded: succeeded,
@@ -381,11 +385,7 @@ class FileTransferService {
   ///
   /// [reserved] holds names claimed earlier in the same run, which are not on
   /// disk yet and so cannot be found by looking.
-  static String uniqueTargetPath(
-    String directory,
-    String fileName, {
-    Set<String>? reserved,
-  }) {
+  static String uniqueTargetPath(String directory, String fileName, {Set<String>? reserved}) {
     final stem = p.basenameWithoutExtension(fileName);
     final extension = p.extension(fileName);
 
@@ -400,14 +400,11 @@ class FileTransferService {
 
   static bool _isTaken(String path, Set<String>? reserved) {
     if (reserved != null && reserved.any((r) => p.equals(r, path))) return true;
-    return File(path).existsSync() ||
-        Directory(path).existsSync() ||
-        Link(path).existsSync();
+    return File(path).existsSync() || Directory(path).existsSync() || Link(path).existsSync();
   }
 
   static Future<bool> _entityExists(String path) async =>
-      await FileSystemEntity.type(path, followLinks: false) !=
-      FileSystemEntityType.notFound;
+      await FileSystemEntity.type(path, followLinks: false) != FileSystemEntityType.notFound;
 
   /// The move's slow path: copy, then delete the source.
   ///

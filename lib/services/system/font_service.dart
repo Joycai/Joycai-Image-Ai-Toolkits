@@ -16,11 +16,7 @@ class FontAsset {
   /// weight progress across a multi-file download.
   final int approxBytes;
 
-  const FontAsset({
-    required this.url,
-    required this.filename,
-    required this.approxBytes,
-  });
+  const FontAsset({required this.url, required this.filename, required this.approxBytes});
 }
 
 /// A font family that is not bundled with the app and must be fetched on
@@ -31,11 +27,7 @@ class DownloadableFont {
   final String displayName;
   final List<FontAsset> assets;
 
-  const DownloadableFont({
-    required this.key,
-    required this.displayName,
-    required this.assets,
-  });
+  const DownloadableFont({required this.key, required this.displayName, required this.assets});
 
   int get totalBytes => assets.fold(0, (sum, a) => sum + a.approxBytes);
 }
@@ -98,14 +90,12 @@ class FontService {
       displayName: 'MiSans',
       assets: [
         FontAsset(
-          url:
-              'https://cdn.jsdelivr.net/gh/dsrkafuu/misans@main/raw/Normal/ttf/MiSans-Regular.ttf',
+          url: 'https://cdn.jsdelivr.net/gh/dsrkafuu/misans@main/raw/Normal/ttf/MiSans-Regular.ttf',
           filename: 'MiSans-Regular.ttf',
           approxBytes: 8073152,
         ),
         FontAsset(
-          url:
-              'https://cdn.jsdelivr.net/gh/dsrkafuu/misans@main/raw/Normal/ttf/MiSans-Bold.ttf',
+          url: 'https://cdn.jsdelivr.net/gh/dsrkafuu/misans@main/raw/Normal/ttf/MiSans-Bold.ttf',
           filename: 'MiSans-Bold.ttf',
           approxBytes: 7959920,
         ),

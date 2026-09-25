@@ -65,27 +65,28 @@ class PromptOptimizerToolbar extends StatelessWidget {
       Theme.of(context).textTheme.labelSmall!.metricsOnly.copyWith(fontWeight: FontWeight.w500);
 
   static double _tintedWidth(BuildContext context, String label) =>
-      12 + AppSize.iconMd + 6 + measureGlassText(context, label, _TintedAction.labelStyle(context)) + 12;
+      12 +
+      AppSize.iconMd +
+      6 +
+      measureGlassText(context, label, _TintedAction.labelStyle(context)) +
+      12;
 
   static double _chipWidth(BuildContext context, String label, {bool dot = false}) =>
       8 + (dot ? 6 + 4 : 0) + measureGlassText(context, label, _chipStyle(context)) + 8;
 
   /// The width these controls take with everything labelled — what the
   /// toolbar weighs its tool switch against.
-  static double preferredWidth(
-    BuildContext context, {
-    String? modeLabel,
-    int pendingKbEdits = 0,
-  }) {
+  static double preferredWidth(BuildContext context, {String? modeLabel, int pendingKbEdits = 0}) {
     final l10n = AppLocalizations.of(context)!;
     final badge = modeLabel == null ? 0.0 : _chipWidth(context, modeLabel);
-    final session = GlassIconButton.widthFor(context, label: l10n.optHistory) +
+    final session =
+        GlassIconButton.widthFor(context, label: l10n.optHistory) +
         _gap +
         GlassIconButton.widthFor(context, label: l10n.optNewSession);
     final primary = pendingKbEdits > 0
         ? GlassIconButton.widthFor(context, label: l10n.kbEditDiscardAll, hasIcon: false) +
-            _gap +
-            _tintedWidth(context, l10n.kbEditConfirmAll(pendingKbEdits))
+              _gap +
+              _tintedWidth(context, l10n.kbEditConfirmAll(pendingKbEdits))
         : _tintedWidth(context, l10n.applyToWorkbench);
     return (_leading + badge + AppSpace.s16 + session + _gap + primary).ceilToDouble();
   }
@@ -118,12 +119,16 @@ class PromptOptimizerToolbar extends StatelessWidget {
     double measure() {
       double w = _leading;
       if (showBadge) w += _chipWidth(context, modeLabel!);
-      if (running) w += (showBadge ? 8 : 0) + (runningLabel ? _chipWidth(context, runningText, dot: true) : 22);
+      if (running) {
+        w +=
+            (showBadge ? 8 : 0) + (runningLabel ? _chipWidth(context, runningText, dot: true) : 22);
+      }
       w += AppSpace.s16;
       if (sessionInMenu) {
         w += AppSize.control;
       } else {
-        w += GlassIconButton.widthFor(context, label: sessionLabels ? l10n.optHistory : null) +
+        w +=
+            GlassIconButton.widthFor(context, label: sessionLabels ? l10n.optHistory : null) +
             _gap +
             GlassIconButton.widthFor(context, label: sessionLabels ? l10n.optNewSession : null);
       }
@@ -267,7 +272,9 @@ class _Chip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final base = PromptOptimizerToolbar._chipStyle(context);
-    final style = (mono ? base.mono.copyWith(fontWeight: FontWeight.w400) : base).copyWith(color: foreground);
+    final style = (mono ? base.mono.copyWith(fontWeight: FontWeight.w400) : base).copyWith(
+      color: foreground,
+    );
     Widget chip = Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(

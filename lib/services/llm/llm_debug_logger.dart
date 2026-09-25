@@ -39,7 +39,8 @@ class LLMLogCorrelation {
     required this.attempt,
   });
 
-  String get header => 'Correlation: context=${contextId ?? '-'} '
+  String get header =>
+      'Correlation: context=${contextId ?? '-'} '
       'request=#$request leg=$leg attempt=$attempt';
 }
 
@@ -115,10 +116,7 @@ class LLMDebugLogger {
   /// and subscribed here instead, where the zone value is visible to the
   /// protocol's body. Pause, resume and cancel pass straight through, so an
   /// idle guard tearing the subscription down still drops the connection.
-  static Stream<T> correlatedStream<T>(
-    LLMLogCorrelation correlation,
-    Stream<T> Function() open,
-  ) {
+  static Stream<T> correlatedStream<T>(LLMLogCorrelation correlation, Stream<T> Function() open) {
     late final StreamController<T> controller;
     StreamSubscription<T>? subscription;
     controller = StreamController<T>(
@@ -146,8 +144,7 @@ class LLMDebugLogger {
   /// (errors 06 §4), and only the finish reason tells a length cut from a
   /// tool turn from a model that thought it was done. Written by the service
   /// from the merged metadata, so it reads the same on every wire.
-  static String responseSummary(Map<String, dynamic>? metadata,
-      {Object? error}) {
+  static String responseSummary(Map<String, dynamic>? metadata, {Object? error}) {
     if (error != null) {
       final text = error.toString().replaceAll('\n', ' ');
       return 'Summary: error=${error.runtimeType} '
@@ -196,15 +193,19 @@ class LLMDebugLogger {
   }
 
   static Future<LLMDebugLog?> startLog(
-      String modelId, String type, Map<String, dynamic> request) async {
+    String modelId,
+    String type,
+    Map<String, dynamic> request,
+  ) async {
     try {
       final dirPath = await _getLogDir();
-      
+
       // Auto-cleanup: remove logs older than 7 days or keep only latest 50
       _cleanupOldLogs(dirPath);
 
       final startedAt = DateTime.now();
-      final fileName = 'log_${startedAt.millisecondsSinceEpoch}_'
+      final fileName =
+          'log_${startedAt.millisecondsSinceEpoch}_'
           '${modelId.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '_')}.txt';
       final file = File(p.join(dirPath, fileName));
 
@@ -254,8 +255,7 @@ class LLMDebugLogger {
     if (log == null) return;
     try {
       await _flush(log);
-      await log.file
-          .writeAsString('${sanitizeLine(line)}\n', mode: FileMode.append);
+      await log.file.writeAsString('${sanitizeLine(line)}\n', mode: FileMode.append);
     } catch (_) {}
   }
 
@@ -429,7 +429,7 @@ class LLMDebugLogger {
         final f = files[i];
         final stat = f.statSync();
         final age = now.difference(stat.modified).inDays;
-        
+
         if (i >= 50 || age > 7) {
           f.deleteSync();
         }
@@ -441,8 +441,7 @@ class LLMDebugLogger {
   /// catch: Google-style `?key=<API_KEY>` query parameters (the request maps
   /// include the full URL under the innocuous key `url`) and bearer tokens.
   static final RegExp _keyQueryParam = RegExp(r'([?&]key=)[^&\s"]+');
-  static final RegExp _bearerToken =
-      RegExp(r'(Bearer\s+)[A-Za-z0-9._~+/=-]+');
+  static final RegExp _bearerToken = RegExp(r'(Bearer\s+)[A-Za-z0-9._~+/=-]+');
 
   /// Any string value longer than this is truncated in the log. Catches
   /// base64 image payloads (MB-sized) protocol-agnostically: the chat

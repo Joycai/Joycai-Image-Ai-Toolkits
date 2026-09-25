@@ -17,15 +17,14 @@ void main() {
     int output = 55319,
     int requests = 63,
     double cost = 2.3348,
-  }) =>
-      UsageStats(
-        totalInput: input,
-        totalCache: cache,
-        totalOutput: output,
-        totalRequestCount: requests,
-        totalCost: cost,
-        groupCosts: {},
-      );
+  }) => UsageStats(
+    totalInput: input,
+    totalCache: cache,
+    totalOutput: output,
+    totalRequestCount: requests,
+    totalCost: cost,
+    groupCosts: {},
+  );
 
   Future<void> pumpSummary(
     WidgetTester tester,
@@ -44,8 +43,7 @@ void main() {
         home: Scaffold(
           body: Align(
             alignment: Alignment.topCenter,
-            child: UsageSummary(
-              stats: data, rangeLabel: 'Last Week', compact: compact),
+            child: UsageSummary(stats: data, rangeLabel: 'Last Week', compact: compact),
           ),
         ),
       ),

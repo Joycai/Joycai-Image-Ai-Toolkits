@@ -37,11 +37,11 @@ class DatabaseMigration {
     if (oldVersion < 19) await _createV19Tables(db);
     if (oldVersion < 20) await _createV20Tables(db);
     if (oldVersion < 21) {
-       // Handled by DatabaseService.syncPresets()
+      // Handled by DatabaseService.syncPresets()
     }
     if (oldVersion < 22) await _createV22Tables(db);
     if (oldVersion < 23) {
-       // Handled by DatabaseService.syncPresets()
+      // Handled by DatabaseService.syncPresets()
     }
     if (oldVersion < 24) await _createV24Tables(db);
     if (oldVersion < 25) {
@@ -78,9 +78,13 @@ class DatabaseMigration {
 
   static Future<void> onCreate(Database db) async {
     await db.execute('CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT)');
-    await db.execute('CREATE TABLE source_directories (path TEXT PRIMARY KEY, is_selected INTEGER DEFAULT 1)');
-    await db.execute('CREATE TABLE tasks (id TEXT PRIMARY KEY, image_path TEXT, status TEXT, parameters TEXT, result_path TEXT, start_time TEXT, end_time TEXT, model_id TEXT, type TEXT DEFAULT "imageProcess", use_stream INTEGER DEFAULT 1)');
-    
+    await db.execute(
+      'CREATE TABLE source_directories (path TEXT PRIMARY KEY, is_selected INTEGER DEFAULT 1)',
+    );
+    await db.execute(
+      'CREATE TABLE tasks (id TEXT PRIMARY KEY, image_path TEXT, status TEXT, parameters TEXT, result_path TEXT, start_time TEXT, end_time TEXT, model_id TEXT, type TEXT DEFAULT "imageProcess", use_stream INTEGER DEFAULT 1)',
+    );
+
     await _createV2Tables(db);
     await _createV3Tables(db);
     await _createV4Tables(db);
@@ -177,7 +181,11 @@ class DatabaseMigration {
   static Future<void> _createV47Columns(Database db) async {
     if (await _tableExists(db, 'system_prompts')) {
       await _addColumnIfNotExists(
-          db, 'system_prompts', 'output_kind', "TEXT NOT NULL DEFAULT 'prompt'");
+        db,
+        'system_prompts',
+        'output_kind',
+        "TEXT NOT NULL DEFAULT 'prompt'",
+      );
     }
   }
 
@@ -206,8 +214,7 @@ class DatabaseMigration {
         created_at TEXT NOT NULL
       )
     ''');
-    await db.execute(
-        'CREATE INDEX IF NOT EXISTS idx_image_layers_set ON image_layers (set_id)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_image_layers_set ON image_layers (set_id)');
   }
 
   /// Channel × route × model (2026-09): three embedded-document columns, all
@@ -292,7 +299,11 @@ class DatabaseMigration {
     // is not there yet throws rather than being skipped.
     if (!await _tableExists(db, 'llm_channels')) return;
     final added = await _addColumnIfNotExists(
-        db, 'llm_channels', 'sort_order', 'INTEGER DEFAULT 0');
+      db,
+      'llm_channels',
+      'sort_order',
+      'INTEGER DEFAULT 0',
+    );
     if (added) await db.execute('UPDATE llm_channels SET sort_order = id');
   }
 
@@ -506,7 +517,8 @@ class DatabaseMigration {
       )
     ''');
     await db.execute(
-        'INSERT INTO llm_models_v32 ($keptColumns) SELECT $keptColumns FROM llm_models');
+      'INSERT INTO llm_models_v32 ($keptColumns) SELECT $keptColumns FROM llm_models',
+    );
     await db.execute('DROP TABLE llm_models');
     await db.execute('ALTER TABLE llm_models_v32 RENAME TO llm_models');
   }
@@ -645,10 +657,7 @@ class DatabaseMigration {
       final promptId = p['id'] as int?;
       final tagId = p['tag_id'] as int?;
       if (promptId != null && tagId != null) {
-        await db.insert('prompt_tag_refs', {
-          'prompt_id': promptId,
-          'tag_id': tagId,
-        });
+        await db.insert('prompt_tag_refs', {'prompt_id': promptId, 'tag_id': tagId});
       }
     }
   }
@@ -737,8 +746,10 @@ class DatabaseMigration {
         request_price REAL DEFAULT 0.0
       )
     ''');
-    await db.execute('ALTER TABLE llm_models ADD COLUMN fee_group_id INTEGER REFERENCES fee_groups(id)');
-    
+    await db.execute(
+      'ALTER TABLE llm_models ADD COLUMN fee_group_id INTEGER REFERENCES fee_groups(id)',
+    );
+
     final allLlmModels = await db.query('llm_models');
     for (final llmModel in allLlmModels) {
       final name = '${llmModel['model_name']} Fee';
@@ -750,7 +761,12 @@ class DatabaseMigration {
         'output_price': llmModel['output_fee'] ?? 0.0,
         'request_price': llmModel['request_fee'] ?? 0.0,
       });
-      await db.update('llm_models', {'fee_group_id': feeGroupId}, where: 'id = ?', whereArgs: [llmModel['id']]);
+      await db.update(
+        'llm_models',
+        {'fee_group_id': feeGroupId},
+        where: 'id = ?',
+        whereArgs: [llmModel['id']],
+      );
     }
     await db.execute('ALTER TABLE tasks ADD COLUMN model_pk INTEGER');
   }
@@ -766,7 +782,12 @@ class DatabaseMigration {
         orElse: () => null,
       );
       if (matchingModel != null) {
-        await db.update('token_usage', {'model_pk': matchingModel['id']}, where: 'id = ?', whereArgs: [usageEntry['id']]);
+        await db.update(
+          'token_usage',
+          {'model_pk': matchingModel['id']},
+          where: 'id = ?',
+          whereArgs: [usageEntry['id']],
+        );
       }
     }
   }
@@ -784,11 +805,13 @@ class DatabaseMigration {
         tag_color INTEGER
       )
     ''');
-    await db.execute('ALTER TABLE llm_models ADD COLUMN channel_id INTEGER REFERENCES llm_channels(id)');
-    
+    await db.execute(
+      'ALTER TABLE llm_models ADD COLUMN channel_id INTEGER REFERENCES llm_channels(id)',
+    );
+
     final settings = await db.query('settings');
     final Map<String, String> settingsMap = {
-      for (final s in settings) s['key'] as String: s['value'] as String
+      for (final s in settings) s['key'] as String: s['value'] as String,
     };
 
     Future<int?> createChannel(String prefix, String defaultName, String type) async {
@@ -797,7 +820,11 @@ class DatabaseMigration {
       if (apiKey == null || apiKey.isEmpty) return null;
       return db.insert('llm_channels', {
         'display_name': defaultName,
-        'endpoint': endpoint ?? (type.contains('google') ? 'https://generativelanguage.googleapis.com' : 'https://api.openai.com/v1'),
+        'endpoint':
+            endpoint ??
+            (type.contains('google')
+                ? 'https://generativelanguage.googleapis.com'
+                : 'https://api.openai.com/v1'),
         'api_key': apiKey,
         'type': type,
         'enable_discovery': 1,
@@ -806,8 +833,16 @@ class DatabaseMigration {
       });
     }
 
-    final googleFreeId = await createChannel('google_free', 'Google GenAI (Free)', 'google-genai-rest');
-    final googlePaidId = await createChannel('google_paid', 'Google GenAI (Paid)', 'google-genai-rest');
+    final googleFreeId = await createChannel(
+      'google_free',
+      'Google GenAI (Free)',
+      'google-genai-rest',
+    );
+    final googlePaidId = await createChannel(
+      'google_paid',
+      'Google GenAI (Paid)',
+      'google-genai-rest',
+    );
     final openaiId = await createChannel('openai', 'OpenAI API', 'openai-api-rest');
 
     final models = await db.query('llm_models');
@@ -821,7 +856,12 @@ class DatabaseMigration {
         channelId = openaiId;
       }
       if (channelId != null) {
-        await db.update('llm_models', {'channel_id': channelId}, where: 'id = ?', whereArgs: [model['id']]);
+        await db.update(
+          'llm_models',
+          {'channel_id': channelId},
+          where: 'id = ?',
+          whereArgs: [model['id']],
+        );
       }
     }
   }
@@ -839,13 +879,22 @@ class DatabaseMigration {
 
     // 2. Migrate existing "Refiner" prompts
     // Find the Refiner tag
-    final refinerTag = await db.query('prompt_tags', where: 'name = ?', whereArgs: ['Refiner'], limit: 1);
+    final refinerTag = await db.query(
+      'prompt_tags',
+      where: 'name = ?',
+      whereArgs: ['Refiner'],
+      limit: 1,
+    );
     if (refinerTag.isNotEmpty) {
       final refinerTagId = refinerTag.first['id'] as int;
-      
+
       // Get all prompts with this tag
-      final refinerPrompts = await db.query('prompts', where: 'tag_id = ?', whereArgs: [refinerTagId]);
-      
+      final refinerPrompts = await db.query(
+        'prompts',
+        where: 'tag_id = ?',
+        whereArgs: [refinerTagId],
+      );
+
       for (final p in refinerPrompts) {
         await db.insert('system_prompts', {
           'title': p['title'],
@@ -856,7 +905,7 @@ class DatabaseMigration {
 
       // Delete from prompts table
       await db.delete('prompts', where: 'tag_id = ?', whereArgs: [refinerTagId]);
-      
+
       // Delete the system tag
       await db.delete('prompt_tags', where: 'id = ?', whereArgs: [refinerTagId]);
     }
@@ -879,7 +928,7 @@ class DatabaseMigration {
     // 3. Migrate existing tags
     final allPrompts = await db.query('prompts');
     final Set<String> uniqueTags = allPrompts.map((p) => p['tag'] as String).toSet();
-    
+
     // Ensure "General" and "Refiner" exist even if no prompts use them
     uniqueTags.add('General');
     uniqueTags.add('Refiner');
@@ -918,7 +967,12 @@ class DatabaseMigration {
   /// actually added, so a migration can seed the new column *only* on the
   /// upgrade that introduced it — re-running the backfill on every launch
   /// would overwrite whatever the user has arranged since.
-  static Future<bool> _addColumnIfNotExists(Database db, String tableName, String columnName, String columnType) async {
+  static Future<bool> _addColumnIfNotExists(
+    Database db,
+    String tableName,
+    String columnName,
+    String columnType,
+  ) async {
     final tableInfo = await db.rawQuery('PRAGMA table_info($tableName)');
     final bool columnExists = tableInfo.any((column) => column['name'] == columnName);
     if (columnExists) return false;

@@ -20,17 +20,20 @@ void main() {
       ModelCapabilities.forModel(modelId).imageParams.firstWhere((p) => p.key == 'imageSize');
 
   Widget host(Widget child, {double width = 340}) => MaterialApp(
-        locale: const Locale('en'),
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        theme: buildAppTheme(accent: ThemeAccent.fromSeed(Colors.indigo), brightness: Brightness.light),
-        home: Scaffold(
-          body: Align(
-            alignment: Alignment.topRight,
-            child: SizedBox(width: width, child: SingleChildScrollView(child: child)),
-          ),
+    locale: const Locale('en'),
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
+    theme: buildAppTheme(accent: ThemeAccent.fromSeed(Colors.indigo), brightness: Brightness.light),
+    home: Scaffold(
+      body: Align(
+        alignment: Alignment.topRight,
+        child: SizedBox(
+          width: width,
+          child: SingleChildScrollView(child: child),
         ),
-      );
+      ),
+    ),
+  );
 
   void tall(WidgetTester tester) {
     tester.view.physicalSize = const Size(1200, 1600);
@@ -41,16 +44,18 @@ void main() {
   testWidgets('the rule line is mono; its status is in the UI face', (tester) async {
     // The status once left mono with `copyWith(fontFamilyFallback: null)`,
     // which keeps the fallback — harmless only while mono never took effect.
-    await tester.pumpWidget(MaterialApp(
-      theme: buildAppTheme(
-        accent: ThemeAccent.fromSeed(Colors.indigo),
-        brightness: Brightness.light,
-        fontFamily: 'Microsoft YaHei',
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildAppTheme(
+          accent: ThemeAccent.fromSeed(Colors.indigo),
+          brightness: Brightness.light,
+          fontFamily: 'Microsoft YaHei',
+        ),
+        home: const Scaffold(
+          body: SizeRuleLine(parts: [SizeRulePart('×16')], status: 'All pass', failLabel: 'fails'),
+        ),
       ),
-      home: const Scaffold(
-        body: SizeRuleLine(parts: [SizeRulePart('×16')], status: 'All pass', failLabel: 'fails'),
-      ),
-    ));
+    );
     final status = tester.widget<Text>(find.text('All pass')).style!;
     expect(status.fontFamily, 'Microsoft YaHei');
     expect(status.fontFamilyFallback, isNull);
@@ -68,21 +73,25 @@ void main() {
       tall(tester);
       final written = <String>[];
       final closed = <int>[];
-      await tester.pumpWidget(host(SizePickerPanel(
-        spec: sizeSpec(modelId),
-        value: value,
-        modelName: modelId,
-        rates: rates,
-        onChanged: written.add,
-        onClose: () => closed.add(1),
-      )));
+      await tester.pumpWidget(
+        host(
+          SizePickerPanel(
+            spec: sizeSpec(modelId),
+            value: value,
+            modelName: modelId,
+            rates: rates,
+            onChanged: written.add,
+            onClose: () => closed.add(1),
+          ),
+        ),
+      );
       await tester.pumpAndSettle();
       return (written, closed);
     }
 
     AppButton button(WidgetTester tester, String label) => tester.widget<AppButton>(
-          find.ancestor(of: find.text(label), matching: find.byType(AppButton)),
-        );
+      find.ancestor(of: find.text(label), matching: find.byType(AppButton)),
+    );
 
     testWidgets('a new ratio keeps the tier; a tier keeps the ratio', (tester) async {
       // `30b`: any cell of the ratio × tier table in two clicks.
@@ -232,10 +241,12 @@ void main() {
         storedValue: stored,
         onChanged: written.add,
       );
-      await tester.pumpWidget(host(
-        layout == null ? f : Provider<WorkbenchLayoutState>.value(value: layout, child: f),
-        width: 300,
-      ));
+      await tester.pumpWidget(
+        host(
+          layout == null ? f : Provider<WorkbenchLayoutState>.value(value: layout, child: f),
+          width: 300,
+        ),
+      );
       await tester.pumpAndSettle();
       return written;
     }

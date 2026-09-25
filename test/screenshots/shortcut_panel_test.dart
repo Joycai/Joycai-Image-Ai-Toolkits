@@ -41,8 +41,9 @@ void main() {
 
   tearDownAll(() => env.dispose());
 
-  final LogicalKeyboardKey primary =
-      Platform.isMacOS ? LogicalKeyboardKey.metaLeft : LogicalKeyboardKey.controlLeft;
+  final LogicalKeyboardKey primary = Platform.isMacOS
+      ? LogicalKeyboardKey.metaLeft
+      : LogicalKeyboardKey.controlLeft;
 
   Future<void> pressPanelKey(WidgetTester tester) async {
     await tester.sendKeyDownEvent(primary);
@@ -66,8 +67,11 @@ void main() {
 
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await settle(tester, 12);
-    expect(find.byType(ShortcutPanel), findsNothing,
-        reason: 'Escape closes it — the panel is a float, not a page');
+    expect(
+      find.byType(ShortcutPanel),
+      findsNothing,
+      reason: 'Escape closes it — the panel is a float, not a page',
+    );
 
     // And the same chord again is a toggle, not a second panel.
     await pressPanelKey(tester);
@@ -76,8 +80,9 @@ void main() {
     expect(find.byType(ShortcutPanel), findsNothing);
   });
 
-  testWidgets('the panel shows the file browser\'s rows and nobody else\'s',
-      (WidgetTester tester) async {
+  testWidgets('the panel shows the file browser\'s rows and nobody else\'s', (
+    WidgetTester tester,
+  ) async {
     await mountApp(
       tester,
       env: env,
@@ -103,16 +108,19 @@ void main() {
           matching: find.text(shortcutLabel(l10n, shortcut)),
         ),
         findsWidgets,
-        reason: '${shortcut.id} is bound on this screen but the panel does '
+        reason:
+            '${shortcut.id} is bound on this screen but the panel does '
             'not mention it',
       );
     }
 
     // …and nothing that belongs only to the other screen is.
-    final workbenchOnly = AppShortcuts.all.where((s) =>
-        s.layer != ShortcutLayer.app &&
-        s.screens.contains(ShortcutScreen.workbench) &&
-        !s.screens.contains(ShortcutScreen.fileBrowser));
+    final workbenchOnly = AppShortcuts.all.where(
+      (s) =>
+          s.layer != ShortcutLayer.app &&
+          s.screens.contains(ShortcutScreen.workbench) &&
+          !s.screens.contains(ShortcutScreen.fileBrowser),
+    );
     expect(workbenchOnly, isNotEmpty, reason: 'there are such rows to check');
     for (final shortcut in workbenchOnly) {
       expect(
@@ -147,14 +155,19 @@ void main() {
       await tester.sendKeyUpEvent(primary);
     }, frames: 12);
 
-    expect(AppState().activeScreenIndex, AppScreen.settings.index,
-        reason: 'the macOS habit, and the same destination as ⌘8');
+    expect(
+      AppState().activeScreenIndex,
+      AppScreen.settings.index,
+      reason: 'the macOS habit, and the same destination as ⌘8',
+    );
 
-    await actInRealAsync(tester, () async => AppState().navigateToScreen(AppScreen.fileBrowser.index));
+    await actInRealAsync(
+      tester,
+      () async => AppState().navigateToScreen(AppScreen.fileBrowser.index),
+    );
   });
 
-  testWidgets('the panel names the region that owns the keyboard',
-      (WidgetTester tester) async {
+  testWidgets('the panel names the region that owns the keyboard', (WidgetTester tester) async {
     await mountApp(
       tester,
       env: env,
@@ -170,8 +183,11 @@ void main() {
       findsOneWidget,
       reason: 'the panel teaches the rule by obeying it',
     );
-    expect(find.textContaining(l10n.shortcutsInactiveRegion), findsWidgets,
-        reason: 'and says the other regions are not the one listening');
+    expect(
+      find.textContaining(l10n.shortcutsInactiveRegion),
+      findsWidgets,
+      reason: 'and says the other regions are not the one listening',
+    );
 
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await settle(tester, 12);

@@ -50,14 +50,12 @@ void main() {
       expect(result, 'ok');
     });
 
-    test('N consecutive failures abandon the job, naming its id, never retried',
-        () async {
+    test('N consecutive failures abandon the job, naming its id, never retried', () async {
       final future = pollJobUntilDone<String>(
         job: 'DashScope image task',
         jobId: 'task-42',
         fetch: () async =>
-            throw LLMApiException('poll request failed: 503 - down',
-                statusCode: 503),
+            throw LLMApiException('poll request failed: 503 - down', statusCode: 503),
         interpret: (_) => null,
         deadline: const Duration(minutes: 1),
         interval: (_) => Duration.zero,
@@ -74,8 +72,7 @@ void main() {
       expect(LLMService.isRetryable(abandoned), isFalse);
     });
 
-    test('a terminal status from interpret is not a transient failure',
-        () async {
+    test('a terminal status from interpret is not a transient failure', () async {
       var calls = 0;
       await expectLater(
         pollJobUntilDone<String>(
@@ -154,16 +151,18 @@ void main() {
         now: () => clock,
       );
       await expectLater(
-          future,
-          throwsA(isA<LLMJobAbandoned>()
-              .having((e) => e.jobId, 'jobId', 'j9')));
+        future,
+        throwsA(isA<LLMJobAbandoned>().having((e) => e.jobId, 'jobId', 'j9')),
+      );
     });
   });
 
   group('dashscopeTaskFailure (B12)', () {
     test('UNKNOWN says an expired id reports it too; code/message kept', () {
-      final e = dashscopeTaskFailure('DashScope image task', 't1', 'UNKNOWN',
-          {'code': 'InvalidTask', 'message': 'gone'});
+      final e = dashscopeTaskFailure('DashScope image task', 't1', 'UNKNOWN', {
+        'code': 'InvalidTask',
+        'message': 'gone',
+      });
       expect(e.message, contains('t1'));
       expect(e.message, contains('InvalidTask'));
       expect(e.message, contains('expire after 24h'));
@@ -172,8 +171,9 @@ void main() {
     });
 
     test('FAILED carries no expiry note', () {
-      final e = dashscopeTaskFailure('DashScope image task', 't1', 'FAILED',
-          {'code': 'DataInspectionFailed'});
+      final e = dashscopeTaskFailure('DashScope image task', 't1', 'FAILED', {
+        'code': 'DataInspectionFailed',
+      });
       expect(e.message, contains('DataInspectionFailed'));
       expect(e.message, isNot(contains('expire')));
     });

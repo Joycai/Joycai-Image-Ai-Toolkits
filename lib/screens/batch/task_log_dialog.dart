@@ -104,12 +104,7 @@ class _TaskLogDialogState extends State<TaskLogDialog> {
       // layout has a slot for.
       titleWidget: _buildHeader(context, logs, colorScheme, l10n),
       content: logs.isEmpty ? _buildEmpty(colorScheme, l10n) : _buildConsole(logs, colorScheme),
-      actions: [
-        AppButton(
-          label: l10n.close,
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ],
+      actions: [AppButton(label: l10n.close, onPressed: () => Navigator.of(context).pop())],
     );
   }
 
@@ -156,10 +151,7 @@ class _TaskLogDialogState extends State<TaskLogDialog> {
                         style: textTheme.titleLarge,
                       ),
                     ),
-                    if (_isLive) ...[
-                      const SizedBox(width: 8),
-                      _LiveBadge(label: l10n.taskLogLive),
-                    ],
+                    if (_isLive) ...[const SizedBox(width: 8), _LiveBadge(label: l10n.taskLogLive)],
                   ],
                 ),
                 const SizedBox(height: 2),
@@ -232,16 +224,16 @@ class _TaskLogDialogState extends State<TaskLogDialog> {
     final color = isError
         ? colorScheme.onErrorContainer
         : isWarning
-            ? context.semantic.onWarningContainer
-            : colorScheme.onSurface;
+        ? context.semantic.onWarningContainer
+        : colorScheme.onSurface;
 
     return Text(
       line,
       style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
-            height: AppType.looseHeight,
-            color: color,
-            fontWeight: isError ? FontWeight.w600 : FontWeight.w400,
-          ),
+        height: AppType.looseHeight,
+        color: color,
+        fontWeight: isError ? FontWeight.w600 : FontWeight.w400,
+      ),
     );
   }
 
@@ -262,11 +254,7 @@ class _TaskLogDialogState extends State<TaskLogDialog> {
         children: [
           Icon(Icons.article_outlined, size: 28, color: colorScheme.outline),
           const SizedBox(height: AppSpace.s10),
-          Text(
-            l10n.noTaskLog,
-            textAlign: TextAlign.center,
-            style: textTheme.titleSmall,
-          ),
+          Text(l10n.noTaskLog, textAlign: TextAlign.center, style: textTheme.titleSmall),
           const SizedBox(height: AppSpace.s4),
           Text(
             // A cancellation is the usual reason a current task has no log;

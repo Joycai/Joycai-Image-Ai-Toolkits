@@ -197,16 +197,11 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
     if (selected.isEmpty) return;
 
     final urls = selected.map((img) => img.url).toList();
-    appState.taskQueue.addTask(
-      urls,
-      state.selectedModelDbId,
-      {
-        'url': _urlController.text,
-        'prefix': _prefixController.text,
-        'cookies': _cookieController.text,
-      },
-      type: TaskType.imageDownload,
-    );
+    appState.taskQueue.addTask(urls, state.selectedModelDbId, {
+      'url': _urlController.text,
+      'prefix': _prefixController.text,
+      'cookies': _cookieController.text,
+    }, type: TaskType.imageDownload);
 
     AppSnackBar.success(context, l10n.addedToQueue(selected.length));
   }
@@ -340,9 +335,7 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
                     ),
                   ),
           ),
-          Expanded(
-            child: DownloaderResultsArea(onAddToQueue: _addToQueue),
-          ),
+          Expanded(child: DownloaderResultsArea(onAddToQueue: _addToQueue)),
         ],
       ),
     );

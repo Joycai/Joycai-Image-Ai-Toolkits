@@ -29,7 +29,9 @@ class PromptCategoryDot extends StatelessWidget {
     return SizedBox(
       width: size,
       height: size,
-      child: DecoratedBox(decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+      child: DecoratedBox(
+        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+      ),
     );
   }
 }
@@ -59,10 +61,9 @@ class PromptCategoryChip extends StatelessWidget {
   final int? count;
   final double height;
 
-  static TextStyle labelStyle(BuildContext context, {required bool selected}) =>
-      Theme.of(context).textTheme.bodySmall!.copyWith(
-            fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-          );
+  static TextStyle labelStyle(BuildContext context, {required bool selected}) => Theme.of(
+    context,
+  ).textTheme.bodySmall!.copyWith(fontWeight: selected ? FontWeight.w600 : FontWeight.w500);
 
   @override
   Widget build(BuildContext context) {
@@ -120,10 +121,8 @@ class PromptCategoryChip extends StatelessWidget {
 
 /// A system template's type, as the pair the design gives it: the refiner in
 /// the accent's wash, batch rename in the information container.
-({IconData icon, Color background, Color foreground, Color glyph, String label}) promptTemplateTypeStyle(
-  BuildContext context,
-  String type,
-) {
+({IconData icon, Color background, Color foreground, Color glyph, String label})
+promptTemplateTypeStyle(BuildContext context, String type) {
   final scheme = Theme.of(context).colorScheme;
   final semantic = context.semantic;
   final l10n = AppLocalizations.of(context)!;
@@ -326,17 +325,21 @@ class PromptReorderBlockedStrip extends StatelessWidget {
             children: [
               Padding(
                 padding: const EdgeInsets.only(top: 1),
-                child: Icon(Icons.warning_amber_rounded, size: AppSize.iconSm, color: semantic.warning),
+                child: Icon(
+                  Icons.warning_amber_rounded,
+                  size: AppSize.iconSm,
+                  color: semantic.warning,
+                ),
               ),
               const SizedBox(width: AppSpace.s6),
               Expanded(
                 child: Text(
                   l10n.reorderOffFiltered,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: semantic.onWarningContainer,
-                        fontWeight: FontWeight.w400,
-                        height: AppType.tightHeight,
-                      ),
+                    color: semantic.onWarningContainer,
+                    fontWeight: FontWeight.w400,
+                    height: AppType.tightHeight,
+                  ),
                 ),
               ),
             ],
@@ -375,7 +378,11 @@ class PromptDragHandle extends StatelessWidget {
       size: AppSize.iconMd,
       color: enabled ? scheme.outline : scheme.outline.withValues(alpha: AppAlpha.disabled),
     );
-    final box = SizedBox(width: 20, height: AppSize.compact, child: Center(child: glyph));
+    final box = SizedBox(
+      width: 20,
+      height: AppSize.compact,
+      child: Center(child: glyph),
+    );
 
     if (!enabled) {
       return Tooltip(

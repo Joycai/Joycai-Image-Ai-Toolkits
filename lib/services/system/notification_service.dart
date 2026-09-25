@@ -14,15 +14,13 @@ class NotificationService {
   factory NotificationService() => _instance;
   NotificationService._internal();
 
-  final FlutterLocalNotificationsPlugin _plugin =
-      FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin _plugin = FlutterLocalNotificationsPlugin();
 
   bool _initialized = false;
   bool _disabled = false;
   int _nextId = 0;
 
-  bool get _isDesktop =>
-      Platform.isWindows || Platform.isMacOS || Platform.isLinux;
+  bool get _isDesktop => Platform.isWindows || Platform.isMacOS || Platform.isLinux;
 
   Future<void> init() async {
     if (_initialized || _disabled || !_isDesktop) return;
@@ -63,21 +61,13 @@ class NotificationService {
     if (_disabled) return;
 
     final details = NotificationDetails(
-      macOS: DarwinNotificationDetails(
-        subtitle: subtitle,
-        presentSound: !silent,
-      ),
+      macOS: DarwinNotificationDetails(subtitle: subtitle, presentSound: !silent),
       linux: const LinuxNotificationDetails(),
       windows: const WindowsNotificationDetails(),
     );
 
     try {
-      await _plugin.show(
-        id: _nextId++,
-        title: title,
-        body: body,
-        notificationDetails: details,
-      );
+      await _plugin.show(id: _nextId++, title: title, body: body, notificationDetails: details);
     } catch (_) {
       _disabled = true;
     }

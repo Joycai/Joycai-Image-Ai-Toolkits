@@ -79,7 +79,10 @@ class AppDropZoneFrame extends StatelessWidget {
         ? Colors.transparent
         : switch (state) {
             AppDropZoneState.rest || AppDropZoneState.armed => scheme.surfaceContainerLow,
-            AppDropZoneState.hover => Color.alphaBlend(scheme.accentTint, scheme.surfaceContainerLow),
+            AppDropZoneState.hover => Color.alphaBlend(
+              scheme.accentTint,
+              scheme.surfaceContainerLow,
+            ),
             AppDropZoneState.reject => scheme.errorContainer,
             AppDropZoneState.full => context.semantic.warningContainer,
           };
@@ -109,7 +112,10 @@ class _DashedEdgePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final rrect = RRect.fromRectAndRadius(Offset.zero & size, Radius.circular(radius)).deflate(width / 2);
+    final rrect = RRect.fromRectAndRadius(
+      Offset.zero & size,
+      Radius.circular(radius),
+    ).deflate(width / 2);
     drawDashedRRect(
       canvas,
       rrect,
@@ -121,7 +127,8 @@ class _DashedEdgePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_DashedEdgePainter old) => old.color != color || old.width != width || old.radius != radius;
+  bool shouldRepaint(_DashedEdgePainter old) =>
+      old.color != color || old.width != width || old.radius != radius;
 }
 
 /// `00d · 1c` 整面投放: a whole surface taking files from the operating system.
@@ -173,7 +180,10 @@ class AppDropSurfaceOverlay extends StatelessWidget {
                     Text(
                       title,
                       textAlign: TextAlign.center,
-                      style: theme.textTheme.titleSmall!.copyWith(color: AppOverlay.onInk, fontWeight: FontWeight.w600),
+                      style: theme.textTheme.titleSmall!.copyWith(
+                        color: AppOverlay.onInk,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     if (subtitle != null) ...[
                       const SizedBox(height: AppSpace.s4),
@@ -220,7 +230,8 @@ class AppDropConfirmRing extends StatefulWidget {
   State<AppDropConfirmRing> createState() => _AppDropConfirmRingState();
 }
 
-class _AppDropConfirmRingState extends State<AppDropConfirmRing> with SingleTickerProviderStateMixin {
+class _AppDropConfirmRingState extends State<AppDropConfirmRing>
+    with SingleTickerProviderStateMixin {
   static const Duration _hold = Duration(milliseconds: 600);
   static const Duration _reducedHold = Duration(milliseconds: 1200);
 
@@ -249,7 +260,8 @@ class _AppDropConfirmRingState extends State<AppDropConfirmRing> with SingleTick
     final total = (_hold + AppMotion.hover).inMicroseconds;
     final t = _controller.value * total;
     if (t <= _hold.inMicroseconds) return 1;
-    return 1 - AppMotion.quick.transform((t - _hold.inMicroseconds) / AppMotion.hover.inMicroseconds);
+    return 1 -
+        AppMotion.quick.transform((t - _hold.inMicroseconds) / AppMotion.hover.inMicroseconds);
   }
 
   @override
@@ -268,7 +280,10 @@ class _AppDropConfirmRingState extends State<AppDropConfirmRing> with SingleTick
                 return DecoratedBox(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(widget.radius),
-                    border: Border.all(color: color.withValues(alpha: color.a * opacity), width: widget.width),
+                    border: Border.all(
+                      color: color.withValues(alpha: color.a * opacity),
+                      width: widget.width,
+                    ),
                   ),
                 );
               },

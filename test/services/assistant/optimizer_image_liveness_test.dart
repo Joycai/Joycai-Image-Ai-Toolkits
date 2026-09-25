@@ -23,21 +23,21 @@ void main() {
   /// `view_image` call, matching production's shape. The file does not need
   /// to exist — liveness only inspects the message structure.
   void recordView(PromptOptimizerSession session, int id, String path) {
-    session.history.add(LLMMessage(
-      role: LLMRole.user,
-      content:
-          '${PromptOptimizerAgent.viewResultMarker} Reference image #$id (img$id.png) is attached.',
-      attachments: [
-        LLMAttachment.fromFile(File(path), 'image/png',
-            referenceType: LLMReferenceType.viewOnly),
-      ],
-    ));
+    session.history.add(
+      LLMMessage(
+        role: LLMRole.user,
+        content:
+            '${PromptOptimizerAgent.viewResultMarker} Reference image #$id (img$id.png) is attached.',
+        attachments: [
+          LLMAttachment.fromFile(File(path), 'image/png', referenceType: LLMReferenceType.viewOnly),
+        ],
+      ),
+    );
   }
 
   PromptOptimizerSession newSession() => PromptOptimizerSession();
 
-  Set<String> live(PromptOptimizerSession s) =>
-      PromptOptimizerAgent.liveViewedPathsForTest(s);
+  Set<String> live(PromptOptimizerSession s) => PromptOptimizerAgent.liveViewedPathsForTest(s);
 
   group('_liveViewedPaths', () {
     test('a fresh view counts as live', () {
@@ -68,9 +68,13 @@ void main() {
       session.addUserTurn('后续调整 1');
       session.addUserTurn('后续调整 2');
 
-      expect(live(session), isEmpty,
-          reason: '_trimForSend elides the attachment before the boundary, so '
-              'the model can no longer see it and must be allowed to re-view');
+      expect(
+        live(session),
+        isEmpty,
+        reason:
+            '_trimForSend elides the attachment before the boundary, so '
+            'the model can no longer see it and must be allowed to re-view',
+      );
     });
 
     test('images leave sooner than knowledge reads do', () {
@@ -80,23 +84,28 @@ void main() {
       final session = newSession();
       session.addUserTurn('第一轮');
       recordView(session, 1, '/tmp/a.png');
-      session.history.add(LLMMessage(
-        role: LLMRole.tool,
-        toolName: 'read_knowledge_file',
-        toolCallId: 'c1',
-        content: '{"path": "07a.md", "content": "${'x' * 500}"}',
-      ));
+      session.history.add(
+        LLMMessage(
+          role: LLMRole.tool,
+          toolName: 'read_knowledge_file',
+          toolCallId: 'c1',
+          content: '{"path": "07a.md", "content": "${'x' * 500}"}',
+        ),
+      );
       session.addUserTurn('后续调整 1');
       session.addUserTurn('后续调整 2');
 
       final sent = PromptOptimizerAgent.trimForSendForTest(session.history);
-      expect(sent.any((m) => m.attachments.isNotEmpty), isFalse,
-          reason: 'the image is past _keepAttachmentTurns');
       expect(
-          sent.any((m) =>
-              m.toolName == 'read_knowledge_file' && m.content.contains('xxx')),
-          isTrue,
-          reason: 'the knowledge read is still inside _keepRecentTurns');
+        sent.any((m) => m.attachments.isNotEmpty),
+        isFalse,
+        reason: 'the image is past _keepAttachmentTurns',
+      );
+      expect(
+        sent.any((m) => m.toolName == 'read_knowledge_file' && m.content.contains('xxx')),
+        isTrue,
+        reason: 'the knowledge read is still inside _keepRecentTurns',
+      );
     });
 
     test('re-viewing after elision makes the image live again', () {
@@ -124,11 +133,13 @@ void main() {
 
       for (var turn = 0; turn < 8; turn++) {
         final sent = PromptOptimizerAgent.trimForSendForTest(session.history);
-        final stillSent = sent.any((m) => m.attachments
-            .any((a) => a.path == '/tmp/a.png'));
+        final stillSent = sent.any((m) => m.attachments.any((a) => a.path == '/tmp/a.png'));
 
-        expect(live(session).contains('/tmp/a.png'), stillSent,
-            reason: 'disagreement $turn turn(s) after the view');
+        expect(
+          live(session).contains('/tmp/a.png'),
+          stillSent,
+          reason: 'disagreement $turn turn(s) after the view',
+        );
 
         session.addUserTurn('后续调整 $turn');
       }
@@ -146,10 +157,7 @@ void main() {
       session.history
         ..clear()
         ..addAll([
-          LLMMessage(
-            role: LLMRole.user,
-            content: '${PromptOptimizerAgent.summaryMarker}\nsummary',
-          ),
+          LLMMessage(role: LLMRole.user, content: '${PromptOptimizerAgent.summaryMarker}\nsummary'),
           ...tail,
         ]);
 

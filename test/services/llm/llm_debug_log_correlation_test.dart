@@ -10,16 +10,17 @@ import 'package:joycai_image_ai_toolkits/services/llm/llm_debug_logger.dart';
 /// every log ends with one normalised summary line (errors 06 §4).
 void main() {
   LLMLogCorrelation correlation({int leg = 0, int attempt = 0}) =>
-      LLMLogCorrelation(
-          contextId: 'task-7', request: 12, leg: leg, attempt: attempt);
+      LLMLogCorrelation(contextId: 'task-7', request: 12, leg: leg, attempt: attempt);
 
   test('the header names context, request, leg and attempt', () {
-    expect(correlation(leg: 1, attempt: 2).header,
-        'Correlation: context=task-7 request=#12 leg=1 attempt=2');
     expect(
-        LLMLogCorrelation(contextId: null, request: 1, leg: 0, attempt: 0)
-            .header,
-        'Correlation: context=- request=#1 leg=0 attempt=0');
+      correlation(leg: 1, attempt: 2).header,
+      'Correlation: context=task-7 request=#12 leg=1 attempt=2',
+    );
+    expect(
+      LLMLogCorrelation(contextId: null, request: 1, leg: 0, attempt: 0).header,
+      'Correlation: context=- request=#1 leg=0 attempt=0',
+    );
   });
 
   test('outside an attempt there is no correlation', () {
@@ -36,8 +37,11 @@ void main() {
 
     final seen = await LLMDebugLogger.runCorrelated(c, protocolGenerate);
     expect(seen, same(c));
-    expect(LLMDebugLogger.currentCorrelation, isNull,
-        reason: 'it does not leak out of the attempt');
+    expect(
+      LLMDebugLogger.currentCorrelation,
+      isNull,
+      reason: 'it does not leak out of the attempt',
+    );
   });
 
   test('correlatedStream reaches an async* protocol body listened to from '
@@ -50,8 +54,7 @@ void main() {
     }
 
     Stream<LLMLogCorrelation?> serviceStream() async* {
-      await for (final value
-          in LLMDebugLogger.correlatedStream(c, protocolStream)) {
+      await for (final value in LLMDebugLogger.correlatedStream(c, protocolStream)) {
         yield value;
       }
     }
@@ -60,12 +63,10 @@ void main() {
     expect(seen, [same(c), same(c)]);
   });
 
-  test('cancelling the correlated stream cancels the protocol stream',
-      () async {
+  test('cancelling the correlated stream cancels the protocol stream', () async {
     var cancelled = false;
     final source = StreamController<int>(onCancel: () => cancelled = true);
-    final sub = LLMDebugLogger.correlatedStream(correlation(), () => source.stream)
-        .listen((_) {});
+    final sub = LLMDebugLogger.correlatedStream(correlation(), () => source.stream).listen((_) {});
     source.add(1);
     await Future<void>.delayed(Duration.zero);
     await sub.cancel();
@@ -80,7 +81,7 @@ void main() {
         'completion_tokens': 4096,
         'stream_incomplete': true,
         'wire_rewrites': [
-          {'field': 'reasoning.effort', 'sent': 'max', 'echoed': 'none'}
+          {'field': 'reasoning.effort', 'sent': 'max', 'echoed': 'none'},
         ],
       });
       expect(line, startsWith('Summary: finish_reason=length'));
@@ -90,15 +91,15 @@ void main() {
     });
 
     test('absent usage says so instead of printing zeros', () {
-      expect(LLMDebugLogger.responseSummary({'finish_reason': 'stop'}),
-          'Summary: finish_reason=stop usage=none');
-      expect(LLMDebugLogger.responseSummary(null),
-          'Summary: finish_reason=- usage=none');
+      expect(
+        LLMDebugLogger.responseSummary({'finish_reason': 'stop'}),
+        'Summary: finish_reason=stop usage=none',
+      );
+      expect(LLMDebugLogger.responseSummary(null), 'Summary: finish_reason=- usage=none');
     });
 
     test('a failure names its type and a bounded message', () {
-      final line = LLMDebugLogger.responseSummary(null,
-          error: StateError('boom\n${'x' * 1000}'));
+      final line = LLMDebugLogger.responseSummary(null, error: StateError('boom\n${'x' * 1000}'));
       expect(line, startsWith('Summary: error=StateError Bad state: boom '));
       expect(line.length, lessThan(400));
       expect(line.contains('\n'), isFalse);
@@ -107,7 +108,8 @@ void main() {
 
   test('appendSummaries is a no-op when nothing was opened', () async {
     await expectLater(
-        LLMDebugLogger.appendSummaries(correlation(), {'finish_reason': 'stop'}),
-        completes);
+      LLMDebugLogger.appendSummaries(correlation(), {'finish_reason': 'stop'}),
+      completes,
+    );
   });
 }

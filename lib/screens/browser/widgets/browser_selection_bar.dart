@@ -38,8 +38,7 @@ _BarInputs _barInputs(FileBrowserState browser, FileStagingState staging) {
   final Set<BrowserFile> selected = browser.selectedFiles;
   return (
     count: selected.length,
-    allStaged: selected.isNotEmpty &&
-        selected.every((BrowserFile f) => staging.contains(f.path)),
+    allStaged: selected.isNotEmpty && selected.every((BrowserFile f) => staging.contains(f.path)),
   );
 }
 
@@ -137,11 +136,12 @@ class _BarContent extends StatelessWidget {
 
     final countLabel = l10n.imagesSelected(count);
     final countStyle = Theme.of(context).textTheme.bodySmall!.metricsOnly.copyWith(
-          fontWeight: FontWeight.w600,
-          color: scheme.onAccentTint,
-        );
+      fontWeight: FontWeight.w600,
+      color: scheme.onAccentTint,
+    );
 
-    final double fullWidth = _padStart +
+    final double fullWidth =
+        _padStart +
         measureGlassText(context, countLabel, countStyle) +
         _gap +
         GlassIconButton.widthFor(context, label: l10n.selectAll, hasIcon: false) +
@@ -195,11 +195,7 @@ class _BarContent extends StatelessWidget {
                 onPressed: onDelete,
               ),
               const SizedBox(width: _gap),
-              _AiRenameButton(
-                label: l10n.aiBatchRename,
-                compact: compact,
-                onPressed: onAiRename,
-              ),
+              _AiRenameButton(label: l10n.aiBatchRename, compact: compact, onPressed: onAiRename),
             ],
           ),
         ),
@@ -223,7 +219,11 @@ class _AiRenameButton extends StatelessWidget {
 
   static double widthFor(BuildContext context, String label, {required bool compact}) {
     if (compact) return AppSize.control;
-    return (12 + AppSize.iconMd + AppSpace.s6 + measureGlassText(context, label, _labelStyle(context)) + 12)
+    return (12 +
+            AppSize.iconMd +
+            AppSpace.s6 +
+            measureGlassText(context, label, _labelStyle(context)) +
+            12)
         .ceilToDouble();
   }
 

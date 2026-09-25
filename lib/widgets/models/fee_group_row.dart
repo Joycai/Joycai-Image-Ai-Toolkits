@@ -101,8 +101,8 @@ class _FeeGroupRowState extends State<FeeGroupRow> {
     final Color nameColor = selected
         ? scheme.onAccentTint
         : unused
-            ? scheme.outline
-            : scheme.onSurface;
+        ? scheme.outline
+        : scheme.onSurface;
 
     final parts = parseFeeGroupName(group.name);
     final Widget identity = Column(
@@ -116,8 +116,11 @@ class _FeeGroupRowState extends State<FeeGroupRow> {
                 parts.base,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: (widget.phone ? textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600) : textTheme.titleSmall)
-                    ?.copyWith(color: nameColor),
+                style:
+                    (widget.phone
+                            ? textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)
+                            : textTheme.titleSmall)
+                        ?.copyWith(color: nameColor),
               ),
             ),
             // A bracketed part of the name — 「[官方]」, 「(特价)」 — is the
@@ -156,14 +159,23 @@ class _FeeGroupRowState extends State<FeeGroupRow> {
                   Expanded(child: identity),
                   const SizedBox(width: 8),
                   Icon(
-                    widget.handle == FeeGroupHandle.always ? Icons.drag_indicator : Icons.chevron_right,
+                    widget.handle == FeeGroupHandle.always
+                        ? Icons.drag_indicator
+                        : Icons.chevron_right,
                     size: AppSize.iconMd,
-                    color: widget.handle == FeeGroupHandle.always ? scheme.onSurfaceVariant : scheme.outline,
+                    color: widget.handle == FeeGroupHandle.always
+                        ? scheme.onSurfaceVariant
+                        : scheme.outline,
                   ),
                 ],
               ),
               const SizedBox(height: AppSpace.s6),
-              Wrap(spacing: AppSpace.s6, runSpacing: AppSpace.s4, crossAxisAlignment: WrapCrossAlignment.center, children: tags),
+              Wrap(
+                spacing: AppSpace.s6,
+                runSpacing: AppSpace.s4,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: tags,
+              ),
             ],
           )
         : Row(
@@ -191,9 +203,18 @@ class _FeeGroupRowState extends State<FeeGroupRow> {
                 ),
               ),
               const SizedBox(width: AppSpace.s6),
-              FeeRowIconButton(icon: Icons.edit_outlined, tooltip: l10n.edit, onPressed: widget.onEdit ?? widget.onTap),
+              FeeRowIconButton(
+                icon: Icons.edit_outlined,
+                tooltip: l10n.edit,
+                onPressed: widget.onEdit ?? widget.onTap,
+              ),
               const SizedBox(width: 2),
-              FeeRowIconButton(icon: Icons.delete_outline, tooltip: l10n.delete, onPressed: widget.onDelete, danger: true),
+              FeeRowIconButton(
+                icon: Icons.delete_outline,
+                tooltip: l10n.delete,
+                onPressed: widget.onDelete,
+                danger: true,
+              ),
             ],
           );
 
@@ -203,10 +224,10 @@ class _FeeGroupRowState extends State<FeeGroupRow> {
       color: selected
           ? scheme.accentTint
           : widget.phone
-              ? scheme.surface
-              : _hovering
-                  ? scheme.surfaceContainer
-                  : scheme.surfaceContainerLow,
+          ? scheme.surface
+          : _hovering
+          ? scheme.surfaceContainer
+          : scheme.surfaceContainerLow,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.control),
         side: BorderSide(color: selected ? scheme.primary : scheme.outlineVariant),
@@ -214,7 +235,9 @@ class _FeeGroupRowState extends State<FeeGroupRow> {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: widget.onTap,
-        onSecondaryTapUp: widget.onContextMenu == null ? null : (details) => widget.onContextMenu!(details.globalPosition),
+        onSecondaryTapUp: widget.onContextMenu == null
+            ? null
+            : (details) => widget.onContextMenu!(details.globalPosition),
         onHover: (hovering) {
           if (hovering != _hovering) setState(() => _hovering = hovering);
         },
@@ -325,7 +348,10 @@ List<Widget> feeGroupPriceTags(BuildContext context, AppLocalizations l10n, Pric
           tooltip: feeGroupRateTable(l10n, group),
         ),
         if (feeGroupOtherSpecsAtZero(group))
-          Text(l10n.specOtherZero, style: textTheme.labelSmall?.mono.copyWith(color: scheme.outline)),
+          Text(
+            l10n.specOtherZero,
+            style: textTheme.labelSmall?.mono.copyWith(color: scheme.outline),
+          ),
         // `D2c · 22e`: a tag of its own, and only on a group that charges.
         if (feeGroupInputRate(l10n, group) case final input?)
           FeePriceTag(label: l10n.specInputTitle, value: input),
@@ -344,7 +370,13 @@ List<Widget> feeGroupPriceTags(BuildContext context, AppLocalizations l10n, Pric
 /// card tone. [inherited] renders the figure muted — it is not configured on
 /// this group, it follows the input price.
 class FeePriceTag extends StatelessWidget {
-  const FeePriceTag({super.key, this.label, required this.value, this.inherited = false, this.tooltip});
+  const FeePriceTag({
+    super.key,
+    this.label,
+    required this.value,
+    this.inherited = false,
+    this.tooltip,
+  });
 
   /// The rate's name; null for a tag that is all figure (the spec summary).
   final String? label;

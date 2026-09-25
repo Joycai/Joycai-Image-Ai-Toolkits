@@ -14,11 +14,7 @@ class PermissionPlaceholder extends StatelessWidget {
   final VoidCallback onReAuthorize;
   final String? customMessage;
 
-  const PermissionPlaceholder({
-    super.key,
-    required this.onReAuthorize,
-    this.customMessage,
-  });
+  const PermissionPlaceholder({super.key, required this.onReAuthorize, this.customMessage});
 
   @override
   Widget build(BuildContext context) {

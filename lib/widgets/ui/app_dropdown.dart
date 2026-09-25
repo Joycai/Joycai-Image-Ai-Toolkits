@@ -168,14 +168,18 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
   /// measured from the actual font, since the user can swap the app onto one
   /// with different metrics — and never below zero, so a large text scale
   /// simply makes both fields grow together.
-  double _verticalInset(BuildContext context, TextStyle? style, double themeInset, double iconSize) {
+  double _verticalInset(
+    BuildContext context,
+    TextStyle? style,
+    double themeInset,
+    double iconSize,
+  ) {
     final lineHeight = (TextPainter(
       text: TextSpan(text: 'Ag', style: style),
       textDirection: TextDirection.ltr,
       textScaler: MediaQuery.textScalerOf(context),
       maxLines: 1,
-    )..layout())
-        .height;
+    )..layout()).height;
     return math.max(0, themeInset - (_buttonHeight(context, style, iconSize) - lineHeight) / 2);
   }
 
@@ -188,14 +192,20 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
 
     final size = widget.size;
     // The size's type, as the picker draws it.
-    final valueStyle = size.valueStyle(textTheme)?.copyWith(
-      color: enabled ? colorScheme.onSurface : colorScheme.onSurface.withValues(alpha: AppAlpha.disabled),
-    );
-    final outline = enabled ? colorScheme.outline : colorScheme.outline.withValues(alpha: AppAlpha.disabled);
+    final valueStyle = size
+        .valueStyle(textTheme)
+        ?.copyWith(
+          color: enabled
+              ? colorScheme.onSurface
+              : colorScheme.onSurface.withValues(alpha: AppAlpha.disabled),
+        );
+    final outline = enabled
+        ? colorScheme.outline
+        : colorScheme.outline.withValues(alpha: AppAlpha.disabled);
 
     final themeInset =
         theme.inputDecorationTheme.contentPadding?.resolve(Directionality.of(context)) ??
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 10);
+        const EdgeInsets.symmetric(horizontal: 12, vertical: 10);
     final pinned = widget.height ?? size.height;
     final double vertical;
     if (pinned != null) {
@@ -208,10 +218,10 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
     }
 
     Text itemText(AppDropdownItem<T> item, String text) => Text(
-          text,
-          overflow: TextOverflow.ellipsis,
-          style: item.muted ? valueStyle?.copyWith(color: outline) : null,
-        );
+      text,
+      overflow: TextOverflow.ellipsis,
+      style: item.muted ? valueStyle?.copyWith(color: outline) : null,
+    );
 
     // Rows that carry more than a label are two lines tall, so the menu has
     // to size them itself rather than at Material's fixed 48 — and the closed
@@ -222,72 +232,69 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
     // The trailing's cap is a share of the row, hence the LayoutBuilder: a
     // menu row is laid out at the menu's width, never measured intrinsically.
     Widget richRow(AppDropdownItem<T> item, double trailingCap) => Row(
-          children: [
-            if (item.icon != null) ...[
-              Icon(item.icon, size: AppSize.iconSm),
-              const SizedBox(width: 8),
-            ],
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: valueStyle?.copyWith(
-                      fontWeight: FontWeight.w500,
-                      color: item.muted ? outline : null,
-                    ),
-                  ),
-                  if (item.description != null)
-                    Text(
-                      item.description!,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
-                    ),
-                ],
-              ),
-            ),
-            if (item.trailing != null) ...[
-              const SizedBox(width: 12),
-              // As wide as it needs, up to a share of the row. A non-flex
-              // child is laid out first, so uncapped a long one (a fee
-              // group's one-line summary) took the whole row from the label
-              // — the name being chosen — and then overflowed it; and as a
-              // flex child it could not hand the label what it left over.
-              ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: trailingCap),
-                child: Text(
-                  item.trailing!,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  // The box is the cap's width once the text is cut, the cut line a
-                  // little less: end-aligned, the 「…」 stays on the row's right
-                  // edge like a trailing that fits.
-                  textAlign: TextAlign.end,
-                  style: textTheme.labelSmall?.mono.copyWith(color: colorScheme.outline),
+      children: [
+        if (item.icon != null) ...[Icon(item.icon, size: AppSize.iconSm), const SizedBox(width: 8)],
+        Expanded(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                item.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: valueStyle?.copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: item.muted ? outline : null,
                 ),
               ),
+              if (item.description != null)
+                Text(
+                  item.description!,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                ),
             ],
-          ],
-        );
+          ),
+        ),
+        if (item.trailing != null) ...[
+          const SizedBox(width: 12),
+          // As wide as it needs, up to a share of the row. A non-flex
+          // child is laid out first, so uncapped a long one (a fee
+          // group's one-line summary) took the whole row from the label
+          // — the name being chosen — and then overflowed it; and as a
+          // flex child it could not hand the label what it left over.
+          ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: trailingCap),
+            child: Text(
+              item.trailing!,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              // The box is the cap's width once the text is cut, the cut line a
+              // little less: end-aligned, the 「…」 stays on the row's right
+              // edge like a trailing that fits.
+              textAlign: TextAlign.end,
+              style: textTheme.labelSmall?.mono.copyWith(color: colorScheme.outline),
+            ),
+          ),
+        ],
+      ],
+    );
 
     Widget richItem(AppDropdownItem<T> item) => Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          // Only a row with a trailing needs its width; the others stay the
-          // plain row they were, measurable by whatever hosts them.
-          child: item.trailing == null
-              ? richRow(item, 0)
-              : LayoutBuilder(
-                  builder: (context, constraints) => richRow(
-                    item,
-                    math.min(_trailingMaxWidth, constraints.maxWidth * _trailingMaxShare),
-                  ),
-                ),
-        );
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      // Only a row with a trailing needs its width; the others stay the
+      // plain row they were, measurable by whatever hosts them.
+      child: item.trailing == null
+          ? richRow(item, 0)
+          : LayoutBuilder(
+              builder: (context, constraints) => richRow(
+                item,
+                math.min(_trailingMaxWidth, constraints.maxWidth * _trailingMaxShare),
+              ),
+            ),
+    );
 
     Widget menuRow(AppDropdownItem<T> item) => hasRichItems
         ? richItem(item)
@@ -309,7 +316,9 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
         // paint it twice.
         helperText: widget.helperText,
         helperMaxLines: widget.helperMaxLines,
-        prefixIcon: widget.prefixIcon == null ? null : Icon(widget.prefixIcon, size: AppSize.iconLg),
+        prefixIcon: widget.prefixIcon == null
+            ? null
+            : Icon(widget.prefixIcon, size: AppSize.iconLg),
         enabled: enabled,
         contentPadding: EdgeInsets.fromLTRB(size.inset, vertical, size.inset, vertical),
       ),
@@ -337,7 +346,11 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
           style: valueStyle,
           hint: widget.hint == null
               ? null
-              : Text(widget.hint!, style: valueStyle?.copyWith(color: outline), overflow: TextOverflow.ellipsis),
+              : Text(
+                  widget.hint!,
+                  style: valueStyle?.copyWith(color: outline),
+                  overflow: TextOverflow.ellipsis,
+                ),
           // Only built when some item reads differently once chosen; the
           // builder has to answer for every item, so the rest repeat [label].
           // Always built: the menu rows carry a check the closed field must

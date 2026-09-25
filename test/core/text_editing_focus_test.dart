@@ -14,15 +14,17 @@ void main() {
   ) async {
     final List<LogicalKeyboardKey> seen = <LogicalKeyboardKey>[];
 
-    await tester.pumpWidget(MaterialApp(
-      home: Focus(
-        onKeyEvent: (FocusNode node, KeyEvent event) {
-          if (event is KeyDownEvent) seen.add(event.logicalKey);
-          return KeyEventResult.ignored;
-        },
-        child: const Material(child: TextField()),
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Focus(
+          onKeyEvent: (FocusNode node, KeyEvent event) {
+            if (event is KeyDownEvent) seen.add(event.logicalKey);
+            return KeyEventResult.ignored;
+          },
+          child: const Material(child: TextField()),
+        ),
       ),
-    ));
+    );
 
     expect(isTextEditingFocused(), isFalse);
 
@@ -40,9 +42,11 @@ void main() {
     final FocusNode node = FocusNode();
     addTearDown(node.dispose);
 
-    await tester.pumpWidget(MaterialApp(
-      home: Focus(focusNode: node, child: const SizedBox.expand()),
-    ));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Focus(focusNode: node, child: const SizedBox.expand()),
+      ),
+    );
     node.requestFocus();
     await tester.pump();
 

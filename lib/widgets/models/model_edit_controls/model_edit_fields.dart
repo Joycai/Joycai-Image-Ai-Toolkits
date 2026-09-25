@@ -83,7 +83,9 @@ class ModelEditTextField extends StatelessWidget {
         suffixText: suffixText,
         suffixStyle: style?.copyWith(color: scheme.onSurfaceVariant),
         suffixIcon: suffix,
-        suffixIconConstraints: suffix == null ? null : const BoxConstraints(minWidth: 0, minHeight: 0),
+        suffixIconConstraints: suffix == null
+            ? null
+            : const BoxConstraints(minWidth: 0, minHeight: 0),
         enabledBorder: error ? errorBorder : null,
         focusedBorder: error ? errorBorder : null,
       ),
@@ -204,7 +206,11 @@ class _ChoiceCell<T> extends StatelessWidget {
 
 /// The form's card: the column colour, a hairline, r10.
 class ModelEditCard extends StatelessWidget {
-  const ModelEditCard({super.key, required this.child, this.padding = const EdgeInsets.all(AppSpace.s10)});
+  const ModelEditCard({
+    super.key,
+    required this.child,
+    this.padding = const EdgeInsets.all(AppSpace.s10),
+  });
 
   final Widget child;
   final EdgeInsetsGeometry padding;

@@ -31,11 +31,7 @@ class AppSidePanel extends StatelessWidget {
   /// Ignored on a narrow window, where the sheet always spans the width.
   final double width;
 
-  const AppSidePanel({
-    super.key,
-    required this.child,
-    this.width = appSidePanelWidth,
-  });
+  const AppSidePanel({super.key, required this.child, this.width = appSidePanelWidth});
 
   /// Presents [builder]'s content as a side panel, picking the presentation
   /// from the window width. Resolves with whatever the panel is popped with.
@@ -65,12 +61,12 @@ class AppSidePanel extends StatelessWidget {
     // Read once, here, rather than inside the transition builder: a route's
     // durations are fixed when it is pushed, so a builder that disagreed with
     // them would animate against a clock it cannot change.
-    final Duration enter =
-        AppMotion.prefersReduced(context) ? AppMotion.reveal : AppMotion.panel;
+    final Duration enter = AppMotion.prefersReduced(context) ? AppMotion.reveal : AppMotion.panel;
     // `00 · 1e`: an exit runs at [AppMotion.exitFactor] of its entrance.
     // Arriving is the event; leaving is getting out of the way.
-    final Duration leave =
-        Duration(milliseconds: (enter.inMilliseconds * AppMotion.exitFactor).round());
+    final Duration leave = Duration(
+      milliseconds: (enter.inMilliseconds * AppMotion.exitFactor).round(),
+    );
 
     return Navigator.of(context, rootNavigator: true).push<T>(
       _AppSidePanelRoute<T>(
@@ -108,8 +104,7 @@ class AppSidePanel extends StatelessWidget {
             return FadeTransition(opacity: curved, child: child);
           }
           return SlideTransition(
-            position: Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero)
-                .animate(curved),
+            position: Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero).animate(curved),
             child: child,
           );
         },
@@ -121,8 +116,7 @@ class AppSidePanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final isNarrow = Responsive.isNarrow(context);
-    final borderRadius =
-        isNarrow ? const BorderRadius.vertical(top: Radius.circular(20)) : null;
+    final borderRadius = isNarrow ? const BorderRadius.vertical(top: Radius.circular(20)) : null;
 
     return Container(
       width: isNarrow ? double.infinity : width,
@@ -131,9 +125,7 @@ class AppSidePanel extends StatelessWidget {
       // the clipping — a colour on both would be one painted over the other.
       decoration: BoxDecoration(
         borderRadius: borderRadius,
-        boxShadow: isNarrow
-            ? null
-            : colorScheme.shadowPanelSide,
+        boxShadow: isNarrow ? null : colorScheme.shadowPanelSide,
       ),
       // Material, not a plain Container: these panels are lists of ListTiles
       // and InkWells, whose ink a Container swallows.

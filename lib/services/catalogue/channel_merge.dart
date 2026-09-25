@@ -72,10 +72,7 @@ class ChannelMerge {
   /// channel earlier in the rail is kept when either could be.
   ///
   /// Keys are compared in memory only and never leave this function.
-  static List<MergeCandidate> candidates(
-    List<LLMChannel> channels,
-    List<LLMModel> models,
-  ) {
+  static List<MergeCandidate> candidates(List<LLMChannel> channels, List<LLMModel> models) {
     final routes = {
       for (final c in channels)
         if (c.id != null) c.id!: RoutedChannel.routesOf(c),
@@ -90,9 +87,7 @@ class ChannelMerge {
         if (b.id == null || used.contains(b.id)) continue;
         if (!_samePlace(a, routes[a.id]!, b, routes[b.id]!)) continue;
         final forward = plan(a, b, models);
-        final chosen = forward != null
-            ? MergeCandidate(a, b, forward)
-            : _reverse(a, b, models);
+        final chosen = forward != null ? MergeCandidate(a, b, forward) : _reverse(a, b, models);
         if (chosen == null) continue;
         found.add(chosen);
         used
@@ -104,11 +99,7 @@ class ChannelMerge {
     return found;
   }
 
-  static MergeCandidate? _reverse(
-    LLMChannel a,
-    LLMChannel b,
-    List<LLMModel> models,
-  ) {
+  static MergeCandidate? _reverse(LLMChannel a, LLMChannel b, List<LLMModel> models) {
     final backward = plan(b, a, models);
     return backward == null ? null : MergeCandidate(b, a, backward);
   }
@@ -117,12 +108,7 @@ class ChannelMerge {
   /// §2). An empty key pairs only with an empty key on the same host — two
   /// local servers at one address are one server — and a channel with no
   /// host pairs with nothing.
-  static bool _samePlace(
-    LLMChannel a,
-    ChannelRoutes ra,
-    LLMChannel b,
-    ChannelRoutes rb,
-  ) {
+  static bool _samePlace(LLMChannel a, ChannelRoutes ra, LLMChannel b, ChannelRoutes rb) {
     if (ra.platform.id != rb.platform.id) return false;
     final host = _hostKey(ra.host);
     if (host.isEmpty || host != _hostKey(rb.host)) return false;
@@ -144,11 +130,7 @@ class ChannelMerge {
   /// under [keep]'s primary vendor, or an image / video model with no
   /// namesake on [keep] (those always ride the primary route, so moving one
   /// would send it somewhere else).
-  static MergePlan? plan(
-    LLMChannel keep,
-    LLMChannel absorb,
-    List<LLMModel> models,
-  ) {
+  static MergePlan? plan(LLMChannel keep, LLMChannel absorb, List<LLMModel> models) {
     final keepId = keep.id;
     final absorbId = absorb.id;
     if (keepId == null || absorbId == null || keepId == absorbId) return null;
@@ -232,10 +214,9 @@ class ChannelMerge {
   static ChannelRoutes? _mergedRoutes(ChannelRoutes kr, ChannelRoutes ar) {
     var merged = kr;
     for (final e in ar.entries) {
-      merged = merged.withRoute(e.kind).withPath(
-        e.kind,
-        ar.host == kr.host ? e.path : ar.addressOf(e.kind),
-      );
+      merged = merged
+          .withRoute(e.kind)
+          .withPath(e.kind, ar.host == kr.host ? e.path : ar.addressOf(e.kind));
     }
     bool same(ChannelRoutes from, RouteKind k) =>
         merged.has(k) &&
@@ -249,11 +230,7 @@ class ChannelMerge {
 
   /// A model on the kept channel that [m] merges into: the same upstream
   /// model and type, not already claimed by another absorbed model.
-  static LLMModel? _namesake(
-    LLMModel m,
-    List<LLMModel> keepModels,
-    Set<int> taken,
-  ) {
+  static LLMModel? _namesake(LLMModel m, List<LLMModel> keepModels, Set<int> taken) {
     for (final k in keepModels) {
       if (k.id == null || taken.contains(k.id)) continue;
       if (k.modelId == m.modelId && k.tag == m.tag) return k;
@@ -266,11 +243,7 @@ class ChannelMerge {
   /// did not offer would now find that pin offered and quietly move — it is
   /// pinned to the route it rides instead. Unchanged models are returned as
   /// themselves.
-  static LLMModel _pinned(
-    LLMModel k,
-    ChannelRoutes before,
-    ChannelRoutes after,
-  ) {
+  static LLMModel _pinned(LLMModel k, ChannelRoutes before, ChannelRoutes after) {
     if (!ModelRoutes.usesRoutes(k)) return k;
     final was = ModelRoutes.requestRoute(k, before);
     if (was == null || ModelRoutes.requestRoute(k, after) == was) return k;
@@ -288,12 +261,7 @@ class ChannelMerge {
   /// those routes — [m]'s current route and whatever it had parked there.
   /// What [into] already has for a route wins; its id and its own fields are
   /// kept. Image and video models have no route parameters to carry.
-  static LLMModel _carry(
-    LLMModel m,
-    ChannelRoutes ar,
-    LLMModel into,
-    ChannelRoutes merged,
-  ) {
+  static LLMModel _carry(LLMModel m, ChannelRoutes ar, LLMModel into, ChannelRoutes merged) {
     if (!ModelRoutes.usesRoutes(m) || !ModelRoutes.usesRoutes(into)) {
       return into;
     }
@@ -330,12 +298,7 @@ class ChannelMerge {
 
   /// [m] moved to the kept channel, its route written explicitly — the
   /// kept channel's primary is another route, and [m] must not follow it.
-  static LLMModel _moved(
-    LLMModel m,
-    ChannelRoutes ar,
-    ChannelRoutes merged,
-    int keepId,
-  ) {
+  static LLMModel _moved(LLMModel m, ChannelRoutes ar, ChannelRoutes merged, int keepId) {
     final across = m.movedTo(keepId);
     if (!ModelRoutes.usesRoutes(m)) return across;
     final route = ModelRoutes.requestRoute(m, ar);
@@ -368,7 +331,6 @@ class ChannelMerge {
         after.route == before.route &&
         after.channelType == before.channelType &&
         after.endpoint == before.endpoint &&
-        (ModelRoutes.usesRoutes(from) ||
-            after.wireProtocol == before.wireProtocol);
+        (ModelRoutes.usesRoutes(from) || after.wireProtocol == before.wireProtocol);
   }
 }

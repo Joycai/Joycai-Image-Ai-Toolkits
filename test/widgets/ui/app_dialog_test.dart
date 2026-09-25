@@ -10,24 +10,26 @@ void main() {
   const seed = Colors.indigo;
 
   Widget host(WidgetBuilder builder) => MaterialApp(
-        theme: buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light),
-        home: Builder(builder: builder),
-      );
+    theme: buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light),
+    home: Builder(builder: builder),
+  );
 
   testWidgets('show displays the title, content and actions', (tester) async {
-    await tester.pumpWidget(host((context) {
-      return Center(
-        child: ElevatedButton(
-          onPressed: () => AppDialog.show<void>(
-            context,
-            title: 'Delete channel?',
-            content: const Text('This cannot be undone.'),
-            actions: [TextButton(onPressed: () {}, child: const Text('Cancel'))],
+    await tester.pumpWidget(
+      host((context) {
+        return Center(
+          child: ElevatedButton(
+            onPressed: () => AppDialog.show<void>(
+              context,
+              title: 'Delete channel?',
+              content: const Text('This cannot be undone.'),
+              actions: [TextButton(onPressed: () {}, child: const Text('Cancel'))],
+            ),
+            child: const Text('Open'),
           ),
-          child: const Text('Open'),
-        ),
-      );
-    }));
+        );
+      }),
+    );
 
     await tester.tap(find.text('Open'));
     await tester.pumpAndSettle();
@@ -38,14 +40,17 @@ void main() {
   });
 
   testWidgets('the title reads from textTheme.titleLarge', (tester) async {
-    await tester.pumpWidget(host((context) {
-      return Center(
-        child: ElevatedButton(
-          onPressed: () => AppDialog.show<void>(context, title: 'Title', content: const SizedBox()),
-          child: const Text('Open'),
-        ),
-      );
-    }));
+    await tester.pumpWidget(
+      host((context) {
+        return Center(
+          child: ElevatedButton(
+            onPressed: () =>
+                AppDialog.show<void>(context, title: 'Title', content: const SizedBox()),
+            child: const Text('Open'),
+          ),
+        );
+      }),
+    );
 
     await tester.tap(find.text('Open'));
     await tester.pumpAndSettle();
@@ -58,24 +63,26 @@ void main() {
   testWidgets('popping with a result returns it from show', (tester) async {
     String? result;
 
-    await tester.pumpWidget(host((context) {
-      return Center(
-        child: ElevatedButton(
-          onPressed: () async {
-            result = await AppDialog.show<String>(
-              context,
-              content: Builder(
-                builder: (dialogContext) => ElevatedButton(
-                  onPressed: () => Navigator.pop(dialogContext, 'confirmed'),
-                  child: const Text('Confirm'),
+    await tester.pumpWidget(
+      host((context) {
+        return Center(
+          child: ElevatedButton(
+            onPressed: () async {
+              result = await AppDialog.show<String>(
+                context,
+                content: Builder(
+                  builder: (dialogContext) => ElevatedButton(
+                    onPressed: () => Navigator.pop(dialogContext, 'confirmed'),
+                    child: const Text('Confirm'),
+                  ),
                 ),
-              ),
-            );
-          },
-          child: const Text('Open'),
-        ),
-      );
-    }));
+              );
+            },
+            child: const Text('Open'),
+          ),
+        );
+      }),
+    );
 
     await tester.tap(find.text('Open'));
     await tester.pumpAndSettle();
@@ -88,14 +95,16 @@ void main() {
   testWidgets('the surface is an opaque panel at r22, clipped to its corners', (tester) async {
     // `01 · 1h`: dialogs are content, never glass — the panel colour at r22,
     // with the shadow outside the clip.
-    await tester.pumpWidget(host((context) {
-      return Center(
-        child: ElevatedButton(
-          onPressed: () => AppDialog.show<void>(context, content: const SizedBox()),
-          child: const Text('Open'),
-        ),
-      );
-    }));
+    await tester.pumpWidget(
+      host((context) {
+        return Center(
+          child: ElevatedButton(
+            onPressed: () => AppDialog.show<void>(context, content: const SizedBox()),
+            child: const Text('Open'),
+          ),
+        );
+      }),
+    );
 
     await tester.tap(find.text('Open'));
     await tester.pumpAndSettle();
@@ -105,14 +114,19 @@ void main() {
     final shape = dialog.shape! as RoundedRectangleBorder;
     expect(appDialogRadius, 22);
     expect(shape.borderRadius, BorderRadius.circular(appDialogRadius));
-    expect(dialog.backgroundColor, Colors.transparent,
-        reason: 'the panel is drawn inside the clip, so the shadow can sit outside it');
+    expect(
+      dialog.backgroundColor,
+      Colors.transparent,
+      reason: 'the panel is drawn inside the clip, so the shadow can sit outside it',
+    );
 
     final clip = tester.widget<ClipRRect>(
-        find.descendant(of: find.byType(Dialog), matching: find.byType(ClipRRect)).first);
+      find.descendant(of: find.byType(Dialog), matching: find.byType(ClipRRect)).first,
+    );
     expect(clip.borderRadius, BorderRadius.circular(appDialogRadius));
     final panel = tester.widget<Material>(
-        find.descendant(of: find.byType(ClipRRect), matching: find.byType(Material)).first);
+      find.descendant(of: find.byType(ClipRRect), matching: find.byType(Material)).first,
+    );
     expect(panel.color, theme.colorScheme.surface);
   });
 
@@ -120,21 +134,22 @@ void main() {
     // showDialog's own transition is opacity alone, so a dialog arrived at
     // final size getting less see-through — present before it had finished
     // appearing. A surface that scales while it fades reads as arriving.
-    testWidgets('scales up on the way in and is settled by the end',
-        (tester) async {
-      await tester.pumpWidget(MaterialApp(
-        theme: buildAppTheme(accent: ThemeAccent.fromSeed(Colors.indigo), brightness: Brightness.light),
-        home: Builder(
-          builder: (context) => TextButton(
-            onPressed: () => AppDialog.show(
-              context,
-              title: 'Overwrite?',
-              content: const Text('body'),
+    testWidgets('scales up on the way in and is settled by the end', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(
+            accent: ThemeAccent.fromSeed(Colors.indigo),
+            brightness: Brightness.light,
+          ),
+          home: Builder(
+            builder: (context) => TextButton(
+              onPressed: () =>
+                  AppDialog.show(context, title: 'Overwrite?', content: const Text('body')),
+              child: const Text('open'),
             ),
-            child: const Text('open'),
           ),
         ),
-      ));
+      );
 
       await tester.tap(find.text('open'));
       await tester.pump();
@@ -158,23 +173,25 @@ void main() {
     testWidgets('drops the scale entirely under reduce-motion', (tester) async {
       // The fade stays — it is opacity, not travel, and it is what tells the
       // user something appeared at all.
-      await tester.pumpWidget(MaterialApp(
-        theme: buildAppTheme(accent: ThemeAccent.fromSeed(Colors.indigo), brightness: Brightness.light),
-        builder: (context, navigator) => MediaQuery(
-          data: MediaQuery.of(context).copyWith(disableAnimations: true),
-          child: navigator!,
-        ),
-        home: Builder(
-          builder: (context) => TextButton(
-            onPressed: () => AppDialog.show(
-              context,
-              title: 'Overwrite?',
-              content: const Text('body'),
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(
+            accent: ThemeAccent.fromSeed(Colors.indigo),
+            brightness: Brightness.light,
+          ),
+          builder: (context, navigator) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(disableAnimations: true),
+            child: navigator!,
+          ),
+          home: Builder(
+            builder: (context) => TextButton(
+              onPressed: () =>
+                  AppDialog.show(context, title: 'Overwrite?', content: const Text('body')),
+              child: const Text('open'),
             ),
-            child: const Text('open'),
           ),
         ),
-      ));
+      );
 
       await tester.tap(find.text('open'));
       await tester.pump();

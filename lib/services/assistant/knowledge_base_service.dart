@@ -15,10 +15,10 @@ class KbFileInfo {
   const KbFileInfo({required this.relPath, required this.sizeKb, required this.isDir});
 
   Map<String, dynamic> toJson() => {
-        'path': relPath,
-        if (!isDir) 'size_kb': sizeKb,
-        'is_dir': isDir,
-      };
+    'path': relPath,
+    if (!isDir) 'size_kb': sizeKb,
+    'is_dir': isDir,
+  };
 }
 
 /// What a knowledge base contains, as the agent sees it.
@@ -32,11 +32,7 @@ class KbTreeStats {
   final int directories;
   final DateTime? newestModified;
 
-  const KbTreeStats({
-    required this.files,
-    required this.directories,
-    this.newestModified,
-  });
+  const KbTreeStats({required this.files, required this.directories, this.newestModified});
 }
 
 /// One row of the knowledge tree as the assistant's left column draws it.
@@ -90,12 +86,11 @@ class KbWritePolicy {
     bool? allowWrites,
     bool? confirmEachWrite,
     bool? backupBeforeOverwrite,
-  }) =>
-      KbWritePolicy(
-        allowWrites: allowWrites ?? this.allowWrites,
-        confirmEachWrite: confirmEachWrite ?? this.confirmEachWrite,
-        backupBeforeOverwrite: backupBeforeOverwrite ?? this.backupBeforeOverwrite,
-      );
+  }) => KbWritePolicy(
+    allowWrites: allowWrites ?? this.allowWrites,
+    confirmEachWrite: confirmEachWrite ?? this.confirmEachWrite,
+    backupBeforeOverwrite: backupBeforeOverwrite ?? this.backupBeforeOverwrite,
+  );
 
   @override
   bool operator ==(Object other) =>
@@ -131,8 +126,10 @@ class KbPathException implements Exception {
 /// catch hands it to the model like every other refusal.
 class KbSectionNotFound extends KbPathException {
   KbSectionNotFound(String heading, List<String> available)
-      : super('No section headed "$heading" in the file. '
-            '${available.isEmpty ? 'The file has no headings — use the whole-file mode.' : 'Its headings are: ${available.join(' | ')}'}');
+    : super(
+        'No section headed "$heading" in the file. '
+        '${available.isEmpty ? 'The file has no headings — use the whole-file mode.' : 'Its headings are: ${available.join(' | ')}'}',
+      );
 }
 
 /// Thrown when a staged edit's target no longer matches the content the edit
@@ -142,8 +139,10 @@ class KbSectionNotFound extends KbPathException {
 /// the model, which is exactly who needs to re-read the file.
 class KbEditConflictException extends KbPathException {
   KbEditConflictException(String relPath)
-      : super('$relPath changed on disk after this edit was proposed, so it '
-            'was NOT written. Re-read the file and propose the edit again.');
+    : super(
+        '$relPath changed on disk after this edit was proposed, so it '
+        'was NOT written. Re-read the file and propose the edit again.',
+      );
 }
 
 /// Local-file access to the user's prompt-engineering knowledge base.
@@ -153,8 +152,7 @@ class KbEditConflictException extends KbPathException {
 /// demand (progressive disclosure) and large files are paged so a single tool
 /// result never floods the context window.
 class KnowledgeBaseService {
-  static final KnowledgeBaseService _instance =
-      KnowledgeBaseService._internal(DatabaseService());
+  static final KnowledgeBaseService _instance = KnowledgeBaseService._internal(DatabaseService());
 
   /// `KnowledgeBaseService()` stays the app-wide instance — the class holds no
   /// state of its own and most of it is plain file access. Pass [database] to
@@ -192,8 +190,10 @@ class KnowledgeBaseService {
     return KbWritePolicy(
       allowWrites: await read(_allowWritesKey, KbWritePolicy.defaults.allowWrites),
       confirmEachWrite: await read(_confirmWritesKey, KbWritePolicy.defaults.confirmEachWrite),
-      backupBeforeOverwrite:
-          await read(_backupWritesKey, KbWritePolicy.defaults.backupBeforeOverwrite),
+      backupBeforeOverwrite: await read(
+        _backupWritesKey,
+        KbWritePolicy.defaults.backupBeforeOverwrite,
+      ),
     );
   }
 
@@ -284,7 +284,11 @@ class KnowledgeBaseService {
 
     if (heading == null) {
       if (!append) throw ArgumentError('a section heading is required to replace a section');
-      final out = [...lines, if (lines.isNotEmpty && lines.last.trim().isNotEmpty) '', ...bodyLines];
+      final out = [
+        ...lines,
+        if (lines.isNotEmpty && lines.last.trim().isNotEmpty) '',
+        ...bodyLines,
+      ];
       return '${out.join(newline)}$newline';
     }
 
@@ -329,11 +333,7 @@ class KnowledgeBaseService {
       // Only a same-level heading may stand in for the original (a rename);
       // anything else keeps it, so the body cannot re-parent the section.
       final renames = _headingLevel(bodyLines.first) == level;
-      replacement = [
-        if (!renames) target,
-        ...bodyLines,
-        if (end < lines.length) '',
-      ];
+      replacement = [if (!renames) target, ...bodyLines, if (end < lines.length) ''];
     }
     final out = [...lines.sublist(0, start), ...replacement, ...lines.sublist(end)];
     final joined = out.join(newline);
@@ -374,15 +374,16 @@ class KnowledgeBaseService {
   }
 
   /// Reads the entry file (the knowledge-base file map) in full.
-  String readEntry(String root) =>
-      File(p.join(root, entryFileName)).readAsStringSync();
+  String readEntry(String root) => File(p.join(root, entryFileName)).readAsStringSync();
 
   /// Resolves a model-supplied [relative] path against [root], rejecting
   /// absolute paths and anything that escapes the root after normalization.
   String resolvePath(String root, String relative) {
     if (relative.trim().isEmpty) throw KbPathException('Path must not be empty.');
     if (p.isAbsolute(relative)) {
-      throw KbPathException('Absolute paths are not allowed — use a path relative to the knowledge base root.');
+      throw KbPathException(
+        'Absolute paths are not allowed — use a path relative to the knowledge base root.',
+      );
     }
     final resolved = p.normalize(p.join(root, relative));
     final normalizedRoot = p.normalize(root);
@@ -456,11 +457,9 @@ class KnowledgeBaseService {
       if (entity is Directory) {
         entries.add(KbFileInfo(relPath: rel, sizeKb: 0, isDir: true));
       } else if (entity is File && name.toLowerCase().endsWith('.md')) {
-        entries.add(KbFileInfo(
-          relPath: rel,
-          sizeKb: (entity.lengthSync() / 1024).round(),
-          isDir: false,
-        ));
+        entries.add(
+          KbFileInfo(relPath: rel, sizeKb: (entity.lengthSync() / 1024).round(), isDir: false),
+        );
       }
     }
     entries.sort((a, b) => a.relPath.compareTo(b.relPath));
@@ -524,19 +523,13 @@ class KnowledgeBaseService {
     for (final entry in listFiles(root, dir: dir)) {
       if (entries.length >= limit) break;
       final name = p.basename(entry.relPath);
-      entries.add(KbTreeEntry(
-        relPath: entry.relPath,
-        name: name,
-        isDir: entry.isDir,
-        depth: depth,
-      ));
+      entries.add(
+        KbTreeEntry(relPath: entry.relPath, name: name, isDir: entry.isDir, depth: depth),
+      );
       if (entry.isDir) {
-        entries.addAll(walkTree(
-          root,
-          dir: entry.relPath,
-          depth: depth + 1,
-          limit: limit - entries.length,
-        ));
+        entries.addAll(
+          walkTree(root, dir: entry.relPath, depth: depth + 1, limit: limit - entries.length),
+        );
       }
     }
     // Alphabetical within each level, folders and files together — whatever
@@ -607,8 +600,7 @@ class KnowledgeBaseService {
     // The ancestor check cannot see a link at the target itself: an existing
     // `a.md` that is a symlink pointing outside the root would be written
     // straight through. A dangling link fails to resolve and is refused too.
-    if (FileSystemEntity.typeSync(resolved, followLinks: false) !=
-        FileSystemEntityType.notFound) {
+    if (FileSystemEntity.typeSync(resolved, followLinks: false) != FileSystemEntityType.notFound) {
       _requireInsideRootResolvingLinks(root, resolved, relPath);
     }
     final file = File(resolved);
@@ -678,8 +670,7 @@ class KnowledgeBaseService {
     if (maxChars != null && content.length <= maxChars) {
       return KbReadResult(content: content, page: 1, totalPages: 1);
     }
-    final effectivePageSize =
-        (maxChars != null && maxChars < pageSize) ? maxChars : pageSize;
+    final effectivePageSize = (maxChars != null && maxChars < pageSize) ? maxChars : pageSize;
     final starts = pageBoundaries(content, effectivePageSize);
     final clamped = page.clamp(1, starts.length);
     final start = starts[clamped - 1];

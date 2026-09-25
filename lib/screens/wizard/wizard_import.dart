@@ -21,7 +21,10 @@ import '../../widgets/ui/app_snackbar.dart';
 Future<void> importBackupSettings(BuildContext context, AppLocalizations l10n) async {
   final appState = Provider.of<AppState>(context, listen: false);
 
-  final PlatformFile? picked = await FilePicker.pickFile(type: FileType.custom, allowedExtensions: ['json']);
+  final PlatformFile? picked = await FilePicker.pickFile(
+    type: FileType.custom,
+    allowedExtensions: ['json'],
+  );
   if (!context.mounted || picked == null) return;
 
   try {
@@ -29,9 +32,11 @@ Future<void> importBackupSettings(BuildContext context, AppLocalizations l10n) a
     if (!context.mounted) return;
     final Map<String, dynamic> data = jsonDecode(fileContent);
 
-    final bool hasDirs = data.containsKey('source_directories') ||
-                        (data['settings'] as List?)?.any((s) => s['key'] == 'output_directory') == true;
-    final bool hasPrompts = data.containsKey('user_prompts') || data.containsKey('prompts') || data.containsKey('tags');
+    final bool hasDirs =
+        data.containsKey('source_directories') ||
+        (data['settings'] as List?)?.any((s) => s['key'] == 'output_directory') == true;
+    final bool hasPrompts =
+        data.containsKey('user_prompts') || data.containsKey('prompts') || data.containsKey('tags');
     final bool hasUsage = data.containsKey('token_usage');
 
     bool includeDirs = hasDirs;
@@ -45,7 +50,9 @@ Future<void> importBackupSettings(BuildContext context, AppLocalizations l10n) a
       hasPrompts: hasPrompts,
       hasUsage: hasUsage,
       onUpdate: (d, p, u) {
-        includeDirs = d; includePrompts = p; includeUsage = u;
+        includeDirs = d;
+        includePrompts = p;
+        includeUsage = u;
       },
     );
 

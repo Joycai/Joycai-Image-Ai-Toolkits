@@ -18,8 +18,7 @@ void main() {
   late FixtureEnv env;
   setUpScreenSuite((FixtureEnv e) => env = e);
 
-  ShotSize sized(String label) =>
-      kShotSizes.firstWhere((ShotSize s) => s.label == label);
+  ShotSize sized(String label) => kShotSizes.firstWhere((ShotSize s) => s.label == label);
 
   Future<void> settle(WidgetTester tester) async {
     for (int i = 0; i < 6; i++) {
@@ -148,8 +147,9 @@ void main() {
         await tester.tap(add.first, warnIfMissed: false);
         await settle(tester);
         await tester.enterText(
-            find.descendant(of: find.byType(Dialog), matching: find.byType(TextField)),
-            '百炼');
+          find.descendant(of: find.byType(Dialog), matching: find.byType(TextField)),
+          '百炼',
+        );
         await settle(tester);
         // Inside the dialog: the rail behind it names the same platform.
         Future<void> tapInDialog(String text) async {

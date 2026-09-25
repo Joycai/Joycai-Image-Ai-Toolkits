@@ -16,7 +16,8 @@ import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/markdown_editor.dart';
 
-const _prompt = '## 主体\n一位身着**墨绿色丝绒长裙**的年轻女性，侧身站在落地窗前，左手轻扶窗框，目光望向窗外。\n\n'
+const _prompt =
+    '## 主体\n一位身着**墨绿色丝绒长裙**的年轻女性，侧身站在落地窗前，左手轻扶窗框，目光望向窗外。\n\n'
     '## 场景与镜头\n- 午后四点的斜射光，窗纱半透，地板上有长影\n- 85mm，f/2，机位略低于视线\n- 背景虚化，保留窗框的竖线\n\n'
     '## 风格与画质\n胶片质感，_Kodak Portra 400_，颗粒细腻，肤色自然。';
 
@@ -32,38 +33,43 @@ void main() {
         tester.view.devicePixelRatio = 1.0;
         addTearDown(tester.view.reset);
 
-        await tester.pumpWidget(MaterialApp(
-          debugShowCheckedModeBanner: false,
-          locale: const Locale('zh'),
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          theme: buildAppTheme(
-            accent: ThemeAccent.fromSeed(const Color(0xFF3B6CF6)),
-            brightness: brightness,
-            fontFamily: 'NotoSansSC',
-          ),
-          home: Scaffold(
-            body: Align(
-              alignment: Alignment.topLeft,
-              child: SizedBox(
-                width: 340,
-                child: MarkdownEditor(
-                  controller: MarkdownTextEditingController(text: _prompt),
-                  label: '提示词',
-                  isMarkdown: true,
-                  onMarkdownChanged: (_) {},
+        await tester.pumpWidget(
+          MaterialApp(
+            debugShowCheckedModeBanner: false,
+            locale: const Locale('zh'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            theme: buildAppTheme(
+              accent: ThemeAccent.fromSeed(const Color(0xFF3B6CF6)),
+              brightness: brightness,
+              fontFamily: 'NotoSansSC',
+            ),
+            home: Scaffold(
+              body: Align(
+                alignment: Alignment.topLeft,
+                child: SizedBox(
+                  width: 340,
+                  child: MarkdownEditor(
+                    controller: MarkdownTextEditingController(text: _prompt),
+                    label: '提示词',
+                    isMarkdown: true,
+                    onMarkdownChanged: (_) {},
+                  ),
                 ),
               ),
             ),
           ),
-        ));
+        );
         await tester.tap(find.byIcon(Icons.open_in_full));
         await tester.pumpAndSettle();
         if (split) {
           await tester.tap(find.text('分栏'));
           await tester.pumpAndSettle();
         }
-        await expectLater(find.byType(MaterialApp), matchesGoldenFile('large_editor_${name}_${brightness.name}.png'));
+        await expectLater(
+          find.byType(MaterialApp),
+          matchesGoldenFile('large_editor_${name}_${brightness.name}.png'),
+        );
       });
     }
   }

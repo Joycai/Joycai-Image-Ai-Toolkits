@@ -68,13 +68,10 @@ class _DownloaderImageCardState extends State<DownloaderImageCard> {
       _meta = known.displayString;
       return;
     }
-    ImageMetadataService().getMetadata(path).then(
-      (metadata) {
-        if (!mounted || metadata == null || widget.image.localCachePath != path) return;
-        setState(() => _meta = metadata.displayString);
-      },
-      onError: (Object _) {},
-    );
+    ImageMetadataService().getMetadata(path).then((metadata) {
+      if (!mounted || metadata == null || widget.image.localCachePath != path) return;
+      setState(() => _meta = metadata.displayString);
+    }, onError: (Object _) {});
   }
 
   void _openMenu(Offset position) {
@@ -120,7 +117,8 @@ class _DownloaderImageCardState extends State<DownloaderImageCard> {
             // native resolution for a 168px tile filled the image cache many
             // times over.
             cacheWidth: (widget.extent * MediaQuery.devicePixelRatioOf(context)).round(),
-            errorBuilder: (context, error, stackTrace) => _placeholder(scheme, Icons.broken_image_outlined),
+            errorBuilder: (context, error, stackTrace) =>
+                _placeholder(scheme, Icons.broken_image_outlined),
           );
 
     final card = AnimatedContainer(
@@ -161,15 +159,19 @@ class _DownloaderImageCardState extends State<DownloaderImageCard> {
                     softWrap: false,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.labelSmall!.mono.copyWith(
-                          color: AppOverlay.onImagePlate,
-                          fontWeight: FontWeight.w400,
-                          height: AppType.tightHeight,
-                        ),
+                      color: AppOverlay.onImagePlate,
+                      fontWeight: FontWeight.w400,
+                      height: AppType.tightHeight,
+                    ),
                   ),
                 ),
               ),
             ),
-          Positioned(top: _inset, left: _inset, child: _TickCircle(selected: selected)),
+          Positioned(
+            top: _inset,
+            left: _inset,
+            child: _TickCircle(selected: selected),
+          ),
         ],
       ),
     );
@@ -191,9 +193,11 @@ class _DownloaderImageCardState extends State<DownloaderImageCard> {
   }
 
   Widget _placeholder(ColorScheme scheme, IconData icon) => ColoredBox(
-        color: scheme.surfaceContainerHighest,
-        child: Center(child: Icon(icon, size: AppSize.iconLg, color: scheme.outline)),
-      );
+    color: scheme.surfaceContainerHighest,
+    child: Center(
+      child: Icon(icon, size: AppSize.iconLg, color: scheme.outline),
+    ),
+  );
 }
 
 /// The round tick on the picture (`勾选框 20 圆`). Unticked it is the image

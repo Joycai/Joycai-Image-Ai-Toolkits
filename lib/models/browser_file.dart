@@ -2,14 +2,7 @@ import 'dart:io';
 
 import 'package:path/path.dart' as p;
 
-enum FileCategory {
-  all,
-  image,
-  video,
-  audio,
-  text,
-  other,
-}
+enum FileCategory { all, image, video, audio, text, other }
 
 class BrowserFile {
   final String path;
@@ -41,12 +34,32 @@ class BrowserFile {
 
     if (const ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.avif'].contains(ext)) {
       return FileCategory.image;
-    } else if (const ['.mp4', '.mkv', '.avi', '.mov', '.wmv', '.flv', '.webm', '.m4v'].contains(ext)) {
+    } else if (const [
+      '.mp4',
+      '.mkv',
+      '.avi',
+      '.mov',
+      '.wmv',
+      '.flv',
+      '.webm',
+      '.m4v',
+    ].contains(ext)) {
       return FileCategory.video;
     } else if (const ['.mp3', '.wav', '.flac', '.m4a', '.ogg', '.aac', '.wma'].contains(ext)) {
       return FileCategory.audio;
-    } else if (const ['.txt', '.md', '.json', '.xml', '.yaml', '.yml', '.srt', '.ass', '.vtt', '.csv', '.log']
-        .contains(ext)) {
+    } else if (const [
+      '.txt',
+      '.md',
+      '.json',
+      '.xml',
+      '.yaml',
+      '.yml',
+      '.srt',
+      '.ass',
+      '.vtt',
+      '.csv',
+      '.log',
+    ].contains(ext)) {
       return FileCategory.text;
     }
     return FileCategory.other;
@@ -72,12 +85,12 @@ class BrowserFile {
   /// callers show such an entry as pending or missing rather than as a 0-byte
   /// file from 1970.
   factory BrowserFile.unresolved(String path) => BrowserFile(
-        path: path,
-        name: p.basename(path),
-        category: categoryOf(path),
-        size: 0,
-        modified: DateTime.fromMillisecondsSinceEpoch(0),
-      );
+    path: path,
+    name: p.basename(path),
+    category: categoryOf(path),
+    size: 0,
+    modified: DateTime.fromMillisecondsSinceEpoch(0),
+  );
 
   factory BrowserFile.fromMap(Map<String, dynamic> map) {
     return BrowserFile(

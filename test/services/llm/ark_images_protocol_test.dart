@@ -88,16 +88,18 @@ void main() {
   group('synchronous', () {
     test('a link that fails to download is still charged', () async {
       answer = (req, _) => json(req, {
-            'data': [
-              {'url': '$base/img/ok.png', 'size': '2048x2048'},
-              {'url': '$base/img/gone.png', 'size': '2048x2048'},
-            ],
-            'usage': {'generated_images': 2, 'output_tokens': 32768},
-          });
+        'data': [
+          {'url': '$base/img/ok.png', 'size': '2048x2048'},
+          {'url': '$base/img/gone.png', 'size': '2048x2048'},
+        ],
+        'usage': {'generated_images': 2, 'output_tokens': 32768},
+      });
 
       final r = await ArkImagesProtocol().generateImage(
-          target('doubao-seedream-5-0-lite-260128'), prompt,
-          options: const {'maxImages': '2'});
+        target('doubao-seedream-5-0-lite-260128'),
+        prompt,
+        options: const {'maxImages': '2'},
+      );
 
       expect(posted.single['sequential_image_generation'], 'auto');
       expect(r.generatedImages, hasLength(1));
@@ -113,42 +115,51 @@ void main() {
         billingMode: 'spec',
         outputRates: const [SpecRate(price: 0.22)],
       );
-      final usage = LLMService.specUsageFor(config, const {}, r.metadata,
-          imageCount: r.generatedImages.length)!;
+      final usage = LLMService.specUsageFor(
+        config,
+        const {},
+        r.metadata,
+        imageCount: r.generatedImages.length,
+      )!;
       expect(usage.units, 2);
       expect(usage.cost, closeTo(0.44, 1e-9));
     });
 
     test('layers with the tier unset go out without a size', () async {
       answer = (req, _) => json(req, {
-            'data': [
-              {'url': '$base/img/ok.png', 'z_index': 0},
-              {
-                'url': '$base/img/ok.png',
-                'z_index': 1,
-                'name': 'figure',
-                'bounding_box': {
-                  'absolute': [27, 0, 888, 1137],
-                },
-              },
-            ],
-            'usage': {'input_images': 1, 'generated_images': 2},
-          });
+        'data': [
+          {'url': '$base/img/ok.png', 'z_index': 0},
+          {
+            'url': '$base/img/ok.png',
+            'z_index': 1,
+            'name': 'figure',
+            'bounding_box': {
+              'absolute': [27, 0, 888, 1137],
+            },
+          },
+        ],
+        'usage': {'input_images': 1, 'generated_images': 2},
+      });
 
       final r = await ArkImagesProtocol().generateImage(
         target('doubao-seedream-5-0-pro-260628'),
         [
-          LLMMessage(role: LLMRole.user, content: '', attachments: [
-            LLMAttachment.fromBytes(Uint8List.fromList(png), 'image/png'),
-          ]),
+          LLMMessage(
+            role: LLMRole.user,
+            content: '',
+            attachments: [LLMAttachment.fromBytes(Uint8List.fromList(png), 'image/png')],
+          ),
         ],
         options: const {'imageTask': 'layers', 'imageSize': 'not_set'},
       );
 
       final sent = posted.single;
       expect(sent['layer_decomposition'], isTrue);
-      expect(sent.containsKey('size'), isFalse,
-          reason: 'upstream\'s `auto`: the source keeps its size');
+      expect(
+        sent.containsKey('size'),
+        isFalse,
+        reason: 'upstream\'s `auto`: the source keeps its size',
+      );
       expect(sent['image'], startsWith('data:image/png;base64,'));
       expect(r.imageLayers.map((l) => l?.zIndex), [0, 1]);
       expect(r.metadata[billedImageCountKey], 2);
@@ -157,49 +168,53 @@ void main() {
 
     test('a request with no image at all fails', () async {
       answer = (req, _) => json(req, {
-            'data': [
-              {
-                'error': {
-                  'code': 'OutputImageSensitiveContentDetected',
-                  'message': 'blocked',
-                },
-              },
-            ],
-            'usage': {'generated_images': 0},
-          });
+        'data': [
+          {
+            'error': {'code': 'OutputImageSensitiveContentDetected', 'message': 'blocked'},
+          },
+        ],
+        'usage': {'generated_images': 0},
+      });
       await expectLater(
-          ArkImagesProtocol().generateImage(
-              target('doubao-seedream-5-0-lite-260128'), prompt),
-          throwsA(isA<LLMApiException>().having((e) => e.message, 'message',
-              contains('OutputImageSensitiveContentDetected'))));
+        ArkImagesProtocol().generateImage(target('doubao-seedream-5-0-lite-260128'), prompt),
+        throwsA(
+          isA<LLMApiException>().having(
+            (e) => e.message,
+            'message',
+            contains('OutputImageSensitiveContentDetected'),
+          ),
+        ),
+      );
     });
   });
 
   group('streamed', () {
-    test('each image as it lands; the closing chunk charges what Ark drew',
-        () async {
+    test('each image as it lands; the closing chunk charges what Ark drew', () async {
       answer = (req, _) => sse(req, [
-            {
-              'type': 'image_generation.partial_succeeded',
-              'image_index': 0,
-              'url': '$base/img/ok.png',
-              'size': '2848x1600',
-            },
-            {
-              'type': 'image_generation.partial_succeeded',
-              'image_index': 1,
-              'url': '$base/img/gone.png',
-              'size': '2848x1600',
-            },
-            {
-              'type': 'image_generation.completed',
-              'usage': {'generated_images': 2, 'output_tokens': 35600},
-            },
-          ]);
+        {
+          'type': 'image_generation.partial_succeeded',
+          'image_index': 0,
+          'url': '$base/img/ok.png',
+          'size': '2848x1600',
+        },
+        {
+          'type': 'image_generation.partial_succeeded',
+          'image_index': 1,
+          'url': '$base/img/gone.png',
+          'size': '2848x1600',
+        },
+        {
+          'type': 'image_generation.completed',
+          'usage': {'generated_images': 2, 'output_tokens': 35600},
+        },
+      ]);
 
       final chunks = await ArkImagesProtocol()
-          .generateImageStream(target('doubao-seedream-5-0-lite-260128'), prompt,
-              options: const {'maxImages': '2'})
+          .generateImageStream(
+            target('doubao-seedream-5-0-lite-260128'),
+            prompt,
+            options: const {'maxImages': '2'},
+          )
           .toList();
 
       expect(posted.single['stream'], isTrue);
@@ -213,11 +228,11 @@ void main() {
     test('a stream request answered with one JSON body reads like the '
         'synchronous form', () async {
       answer = (req, _) => json(req, {
-            'data': [
-              {'url': '$base/img/ok.png'},
-            ],
-            'usage': {'generated_images': 1},
-          });
+        'data': [
+          {'url': '$base/img/ok.png'},
+        ],
+        'usage': {'generated_images': 1},
+      });
 
       final chunks = await ArkImagesProtocol()
           .generateImageStream(target('doubao-seedream-5-0-lite-260128'), prompt)
@@ -230,20 +245,15 @@ void main() {
 
     test('a 400 envelope fails the stream request with its message', () async {
       answer = (req, _) => json(req, {
-            'error': {
-              'code': 'InvalidParameter',
-              'message': 'size is invalid',
-              'param': 'size',
-            },
-          }, status: 400);
+        'error': {'code': 'InvalidParameter', 'message': 'size is invalid', 'param': 'size'},
+      }, status: 400);
 
       await expectLater(
-          ArkImagesProtocol()
-              .generateImageStream(
-                  target('doubao-seedream-5-0-lite-260128'), prompt)
-              .toList(),
-          throwsA(isA<LLMApiException>()
-              .having((e) => e.statusCode, 'statusCode', 400)));
+        ArkImagesProtocol()
+            .generateImageStream(target('doubao-seedream-5-0-lite-260128'), prompt)
+            .toList(),
+        throwsA(isA<LLMApiException>().having((e) => e.statusCode, 'statusCode', 400)),
+      );
     });
   });
 }

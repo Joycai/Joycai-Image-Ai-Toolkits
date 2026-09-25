@@ -14,11 +14,7 @@ const double _kPickValue = 0.9;
 ///
 /// Category colours are identity colours; nothing here reads the accent.
 class ColorHueBar extends StatelessWidget {
-  const ColorHueBar({
-    super.key,
-    required this.color,
-    required this.onColorChanged,
-  });
+  const ColorHueBar({super.key, required this.color, required this.onColorChanged});
 
   final Color color;
   final ValueChanged<int> onColorChanged;
@@ -38,7 +34,9 @@ class ColorHueBar extends StatelessWidget {
 
         void pick(double dx) {
           final t = ((dx - _handle / 2) / usable).clamp(0.0, 1.0);
-          onColorChanged(HSVColor.fromAHSV(1, t * 360, _kPickSaturation, _kPickValue).toColor().toARGB32());
+          onColorChanged(
+            HSVColor.fromAHSV(1, t * 360, _kPickSaturation, _kPickValue).toColor().toARGB32(),
+          );
         }
 
         return Semantics(
@@ -67,7 +65,12 @@ class ColorHueBar extends StatelessWidget {
                           gradient: LinearGradient(
                             colors: [
                               for (int i = 0; i <= 6; i++)
-                                HSVColor.fromAHSV(1, i * 60.0, _kPickSaturation, _kPickValue).toColor(),
+                                HSVColor.fromAHSV(
+                                  1,
+                                  i * 60.0,
+                                  _kPickSaturation,
+                                  _kPickValue,
+                                ).toColor(),
                             ],
                           ),
                         ),
@@ -103,11 +106,7 @@ class ColorHuePicker extends StatefulWidget {
   final Color initialColor;
   final ValueChanged<int> onColorChanged;
 
-  const ColorHuePicker({
-    super.key,
-    required this.initialColor,
-    required this.onColorChanged,
-  });
+  const ColorHuePicker({super.key, required this.initialColor, required this.onColorChanged});
 
   @override
   State<ColorHuePicker> createState() => _ColorHuePickerState();
@@ -133,7 +132,7 @@ class _ColorHuePickerState extends State<ColorHuePicker> {
 
   void _handleGesture(Offset localPosition, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    
+
     final double rad = (localPosition - center).direction; // -pi to pi
     double deg = (rad * 180 / 3.1415926535) + 90;
     if (deg < 0) deg += 360;
@@ -141,7 +140,7 @@ class _ColorHuePickerState extends State<ColorHuePicker> {
     setState(() {
       _hue = deg % 360;
     });
-    
+
     final color = HSVColor.fromAHSV(1.0, _hue, 0.8, 0.9).toColor();
     widget.onColorChanged(color.toARGB32());
   }
@@ -175,7 +174,7 @@ class _ColorWheelPainter extends CustomPainter {
         ..color = HSVColor.fromAHSV(1.0, i, 1.0, 1.0).toColor()
         ..style = PaintingStyle.stroke
         ..strokeWidth = strokeWidth + 1;
-      
+
       canvas.drawArc(
         Rect.fromCircle(center: center, radius: radius - (strokeWidth / 2)),
         (i - 90) * 3.1415926535 / 180,
@@ -192,30 +191,42 @@ class _ColorWheelPainter extends CustomPainter {
     );
 
     canvas.drawCircle(
-      indicatorOffset, 
-      12, 
-      Paint()..color = Colors.black26..style = PaintingStyle.fill..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3)
+      indicatorOffset,
+      12,
+      Paint()
+        ..color = Colors.black26
+        ..style = PaintingStyle.fill
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
     );
     canvas.drawCircle(
-      indicatorOffset, 
-      10, 
-      Paint()..color = Colors.white..style = PaintingStyle.fill
+      indicatorOffset,
+      10,
+      Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.fill,
     );
     canvas.drawCircle(
-      indicatorOffset, 
-      7, 
-      Paint()..color = HSVColor.fromAHSV(1.0, hue, 1.0, 1.0).toColor()..style = PaintingStyle.fill
+      indicatorOffset,
+      7,
+      Paint()
+        ..color = HSVColor.fromAHSV(1.0, hue, 1.0, 1.0).toColor()
+        ..style = PaintingStyle.fill,
     );
 
     canvas.drawCircle(
-      center, 
-      radius - strokeWidth - 12, 
-      Paint()..color = HSVColor.fromAHSV(1.0, hue, 0.8, 0.9).toColor()..style = PaintingStyle.fill
+      center,
+      radius - strokeWidth - 12,
+      Paint()
+        ..color = HSVColor.fromAHSV(1.0, hue, 0.8, 0.9).toColor()
+        ..style = PaintingStyle.fill,
     );
     canvas.drawCircle(
-      center, 
-      radius - strokeWidth - 12, 
-      Paint()..color = Colors.white24..style = PaintingStyle.stroke..strokeWidth = 2
+      center,
+      radius - strokeWidth - 12,
+      Paint()
+        ..color = Colors.white24
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2,
     );
   }
 

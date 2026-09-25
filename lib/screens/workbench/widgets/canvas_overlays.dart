@@ -86,7 +86,11 @@ class CanvasZoomPill extends StatelessWidget {
       borderRadius: BorderRadius.circular(AppRadius.sm),
       child: Padding(
         padding: const EdgeInsets.all(5),
-        child: Icon(icon, size: AppSize.iconSm, color: Theme.of(context).colorScheme.onSurfaceVariant),
+        child: Icon(
+          icon,
+          size: AppSize.iconSm,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
       ),
     );
   }
@@ -115,24 +119,20 @@ class CanvasBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color ground = inverted ? AppOverlay.onImagePlate.withValues(alpha: 0.9) : AppOverlay.imagePlate;
+    final Color ground = inverted
+        ? AppOverlay.onImagePlate.withValues(alpha: 0.9)
+        : AppOverlay.imagePlate;
     final Color ink = inverted ? AppOverlay.ink : AppOverlay.onImagePlate;
 
     return IgnorePointer(
       child: Container(
         constraints: const BoxConstraints(maxWidth: 360),
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-        decoration: BoxDecoration(
-          color: ground,
-          borderRadius: BorderRadius.circular(AppRadius.xs),
-        ),
+        decoration: BoxDecoration(color: ground, borderRadius: BorderRadius.circular(AppRadius.xs)),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (icon != null) ...[
-              Icon(icon, size: 12, color: ink),
-              const SizedBox(width: 6),
-            ],
+            if (icon != null) ...[Icon(icon, size: 12, color: ink), const SizedBox(width: 6)],
             Flexible(
               child: Text(
                 label,
@@ -143,12 +143,10 @@ class CanvasBadge extends StatelessWidget {
                 // width, a pixel size, a file's name. Numbers that change
                 // under the pointer should not reflow the label around them
                 // every time a digit does.
-                style: Theme.of(context)
-                    .textTheme
-                    .labelSmall!
-                    .metricsOnly
-                    .mono
-                    .copyWith(fontWeight: FontWeight.w400, color: ink),
+                style: Theme.of(context).textTheme.labelSmall!.metricsOnly.mono.copyWith(
+                  fontWeight: FontWeight.w400,
+                  color: ink,
+                ),
               ),
             ),
           ],

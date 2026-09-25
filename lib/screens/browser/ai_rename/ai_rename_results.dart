@@ -60,7 +60,10 @@ extension _ResultsArea on _AiRenameDialogState {
                   value: _filter,
                   onChanged: (value) => _rebuild(() => _filter = value),
                   segments: [
-                    AppSegment(value: _RowFilter.all, label: '${l10n.renameFilterAll} ${_rows.length}'),
+                    AppSegment(
+                      value: _RowFilter.all,
+                      label: '${l10n.renameFilterAll} ${_rows.length}',
+                    ),
                     AppSegment(
                       value: _RowFilter.conflicts,
                       label: '${l10n.renameFilterConflicts} $_conflictCount',
@@ -218,7 +221,11 @@ extension _ResultsArea on _AiRenameDialogState {
             children: [
               Row(
                 children: [
-                  Icon(Icons.warning_amber_rounded, size: AppSize.iconLg, color: context.semantic.warning),
+                  Icon(
+                    Icons.warning_amber_rounded,
+                    size: AppSize.iconLg,
+                    color: context.semantic.warning,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -295,10 +302,7 @@ extension _ResultsArea on _AiRenameDialogState {
               onCommitEdit: (value) {
                 final trimmed = value.trim();
                 if (trimmed.isNotEmpty && !AiRenameAgent.isSafeFileName(trimmed)) {
-                  AppSnackBar.warning(
-                    context,
-                    l10n.folderNameIllegalChars(r'/ \\ ..'),
-                  );
+                  AppSnackBar.warning(context, l10n.folderNameIllegalChars(r'/ \\ ..'));
                   return;
                 }
                 _update(() {

@@ -29,10 +29,7 @@ class MiniMaxVideoProtocol implements VideoJobProtocol, CancellableJobProtocol {
     LLMLogger? logger,
   }) async {
     final config = target.config;
-    final userMsg = history.lastWhere(
-      (m) => m.role == LLMRole.user,
-      orElse: () => history.last,
-    );
+    final userMsg = history.lastWhere((m) => m.role == LLMRole.user, orElse: () => history.last);
 
     final media = <MiniMaxVideoMedia>[];
     for (final att in userMsg.attachments) {
@@ -47,8 +44,7 @@ class MiniMaxVideoProtocol implements VideoJobProtocol, CancellableJobProtocol {
         default:
           role = MiniMaxVideoRole.referenceImage;
       }
-      media.add(MiniMaxVideoMedia(
-          role, imageDataUrl(bytes, att.mimeType)));
+      media.add(MiniMaxVideoMedia(role, imageDataUrl(bytes, att.mimeType)));
     }
 
     // Upstream rejects a request that mixes the image-based modality with the
@@ -72,31 +68,28 @@ class MiniMaxVideoProtocol implements VideoJobProtocol, CancellableJobProtocol {
     );
 
     final url = Uri.parse('${minimaxV2Base(config.endpoint)}/video_generation');
-    logger?.call('Submitting MiniMax video task to: ${url.host}',
-        level: 'DEBUG');
+    logger?.call('Submitting MiniMax video task to: ${url.host}', level: 'DEBUG');
 
     LLMDebugLog? debugFile;
     if (LLMDebugLogger.enabled) {
-      debugFile = await LLMDebugLogger.startLog(
-        config.modelId,
-        'MiniMax (Video Submit)',
-        {
-          'url': redactUrl(url),
-          'payload': minimaxPayloadForLog(payload),
-        },
-      );
+      debugFile = await LLMDebugLogger.startLog(config.modelId, 'MiniMax (Video Submit)', {
+        'url': redactUrl(url),
+        'payload': minimaxPayloadForLog(payload),
+      });
     }
 
     final client = config.createClient();
     try {
-      final response = await sendJsonRequest(client, url,
-          headers: target.headers(),
-          body: jsonEncode(payload),
-          options: options);
+      final response = await sendJsonRequest(
+        client,
+        url,
+        headers: target.headers(),
+        body: jsonEncode(payload),
+        options: options,
+      );
 
       if (debugFile != null) {
-        await LLMDebugLogger.appendLine(
-            debugFile, 'Status: ${response.statusCode}');
+        await LLMDebugLogger.appendLine(debugFile, 'Status: ${response.statusCode}');
         await LLMDebugLogger.appendLine(debugFile, 'Body: ${response.body}');
       }
 
@@ -104,8 +97,7 @@ class MiniMaxVideoProtocol implements VideoJobProtocol, CancellableJobProtocol {
 
       final taskId = data['task_id']?.toString();
       if (taskId == null || taskId.isEmpty) {
-        throw LLMApiException(
-            'MiniMax video submit returned no task_id: ${response.body}');
+        throw LLMApiException('MiniMax video submit returned no task_id: ${response.body}');
       }
       // Into the log the moment it exists — the only handle left if polling
       // ever dies. Records live 7 days upstream, so a lost id is recoverable
@@ -133,11 +125,12 @@ class MiniMaxVideoProtocol implements VideoJobProtocol, CancellableJobProtocol {
   }) async {
     final client = target.config.createClient();
     try {
-      final task =
-          await _fetchTask(target, operationName, client, options: options);
-      final status = requireJobStatus(task['status'],
-              job: 'MiniMax video task', jobId: operationName)
-          .toLowerCase();
+      final task = await _fetchTask(target, operationName, client, options: options);
+      final status = requireJobStatus(
+        task['status'],
+        job: 'MiniMax video task',
+        jobId: operationName,
+      ).toLowerCase();
 
       switch (status) {
         case 'succeeded':
@@ -145,34 +138,33 @@ class MiniMaxVideoProtocol implements VideoJobProtocol, CancellableJobProtocol {
           final videoUrl = content is Map ? content['url']?.toString() : null;
           if (videoUrl == null || videoUrl.isEmpty) {
             throw LLMApiException(
-                'MiniMax video task $operationName succeeded but returned no '
-                'content.url: $task',
-                isJobEnded: true);
+              'MiniMax video task $operationName succeeded but returned no '
+              'content.url: $task',
+              isJobEnded: true,
+            );
           }
           // A signed CDN link: the API key must not travel to it.
           final usage = task['usage'];
-          return videoDoneEnvelope(operationName, videoUrl,
-              requiresAuth:
-                  videoUriNeedsAuth(videoUrl, target.config.endpoint),
-              renderedSeconds:
-                  (usage is Map ? usage['output_seconds'] : null) ??
-                      task['duration']);
+          return videoDoneEnvelope(
+            operationName,
+            videoUrl,
+            requiresAuth: videoUriNeedsAuth(videoUrl, target.config.endpoint),
+            renderedSeconds: (usage is Map ? usage['output_seconds'] : null) ?? task['duration'],
+          );
         case 'failed':
         case 'cancelled':
           final error = task['error'];
           final code = error is Map ? error['code'] : null;
           final message = error is Map ? error['message'] : null;
-          throw LLMApiException('MiniMax video task $operationName $status'
-              '${code != null ? ' ($code)' : ''}'
-              '${message != null ? ': $message' : ''}',
-              isJobEnded: true);
+          throw LLMApiException(
+            'MiniMax video task $operationName $status'
+            '${code != null ? ' ($code)' : ''}'
+            '${message != null ? ': $message' : ''}',
+            isJobEnded: true,
+          );
         default:
           // queued / running / anything newer.
-          return {
-            'name': operationName,
-            'done': false,
-            'status': status,
-          };
+          return {'name': operationName, 'done': false, 'status': status};
       }
     } finally {
       client.close();
@@ -193,11 +185,7 @@ class MiniMaxVideoProtocol implements VideoJobProtocol, CancellableJobProtocol {
   /// either way, which is why this is best-effort and returns a description
   /// rather than throwing.
   @override
-  Future<String?> cancel(
-    LLMTarget target,
-    String operationName, {
-    LLMLogger? logger,
-  }) async {
+  Future<String?> cancel(LLMTarget target, String operationName, {LLMLogger? logger}) async {
     final client = target.config.createClient();
     try {
       final Map<String, dynamic> task;
@@ -211,31 +199,34 @@ class MiniMaxVideoProtocol implements VideoJobProtocol, CancellableJobProtocol {
         // is warning the user that cancelling failed when what actually
         // happened is that there was nothing left to cancel.
         logger?.call(
-            'MiniMax video task $operationName could not be read, so nothing '
-            'was cancelled upstream (records are kept 7 days): $e',
-            level: 'INFO');
+          'MiniMax video task $operationName could not be read, so nothing '
+          'was cancelled upstream (records are kept 7 days): $e',
+          level: 'INFO',
+        );
         return null;
       }
 
       final status = task['status']?.toString().toLowerCase() ?? '';
       if (status != 'queued') {
         logger?.call(
-            'MiniMax video task $operationName is "$status" — only a queued '
-            'task can be cancelled upstream, so it was left alone (deleting '
-            'a finished task would destroy its video).',
-            level: 'INFO');
+          'MiniMax video task $operationName is "$status" — only a queued '
+          'task can be cancelled upstream, so it was left alone (deleting '
+          'a finished task would destroy its video).',
+          level: 'INFO',
+        );
         return null;
       }
 
       final url = Uri.parse(
-          '${minimaxV2Base(target.config.endpoint)}/video_generation/$operationName');
+        '${minimaxV2Base(target.config.endpoint)}/video_generation/$operationName',
+      );
       final response = await client.delete(url, headers: target.headers());
-      final data =
-          decodeJsonBody(response, apiName: 'MiniMax video cancel');
+      final data = decodeJsonBody(response, apiName: 'MiniMax video cancel');
       final action = data['action']?.toString();
       logger?.call(
-          'MiniMax video task $operationName ${action ?? 'cancelled'} upstream.',
-          level: 'INFO');
+        'MiniMax video task $operationName ${action ?? 'cancelled'} upstream.',
+        level: 'INFO',
+      );
       return action;
     } finally {
       client.close();
@@ -254,24 +245,29 @@ class MiniMaxVideoProtocol implements VideoJobProtocol, CancellableJobProtocol {
     http.Client client, {
     Map<String, dynamic>? options,
   }) async {
-    final url = Uri.parse('${minimaxV2Base(target.config.endpoint)}'
-        '/query/video_generation/$operationName');
-    final response = await sendJsonRequest(client, url,
-        headers: target.headers(),
-        body: '',
-        options: options,
-        method: 'GET');
-    final data = decodeJsonBody(response,
-        apiName: 'MiniMax video poll', checkEnvelope: false);
+    final url = Uri.parse(
+      '${minimaxV2Base(target.config.endpoint)}'
+      '/query/video_generation/$operationName',
+    );
+    final response = await sendJsonRequest(
+      client,
+      url,
+      headers: target.headers(),
+      body: '',
+      options: options,
+      method: 'GET',
+    );
+    final data = decodeJsonBody(response, apiName: 'MiniMax video poll', checkEnvelope: false);
 
     final task = data['task'];
     if (task is! Map) {
       // Records are kept 7 days; past that the id resolves to nothing rather
       // than to a failed task, and the difference is worth saying out loud.
       throw LLMApiException(
-          'MiniMax video task $operationName returned no task object — task '
-          'records are kept for 7 days, after which an id resolves to nothing: '
-          '${response.body}');
+        'MiniMax video task $operationName returned no task object — task '
+        'records are kept for 7 days, after which an id resolves to nothing: '
+        '${response.body}',
+      );
     }
     return task.cast<String, dynamic>();
   }

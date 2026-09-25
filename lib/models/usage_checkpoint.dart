@@ -31,7 +31,8 @@ class UsageCheckpoint {
     final totalCost = map['total_cost'];
     return UsageCheckpoint(
       id: _int(map['id']),
-      timestamp: DateTime.tryParse(timestamp is String ? timestamp : '') ??
+      timestamp:
+          DateTime.tryParse(timestamp is String ? timestamp : '') ??
           DateTime.fromMillisecondsSinceEpoch(0),
       totalInputTokens: _int(map['total_input_tokens']) ?? 0,
       totalCacheTokens: _int(map['total_cache_tokens']) ?? 0,
@@ -45,17 +46,17 @@ class UsageCheckpoint {
   static int? _int(Object? cell) => cell is int ? cell : null;
 
   Map<String, dynamic> toMap() => {
-        if (id != null) 'id': id,
-        'timestamp': timestamp.toIso8601String(),
-        'total_input_tokens': totalInputTokens,
-        'total_cache_tokens': totalCacheTokens,
-        'total_output_tokens': totalOutputTokens,
-        'total_request_count': totalRequestCount,
-        'total_cost': totalCost,
-        // Keyed by int group id; jsonEncode throws JsonUnsupportedObjectError
-        // on any non-String map key, so the keys are stringified first.
-        'metadata': jsonEncode(groupCosts.map((k, v) => MapEntry(k.toString(), v))),
-      };
+    if (id != null) 'id': id,
+    'timestamp': timestamp.toIso8601String(),
+    'total_input_tokens': totalInputTokens,
+    'total_cache_tokens': totalCacheTokens,
+    'total_output_tokens': totalOutputTokens,
+    'total_request_count': totalRequestCount,
+    'total_cost': totalCost,
+    // Keyed by int group id; jsonEncode throws JsonUnsupportedObjectError
+    // on any non-String map key, so the keys are stringified first.
+    'metadata': jsonEncode(groupCosts.map((k, v) => MapEntry(k.toString(), v))),
+  };
 
   static Map<int, double> _decodeGroupCosts(Object? raw) {
     if (raw is! String || raw.isEmpty) return const {};

@@ -139,7 +139,11 @@ String _freeName(RenameReviewRow row, List<RenameReviewRow> among) {
   // itself, which moves the search on to the next number.
   final reserved = <String>{};
   while (true) {
-    final candidate = FileTransferService.uniqueTargetPath(row.directory, row.newName, reserved: reserved);
+    final candidate = FileTransferService.uniqueTargetPath(
+      row.directory,
+      row.newName,
+      reserved: reserved,
+    );
     if (!claimed.contains(candidate.toLowerCase())) return p.basename(candidate);
     reserved.add(candidate);
   }

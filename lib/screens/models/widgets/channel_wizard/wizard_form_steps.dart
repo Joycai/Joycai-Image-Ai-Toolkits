@@ -16,14 +16,12 @@ extension _FormSteps on _ChannelWizardDialogState {
           // The field stays for the local runtimes rather than disappearing:
           // vanishing would leave someone who *has* put reverse-proxy auth in
           // front with nowhere to put the key.
-          label: _keyOptional
-              ? '${l10n.apiKey} · ${l10n.apiKeyOptional}'
-              : l10n.apiKey,
+          label: _keyOptional ? '${l10n.apiKey} · ${l10n.apiKeyOptional}' : l10n.apiKey,
           helper: _keyOptional
               ? l10n.apiKeyLocalNote
               : multi
-                  ? '${l10n.routeKeyShared} · ${l10n.apiKeyStorageNotice}'
-                  : l10n.apiKeyStorageNotice,
+              ? '${l10n.routeKeyShared} · ${l10n.apiKeyStorageNotice}'
+              : l10n.apiKeyStorageNotice,
           child: ChannelField(
             controller: _apiKeyCtrl,
             mono: true,
@@ -53,20 +51,16 @@ extension _FormSteps on _ChannelWizardDialogState {
               child: Text(
                 l10n.probeSkippableNote,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      fontWeight: FontWeight.w400,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+                  fontWeight: FontWeight.w400,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
             ),
           ],
         ),
         if (_probe != null) ...[
           const SizedBox(height: AppSpace.s10),
-          ChannelProbeResultCard(
-            l10n: l10n,
-            result: _probe!,
-            onRetry: _probing ? null : _runProbe,
-          ),
+          ChannelProbeResultCard(l10n: l10n, result: _probe!, onRetry: _probing ? null : _runProbe),
         ],
       ],
     );
@@ -101,9 +95,7 @@ extension _FormSteps on _ChannelWizardDialogState {
                     vertical: AppSpace.s6,
                   ),
                   decoration: BoxDecoration(
-                    border: i == 0
-                        ? null
-                        : Border(top: BorderSide(color: scheme.outlineVariant)),
+                    border: i == 0 ? null : Border(top: BorderSide(color: scheme.outlineVariant)),
                   ),
                   child: Row(
                     children: [
@@ -126,8 +118,9 @@ extension _FormSteps on _ChannelWizardDialogState {
                               'POST ${LLMDispatcher.chatRequestUrl(e.kind.face, routes.addressOf(e.kind)!)}',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: theme.textTheme.labelSmall?.mono
-                                  .copyWith(color: scheme.onSurfaceVariant),
+                              style: theme.textTheme.labelSmall?.mono.copyWith(
+                                color: scheme.onSurfaceVariant,
+                              ),
                             ),
                           ],
                         ),
@@ -153,11 +146,7 @@ extension _FormSteps on _ChannelWizardDialogState {
     );
   }
 
-  List<String> _routeFeatureWords(
-    AppLocalizations l10n,
-    ChannelRoutes routes,
-    RouteKind kind,
-  ) {
+  List<String> _routeFeatureWords(AppLocalizations l10n, ChannelRoutes routes, RouteKind kind) {
     final f = routes.featuresOf(kind);
     return [
       if (f.webSearch) l10n.routeFeatureWebSearch,
@@ -174,29 +163,25 @@ extension _FormSteps on _ChannelWizardDialogState {
     final family = Vendors.byId(_resolvedChannelType()).family;
     final isMidjourney = family == ProtocolFamily.midjourney;
     final presetEndpoint = variant?.defaultEndpoint ?? preset.defaultEndpoint;
-    final edited = presetEndpoint != null &&
-        _endpointCtrl.text.trim() != presetEndpoint;
+    final edited = presetEndpoint != null && _endpointCtrl.text.trim() != presetEndpoint;
 
     final helper = isRelay
         ? l10n.newApiBaseHint
         : isMidjourney
-            ? l10n.midjourneyEndpointHint
-            : presetEndpoint != null
-                ? l10n.endpointPresetValue(presetEndpoint)
-                : switch (family) {
-                    ProtocolFamily.gemini => l10n.googleV1BetaHint,
-                    ProtocolFamily.anthropic => l10n.anthropicV1Hint,
-                    ProtocolFamily.dashscope => l10n.dashscopeApiV1Hint,
-                    _ => l10n.openaiV1Hint,
-                  };
+        ? l10n.midjourneyEndpointHint
+        : presetEndpoint != null
+        ? l10n.endpointPresetValue(presetEndpoint)
+        : switch (family) {
+            ProtocolFamily.gemini => l10n.googleV1BetaHint,
+            ProtocolFamily.anthropic => l10n.anthropicV1Hint,
+            ProtocolFamily.dashscope => l10n.dashscopeApiV1Hint,
+            _ => l10n.openaiV1Hint,
+          };
 
     return ChannelLabelledField(
       label: isRelay ? l10n.newApiBaseUrl : l10n.endpointUrl,
       badge: edited
-          ? ChannelBadge(
-              l10n.presetEndpointModified,
-              tone: ChannelBadgeTone.warning,
-            )
+          ? ChannelBadge(l10n.presetEndpointModified, tone: ChannelBadgeTone.warning)
           : null,
       trailing: edited
           ? AppButton(
@@ -213,9 +198,7 @@ extension _FormSteps on _ChannelWizardDialogState {
       child: ChannelField(
         controller: _endpointCtrl,
         mono: true,
-        hint: isRelay || isMidjourney
-            ? 'https://your-newapi-host.com'
-            : 'https://your-api.com/v1',
+        hint: isRelay || isMidjourney ? 'https://your-newapi-host.com' : 'https://your-api.com/v1',
         errorText: _endpointError(l10n),
         onChanged: (_) => _rebuild(_clearProbe),
       ),

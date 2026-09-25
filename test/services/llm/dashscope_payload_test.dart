@@ -72,24 +72,22 @@ void main() {
   group('buildDashScopeImagePayload', () {
     const prompt = 'a cat';
 
-    ParamSpec sizeSpecOf(String modelId) => ModelCapabilities.forModel(modelId)
-        .imageParams
-        .firstWhere((p) => p.key == 'imageSize');
+    ParamSpec sizeSpecOf(String modelId) =>
+        ModelCapabilities.forModel(modelId).imageParams.firstWhere((p) => p.key == 'imageSize');
 
     Map<String, dynamic> qwen({
       List<String> refs = const [],
       Map<String, dynamic>? options,
       ({int width, int height})? inputSize,
-    }) =>
-        buildDashScopeImagePayload(
-          modelId: 'qwen-image-3.0',
-          shape: ImageRequestShape.dashscopeQwen,
-          prompt: prompt,
-          imageRefs: refs,
-          options: options,
-          inputSize: inputSize,
-          sizeSpec: sizeSpecOf('qwen-image-3.0'),
-        );
+    }) => buildDashScopeImagePayload(
+      modelId: 'qwen-image-3.0',
+      shape: ImageRequestShape.dashscopeQwen,
+      prompt: prompt,
+      imageRefs: refs,
+      options: options,
+      inputSize: inputSize,
+      sizeSpec: sizeSpecOf('qwen-image-3.0'),
+    );
 
     test('qwen nests the conversation under input and leads with the images', () {
       final body = qwen(refs: ['data:image/png;base64,AAA']);
@@ -122,8 +120,7 @@ void main() {
       // reads only model / input / parameters there.
       final body = qwen(options: {'imageSize': '1024x1024', 'promptExtend': 'off'});
       expect(body.keys.toSet(), {'model', 'input', 'parameters'});
-      expect(body['parameters'],
-          {'n': 1, 'size': '1024*1024', 'prompt_extend': false});
+      expect(body['parameters'], {'n': 1, 'size': '1024*1024', 'prompt_extend': false});
     });
 
     test('n is always sent, and always 1', () {
@@ -143,10 +140,11 @@ void main() {
 
     test('prompt_extend is tri-state: unset leaves the upstream default on', () {
       expect((qwen()['parameters'] as Map).containsKey('prompt_extend'), isFalse);
-      expect((qwen(options: {'promptExtend': 'on'})['parameters'] as Map)['prompt_extend'],
-          isTrue);
-      expect((qwen(options: {'promptExtend': 'off'})['parameters'] as Map)['prompt_extend'],
-          isFalse);
+      expect((qwen(options: {'promptExtend': 'on'})['parameters'] as Map)['prompt_extend'], isTrue);
+      expect(
+        (qwen(options: {'promptExtend': 'off'})['parameters'] as Map)['prompt_extend'],
+        isFalse,
+      );
     });
 
     group('size is always sent on the qwen dialect', () {
@@ -155,18 +153,18 @@ void main() {
       // author's choice or the dialect's 1K default does.
       test('text-to-image with nothing chosen is a 1K square', () {
         expect((qwen()['parameters'] as Map)['size'], '1024*1024');
-        expect((qwen(options: {'imageSize': 'not_set'})['parameters'] as Map)['size'],
-            '1024*1024');
+        expect((qwen(options: {'imageSize': 'not_set'})['parameters'] as Map)['size'], '1024*1024');
       });
 
       test('a stale value from another family still gets the default, not nothing', () {
-        expect((qwen(options: {'imageSize': 'auto'})['parameters'] as Map)['size'],
-            '1024*1024');
+        expect((qwen(options: {'imageSize': 'auto'})['parameters'] as Map)['size'], '1024*1024');
       });
 
       test('an explicit choice is kept in the wire spelling', () {
-        expect((qwen(options: {'imageSize': '1536x1024'})['parameters'] as Map)['size'],
-            '1536*1024');
+        expect(
+          (qwen(options: {'imageSize': '1536x1024'})['parameters'] as Map)['size'],
+          '1536*1024',
+        );
       });
 
       test('an edit with nothing chosen follows the input ratio at the 1K area', () {
@@ -229,27 +227,29 @@ void main() {
       // model's own default rather than a 400.
       Object? sizeFor(String modelId, ImageRequestShape shape, String stored) =>
           (buildDashScopeImagePayload(
-            modelId: modelId,
-            shape: shape,
-            prompt: prompt,
-            imageRefs: const [],
-            options: {'imageSize': stored},
-            sizeSpec: sizeSpecOf(modelId),
-          )['parameters'] as Map)['size'];
+                modelId: modelId,
+                shape: shape,
+                prompt: prompt,
+                imageRefs: const [],
+                options: {'imageSize': stored},
+                sizeSpec: sizeSpecOf(modelId),
+              )['parameters']
+              as Map)['size'];
 
       expect(sizeFor('wan2.7-image', ImageRequestShape.dashscopeWan, '3840x2160'), '1K');
       expect(sizeFor('wan2.7-image', ImageRequestShape.dashscopeWan, '4K'), '1K');
       expect(sizeFor('wan2.7-image-pro', ImageRequestShape.dashscopeWan, '4K'), '4K');
       // First-generation qwen takes five fixed sizes and no computed default.
       for (final stale in ['not_set', 'auto', '1024x1024', '']) {
-        expect(sizeFor('qwen-image-plus', ImageRequestShape.dashscopeQwen, stale),
-            '1328*1328', reason: stale);
+        expect(
+          sizeFor('qwen-image-plus', ImageRequestShape.dashscopeQwen, stale),
+          '1328*1328',
+          reason: stale,
+        );
       }
-      expect(sizeFor('qwen-image-plus', ImageRequestShape.dashscopeQwen, '1664x928'),
-          '1664*928');
+      expect(sizeFor('qwen-image-plus', ImageRequestShape.dashscopeQwen, '1664x928'), '1664*928');
       // DashScope's own spelling is a size too.
-      expect(sizeFor('qwen-image-3.0', ImageRequestShape.dashscopeQwen, '1536*1024'),
-          '1536*1024');
+      expect(sizeFor('qwen-image-3.0', ImageRequestShape.dashscopeQwen, '1536*1024'), '1536*1024');
     });
 
     test('edit-max / plus default stays inside their per-edge range', () {
@@ -310,10 +310,16 @@ void main() {
     });
 
     test('its -max / -plus siblings and the generators keep it', () {
-      for (final id in ['qwen-image-edit-max', 'qwen-image-edit-plus-2026-01-01', 'qwen-image-3.0-pro']) {
-        expect(ModelCapabilities.forModel(id).imageParams.any((p) => p.key == 'imageSize'),
-            isTrue,
-            reason: id);
+      for (final id in [
+        'qwen-image-edit-max',
+        'qwen-image-edit-plus-2026-01-01',
+        'qwen-image-3.0-pro',
+      ]) {
+        expect(
+          ModelCapabilities.forModel(id).imageParams.any((p) => p.key == 'imageSize'),
+          isTrue,
+          reason: id,
+        );
       }
     });
   });
@@ -330,11 +336,11 @@ void main() {
               {
                 'message': {
                   'content': [
-                    {'image': 'https://example.com/a.png'}
-                  ]
-                }
-              }
-            ]
+                    {'image': 'https://example.com/a.png'},
+                  ],
+                },
+              },
+            ],
           },
         }),
         returnsNormally,
@@ -352,11 +358,13 @@ void main() {
           'message': 'Input data may contain inappropriate content.',
           'request_id': 'abc-123',
         }),
-        throwsA(isA<LLMApiException>().having(
-          (e) => e.message,
-          'message',
-          allOf(contains('DataInspectionFailed'), contains('abc-123')),
-        )),
+        throwsA(
+          isA<LLMApiException>().having(
+            (e) => e.message,
+            'message',
+            allOf(contains('DataInspectionFailed'), contains('abc-123')),
+          ),
+        ),
       );
     });
 
@@ -382,11 +390,11 @@ void main() {
                   'content': [
                     {'text': 'rewritten prompt'},
                     {'image': 'https://example.com/a.png'},
-                  ]
-                }
-              }
-            ]
-          }
+                  ],
+                },
+              },
+            ],
+          },
         }),
         ['https://example.com/a.png'],
       );
@@ -399,8 +407,8 @@ void main() {
             'results': [
               {'url': 'https://example.com/a.png'},
               {'url': 'https://example.com/b.png'},
-            ]
-          }
+            ],
+          },
         }),
         ['https://example.com/a.png', 'https://example.com/b.png'],
       );
@@ -409,8 +417,20 @@ void main() {
     test('malformed or empty output yields nothing, never a throw', () {
       expect(dashscopeImageRefs({}), isEmpty);
       expect(dashscopeImageRefs({'output': 'nope'}), isEmpty);
-      expect(dashscopeImageRefs({'output': {'choices': 'nope'}}), isEmpty);
-      expect(dashscopeImageRefs({'output': {'results': [7]}}), isEmpty);
+      expect(
+        dashscopeImageRefs({
+          'output': {'choices': 'nope'},
+        }),
+        isEmpty,
+      );
+      expect(
+        dashscopeImageRefs({
+          'output': {
+            'results': [7],
+          },
+        }),
+        isEmpty,
+      );
     });
   });
 
@@ -431,10 +451,7 @@ void main() {
 
     test('a future wan2.7 video id is not claimed by the image rule', () {
       // Which is why the rule names `-image` instead of the `wan2.7` prefix.
-      expect(
-        ModelFamilyClassifier.classify('wan2.7-t2v'),
-        isNot(ModelFamily.dashscopeImage),
-      );
+      expect(ModelFamilyClassifier.classify('wan2.7-t2v'), isNot(ModelFamily.dashscopeImage));
     });
 
     test('the family shows up as an image generator everywhere it matters', () {
@@ -450,10 +467,14 @@ void main() {
     });
 
     test('each model declares the body shape its endpoint expects', () {
-      expect(ModelDescriptor.of('qwen-image-3.0').capabilities.imageRequestShape,
-          ImageRequestShape.dashscopeQwen);
-      expect(ModelDescriptor.of('wan2.7-image-pro').capabilities.imageRequestShape,
-          ImageRequestShape.dashscopeWan);
+      expect(
+        ModelDescriptor.of('qwen-image-3.0').capabilities.imageRequestShape,
+        ImageRequestShape.dashscopeQwen,
+      );
+      expect(
+        ModelDescriptor.of('wan2.7-image-pro').capabilities.imageRequestShape,
+        ImageRequestShape.dashscopeWan,
+      );
     });
 
     test('and declares that one request runs the whole generation', () {
@@ -464,15 +485,14 @@ void main() {
 
   group('vendor + timeout', () {
     LLMModelConfig config(String modelId, String channelType) => LLMModelConfig(
-          modelId: modelId,
-          channelType: channelType,
-          endpoint: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
-          apiKey: 'k',
-        );
+      modelId: modelId,
+      channelType: channelType,
+      endpoint: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+      apiKey: 'k',
+    );
 
     test('only the DashScope vendor claims the native image surface', () {
-      expect(Vendors.byId(Vendors.dashscope).imageMenu,
-          contains(WireProtocol.dashscopeImagesSync));
+      expect(Vendors.byId(Vendors.dashscope).imageMenu, contains(WireProtocol.dashscopeImagesSync));
       expect(Vendors.byId(Vendors.newApiOpenAI).imageMenu, isEmpty);
     });
 
@@ -481,8 +501,7 @@ void main() {
       // guard would turn a paid result into a timeout message.
       expect(
         LLMDispatcher().generateTimeout(config('qwen-image-3.0', Vendors.dashscope)),
-        greaterThan(
-            LLMDispatcher().generateTimeout(config('qwen-max', Vendors.dashscope))),
+        greaterThan(LLMDispatcher().generateTimeout(config('qwen-max', Vendors.dashscope))),
       );
     });
 
@@ -490,8 +509,7 @@ void main() {
       // Not the flat 120 s it used to be — the deadline now scales with the
       // output cap — but the longRunning exemption still has to mean
       // something, so a chat model must land under it.
-      final chat =
-          LLMDispatcher().generateTimeout(config('qwen-max', Vendors.dashscope));
+      final chat = LLMDispatcher().generateTimeout(config('qwen-max', Vendors.dashscope));
       expect(chat, greaterThanOrEqualTo(const Duration(seconds: 120)));
       expect(chat, lessThan(const Duration(minutes: 5)));
     });
@@ -513,21 +531,11 @@ void main() {
       // for a live connection abandons a task that is billed and still
       // running.
       final dispatcher = LLMDispatcher();
-      expect(
-        dispatcher.streamIsSingleShot(config('qwen-image', Vendors.dashscope)),
-        isTrue,
-      );
-      expect(
-        dispatcher
-            .streamIsSingleShot(config('qwen-image', Vendors.dashscopeNative)),
-        isTrue,
-      );
+      expect(dispatcher.streamIsSingleShot(config('qwen-image', Vendors.dashscope)), isTrue);
+      expect(dispatcher.streamIsSingleShot(config('qwen-image', Vendors.dashscopeNative)), isTrue);
       // Chat on the same channel really does stream, and keeps the short
       // guard that says whether the connection is alive.
-      expect(
-        dispatcher.streamIsSingleShot(config('qwen-max', Vendors.dashscope)),
-        isFalse,
-      );
+      expect(dispatcher.streamIsSingleShot(config('qwen-max', Vendors.dashscope)), isFalse);
     });
   });
 }

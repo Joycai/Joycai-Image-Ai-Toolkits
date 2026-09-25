@@ -45,10 +45,7 @@ void main() {
       expect(check('a/b'), FolderNameError.illegalChars);
       expect(check(r'a\b'), FolderNameError.illegalChars);
       expect(check('a:b'), FolderNameError.illegalChars);
-      expect(
-        check('a${String.fromCharCode(1)}b'),
-        FolderNameError.illegalChars,
-      );
+      expect(check('a${String.fromCharCode(1)}b'), FolderNameError.illegalChars);
       expect(check('CON'), FolderNameError.reservedName);
       expect(check('lpt1.txt'), FolderNameError.reservedName);
       // Reserved names are a Windows thing.
@@ -59,7 +56,10 @@ void main() {
 
     test('a trailing dot or space on Windows is trimmed, not refused', () {
       final parent = root.path;
-      expect(FolderOperationsService.validateName(parent: parent, name: 'name. ', windows: true), isNull);
+      expect(
+        FolderOperationsService.validateName(parent: parent, name: 'name. ', windows: true),
+        isNull,
+      );
       expect(FolderOperationsService.sanitize('name. ', windows: true), 'name');
       expect(FolderOperationsService.sanitize('name. ', windows: false), 'name.');
     });
@@ -67,11 +67,7 @@ void main() {
     test('renaming a folder to its own name is not "exists"', () async {
       final own = await mkdir('own');
       expect(
-        FolderOperationsService.validateName(
-          parent: root.path,
-          name: 'own',
-          currentPath: own.path,
-        ),
+        FolderOperationsService.validateName(parent: root.path, name: 'own', currentPath: own.path),
         isNull,
       );
     });
@@ -138,8 +134,7 @@ void main() {
       expect(await Directory(p.join(root.path, 'gone')).exists(), isFalse);
     });
 
-    test('delete refuses a registered root even when a caller reaches the service',
-        () async {
+    test('delete refuses a registered root even when a caller reaches the service', () async {
       final registered = await mkdir('registered');
       await write('registered/a.txt', 'a');
 
@@ -160,15 +155,9 @@ void main() {
     final parent = p.join(root.path, 'library');
     final nestedRoot = p.join(parent, 'favorites');
 
+    expect(FolderOperationsService.isRegisteredRoot(nestedRoot, [parent, nestedRoot]), isTrue);
     expect(
-      FolderOperationsService.isRegisteredRoot(nestedRoot, [parent, nestedRoot]),
-      isTrue,
-    );
-    expect(
-      FolderOperationsService.isRegisteredRoot(
-        p.join(parent, 'ordinary'),
-        [parent, nestedRoot],
-      ),
+      FolderOperationsService.isRegisteredRoot(p.join(parent, 'ordinary'), [parent, nestedRoot]),
       isFalse,
     );
   });
@@ -181,8 +170,12 @@ void main() {
       await mkdir('other/src');
       final free = await mkdir('free');
 
-      FolderMoveRejection? can(String s, String d, {Set<String> roots = const {}, FolderTransferMode mode = FolderTransferMode.move}) =>
-          FolderOperationsService.canTransfer(s, d, roots: roots, mode: mode);
+      FolderMoveRejection? can(
+        String s,
+        String d, {
+        Set<String> roots = const {},
+        FolderTransferMode mode = FolderTransferMode.move,
+      }) => FolderOperationsService.canTransfer(s, d, roots: roots, mode: mode);
 
       expect(can(src.path, src.path), FolderMoveRejection.intoSelf);
       expect(can(src.path, child.path), FolderMoveRejection.intoDescendant);
@@ -213,7 +206,12 @@ void main() {
         FolderMoveRejection.targetExists,
       );
       expect(
-        FolderOperationsService.canTransfer(src.path, free.path, roots: {src.path}, mode: FolderTransferMode.copy),
+        FolderOperationsService.canTransfer(
+          src.path,
+          free.path,
+          roots: {src.path},
+          mode: FolderTransferMode.copy,
+        ),
         isNull,
       );
     });
@@ -267,8 +265,7 @@ void main() {
       expect(await src.exists(), isFalse);
     });
 
-    test('the copy-delete route preserves symbolic links before removing the source',
-        () async {
+    test('the copy-delete route preserves symbolic links before removing the source', () async {
       if (Platform.isWindows) return;
 
       final src = await mkdir('linked');

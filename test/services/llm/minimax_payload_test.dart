@@ -20,13 +20,13 @@ void main() {
         'https://api.minimaxi.com/anthropic/v1/',
       ];
       for (final endpoint in faces) {
-        expect(minimaxOpenAIBase(endpoint), 'https://api.minimaxi.com/v1',
-            reason: endpoint);
-        expect(minimaxAnthropicBase(endpoint),
-            'https://api.minimaxi.com/anthropic/v1',
-            reason: endpoint);
-        expect(minimaxV2Base(endpoint), 'https://api.minimaxi.com/v2',
-            reason: endpoint);
+        expect(minimaxOpenAIBase(endpoint), 'https://api.minimaxi.com/v1', reason: endpoint);
+        expect(
+          minimaxAnthropicBase(endpoint),
+          'https://api.minimaxi.com/anthropic/v1',
+          reason: endpoint,
+        );
+        expect(minimaxV2Base(endpoint), 'https://api.minimaxi.com/v2', reason: endpoint);
       }
     });
 
@@ -35,18 +35,24 @@ void main() {
       // `…/anthropic/v1` and the image surface resolves to
       // `…/anthropic/v1/image_generation`, which 404s with nothing in the
       // message about which half of the URL was wrong.
-      expect(minimaxOpenAIBase('https://api.minimaxi.com/anthropic/v1'),
-          'https://api.minimaxi.com/v1');
+      expect(
+        minimaxOpenAIBase('https://api.minimaxi.com/anthropic/v1'),
+        'https://api.minimaxi.com/v1',
+      );
     });
 
     test('derivation is idempotent and keys off the path only', () {
       final once = minimaxV2Base('https://api.minimaxi.com/v1');
       expect(minimaxV2Base(once), once);
       // A corporate gateway or a regional host works unchanged.
-      expect(minimaxOpenAIBase('https://gateway.internal/minimax/v1'),
-          'https://gateway.internal/minimax/v1');
-      expect(minimaxV2Base('https://gateway.internal/minimax/v1'),
-          'https://gateway.internal/minimax/v2');
+      expect(
+        minimaxOpenAIBase('https://gateway.internal/minimax/v1'),
+        'https://gateway.internal/minimax/v1',
+      );
+      expect(
+        minimaxV2Base('https://gateway.internal/minimax/v1'),
+        'https://gateway.internal/minimax/v2',
+      );
     });
   });
 
@@ -100,11 +106,11 @@ void main() {
 
     test('prompt_optimizer is tri-state, not a boolean with a default', () {
       Object? optimizer(String? value) => buildMiniMaxImagePayload(
-            modelId: 'image-01',
-            prompt: 'p',
-            subjectRefs: const [],
-            options: value == null ? null : {'promptExtend': value},
-          )['prompt_optimizer'];
+        modelId: 'image-01',
+        prompt: 'p',
+        subjectRefs: const [],
+        options: value == null ? null : {'promptExtend': value},
+      )['prompt_optimizer'];
       expect(optimizer('on'), isTrue);
       expect(optimizer('off'), isFalse);
       // `not_set` must send nothing at all — sending `false` would pin a
@@ -120,7 +126,7 @@ void main() {
         minimaxImageRefs(const {
           'data': {
             'image_urls': ['https://a', 'https://b'],
-          }
+          },
         }),
         ['https://a', 'https://b'],
       );
@@ -131,7 +137,7 @@ void main() {
         minimaxImageRefs(const {
           'data': {
             'image_base64': ['AAA'],
-          }
+          },
         }),
         ['AAA'],
       );
@@ -146,7 +152,7 @@ void main() {
           'data': {
             'image_urls': ['https://a'],
             'image_base64': ['AAA'],
-          }
+          },
         }),
         ['https://a'],
       );
@@ -155,14 +161,20 @@ void main() {
     test('a missing or malformed data block yields nothing, never throws', () {
       expect(minimaxImageRefs(const {}), isEmpty);
       expect(minimaxImageRefs(const {'data': 'oops'}), isEmpty);
-      expect(minimaxImageRefs(const {'data': {'image_urls': 'oops'}}), isEmpty);
       expect(
-          minimaxImageRefs(const {
-            'data': {
-              'image_urls': ['', null],
-            }
-          }),
-          isEmpty);
+        minimaxImageRefs(const {
+          'data': {'image_urls': 'oops'},
+        }),
+        isEmpty,
+      );
+      expect(
+        minimaxImageRefs(const {
+          'data': {
+            'image_urls': ['', null],
+          },
+        }),
+        isEmpty,
+      );
     });
 
     test('all-images-failed is an error even inside a 200 with status 0', () {
@@ -198,9 +210,11 @@ void main() {
         // Unparseable counts must not be read as zero successes.
         {'success_count': 'n/a', 'failed_count': '1'},
       ]) {
-        expect(() => throwIfMiniMaxImagesFailed({'metadata': metadata}),
-            returnsNormally,
-            reason: '$metadata');
+        expect(
+          () => throwIfMiniMaxImagesFailed({'metadata': metadata}),
+          returnsNormally,
+          reason: '$metadata',
+        );
       }
       expect(() => throwIfMiniMaxImagesFailed(const {}), returnsNormally);
     });
@@ -214,9 +228,7 @@ void main() {
       final body = buildMiniMaxVideoPayload(
         modelId: 'MiniMax-H3',
         prompt: '',
-        media: const [
-          MiniMaxVideoMedia(MiniMaxVideoRole.firstFrame, 'data:image/png;base64,A'),
-        ],
+        media: const [MiniMaxVideoMedia(MiniMaxVideoRole.firstFrame, 'data:image/png;base64,A')],
       );
       // Exactly one text item is mandatory upstream even for a pure
       // image-to-video request, so an empty prompt is still a text item.
@@ -258,8 +270,7 @@ void main() {
     test('resolution and duration are always sent, with real defaults', () {
       // Both are required upstream with no server-side default, so "leave it
       // unset" is not available the way it is for an optional knob.
-      final bare = buildMiniMaxVideoPayload(
-          modelId: 'MiniMax-H3', prompt: 'p', media: const []);
+      final bare = buildMiniMaxVideoPayload(modelId: 'MiniMax-H3', prompt: 'p', media: const []);
       expect(bare['resolution'], '768P');
       expect(bare['duration'], 5);
 
@@ -371,10 +382,8 @@ void main() {
         modelId: 'MiniMax-H3',
         prompt: 'p',
         media: const [
-          MiniMaxVideoMedia(
-              MiniMaxVideoRole.firstFrame, 'data:image/png;base64,AAAA'),
-          MiniMaxVideoMedia(
-              MiniMaxVideoRole.referenceImage, 'https://example/img.png'),
+          MiniMaxVideoMedia(MiniMaxVideoRole.firstFrame, 'data:image/png;base64,AAAA'),
+          MiniMaxVideoMedia(MiniMaxVideoRole.referenceImage, 'https://example/img.png'),
         ],
       );
       final logged = minimaxPayloadForLog(body);

@@ -15,8 +15,7 @@ List<String> folderOutlineLabels(List<String> paths) {
   // How many trailing segments each label shows; grows while it collides.
   final depth = List<int>.filled(paths.length, 1);
 
-  bool collides(int i, int j) =>
-      _tail(segments[i], depth[i]) == _tail(segments[j], depth[j]);
+  bool collides(int i, int j) => _tail(segments[i], depth[i]) == _tail(segments[j], depth[j]);
 
   var changed = true;
   while (changed) {
@@ -25,8 +24,7 @@ List<String> folderOutlineLabels(List<String> paths) {
       for (var j = i + 1; j < paths.length; j++) {
         if (!collides(i, j)) continue;
         // The same folder twice cannot be told apart; leave both bare.
-        if (_tail(segments[i], segments[i].length) ==
-            _tail(segments[j], segments[j].length)) {
+        if (_tail(segments[i], segments[i].length) == _tail(segments[j], segments[j].length)) {
           continue;
         }
         // Deepen whichever side still has segments to give; a side already

@@ -75,8 +75,14 @@ InputDecoration downloaderFieldDecoration(
     filled: true,
     fillColor: fill ?? scheme.surface,
     constraints: contentPadding == null ? BoxConstraints.tightFor(height: height) : null,
-    contentPadding: contentPadding ??
-        EdgeInsetsDirectional.fromSTEB(icon == null ? AppSpace.s10 : 0, vertical, AppSpace.s10, vertical),
+    contentPadding:
+        contentPadding ??
+        EdgeInsetsDirectional.fromSTEB(
+          icon == null ? AppSpace.s10 : 0,
+          vertical,
+          AppSpace.s10,
+          vertical,
+        ),
     prefixIcon: icon == null ? null : Icon(icon, size: AppSize.iconMd, color: scheme.outline),
     prefixIconConstraints: const BoxConstraints(minWidth: AppSize.control, minHeight: 0),
   );
@@ -102,7 +108,10 @@ class DownloaderActionButton extends StatelessWidget {
     this.fill,
     this.foreground,
     this.iconSize = AppSize.iconMd,
-  }) : assert(icon != null || label != null, 'give DownloaderActionButton an icon, a label or both');
+  }) : assert(
+         icon != null || label != null,
+         'give DownloaderActionButton an icon, a label or both',
+       );
 
   final IconData? icon;
   final String? label;
@@ -150,8 +159,8 @@ class DownloaderActionButton extends StatelessWidget {
     final Color ground = !boxed
         ? Colors.transparent
         : selected
-            ? scheme.accentTint
-            : (fill ?? scheme.surface);
+        ? scheme.accentTint
+        : (fill ?? scheme.surface);
     final BorderSide side = !boxed
         ? BorderSide.none
         : BorderSide(color: selected ? scheme.accentRing : scheme.outlineVariant);

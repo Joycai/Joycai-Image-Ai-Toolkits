@@ -30,12 +30,7 @@ void main() {
   }
 
   RenameProposal proposal(String path, String newName, {bool overwrite = false}) =>
-      RenameProposal(
-        path: path,
-        oldName: p.basename(path),
-        newName: newName,
-        overwrite: overwrite,
-      );
+      RenameProposal(path: path, oldName: p.basename(path), newName: newName, overwrite: overwrite);
 
   test('renames a file whose target name is free', () async {
     final source = await write('a.png', 'aaa');
@@ -66,8 +61,7 @@ void main() {
     final source = await write('a.png', 'new');
     await write('b.png', 'old');
 
-    final count =
-        await AiRenameAgent.applyProposals([proposal(source, 'b.png', overwrite: true)]);
+    final count = await AiRenameAgent.applyProposals([proposal(source, 'b.png', overwrite: true)]);
 
     expect(count, 1);
     expect(File(source).existsSync(), isFalse);
@@ -89,7 +83,11 @@ void main() {
 
     expect(count, 1);
     expect(File(p.join(dir.path, 'b.png')).readAsStringSync(), 'first');
-    expect(File(second).readAsStringSync(), 'second', reason: 'the refused source stays where it was');
+    expect(
+      File(second).readAsStringSync(),
+      'second',
+      reason: 'the refused source stays where it was',
+    );
   });
 
   test('a proposal that does not change the name is a no-op', () async {
@@ -105,10 +103,9 @@ void main() {
     final source = await write('a.png', 'aaa');
     final logs = <String>[];
 
-    final count = await AiRenameAgent.applyProposals(
-      [proposal(source, '../escaped.png')],
-      onLog: logs.add,
-    );
+    final count = await AiRenameAgent.applyProposals([
+      proposal(source, '../escaped.png'),
+    ], onLog: logs.add);
 
     expect(count, 0);
     expect(File(source).readAsStringSync(), 'aaa');

@@ -21,19 +21,21 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
 
-    await tester.pumpWidget(MaterialApp(
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: Scaffold(
-        body: Align(
-          alignment: Alignment.topCenter,
-          child: SizedBox(
-            width: size.width,
-            child: OptimizerContextCard(usage: usage),
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: Align(
+            alignment: Alignment.topCenter,
+            child: SizedBox(
+              width: size.width,
+              child: OptimizerContextCard(usage: usage),
+            ),
           ),
         ),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
   }
 
@@ -230,8 +232,9 @@ void main() {
     expect(find.text('0'), findsNothing);
   });
 
-  testWidgets('an unset window says so rather than passing the default off as measured',
-      (tester) async {
+  testWidgets('an unset window says so rather than passing the default off as measured', (
+    tester,
+  ) async {
     const slices = {ContextUsageSlice.systemPrompt: 18200};
     await pump(
       tester,
@@ -251,8 +254,11 @@ void main() {
       tester,
       const ContextUsageSnapshot(windowChars: 49152, charsPerToken: 1.5, slices: slices),
     );
-    expect(find.text(l10n.optCtxWindowAssumed), findsNothing,
-        reason: 'a configured window carries no caveat');
+    expect(
+      find.text(l10n.optCtxWindowAssumed),
+      findsNothing,
+      reason: 'a configured window carries no caveat',
+    );
   });
 
   for (final width in [250.0, 600.0]) {

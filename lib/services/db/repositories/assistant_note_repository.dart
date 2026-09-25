@@ -22,14 +22,13 @@ class AssistantNote {
   });
 
   static AssistantNote fromRow(Map<String, dynamic> row) => AssistantNote(
-        id: row['id'] as int,
-        sessionId: row['session_id'] as String,
-        slug: row['slug'] as String? ?? '',
-        title: row['title'] as String? ?? '',
-        content: row['content'] as String? ?? '',
-        createdAt:
-            DateTime.fromMillisecondsSinceEpoch(row['created_at'] as int? ?? 0),
-      );
+    id: row['id'] as int,
+    sessionId: row['session_id'] as String,
+    slug: row['slug'] as String? ?? '',
+    title: row['title'] as String? ?? '',
+    content: row['content'] as String? ?? '',
+    createdAt: DateTime.fromMillisecondsSinceEpoch(row['created_at'] as int? ?? 0),
+  );
 }
 
 /// SQLite store for knowledge sub-agent findings (`assistant_notes`, v34).
@@ -94,7 +93,7 @@ class AssistantNoteRepository {
 
     final storedContent = content.length > maxContentChars
         ? '${content.substring(0, maxContentChars)}\n\n'
-            '[note truncated at $maxContentChars characters]'
+              '[note truncated at $maxContentChars characters]'
         : content;
 
     final now = DateTime.now();

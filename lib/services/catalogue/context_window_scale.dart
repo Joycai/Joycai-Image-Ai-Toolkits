@@ -19,7 +19,17 @@ class ContextWindowScale {
   const ContextWindowScale._();
 
   /// 8k, 16k, 32k, 64k, 96k, 128k, 256k, 512k, 1M.
-  static const List<int> stops = [8192, 16384, 32768, 65536, 98304, 131072, 262144, 524288, 1048576];
+  static const List<int> stops = [
+    8192,
+    16384,
+    32768,
+    65536,
+    98304,
+    131072,
+    262144,
+    524288,
+    1048576,
+  ];
 
   /// Dragging moves the value in whole multiples of this.
   static const int step = 1024;
@@ -102,7 +112,11 @@ class ContextWindowScale {
     if (m == null) return null;
     final number = double.tryParse(m.group(1)!);
     if (number == null) return null;
-    final unit = switch (m.group(2)) { 'k' => 1024, 'm' => 1048576, _ => 1 };
+    final unit = switch (m.group(2)) {
+      'k' => 1024,
+      'm' => 1048576,
+      _ => 1,
+    };
     if (unit == 1 && m.group(1)!.contains('.')) return null;
     final tokens = (number * unit).round();
     return tokens < 0 ? null : tokens;

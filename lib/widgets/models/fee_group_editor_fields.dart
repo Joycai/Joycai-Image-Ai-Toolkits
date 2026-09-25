@@ -54,7 +54,11 @@ class FeeGroupEditorFields extends StatelessWidget {
               segments: [
                 AppSegment(value: 'token', label: l10n.perToken, icon: Icons.token_outlined),
                 AppSegment(value: 'request', label: l10n.perRequest, icon: Icons.ads_click),
-                AppSegment(value: specBillingMode, label: l10n.perSpec, icon: Icons.photo_size_select_large_outlined),
+                AppSegment(
+                  value: specBillingMode,
+                  label: l10n.perSpec,
+                  icon: Icons.photo_size_select_large_outlined,
+                ),
               ],
               value: draft.billingMode,
               onChanged: draft.setMode,
@@ -152,7 +156,10 @@ class FeeGroupEditorFields extends StatelessWidget {
         // per-request rates differ by six orders of magnitude.
         Text(
           draft.isToken ? l10n.tokenPriceHint : l10n.requestPriceHint,
-          style: textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant, height: AppType.proseHeight),
+          style: textTheme.labelSmall?.copyWith(
+            color: scheme.onSurfaceVariant,
+            height: AppType.proseHeight,
+          ),
         ),
         // `D2e · 24b`: a request-billed group charges reference images too —
         // the spec table's own row, under the hint that stays about the
@@ -173,11 +180,11 @@ class FeeGroupEditorFields extends StatelessWidget {
   }
 
   static InputDecoration _decoration(BuildContext context) => InputDecoration(
-        filled: true,
-        fillColor: Theme.of(context).colorScheme.surface,
-        isDense: true,
-        contentPadding: const EdgeInsets.symmetric(horizontal: AppSpace.s10, vertical: 12),
-      );
+    filled: true,
+    fillColor: Theme.of(context).colorScheme.surface,
+    isDense: true,
+    contentPadding: const EdgeInsets.symmetric(horizontal: AppSpace.s10, vertical: 12),
+  );
 
   Widget _priceField(
     BuildContext context,
@@ -201,14 +208,21 @@ class FeeGroupEditorFields extends StatelessWidget {
         // says which rate it is empty of.
         floatingLabelBehavior: FloatingLabelBehavior.always,
         hintText: hintText,
-        hintStyle: textTheme.bodyMedium?.mono.copyWith(color: scheme.outline, fontStyle: FontStyle.italic),
+        hintStyle: textTheme.bodyMedium?.mono.copyWith(
+          color: scheme.outline,
+          fontStyle: FontStyle.italic,
+        ),
         suffixText: suffix,
         suffixStyle: textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
         error: invalid
             ? Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.error_outline, size: AppSize.iconSm - 2, color: scheme.onErrorContainer),
+                  Icon(
+                    Icons.error_outline,
+                    size: AppSize.iconSm - 2,
+                    color: scheme.onErrorContainer,
+                  ),
                   const SizedBox(width: AppSpace.s4),
                   Expanded(
                     child: Text(
@@ -236,7 +250,9 @@ class _Caption extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: AppSpace.s4),
       child: Text(
         label,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+        style: Theme.of(
+          context,
+        ).textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
       ),
     );
   }

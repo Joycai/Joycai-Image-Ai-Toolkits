@@ -23,10 +23,7 @@ Map<String, dynamic> prepareAnthropicPayload(
   required bool isStreaming,
   ThinkingDialect? dialect,
 }) {
-  final converted = buildAnthropicHistory(
-    history,
-    modelId: target.config.modelId,
-  );
+  final converted = buildAnthropicHistory(history, modelId: target.config.modelId);
   final maxTokens = anthropicMaxTokens(target, options);
   final thinkingDialect = dialect ?? resolveAnthropicThinkingDialect(target);
   final effort = target.config.effectiveReasoningEffort;
@@ -36,11 +33,7 @@ Map<String, dynamic> prepareAnthropicPayload(
     'system': ?converted.system,
     'messages': converted.messages,
     'stream': isStreaming,
-    'thinking': ?anthropicThinkingRequest(
-      thinkingDialect,
-      effort: effort,
-      maxTokens: maxTokens,
-    ),
+    'thinking': ?anthropicThinkingRequest(thinkingDialect, effort: effort, maxTokens: maxTokens),
     'output_config': ?anthropicOutputConfig(thinkingDialect, effort: effort),
   };
 
@@ -59,8 +52,7 @@ Map<String, dynamic> prepareAnthropicPayload(
     // Only where the vendor declares it (`VendorProfile.webSearchOn`): a
     // switch stored on a model that now reaches a non-Anthropic ④ face
     // (Bailian's) is hidden in the editor and must not be sent either.
-    if (target.config.enableWebSearch &&
-        target.vendor.sendsWebSearchOn(WireProtocol.anthropicChat))
+    if (target.config.enableWebSearch && target.vendor.sendsWebSearchOn(WireProtocol.anthropicChat))
       {
         'type': anthropicWebSearchToolType,
         'name': 'web_search',

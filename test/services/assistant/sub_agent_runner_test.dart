@@ -37,8 +37,7 @@ void main() {
       expect(executed, 0);
     });
 
-    test('every tool call gets a paired result before the next request',
-        () async {
+    test('every tool call gets a paired result before the next request', () async {
       List<LLMMessage>? secondRequestMessages;
       var turn = 0;
       final result = await SubAgentRunner.run(
@@ -50,8 +49,7 @@ void main() {
         request: (messages, tools) async {
           turn++;
           if (turn == 1) {
-            return LLMResponse(
-                text: '', toolCalls: [toolCall('a'), toolCall('b')]);
+            return LLMResponse(text: '', toolCalls: [toolCall('a'), toolCall('b')]);
           }
           secondRequestMessages = List.of(messages);
           return LLMResponse(text: 'done');
@@ -67,8 +65,7 @@ void main() {
       expect(jsonDecode(msgs[3].content), {'ok': 'a'});
     });
 
-    test('a throwing executor becomes an error result, not an escape',
-        () async {
+    test('a throwing executor becomes an error result, not an escape', () async {
       var turn = 0;
       List<LLMMessage>? secondRequestMessages;
       await SubAgentRunner.run(
@@ -76,13 +73,11 @@ void main() {
         systemPrompt: 'sys',
         task: 'brief',
         tools: const [],
-        executeTool: (call, _) =>
-            call.id == 'a' ? throw StateError('boom') : {'ok': call.id},
+        executeTool: (call, _) => call.id == 'a' ? throw StateError('boom') : {'ok': call.id},
         request: (messages, tools) async {
           turn++;
           if (turn == 1) {
-            return LLMResponse(
-                text: '', toolCalls: [toolCall('a'), toolCall('b')]);
+            return LLMResponse(text: '', toolCalls: [toolCall('a'), toolCall('b')]);
           }
           secondRequestMessages = List.of(messages);
           return LLMResponse(text: 'done');
@@ -93,8 +88,7 @@ void main() {
       expect(jsonDecode(results[1].content), {'ok': 'b'});
     });
 
-    test('cancellation mid-batch stubs the remaining calls, then stops',
-        () async {
+    test('cancellation mid-batch stubs the remaining calls, then stops', () async {
       var cancelled = false;
       final executedIds = <String>[];
       final result = await SubAgentRunner.run(
@@ -109,8 +103,7 @@ void main() {
           return {'ok': call.id};
         },
         request: (messages, tools) async {
-          return LLMResponse(
-              text: '', toolCalls: [toolCall('a'), toolCall('b')]);
+          return LLMResponse(text: '', toolCalls: [toolCall('a'), toolCall('b')]);
         },
       );
       expect(result.cancelled, isTrue);
@@ -160,8 +153,7 @@ void main() {
         request: (messages, tools) async {
           turn++;
           if (turn == 1) {
-            return LLMResponse(
-                text: '', toolCalls: [toolCall('a'), toolCall('b')]);
+            return LLMResponse(text: '', toolCalls: [toolCall('a'), toolCall('b')]);
           }
           return LLMResponse(text: 'done');
         },
@@ -187,8 +179,7 @@ void main() {
         request: (messages, tools) async {
           turn++;
           // Even the tools-free last round misbehaves and calls a tool.
-          return LLMResponse(
-              text: 'Let me look at x.md first.', toolCalls: [toolCall('c$turn')]);
+          return LLMResponse(text: 'Let me look at x.md first.', toolCalls: [toolCall('c$turn')]);
         },
       );
       expect(result.output, isEmpty);
@@ -208,8 +199,9 @@ void main() {
           return {'ok': call.id};
         },
         request: (messages, tools) async => LLMResponse(
-            text: 'Reading the style rules now.',
-            toolCalls: [toolCall('a'), toolCall('b')]),
+          text: 'Reading the style rules now.',
+          toolCalls: [toolCall('a'), toolCall('b')],
+        ),
       );
       expect(result.cancelled, isTrue);
       expect(result.output, isEmpty);
@@ -232,9 +224,12 @@ void main() {
         request: (messages, tools) async {
           turn++;
           if (turn == 1) {
-            return LLMResponse(text: '', toolCalls: [
-              LLMToolCall(id: 'a', name: 't', arguments: {'paths': 'x' * 4000}),
-            ]);
+            return LLMResponse(
+              text: '',
+              toolCalls: [
+                LLMToolCall(id: 'a', name: 't', arguments: {'paths': 'x' * 4000}),
+              ],
+            );
           }
           return LLMResponse(text: 'done');
         },
@@ -267,8 +262,7 @@ void main() {
       expect(seen, [1003, 1004]);
     });
 
-    test('an empty run reports empty output for the caller to reject',
-        () async {
+    test('an empty run reports empty output for the caller to reject', () async {
       final result = await SubAgentRunner.run(
         modelIdentifier: 'm',
         systemPrompt: 'sys',
@@ -289,8 +283,7 @@ void main() {
     });
 
     test('with paths the section lists them verbatim', () {
-      final msg = PromptOptimizerAgent.buildDelegateTask(
-          'the brief', const ['a.md', 'rules/b.md']);
+      final msg = PromptOptimizerAgent.buildDelegateTask('the brief', const ['a.md', 'rules/b.md']);
       expect(msg, contains('Start from these knowledge-base files:'));
       expect(msg, contains('- a.md'));
       expect(msg, contains('- rules/b.md'));
@@ -302,20 +295,24 @@ void main() {
 
     test('delegate and read_note appear iff any kind is available', () {
       expect(
-        names(PromptOptimizerAgent.toolsetFor(
-          acceptsImageInput: true,
-          knowledgeMode: true,
-          editMode: false,
-          delegateKinds: const {'knowledge'},
-        )),
+        names(
+          PromptOptimizerAgent.toolsetFor(
+            acceptsImageInput: true,
+            knowledgeMode: true,
+            editMode: false,
+            delegateKinds: const {'knowledge'},
+          ),
+        ),
         containsAll(['delegate', 'read_note']),
       );
       // No available kind: neither tool exists.
-      final none = names(PromptOptimizerAgent.toolsetFor(
-        acceptsImageInput: true,
-        knowledgeMode: true,
-        editMode: false,
-      ));
+      final none = names(
+        PromptOptimizerAgent.toolsetFor(
+          acceptsImageInput: true,
+          knowledgeMode: true,
+          editMode: false,
+        ),
+      );
       expect(none, isNot(contains('delegate')));
       expect(none, isNot(contains('read_note')));
     });
@@ -323,23 +320,27 @@ void main() {
     test('draft kind works outside knowledge sessions', () {
       // A system-prompt session with reference images and an image-capable
       // sub-agent model still gets drafting delegation.
-      final tools = names(PromptOptimizerAgent.toolsetFor(
-        acceptsImageInput: true,
-        knowledgeMode: false,
-        editMode: false,
-        delegateKinds: const {'draft'},
-      ));
+      final tools = names(
+        PromptOptimizerAgent.toolsetFor(
+          acceptsImageInput: true,
+          knowledgeMode: false,
+          editMode: false,
+          delegateKinds: const {'draft'},
+        ),
+      );
       expect(tools, contains('delegate'));
       expect(tools, isNot(contains('read_knowledge_file')));
     });
 
     test('delegate is additive — the direct read tool stays', () {
-      final tools = names(PromptOptimizerAgent.toolsetFor(
-        acceptsImageInput: true,
-        knowledgeMode: true,
-        editMode: false,
-        delegateKinds: const {'knowledge'},
-      ));
+      final tools = names(
+        PromptOptimizerAgent.toolsetFor(
+          acceptsImageInput: true,
+          knowledgeMode: true,
+          editMode: false,
+          delegateKinds: const {'knowledge'},
+        ),
+      );
       expect(tools, contains('read_knowledge_file'));
       expect(tools, contains('delegate'));
     });
@@ -347,24 +348,28 @@ void main() {
     test('context exhaustion removes reads but keeps delegate', () {
       // The sub-agent researches in its own fresh context — running out of
       // room in the main one is exactly when delegation is most useful.
-      final tools = names(PromptOptimizerAgent.toolsetFor(
-        acceptsImageInput: true,
-        knowledgeMode: true,
-        editMode: false,
-        delegateKinds: const {'knowledge'},
-        contextExhausted: true,
-      ));
+      final tools = names(
+        PromptOptimizerAgent.toolsetFor(
+          acceptsImageInput: true,
+          knowledgeMode: true,
+          editMode: false,
+          delegateKinds: const {'knowledge'},
+          contextExhausted: true,
+        ),
+      );
       expect(tools, isNot(contains('read_knowledge_file')));
       expect(tools, contains('delegate'));
     });
 
     test('edit mode keeps the write tool; text-only drops image tools', () {
-      final tools = names(PromptOptimizerAgent.toolsetFor(
-        acceptsImageInput: false,
-        knowledgeMode: true,
-        editMode: true,
-        delegateKinds: const {'knowledge'},
-      ));
+      final tools = names(
+        PromptOptimizerAgent.toolsetFor(
+          acceptsImageInput: false,
+          knowledgeMode: true,
+          editMode: true,
+          delegateKinds: const {'knowledge'},
+        ),
+      );
       expect(tools, contains('write_knowledge_file'));
       expect(tools, contains('delegate'));
       expect(tools, isNot(contains('view_image')));
@@ -377,8 +382,7 @@ void main() {
         (t.parameters['properties'] as Map).cast<String, dynamic>();
 
     test('the kind enum lists exactly the available kinds', () {
-      final both =
-          PromptOptimizerAgent.delegateToolFor(const {'knowledge', 'draft'});
+      final both = PromptOptimizerAgent.delegateToolFor(const {'knowledge', 'draft'});
       expect((props(both)['kind'] as Map)['enum'], ['draft', 'knowledge']);
 
       final only = PromptOptimizerAgent.delegateToolFor(const {'knowledge'});
@@ -388,8 +392,7 @@ void main() {
     test("each kind's private field appears only with its kind", () {
       // A field describing an unavailable capability reads as an
       // instruction to try it.
-      final knowledge =
-          PromptOptimizerAgent.delegateToolFor(const {'knowledge'});
+      final knowledge = PromptOptimizerAgent.delegateToolFor(const {'knowledge'});
       expect(props(knowledge), contains('paths'));
       expect(props(knowledge), isNot(contains('image_id')));
 

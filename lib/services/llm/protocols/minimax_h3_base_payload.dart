@@ -90,8 +90,9 @@ bool minimaxH3TempRefIsStale(
 /// released H3-Base checkpoints serve one task variant per process, so a
 /// request mixing the two modalities has no shape the cookbook documents.
 /// Returns the kept items first.
-(List<MiniMaxH3Media> kept, List<MiniMaxH3Media> dropped)
-    partitionMiniMaxH3Media(List<MiniMaxH3Media> media) {
+(List<MiniMaxH3Media> kept, List<MiniMaxH3Media> dropped) partitionMiniMaxH3Media(
+  List<MiniMaxH3Media> media,
+) {
   final hasFrame = media.any((m) => m.role.isFrame);
   if (!hasFrame) return (media, const []);
   return (
@@ -135,10 +136,7 @@ Map<String, dynamic> buildMiniMaxH3VideoPayload({
   final aspect = readStringOption(options, 'aspectRatio');
   // `adaptive` is the cloud spelling of the same idea and shares the option
   // key; both normalize to H3-Base's `auto`.
-  final ratio = (aspect == null ||
-          aspect == 'not_set' ||
-          aspect == 'adaptive' ||
-          aspect == 'auto')
+  final ratio = (aspect == null || aspect == 'not_set' || aspect == 'adaptive' || aspect == 'auto')
       ? (media.isEmpty ? '16:9' : 'auto')
       : aspect;
 
@@ -163,11 +161,7 @@ Map<String, dynamic> buildMiniMaxH3VideoPayload({
           if (item.role == MiniMaxH3Role.lastFrame) 'frame_index': -1,
         },
     ],
-    'target': {
-      'short_edge': 768,
-      'aspect_ratio': ratio,
-      'duration_seconds': duration.toDouble(),
-    },
+    'target': {'short_edge': 768, 'aspect_ratio': ratio, 'duration_seconds': duration.toDouble()},
     'num_outputs_per_prompt': 1,
     'num_inference_steps': 50,
     'flow_shift': 12.0,
@@ -189,9 +183,11 @@ Map<String, dynamic> minimaxH3PollEnvelope(
   String operationName,
   String videoUri,
 ) {
-  final status = requireJobStatus(data['status'],
-          job: 'MiniMax H3 local video job', jobId: operationName)
-      .toLowerCase();
+  final status = requireJobStatus(
+    data['status'],
+    job: 'MiniMax H3 local video job',
+    jobId: operationName,
+  ).toLowerCase();
 
   if (status == 'completed') {
     // The job's own `/content` endpoint on the API host: the channel's
@@ -202,12 +198,11 @@ Map<String, dynamic> minimaxH3PollEnvelope(
 
   if (status == 'failed') {
     final err = data['error'];
-    final msg = err is Map
-        ? (err['message'] ?? err.toString())
-        : (err?.toString() ?? 'unknown');
+    final msg = err is Map ? (err['message'] ?? err.toString()) : (err?.toString() ?? 'unknown');
     throw LLMApiException(
-        'MiniMax H3 local video job $operationName failed: $msg',
-        isJobEnded: true);
+      'MiniMax H3 local video job $operationName failed: $msg',
+      isJobEnded: true,
+    );
   }
 
   return {

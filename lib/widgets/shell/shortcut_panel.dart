@@ -36,10 +36,7 @@ int _openPanels = 0;
 bool get isShortcutPanelOpen => _openPanels > 0;
 
 /// Opens the panel, or closes it if it is already up — `⌘/` is a toggle.
-void toggleShortcutPanel(
-  BuildContext context, {
-  required ShortcutScreen? screen,
-}) {
+void toggleShortcutPanel(BuildContext context, {required ShortcutScreen? screen}) {
   final navigator = Navigator.of(context);
   if (isShortcutPanelOpen) {
     navigator.popUntil((route) => route.settings.name != _routeName);
@@ -54,8 +51,7 @@ void toggleShortcutPanel(
     // claim. What the user is asking about is the region that was live when
     // they pressed the key, and while the panel is up nothing underneath can
     // change it.
-    builder: (_) =>
-        ShortcutPanel(screen: screen, activePane: FocusPane.active.value),
+    builder: (_) => ShortcutPanel(screen: screen, activePane: FocusPane.active.value),
   );
 }
 
@@ -116,17 +112,18 @@ class _ShortcutPanelState extends State<ShortcutPanel> {
               Flexible(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(
-                      AppSpace.s16, AppSpace.s10, AppSpace.s16, AppSpace.s6),
+                    AppSpace.s16,
+                    AppSpace.s10,
+                    AppSpace.s16,
+                    AppSpace.s6,
+                  ),
                   child: narrow
                       ? Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             ..._fileGroups(context, l10n),
                             if (screenRows.isNotEmpty)
-                              _Group(
-                                title: l10n.shortcutsGroupScreen,
-                                rows: screenRows,
-                              ),
+                              _Group(title: l10n.shortcutsGroupScreen, rows: screenRows),
                             _Group(
                               title: l10n.shortcutsGroupGlobal,
                               rows: AppShortcuts.appLevel.toList(),
@@ -141,10 +138,7 @@ class _ShortcutPanelState extends State<ShortcutPanel> {
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
                                   if (screenRows.isNotEmpty)
-                                    _Group(
-                                      title: l10n.shortcutsGroupScreen,
-                                      rows: screenRows,
-                                    ),
+                                    _Group(title: l10n.shortcutsGroupScreen, rows: screenRows),
                                   _Group(
                                     title: l10n.shortcutsGroupGlobal,
                                     rows: AppShortcuts.appLevel.toList(),
@@ -181,14 +175,15 @@ class _ShortcutPanelState extends State<ShortcutPanel> {
     if (s == null) return const <Widget>[];
 
     final active = widget.activePane;
-    final panes = <ShortcutPane>[
-      for (final pane in ShortcutPane.values)
-        if (AppShortcuts.forPane(s, pane).isNotEmpty) pane,
-    ]..sort((a, b) {
-        if (a == active) return -1;
-        if (b == active) return 1;
-        return a.index.compareTo(b.index);
-      });
+    final panes =
+        <ShortcutPane>[
+          for (final pane in ShortcutPane.values)
+            if (AppShortcuts.forPane(s, pane).isNotEmpty) pane,
+        ]..sort((a, b) {
+          if (a == active) return -1;
+          if (b == active) return 1;
+          return a.index.compareTo(b.index);
+        });
 
     return <Widget>[
       for (final (index, pane) in panes.indexed)
@@ -199,7 +194,7 @@ class _ShortcutPanelState extends State<ShortcutPanel> {
           subtitle: pane == active
               ? l10n.shortcutsActiveRegion(shortcutPaneLabel(l10n, s, pane))
               : '${shortcutPaneLabel(l10n, s, pane)} · '
-                  '${l10n.shortcutsInactiveRegion}',
+                    '${l10n.shortcutsInactiveRegion}',
           dimmed: active != null && pane != active,
           rows: AppShortcuts.forPane(s, pane).toList(),
         ),
@@ -226,18 +221,16 @@ class _Header extends StatelessWidget {
             Expanded(
               child: Text(
                 l10n.shortcutsTitle,
-                style: Theme.of(context)
-                    .textTheme
-                    .titleSmall
-                    ?.copyWith(fontWeight: FontWeight.w600),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
               ),
             ),
             Text(
               l10n.shortcutsClose,
-              style: Theme.of(context)
-                  .textTheme
-                  .labelSmall
-                  ?.copyWith(color: scheme.onSurfaceVariant),
+              style: Theme.of(
+                context,
+              ).textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
             ),
             const SizedBox(width: AppSpace.s6),
             const AppKeyLabel(chord: ShortcutKey(LogicalKeyboardKey.escape)),
@@ -259,24 +252,22 @@ class _Footer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(
-          AppSpace.s16, AppSpace.s10, AppSpace.s16, AppSpace.s10),
+      padding: const EdgeInsets.fromLTRB(AppSpace.s16, AppSpace.s10, AppSpace.s16, AppSpace.s10),
       decoration: BoxDecoration(
         border: Border(top: BorderSide(color: scheme.outlineVariant)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.my_location_outlined,
-              size: AppSize.iconSm, color: scheme.primary),
+          Icon(Icons.my_location_outlined, size: AppSize.iconSm, color: scheme.primary),
           const SizedBox(width: AppSpace.s6),
           Expanded(
             child: Text(
               l10n.shortcutsActiveRegionNote,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                    height: AppType.proseHeight,
-                  ),
+                color: scheme.onSurfaceVariant,
+                height: AppType.proseHeight,
+              ),
             ),
           ),
         ],
@@ -286,12 +277,7 @@ class _Footer extends StatelessWidget {
 }
 
 class _Group extends StatelessWidget {
-  const _Group({
-    required this.title,
-    required this.rows,
-    this.subtitle,
-    this.dimmed = false,
-  });
+  const _Group({required this.title, required this.rows, this.subtitle, this.dimmed = false});
 
   final String title;
   final String? subtitle;
@@ -306,8 +292,7 @@ class _Group extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(
-              AppSpace.s10, AppSpace.s10, AppSpace.s10, AppSpace.s4),
+          padding: const EdgeInsets.fromLTRB(AppSpace.s10, AppSpace.s10, AppSpace.s10, AppSpace.s4),
           child: Row(
             children: [
               Flexible(
@@ -316,10 +301,10 @@ class _Group extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.8,
-                        color: scheme.outline,
-                      ),
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.8,
+                    color: scheme.outline,
+                  ),
                 ),
               ),
               if (subtitle != null) ...[
@@ -329,23 +314,17 @@ class _Group extends StatelessWidget {
                     subtitle!,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context)
-                        .textTheme
-                        .labelSmall
-                        ?.copyWith(color: scheme.outline),
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(color: scheme.outline),
                   ),
                 ),
               ],
             ],
           ),
         ),
-        for (final row in rows)
-          _Row(label: shortcutLabel(l10n, row), shortcut: row),
+        for (final row in rows) _Row(label: shortcutLabel(l10n, row), shortcut: row),
       ],
     );
-    return dimmed
-        ? Opacity(opacity: AppAlpha.disabled, child: body)
-        : body;
+    return dimmed ? Opacity(opacity: AppAlpha.disabled, child: body) : body;
   }
 }
 

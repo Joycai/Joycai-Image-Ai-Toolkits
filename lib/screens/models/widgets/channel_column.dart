@@ -113,7 +113,12 @@ class ChannelColumn extends StatelessWidget {
     );
   }
 
-  Widget _buildList(BuildContext context, AppLocalizations l10n, List<LLMChannel> all, bool canReorder) {
+  Widget _buildList(
+    BuildContext context,
+    AppLocalizations l10n,
+    List<LLMChannel> all,
+    bool canReorder,
+  ) {
     if (all.isEmpty) {
       return ModelsEmptyState(icon: Icons.cloud_queue, title: l10n.noModelsConfigured);
     }
@@ -152,7 +157,9 @@ class ChannelColumn extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(AppSpace.s6, AppSpace.s6, AppSpace.s6, 0),
                 child: Text(
                   l10n.channelReorderFootnote,
-                  style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(color: scheme.outline),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.labelSmall?.mono.copyWith(color: scheme.outline),
                 ),
               )
             : null,
@@ -165,13 +172,13 @@ class ChannelColumn extends StatelessWidget {
           // why the menu is the one way to reorder a filtered rail (`00d`
           // 禁用: 「用行尾菜单的上移 / 下移」).
           List<AppGlassMenuEntry> menu(BuildContext anchor) => channelMenuItems(
-                anchor,
-                actions: actions,
-                channel: channel,
-                index: storedIndex,
-                count: all.length,
-                reorderLocked: false,
-              );
+            anchor,
+            actions: actions,
+            channel: channel,
+            index: storedIndex,
+            count: all.length,
+            reorderLocked: false,
+          );
 
           final row = Padding(
             padding: const EdgeInsets.only(bottom: AppSpace.s4),
@@ -182,14 +189,15 @@ class ChannelColumn extends StatelessWidget {
               dense: dense,
               handle: handle,
               onTap: () => onSelect(channel),
-              onContextMenu: (position) => showAppGlassMenu(
-                context,
-                position: position,
-                entries: menu(context),
-              ),
+              onContextMenu: (position) =>
+                  showAppGlassMenu(context, position: position, entries: menu(context)),
               // `00d · 1a` 禁用: the grip is withdrawn and the row menu takes
               // its place.
-              trailing: locked ? Builder(builder: (anchor) => _RowMenuButton(anchor: anchor, entries: menu)) : null,
+              trailing: locked
+                  ? Builder(
+                      builder: (anchor) => _RowMenuButton(anchor: anchor, entries: menu),
+                    )
+                  : null,
             ),
           );
 
@@ -199,8 +207,8 @@ class ChannelColumn extends StatelessWidget {
           final Widget child = !canReorder
               ? row
               : touch
-                  ? AppLongPressDragStartListener(index: index, child: row)
-                  : ReorderableDragStartListener(index: index, child: row);
+              ? AppLongPressDragStartListener(index: index, child: row)
+              : ReorderableDragStartListener(index: index, child: row);
           return gap.item(key: ValueKey(channel.id), index: index, child: child);
         },
       ),
@@ -243,7 +251,8 @@ class _Header extends StatelessWidget {
             measureGlassText(context, title, titleStyle),
             measureGlassText(context, counts, countStyle),
           );
-          final showLabel = constraints.maxWidth - textWidth - _gap >=
+          final showLabel =
+              constraints.maxWidth - textWidth - _gap >=
               ModelsActionButton.widthFor(context, l10n.addChannel);
 
           return Row(
@@ -297,10 +306,7 @@ class _RowMenuButton extends StatelessWidget {
           minimumSize: const Size(AppSize.compact, AppSize.compact),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
         ),
-        onPressed: () => showAppGlassMenuBelow(
-          anchor,
-          entries: entries(anchor),
-        ),
+        onPressed: () => showAppGlassMenuBelow(anchor, entries: entries(anchor)),
       ),
     );
   }
@@ -335,10 +341,10 @@ class _ReorderLockedNote extends StatelessWidget {
             child: Text(
               message,
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: semantic.onWarningContainer,
-                    fontWeight: FontWeight.w400,
-                    height: AppType.tightHeight,
-                  ),
+                color: semantic.onWarningContainer,
+                fontWeight: FontWeight.w400,
+                height: AppType.tightHeight,
+              ),
             ),
           ),
         ],

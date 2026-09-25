@@ -6,18 +6,17 @@ import '../../l10n/app_localizations.dart';
 import '../../state/app_state.dart';
 
 /// The name a [ThumbnailFit] goes by in the UI.
-String thumbnailFitLabel(AppLocalizations l10n, ThumbnailFit fit) =>
-    switch (fit) {
-      ThumbnailFit.fit => l10n.thumbnailFitContain,
-      ThumbnailFit.fill => l10n.thumbnailFitCover,
-    };
+String thumbnailFitLabel(AppLocalizations l10n, ThumbnailFit fit) => switch (fit) {
+  ThumbnailFit.fit => l10n.thumbnailFitContain,
+  ThumbnailFit.fill => l10n.thumbnailFitCover,
+};
 
 /// The glyph that stands for a [ThumbnailFit] — the picture boxed whole, or
 /// the same picture cropped to the box.
 IconData thumbnailFitIcon(ThumbnailFit fit) => switch (fit) {
-      ThumbnailFit.fit => Icons.fit_screen_outlined,
-      ThumbnailFit.fill => Icons.crop_outlined,
-    };
+  ThumbnailFit.fit => Icons.fit_screen_outlined,
+  ThumbnailFit.fill => Icons.crop_outlined,
+};
 
 /// Picks how thumbnails fill their tile, for the bar of whichever grid it is
 /// dropped into.
@@ -31,11 +30,7 @@ IconData thumbnailFitIcon(ThumbnailFit fit) => switch (fit) {
 /// One widget rather than a copy per bar because the setting is one setting —
 /// see [ThumbnailFit].
 class ThumbnailFitToggle extends StatelessWidget {
-  const ThumbnailFitToggle({
-    super.key,
-    this.iconSize = 18,
-    this.size = kMinInteractiveDimension,
-  });
+  const ThumbnailFitToggle({super.key, this.iconSize = 18, this.size = kMinInteractiveDimension});
 
   final double iconSize;
 

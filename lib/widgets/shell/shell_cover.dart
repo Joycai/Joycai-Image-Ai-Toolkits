@@ -59,8 +59,7 @@ class ShellCover extends InheritedWidget {
       context.getInheritedWidgetOfExactType<ShellCover>()?.controller;
 
   @override
-  bool updateShouldNotify(ShellCover oldWidget) =>
-      oldWidget.controller != controller;
+  bool updateShouldNotify(ShellCover oldWidget) => oldWidget.controller != controller;
 }
 
 /// A page route whose page is **fully opaque once the transition has landed**,
@@ -105,8 +104,7 @@ class FullScreenCoverRoute<T> extends PageRouteBuilder<T> {
     super.dispose();
   }
 
-  void _onStatus(AnimationStatus status) =>
-      _setCovering(status == AnimationStatus.completed);
+  void _onStatus(AnimationStatus status) => _setCovering(status == AnimationStatus.completed);
 
   void _setCovering(bool value) {
     if (_covering == value) return;

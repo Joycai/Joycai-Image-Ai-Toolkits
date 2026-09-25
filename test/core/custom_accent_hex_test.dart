@@ -23,8 +23,10 @@ void main() {
 
   test('a storage value round-trips, and a preset key is not one', () {
     const seed = Color(0xFF7E57C2);
-    expect(CustomAccent.parseStorageValue(CustomAccent.storageValue(seed))?.toARGB32(),
-        seed.toARGB32());
+    expect(
+      CustomAccent.parseStorageValue(CustomAccent.storageValue(seed))?.toARGB32(),
+      seed.toARGB32(),
+    );
     expect(CustomAccent.parseStorageValue('blue'), isNull);
     expect(CustomAccent.parseStorageValue('custom:#nope'), isNull);
   });

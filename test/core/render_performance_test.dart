@@ -22,8 +22,11 @@ void main() {
         for (double v = 80; v <= 400; v += 1) snapThumbnailSize(v),
       };
       expect(distinct.length, lessThan(50));
-      expect(distinct.length, greaterThan(20),
-          reason: 'coarse enough to stop being smooth would be a real loss');
+      expect(
+        distinct.length,
+        greaterThan(20),
+        reason: 'coarse enough to stop being smooth would be a real loss',
+      );
     });
 
     test('both ends of the slider stay reachable', () {
@@ -41,84 +44,78 @@ void main() {
     });
   });
 
-  testWidgets(
-    'the breathing dot keeps its repaint inside a boundary',
-    (WidgetTester tester) async {
-      // `00 · 1e`: this is the app's one looping animation, and the task
-      // capsule in the shell puts it inside a BackdropFilter on every screen.
-      // Without a boundary between the two, each breath marked the glass
-      // dirty and re-recorded the blur sixty times a second for as long as
-      // any task was running.
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: Center(child: AppBreathingDot(color: Colors.blue)),
-          ),
-        ),
-      );
-
-      final Finder animated = find.descendant(
-        of: find.byType(AppBreathingDot),
-        matching: find.byType(FadeTransition),
-      );
-      expect(
-        animated,
-        findsOneWidget,
-        reason: 'the dot must animate by repainting (FadeTransition), not by '
-            'rebuilding an Opacity in a builder',
-      );
-
-      // Walk up from the render object that calls markNeedsPaint each frame.
-      // The first boundary above it must belong to the dot itself, not to
-      // whatever the dot happens to have been dropped into.
-      final List<String> crossed = <String>[];
-      String? boundary;
-      tester.element(animated).visitAncestorElements((Element a) {
-        if (a.renderObject?.isRepaintBoundary ?? false) {
-          boundary = a.widget.runtimeType.toString();
-          return false;
-        }
-        crossed.add(a.widget.runtimeType.toString());
-        return true;
-      });
-
-      expect(boundary, 'RepaintBoundary');
-      expect(
-        crossed,
-        isEmpty,
-        reason: 'the boundary must sit directly above the animation, inside '
-            'AppBreathingDot — a caller cannot be relied on to add one',
-      );
-    },
-  );
-
-  testWidgets('a dot that is not breathing is fully opaque',
-      (WidgetTester tester) async {
+  testWidgets('the breathing dot keeps its repaint inside a boundary', (WidgetTester tester) async {
+    // `00 · 1e`: this is the app's one looping animation, and the task
+    // capsule in the shell puts it inside a BackdropFilter on every screen.
+    // Without a boundary between the two, each breath marked the glass
+    // dirty and re-recorded the blur sixty times a second for as long as
+    // any task was running.
     await tester.pumpWidget(
       const MaterialApp(
         home: Scaffold(
-          body: Center(
-            child: AppBreathingDot(color: Colors.blue, breathing: false),
-          ),
+          body: Center(child: AppBreathingDot(color: Colors.blue)),
+        ),
+      ),
+    );
+
+    final Finder animated = find.descendant(
+      of: find.byType(AppBreathingDot),
+      matching: find.byType(FadeTransition),
+    );
+    expect(
+      animated,
+      findsOneWidget,
+      reason:
+          'the dot must animate by repainting (FadeTransition), not by '
+          'rebuilding an Opacity in a builder',
+    );
+
+    // Walk up from the render object that calls markNeedsPaint each frame.
+    // The first boundary above it must belong to the dot itself, not to
+    // whatever the dot happens to have been dropped into.
+    final List<String> crossed = <String>[];
+    String? boundary;
+    tester.element(animated).visitAncestorElements((Element a) {
+      if (a.renderObject?.isRepaintBoundary ?? false) {
+        boundary = a.widget.runtimeType.toString();
+        return false;
+      }
+      crossed.add(a.widget.runtimeType.toString());
+      return true;
+    });
+
+    expect(boundary, 'RepaintBoundary');
+    expect(
+      crossed,
+      isEmpty,
+      reason:
+          'the boundary must sit directly above the animation, inside '
+          'AppBreathingDot — a caller cannot be relied on to add one',
+    );
+  });
+
+  testWidgets('a dot that is not breathing is fully opaque', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: Center(child: AppBreathingDot(color: Colors.blue, breathing: false)),
         ),
       ),
     );
     final FadeTransition fade = tester.widget(
-      find.descendant(
-        of: find.byType(AppBreathingDot),
-        matching: find.byType(FadeTransition),
-      ),
+      find.descendant(of: find.byType(AppBreathingDot), matching: find.byType(FadeTransition)),
     );
     expect(fade.opacity.value, 1.0);
   });
 
   group('glass nesting', () {
     Future<void> pump(WidgetTester tester, Widget child) => tester.pumpWidget(
-          MaterialApp(home: Scaffold(body: Center(child: child))),
-        );
+      MaterialApp(
+        home: Scaffold(body: Center(child: child)),
+      ),
+    );
 
-    testWidgets('a lens on glass does not sample the window twice',
-        (WidgetTester tester) async {
+    testWidgets('a lens on glass does not sample the window twice', (WidgetTester tester) async {
       // A nested backdrop filter samples its parent's already blurred,
       // already saturated, fill-covered output. The workbench carried seven
       // of these at once against the ceiling of three in AppGlass's own doc —
@@ -133,8 +130,7 @@ void main() {
       expect(find.byType(BackdropFilter), findsOneWidget);
     });
 
-    testWidgets('a lens standing on its own keeps its blur',
-        (WidgetTester tester) async {
+    testWidgets('a lens standing on its own keeps its blur', (WidgetTester tester) async {
       await pump(
         tester,
         const AppGlass(grade: GlassGrade.lens, child: SizedBox.square(dimension: 20)),
@@ -156,8 +152,9 @@ void main() {
       expect(find.byType(BackdropFilter), findsNWidgets(2));
     });
 
-    testWidgets('the tinted CTA does not re-blur the bar it stands on',
-        (WidgetTester tester) async {
+    testWidgets('the tinted CTA does not re-blur the bar it stands on', (
+      WidgetTester tester,
+    ) async {
       await pump(
         tester,
         const AppGlass(
@@ -168,8 +165,9 @@ void main() {
       expect(find.byType(BackdropFilter), findsOneWidget);
     });
 
-    testWidgets('off glass, the tinted CTA is the first layer and blurs',
-        (WidgetTester tester) async {
+    testWidgets('off glass, the tinted CTA is the first layer and blurs', (
+      WidgetTester tester,
+    ) async {
       await pump(tester, const AppTintedGlass(child: SizedBox.square(dimension: 20)));
       expect(find.byType(BackdropFilter), findsOneWidget);
     });

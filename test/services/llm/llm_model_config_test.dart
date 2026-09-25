@@ -4,9 +4,9 @@ import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 void main() {
   group('LLMModelConfig', () {
     test('Initialization should set correct values', () {
-            final config = LLMModelConfig(
-              id: 1,
-              modelId: 'test-model',
+      final config = LLMModelConfig(
+        id: 1,
+        modelId: 'test-model',
         channelType: 'openai',
         endpoint: 'https://api.openai.com/v1',
         apiKey: 'sk-123',
@@ -34,28 +34,17 @@ void main() {
       // Protocols append their path directly, so `…/v1/` used to yield
       // `/v1//chat/completions` and every request 404'd while discovery,
       // which trimmed, kept working.
-      LLMModelConfig at(String endpoint) => LLMModelConfig(
-            modelId: 'm',
-            channelType: 'openai',
-            endpoint: endpoint,
-            apiKey: 'k',
-          );
+      LLMModelConfig at(String endpoint) =>
+          LLMModelConfig(modelId: 'm', channelType: 'openai', endpoint: endpoint, apiKey: 'k');
 
-      expect(at('https://relay.example.com/v1/').endpoint,
-          'https://relay.example.com/v1');
-      expect(at('https://relay.example.com/v1///').endpoint,
-          'https://relay.example.com/v1');
-      expect(at('  https://relay.example.com/v1  ').endpoint,
-          'https://relay.example.com/v1');
-      expect(at('https://relay.example.com/v1').endpoint,
-          'https://relay.example.com/v1');
+      expect(at('https://relay.example.com/v1/').endpoint, 'https://relay.example.com/v1');
+      expect(at('https://relay.example.com/v1///').endpoint, 'https://relay.example.com/v1');
+      expect(at('  https://relay.example.com/v1  ').endpoint, 'https://relay.example.com/v1');
+      expect(at('https://relay.example.com/v1').endpoint, 'https://relay.example.com/v1');
     });
 
     test('LLMMessage should be initialized correctly', () {
-      final message = LLMMessage(
-        role: LLMRole.user,
-        content: 'Hello AI',
-      );
+      final message = LLMMessage(role: LLMRole.user, content: 'Hello AI');
 
       expect(message.role, LLMRole.user);
       expect(message.content, 'Hello AI');
@@ -63,7 +52,7 @@ void main() {
     });
 
     test('LLMAttachment fromFile should create correct attachment', () {
-      // We can't easily test File in unit tests without mocks, 
+      // We can't easily test File in unit tests without mocks,
       // but we can check the constructor if it was exposed or use a mock file if available.
       // Since LLMAttachment.fromFile takes a File, we'll skip the real file part.
     });

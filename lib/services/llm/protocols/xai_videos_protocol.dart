@@ -32,15 +32,9 @@ class XaiVideosProtocol implements VideoJobProtocol {
     LLMLogger? logger,
   }) async {
     final config = target.config;
-    final userMsg = history.lastWhere(
-      (m) => m.role == LLMRole.user,
-      orElse: () => history.last,
-    );
+    final userMsg = history.lastWhere((m) => m.role == LLMRole.user, orElse: () => history.last);
 
-    final payload = <String, dynamic>{
-      'model': config.modelId,
-      'prompt': userMsg.content,
-    };
+    final payload = <String, dynamic>{'model': config.modelId, 'prompt': userMsg.content};
 
     final seconds = int.tryParse(resolveVideoSeconds(options) ?? '');
     if (seconds != null) payload['duration'] = seconds.clamp(1, 15);
@@ -72,9 +66,7 @@ class XaiVideosProtocol implements VideoJobProtocol {
     if (firstFrame != null) {
       final bytes = await readAttachmentBytes(firstFrame);
       if (bytes != null) {
-        payload['image'] = {
-          'url': imageDataUrl(bytes, firstFrame.mimeType),
-        };
+        payload['image'] = {'url': imageDataUrl(bytes, firstFrame.mimeType)};
       }
       if (references.isNotEmpty) {
         logger?.call(
@@ -113,10 +105,13 @@ class XaiVideosProtocol implements VideoJobProtocol {
 
     final client = config.createClient();
     try {
-      final response = await sendJsonRequest(client, url,
-          headers: target.headers(),
-          body: jsonEncode(payload),
-          options: options);
+      final response = await sendJsonRequest(
+        client,
+        url,
+        headers: target.headers(),
+        body: jsonEncode(payload),
+        options: options,
+      );
 
       if (debugFile != null) {
         await LLMDebugLogger.appendLine(debugFile, 'Status: ${response.statusCode}');
@@ -126,8 +121,7 @@ class XaiVideosProtocol implements VideoJobProtocol {
       final data = decodeJsonBody(response, apiName: 'xAI video submit');
       final requestId = data['request_id']?.toString();
       if (requestId == null || requestId.isEmpty) {
-        throw LLMApiException(
-            'xAI video submit returned no request_id: ${response.body}');
+        throw LLMApiException('xAI video submit returned no request_id: ${response.body}');
       }
       logger?.call('xAI video request id: $requestId', level: 'DEBUG');
       // What went out: the one first frame, or the references — never both
@@ -158,17 +152,19 @@ class XaiVideosProtocol implements VideoJobProtocol {
 
     final client = config.createClient();
     try {
-      final response = await sendJsonRequest(client, url,
-          headers: target.headers(),
-          body: '',
-          options: options,
-          method: 'GET');
+      final response = await sendJsonRequest(
+        client,
+        url,
+        headers: target.headers(),
+        body: '',
+        options: options,
+        method: 'GET',
+      );
       // 200 = terminal result; 202 = accepted / still pending — both inside
       // decodeJsonBody's 2xx window. checkEnvelope: false because a failed
       // job carries an `error` field beside `status`, owned by the status
       // machine below (which names the request in its message).
-      final data = decodeJsonBody(response,
-          apiName: 'xAI video fetch', checkEnvelope: false);
+      final data = decodeJsonBody(response, apiName: 'xAI video fetch', checkEnvelope: false);
       return xaiVideoPollEnvelope(data, operationName, config.endpoint);
     } finally {
       client.close();
@@ -191,9 +187,11 @@ Map<String, dynamic> xaiVideoPollEnvelope(
   String operationName,
   String endpoint,
 ) {
-  final status = requireJobStatus(data['status'],
-          job: 'xAI video request', jobId: operationName)
-      .toLowerCase();
+  final status = requireJobStatus(
+    data['status'],
+    job: 'xAI video request',
+    jobId: operationName,
+  ).toLowerCase();
 
   switch (status) {
     case 'done':
@@ -201,8 +199,9 @@ Map<String, dynamic> xaiVideoPollEnvelope(
       final videoUrl = video?['url']?.toString();
       if (videoUrl == null || videoUrl.isEmpty) {
         throw LLMApiException(
-            'xAI video request $operationName is done but returned no URL: $data',
-            isJobEnded: true);
+          'xAI video request $operationName is done but returned no URL: $data',
+          isJobEnded: true,
+        );
       }
       final usage = data['usage'];
       return videoDoneEnvelope(
@@ -210,25 +209,27 @@ Map<String, dynamic> xaiVideoPollEnvelope(
         videoUrl,
         requiresAuth: videoUriNeedsAuth(videoUrl, endpoint),
         renderedSeconds: video?['duration'],
-        reportedCost: reportedCostOf(reportedCostFromTicks(
-            usage is Map ? usage['cost_in_usd_ticks'] : null)),
+        reportedCost: reportedCostOf(
+          reportedCostFromTicks(usage is Map ? usage['cost_in_usd_ticks'] : null),
+        ),
       );
     case 'failed':
       final err = data['error'];
       final msg = err is Map
           ? '${err['code'] ?? 'unknown'}: ${err['message'] ?? err.toString()}'
           : (err?.toString() ?? 'unknown');
-      throw LLMApiException('xAI video request $operationName failed: $msg',
-          isJobEnded: true);
+      throw LLMApiException('xAI video request $operationName failed: $msg', isJobEnded: true);
     case 'expired':
       throw LLMApiException(
-          'xAI video request $operationName expired before completing.',
-          isJobEnded: true);
+        'xAI video request $operationName expired before completing.',
+        isJobEnded: true,
+      );
     case 'cancelled':
     case 'canceled':
       throw LLMApiException(
-          'xAI video request $operationName was cancelled upstream.',
-          isJobEnded: true);
+        'xAI video request $operationName was cancelled upstream.',
+        isJobEnded: true,
+      );
     default:
       return {
         'name': operationName,

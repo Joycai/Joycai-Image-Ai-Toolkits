@@ -36,12 +36,12 @@ void main() {
   tearDownAll(() => env.dispose());
 
   Future<void> open(WidgetTester tester) => mountApp(
-        tester,
-        env: env,
-        screen: AppScreen.tasks,
-        size: const Size(1440, 900),
-        label: 'queue-rows',
-      );
+    tester,
+    env: env,
+    screen: AppScreen.tasks,
+    size: const Size(1440, 900),
+    label: 'queue-rows',
+  );
 
   /// The filter pill labelled [label], anchored on the [Material] that paints
   /// its fill — the nearest one above the label.
@@ -61,8 +61,9 @@ void main() {
   /// slab.
   Color? fillOf(WidgetTester tester, Finder widget) => tester.widget<Material>(widget).color;
 
-  testWidgets('the selected filter takes the accent ladder, label included',
-      (WidgetTester tester) async {
+  testWidgets('the selected filter takes the accent ladder, label included', (
+    WidgetTester tester,
+  ) async {
     await open(tester);
     final ColorScheme scheme = Theme.of(tester.element(find.byType(Scaffold).first)).colorScheme;
 
@@ -79,8 +80,7 @@ void main() {
     expect(label.style?.color, isNot(scheme.primary));
   });
 
-  testWidgets('an unselected filter is an outline, not a filled slab',
-      (WidgetTester tester) async {
+  testWidgets('an unselected filter is an outline, not a filled slab', (WidgetTester tester) async {
     await open(tester);
     final ColorScheme scheme = Theme.of(tester.element(find.byType(Scaffold).first)).colorScheme;
 
@@ -117,14 +117,10 @@ void main() {
     // image. Putting an input where every other row shows a result is the one
     // place a picture must not be ambiguous about which it is — the queue is
     // scanned for "what came out", not "what went in".
-    final int withResults = AppState()
-        .taskQueue
-        .queue
+    final int withResults = AppState().taskQueue.queue
         .where((TaskItem t) => t.resultPaths.isNotEmpty)
         .length;
-    final int withSourcesOnly = AppState()
-        .taskQueue
-        .queue
+    final int withSourcesOnly = AppState().taskQueue.queue
         .where((TaskItem t) => t.resultPaths.isEmpty && t.imagePaths.isNotEmpty)
         .length;
     expect(withResults, greaterThan(0));
@@ -146,8 +142,7 @@ void main() {
     expect(find.byType(DashedBorder), findsWidgets);
   });
 
-  testWidgets('a failed task says so where its result would be',
-      (WidgetTester tester) async {
+  testWidgets('a failed task says so where its result would be', (WidgetTester tester) async {
     await open(tester);
 
     // Filled with a mark rather than dashed: this task *should* have produced
@@ -158,8 +153,7 @@ void main() {
     );
   });
 
-  testWidgets('a running row does not grow taller than a settled one',
-      (WidgetTester tester) async {
+  testWidgets('a running row does not grow taller than a settled one', (WidgetTester tester) async {
     // `10h` runs the progress along the row's bottom edge and says why: every
     // row below a task that starts jumped down 16px, and back up when it
     // finished, which on a working queue is a list that will not hold still.

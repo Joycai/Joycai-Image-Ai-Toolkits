@@ -22,10 +22,18 @@ void main() {
   Widget host(String modelId, String quality, Locale locale) {
     final m = LLMModel(id: 1, modelId: modelId, modelName: modelId, tag: 'image', channelId: 1);
     final ch = LLMChannel(
-        id: 1, displayName: 'Relay', endpoint: 'https://e.invalid', apiKey: 'k', type: 'openai-api-rest');
+      id: 1,
+      displayName: 'Relay',
+      endpoint: 'https://e.invalid',
+      apiKey: 'k',
+      type: 'openai-api-rest',
+    );
     return MaterialApp(
       locale: locale,
-      theme: buildAppTheme(accent: ThemeAccent.fromSeed(Colors.indigo), brightness: Brightness.light),
+      theme: buildAppTheme(
+        accent: ThemeAccent.fromSeed(Colors.indigo),
+        brightness: Brightness.light,
+      ),
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
@@ -48,7 +56,8 @@ void main() {
                 onToggleExpansion: () {},
                 onChannelChanged: (_) {},
                 onModelChanged: (_) {},
-                imageParamResolver: (model, spec) => spec.key == 'quality' ? quality : spec.defaultValue,
+                imageParamResolver: (model, spec) =>
+                    spec.key == 'quality' ? quality : spec.defaultValue,
                 onImageParamChanged: (_, _, _) {},
                 capabilitiesOf: (m) => ModelDescriptor.of(m.modelId).capabilities,
               ),
@@ -66,8 +75,11 @@ void main() {
     for (final p in paragraphs) {
       if (p.maxLines != 1) continue;
       final painter = TextPainter(text: p.text, textDirection: TextDirection.ltr)..layout();
-      expect(p.size.width + 0.01, greaterThanOrEqualTo(painter.width),
-          reason: '"${p.text.toPlainText()}" was elided at the panel width');
+      expect(
+        p.size.width + 0.01,
+        greaterThanOrEqualTo(painter.width),
+        reason: '"${p.text.toPlainText()}" was elided at the panel width',
+      );
     }
   }
 

@@ -109,7 +109,8 @@ class TextDiff {
       head++;
     }
     int tail = 0;
-    while (tail < a.length - head && tail < b.length - head &&
+    while (tail < a.length - head &&
+        tail < b.length - head &&
         a[a.length - 1 - tail] == b[b.length - 1 - tail]) {
       tail++;
     }
@@ -117,9 +118,7 @@ class TextDiff {
     final midA = a.sublist(head, a.length - tail);
     final midB = b.sublist(head, b.length - tail);
 
-    final ops = <_Op>[
-      for (int i = 0; i < head; i++) _Op(DiffLineKind.context, a[i], i + 1, i + 1),
-    ];
+    final ops = <_Op>[for (int i = 0; i < head; i++) _Op(DiffLineKind.context, a[i], i + 1, i + 1)];
     ops.addAll(_myers(midA, midB, head));
     for (int i = 0; i < tail; i++) {
       final oldIndex = a.length - tail + i;

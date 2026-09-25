@@ -50,39 +50,40 @@ extension _EmptyState on _PromptOptimizerChatViewState {
     final analysis = _analysisPresetLoaded(session);
     final (IconData icon, String title, String sub) = switch (session.mode) {
       AssistantMode.systemPrompt => (
-          Icons.auto_awesome,
-          analysis ? l10n.optEmptyAnalysisTitle : l10n.optEmptyPresetTitle,
-          analysis ? l10n.optEmptyAnalysisSub : l10n.optEmptyPresetSub,
-        ),
+        Icons.auto_awesome,
+        analysis ? l10n.optEmptyAnalysisTitle : l10n.optEmptyPresetTitle,
+        analysis ? l10n.optEmptyAnalysisSub : l10n.optEmptyPresetSub,
+      ),
       AssistantMode.knowledgeBase => (
-          Icons.menu_book_outlined,
-          l10n.optEmptyKbTitle,
-          l10n.optEmptyKbSub,
-        ),
+        Icons.menu_book_outlined,
+        l10n.optEmptyKbTitle,
+        l10n.optEmptyKbSub,
+      ),
       AssistantMode.knowledgeEdit => (
-          Icons.edit_note_outlined,
-          l10n.optEmptyKbEditTitle,
-          l10n.optEmptyKbEditSub,
-        ),
+        Icons.edit_note_outlined,
+        l10n.optEmptyKbEditTitle,
+        l10n.optEmptyKbEditSub,
+      ),
     };
     final examples = switch (session.mode) {
-      AssistantMode.systemPrompt => analysis
-          ? [
-              l10n.optEmptyAnalysisExample1,
-              l10n.optEmptyAnalysisExample2,
-              l10n.optEmptyAnalysisExample3,
-            ]
-          : const <String>[],
+      AssistantMode.systemPrompt =>
+        analysis
+            ? [
+                l10n.optEmptyAnalysisExample1,
+                l10n.optEmptyAnalysisExample2,
+                l10n.optEmptyAnalysisExample3,
+              ]
+            : const <String>[],
       AssistantMode.knowledgeBase => [
-          l10n.optEmptyKbExample1,
-          l10n.optEmptyKbExample2,
-          l10n.optEmptyKbExample3,
-        ],
+        l10n.optEmptyKbExample1,
+        l10n.optEmptyKbExample2,
+        l10n.optEmptyKbExample3,
+      ],
       AssistantMode.knowledgeEdit => [
-          l10n.optEmptyKbEditExample1,
-          l10n.optEmptyKbEditExample2,
-          l10n.optEmptyKbEditExample3,
-        ],
+        l10n.optEmptyKbEditExample1,
+        l10n.optEmptyKbEditExample2,
+        l10n.optEmptyKbEditExample3,
+      ],
     };
     final choices = widget.presetChoices;
 

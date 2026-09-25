@@ -52,15 +52,15 @@ void main() {
 
   group('resultVersionsFromTasks', () {
     TaskItem task(String session, Object version, List<String> results) => TaskItem(
-          id: 'id_${results.join()}',
-          imagePaths: const [],
-          modelId: 'm',
-          parameters: {
-            PromptProvenance.sessionParamKey: session,
-            PromptProvenance.versionParamKey: version,
-          },
-          resultPaths: results,
-        );
+      id: 'id_${results.join()}',
+      imagePaths: const [],
+      modelId: 'm',
+      parameters: {
+        PromptProvenance.sessionParamKey: session,
+        PromptProvenance.versionParamKey: version,
+      },
+      resultPaths: results,
+    );
 
     test('projects only the asked-for session, later tasks win collisions', () {
       final map = PromptProvenance.resultVersionsFromTasks([
@@ -72,7 +72,9 @@ void main() {
     });
 
     test('string versions (JSON round trips, old rows) still decode', () {
-      final map = PromptProvenance.resultVersionsFromTasks([task('s1', '4', ['a.png'])], 's1');
+      final map = PromptProvenance.resultVersionsFromTasks([
+        task('s1', '4', ['a.png']),
+      ], 's1');
       expect(map, {'a.png': 4});
     });
 

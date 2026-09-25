@@ -69,7 +69,8 @@ class DataSection extends StatelessWidget {
               title: l10n.runSetupWizard,
               verb: l10n.actionRun,
               icon: Icons.play_arrow_outlined,
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SetupWizard())),
+              onPressed: () =>
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const SetupWizard())),
             ),
             _DataActionRow(
               title: l10n.resetAllSettings,
@@ -143,29 +144,29 @@ class DataSection extends StatelessWidget {
     bool u = false;
 
     Widget options(StateSetter setState) => Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            ImportOptionRow(
-              title: l10n.includeDirectories,
-              description: l10n.includeDirectoriesDesc,
-              value: d,
-              onChanged: (v) => setState(() => d = v),
-            ),
-            ImportOptionRow(
-              title: l10n.includePrompts,
-              description: l10n.includePromptsDesc,
-              value: p,
-              onChanged: (v) => setState(() => p = v),
-            ),
-            ImportOptionRow(
-              title: l10n.includeUsage,
-              description: l10n.includeUsageDesc,
-              value: u,
-              onChanged: (v) => setState(() => u = v),
-            ),
-          ],
-        );
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ImportOptionRow(
+          title: l10n.includeDirectories,
+          description: l10n.includeDirectoriesDesc,
+          value: d,
+          onChanged: (v) => setState(() => d = v),
+        ),
+        ImportOptionRow(
+          title: l10n.includePrompts,
+          description: l10n.includePromptsDesc,
+          value: p,
+          onChanged: (v) => setState(() => p = v),
+        ),
+        ImportOptionRow(
+          title: l10n.includeUsage,
+          description: l10n.includeUsageDesc,
+          value: u,
+          onChanged: (v) => setState(() => u = v),
+        ),
+      ],
+    );
 
     if (isMobile) {
       return showModalBottomSheet<bool>(
@@ -174,7 +175,12 @@ class DataSection extends StatelessWidget {
         useSafeArea: true,
         builder: (sheetContext) => StatefulBuilder(
           builder: (sheetContext, setState) => SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(AppSpace.s22, AppSpace.s22, AppSpace.s22, AppSpace.s28),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpace.s22,
+              AppSpace.s22,
+              AppSpace.s22,
+              AppSpace.s28,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -234,7 +240,10 @@ class DataSection extends StatelessWidget {
     final appState = Provider.of<AppState>(context, listen: false);
     final importedMsg = l10n.settingsImported;
 
-    final PlatformFile? picked = await FilePicker.pickFile(type: FileType.custom, allowedExtensions: ['json']);
+    final PlatformFile? picked = await FilePicker.pickFile(
+      type: FileType.custom,
+      allowedExtensions: ['json'],
+    );
     if (!context.mounted || picked == null) return;
 
     try {
@@ -245,9 +254,13 @@ class DataSection extends StatelessWidget {
       final Map<String, dynamic> data = jsonDecode(fileContent);
 
       // Pre-check what's available in the file
-      final bool hasDirs = data.containsKey('source_directories') ||
+      final bool hasDirs =
+          data.containsKey('source_directories') ||
           (data['settings'] as List?)?.any((s) => s['key'] == 'output_directory') == true;
-      final bool hasPrompts = data.containsKey('user_prompts') || data.containsKey('prompts') || data.containsKey('tags');
+      final bool hasPrompts =
+          data.containsKey('user_prompts') ||
+          data.containsKey('prompts') ||
+          data.containsKey('tags');
       final bool hasUsage = data.containsKey('token_usage');
 
       bool includeDirs = hasDirs;
@@ -385,13 +398,13 @@ class _DataActionRow extends StatelessWidget {
     final Color titleInk = !enabled
         ? colorScheme.outline
         : danger
-            ? colorScheme.error
-            : colorScheme.onSurface;
+        ? colorScheme.error
+        : colorScheme.onSurface;
     final Color actionInk = !enabled
         ? colorScheme.outline
         : danger
-            ? colorScheme.error
-            : colorScheme.accentText;
+        ? colorScheme.error
+        : colorScheme.accentText;
     final Color actionEdge = danger && enabled
         ? colorScheme.error.withValues(alpha: AppAlpha.edge)
         : colorScheme.outlineVariant;
@@ -417,7 +430,10 @@ class _DataActionRow extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500, color: titleInk),
+                  style: textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
+                    color: titleInk,
+                  ),
                 ),
                 if (note != null)
                   Padding(
@@ -448,10 +464,7 @@ class _DataActionRow extends StatelessWidget {
               children: [
                 Icon(icon, size: AppSize.iconSm, color: actionInk),
                 const SizedBox(width: AppSpace.s6),
-                Text(
-                  verb,
-                  style: textTheme.labelMedium?.copyWith(color: actionInk),
-                ),
+                Text(verb, style: textTheme.labelMedium?.copyWith(color: actionInk)),
               ],
             ),
           ),
@@ -508,10 +521,7 @@ class _TempFilesRowState extends State<_TempFilesRow> {
           variant: AppButtonVariant.text,
           onPressed: () => Navigator.pop(context, false),
         ),
-        AppButton(
-          label: l10n.clearTempFiles,
-          onPressed: () => Navigator.pop(context, true),
-        ),
+        AppButton(label: l10n.clearTempFiles, onPressed: () => Navigator.pop(context, true)),
       ],
     );
     if (confirmed != true || !mounted) return;

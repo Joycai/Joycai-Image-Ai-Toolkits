@@ -24,9 +24,7 @@ String presetSummaryOf(String content) {
       continue;
     }
     if (inFence) continue;
-    final structural = line.isEmpty ||
-        line.startsWith('#') ||
-        _rule.hasMatch(line);
+    final structural = line.isEmpty || line.startsWith('#') || _rule.hasMatch(line);
     if (structural) {
       if (lines.isNotEmpty) break;
       continue;
@@ -34,10 +32,12 @@ String presetSummaryOf(String content) {
     lines.add(line);
   }
   return lines
-      .map((l) => l
-          .replaceFirst(_marker, '')
-          .replaceAllMapped(_link, (m) => m[1]!)
-          .replaceAll(_emphasis, ''))
+      .map(
+        (l) => l
+            .replaceFirst(_marker, '')
+            .replaceAllMapped(_link, (m) => m[1]!)
+            .replaceAll(_emphasis, ''),
+      )
       .join(' ')
       .replaceAll(_space, ' ')
       .trim();

@@ -91,8 +91,7 @@ void main() {
     expect(calls, 1);
   });
 
-  test('a cached thumbnail is returned without touching the extractor',
-      () async {
+  test('a cached thumbnail is returned without touching the extractor', () async {
     var calls = 0;
     service.extractorOverride = (src, dest) async {
       calls++;

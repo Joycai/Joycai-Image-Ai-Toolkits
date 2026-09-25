@@ -7,10 +7,8 @@ enum OutputUnit {
   second,
   clip;
 
-  static OutputUnit parse(String? raw) => OutputUnit.values.firstWhere(
-        (u) => u.name == raw,
-        orElse: () => OutputUnit.image,
-      );
+  static OutputUnit parse(String? raw) =>
+      OutputUnit.values.firstWhere((u) => u.name == raw, orElse: () => OutputUnit.image);
 }
 
 /// One row of a spec-billed fee group's rate table: a price, and the output
@@ -40,20 +38,18 @@ class SpecRate {
       size == other.size && quality == other.quality && seconds == other.seconds;
 
   Map<String, dynamic> toJson() => {
-        if (size != null) 'size': size,
-        if (quality != null) 'quality': quality,
-        if (seconds != null) 'seconds': seconds,
-        'price': price,
-      };
+    if (size != null) 'size': size,
+    if (quality != null) 'quality': quality,
+    if (seconds != null) 'seconds': seconds,
+    'price': price,
+  };
 
   factory SpecRate.fromJson(Map<String, dynamic> json) {
     final rawSeconds = json['seconds'];
     return SpecRate(
       size: _nonEmpty(json['size']),
       quality: _nonEmpty(json['quality']),
-      seconds: rawSeconds is num
-          ? rawSeconds.toInt()
-          : int.tryParse(rawSeconds?.toString() ?? ''),
+      seconds: rawSeconds is num ? rawSeconds.toInt() : int.tryParse(rawSeconds?.toString() ?? ''),
       price: (json['price'] as num? ?? 0.0).toDouble(),
     );
   }

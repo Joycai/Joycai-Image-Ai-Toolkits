@@ -9,8 +9,7 @@ import 'package:joycai_image_ai_toolkits/services/llm/protocols/gemini_payload.d
 /// and nothing at all at the default effort.
 void main() {
   group('layer 3 declares the field generation', () {
-    GeminiThinkingGeneration gen(String id) =>
-        ModelFamilyClassifier.geminiThinkingGeneration(id);
+    GeminiThinkingGeneration gen(String id) => ModelFamilyClassifier.geminiThinkingGeneration(id);
 
     test('Gemini 3 and later take thinkingLevel', () {
       expect(gen('gemini-3-pro-preview'), GeminiThinkingGeneration.level);
@@ -34,28 +33,27 @@ void main() {
     });
 
     test('an image or video generator never takes it', () {
-      expect(ModelDescriptor.of('gemini-3.1-flash-image').geminiThinking,
-          GeminiThinkingGeneration.none);
-      expect(ModelDescriptor.of('veo-3.0-generate').geminiThinking,
-          GeminiThinkingGeneration.none);
-      expect(ModelDescriptor.of('gemini-3-pro-preview').geminiThinking,
-          GeminiThinkingGeneration.level);
+      expect(
+        ModelDescriptor.of('gemini-3.1-flash-image').geminiThinking,
+        GeminiThinkingGeneration.none,
+      );
+      expect(ModelDescriptor.of('veo-3.0-generate').geminiThinking, GeminiThinkingGeneration.none);
+      expect(
+        ModelDescriptor.of('gemini-3-pro-preview').geminiThinking,
+        GeminiThinkingGeneration.level,
+      );
     });
   });
 
   group('translation table', () {
     test('default and non-thinking models send nothing', () {
-      expect(geminiThinkingConfig(GeminiThinkingGeneration.level, null),
-          isNull);
-      expect(geminiThinkingConfig(
-              GeminiThinkingGeneration.none, ReasoningEffort.high),
-          isNull);
+      expect(geminiThinkingConfig(GeminiThinkingGeneration.level, null), isNull);
+      expect(geminiThinkingConfig(GeminiThinkingGeneration.none, ReasoningEffort.high), isNull);
     });
 
     test('levels are UPPERCASE; off is MINIMAL, max is HIGH', () {
       String? level(ReasoningEffort e) =>
-          geminiThinkingConfig(GeminiThinkingGeneration.level, e)?[
-              'thinkingLevel'];
+          geminiThinkingConfig(GeminiThinkingGeneration.level, e)?['thinkingLevel'];
       expect(level(ReasoningEffort.off), 'MINIMAL');
       expect(level(ReasoningEffort.low), 'LOW');
       expect(level(ReasoningEffort.medium), 'MEDIUM');
@@ -65,8 +63,7 @@ void main() {
 
     test('budgets: off is 0, max is high', () {
       int? budget(ReasoningEffort e) =>
-          geminiThinkingConfig(GeminiThinkingGeneration.budget, e)?[
-              'thinkingBudget'];
+          geminiThinkingConfig(GeminiThinkingGeneration.budget, e)?['thinkingBudget'];
       expect(budget(ReasoningEffort.off), 0);
       expect(budget(ReasoningEffort.low), 1024);
       expect(budget(ReasoningEffort.medium), 8192);
@@ -75,17 +72,15 @@ void main() {
     });
 
     test('exactly one generation field, always with includeThoughts', () {
-      for (final gen in [
-        GeminiThinkingGeneration.level,
-        GeminiThinkingGeneration.budget,
-      ]) {
+      for (final gen in [GeminiThinkingGeneration.level, GeminiThinkingGeneration.budget]) {
         for (final e in ReasoningEffort.values) {
           final c = geminiThinkingConfig(gen, e)!;
           expect(c['includeThoughts'], isTrue, reason: '$gen $e');
           expect(
-              c.containsKey('thinkingLevel') ^ c.containsKey('thinkingBudget'),
-              isTrue,
-              reason: '$gen $e');
+            c.containsKey('thinkingLevel') ^ c.containsKey('thinkingBudget'),
+            isTrue,
+            reason: '$gen $e',
+          );
         }
       }
     });
@@ -99,41 +94,45 @@ void main() {
       ReasoningEffort? effort, {
       bool emitsImages = false,
     }) =>
-        prepareGooglePayload(history, null, null,
-            thinking: thinking,
-            reasoningEffort: effort,
-            emitsImages: emitsImages)['generationConfig'] as Map;
+        prepareGooglePayload(
+              history,
+              null,
+              null,
+              thinking: thinking,
+              reasoningEffort: effort,
+              emitsImages: emitsImages,
+            )['generationConfig']
+            as Map;
 
     test('the default effort sends the same body as before', () {
       expect(generationConfig(GeminiThinkingGeneration.level, null), isEmpty);
       expect(
-          prepareGooglePayload(history, null, null,
-              thinking: GeminiThinkingGeneration.level),
-          prepareGooglePayload(history, null, null));
+        prepareGooglePayload(history, null, null, thinking: GeminiThinkingGeneration.level),
+        prepareGooglePayload(history, null, null),
+      );
     });
 
     test('a level lands under generationConfig.thinkingConfig', () {
-      expect(
-        generationConfig(GeminiThinkingGeneration.level, ReasoningEffort.high),
-        {
-          'thinkingConfig': {'thinkingLevel': 'HIGH', 'includeThoughts': true},
-        },
-      );
+      expect(generationConfig(GeminiThinkingGeneration.level, ReasoningEffort.high), {
+        'thinkingConfig': {'thinkingLevel': 'HIGH', 'includeThoughts': true},
+      });
     });
 
     test('a budget lands there too, and only the budget', () {
       final c = generationConfig(
-          GeminiThinkingGeneration.budget, ReasoningEffort.low)['thinkingConfig'];
+        GeminiThinkingGeneration.budget,
+        ReasoningEffort.low,
+      )['thinkingConfig'];
       expect(c, {'thinkingBudget': 1024, 'includeThoughts': true});
     });
 
     test('a model that does not think gets no thinkingConfig', () {
       expect(
-          generationConfig(GeminiThinkingGeneration.none, ReasoningEffort.high,
-              emitsImages: true),
-          {
-            'responseModalities': ['TEXT', 'IMAGE'],
-          });
+        generationConfig(GeminiThinkingGeneration.none, ReasoningEffort.high, emitsImages: true),
+        {
+          'responseModalities': ['TEXT', 'IMAGE'],
+        },
+      );
     });
   });
 }

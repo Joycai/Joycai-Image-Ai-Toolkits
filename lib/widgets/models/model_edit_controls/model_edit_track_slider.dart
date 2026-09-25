@@ -121,78 +121,83 @@ class _ModelEditTrackSliderState extends State<ModelEditTrackSlider> {
           SingleActivator(LogicalKeyboardKey.arrowDown): _TrackStepIntent(-1),
         },
         actions: {
-          _TrackStepIntent: CallbackAction<_TrackStepIntent>(onInvoke: (intent) {
-            _step(intent.direction);
-            return null;
-          }),
+          _TrackStepIntent: CallbackAction<_TrackStepIntent>(
+            onInvoke: (intent) {
+              _step(intent.direction);
+              return null;
+            },
+          ),
         },
-        child: LayoutBuilder(builder: (context, constraints) {
-          final width = constraints.maxWidth;
-          final span = math.max(0.0, width - widget.inset * 2);
-          double xOf(int stop) => widget.inset + (_last == 0 ? 0 : stop / _last * span);
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final width = constraints.maxWidth;
+            final span = math.max(0.0, width - widget.inset * 2);
+            double xOf(int stop) => widget.inset + (_last == 0 ? 0 : stop / _last * span);
 
-          return GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTapDown: enabled ? (d) => _seek(d.localPosition.dx, width) : null,
-            onHorizontalDragStart: enabled ? (d) => _seek(d.localPosition.dx, width) : null,
-            onHorizontalDragUpdate: enabled ? (d) => _seek(d.localPosition.dx, width) : null,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                SizedBox(
-                  height: _trackBand,
-                  child: CustomPaint(
-                    painter: _TrackPainter(
-                      stopCount: widget.stopCount,
-                      value: widget.value.clamp(0.0, _last),
-                      inset: widget.inset,
-                      enabled: enabled,
-                      focused: _focused && enabled,
-                      track: scheme.outlineVariant,
-                      active: scheme.primary,
-                      thumb: enabled ? scheme.primary : scheme.surfaceContainer,
-                      thumbEdge: enabled ? scheme.surface : scheme.outlineVariant,
-                      ring: scheme.accentRing,
+            return GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTapDown: enabled ? (d) => _seek(d.localPosition.dx, width) : null,
+              onHorizontalDragStart: enabled ? (d) => _seek(d.localPosition.dx, width) : null,
+              onHorizontalDragUpdate: enabled ? (d) => _seek(d.localPosition.dx, width) : null,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  SizedBox(
+                    height: _trackBand,
+                    child: CustomPaint(
+                      painter: _TrackPainter(
+                        stopCount: widget.stopCount,
+                        value: widget.value.clamp(0.0, _last),
+                        inset: widget.inset,
+                        enabled: enabled,
+                        focused: _focused && enabled,
+                        track: scheme.outlineVariant,
+                        active: scheme.primary,
+                        thumb: enabled ? scheme.primary : scheme.surfaceContainer,
+                        thumbEdge: enabled ? scheme.surface : scheme.outlineVariant,
+                        ring: scheme.accentRing,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: _labelGap),
-                SizedBox(
-                  height: _labelBand,
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      for (var i = 0; i < widget.stopCount; i++)
-                        if (widget.labels[i] != null)
-                          Positioned(
-                            left: xOf(i) - _labelSlot / 2,
-                            width: _labelSlot,
-                            top: 0,
-                            child: Text(
-                              widget.labels[i]!,
-                              textAlign: TextAlign.center,
-                              maxLines: 1,
-                              softWrap: false,
-                              overflow: TextOverflow.visible,
-                              style: labelStyle?.copyWith(
-                                color: !enabled
-                                    ? scheme.outline
-                                    : i == widget.highlight
-                                        ? scheme.onSurface
-                                        : scheme.onSurfaceVariant,
-                                fontWeight:
-                                    enabled && i == widget.highlight ? FontWeight.w600 : FontWeight.w400,
+                  const SizedBox(height: _labelGap),
+                  SizedBox(
+                    height: _labelBand,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        for (var i = 0; i < widget.stopCount; i++)
+                          if (widget.labels[i] != null)
+                            Positioned(
+                              left: xOf(i) - _labelSlot / 2,
+                              width: _labelSlot,
+                              top: 0,
+                              child: Text(
+                                widget.labels[i]!,
+                                textAlign: TextAlign.center,
+                                maxLines: 1,
+                                softWrap: false,
+                                overflow: TextOverflow.visible,
+                                style: labelStyle?.copyWith(
+                                  color: !enabled
+                                      ? scheme.outline
+                                      : i == widget.highlight
+                                      ? scheme.onSurface
+                                      : scheme.onSurfaceVariant,
+                                  fontWeight: enabled && i == widget.highlight
+                                      ? FontWeight.w600
+                                      : FontWeight.w400,
+                                ),
                               ),
                             ),
-                          ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
-          );
-        }),
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -237,15 +242,25 @@ class _TrackPainter extends CustomPainter {
     double xOf(double stop) => inset + (last == 0 ? 0 : stop / last * span);
     const cap = Radius.circular(2);
 
-    canvas.drawRRect(RRect.fromLTRBR(inset, cy - 2, inset + span, cy + 2, cap), Paint()..color = track);
+    canvas.drawRRect(
+      RRect.fromLTRBR(inset, cy - 2, inset + span, cy + 2, cap),
+      Paint()..color = track,
+    );
     final thumbX = xOf(value);
     // Greyed, the track keeps no fill: nothing chosen here would be sent.
     if (enabled) {
-      canvas.drawRRect(RRect.fromLTRBR(inset, cy - 2, thumbX, cy + 2, cap), Paint()..color = active);
+      canvas.drawRRect(
+        RRect.fromLTRBR(inset, cy - 2, thumbX, cy + 2, cap),
+        Paint()..color = active,
+      );
     }
     for (var i = 0; i < stopCount; i++) {
       final reached = enabled && i <= value + 1e-9;
-      canvas.drawCircle(Offset(xOf(i.toDouble()), cy), 3, Paint()..color = reached ? active : track);
+      canvas.drawCircle(
+        Offset(xOf(i.toDouble()), cy),
+        3,
+        Paint()..color = reached ? active : track,
+      );
     }
 
     final centre = Offset(thumbX, cy);

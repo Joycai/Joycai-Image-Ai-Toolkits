@@ -132,13 +132,10 @@ class _FileCardState extends State<FileCard> {
   /// Tags media thumbnails for the preview's shared-element flight; documents
   /// never open into the preview, so they stay un-tagged.
   Widget _maybeHero(Widget thumbnail) {
-    final isMedia = widget.file.category == FileCategory.image ||
-        widget.file.category == FileCategory.video;
+    final isMedia =
+        widget.file.category == FileCategory.image || widget.file.category == FileCategory.video;
     if (widget.heroScope == null || !isMedia) return thumbnail;
-    return Hero(
-      tag: previewHeroTag(widget.heroScope!, widget.file.path),
-      child: thumbnail,
-    );
+    return Hero(tag: previewHeroTag(widget.heroScope!, widget.file.path), child: thumbnail);
   }
 
   Widget _buildPicture(BuildContext context, ThumbnailFit thumbFit) {
@@ -206,7 +203,7 @@ class _FileCardState extends State<FileCard> {
             final labelWidth = measureGlassText(context, l10n.stagedBadge, plateStyle);
             final stagedWithLabel =
                 _badgeInset + 20 + _badgeInset + 5 + 12 + 4 + labelWidth + 5 + _badgeInset <=
-                    constraints.maxWidth;
+                constraints.maxWidth;
 
             return Stack(
               fit: StackFit.expand,
@@ -229,13 +226,15 @@ class _FileCardState extends State<FileCard> {
                         opacity: _isHovered ? 1 : 0,
                         duration: hoverDuration,
                         curve: AppMotion.quick,
-                        child: _PlateBadge(child: Text(
-                          _dimensions,
-                          maxLines: 1,
-                          softWrap: false,
-                          overflow: TextOverflow.ellipsis,
-                          style: plateStyle,
-                        )),
+                        child: _PlateBadge(
+                          child: Text(
+                            _dimensions,
+                            maxLines: 1,
+                            softWrap: false,
+                            overflow: TextOverflow.ellipsis,
+                            style: plateStyle,
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -253,11 +252,11 @@ class _FileCardState extends State<FileCard> {
                           BoxShadow(color: _checkShadow, blurRadius: 3, offset: Offset(0, 1)),
                         ],
                       ),
-                      child: Icon(Icons.check,
-                          size: AppSize.iconSm,
-                          color: paneActive
-                              ? scheme.onPrimary
-                              : scheme.surface),
+                      child: Icon(
+                        Icons.check,
+                        size: AppSize.iconSm,
+                        color: paneActive ? scheme.onPrimary : scheme.surface,
+                      ),
                     ),
                   ),
                 if (widget.isStaged)
@@ -270,7 +269,11 @@ class _FileCardState extends State<FileCard> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.inbox_outlined, size: 12, color: AppOverlay.onImagePlate),
+                            const Icon(
+                              Icons.inbox_outlined,
+                              size: 12,
+                              color: AppOverlay.onImagePlate,
+                            ),
                             if (stagedWithLabel) ...[
                               const SizedBox(width: AppSpace.s4),
                               Text(l10n.stagedBadge, maxLines: 1, style: plateStyle),
@@ -324,14 +327,12 @@ class _FileCardState extends State<FileCard> {
                 // ground hides the part of each shadow under it.
                 boxShadow: switch ((selected, paneActive)) {
                   (true, true) => [
-                      BoxShadow(color: scheme.accentRing, spreadRadius: 4),
-                      BoxShadow(color: scheme.primary, spreadRadius: 2),
-                    ],
+                    BoxShadow(color: scheme.accentRing, spreadRadius: 4),
+                    BoxShadow(color: scheme.primary, spreadRadius: 2),
+                  ],
                   // No halo while the pane is idle: one flat neutral ring,
                   // so the grid reads as "still picked, not listening".
-                  (true, false) => [
-                      BoxShadow(color: scheme.outline, spreadRadius: 2),
-                    ],
+                  (true, false) => [BoxShadow(color: scheme.outline, spreadRadius: 2)],
                   _ => null,
                 },
               ),
@@ -391,10 +392,7 @@ class _PlateBadge extends StatelessWidget {
         color: AppOverlay.imagePlate,
         borderRadius: BorderRadius.circular(AppRadius.xs),
       ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-        child: child,
-      ),
+      child: Padding(padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1), child: child),
     );
   }
 }

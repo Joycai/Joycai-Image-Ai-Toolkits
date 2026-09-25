@@ -39,16 +39,13 @@ void main() {
       writeFile('01_rules/01b_lens.md');
       writeFile('05_layers.md');
 
-      expect(
-        walk().map((e) => '${'  ' * e.depth}${e.name}').toList(),
-        <String>[
-          '01_rules',
-          '  01a_light.md',
-          '  01b_lens.md',
-          '05_layers.md',
-          'README.md',
-        ],
-      );
+      expect(walk().map((e) => '${'  ' * e.depth}${e.name}').toList(), <String>[
+        '01_rules',
+        '  01a_light.md',
+        '  01b_lens.md',
+        '05_layers.md',
+        'README.md',
+      ]);
     });
 
     test('carries the nesting depth, not just the path', () {

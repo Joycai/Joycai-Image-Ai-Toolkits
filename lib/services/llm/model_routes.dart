@@ -21,11 +21,7 @@ class RouteParams {
   final bool enableThinking;
   final String? reasoningEffort;
 
-  const RouteParams({
-    this.maxOutputTokens,
-    this.enableThinking = false,
-    this.reasoningEffort,
-  });
+  const RouteParams({this.maxOutputTokens, this.enableThinking = false, this.reasoningEffort});
 
   /// Never configured: nothing is sent.
   static const RouteParams empty = RouteParams();
@@ -36,8 +32,7 @@ class RouteParams {
     reasoningEffort: model.reasoningEffort,
   );
 
-  bool get isEmpty =>
-      maxOutputTokens == null && !enableThinking && reasoningEffort == null;
+  bool get isEmpty => maxOutputTokens == null && !enableThinking && reasoningEffort == null;
 
   Map<String, Object> toJson() => {
     'max_output_tokens': ?maxOutputTokens,
@@ -66,8 +61,7 @@ class RouteParams {
       other.reasoningEffort == reasoningEffort;
 
   @override
-  int get hashCode =>
-      Object.hash(maxOutputTokens, enableThinking, reasoningEffort);
+  int get hashCode => Object.hash(maxOutputTokens, enableThinking, reasoningEffort);
 
   @override
   String toString() =>
@@ -82,8 +76,7 @@ class ModelRoutes {
   /// Whether [model] rides a route at all: chat-surface models do, image and
   /// video models pick a dedicated endpoint instead.
   static bool usesRoutes(LLMModel model) =>
-      LLMDispatcher.surfaceForModel(model.modelId, tag: model.tag) ==
-      Surface.chat;
+      LLMDispatcher.surfaceForModel(model.modelId, tag: model.tag) == Surface.chat;
 
   /// The parameters parked for [model]'s other routes, by route.
   static Map<RouteKind, RouteParams> parked(LLMModel model) {
@@ -98,18 +91,14 @@ class ModelRoutes {
     if (json is! Map) return const {};
     return {
       for (final entry in json.entries)
-        ?RouteKind.tryParse(entry.key as String?): RouteParams.fromJson(
-          entry.value,
-        ),
+        ?RouteKind.tryParse(entry.key as String?): RouteParams.fromJson(entry.value),
     };
   }
 
   /// [parked] as the `route_params` column, or null when there is nothing.
   static String? encodeParked(Map<RouteKind, RouteParams> parked) {
     if (parked.isEmpty) return null;
-    return jsonEncode({
-      for (final e in parked.entries) e.key.id: e.value.toJson(),
-    });
+    return jsonEncode({for (final e in parked.entries) e.key.id: e.value.toJson()});
   }
 
   /// The route [model] chose explicitly: its `active_route`, else — for a row
@@ -245,9 +234,7 @@ class RoutedChannel {
       endpoint: routes.addressOf(kind)!,
       // The default face needs no pin; one the row already spelled out is
       // kept verbatim so nothing downstream sees a different selection.
-      wireProtocol: face != vendorDefault || model.wireProtocol == face.id
-          ? face.id
-          : null,
+      wireProtocol: face != vendorDefault || model.wireProtocol == face.id ? face.id : null,
     );
   }
 }

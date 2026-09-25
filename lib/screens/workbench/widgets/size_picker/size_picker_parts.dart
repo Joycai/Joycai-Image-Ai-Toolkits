@@ -194,7 +194,10 @@ class SizeNumberInput extends StatelessWidget {
       borderSide: BorderSide(color: color, width: width),
     );
     return AnimatedContainer(
-      duration: AppMotion.durationOf(context, flash ? AppMotion.state : const Duration(milliseconds: 300)),
+      duration: AppMotion.durationOf(
+        context,
+        flash ? AppMotion.state : const Duration(milliseconds: 300),
+      ),
       curve: AppMotion.quick,
       decoration: BoxDecoration(
         color: flash ? scheme.accentTint : Colors.transparent,
@@ -204,8 +207,12 @@ class SizeNumberInput extends StatelessWidget {
         controller: controller,
         focusNode: focusNode,
         style: style,
-        keyboardType: allowRatio ? const TextInputType.numberWithOptions(decimal: true) : TextInputType.number,
-        inputFormatters: [FilteringTextInputFormatter.allow(allowRatio ? RegExp(r'[0-9:.xX×/]') : RegExp(r'[0-9]'))],
+        keyboardType: allowRatio
+            ? const TextInputType.numberWithOptions(decimal: true)
+            : TextInputType.number,
+        inputFormatters: [
+          FilteringTextInputFormatter.allow(allowRatio ? RegExp(r'[0-9:.xX×/]') : RegExp(r'[0-9]')),
+        ],
         onChanged: onChanged,
         onSubmitted: onSubmitted,
         decoration: InputDecoration(
@@ -293,19 +300,27 @@ class SizePreview extends StatelessWidget {
                 SizedBox(
                   width: refSide,
                   height: refSide,
-                  child: DashedBorder(color: scheme.outline, radius: 2, child: const SizedBox.expand()),
+                  child: DashedBorder(
+                    color: scheme.outline,
+                    radius: 2,
+                    child: const SizedBox.expand(),
+                  ),
                 ),
                 TweenAnimationBuilder<Size?>(
                   tween: SizeTween(end: Size(rw, rh)),
                   duration: AppMotion.durationOf(context, AppMotion.state),
                   curve: AppMotion.move,
-                  builder: (context, size, child) => SizedBox(width: size!.width, height: size.height, child: child),
+                  builder: (context, size, child) =>
+                      SizedBox(width: size!.width, height: size.height, child: child),
                   child: rect,
                 ),
                 Positioned(
                   left: AppSpace.s10,
                   bottom: AppSpace.s6,
-                  child: Text(referenceLabel, style: text.labelSmall?.copyWith(color: scheme.outline, fontSize: 10.5)),
+                  child: Text(
+                    referenceLabel,
+                    style: text.labelSmall?.copyWith(color: scheme.outline, fontSize: 10.5),
+                  ),
                 ),
                 Positioned(
                   right: AppSpace.s10,
@@ -339,7 +354,12 @@ class SizeRulePart {
 /// rule is inked — the others stay grey, neither green nor red, because they
 /// were not what stopped the size.
 class SizeRuleLine extends StatelessWidget {
-  const SizeRuleLine({super.key, required this.parts, required this.status, required this.failLabel});
+  const SizeRuleLine({
+    super.key,
+    required this.parts,
+    required this.status,
+    required this.failLabel,
+  });
 
   final List<SizeRulePart> parts;
 
@@ -350,7 +370,9 @@ class SizeRuleLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final ui = Theme.of(context).textTheme.labelSmall!.copyWith(color: scheme.outline, fontSize: 10.5);
+    final ui = Theme.of(
+      context,
+    ).textTheme.labelSmall!.copyWith(color: scheme.outline, fontSize: 10.5);
     final base = ui.mono;
     final spans = <InlineSpan>[];
     for (final (i, p) in parts.indexed) {
@@ -367,10 +389,7 @@ class SizeRuleLine extends StatelessWidget {
         Expanded(
           child: Text.rich(TextSpan(children: spans), maxLines: 2, overflow: TextOverflow.ellipsis),
         ),
-        if (status != null) ...[
-          const SizedBox(width: AppSpace.s6),
-          Text(status!, style: ui),
-        ],
+        if (status != null) ...[const SizedBox(width: AppSpace.s6), Text(status!, style: ui)],
       ],
     );
   }
@@ -391,8 +410,10 @@ List<SizeRulePart> sizeRuleParts(
   final range = formatPixelRange(rules.minPixels, rules.minPixels, rules.maxPixels);
   return [
     SizeRulePart('×${rules.edgeStep}', passes: ok('sizeRuleEdgeGrid')),
-    if (rules.minEdge != null) SizeRulePart(minEdgeLabel(rules.minEdge!), passes: ok('sizeRuleMinEdge')),
-    if (rules.maxEdge != null) SizeRulePart(maxEdgeLabel(rules.maxEdge!), passes: ok('sizeRuleMaxEdge')),
+    if (rules.minEdge != null)
+      SizeRulePart(minEdgeLabel(rules.minEdge!), passes: ok('sizeRuleMinEdge')),
+    if (rules.maxEdge != null)
+      SizeRulePart(maxEdgeLabel(rules.maxEdge!), passes: ok('sizeRuleMaxEdge')),
     SizeRulePart('≤ $ratioLimit', passes: ok('sizeRuleAspect')),
     SizeRulePart('${range.min}–${range.max} MP', passes: ok('sizeRulePixels')),
   ];

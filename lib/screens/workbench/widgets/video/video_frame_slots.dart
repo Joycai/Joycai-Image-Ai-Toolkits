@@ -80,7 +80,12 @@ class _FrameDropTargetState extends State<_FrameDropTarget> {
     final textTheme = theme.textTheme;
     final l10n = AppLocalizations.of(context)!;
     final bool isMobile = Responsive.isMobile(context);
-    final double slotHeight = Responsive.value<double>(context, mobile: 104, tablet: 96, desktop: 92);
+    final double slotHeight = Responsive.value<double>(
+      context,
+      mobile: 104,
+      tablet: 96,
+      desktop: 92,
+    );
     final image = widget.image;
 
     return Column(
@@ -116,10 +121,10 @@ class _FrameDropTargetState extends State<_FrameDropTarget> {
                 final AppDropZoneState state = rejectedData.isNotEmpty
                     ? AppDropZoneState.reject
                     : (candidateData.isNotEmpty || _osDragging)
-                        ? AppDropZoneState.hover
-                        : _isDroppableImage(payload)
-                            ? AppDropZoneState.armed
-                            : AppDropZoneState.rest;
+                    ? AppDropZoneState.hover
+                    : _isDroppableImage(payload)
+                    ? AppDropZoneState.armed
+                    : AppDropZoneState.rest;
 
                 void onTap() {
                   if (isMobile) {

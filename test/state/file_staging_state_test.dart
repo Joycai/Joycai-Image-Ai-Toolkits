@@ -24,12 +24,12 @@ void main() {
   late DatabaseService db;
 
   BrowserFile fileAt(Directory dir, String name) => BrowserFile(
-        path: p.join(dir.path, name),
-        name: name,
-        category: BrowserFile.categoryOf(name),
-        size: 10,
-        modified: DateTime(2026, 1, 1),
-      );
+    path: p.join(dir.path, name),
+    name: name,
+    category: BrowserFile.categoryOf(name),
+    size: 10,
+    modified: DateTime(2026, 1, 1),
+  );
 
   setUp(() async {
     root = await Directory.systemTemp.createTemp('joycai_staging');
@@ -54,8 +54,7 @@ void main() {
     return state;
   }
 
-  test('marks are appended in the order they were added, without duplicates',
-      () async {
+  test('marks are appended in the order they were added, without duplicates', () async {
     final state = await freshState();
     final a = fileAt(root, 'a.png');
     final b = fileAt(root, 'b.png');
@@ -178,12 +177,8 @@ void main() {
       expect(restored.contains(p.join(root.path, 'a.png')), isTrue);
     });
 
-    test('a restored mark whose file is gone comes back marked missing',
-        () async {
-      await db.saveSetting(
-        FileStagingState.settingsKey,
-        p.join(root.path, 'ghost.png'),
-      );
+    test('a restored mark whose file is gone comes back marked missing', () async {
+      await db.saveSetting(FileStagingState.settingsKey, p.join(root.path, 'ghost.png'));
 
       final restored = await freshState();
 
@@ -204,8 +199,7 @@ void main() {
   });
 
   group('restored notice', () {
-    test('counts what came back, and stops claiming it once the user edits',
-        () async {
+    test('counts what came back, and stops claiming it once the user edits', () async {
       // The line says how the panel got its contents, not what is in it. After
       // an add it is no longer describing the list on screen.
       await db.saveSetting(

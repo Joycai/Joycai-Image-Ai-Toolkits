@@ -107,8 +107,7 @@ class _SetupWizardState extends State<SetupWizard> {
         // Mainland host. The international one (dashscope-intl.aliyuncs.com)
         // is reached by typing over this, exactly as in the add-channel
         // wizard's preset.
-        _endpointController.text =
-            'https://dashscope.aliyuncs.com/compatible-mode/v1';
+        _endpointController.text = 'https://dashscope.aliyuncs.com/compatible-mode/v1';
       case Vendors.dashscopeNative:
         // Same host, the other face — `/api/v1` is where DashScope's own
         // request format lives. Every other face is derived from whichever
@@ -129,8 +128,7 @@ class _SetupWizardState extends State<SetupWizard> {
         : kChannelProviderPresets.firstWhere((p) => p.id == _presetId);
     final variant = preset == null
         ? null
-        : variantForChannelType(preset, _channelType,
-            endpoint: _endpointController.text);
+        : variantForChannelType(preset, _channelType, endpoint: _endpointController.text);
 
     return InkWell(
       onTap: () => _pickProvider(l10n),
@@ -145,9 +143,9 @@ class _SetupWizardState extends State<SetupWizard> {
           preset == null
               ? channelTypeLabel(l10n, _channelType)
               : variant == null
-                  ? channelProviderTitle(l10n, preset.id)
-                  : '${channelProviderTitle(l10n, preset.id)}'
-                      ' · ${channelProviderVariantLabel(l10n, preset.id, variant.id)}',
+              ? channelProviderTitle(l10n, preset.id)
+              : '${channelProviderTitle(l10n, preset.id)}'
+                    ' · ${channelProviderVariantLabel(l10n, preset.id, variant.id)}',
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: theme.textTheme.bodyMedium,
@@ -162,8 +160,7 @@ class _SetupWizardState extends State<SetupWizard> {
     setState(() {
       _presetId = picked.preset.id;
       _channelType = picked.variant?.channelType ?? picked.preset.channelType;
-      final endpoint =
-          picked.variant?.defaultEndpoint ?? picked.preset.defaultEndpoint;
+      final endpoint = picked.variant?.defaultEndpoint ?? picked.preset.defaultEndpoint;
       if (endpoint != null) {
         _endpointController.text = endpoint;
       } else {
@@ -177,14 +174,17 @@ class _SetupWizardState extends State<SetupWizard> {
       _saveChannelAndContinue();
       return;
     }
-    
+
     if (_currentStep == 3) {
       _saveModelAndContinue();
       return;
     }
 
     if (_currentStep < _totalSteps - 1) {
-      _pageController.nextPage(duration: AppMotion.durationOf(context, AppMotion.panel), curve: AppMotion.move);
+      _pageController.nextPage(
+        duration: AppMotion.durationOf(context, AppMotion.panel),
+        curve: AppMotion.move,
+      );
       setState(() => _currentStep++);
     } else {
       _finishSetup();
@@ -200,14 +200,16 @@ class _SetupWizardState extends State<SetupWizard> {
     // A local runtime has no key to give; skipping the channel because the
     // key box is empty would silently drop the one the user just configured.
     if (apiKey.isNotEmpty || Vendors.byId(_channelType).keyOptional) {
-      final id = await _db.addChannel(LLMChannel(
-        displayName: _channelNameController.text.trim(),
-        endpoint: _endpointController.text.trim(),
-        apiKey: apiKey,
-        type: _channelType,
-        tag: _channelNameController.text.trim().split(' ').first,
-        tagColor: Colors.blue.toARGB32(),
-      ));
+      final id = await _db.addChannel(
+        LLMChannel(
+          displayName: _channelNameController.text.trim(),
+          endpoint: _endpointController.text.trim(),
+          apiKey: apiKey,
+          type: _channelType,
+          tag: _channelNameController.text.trim().split(' ').first,
+          tagColor: Colors.blue.toARGB32(),
+        ),
+      );
       setState(() {
         _createdChannelId = id;
         _currentStep++;
@@ -225,14 +227,18 @@ class _SetupWizardState extends State<SetupWizard> {
   Future<void> _saveModelAndContinue() async {
     final pageTurn = AppMotion.durationOf(context, AppMotion.panel);
     if (_modelIdController.text.isNotEmpty && _createdChannelId != null) {
-      await _db.addModel(LLMModel(
-        modelId: _modelIdController.text,
-        modelName: _modelNameController.text.isEmpty ? _modelIdController.text : _modelNameController.text,
-        tag: _modelTag,
-        channelId: _createdChannelId,
-      ));
+      await _db.addModel(
+        LLMModel(
+          modelId: _modelIdController.text,
+          modelName: _modelNameController.text.isEmpty
+              ? _modelIdController.text
+              : _modelNameController.text,
+          tag: _modelTag,
+          channelId: _createdChannelId,
+        ),
+      );
     }
-    
+
     setState(() => _currentStep++);
     _pageController.nextPage(duration: pageTurn, curve: AppMotion.move);
   }
@@ -252,97 +258,102 @@ class _SetupWizardState extends State<SetupWizard> {
     return PopScope(
       canPop: false,
       child: Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            // `D3 12c` draws the wizard's chrome as a 52px strip with the
-            // title at one end and 「跳过」 at the other, then the progress bar
-            // flush under it. An [AppBar] is 56, carries its own elevation and
-            // surface-tint rules, and puts the skip action in a slot sized for
-            // icon buttons — three decisions this screen does not need made
-            // for it.
-            Container(
-              height: 52,
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerLow,
-                border: Border(
-                  bottom: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+        body: SafeArea(
+          child: Column(
+            children: [
+              // `D3 12c` draws the wizard's chrome as a 52px strip with the
+              // title at one end and 「跳过」 at the other, then the progress bar
+              // flush under it. An [AppBar] is 56, carries its own elevation and
+              // surface-tint rules, and puts the skip action in a slot sized for
+              // icon buttons — three decisions this screen does not need made
+              // for it.
+              Container(
+                height: 52,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerLow,
+                  border: Border(
+                    bottom: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Text(l10n.setupWizardTitle, style: Theme.of(context).textTheme.titleMedium),
+                    const Spacer(),
+                    AppButton(
+                      label: l10n.skip,
+                      variant: AppButtonVariant.text,
+                      size: AppButtonSize.compact,
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ],
                 ),
               ),
-              child: Row(
-                children: [
-                  Text(l10n.setupWizardTitle, style: Theme.of(context).textTheme.titleMedium),
-                  const Spacer(),
-                  AppButton(
-                    label: l10n.skip,
-                    variant: AppButtonVariant.text,
-                    size: AppButtonSize.compact,
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                ],
+              LinearProgressIndicator(value: (_currentStep + 1) / _totalSteps),
+              Expanded(
+                child: PageView(
+                  controller: _pageController,
+                  physics: const NeverScrollableScrollPhysics(),
+                  children: [
+                    _buildWelcomeStep(context, l10n),
+                    // 560, per `D3 12d`. A form of single-line fields stretched
+                    // to a desktop window puts an API key on a line a thousand
+                    // pixels wide. Welcome and finish centre their own, narrower
+                    // column and are left alone.
+                    _stepColumn(_buildStorageStep(context, l10n)),
+                    _stepColumn(_buildChannelStep(context, l10n)),
+                    _stepColumn(_buildModelStep(context, l10n)),
+                    _buildFinishStep(context, l10n),
+                  ],
+                ),
               ),
-            ),
-            LinearProgressIndicator(value: (_currentStep + 1) / _totalSteps),
-            Expanded(
-              child: PageView(
-                controller: _pageController,
-                physics: const NeverScrollableScrollPhysics(),
-                children: [
-                  _buildWelcomeStep(context, l10n),
-                  // 560, per `D3 12d`. A form of single-line fields stretched
-                  // to a desktop window puts an API key on a line a thousand
-                  // pixels wide. Welcome and finish centre their own, narrower
-                  // column and are left alone.
-                  _stepColumn(_buildStorageStep(context, l10n)),
-                  _stepColumn(_buildChannelStep(context, l10n)),
-                  _stepColumn(_buildModelStep(context, l10n)),
-                  _buildFinishStep(context, l10n),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  if (_currentStep > 0 && _currentStep != 4)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    if (_currentStep > 0 && _currentStep != 4)
+                      AppButton(
+                        label: l10n.back,
+                        variant: AppButtonVariant.text,
+                        onPressed: () {
+                          int prev = _currentStep - 1;
+                          if (_currentStep == 4 && _createdChannelId == null) {
+                            prev = 2; // Go back to channel if model was skipped
+                          }
+                          _pageController.animateToPage(
+                            prev,
+                            duration: AppMotion.durationOf(context, AppMotion.panel),
+                            curve: AppMotion.move,
+                          );
+                          setState(() => _currentStep = prev);
+                        },
+                      ),
+                    const SizedBox(width: 14),
                     AppButton(
-                      label: l10n.back,
-                      variant: AppButtonVariant.text,
-                      onPressed: () {
-                        int prev = _currentStep - 1;
-                        if (_currentStep == 4 && _createdChannelId == null) {
-                          prev = 2; // Go back to channel if model was skipped
-                        }
-                        _pageController.animateToPage(prev, duration: AppMotion.durationOf(context, AppMotion.panel), curve: AppMotion.move);
-                        setState(() => _currentStep = prev);
-                      },
+                      label: _currentStep == _totalSteps - 1
+                          ? l10n.getStarted
+                          : (_currentStep == 2 && _apiKeyController.text.isEmpty
+                                ? l10n.skip
+                                : l10n.next),
+                      onPressed: _currentStep == 1 && _outputDirController.text.isEmpty
+                          ? null
+                          : _nextStep,
                     ),
-                  const SizedBox(width: 14),
-                  AppButton(
-                    label: _currentStep == _totalSteps - 1 ? l10n.getStarted : (_currentStep == 2 && _apiKeyController.text.isEmpty ? l10n.skip : l10n.next),
-                    onPressed: _currentStep == 1 && _outputDirController.text.isEmpty
-                        ? null
-                        : _nextStep,
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
 
   /// Holds a form step to the width `D3` draws it at.
   static Widget _stepColumn(Widget child) => Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 560),
-          child: child,
-        ),
-      );
+    child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 560), child: child),
+  );
 
   Widget _buildWelcomeStep(BuildContext context, AppLocalizations l10n) {
     final appState = Provider.of<AppState>(context);
@@ -467,12 +478,10 @@ class _SetupWizardState extends State<SetupWizard> {
     final String endpointHint = switch (Vendors.byId(_channelType).family) {
       ProtocolFamily.gemini =>
         "Hint: Google GenAI endpoints usually end with '/v1beta' (internal handling)",
-      ProtocolFamily.anthropic =>
-        "Hint: Anthropic endpoints usually end with '/v1'",
-      ProtocolFamily.dashscope =>
-        "Hint: DashScope native endpoints end with '/api/v1'",
-      ProtocolFamily.openai || ProtocolFamily.midjourney =>
-        "Hint: OpenAI compatible endpoints usually end with '/v1'",
+      ProtocolFamily.anthropic => "Hint: Anthropic endpoints usually end with '/v1'",
+      ProtocolFamily.dashscope => "Hint: DashScope native endpoints end with '/api/v1'",
+      ProtocolFamily.openai ||
+      ProtocolFamily.midjourney => "Hint: OpenAI compatible endpoints usually end with '/v1'",
     };
 
     return SingleChildScrollView(
@@ -486,10 +495,7 @@ class _SetupWizardState extends State<SetupWizard> {
           const SizedBox(height: 24),
           TextField(
             controller: _channelNameController,
-            decoration: InputDecoration(
-              labelText: l10n.displayName,
-              hintText: 'e.g. My OpenAI',
-            ),
+            decoration: InputDecoration(labelText: l10n.displayName, hintText: 'e.g. My OpenAI'),
           ),
           const SizedBox(height: 16),
           // The same catalogue the add-channel dialog and the channel editor
@@ -526,9 +532,9 @@ class _SetupWizardState extends State<SetupWizard> {
           const SizedBox(height: 6),
           Text(
             l10n.apiKeyStorageNotice,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
         ],
       ),
@@ -569,10 +575,7 @@ class _SetupWizardState extends State<SetupWizard> {
           const SizedBox(height: 16),
           TextField(
             controller: _modelNameController,
-            decoration: InputDecoration(
-              labelText: l10n.displayName,
-              hintText: 'e.g. My Model',
-            ),
+            decoration: InputDecoration(labelText: l10n.displayName, hintText: 'e.g. My Model'),
           ),
           const SizedBox(height: 16),
           AppDropdown<String>(
@@ -593,7 +596,7 @@ class _SetupWizardState extends State<SetupWizard> {
   Future<void> _fetchModels() async {
     final l10n = AppLocalizations.of(context)!;
     setState(() => _isFetchingModels = true);
-    
+
     try {
       final apiKey = _apiKeyController.text.trim();
 
@@ -605,9 +608,9 @@ class _SetupWizardState extends State<SetupWizard> {
       );
 
       final models = await ModelDiscoveryService().discoverModels(config);
-      
+
       if (!mounted) return;
-      
+
       final selected = await AppDialog.show<DiscoveredModel>(
         context,
         title: l10n.selectModelsToAdd,
@@ -651,12 +654,7 @@ class _SetupWizardState extends State<SetupWizard> {
       barrierDismissible: false,
       title: l10n.restartRequired,
       content: Text(l10n.restartMessage),
-      actions: [
-        AppButton(
-          label: l10n.exit,
-          onPressed: () => exit(0),
-        ),
-      ],
+      actions: [AppButton(label: l10n.exit, onPressed: () => exit(0))],
     );
   }
 
@@ -668,7 +666,11 @@ class _SetupWizardState extends State<SetupWizard> {
         children: [
           const Icon(Icons.check_circle_outline, size: 80, color: Colors.green),
           const SizedBox(height: 24),
-          Text(l10n.setupCompleteMessage, style: Theme.of(context).textTheme.headlineSmall, textAlign: TextAlign.center),
+          Text(
+            l10n.setupCompleteMessage,
+            style: Theme.of(context).textTheme.headlineSmall,
+            textAlign: TextAlign.center,
+          ),
         ],
       ),
     );

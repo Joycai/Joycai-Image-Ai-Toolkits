@@ -120,8 +120,7 @@ void main() {
       await seedChannelWithModel(db, apiKey: 'live-key');
 
       await db.transaction((txn) async {
-        await DatabaseService()
-            .restoreBackupInto(txn, backupFile(channelName: 'Someone Else'));
+        await DatabaseService().restoreBackupInto(txn, backupFile(channelName: 'Someone Else'));
       });
 
       final channels = await db.query('llm_channels');
@@ -193,8 +192,7 @@ void main() {
       final db = await openTestDb();
 
       await db.transaction((txn) async {
-        await DatabaseService()
-            .restoreBackupInto(txn, backupFile(), includeDirectories: false);
+        await DatabaseService().restoreBackupInto(txn, backupFile(), includeDirectories: false);
       });
 
       final keys = (await db.query('settings')).map((r) => r['key']).toSet();
@@ -209,38 +207,37 @@ void main() {
     /// Prompt data as `getPromptDataRaw` writes it: tags nested per prompt, and
     /// a legacy `tag_id` still pointing at the exporting machine's tag ids.
     Map<String, dynamic> withPrompts(Map<String, dynamic> file) {
-      return file
-        ..addAll({
-          'tags': [
-            {'id': 41, 'name': 'Portrait', 'color': 100, 'is_system': 0},
-          ],
-          'user_prompts': [
-            {
-              'id': 7,
-              'title': 'My prompt',
-              'content': 'hello',
-              'tag': 'Portrait',
-              'tag_id': 41,
-              'tags': [
-                {'id': 41, 'name': 'Portrait', 'color': 100, 'is_system': 0},
-              ],
-            },
-          ],
-          'system_prompts': [
-            {
-              'id': 9,
-              'title': 'My system prompt',
-              'content': 'sys',
-              'type': 'refiner',
-              // A hand-edited or damaged file: the column is NOT NULL, and
-              // this one row must not roll the whole restore back.
-              'output_kind': null,
-              'tags': [
-                {'id': 41, 'name': 'Portrait', 'color': 100, 'is_system': 0},
-              ],
-            },
-          ],
-        });
+      return file..addAll({
+        'tags': [
+          {'id': 41, 'name': 'Portrait', 'color': 100, 'is_system': 0},
+        ],
+        'user_prompts': [
+          {
+            'id': 7,
+            'title': 'My prompt',
+            'content': 'hello',
+            'tag': 'Portrait',
+            'tag_id': 41,
+            'tags': [
+              {'id': 41, 'name': 'Portrait', 'color': 100, 'is_system': 0},
+            ],
+          },
+        ],
+        'system_prompts': [
+          {
+            'id': 9,
+            'title': 'My system prompt',
+            'content': 'sys',
+            'type': 'refiner',
+            // A hand-edited or damaged file: the column is NOT NULL, and
+            // this one row must not roll the whole restore back.
+            'output_kind': null,
+            'tags': [
+              {'id': 41, 'name': 'Portrait', 'color': 100, 'is_system': 0},
+            ],
+          },
+        ],
+      });
     }
 
     test('restores prompts, tags and their links', () async {
@@ -260,8 +257,11 @@ void main() {
 
       final prompts = await db.query('prompts');
       expect(prompts.map((p) => p['title']), ['My prompt']);
-      expect(prompts.single['tag_id'], newTagId,
-          reason: 'tag_id must be remapped to the new tag, not the exporter\'s id');
+      expect(
+        prompts.single['tag_id'],
+        newTagId,
+        reason: 'tag_id must be remapped to the new tag, not the exporter\'s id',
+      );
 
       final refs = await db.query('prompt_tag_refs');
       expect(refs.single['tag_id'], newTagId);
@@ -280,35 +280,35 @@ void main() {
     /// a user prompt, which `Prompt.toMap` stopped writing, so these keep the
     /// importer's remapping of an older file's `tag_id` covered.
     Map<String, dynamic> promptsFile() => {
-          'export_type': 'prompts_only',
-          'version': 1,
+      'export_type': 'prompts_only',
+      'version': 1,
+      'tags': [
+        {'id': 41, 'name': 'Portrait', 'color': 100, 'is_system': 0},
+      ],
+      'user_prompts': [
+        {
+          'id': 7,
+          'title': 'Imported',
+          'content': 'hello',
+          'tag': 'Portrait',
+          'tag_id': 41,
           'tags': [
             {'id': 41, 'name': 'Portrait', 'color': 100, 'is_system': 0},
           ],
-          'user_prompts': [
-            {
-              'id': 7,
-              'title': 'Imported',
-              'content': 'hello',
-              'tag': 'Portrait',
-              'tag_id': 41,
-              'tags': [
-                {'id': 41, 'name': 'Portrait', 'color': 100, 'is_system': 0},
-              ],
-            },
+        },
+      ],
+      'system_prompts': [
+        {
+          'id': 9,
+          'title': 'Imported system',
+          'content': 'sys',
+          'type': 'refiner',
+          'tags': [
+            {'id': 41, 'name': 'Portrait', 'color': 100, 'is_system': 0},
           ],
-          'system_prompts': [
-            {
-              'id': 9,
-              'title': 'Imported system',
-              'content': 'sys',
-              'type': 'refiner',
-              'tags': [
-                {'id': 41, 'name': 'Portrait', 'color': 100, 'is_system': 0},
-              ],
-            },
-          ],
-        };
+        },
+      ],
+    };
 
     test('merge keeps existing prompts and links the new ones', () async {
       final db = await openTestDb();
@@ -323,7 +323,11 @@ void main() {
       expect(prompts.map((p) => p['title']), containsAll(['Old', 'Imported']));
 
       final imported = prompts.firstWhere((p) => p['title'] == 'Imported');
-      final portrait = (await db.query('prompt_tags', where: 'name = ?', whereArgs: ['Portrait'])).single;
+      final portrait = (await db.query(
+        'prompt_tags',
+        where: 'name = ?',
+        whereArgs: ['Portrait'],
+      )).single;
       expect(imported['tag_id'], portrait['id']);
       expect((await db.query('prompt_tag_refs')).single['tag_id'], portrait['id']);
       await db.close();
@@ -355,8 +359,11 @@ void main() {
       });
 
       expect((await db.query('prompts')).map((p) => p['title']), ['Imported']);
-      expect(await db.query('llm_channels'), isEmpty,
-          reason: 'prompt import must not touch channels');
+      expect(
+        await db.query('llm_channels'),
+        isEmpty,
+        reason: 'prompt import must not touch channels',
+      );
       await db.close();
     });
 
@@ -377,18 +384,26 @@ void main() {
       // `onCreate` seeds a tag and the built-in presets, so these are
       // containment checks: what matters is that the file's rows arrived.
       expect((await db.query('prompts')).map((p) => p['title']), ['Imported']);
-      expect((await db.query('system_prompts')).map((p) => p['title']),
-          contains('Imported system'));
+      expect(
+        (await db.query('system_prompts')).map((p) => p['title']),
+        contains('Imported system'),
+      );
       expect((await db.query('prompt_tags')).map((t) => t['name']), contains('Portrait'));
-      expect((await db.query('prompt_tag_refs')).length, 1,
-          reason: 'the links survive too — the row went in whole but for the unknown key');
+      expect(
+        (await db.query('prompt_tag_refs')).length,
+        1,
+        reason: 'the links survive too — the row went in whole but for the unknown key',
+      );
 
       // Asserting on a *known* column: `containsKey('pinned_at')` would be
       // vacuous, since a query only ever returns the table's real columns and
       // would pass just as well if the filter had thrown everything away.
       final imported = (await db.query('prompts')).single;
-      expect(imported['content'], 'hello',
-          reason: 'the row went in whole but for the one key with nowhere to go');
+      expect(
+        imported['content'],
+        'hello',
+        reason: 'the row went in whole but for the one key with nowhere to go',
+      );
       expect(imported['tag'], 'Portrait');
       await db.close();
     });
@@ -406,18 +421,21 @@ void main() {
     final tagRow = {'name': 'Portrait', 'color': 100, 'is_system': 1, 'sort_order': 3, 'id': 41};
 
     SystemPrompt preset(PresetOutputKind kind) => SystemPrompt(
-          title: 'Preset',
-          content: 'sys',
-          type: SystemPrompt.typeRefiner,
-          outputKind: kind,
-          sortOrder: 9,
-          tags: [portrait],
-        );
+      title: 'Preset',
+      content: 'sys',
+      type: SystemPrompt.typeRefiner,
+      outputKind: kind,
+      sortOrder: 9,
+      tags: [portrait],
+    );
 
     test('a prompt-kind preset leaves output_kind out', () {
       final row = preset(PresetOutputKind.prompt).toExportMap();
-      expect(row.containsKey('output_kind'), isFalse,
-          reason: 'a build older than v47 inserts this row column by column');
+      expect(
+        row.containsKey('output_kind'),
+        isFalse,
+        reason: 'a build older than v47 inserts this row column by column',
+      );
       expect(row['title'], 'Preset');
     });
 
@@ -431,8 +449,11 @@ void main() {
 
     test('an analysis preset still carries it', () {
       final row = preset(PresetOutputKind.analysis).toExportMap();
-      expect(row['output_kind'], 'analysis',
-          reason: 'dropping it would quietly turn the preset into a prompt one');
+      expect(
+        row['output_kind'],
+        'analysis',
+        reason: 'dropping it would quietly turn the preset into a prompt one',
+      );
     });
 
     test('what is left out reads back as the default', () {
@@ -449,9 +470,16 @@ void main() {
           'system_prompts': [preset(PresetOutputKind.prompt).toExportMap()],
         });
       });
-      final row = (await db.query('system_prompts', where: 'title = ?', whereArgs: ['Preset'])).single;
-      expect(row['output_kind'], 'prompt',
-          reason: "the column's default stands in for the key the file left out");
+      final row = (await db.query(
+        'system_prompts',
+        where: 'title = ?',
+        whereArgs: ['Preset'],
+      )).single;
+      expect(
+        row['output_kind'],
+        'prompt',
+        reason: "the column's default stands in for the key the file left out",
+      );
       await db.close();
     });
 
@@ -502,8 +530,7 @@ void main() {
         'id': null,
         'tags': [tagRow],
       };
-      expect(presets.first, presetRow,
-          reason: 'the default kind is the one key that is left out');
+      expect(presets.first, presetRow, reason: 'the default kind is the one key that is left out');
       expect(presets.last, {...presetRow, 'output_kind': 'analysis'});
     });
 
@@ -527,11 +554,18 @@ void main() {
       });
 
       final row = (await db.query('prompts', where: 'title = ?', whereArgs: ['Mine'])).single;
-      expect(Prompt.fromMap(row).isMarkdown, isTrue,
-          reason: 'the column defaults to 0, so a dropped key reads back as plain text');
+      expect(
+        Prompt.fromMap(row).isMarkdown,
+        isTrue,
+        reason: 'the column defaults to 0, so a dropped key reads back as plain text',
+      );
       expect(row['sort_order'], 5);
 
-      final tag = (await db.query('prompt_tags', where: 'name = ?', whereArgs: ['Portrait'])).single;
+      final tag = (await db.query(
+        'prompt_tags',
+        where: 'name = ?',
+        whereArgs: ['Portrait'],
+      )).single;
       expect(tag['color'], 100);
       await db.close();
     });
@@ -550,7 +584,11 @@ void main() {
         });
       });
 
-      final row = (await db.query('system_prompts', where: 'title = ?', whereArgs: ['Preset'])).single;
+      final row = (await db.query(
+        'system_prompts',
+        where: 'title = ?',
+        whereArgs: ['Preset'],
+      )).single;
       expect(row['output_kind'], 'analysis');
       expect(SystemPrompt.fromMap(row).outputKind, PresetOutputKind.analysis);
       await db.close();
@@ -571,7 +609,11 @@ void main() {
         await DatabaseService().restoreBackupInto(txn, backup);
       });
 
-      final row = (await db.query('system_prompts', where: 'title = ?', whereArgs: ['Preset'])).single;
+      final row = (await db.query(
+        'system_prompts',
+        where: 'title = ?',
+        whereArgs: ['Preset'],
+      )).single;
       expect(row['output_kind'], 'analysis');
       await db.close();
     });
@@ -592,7 +634,11 @@ void main() {
         await DatabaseService().restoreBackupInto(txn, backup);
       });
 
-      final row = (await db.query('system_prompts', where: 'title = ?', whereArgs: ['Preset'])).single;
+      final row = (await db.query(
+        'system_prompts',
+        where: 'title = ?',
+        whereArgs: ['Preset'],
+      )).single;
       expect(row['output_kind'], 'prompt');
       await db.close();
     });
@@ -609,16 +655,26 @@ void main() {
           'user_prompts': [],
           'system_prompts': [],
         }),
-        throwsA(isA<BackupFormatException>()
-            .having((e) => e.error, 'error', BackupFormatError.promptsOnly)),
+        throwsA(
+          isA<BackupFormatException>().having(
+            (e) => e.error,
+            'error',
+            BackupFormatError.promptsOnly,
+          ),
+        ),
       );
     });
 
     test('rejects an unrelated JSON file', () async {
       expect(
         () => DatabaseService().restoreBackup({'hello': 'world'}),
-        throwsA(isA<BackupFormatException>()
-            .having((e) => e.error, 'error', BackupFormatError.notABackup)),
+        throwsA(
+          isA<BackupFormatException>().having(
+            (e) => e.error,
+            'error',
+            BackupFormatError.notABackup,
+          ),
+        ),
       );
     });
 
@@ -629,8 +685,13 @@ void main() {
           'schema_version': DatabaseService.dbVersion + 1,
           'settings': [],
         }),
-        throwsA(isA<BackupFormatException>()
-            .having((e) => e.error, 'error', BackupFormatError.newerSchema)),
+        throwsA(
+          isA<BackupFormatException>().having(
+            (e) => e.error,
+            'error',
+            BackupFormatError.newerSchema,
+          ),
+        ),
       );
     });
 
@@ -650,8 +711,7 @@ void main() {
   });
 
   group('channel routes in backups (v45)', () {
-    test('a pre-route backup restores and reads its routes as before',
-        () async {
+    test('a pre-route backup restores and reads its routes as before', () async {
       final db = await openTestDb();
       final legacy = backupFile()..['schema_version'] = 44;
       (legacy['llm_channels'] as List).first
@@ -668,21 +728,25 @@ void main() {
 
       final channel = (await db.query('llm_channels')).single;
       expect(channel['routes'], isNull);
-      final routes = ChannelRoutes.resolve(channel['type'] as String,
-          channel['endpoint'] as String, channel['routes'] as String?);
-      expect(routes.kinds,
-          [RouteKind.dashscope, RouteKind.chat, RouteKind.anthropic]);
+      final routes = ChannelRoutes.resolve(
+        channel['type'] as String,
+        channel['endpoint'] as String,
+        channel['routes'] as String?,
+      );
+      expect(routes.kinds, [RouteKind.dashscope, RouteKind.chat, RouteKind.anthropic]);
       final model = LLMModel.fromMap((await db.query('llm_models')).single);
       expect(ModelRoutes.requestRoute(model, routes), RouteKind.anthropic);
       await db.close();
     });
 
-    test('routes and parked params round-trip through export and restore',
-        () async {
+    test('routes and parked params round-trip through export and restore', () async {
       final db = await openTestDb();
-      final routes = ChannelRoutes.create(Platforms.byId(Platforms.newapi),
-          'https://relay.example.com', [RouteKind.chat, RouteKind.gemini],
-          paths: {RouteKind.gemini: 'https://g.example.com/v1beta'});
+      final routes = ChannelRoutes.create(
+        Platforms.byId(Platforms.newapi),
+        'https://relay.example.com',
+        [RouteKind.chat, RouteKind.gemini],
+        paths: {RouteKind.gemini: 'https://g.example.com/v1beta'},
+      );
       final file = backupFile();
       (file['llm_channels'] as List).first
         ..['type'] = routes.primaryVendorId
@@ -705,8 +769,7 @@ void main() {
       await db.close();
     });
 
-    test('a redacted key survives a restore across the route migration',
-        () async {
+    test('a redacted key survives a restore across the route migration', () async {
       // This machine still holds the channel as written before routes, with
       // a MiniMax endpoint whose primary face is canonicalized on save.
       final db = await openTestDb();
@@ -732,41 +795,49 @@ void main() {
       await db.close();
     });
 
-    test('a fee group\'s input-image rate round-trips; an older backup restores without one',
-        () async {
-      // v48: a different path from a direct insert — `_importPricingGroups`
-      // re-ids the groups and rewrites every model's reference.
-      final db = await openTestDb();
-      final file = backupFile();
-      file['fee_groups'] = [
-        PricingGroup(
-          id: 9,
-          name: 'Seedream pro',
-          billingMode: 'spec',
-          outputRates: const [SpecRate(price: 0.3)],
-          inputUnitPrice: 0.02,
-          inputFreeUnits: 1,
-        ).toMap(),
-        // As a v47 build wrote it: no input columns at all.
-        {'id': 10, 'name': 'Old spec', 'billing_mode': 'spec', 'output_unit': 'image', 'output_rates': '[{"price":0.1}]'},
-      ];
-      (file['llm_models'] as List).first['fee_group_id'] = 9;
+    test(
+      'a fee group\'s input-image rate round-trips; an older backup restores without one',
+      () async {
+        // v48: a different path from a direct insert — `_importPricingGroups`
+        // re-ids the groups and rewrites every model's reference.
+        final db = await openTestDb();
+        final file = backupFile();
+        file['fee_groups'] = [
+          PricingGroup(
+            id: 9,
+            name: 'Seedream pro',
+            billingMode: 'spec',
+            outputRates: const [SpecRate(price: 0.3)],
+            inputUnitPrice: 0.02,
+            inputFreeUnits: 1,
+          ).toMap(),
+          // As a v47 build wrote it: no input columns at all.
+          {
+            'id': 10,
+            'name': 'Old spec',
+            'billing_mode': 'spec',
+            'output_unit': 'image',
+            'output_rates': '[{"price":0.1}]',
+          },
+        ];
+        (file['llm_models'] as List).first['fee_group_id'] = 9;
 
-      await db.transaction((txn) async {
-        await DatabaseService().restoreBackupInto(txn, file);
-      });
+        await db.transaction((txn) async {
+          await DatabaseService().restoreBackupInto(txn, file);
+        });
 
-      final groups = {
-        for (final row in await db.query('fee_groups')) row['name']: PricingGroup.fromMap(row),
-      };
-      expect(groups['Seedream pro']!.inputUnitPrice, 0.02);
-      expect(groups['Seedream pro']!.inputFreeUnits, 1);
-      expect(groups['Old spec']!.chargesInputImages, isFalse);
-      expect(groups['Old spec']!.outputRates.single.price, 0.1);
-      final model = (await db.query('llm_models')).single;
-      expect(model['fee_group_id'], groups['Seedream pro']!.id);
-      await db.close();
-    });
+        final groups = {
+          for (final row in await db.query('fee_groups')) row['name']: PricingGroup.fromMap(row),
+        };
+        expect(groups['Seedream pro']!.inputUnitPrice, 0.02);
+        expect(groups['Seedream pro']!.inputFreeUnits, 1);
+        expect(groups['Old spec']!.chargesInputImages, isFalse);
+        expect(groups['Old spec']!.outputRates.single.price, 0.1);
+        final model = (await db.query('llm_models')).single;
+        expect(model['fee_group_id'], groups['Seedream pro']!.id);
+        await db.close();
+      },
+    );
 
     test('this build writes schema 49, which a v48 build rejects', () {
       expect(DatabaseService.dbVersion, 49);

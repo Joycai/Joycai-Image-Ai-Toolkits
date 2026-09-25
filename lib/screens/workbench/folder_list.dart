@@ -44,23 +44,18 @@ typedef _FolderInputs = ({
 /// The same, for the file browser's tree. Its column draws the registered
 /// folders and whether any of them is ticked; the browser's selection, its
 /// scans and its size slider are none of its business.
-typedef _BrowserInputs = ({
-  List<String> sourceDirectories,
-  bool hasActive,
-});
+typedef _BrowserInputs = ({List<String> sourceDirectories, bool hasActive});
 
-_BrowserInputs _browserInputs(FileBrowserState s) => (
-      sourceDirectories: s.sourceDirectories,
-      hasActive: s.activeDirectories.isNotEmpty,
-    );
+_BrowserInputs _browserInputs(FileBrowserState s) =>
+    (sourceDirectories: s.sourceDirectories, hasActive: s.activeDirectories.isNotEmpty);
 
 _FolderInputs _folderInputs(GalleryState s) => (
-      resultRoots: s.resultRootDirectories,
-      viewMode: s.viewMode,
-      galleryCount: s.galleryImages.length,
-      processedCount: s.processedImages.length,
-      droppedCount: s.droppedImages.length,
-    );
+  resultRoots: s.resultRootDirectories,
+  viewMode: s.viewMode,
+  galleryCount: s.galleryImages.length,
+  processedCount: s.processedImages.length,
+  droppedCount: s.droppedImages.length,
+);
 
 /// The folder column — `A1 1a` on the workbench, and the file browser's
 /// directory tree.
@@ -70,10 +65,7 @@ _FolderInputs _folderInputs(GalleryState s) => (
 class FolderList extends StatefulWidget {
   final bool useFileBrowserState;
 
-  const FolderList({
-    super.key,
-    this.useFileBrowserState = false,
-  });
+  const FolderList({super.key, this.useFileBrowserState = false});
 
   @override
   State<FolderList> createState() => _FolderListState();
@@ -116,7 +108,8 @@ class _FolderListState extends State<FolderList> {
     final browser = useFileBrowserState
         ? context.select<FileBrowserState, _BrowserInputs>(_browserInputs)
         : null;
-    final sourceDirectories = browser?.sourceDirectories ??
+    final sourceDirectories =
+        browser?.sourceDirectories ??
         context.select<GalleryState, List<String>>((s) => s.sourceDirectories);
 
     // A folder that left the list some other way has nothing left to confirm.
@@ -160,10 +153,10 @@ class _FolderListState extends State<FolderList> {
                 Text(
                   l10n.directories.toUpperCase(),
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: AppType.trackedLabelSpacing,
-                        color: colorScheme.onAccentTint,
-                      ),
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: AppType.trackedLabelSpacing,
+                    color: colorScheme.onAccentTint,
+                  ),
                 ),
                 const SizedBox(width: AppSpace.s6),
                 Container(
@@ -175,9 +168,9 @@ class _FolderListState extends State<FolderList> {
                   child: Text(
                     '${sourceDirectories.length}',
                     style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
-                          fontWeight: FontWeight.w400,
-                          color: colorScheme.onSurfaceVariant,
-                        ),
+                      fontWeight: FontWeight.w400,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
                 const Spacer(),
@@ -222,17 +215,22 @@ class _FolderListState extends State<FolderList> {
           // of the column. Pointer platforms only — a phone has no Ctrl.
           if (sourceDirectories.isNotEmpty && !(Platform.isIOS || Platform.isAndroid))
             Padding(
-              padding: const EdgeInsets.fromLTRB(AppSpace.s16, AppSpace.s10, AppSpace.s16, AppSpace.s10),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpace.s16,
+                AppSpace.s10,
+                AppSpace.s16,
+                AppSpace.s10,
+              ),
               child: Text(
                 // The copy key is ⌥ on macOS, as `AppCopyModifier` reads it.
                 defaultTargetPlatform == TargetPlatform.macOS
                     ? l10n.browserDragFootnoteMac
                     : l10n.browserDragFootnote,
                 style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
-                      fontWeight: FontWeight.w400,
-                      color: colorScheme.outline,
-                      height: AppType.proseHeight,
-                    ),
+                  fontWeight: FontWeight.w400,
+                  color: colorScheme.outline,
+                  height: AppType.proseHeight,
+                ),
               ),
             ),
         ] else
@@ -275,7 +273,13 @@ class _FolderListState extends State<FolderList> {
       children: [
         // SOURCES — the aggregate "All Sources" view is the head of the group,
         // with the browsable source-folder tree nested beneath it.
-        _buildSectionHeader(context, metrics, l10n.sectionSources, count: sourceDirectories.length, first: true),
+        _buildSectionHeader(
+          context,
+          metrics,
+          l10n.sectionSources,
+          count: sourceDirectories.length,
+          first: true,
+        ),
         _buildFixedNode(
           metrics,
           icon: Icons.photo_library_outlined,
@@ -287,13 +291,15 @@ class _FolderListState extends State<FolderList> {
         if (sourceDirectories.isEmpty)
           _buildInlineHint(context, metrics, l10n.noFolders)
         else
-          ...sourceDirectories.map((path) => DirectoryTreeItem(
-                key: ValueKey(path),
-                path: path,
-                isRoot: true,
-                useFileBrowserState: false,
-                onRemove: _requestRemove,
-              )),
+          ...sourceDirectories.map(
+            (path) => DirectoryTreeItem(
+              key: ValueKey(path),
+              path: path,
+              isRoot: true,
+              useFileBrowserState: false,
+              onRemove: _requestRemove,
+            ),
+          ),
 
         // RESULTS — the result cache is also a real folder tree, now browsable.
         _buildSectionHeader(context, metrics, l10n.sectionResults, count: resultRoots.length),
@@ -308,7 +314,9 @@ class _FolderListState extends State<FolderList> {
         if (resultRoots.isEmpty)
           _buildInlineHint(context, metrics, l10n.noResultsYet)
         else
-          ...resultRoots.map((path) => ResultTreeItem(key: ValueKey(path), path: path, isRoot: true)),
+          ...resultRoots.map(
+            (path) => ResultTreeItem(key: ValueKey(path), path: path, isRoot: true),
+          ),
 
         // WORKSPACE — transient drop zone.
         _buildSectionHeader(context, metrics, l10n.sectionWorkspace),
@@ -337,7 +345,12 @@ class _FolderListState extends State<FolderList> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     return Padding(
-      padding: EdgeInsets.fromLTRB(metrics.headerInset, first ? AppSpace.s6 : 14, metrics.headerInset, AppSpace.s4),
+      padding: EdgeInsets.fromLTRB(
+        metrics.headerInset,
+        first ? AppSpace.s6 : 14,
+        metrics.headerInset,
+        AppSpace.s4,
+      ),
       child: Row(
         children: [
           Expanded(
@@ -476,18 +489,18 @@ class _FolderListState extends State<FolderList> {
             Text(
               l10n.noFolders,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.onSurface,
-                  ),
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpace.s6),
             Text(
               l10n.clickAddFolder,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                    height: AppType.proseHeight,
-                  ),
+                color: colorScheme.onSurfaceVariant,
+                height: AppType.proseHeight,
+              ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -613,7 +626,10 @@ class _ArmedEdgePainter extends CustomPainter {
     if (edge == null) return;
     drawDashedRRect(
       canvas,
-      RRect.fromRectAndRadius(Offset.zero & size, const Radius.circular(AppRadius.control)).deflate(inset),
+      RRect.fromRectAndRadius(
+        Offset.zero & size,
+        const Radius.circular(AppRadius.control),
+      ).deflate(inset),
       Paint()
         ..color = edge
         ..style = PaintingStyle.stroke

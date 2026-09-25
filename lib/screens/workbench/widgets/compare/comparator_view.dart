@@ -136,7 +136,8 @@ class _ComparatorViewState extends State<ComparatorView> {
                 animation: _rawController,
                 builder: (context, _) {
                   final percent = (_rawController.value.getMaxScaleOnAxis() * 100).round();
-                  final synced = uiState.comparatorLayout == ComparatorLayout.slider ||
+                  final synced =
+                      uiState.comparatorLayout == ComparatorLayout.slider ||
                       uiState.comparatorSyncTransform;
                   return _ImagePlate(
                     text: synced
@@ -261,10 +262,8 @@ class _ComparatorViewState extends State<ComparatorView> {
                 ValueListenableBuilder<double>(
                   valueListenable: _scanRatio,
                   child: rawLayer,
-                  builder: (context, ratio, child) => ClipRect(
-                    clipper: _CurtainClipper(ratio),
-                    child: child,
-                  ),
+                  builder: (context, ratio, child) =>
+                      ClipRect(clipper: _CurtainClipper(ratio), child: child),
                 ),
                 // Positioned has to be the Stack's direct child, so the
                 // listener sits inside a fill and re-positions the handle
@@ -284,7 +283,8 @@ class _ComparatorViewState extends State<ComparatorView> {
                       // resizers.
                       onHorizontalDragUpdate: (details) {
                         _dragScanPos =
-                            ((_dragScanPos ?? constraints.maxWidth * _scanRatio.value) + details.delta.dx)
+                            ((_dragScanPos ?? constraints.maxWidth * _scanRatio.value) +
+                                    details.delta.dx)
                                 .clamp(-24.0, constraints.maxWidth + 24.0);
                         _scanRatio.value = (_dragScanPos! / constraints.maxWidth).clamp(0.0, 1.0);
                       },
@@ -345,9 +345,9 @@ class _ComparatorViewState extends State<ComparatorView> {
       return Center(
         child: Text(
           l10n.noImagesSelected,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
         ),
       );
     }
@@ -393,9 +393,9 @@ class _ImagePlate extends StatelessWidget {
         overflow: TextOverflow.ellipsis,
         softWrap: false,
         style: Theme.of(context).textTheme.labelSmall!.metricsOnly.mono.copyWith(
-              color: AppOverlay.onImagePlate,
-              fontWeight: strong ? FontWeight.w600 : FontWeight.w400,
-            ),
+          color: AppOverlay.onImagePlate,
+          fontWeight: strong ? FontWeight.w600 : FontWeight.w400,
+        ),
       ),
     );
     return opacity >= 1.0 ? plate : Opacity(opacity: opacity, child: plate);
@@ -519,8 +519,14 @@ class _EmptyState extends StatelessWidget {
               runSpacing: AppSpace.s10,
               alignment: WrapAlignment.center,
               children: [
-                SizedBox(width: 160, child: _ChooseCard(label: l10n.comparatorPickRaw, onTap: onPick)),
-                SizedBox(width: 160, child: _ChooseCard(label: l10n.comparatorPickAfter, onTap: onPick)),
+                SizedBox(
+                  width: 160,
+                  child: _ChooseCard(label: l10n.comparatorPickRaw, onTap: onPick),
+                ),
+                SizedBox(
+                  width: 160,
+                  child: _ChooseCard(label: l10n.comparatorPickAfter, onTap: onPick),
+                ),
               ],
             ),
           ],
@@ -565,7 +571,11 @@ class _ChooseCard extends StatelessWidget {
                   color: colorScheme.accentTint,
                   borderRadius: BorderRadius.circular(AppRadius.control),
                 ),
-                child: Icon(Icons.add_photo_alternate_outlined, size: 24, color: colorScheme.primary),
+                child: Icon(
+                  Icons.add_photo_alternate_outlined,
+                  size: 24,
+                  color: colorScheme.primary,
+                ),
               ),
               const SizedBox(height: AppSpace.s10),
               Text(

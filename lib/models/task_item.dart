@@ -8,13 +8,7 @@ import 'dart:convert';
 
 enum TaskStatus { pending, processing, completed, failed, cancelled }
 
-enum TaskType {
-  imageProcess,
-  imageDownload,
-  promptRefine,
-  aiRename,
-  videoGenerate,
-}
+enum TaskType { imageProcess, imageDownload, promptRefine, aiRename, videoGenerate }
 
 enum TaskEventType { textChunk, imageResult, progress, statusChanged, error }
 
@@ -25,12 +19,8 @@ class TaskEvent {
   final dynamic data;
   final DateTime timestamp;
 
-  TaskEvent({
-    required this.taskId,
-    this.taskType,
-    required this.type,
-    this.data,
-  }) : timestamp = DateTime.now();
+  TaskEvent({required this.taskId, this.taskType, required this.type, this.data})
+    : timestamp = DateTime.now();
 }
 
 class TaskItem {
@@ -105,25 +95,25 @@ class TaskItem {
   /// executors route by [modelDbId] — and final, so relabelling a stored task
   /// takes a copy.
   TaskItem withModelId(String modelId) => TaskItem(
-        id: id,
-        type: type,
-        imagePaths: imagePaths,
-        modelId: modelId,
-        modelDbId: modelDbId,
-        channelTag: channelTag,
-        channelColor: channelColor,
-        parameters: parameters,
-        useStream: useStream,
-        status: status,
-        logs: logs,
-        resultPaths: resultPaths,
-        startTime: startTime,
-        endTime: endTime,
-        progress: progress,
-        operationSurface: operationSurface,
-        operationName: operationName,
-        createdAt: createdAt,
-      );
+    id: id,
+    type: type,
+    imagePaths: imagePaths,
+    modelId: modelId,
+    modelDbId: modelDbId,
+    channelTag: channelTag,
+    channelColor: channelColor,
+    parameters: parameters,
+    useStream: useStream,
+    status: status,
+    logs: logs,
+    resultPaths: resultPaths,
+    startTime: startTime,
+    endTime: endTime,
+    progress: progress,
+    operationSurface: operationSurface,
+    operationName: operationName,
+    createdAt: createdAt,
+  );
 
   /// Marks where [addLog] dropped the head of an over-long log.
   static const String logTruncationMarker =
@@ -135,9 +125,7 @@ class TaskItem {
   static const int maxLogLines = 500;
 
   void addLog(String message) {
-    logs.add(
-      '[${DateTime.now().toIso8601String().split('T').last.substring(0, 8)}] $message',
-    );
+    logs.add('[${DateTime.now().toIso8601String().split('T').last.substring(0, 8)}] $message');
     if (logs.length <= maxLogLines) return;
     // Oldest lines go first, but the marker is kept pinned at the head and
     // trimmed around, so a truncated log never reads as a complete one.
@@ -215,8 +203,7 @@ class TaskItem {
     }
   }
 
-  static DateTime? _decodeDate(Object? raw) =>
-      raw is String ? DateTime.tryParse(raw) : null;
+  static DateTime? _decodeDate(Object? raw) => raw is String ? DateTime.tryParse(raw) : null;
 
   factory TaskItem.fromMap(Map<String, dynamic> map) {
     return TaskItem(

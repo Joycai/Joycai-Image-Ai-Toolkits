@@ -10,9 +10,11 @@ void main() {
     final a = <String>[];
     final b = <String>[];
     final la = service.addLogListener(
-        (msg, {level = 'INFO', contextId}) => a.add('$level|$contextId|$msg'));
+      (msg, {level = 'INFO', contextId}) => a.add('$level|$contextId|$msg'),
+    );
     final lb = service.addLogListener(
-        (msg, {level = 'INFO', contextId}) => b.add('$level|$contextId|$msg'));
+      (msg, {level = 'INFO', contextId}) => b.add('$level|$contextId|$msg'),
+    );
     addTearDown(() {
       service.removeLogListener(la);
       service.removeLogListener(lb);
@@ -28,10 +30,8 @@ void main() {
     final service = LLMService();
     final a = <String>[];
     final b = <String>[];
-    final la = service.addLogListener(
-        (msg, {level = 'INFO', contextId}) => a.add(msg));
-    final lb = service.addLogListener(
-        (msg, {level = 'INFO', contextId}) => b.add(msg));
+    final la = service.addLogListener((msg, {level = 'INFO', contextId}) => a.add(msg));
+    final lb = service.addLogListener((msg, {level = 'INFO', contextId}) => b.add(msg));
     addTearDown(() => service.removeLogListener(lb));
 
     service.emitLogForTest('one');
@@ -46,9 +46,9 @@ void main() {
     final service = LLMService();
     final heard = <String>[];
     final bad = service.addLogListener(
-        (msg, {level = 'INFO', contextId}) => throw StateError('boom'));
-    final good = service.addLogListener(
-        (msg, {level = 'INFO', contextId}) => heard.add(msg));
+      (msg, {level = 'INFO', contextId}) => throw StateError('boom'),
+    );
+    final good = service.addLogListener((msg, {level = 'INFO', contextId}) => heard.add(msg));
     addTearDown(() {
       service.removeLogListener(bad);
       service.removeLogListener(good);

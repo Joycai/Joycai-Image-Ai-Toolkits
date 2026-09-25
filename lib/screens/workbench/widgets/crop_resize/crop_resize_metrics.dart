@@ -39,17 +39,13 @@ TextStyle _valueStyle(BuildContext context) =>
     Theme.of(context).textTheme.bodySmall!.metricsOnly.mono;
 
 /// Save Copy's two lines (`1a`: 600 label over an 11px subtitle, 1.15 apart).
-TextStyle _saveLabelStyle(BuildContext context) => Theme.of(context)
-    .textTheme
-    .bodySmall!
-    .metricsOnly
-    .copyWith(fontWeight: FontWeight.w600, height: 1.15);
+TextStyle _saveLabelStyle(BuildContext context) => Theme.of(
+  context,
+).textTheme.bodySmall!.metricsOnly.copyWith(fontWeight: FontWeight.w600, height: 1.15);
 
-TextStyle _saveSubtitleStyle(BuildContext context) => Theme.of(context)
-    .textTheme
-    .labelSmall!
-    .metricsOnly
-    .copyWith(fontWeight: FontWeight.w400, height: 1.15);
+TextStyle _saveSubtitleStyle(BuildContext context) => Theme.of(
+  context,
+).textTheme.labelSmall!.metricsOnly.copyWith(fontWeight: FontWeight.w400, height: 1.15);
 
 /// Whether Save Copy's two lines stand inside the 32px control at the user's
 /// text scale. Measured, like everything else here: at a large enough scale
@@ -77,26 +73,25 @@ List<GlassSegment<_RatioPreset>> _ratioSegments(
   AppLocalizations l10n, {
   required bool portrait,
   required bool icons,
-}) =>
-    [
-      GlassSegment(
-        value: _RatioPreset.free,
-        label: l10n.cropResizeFreeRatio,
-        icon: icons ? Icons.crop_free : null,
-      ),
-      const GlassSegment(value: _RatioPreset.r1x1, label: '1:1'),
-      const GlassSegment(value: _RatioPreset.r4x3, label: '4:3'),
-      const GlassSegment(value: _RatioPreset.r16x9, label: '16:9'),
-      if (portrait) ...const [
-        GlassSegment(value: _RatioPreset.r3x4, label: '3:4'),
-        GlassSegment(value: _RatioPreset.r9x16, label: '9:16'),
-      ],
-      GlassSegment(
-        value: _RatioPreset.custom,
-        label: l10n.custom,
-        icon: icons ? Icons.edit_outlined : null,
-      ),
-    ];
+}) => [
+  GlassSegment(
+    value: _RatioPreset.free,
+    label: l10n.cropResizeFreeRatio,
+    icon: icons ? Icons.crop_free : null,
+  ),
+  const GlassSegment(value: _RatioPreset.r1x1, label: '1:1'),
+  const GlassSegment(value: _RatioPreset.r4x3, label: '4:3'),
+  const GlassSegment(value: _RatioPreset.r16x9, label: '16:9'),
+  if (portrait) ...const [
+    GlassSegment(value: _RatioPreset.r3x4, label: '3:4'),
+    GlassSegment(value: _RatioPreset.r9x16, label: '9:16'),
+  ],
+  GlassSegment(
+    value: _RatioPreset.custom,
+    label: l10n.custom,
+    icon: icons ? Icons.edit_outlined : null,
+  ),
+];
 
 /// What the single row is currently allowed to show. Starts with everything
 /// and is stepped down in [_WideRow._fitRow].
@@ -155,8 +150,8 @@ double _measureRow(
 
 /// Lays [children] out with the bar's gap between each.
 List<Widget> _spaced(List<Widget> children) => [
-      for (int i = 0; i < children.length; i++) ...[
-        if (i > 0) const SizedBox(width: _kGap),
-        children[i],
-      ],
-    ];
+  for (int i = 0; i < children.length; i++) ...[
+    if (i > 0) const SizedBox(width: _kGap),
+    children[i],
+  ],
+];

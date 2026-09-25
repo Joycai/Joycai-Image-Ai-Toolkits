@@ -17,30 +17,32 @@ void main() {
     final inputFree = TextEditingController();
     addTearDown(inputPrice.dispose);
     addTearDown(inputFree.dispose);
-    await tester.pumpWidget(MaterialApp(
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      locale: const Locale('en'),
-      home: Scaffold(
-        body: SingleChildScrollView(
-          child: SpecRateTableEditor(
-            unit: unit,
-            onUnitChanged: (_) {},
-            rows: const [],
-            otherPriceCtrl: other,
-            inputPriceCtrl: inputPrice,
-            inputFreeCtrl: inputFree,
-            inputPriceInvalid: false,
-            inputFreeWithoutPrice: false,
-            onAddRow: () {},
-            onRemoveRow: (_) {},
-            onChanged: () {},
-            onSwitchToRequest: () {},
-            narrow: false,
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: SpecRateTableEditor(
+              unit: unit,
+              onUnitChanged: (_) {},
+              rows: const [],
+              otherPriceCtrl: other,
+              inputPriceCtrl: inputPrice,
+              inputFreeCtrl: inputFree,
+              inputPriceInvalid: false,
+              inputFreeWithoutPrice: false,
+              onAddRow: () {},
+              onRemoveRow: (_) {},
+              onChanged: () {},
+              onSwitchToRequest: () {},
+              narrow: false,
+            ),
           ),
         ),
       ),
-    ));
+    );
     await tester.pump();
   }
 

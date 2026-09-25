@@ -167,8 +167,12 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
     final lastSelectedModelId = context.select<AppState, String?>((s) => s.lastSelectedModelId);
     final lastPrompt = context.select<AppState, String>((s) => s.lastPrompt);
     final useStream = context.select<AppState, bool>((s) => s.useStream);
-    final compressReferenceImages = context.select<AppState, bool>((s) => s.compressReferenceImages);
-    final promptHistory = context.select<AppState, List<PromptHistoryEntry>>((s) => s.imagePromptHistory);
+    final compressReferenceImages = context.select<AppState, bool>(
+      (s) => s.compressReferenceImages,
+    );
+    final promptHistory = context.select<AppState, List<PromptHistoryEntry>>(
+      (s) => s.imagePromptHistory,
+    );
     // Rebuild parameter controls when the stored image params change.
     context.select<AppState, int>((s) => s.imageParamsRevision);
 
@@ -242,10 +246,7 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
                 final appState = Provider.of<AppState>(context, listen: false);
                 final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
 
-                workbenchUIState.sendToOptimizer(
-                  _promptController.text,
-                  appState.selectedImages,
-                );
+                workbenchUIState.sendToOptimizer(_promptController.text, appState.selectedImages);
 
                 appState.setWorkbenchTab(4);
 
@@ -292,15 +293,17 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
             selectedChannelId: selectedChannelId,
             selectedModelDbId: selectedModelDbId,
             isExpanded: _isModelSettingsExpanded,
-            onToggleExpansion: () => setState(() => _isModelSettingsExpanded = !_isModelSettingsExpanded),
+            onToggleExpansion: () =>
+                setState(() => _isModelSettingsExpanded = !_isModelSettingsExpanded),
             onChannelChanged: (val) {
               final appState = Provider.of<AppState>(context, listen: false);
               // Pick the first *image* model of the channel. Using the
               // unfiltered model list here used to select a chat model,
               // which imageModels can't resolve — the selection silently
               // reverted and the channel appeared unclickable.
-              final firstInChannel =
-                  appState.imageModels.where((m) => m.channelId == val).firstOrNull;
+              final firstInChannel = appState.imageModels
+                  .where((m) => m.channelId == val)
+                  .firstOrNull;
               final newDbId = firstInChannel?.id;
               if (newDbId != null) {
                 _updateConfig(modelDbId: newDbId);
@@ -313,11 +316,14 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
                 Provider.of<AppState>(context, listen: false).getImageParam(model, spec),
             onImageParamChanged: (model, key, value) =>
                 Provider.of<AppState>(context, listen: false).setImageParam(model, key, value),
-            capabilitiesOf: (model) =>
-                Provider.of<AppState>(context, listen: false).descriptorForModel(model).capabilities,
+            capabilitiesOf: (model) => Provider.of<AppState>(
+              context,
+              listen: false,
+            ).descriptorForModel(model).capabilities,
             storedImageParamOf: (model, key) =>
                 Provider.of<AppState>(context, listen: false).storedImageParam(model, key),
-            specRatesOf: (model) => Provider.of<AppState>(context, listen: false).specRatesFor(model),
+            specRatesOf: (model) =>
+                Provider.of<AppState>(context, listen: false).specRatesFor(model),
           ),
         ),
         const SizedBox(height: _kCardGap),
@@ -352,90 +358,90 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
     // is scrolled by a controller above this widget, where the height is
     // unbounded and a flex child throws.
     Widget buildPrompt({required bool fill}) => _PanelCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisSize: fill ? MainAxisSize.max : MainAxisSize.min,
-            children: [
-              // Given exactly its pinned height, not allowed to size itself:
-              // [PromptHistoryButton] brings a padded tap target on touch
-              // platforms (40 at its compact density), and a row that grew to
-              // hold it would take those pixels out of the editor's floor.
-              // Pinned, the target is clamped to the row instead.
-              SizedBox(
-                height: _kPromptHeaderRow,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        l10n.prompt,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: captionStyle,
-                      ),
-                    ),
-                    PromptHistoryButton(
-                      entries: promptHistory,
-                      type: PromptHistoryType.image,
-                      onApply: (content) {
-                        _promptController.text = content;
-                        _updateConfig(prompt: content);
-                      },
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.library_books_outlined),
-                      tooltip: l10n.library,
-                      style: _cardIconStyle(colorScheme, colorScheme.onAccentTint),
-                      onPressed: _allUserPrompts.isEmpty ? null : () => _showPromptPickerMenu(l10n),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: _kCardInnerGap),
-              _fillable(
-                fill: fill,
-                child: ConstrainedBox(
-                  // A floor for the bottom sheet, where nothing else bounds the
-                  // card. Under the desktop [Expanded] the height is already
-                  // tight and this is a no-op.
-                  constraints: const BoxConstraints(minHeight: kMinPromptEditorHeight),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    mainAxisSize: fill ? MainAxisSize.max : MainAxisSize.min,
-                    children: [
-                      _fillable(
-                        fill: fill,
-                        child: MarkdownEditor(
-                          controller: _promptController,
-                          label: l10n.prompt,
-                          isMarkdown: isMarkdownWorkbench,
-                          onMarkdownChanged: (v) =>
-                              Provider.of<AppState>(context, listen: false).setIsMarkdownWorkbench(v),
-                          maxLines: 15,
-                          initiallyPreview: false,
-                          hint: l10n.promptHint,
-                          // Not _updateConfig: keystrokes take the silent draft
-                          // path so typing does not notify the whole app. See
-                          // AppStateWorkbench.setPromptDraft.
-                          onChanged: appState.setPromptDraft,
-                          expand: fill,
-                          // Filling, the height is handed down and there is
-                          // nothing to measure; only the bottom sheet, where
-                          // the card sizes itself, still probes.
-                          probeAvailableHeight: !fill,
-                          // `1a` draws the editor as its own box inside the
-                          // card, under the markdown controls row.
-                          bordered: true,
-                        ),
-                      ),
-                      const SizedBox(height: _kCardInnerGap),
-                      editorActions,
-                    ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: fill ? MainAxisSize.max : MainAxisSize.min,
+        children: [
+          // Given exactly its pinned height, not allowed to size itself:
+          // [PromptHistoryButton] brings a padded tap target on touch
+          // platforms (40 at its compact density), and a row that grew to
+          // hold it would take those pixels out of the editor's floor.
+          // Pinned, the target is clamped to the row instead.
+          SizedBox(
+            height: _kPromptHeaderRow,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    l10n.prompt,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: captionStyle,
                   ),
                 ),
-              ),
-            ],
+                PromptHistoryButton(
+                  entries: promptHistory,
+                  type: PromptHistoryType.image,
+                  onApply: (content) {
+                    _promptController.text = content;
+                    _updateConfig(prompt: content);
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.library_books_outlined),
+                  tooltip: l10n.library,
+                  style: _cardIconStyle(colorScheme, colorScheme.onAccentTint),
+                  onPressed: _allUserPrompts.isEmpty ? null : () => _showPromptPickerMenu(l10n),
+                ),
+              ],
+            ),
           ),
-        );
+          const SizedBox(height: _kCardInnerGap),
+          _fillable(
+            fill: fill,
+            child: ConstrainedBox(
+              // A floor for the bottom sheet, where nothing else bounds the
+              // card. Under the desktop [Expanded] the height is already
+              // tight and this is a no-op.
+              constraints: const BoxConstraints(minHeight: kMinPromptEditorHeight),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: fill ? MainAxisSize.max : MainAxisSize.min,
+                children: [
+                  _fillable(
+                    fill: fill,
+                    child: MarkdownEditor(
+                      controller: _promptController,
+                      label: l10n.prompt,
+                      isMarkdown: isMarkdownWorkbench,
+                      onMarkdownChanged: (v) =>
+                          Provider.of<AppState>(context, listen: false).setIsMarkdownWorkbench(v),
+                      maxLines: 15,
+                      initiallyPreview: false,
+                      hint: l10n.promptHint,
+                      // Not _updateConfig: keystrokes take the silent draft
+                      // path so typing does not notify the whole app. See
+                      // AppStateWorkbench.setPromptDraft.
+                      onChanged: appState.setPromptDraft,
+                      expand: fill,
+                      // Filling, the height is handed down and there is
+                      // nothing to measure; only the bottom sheet, where
+                      // the card sizes itself, still probes.
+                      probeAvailableHeight: !fill,
+                      // `1a` draws the editor as its own box inside the
+                      // card, under the markdown controls row.
+                      bordered: true,
+                    ),
+                  ),
+                  const SizedBox(height: _kCardInnerGap),
+                  editorActions,
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
 
     // Primary Execution Button — reused in both mobile (pinned) and desktop (docked)
     //
@@ -456,7 +462,13 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(AppRadius.control),
               boxShadow: enabled
-                  ? [BoxShadow(color: colorScheme.accentRing, blurRadius: 12, offset: const Offset(0, 4))]
+                  ? [
+                      BoxShadow(
+                        color: colorScheme.accentRing,
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ]
                   : null,
             ),
             // Colours, radius and the 13/600 label are the theme's; only the
@@ -478,7 +490,9 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
                         return;
                       }
 
-                      final selectedModel = appState.imageModels.firstWhere((m) => m.id == selectedModelDbId);
+                      final selectedModel = appState.imageModels.firstWhere(
+                        (m) => m.id == selectedModelDbId,
+                      );
                       final modelName = selectedModel.modelName;
 
                       final params = <String, dynamic>{
@@ -516,7 +530,12 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
         mainAxisSize: MainAxisSize.max,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(AppSpace.s16, AppSpace.s16, AppSpace.s16, AppSpace.s10),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpace.s16,
+              AppSpace.s16,
+              AppSpace.s16,
+              AppSpace.s10,
+            ),
             child: processButton,
           ),
           Expanded(
@@ -600,12 +619,8 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
                       // the scroller is invisible until it is needed —
                       // and while the head fits, every extra pixel of
                       // window goes to the editor.
-                      constraints: BoxConstraints(
-                        maxHeight: box.maxHeight - promptFloor,
-                      ),
-                      child: ScrollEdgeFade(
-                        child: SingleChildScrollView(child: head),
-                      ),
+                      constraints: BoxConstraints(maxHeight: box.maxHeight - promptFloor),
+                      child: ScrollEdgeFade(child: SingleChildScrollView(child: head)),
                     ),
                     const SizedBox(height: _kCardGap),
                     Expanded(child: buildPrompt(fill: true)),
@@ -636,14 +651,14 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
   /// Shrink-wrapped: the prompt header's height is a pinned term of the
   /// panel's arithmetic, and a padded 48px tap target would silently grow it.
   static ButtonStyle _cardIconStyle(ColorScheme colorScheme, Color ink) => IconButton.styleFrom(
-        foregroundColor: ink,
-        disabledForegroundColor: colorScheme.outline,
-        iconSize: AppSize.iconMd,
-        minimumSize: const Size.square(AppSize.compact),
-        maximumSize: const Size.square(AppSize.compact),
-        padding: EdgeInsets.zero,
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      );
+    foregroundColor: ink,
+    disabledForegroundColor: colorScheme.outline,
+    iconSize: AppSize.iconMd,
+    minimumSize: const Size.square(AppSize.compact),
+    maximumSize: const Size.square(AppSize.compact),
+    padding: EdgeInsets.zero,
+    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+  );
 
   void _showPromptPickerMenu(AppLocalizations l10n) {
     PromptLibrarySheet.show(

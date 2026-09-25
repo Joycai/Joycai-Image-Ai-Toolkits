@@ -35,8 +35,11 @@ class AppGlassMenuItem extends AppGlassMenuEntry {
     this.radio = false,
     this.enabled = true,
     this.danger = false,
-  })  : assert(onSelected == null || children == null, 'a submenu row has no action of its own'),
-        assert(icon == null || checked == null, 'a row is marked either by its icon or by its check');
+  }) : assert(onSelected == null || children == null, 'a submenu row has no action of its own'),
+       assert(
+         icon == null || checked == null,
+         'a row is marked either by its icon or by its check',
+       );
 
   final IconData? icon;
   final String label;
@@ -233,15 +236,18 @@ double appGlassMenuHeight(List<AppGlassMenuEntry> entries) {
   double height = AppSpace.s6 * 2;
   for (final AppGlassMenuEntry entry in entries) {
     height += switch (entry) {
-      AppGlassMenuItem(:final bool isEnabled, :final String? note, :final String? hint) => hint != null
-          ? _AppGlassMenuRow._hintHeight
-          : !isEnabled && note != null
-              ? _AppGlassMenuRow._noteHeight
-              : AppSize.compact,
+      AppGlassMenuItem(:final bool isEnabled, :final String? note, :final String? hint) =>
+        hint != null
+            ? _AppGlassMenuRow._hintHeight
+            : !isEnabled && note != null
+            ? _AppGlassMenuRow._noteHeight
+            : AppSize.compact,
       AppGlassMenuQuickBlock() => _AppGlassMenuQuickBlock.height,
       AppGlassMenuHeading() => _AppGlassMenuHeading.height,
-      AppGlassMenuGrid(:final List<AppGlassMenuItem> items, :final int columns) =>
-        _gridHeight(items.length, columns),
+      AppGlassMenuGrid(:final List<AppGlassMenuItem> items, :final int columns) => _gridHeight(
+        items.length,
+        columns,
+      ),
       _ => 1 + AppSpace.s4 * 2,
     };
   }
@@ -272,11 +278,11 @@ Alignment _menuOrigin({
   final double minX = padding.left + margin;
   final double minY = padding.top + margin;
   final double maxX = math.max(minX, screenSize.width - padding.right - margin - childSize.width);
-  final double maxY = math.max(minY, screenSize.height - padding.bottom - margin - childSize.height);
-  return Alignment(
-    position.dx > maxX ? 1 : anchor.x,
-    position.dy > maxY ? 1 : anchor.y,
+  final double maxY = math.max(
+    minY,
+    screenSize.height - padding.bottom - margin - childSize.height,
   );
+  return Alignment(position.dx > maxX ? 1 : anchor.x, position.dy > maxY ? 1 : anchor.y);
 }
 
 class _AppGlassMenuRoute extends PopupRoute<VoidCallback> {
@@ -313,13 +319,16 @@ class _AppGlassMenuRoute extends PopupRoute<VoidCallback> {
   Duration get transitionDuration => duration;
 
   @override
-  Duration get reverseTransitionDuration => duration == Duration.zero ? Duration.zero : AppMotion.hover;
+  Duration get reverseTransitionDuration =>
+      duration == Duration.zero ? Duration.zero : AppMotion.hover;
 
   @override
-  Widget buildPage(BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation) {
-    return themes.wrap(
-      _AppGlassMenuHost(position: position, entries: entries, width: width),
-    );
+  Widget buildPage(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+  ) {
+    return themes.wrap(_AppGlassMenuHost(position: position, entries: entries, width: width));
   }
 
   @override
@@ -330,7 +339,11 @@ class _AppGlassMenuRoute extends PopupRoute<VoidCallback> {
     Widget child,
   ) {
     if (AppMotion.prefersReduced(context)) return child;
-    final curved = CurvedAnimation(parent: animation, curve: AppMotion.enter, reverseCurve: AppMotion.quick);
+    final curved = CurvedAnimation(
+      parent: animation,
+      curve: AppMotion.enter,
+      reverseCurve: AppMotion.quick,
+    );
     return FadeTransition(
       opacity: curved,
       child: ScaleTransition(
@@ -404,7 +417,12 @@ class _AppGlassMenuHostState extends State<_AppGlassMenuHost> {
     final RenderBox? host = context.findRenderObject() as RenderBox?;
     final RenderBox? row = rowContext.findRenderObject() as RenderBox?;
     final RenderBox? menu = _menuKey.currentContext?.findRenderObject() as RenderBox?;
-    if (host == null || row == null || menu == null || !host.hasSize || !row.hasSize || !menu.hasSize) {
+    if (host == null ||
+        row == null ||
+        menu == null ||
+        !host.hasSize ||
+        !row.hasSize ||
+        !menu.hasSize) {
       return;
     }
 
@@ -450,7 +468,10 @@ class _AppGlassMenuHostState extends State<_AppGlassMenuHost> {
       child: Stack(
         children: [
           CustomSingleChildLayout(
-            delegate: _AppGlassMenuLayout(position: widget.position, padding: MediaQuery.paddingOf(context)),
+            delegate: _AppGlassMenuLayout(
+              position: widget.position,
+              padding: MediaQuery.paddingOf(context),
+            ),
             child: AppGlassMenu(key: _menuKey, width: widget.width, entries: widget.entries),
           ),
           if (open != null)
@@ -589,12 +610,19 @@ class AppGlassMenu extends StatelessWidget {
                 children: [
                   for (final AppGlassMenuEntry entry in entries)
                     switch (entry) {
-                      final AppGlassMenuItem item =>
-                        _AppGlassMenuRow(item: item, autofocus: identical(item, firstEnabled)),
-                      final AppGlassMenuQuickBlock block =>
-                        _AppGlassMenuQuickBlock(block: block, autofocus: firstEnabled),
+                      final AppGlassMenuItem item => _AppGlassMenuRow(
+                        item: item,
+                        autofocus: identical(item, firstEnabled),
+                      ),
+                      final AppGlassMenuQuickBlock block => _AppGlassMenuQuickBlock(
+                        block: block,
+                        autofocus: firstEnabled,
+                      ),
                       final AppGlassMenuHeading heading => _AppGlassMenuHeading(heading: heading),
-                      final AppGlassMenuGrid grid => _AppGlassMenuGrid(grid: grid, autofocus: firstEnabled),
+                      final AppGlassMenuGrid grid => _AppGlassMenuGrid(
+                        grid: grid,
+                        autofocus: firstEnabled,
+                      ),
                       _ => const _AppGlassMenuRule(),
                     },
                 ],
@@ -851,8 +879,8 @@ class _AppGlassMenuRow extends StatelessWidget {
     final IconData? mark = checked == null
         ? null
         : item.radio
-            ? (checked ? Icons.radio_button_checked : Icons.radio_button_unchecked)
-            : (checked ? Icons.check_box : Icons.check_box_outline_blank);
+        ? (checked ? Icons.radio_button_checked : Icons.radio_button_unchecked)
+        : (checked ? Icons.check_box : Icons.check_box_outline_blank);
     final Color markColor = !enabled ? dim : (checked == true ? scheme.primary : ink2);
     final bool washed = checked == true && !item.radio;
 
@@ -897,14 +925,16 @@ class _AppGlassMenuRow extends StatelessWidget {
               height: hint != null
                   ? _hintHeight
                   : note == null
-                      ? AppSize.compact
-                      : _noteHeight,
+                  ? AppSize.compact
+                  : _noteHeight,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Row(
                   // A hinted row keeps its mark on the label's line, not
                   // centred against the hint under it.
-                  crossAxisAlignment: hint != null ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+                  crossAxisAlignment: hint != null
+                      ? CrossAxisAlignment.start
+                      : CrossAxisAlignment.center,
                   children: [
                     if (item.icon != null) ...[
                       Icon(item.icon, size: AppSize.iconMd, color: glyphColor),
@@ -913,7 +943,9 @@ class _AppGlassMenuRow extends StatelessWidget {
                     if (mark != null) ...[
                       SizedBox(
                         height: AppSize.compact,
-                        child: Center(child: Icon(mark, size: AppSize.iconMd, color: markColor)),
+                        child: Center(
+                          child: Icon(mark, size: AppSize.iconMd, color: markColor),
+                        ),
                       ),
                       const SizedBox(width: 8),
                     ],
@@ -968,14 +1000,14 @@ class _AppGlassMenuRow extends StatelessWidget {
                       // but the row must not be the thing that breaks.
                       Flexible(
                         child: Text(
-                        item.trailing!,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: textTheme.labelSmall!.mono.metricsOnly.copyWith(
-                          fontWeight: FontWeight.w400,
-                          color: enabled ? ink2 : dim,
+                          item.trailing!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: textTheme.labelSmall!.mono.metricsOnly.copyWith(
+                            fontWeight: FontWeight.w400,
+                            color: enabled ? ink2 : dim,
+                          ),
                         ),
-                      ),
                       ),
                     ],
                     if (submenu)
@@ -983,7 +1015,11 @@ class _AppGlassMenuRow extends StatelessWidget {
                       // the text does, so it reads as the row's end.
                       Transform.translate(
                         offset: const Offset(AppSpace.s4, 0),
-                        child: Icon(Icons.chevron_right, size: AppSize.iconMd, color: enabled ? ink2 : dim),
+                        child: Icon(
+                          Icons.chevron_right,
+                          size: AppSize.iconMd,
+                          color: enabled ? ink2 : dim,
+                        ),
                       ),
                   ],
                 ),

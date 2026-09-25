@@ -61,12 +61,15 @@ class UsageToolbar extends StatelessWidget {
         // The heavier weight for every chip: the selection moves, and the
         // track must not change width when it does.
         final chipStyle = textTheme.labelMedium!.copyWith(fontWeight: FontWeight.w600);
-        final segmentWidth = _trackChrome +
+        final segmentWidth =
+            _trackChrome +
             usagePresets.fold<double>(
               0,
-              (sum, preset) => sum + measure(usagePresetLabel(l10n, preset), chipStyle) + _chipChrome,
+              (sum, preset) =>
+                  sum + measure(usagePresetLabel(l10n, preset), chipStyle) + _chipChrome,
             );
-        final labelledClearWidth = _buttonPadding * 2 +
+        final labelledClearWidth =
+            _buttonPadding * 2 +
             AppSize.iconMd +
             _buttonIconGap +
             measure(l10n.clearAll, textTheme.labelLarge!);

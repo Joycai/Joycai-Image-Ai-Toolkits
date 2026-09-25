@@ -58,8 +58,13 @@ extension _AgentTimeline on _PromptOptimizerChatViewState {
     // work, but of work in progress it is a card that stops updating three
     // lines in.
     final expanded = live || _expandedToolGroups.contains(key);
-    final shown = expanded ? steps : steps.take(_PromptOptimizerChatViewState._collapsedStepCount).toList();
-    final canToggle = !live && groupKey != null && steps.length > _PromptOptimizerChatViewState._collapsedStepCount;
+    final shown = expanded
+        ? steps
+        : steps.take(_PromptOptimizerChatViewState._collapsedStepCount).toList();
+    final canToggle =
+        !live &&
+        groupKey != null &&
+        steps.length > _PromptOptimizerChatViewState._collapsedStepCount;
 
     final images = steps.where((e) => e.toolName == 'view_image').length;
     final docs = steps.where((e) => e.toolName == 'read_knowledge_file').length;
@@ -69,8 +74,8 @@ extension _AgentTimeline on _PromptOptimizerChatViewState {
     ].join(' · ');
 
     void toggle() => _rebuild(() {
-          if (!_expandedToolGroups.remove(key)) _expandedToolGroups.add(key);
-        });
+      if (!_expandedToolGroups.remove(key)) _expandedToolGroups.add(key);
+    });
 
     return _underAvatar(
       _card(
@@ -85,9 +90,7 @@ extension _AgentTimeline on _PromptOptimizerChatViewState {
                   TextSpan(
                     children: [
                       TextSpan(
-                        text: live
-                            ? l10n.optAgentStepsRunning
-                            : l10n.optAgentSteps(steps.length),
+                        text: live ? l10n.optAgentStepsRunning : l10n.optAgentSteps(steps.length),
                         style: _cardTitleStyle,
                       ),
                       if (!live && detail.isNotEmpty) ...[
@@ -113,9 +116,7 @@ extension _AgentTimeline on _PromptOptimizerChatViewState {
               if (canToggle) ...[
                 const SizedBox(width: 8),
                 _textAction(
-                  expanded
-                      ? l10n.optAgentStepsCollapse
-                      : l10n.optAgentStepsExpand(steps.length),
+                  expanded ? l10n.optAgentStepsCollapse : l10n.optAgentStepsExpand(steps.length),
                   toggle,
                 ),
               ],
@@ -162,18 +163,15 @@ extension _AgentTimeline on _PromptOptimizerChatViewState {
   /// row listens to that count: it ticks per fragment, and rebuilding the
   /// whole transcript that often is the cost the notifier exists to avoid.
   Widget _buildWorkingStep(AppLocalizations l10n, ColorScheme colorScheme) {
-    final style = Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: colorScheme.accentText,
-          fontWeight: FontWeight.w500,
-        );
+    final style = Theme.of(
+      context,
+    ).textTheme.bodySmall?.copyWith(color: colorScheme.accentText, fontWeight: FontWeight.w500);
     Widget label(int? chars) => Text(
-          chars == null || chars <= 0
-              ? l10n.optAgentStepWorking
-              : l10n.optAgentStepStreaming(chars),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: style,
-        );
+      chars == null || chars <= 0 ? l10n.optAgentStepWorking : l10n.optAgentStepStreaming(chars),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: style,
+    );
     final progress = _session?.streamingToolArgumentChars;
 
     return Padding(
@@ -216,9 +214,9 @@ extension _AgentTimeline on _PromptOptimizerChatViewState {
               _toolLabel(entry, l10n),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
             ),
           ),
         ],
@@ -284,7 +282,8 @@ class _ElapsedLabelState extends State<_ElapsedLabel> {
           ? l10n.optElapsedSeconds(seconds)
           : l10n.optElapsedMinutes(seconds ~/ 60, seconds % 60),
       maxLines: 1,
-      style: widget.style ??
+      style:
+          widget.style ??
           theme.textTheme.labelSmall?.mono.copyWith(
             fontWeight: FontWeight.w400,
             color: theme.colorScheme.onSurfaceVariant,

@@ -42,13 +42,15 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
 
-    await tester.pumpWidget(MaterialApp(
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: Scaffold(
-        body: KnowledgeTreePanel(kbPath: path ?? root.path, pendingKbEdits: pending),
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: KnowledgeTreePanel(kbPath: path ?? root.path, pendingKbEdits: pending),
+        ),
       ),
-    ));
+    );
     // The walk is deliberately off the build path — a zero-duration timer, so
     // the clock has to move before anything can be asserted about the rows.
     // Fixed pumps rather than pumpAndSettle: a scan in flight draws a
@@ -59,22 +61,19 @@ void main() {
   }
 
   /// A staged edit, built the way the agent builds one.
-  OptimizerChatEntry edit(String path, {String? oldContent}) =>
-      OptimizerChatEntry(
-        kind: OptimizerEntryKind.kbEdit,
-        text: path,
-        editId: 'e_$path',
-        targetPath: path,
-        newContent: '# new',
-        oldContent: oldContent,
-        editState: KbEditState.pending,
-      );
+  OptimizerChatEntry edit(String path, {String? oldContent}) => OptimizerChatEntry(
+    kind: OptimizerEntryKind.kbEdit,
+    text: path,
+    editId: 'e_$path',
+    targetPath: path,
+    newContent: '# new',
+    oldContent: oldContent,
+    editState: KbEditState.pending,
+  );
 
   /// Row labels in the order they are drawn.
-  List<String> rowsOf(WidgetTester tester) => tester
-      .widgetList<Text>(find.byType(Text))
-      .map((t) => t.data ?? '')
-      .toList();
+  List<String> rowsOf(WidgetTester tester) =>
+      tester.widgetList<Text>(find.byType(Text)).map((t) => t.data ?? '').toList();
 
   testWidgets('a chevron turns only for the folder that was clicked', (tester) async {
     // Rows shift when a folder closes; unkeyed, the folder that slid into an
@@ -94,10 +93,12 @@ void main() {
     await tester.tap(find.text('a'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 30));
-    final bChevron = tester.widget<RotationTransition>(find.descendant(
-      of: find.ancestor(of: find.text('b'), matching: find.byType(KeyedSubtree)).first,
-      matching: find.byType(RotationTransition),
-    ));
+    final bChevron = tester.widget<RotationTransition>(
+      find.descendant(
+        of: find.ancestor(of: find.text('b'), matching: find.byType(KeyedSubtree)).first,
+        matching: find.byType(RotationTransition),
+      ),
+    );
     expect(bChevron.turns.value, 0, reason: 'b never opened, so its chevron never moves');
     await tester.pump(const Duration(milliseconds: 300));
   });
@@ -168,10 +169,13 @@ void main() {
     writeFile('b.md');
     final l10n = await en();
 
-    await pumpTree(tester, pending: [
-      edit('a.md', oldContent: '# old'),
-      edit('c.md'),
-    ]);
+    await pumpTree(
+      tester,
+      pending: [
+        edit('a.md', oldContent: '# old'),
+        edit('c.md'),
+      ],
+    );
     expect(find.text(l10n.optKbTreePending(2)), findsOneWidget);
   });
 

@@ -35,8 +35,7 @@ class RuntimeInfo {
   final String dataDirectory;
 
   /// `4.0.0 (build 0)`.
-  String get versionLine =>
-      buildNumber.isEmpty ? version : '$version (build $buildNumber)';
+  String get versionLine => buildNumber.isEmpty ? version : '$version (build $buildNumber)';
 
   /// The block the Copy button writes.
   ///
@@ -45,11 +44,11 @@ class RuntimeInfo {
   /// copied it — the same reason the editor prints token counts in mono
   /// rather than in words.
   String get report => <String>[
-        'Version: $versionLine',
-        'Engine: $engine',
-        'Platform: $platform',
-        'Data directory: $dataDirectory',
-      ].join('\n');
+    'Version: $versionLine',
+    'Engine: $engine',
+    'Platform: $platform',
+    'Data directory: $dataDirectory',
+  ].join('\n');
 
   /// Reads the running app.
   static Future<RuntimeInfo> load() async {

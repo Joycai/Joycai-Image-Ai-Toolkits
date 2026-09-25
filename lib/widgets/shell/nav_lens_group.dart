@@ -66,11 +66,13 @@ class NavLensGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final current = AppDestination.values[
-        context.select<AppState, int>((s) => s.activeScreenIndex)];
-    final queueCount = context.select<TaskQueueService, int>((q) => q.queue
-        .where((t) => t.status == TaskStatus.pending || t.status == TaskStatus.processing)
-        .length);
+    final current =
+        AppDestination.values[context.select<AppState, int>((s) => s.activeScreenIndex)];
+    final queueCount = context.select<TaskQueueService, int>(
+      (q) => q.queue
+          .where((t) => t.status == TaskStatus.pending || t.status == TaskStatus.processing)
+          .length,
+    );
     final scheme = Theme.of(context).colorScheme;
     final edge = GlassInk.maybeOf(context)?.edge ?? scheme.outlineVariant;
 
@@ -82,18 +84,22 @@ class NavLensGroup extends StatelessWidget {
     final cells = <Widget>[];
     for (int i = 0; i < destinations.length; i++) {
       if (i == settingsAt) {
-        cells.add(Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: SizedBox(width: 1, height: 16, child: ColoredBox(color: edge)),
-        ));
+        cells.add(
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: SizedBox(width: 1, height: 16, child: ColoredBox(color: edge)),
+          ),
+        );
       }
       final d = destinations[i];
-      cells.add(_NavLens(
-        destination: d,
-        selected: d == current,
-        badge: d.showsQueueBadge ? queueCount : 0,
-        density: density,
-      ));
+      cells.add(
+        _NavLens(
+          destination: d,
+          selected: d == current,
+          badge: d.showsQueueBadge ? queueCount : 0,
+          density: density,
+        ),
+      );
     }
 
     return SizedBox(
@@ -225,21 +231,18 @@ class _NavBadge extends StatelessWidget {
     return Container(
       constraints: const BoxConstraints(minWidth: 14, minHeight: 14, maxHeight: 14),
       padding: const EdgeInsets.symmetric(horizontal: 3),
-      decoration: BoxDecoration(
-        color: scheme.primary,
-        borderRadius: BorderRadius.circular(7),
-      ),
+      decoration: BoxDecoration(color: scheme.primary, borderRadius: BorderRadius.circular(7)),
       child: Center(
         widthFactor: 1,
         heightFactor: 1,
         child: Text(
-        '$count',
-        style: Theme.of(context).textTheme.labelSmall!.mono.copyWith(
-              color: scheme.onPrimary,
-              fontWeight: FontWeight.w600,
-              height: 1,
-              letterSpacing: 0,
-            ),
+          '$count',
+          style: Theme.of(context).textTheme.labelSmall!.mono.copyWith(
+            color: scheme.onPrimary,
+            fontWeight: FontWeight.w600,
+            height: 1,
+            letterSpacing: 0,
+          ),
         ),
       ),
     );

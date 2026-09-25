@@ -41,7 +41,10 @@ Widget appReorderLiftDecorator(
                 child: Padding(
                   padding: slotPadding,
                   child: DecoratedBox(
-                    decoration: BoxDecoration(borderRadius: borderRadius, boxShadow: appDragShadow(context, t: t)),
+                    decoration: BoxDecoration(
+                      borderRadius: borderRadius,
+                      boxShadow: appDragShadow(context, t: t),
+                    ),
                   ),
                 ),
               ),
@@ -55,7 +58,9 @@ Widget appReorderLiftDecorator(
                       decoration: BoxDecoration(
                         borderRadius: borderRadius,
                         border: Border.all(
-                          color: reduced ? scheme.primary : Color.lerp(scheme.outlineVariant, scheme.primary, t)!,
+                          color: reduced
+                              ? scheme.primary
+                              : Color.lerp(scheme.outlineVariant, scheme.primary, t)!,
                           width: reduced ? 2 : 1,
                         ),
                       ),
@@ -86,5 +91,6 @@ class AppLongPressDragStartListener extends ReorderableDelayedDragStartListener 
   static const Duration delay = Duration(milliseconds: 300);
 
   @override
-  MultiDragGestureRecognizer createRecognizer() => DelayedMultiDragGestureRecognizer(delay: delay, debugOwner: this);
+  MultiDragGestureRecognizer createRecognizer() =>
+      DelayedMultiDragGestureRecognizer(delay: delay, debugOwner: this);
 }

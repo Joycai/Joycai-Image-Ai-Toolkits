@@ -25,27 +25,28 @@ void main() {
     final gallery = appState.galleryState
       ..clearDroppedImages()
       ..setViewMode(GalleryViewMode.temp);
-    await tester.pumpWidget(MultiProvider(
-      providers: [
-        ChangeNotifierProvider<AppState>.value(value: appState),
-        ChangeNotifierProvider<GalleryState>.value(value: gallery),
-        ChangeNotifierProvider.value(value: appState.workbenchUIState),
-      ],
-      child: const MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: Scaffold(body: Gallery()),
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<AppState>.value(value: appState),
+          ChangeNotifierProvider<GalleryState>.value(value: gallery),
+          ChangeNotifierProvider.value(value: appState.workbenchUIState),
+        ],
+        child: const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(body: Gallery()),
+        ),
       ),
-    ));
+    );
     await tester.pump();
     return gallery;
   }
 
   double gridOpacity(WidgetTester tester) => tester
-      .widget<Opacity>(find.ancestor(
-        of: find.byType(CustomScrollView),
-        matching: find.byType(Opacity),
-      ).first)
+      .widget<Opacity>(
+        find.ancestor(of: find.byType(CustomScrollView), matching: find.byType(Opacity)).first,
+      )
       .opacity;
 
   testWidgets('the grid fades in over a placeholder, and does not fade again', (tester) async {
@@ -54,7 +55,11 @@ void main() {
 
     gallery.addDroppedFiles([AppImage(path: '/nowhere/a.png', name: 'a.png')]);
     await tester.pump();
-    expect(gridOpacity(tester), lessThan(0.2), reason: 'the first frame of the grid is still faint');
+    expect(
+      gridOpacity(tester),
+      lessThan(0.2),
+      reason: 'the first frame of the grid is still faint',
+    );
     await tester.pump(const Duration(milliseconds: 90));
     final mid = gridOpacity(tester);
     expect(mid, inExclusiveRange(0.2, 1.0));
@@ -65,8 +70,11 @@ void main() {
     gallery.addDroppedFiles([AppImage(path: '/nowhere/b.png', name: 'b.png')]);
     await tester.pump();
     expect(gridOpacity(tester), 1.0, reason: 'more images in a grid already up is not a reveal');
-    expect(tester.element(find.byType(CustomScrollView)), same(scroller),
-        reason: 'and the grid is not remounted');
+    expect(
+      tester.element(find.byType(CustomScrollView)),
+      same(scroller),
+      reason: 'and the grid is not remounted',
+    );
 
     // Thumbnail loads leave timers behind; let them run out.
     await tester.pumpWidget(const SizedBox());
@@ -75,8 +83,9 @@ void main() {
 
   testWidgets('under reduce-motion the grid appears at once', (tester) async {
     final gallery = await pump(tester);
-    tester.platformDispatcher.accessibilityFeaturesTestValue =
-        const FakeAccessibilityFeatures(disableAnimations: true);
+    tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures(
+      disableAnimations: true,
+    );
     addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
     gallery.addDroppedFiles([AppImage(path: '/nowhere/a.png', name: 'a.png')]);
     await tester.pump();

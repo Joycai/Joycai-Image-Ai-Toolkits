@@ -115,29 +115,26 @@ class _AppRunConsoleState extends State<AppRunConsole> {
     final tail = (!hasTasks && !isMobile) ? lastLog : null;
 
     Widget statusBar({required bool topRule}) => _StatusBar(
-          height: isMobile ? AppSize.large : AppSize.control,
-          topRule: topRule,
-          hasErrors: hasErrors,
-          isProcessing: isProcessing,
-          summary: _summary(runningCount, pendingCount, avgProgress, hasErrors ? failedCount : 0, l10n),
-          tail: tail,
-          // On a phone the strip opens the queue sheet, which rises; on a
-          // desktop it discloses the log panel above-and-below it.
-          chevron: (!isMobile && isConsoleExpanded) ? Icons.expand_more : Icons.expand_less,
-          onTap: () {
-            if (isMobile) {
-              widget.onExpand(context);
-            } else {
-              context.read<AppState>().setConsoleExpanded(!isConsoleExpanded);
-            }
-          },
-        );
+      height: isMobile ? AppSize.large : AppSize.control,
+      topRule: topRule,
+      hasErrors: hasErrors,
+      isProcessing: isProcessing,
+      summary: _summary(runningCount, pendingCount, avgProgress, hasErrors ? failedCount : 0, l10n),
+      tail: tail,
+      // On a phone the strip opens the queue sheet, which rises; on a
+      // desktop it discloses the log panel above-and-below it.
+      chevron: (!isMobile && isConsoleExpanded) ? Icons.expand_more : Icons.expand_less,
+      onTap: () {
+        if (isMobile) {
+          widget.onExpand(context);
+        } else {
+          context.read<AppState>().setConsoleExpanded(!isConsoleExpanded);
+        }
+      },
+    );
 
     if (isMobile) {
-      return Material(
-        color: colorScheme.surfaceContainerLow,
-        child: statusBar(topRule: true),
-      );
+      return Material(color: colorScheme.surfaceContainerLow, child: statusBar(topRule: true));
     }
 
     // Desktop: a strip across the bottom of the window, flush with the
@@ -156,8 +153,10 @@ class _AppRunConsoleState extends State<AppRunConsole> {
             // the panel started moving the instant the pointer reversed, with
             // the pointer still 200px from the handle.
             onDrag: (dy) => setState(() {
-              _dragHeight = ((_dragHeight ?? _height) - dy)
-                  .clamp(100.0 - _kDragSlack, 600.0 + _kDragSlack);
+              _dragHeight = ((_dragHeight ?? _height) - dy).clamp(
+                100.0 - _kDragSlack,
+                600.0 + _kDragSlack,
+              );
               _height = _dragHeight!.clamp(100.0, 600.0);
             }),
             onDragEnd: () {
@@ -187,10 +186,7 @@ class _AppRunConsoleState extends State<AppRunConsole> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             const Divider(height: 1),
-                            SizedBox(
-                              height: _height,
-                              child: const LogConsoleWidget(),
-                            ),
+                            SizedBox(height: _height, child: const LogConsoleWidget()),
                           ],
                         )
                       : const SizedBox(width: double.infinity),
@@ -293,7 +289,9 @@ class _StatusBar extends StatelessWidget {
       child: Container(
         height: height,
         decoration: topRule
-            ? BoxDecoration(border: Border(top: BorderSide(color: colorScheme.outlineVariant)))
+            ? BoxDecoration(
+                border: Border(top: BorderSide(color: colorScheme.outlineVariant)),
+              )
             : null,
         padding: const EdgeInsets.symmetric(horizontal: 12),
         child: Row(
@@ -328,7 +326,8 @@ class _StatusBar extends StatelessWidget {
                         ),
                       ),
                     ),
-                  if (summary != null && tail != null) const SizedBox(width: _AppRunConsoleState._kGap),
+                  if (summary != null && tail != null)
+                    const SizedBox(width: _AppRunConsoleState._kGap),
                   if (tail != null)
                     Expanded(
                       child: Text(
@@ -339,7 +338,9 @@ class _StatusBar extends StatelessWidget {
                         textAlign: TextAlign.right,
                         style: textTheme.labelSmall?.mono.copyWith(
                           fontWeight: FontWeight.w400,
-                          color: tail.level == 'ERROR' ? colorScheme.error : colorScheme.onSurfaceVariant,
+                          color: tail.level == 'ERROR'
+                              ? colorScheme.error
+                              : colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ),
