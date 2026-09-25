@@ -19,7 +19,9 @@ import 'package:flutter_test/flutter_test.dart';
 /// has — which is what the `??` exemption below is for.
 void main() {
   final constructs = RegExp(r'\b(DatabaseService(\.\w+)?|[A-Z]\w*Repository)\s*\(');
-  final injectionDefault = RegExp(r'\?\?\s*$');
+  // `<parameter> ?? ` right before it: a named identifier, so `null ??` and
+  // an expression do not pass.
+  final injectionDefault = RegExp(r'\b(?!null\b)[a-z]\w*\s*\?\?\s*$');
 
   test('screens and widgets construct no DatabaseService or repository', () {
     final offenders = <String>[];

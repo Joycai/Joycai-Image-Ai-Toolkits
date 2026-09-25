@@ -62,14 +62,18 @@ void main() {
 
   test('a rename the disk refuses leaves the layer rows where they were', () async {
     final (base, top) = await saveSet();
-    final missing = p.join(dir.path, 'missing.png');
+    // The row stays; the file goes, so the rename itself is what fails. A
+    // path with no row would pass this whichever order the two steps ran in.
+    File(top).deleteSync();
 
     await expectLater(
-      FileRenameService.rename(missing, 'moved.png', database: db),
+      FileRenameService.rename(top, 'moved.png', database: db),
       throwsA(isA<FileSystemException>()),
     );
 
-    final set = await layers.setFor(base);
-    expect(set!.layers.map((l) => l.path), [base, top]);
+    expect(ImageLayerRepository.layeredPaths.value.keys, containsAll([base, top]));
+    expect(ImageLayerRepository.layeredPaths.value, isNot(contains(p.join(dir.path, 'moved.png'))));
+    final rows = await (await db.database).query('image_layers', columns: ['path']);
+    expect(rows.map((r) => r['path']), containsAll([base, top]));
   });
 }

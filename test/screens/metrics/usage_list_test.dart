@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
@@ -96,6 +98,7 @@ void main() {
     List<TokenUsage> rows,
     Size size, {
     bool hasMore = false,
+    Future<void> Function(String modelId)? onClearModelUsage,
   }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0;
@@ -109,7 +112,7 @@ void main() {
           body: SingleChildScrollView(
             child: UsageList(
               usageData: rows,
-              onClearModelUsage: (_) async {},
+              onClearModelUsage: onClearModelUsage ?? (_) async {},
               hasMore: hasMore,
               isLoadingMore: false,
               onLoadMore: () {},
@@ -138,6 +141,40 @@ void main() {
       expect(find.text('Yesterday'), findsOneWidget);
     });
   }
+
+  testWidgets('clearing a model closes the dialog before the reload lands', (tester) async {
+    // The reload behind the clear swaps the list for a loading card, which
+    // unmounts the row the dialog was opened from; a pop that waited for it
+    // found no context to pop through and the dialog stayed open for good.
+    final cleared = Completer<void>();
+    String? clearedModel;
+    await pumpList(
+      tester,
+      [tokenRow(timestamp: todayAt(14))],
+      const Size(1920, 1080),
+      onClearModelUsage: (modelId) {
+        clearedModel = modelId;
+        return cleared.future;
+      },
+    );
+
+    await tester.tap(find.text('claude-sonnet-5'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Clear Model Data'));
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Clear Model Data'),
+      findsNWidgets(2),
+      reason: 'the row button and the dialog',
+    );
+
+    await tester.tap(find.text('Clear Model Data').last);
+    await tester.pumpAndSettle();
+
+    expect(clearedModel, 'claude-sonnet-5');
+    expect(cleared.isCompleted, isFalse);
+    expect(find.text('Clear Model Data'), findsOneWidget, reason: 'the dialog is gone');
+  });
 
   testWidgets('groups records under the day they happened', (tester) async {
     await pumpList(tester, [
