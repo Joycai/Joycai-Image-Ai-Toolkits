@@ -201,6 +201,47 @@ void main() {
       expect(keys, isNot(contains('result_cache_directory')));
       await db.close();
     });
+
+    test('keeps the paths this machine had when directories are excluded', () async {
+      final db = await openTestDb();
+      await db.insert('settings', {'key': 'output_directory', 'value': '/this/machine/out'});
+      await db.insert('settings', {
+        'key': 'result_cache_directory',
+        'value': '/this/machine/cache',
+      });
+      await db.insert('settings', {'key': 'image_prefix', 'value': 'old'});
+
+      await db.transaction((txn) async {
+        await DatabaseService().restoreBackupInto(txn, backupFile(), includeDirectories: false);
+      });
+
+      final settings = {
+        for (final row in await db.query('settings')) row['key'] as String: row['value'],
+      };
+      // The file's paths are not applied, and the wipe does not take the live
+      // ones with it -- the same rule as `source_directories`.
+      expect(settings['output_directory'], '/this/machine/out');
+      expect(settings['result_cache_directory'], '/this/machine/cache');
+      // Everything else still comes from the file.
+      expect(settings['image_prefix'], 'result');
+      await db.close();
+    });
+
+    test('takes the paths from the file when directories are included', () async {
+      final db = await openTestDb();
+      await db.insert('settings', {'key': 'output_directory', 'value': '/this/machine/out'});
+
+      await db.transaction((txn) async {
+        await DatabaseService().restoreBackupInto(txn, backupFile(), includeDirectories: true);
+      });
+
+      final settings = {
+        for (final row in await db.query('settings')) row['key'] as String: row['value'],
+      };
+      expect(settings['output_directory'], '/other/machine/out');
+      expect(settings['result_cache_directory'], '/other/machine/cache');
+      await db.close();
+    });
   });
 
   group('restore prompts', () {

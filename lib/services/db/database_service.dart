@@ -634,14 +634,18 @@ class DatabaseService {
     // rather than overwriting working keys with the blanks from the file.
     final preservedKeys = await _collectChannelKeys(txn);
     final preservedSecrets = {
-      for (final row in await txn.query(
-        'settings',
-        where: 'key IN (${List.filled(secretSettingKeys.length, '?').join(', ')})',
-        whereArgs: secretSettingKeys.toList(),
-      ))
+      for (final row in await _querySettings(txn, secretSettingKeys))
         if ((row['value'] as String? ?? '').isNotEmpty)
           row['key'] as String: row['value'] as String,
     };
+    // Leaving directories out means the file's paths are not applied, so the
+    // ones this machine has must survive the wipe: `clearAllData` empties the
+    // whole settings table, and the file's rows are filtered below. The
+    // `source_directories` table already gets this treatment by being cleared
+    // only when directories are included.
+    final preservedDirectories = includeDirectories
+        ? const <Map<String, Object?>>[]
+        : await _querySettings(txn, _directorySettingKeys);
 
     await clearAllData(
       txn,
@@ -707,10 +711,25 @@ class DatabaseService {
         'value': entry.value,
       }, conflictAlgorithm: ConflictAlgorithm.replace);
     }
+    for (final row in preservedDirectories) {
+      await txn.insert('settings', {
+        'key': row['key'],
+        'value': row['value'],
+      }, conflictAlgorithm: ConflictAlgorithm.replace);
+    }
 
     if (includeDirectories && data['source_directories'] != null) {
       await _importSimpleTable(txn, 'source_directories', data['source_directories']);
     }
+  }
+
+  /// The `settings` rows whose key is in [keys].
+  Future<List<Map<String, Object?>>> _querySettings(DatabaseExecutor txn, Set<String> keys) {
+    return txn.query(
+      'settings',
+      where: 'key IN (${List.filled(keys.length, '?').join(', ')})',
+      whereArgs: keys.toList(),
+    );
   }
 
   Future<void> importPromptData(Map<String, dynamic> data, {bool replace = false}) async {
