@@ -69,6 +69,9 @@ linter:
     # A future dropped on the floor is either a missing `await` or a
     # deliberate fire-and-forget; `unawaited(...)` says which.
     - unawaited_futures
+    # Effective Dart: an async member that returns nothing returns
+    # `Future<void>`, so a caller can await it and see its errors.
+    - avoid_void_async
 
 # `dart format` with Flutter's own setting (flutter/flutter's
 # analysis_options_common.yaml). CI fails on an unformatted file.

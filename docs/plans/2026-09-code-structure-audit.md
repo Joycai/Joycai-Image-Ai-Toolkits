@@ -37,7 +37,7 @@
 |---|---|---|---|
 | 1 | 单屏 widget 归位：`widgets/dialogs/{library,prompt_history}_dialog` → `screens/workbench/widgets/config/`；`widgets/placeholders/permission_placeholder` → `screens/workbench/widgets/gallery/`；`widgets/dialogs/task_log_dialog` → `screens/batch/`；`widgets/models/{channel_avatar,channel_edit_dialog,channel_probe_result_card,channel_route_table,channel_wizard_dialog,channel_wizard/,discovery_dialog}` → `screens/models/widgets/`。测试跟着镜像；`source_layout_test` 新增断言（设计系统除外，`main.dart` 视为外壳而非 screen） | 双闸门绿；新断言在迁移前能失败 | 已做 |
 | 2 | 合并 `modelKindIcon`：编辑器改用 `widgets/ui/model_tag_chip.dart` 那份（卡片用的就是它；编辑器注释本就写着「卡片那一个」） | 双闸门绿 | 已做 |
-| 3 | lint：`directives_ordering` `prefer_relative_imports` ~~`omit_local_variable_types`~~ `unnecessary_lambdas` `prefer_final_in_for_each` `prefer_const_constructors` `prefer_const_declarations` `prefer_const_literals_to_create_immutables` `use_colored_box` `use_decorated_box` `avoid_multiple_declarations_per_line` `unawaited_futures`；`dart fix --apply` + 手工逐处（`unawaited_futures` 每处判断是漏了 `await` 还是有意不等） | `flutter analyze` 零问题；测试数不变 | 已做 |
+| 3 | lint（review 后加 `avoid_void_async`）：`directives_ordering` `prefer_relative_imports` ~~`omit_local_variable_types`~~ `unnecessary_lambdas` `prefer_final_in_for_each` `prefer_const_constructors` `prefer_const_declarations` `prefer_const_literals_to_create_immutables` `use_colored_box` `use_decorated_box` `avoid_multiple_declarations_per_line` `unawaited_futures`；`dart fix --apply` + 手工逐处（`unawaited_futures` 每处判断是漏了 `await` 还是有意不等） | `flutter analyze` 零问题；测试数不变 | 已做 |
 | 4 | `dart format`：`analysis_options.yaml` 加 `formatter: page_width: 100`，全仓格式化一次（单独一个提交，只有格式），`.git-blame-ignore-revs` 记下它；CI 加格式闸门；CLAUDE.md 的闸门一节同步 | `dart format --set-exit-if-changed lib test tool` 通过 | 已做 |
 | 5 | 去掉 `cupertino_icons` | `flutter pub get` + 双闸门绿 | 已做 |
 | 6 | 收尾：review 循环、台账一行、删除本文件、bump version、开 PR | — | 待做 |
@@ -48,7 +48,7 @@
 
 - 片 1：迁移前新断言列出的正是 14 个文件（含 `channel_wizard/` 四个 part），迁移后通过。
   `test/screenshots/shortcut_panel_test.dart` 有三个用例在本机失败（`widgets/shell/shortcut_panel.dart:364`
-  的 Row 溢出 49px）——在基线 `6231534` 上同样失败，与本轮无关，本机 Flutter 3.47.5，不在这一轮修。
+  的 Row 溢出 49px）——在基线 `6231534` 上同样失败，与本轮无关；`main` 上的 #346 已修，合入后消失。
 - 片 2：两份的差别只在编辑器那份不转小写、未知 kind 落到 `forum`（卡片落到 `memory`）。编辑器的
   `tag` 来自 `model?.tag ?? 'chat'`，四个已知 kind 的图标两份相同；只有库里残留的未知 tag 会从
   `forum` 变成 `memory`——即与卡片一致，这正是编辑器注释要的。台账「还欠的」对应条目已销。
@@ -66,8 +66,18 @@
   「启动任务失败」报出来）。
   全量测试第一次跑时 `test/services/tasks/image_stream_save_test.dart` 的「fails after an image」失败一次，
   单独连跑六次全过：它在任务状态变 `failed` 后立刻断言用量行，而用量是异步落库的，高负载下会晚到——测试自身的
-  竞态，与本片无关（`unawaited` 是恒等函数），另开任务。
+  竞态，与本片无关（`unawaited` 是恒等函数）；`main` 上的 #347 已修。
 - 片 4：格式化后 10 处单行 `if` 被折成多行，触发 `curly_braces_in_flow_control_structures`，`dart fix` 补括号
   后并进同一个纯格式提交 `8fc956d`，记进 `.git-blame-ignore-revs`（本仓库用 merge commit 合 PR，SHA 会保留）。
   `flutter gen-l10n` 读同一份 formatter 设置，重新生成后格式检查仍是 0 改动，CI 里放在 gen-l10n 之后没问题。
   CLAUDE.md 的闸门从两道变三道（gate 0 = format）；两个写代码的项目 skill 的检查清单同步。
+- **Review 第 1 轮（4 条）**：
+  ① 分支落后 `main`（#346 / #347），合入后那四个文件没按行宽 100 格式化，CI 的格式闸门会挂——merge（不 rebase，
+  否则 `8fc956d` 变了）、冲突的 `keyboard_section.dart` 我方只有格式改动，取 `main` 的；格式化单独一个提交
+  `88767ce` 记进 `.git-blame-ignore-revs`。
+  ② **片 3 的一处 `use_decorated_box` 不等价**：`wizard_form_steps.dart` 的线路列表带 `Border.all`，`Container`
+  会按边框宽度给子组件让出 1px（`BoxDecoration.padding`），`DecoratedBox` 不会——每行贴到外框上、行间分隔线压住
+  外框。补显式 `Padding(EdgeInsets.all(1))`；`channel_wizard_dialog_test` 加一条量位置的用例，修前失败
+  （`536,661` 对 `537,662`）、修后通过。其余三处替换没有边框，等价。之前「行为不变」的说法对这一处不成立。
+  ③ `source_layout_test` 的提示语里 `channel_avatar` 的旧路径。
+  ④ `prompts_screen.dart` 还有五个 `void … async`（全仓仅此五处），加 `avoid_void_async` 并改成 `Future<void>`。

@@ -273,6 +273,38 @@ void main() {
       expect(find.text('POST https://api.minimaxi.com/anthropic/v1/messages'), findsOneWidget);
     });
 
+    testWidgets('the route rows sit inside the list\'s 1px border', (tester) async {
+      await _pumpWizard(tester);
+      await _selectProvider(tester, 'MiniMax');
+      await _tapText(tester, 'Next');
+
+      final route = find.text('POST https://api.minimaxi.com/v1/chat/completions');
+      final box = find.ancestor(
+        of: route,
+        matching: find.byWidgetPredicate(
+          (w) =>
+              w is DecoratedBox &&
+              w.decoration is BoxDecoration &&
+              (w.decoration as BoxDecoration).color != null &&
+              ((w.decoration as BoxDecoration).border as Border?)?.isUniform == true,
+        ),
+      );
+      final row = find.ancestor(
+        of: route,
+        matching: find.byWidgetPredicate(
+          (w) =>
+              w is Container &&
+              w.padding == const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        ),
+      );
+      expect(box, findsOneWidget);
+      expect(row, findsOneWidget);
+      // The rows' own top-border separators would otherwise draw over the
+      // outer border, and the text would sit 1px up and left.
+      expect(tester.getTopLeft(row), tester.getTopLeft(box) + const Offset(1, 1));
+      expect(tester.getTopRight(row).dx, tester.getTopRight(box).dx - 1);
+    });
+
     testWidgets('Google lists its native and OpenAI-compatible routes', (tester) async {
       await _pumpWizard(tester);
       await _selectProvider(tester, 'Google GenAI');

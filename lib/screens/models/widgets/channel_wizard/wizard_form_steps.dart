@@ -86,55 +86,60 @@ extension _FormSteps on _ChannelWizardDialogState {
             borderRadius: BorderRadius.circular(AppRadius.control),
             border: Border.all(color: scheme.outlineVariant),
           ),
-          child: Column(
-            children: [
-              for (final (i, e) in routes.entries.indexed)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpace.s10,
-                    vertical: AppSpace.s6,
-                  ),
-                  decoration: BoxDecoration(
-                    border: i == 0 ? null : Border(top: BorderSide(color: scheme.outlineVariant)),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.check_circle, size: AppSize.iconSm, color: scheme.primary),
-                      const SizedBox(width: AppSpace.s6),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              i == 0
-                                  ? '${routeLabel(l10n, e.kind)} · ${l10n.routePrimarySuffix}'
-                                  : routeLabel(l10n, e.kind),
-                              style: theme.textTheme.labelMedium?.copyWith(
-                                color: scheme.onSurface,
-                                fontWeight: i == 0 ? FontWeight.w600 : FontWeight.w500,
-                              ),
-                            ),
-                            Text(
-                              'POST ${LLMDispatcher.chatRequestUrl(e.kind.face, routes.addressOf(e.kind)!)}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.textTheme.labelSmall?.mono.copyWith(
-                                color: scheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      // `4b`: what this route carries beyond the protocol's
-                      // standard part, one word each.
-                      for (final word in _routeFeatureWords(l10n, routes, e.kind)) ...[
+          // Inside the border, as a Container would have put the rows; the
+          // rows' own top-border separators must not draw over it.
+          child: Padding(
+            padding: const EdgeInsets.all(1),
+            child: Column(
+              children: [
+                for (final (i, e) in routes.entries.indexed)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpace.s10,
+                      vertical: AppSpace.s6,
+                    ),
+                    decoration: BoxDecoration(
+                      border: i == 0 ? null : Border(top: BorderSide(color: scheme.outlineVariant)),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.check_circle, size: AppSize.iconSm, color: scheme.primary),
                         const SizedBox(width: AppSpace.s6),
-                        AppRouteBadge(label: word, state: RouteBadgeState.quiet),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                i == 0
+                                    ? '${routeLabel(l10n, e.kind)} · ${l10n.routePrimarySuffix}'
+                                    : routeLabel(l10n, e.kind),
+                                style: theme.textTheme.labelMedium?.copyWith(
+                                  color: scheme.onSurface,
+                                  fontWeight: i == 0 ? FontWeight.w600 : FontWeight.w500,
+                                ),
+                              ),
+                              Text(
+                                'POST ${LLMDispatcher.chatRequestUrl(e.kind.face, routes.addressOf(e.kind)!)}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.labelSmall?.mono.copyWith(
+                                  color: scheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        // `4b`: what this route carries beyond the protocol's
+                        // standard part, one word each.
+                        for (final word in _routeFeatureWords(l10n, routes, e.kind)) ...[
+                          const SizedBox(width: AppSpace.s6),
+                          AppRouteBadge(label: word, state: RouteBadgeState.quiet),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         ),
         const SizedBox(height: AppSpace.s6),

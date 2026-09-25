@@ -285,7 +285,7 @@ void main() {
           '  ${violations.join('\n  ')}\n\n'
           'Either the primitive is not one — move it to the feature folder that '
           'owns it — or the thing it needs belongs lower down. `TagAvatar` came '
-          'out of `widgets/models/channel_avatar.dart` because the picker only '
+          'out of `screens/models/widgets/channel_avatar.dart` because the picker only '
           'ever needed the bare-string half.',
     );
   });

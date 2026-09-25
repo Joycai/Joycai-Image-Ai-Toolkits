@@ -611,17 +611,21 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
 
   // --- Dialog wrappers: delegate to prompt_dialogs.dart, then reload on change ---
 
-  void _confirmDelete(AppLocalizations l10n, dynamic prompt, {required bool isSystem}) async {
+  Future<void> _confirmDelete(
+    AppLocalizations l10n,
+    dynamic prompt, {
+    required bool isSystem,
+  }) async {
     final deleted = await showDeletePromptConfirm(context, l10n, prompt, isSystem: isSystem);
     if (deleted) unawaited(_loadData());
   }
 
-  void _confirmDeleteTag(AppLocalizations l10n, PromptTag tag) async {
+  Future<void> _confirmDeleteTag(AppLocalizations l10n, PromptTag tag) async {
     final deleted = await showDeleteTagConfirm(context, l10n, tag);
     if (deleted) unawaited(_loadData());
   }
 
-  void _showTagDialog(AppLocalizations l10n, {PromptTag? tag}) async {
+  Future<void> _showTagDialog(AppLocalizations l10n, {PromptTag? tag}) async {
     final saved = await showTagEditDialog(
       context,
       l10n,
@@ -632,7 +636,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
     if (saved) unawaited(_loadData());
   }
 
-  void _showSystemPromptDialog(AppLocalizations l10n, {SystemPrompt? prompt}) async {
+  Future<void> _showSystemPromptDialog(AppLocalizations l10n, {SystemPrompt? prompt}) async {
     final saved = await showSystemPromptEditDialog(
       context,
       l10n,
@@ -644,7 +648,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
     if (saved) unawaited(_loadData());
   }
 
-  void _showPromptDialog(AppLocalizations l10n, {Prompt? prompt}) async {
+  Future<void> _showPromptDialog(AppLocalizations l10n, {Prompt? prompt}) async {
     final saved = await showPromptEditDialog(
       context,
       l10n,

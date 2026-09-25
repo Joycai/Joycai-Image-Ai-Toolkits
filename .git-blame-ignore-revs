@@ -4,3 +4,6 @@
 
 # style(format): 全仓 dart format，行宽 100 (2026-09 structure audit)
 8fc956d0c2e60c487e7379d8feeed150a01f5c34
+
+# style(format): main 合入的四个文件按行宽 100 格式化
+88767ce04ca6b86d077386b9138e5ea6c11de4ca
