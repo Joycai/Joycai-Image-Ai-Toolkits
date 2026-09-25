@@ -39,7 +39,7 @@
 | 2 | 合并 `modelKindIcon`：编辑器改用 `widgets/ui/model_tag_chip.dart` 那份（卡片用的就是它；编辑器注释本就写着「卡片那一个」） | 双闸门绿 | 已做 |
 | 3 | lint：`directives_ordering` `prefer_relative_imports` ~~`omit_local_variable_types`~~ `unnecessary_lambdas` `prefer_final_in_for_each` `prefer_const_constructors` `prefer_const_declarations` `prefer_const_literals_to_create_immutables` `use_colored_box` `use_decorated_box` `avoid_multiple_declarations_per_line` `unawaited_futures`；`dart fix --apply` + 手工逐处（`unawaited_futures` 每处判断是漏了 `await` 还是有意不等） | `flutter analyze` 零问题；测试数不变 | 已做 |
 | 4 | `dart format`：`analysis_options.yaml` 加 `formatter: page_width: 100`，全仓格式化一次（单独一个提交，只有格式），`.git-blame-ignore-revs` 记下它；CI 加格式闸门；CLAUDE.md 的闸门一节同步 | `dart format --set-exit-if-changed lib test tool` 通过 | 已做 |
-| 5 | 去掉 `cupertino_icons` | `flutter pub get` + 双闸门绿 | 待做 |
+| 5 | 去掉 `cupertino_icons` | `flutter pub get` + 双闸门绿 | 已做 |
 | 6 | 收尾：review 循环、台账一行、删除本文件、bump version、开 PR | — | 待做 |
 
 ## 2. 施工记录
