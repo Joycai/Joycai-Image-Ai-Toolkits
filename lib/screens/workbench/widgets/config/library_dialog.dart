@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
-import '../../core/responsive.dart';
-import '../../l10n/app_localizations.dart';
-import '../../models/prompt.dart';
-import '../../models/tag.dart';
-import '../ui/app_button.dart';
-import '../ui/app_empty_state.dart';
-import '../ui/app_search_field.dart';
-import '../ui/app_side_panel.dart';
-import '../ui/scroll_edge_fade.dart';
+import '../../../../core/responsive.dart';
+import '../../../../l10n/app_localizations.dart';
+import '../../../../models/prompt.dart';
+import '../../../../models/tag.dart';
+import '../../../../widgets/ui/app_button.dart';
+import '../../../../widgets/ui/app_empty_state.dart';
+import '../../../../widgets/ui/app_search_field.dart';
+import '../../../../widgets/ui/app_side_panel.dart';
+import '../../../../widgets/ui/scroll_edge_fade.dart';
 
 class PromptLibrarySheet extends StatefulWidget {
   final List<Prompt> allPrompts;

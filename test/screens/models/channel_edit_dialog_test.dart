@@ -5,7 +5,7 @@ import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/models/llm_channel.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
-import 'package:joycai_image_ai_toolkits/widgets/models/channel_edit_dialog.dart';
+import 'package:joycai_image_ai_toolkits/screens/models/widgets/channel_edit_dialog.dart';
 import 'package:joycai_image_ai_toolkits/widgets/models/channel_provider_presets.dart';
 import '../../support/private_data_dir.dart';
 import '../../support/real_async.dart';

@@ -66,7 +66,7 @@ widgets/           shared UI, in domain folders only:
   ui/ glass/ drag/   the design system — app_* controls, generic inputs, drawing primitives,
                        listenable_selector (a Selector for a plain Listenable)
   shell/             nav chrome: window frame, top bar, phone dock, destinations, shell_cover, baked_backdrop
-  models/ tasks/ settings/ files/ dialogs/ placeholders/
+  models/ tasks/ settings/ files/ dialogs/
 screens/           workbench · browser · batch · downloader · prompts · settings · metrics · models · wizard
 bench/             render_bench.dart — GPU benchmark, inert unless RBENCH=1
 ```
@@ -109,8 +109,9 @@ strictly **lower** rank — never sideways, never up:
   needs it (`LLMDebugLogger.enabled`). A shared widget may not import a screen — inject
   the dependency (`AppRunConsole`'s `onExpand`).
 - **`widgets/` and `services/` keep nothing in their root.** Every file sits in a domain
-  folder. And `lib/widgets/` means *more than one feature uses it*: a widget with one
-  screen's worth of callers belongs under that screen.
+  folder. And `lib/widgets/` means *more than one feature uses it*: a widget that only
+  one screen reaches, directly or through other widgets, belongs under that screen
+  (the design system is exempt; `main.dart` counts as the shell, not a screen).
 - **The design system (`widgets/{ui,glass,drag}`) imports only `core`, `l10n` and
   itself.** When a primitive seems to need something higher, either it is not a
   primitive or the dependency belongs lower (the dock's size became `AppDock` in
@@ -121,7 +122,7 @@ strictly **lower** rank — never sideways, never up:
   every routing branch lives in `llm_dispatcher.dart`.
 
 `test/source_layout_test.dart` enforces the import rules (ranks, no cycles, empty roots,
-Flutter-free models — how a model looks is a widget-layer extension, `widgets/files/file_visuals.dart` —
+no single-screen widget in `widgets/`, Flutter-free models — how a model looks is a widget-layer extension, `widgets/files/file_visuals.dart` —
 the design-system boundary, no relative import climbing out of `lib/`, and that `test/`
 mirrors this layout with nothing loose in its own root — bar this test and
 `flutter_test_config.dart`, which flutter_test only finds there — or in `test/services/`,

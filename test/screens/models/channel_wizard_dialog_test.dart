@@ -6,7 +6,7 @@ import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 import 'package:joycai_image_ai_toolkits/widgets/models/channel_form_sections.dart';
 import 'package:joycai_image_ai_toolkits/widgets/models/channel_provider_presets.dart';
-import 'package:joycai_image_ai_toolkits/widgets/models/channel_wizard_dialog.dart';
+import 'package:joycai_image_ai_toolkits/screens/models/widgets/channel_wizard_dialog.dart';
 import '../../support/private_data_dir.dart';
 import '../../support/real_async.dart';
 

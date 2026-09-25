@@ -17,7 +17,7 @@ import '../../../widgets/ui/app_search_field.dart';
 import '../../../widgets/glass/app_glass_menu.dart';
 import '../../../widgets/glass/glass_controls.dart';
 import '../../../widgets/models/app_route_badge.dart';
-import '../../../widgets/models/channel_avatar.dart';
+import 'channel_avatar.dart';
 import '../../../widgets/models/route_labels.dart';
 import '../../../widgets/ui/scroll_edge_fade.dart';
 import '../../../widgets/models/model_card.dart';

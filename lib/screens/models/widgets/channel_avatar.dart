@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../core/constants.dart';
-import '../../models/llm_channel.dart';
-import '../ui/tag_avatar.dart';
+import '../../../core/constants.dart';
+import '../../../models/llm_channel.dart';
+import '../../../widgets/ui/tag_avatar.dart';
 
 /// A channel's identity as a plate: its tag's first letter on its own colour.
 ///

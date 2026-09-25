@@ -17,7 +17,7 @@ import '../../services/files/file_permission_service.dart';
 import '../../state/gallery_state.dart';
 import '../../widgets/dialogs/file_rename_dialog.dart';
 import '../../widgets/drag/app_drop_zone.dart';
-import '../../widgets/placeholders/permission_placeholder.dart';
+import 'widgets/gallery/permission_placeholder.dart';
 import '../../widgets/ui/focus_pane.dart';
 import 'widgets/gallery/gallery_file_actions.dart';
 import 'widgets/gallery/image_card.dart';

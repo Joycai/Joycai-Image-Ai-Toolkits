@@ -15,7 +15,7 @@ void main() {
   const allowed = {
     'lib/services/llm/model_routes.dart',
     'lib/services/db/repositories/model_repository.dart',
-    'lib/widgets/models/channel_edit_dialog.dart',
+    'lib/screens/models/widgets/channel_edit_dialog.dart',
   };
   final read = RegExp(r'\b(?=[a-z_])\w*[cC]hannel\w*[!?]?\.(type|endpoint)\b');
 

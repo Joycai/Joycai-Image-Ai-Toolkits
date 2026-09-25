@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../../core/app_semantic_colors.dart';
-import '../../core/app_theme.dart';
-import '../../core/design_tokens.dart';
-import '../../l10n/app_localizations.dart';
-import '../../services/llm/channel_probe_service.dart';
-import '../ui/app_button.dart';
+import '../../../core/app_semantic_colors.dart';
+import '../../../core/app_theme.dart';
+import '../../../core/design_tokens.dart';
+import '../../../l10n/app_localizations.dart';
+import '../../../services/llm/channel_probe_service.dart';
+import '../../../widgets/ui/app_button.dart';
 
 /// The verdict of a connection test as a card (`D1b 1c`, six results): a 44
 /// icon plate, a 600 title, an 11px line of detail, and — where trying again

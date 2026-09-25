@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 
-import '../../core/app_theme.dart';
-import '../../core/design_tokens.dart';
-import '../../core/responsive.dart';
-import '../../l10n/app_localizations.dart';
-import '../../models/llm_channel.dart';
-import '../../models/llm_model.dart';
-import '../../services/llm/llm_types.dart';
-import '../../services/llm/model_discovery_service.dart';
-import '../../services/llm/model_family.dart';
-import '../../services/catalogue/model_id_uniqueness.dart';
-import '../../state/app_state.dart';
-import '../ui/model_tag_chip.dart';
-import '../ui/app_button.dart';
-import '../ui/app_search_field.dart';
-import '../ui/app_dialog.dart';
+import '../../../core/app_theme.dart';
+import '../../../core/design_tokens.dart';
+import '../../../core/responsive.dart';
+import '../../../l10n/app_localizations.dart';
+import '../../../models/llm_channel.dart';
+import '../../../models/llm_model.dart';
+import '../../../services/llm/llm_types.dart';
+import '../../../services/llm/model_discovery_service.dart';
+import '../../../services/llm/model_family.dart';
+import '../../../services/catalogue/model_id_uniqueness.dart';
+import '../../../state/app_state.dart';
+import '../../../widgets/ui/model_tag_chip.dart';
+import '../../../widgets/ui/app_button.dart';
+import '../../../widgets/ui/app_search_field.dart';
+import '../../../widgets/ui/app_dialog.dart';
 
 /// Fetches a channel's model list and adds the ones picked (`D1a · 1c`).
 ///

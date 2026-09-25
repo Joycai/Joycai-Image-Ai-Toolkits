@@ -278,6 +278,61 @@ void main() {
     );
   });
 
+  test('a feature widget in widgets/ is reached by more than one screen', () {
+    // Who, in the end, mounts each file: walk the importers upwards through
+    // `widgets/` until a screen, the benchmark or `main.dart` is reached. The
+    // design system is exempt — a primitive is generic by what it imports, not
+    // by how many callers it has today — and `main.dart` counts as the shell,
+    // not as one more screen, so the top bar and the dock stay where they are.
+    final importers = <String, Set<String>>{};
+    for (final edge in edges) {
+      (importers[edge.to] ??= <String>{}).add(edge.from);
+    }
+    String? consumerOf(String file) => switch (moduleOf(file)) {
+          'screens' => 'screens/${p.split(p.relative(file, from: 'lib'))[1]}',
+          'bench' => 'bench',
+          '<root>' => 'main.dart',
+          _ => null,
+        };
+    Set<String> consumersOf(String file) {
+      final found = <String>{};
+      final seen = {file};
+      final pending = [file];
+      while (pending.isNotEmpty) {
+        for (final from in importers[pending.removeLast()] ?? const <String>{}) {
+          if (!seen.add(from)) continue;
+          final consumer = consumerOf(from);
+          if (consumer != null) {
+            found.add(consumer);
+          } else {
+            pending.add(from);
+          }
+        }
+      }
+      return found;
+    }
+
+    final stranded = <String>[];
+    for (final file in dartFiles.where((f) => moduleOf(f) == 'widgets')) {
+      if (designSystem.contains(folderOf(file))) continue;
+      final consumers = consumersOf(file);
+      if (consumers.isEmpty) {
+        stranded.add('$file  (reached by nothing in lib/)');
+      } else if (consumers.length == 1 && consumers.single.startsWith('screens/')) {
+        stranded.add('$file  (only ${consumers.single})');
+      }
+    }
+    expect(
+      stranded,
+      isEmpty,
+      reason: 'these sit in widgets/ but one screen is all that uses them:\n'
+          '  ${stranded.join('\n  ')}\n\n'
+          '`lib/widgets/` means more than one feature uses it. Move the file under '
+          'the screen that owns it (its test follows, into the mirrored folder); '
+          'if a second screen is about to need it, move it back in that change.',
+    );
+  });
+
   test('every relative directive resolves to a file that exists', () {
     final missing = edges
         .where((e) => !File(e.to).existsSync())

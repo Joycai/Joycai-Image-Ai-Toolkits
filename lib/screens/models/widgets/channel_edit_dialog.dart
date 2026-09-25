@@ -1,30 +1,30 @@
 import 'package:flutter/material.dart';
 
-import '../../core/constants.dart';
-import '../../core/design_tokens.dart';
-import '../../core/responsive.dart';
-import '../../l10n/app_localizations.dart';
-import '../../models/llm_channel.dart';
-import '../../services/catalogue/route_switching.dart';
-import '../../services/llm/channel_probe_service.dart';
-import '../../services/llm/channel_routes.dart';
-import '../../services/llm/llm_types.dart';
-import '../../services/llm/model_routes.dart';
-import '../../services/llm/vendors/platforms.dart';
-import '../../services/llm/vendors/vendors.dart';
-import '../../state/app_state.dart';
-import '../ui/app_button.dart';
-import '../ui/app_dialog.dart';
-import '../ui/app_dropdown.dart';
-import '../ui/app_field_size.dart';
-import '../ui/app_snackbar.dart';
-import 'channel_form_sections.dart';
-import 'channel_preset_picker.dart';
+import '../../../core/constants.dart';
+import '../../../core/design_tokens.dart';
+import '../../../core/responsive.dart';
+import '../../../l10n/app_localizations.dart';
+import '../../../models/llm_channel.dart';
+import '../../../services/catalogue/route_switching.dart';
+import '../../../services/llm/channel_probe_service.dart';
+import '../../../services/llm/channel_routes.dart';
+import '../../../services/llm/llm_types.dart';
+import '../../../services/llm/model_routes.dart';
+import '../../../services/llm/vendors/platforms.dart';
+import '../../../services/llm/vendors/vendors.dart';
+import '../../../state/app_state.dart';
+import '../../../widgets/ui/app_button.dart';
+import '../../../widgets/ui/app_dialog.dart';
+import '../../../widgets/ui/app_dropdown.dart';
+import '../../../widgets/ui/app_field_size.dart';
+import '../../../widgets/ui/app_snackbar.dart';
+import '../../../widgets/models/channel_form_sections.dart';
+import '../../../widgets/models/channel_preset_picker.dart';
 import 'channel_probe_result_card.dart';
-import 'channel_provider_presets.dart';
-import 'channel_provider_row.dart';
+import '../../../widgets/models/channel_provider_presets.dart';
+import '../../../widgets/models/channel_provider_row.dart';
 import 'channel_route_table.dart';
-import 'route_labels.dart';
+import '../../../widgets/models/route_labels.dart';
 
 /// Edit-channel dialog (design `D1b 1e`): the wizard's fields laid flat in
 /// four sections — provider preset, basic info, configuration, tag and

@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 
-import '../../core/app_theme.dart';
-import '../../core/design_tokens.dart';
-import '../../l10n/app_localizations.dart';
-import '../../services/llm/channel_probe_service.dart';
-import '../../services/llm/channel_routes.dart';
-import '../../services/llm/llm_dispatcher.dart';
-import '../../services/llm/vendors/platforms.dart';
-import '../ui/app_button.dart';
-import '../ui/app_icon_button.dart';
-import 'app_route_badge.dart';
-import 'channel_form_sections.dart';
+import '../../../core/app_theme.dart';
+import '../../../core/design_tokens.dart';
+import '../../../l10n/app_localizations.dart';
+import '../../../services/llm/channel_probe_service.dart';
+import '../../../services/llm/channel_routes.dart';
+import '../../../services/llm/llm_dispatcher.dart';
+import '../../../services/llm/vendors/platforms.dart';
+import '../../../widgets/ui/app_button.dart';
+import '../../../widgets/ui/app_icon_button.dart';
+import '../../../widgets/models/app_route_badge.dart';
+import '../../../widgets/models/channel_form_sections.dart';
 import 'channel_probe_result_card.dart';
-import 'route_labels.dart';
+import '../../../widgets/models/route_labels.dart';
 
 /// The channel editor's route table (`D1f · 4c`, `4g`): one row per route the
 /// channel has — its path in one of four states, the address a request is

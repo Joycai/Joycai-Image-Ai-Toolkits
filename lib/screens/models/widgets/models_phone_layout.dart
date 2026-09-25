@@ -15,7 +15,7 @@ import '../../../widgets/drag/app_reorder_gap.dart';
 import '../../../widgets/glass/app_glass.dart';
 import '../../../widgets/glass/app_glass_menu.dart';
 import '../../../widgets/glass/glass_controls.dart';
-import '../../../widgets/models/channel_avatar.dart';
+import 'channel_avatar.dart';
 import 'channel_merge_review.dart';
 import 'channel_row.dart';
 import '../../../widgets/models/model_card.dart';

@@ -10,10 +10,10 @@ import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/tasks/task_queue_service.dart';
 import '../../state/app_state.dart';
-import '../ui/app_breathing_dot.dart';
-import '../ui/app_button.dart';
-import '../ui/app_dialog.dart';
-import '../ui/app_snackbar.dart';
+import '../../widgets/ui/app_breathing_dot.dart';
+import '../../widgets/ui/app_button.dart';
+import '../../widgets/ui/app_dialog.dart';
+import '../../widgets/ui/app_snackbar.dart';
 
 /// The full log of a single task, in a console the user can read, select and
 /// copy from (`B2 · 1b` 任务日志对话框).

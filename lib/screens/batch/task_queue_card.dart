@@ -19,7 +19,7 @@ import '../../widgets/ui/app_button.dart';
 import '../../widgets/ui/app_section_label.dart';
 import '../../widgets/ui/app_snackbar.dart';
 import '../../widgets/ui/dashed_border.dart';
-import '../../widgets/dialogs/task_log_dialog.dart';
+import 'task_log_dialog.dart';
 import '../../widgets/glass/app_glass_menu.dart';
 import '../../widgets/glass/glass_controls.dart';
 import '../../widgets/ui/scroll_edge_fade.dart';

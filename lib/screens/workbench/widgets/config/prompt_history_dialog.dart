@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../l10n/app_localizations.dart';
-import '../../models/prompt_history_entry.dart';
-import '../../state/app_state.dart';
-import '../ui/app_button.dart';
-import '../ui/app_dialog.dart';
-import '../ui/app_side_panel.dart';
-import '../ui/scroll_edge_fade.dart';
+import '../../../../l10n/app_localizations.dart';
+import '../../../../models/prompt_history_entry.dart';
+import '../../../../state/app_state.dart';
+import '../../../../widgets/ui/app_button.dart';
+import '../../../../widgets/ui/app_dialog.dart';
+import '../../../../widgets/ui/app_side_panel.dart';
+import '../../../../widgets/ui/scroll_edge_fade.dart';
 
 /// Prompt-header action that opens the recent-prompt picker for [type].
 ///

@@ -288,7 +288,7 @@ surface 开关"表达不了它。绑定关系升级为：
 （回复卡「打开该模型」的跳转）。密钥在渠道行里，随事务消失。
 
 **界面**：`widgets/models/app_route_badge.dart`（四态徽标）· `route_labels.dart`
-（线路名 / 平台名唯一一张表）· `channel_route_table.dart`（渠道编辑的线路表；路径
+（线路名 / 平台名唯一一张表）· `screens/models/widgets/channel_route_table.dart`（渠道编辑的线路表；路径
 null = 平台默认，`''` = 主机本身，绝对 URL = 独立主机；「用主机本身」只在
 `PlatformProfile.guessedPaths` 的自定义平台上给，中转与厂商的布局是已知的）；
 模型编辑的线路条在 `model_edit/model_edit_routes.dart`（作用域灰字是
