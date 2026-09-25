@@ -88,6 +88,7 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 |---|---|
 | 界面直接调用的其他有副作用的 service：`ChannelProbeService`、`ModelDiscoveryService`、`WebScraperService`、`KnowledgeBaseService`、`ImageMetadataService`、`ImageProcessingService`、`FilePermissionService`、`GpuInfoService` | 它们不碰数据库，扫描规则管不到；数量多，是另一种形状的问题（网络 / 文件 / 平台调用从 View 发起），要先定「屏幕控制器还是 state」再一起收 |
 | `ImageLayerRepository.layeredPaths` 是进程级静态 `ValueNotifier` | 界面只读它、不构造 repository，不违反规则。挪进 `GalleryState` 要同时改 `services` 下 6 处 `ImageLayerRepository()` 和 `DatabaseService` 开库时的 `loadPaths()`，单开一轮 |
+| 用量表：清模型数据的对话框开着时把窗口拖过手机断点（或旋转手机），删除落在数据库上，但重载的是旧形态视图的 `UsageController`，屏上列表要到下次重载才更新 | 桌面 / 手机两个视图各自持有 controller 是有意的（见 `usage_controller.dart` 头注释）；要么让两个视图共用一个，要么把清除挂到屏幕一级。main 上同一路径连对话框都关不上，本轮修到「能关、能删」为止 |
 | `AppState` 在测试里跑内存库（`AppState.forDatabase`） | `AppState._internal` 往 `LLMService` 单例注册全局日志监听且不注销，多建实例就泄漏；先得把那个监听改成可注销的。经过 `AppState` 的界面测试继续用 `usePrivateDataDir` + `useRealAsyncAppState` |
 
 
