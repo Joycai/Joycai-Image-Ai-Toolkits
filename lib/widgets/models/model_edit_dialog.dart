@@ -30,6 +30,7 @@ import '../ui/app_labelled_field.dart';
 import '../ui/app_section_label.dart';
 import '../glass/app_glass.dart';
 import '../ui/searchable_picker.dart';
+import '../ui/model_tag_chip.dart' show modelKindIcon;
 import 'app_route_badge.dart';
 import 'context_window_slider.dart';
 import 'model_edit_card_preview.dart';

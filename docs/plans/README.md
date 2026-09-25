@@ -229,7 +229,6 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 - `buildAnthropicHistory` 没有直接测试，只经 payload 测试间接覆盖（拆分前就是如此）。
 - **`llm_dispatcher.dart` 仍在 1500 行以上，刻意不拆**（唯一路由表，见上面 `2026-09-large-file-split` 一行）。
   其余 1000–1500 行的文件这一轮拆过一遍（十五个），行数与留下的部分记在欠账清扫那一行指向的执行文档「施工记录」里。
-- `modelKindIcon` 在 `widgets/ui/model_tag_chip.dart` 与 `widgets/models/model_edit_controls.dart` 各声明一份（拆分时发现，未合并）。
 
 ### 需要真实 key 才能定论（来自端点审计第 3 节）
 
