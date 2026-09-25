@@ -8,7 +8,6 @@ import '../../../core/constants.dart';
 import '../../../core/design_tokens.dart';
 import '../../../core/file_utils.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../services/db/database_service.dart';
 import '../../../services/files/temp_storage_service.dart';
 import '../../../state/app_state.dart';
 import '../../../widgets/dialogs/import_options_dialog.dart';
@@ -88,7 +87,7 @@ class DataSection extends StatelessWidget {
 
   Future<void> _openAppDataDir(BuildContext context) async {
     try {
-      final path = await DatabaseService().getDatabasePath();
+      final path = await Provider.of<AppState>(context, listen: false).databasePath();
       await FileUtils.openPath(path);
     } catch (e) {
       // Ignore
@@ -108,7 +107,7 @@ class DataSection extends StatelessWidget {
 
     if (confirmed != true || !context.mounted) return;
 
-    final data = await DatabaseService().getAllDataRaw(
+    final data = await Provider.of<AppState>(context, listen: false).exportBackup(
       includePrompts: includePrompts,
       includeUsage: includeUsage,
       includeDirectories: includeDirs,
@@ -284,17 +283,15 @@ class DataSection extends StatelessWidget {
 
       if (confirmed != true || !context.mounted) return;
 
-      await DatabaseService().restoreBackup(
+      // Restores and reloads every state a backup touches; the wizard's import
+      // goes through the same call, so the two cannot drift apart again.
+      await appState.restoreBackup(
         data,
         includePrompts: includePrompts,
         includeUsage: includeUsage,
         includeDirectories: includeDirs,
       );
 
-      if (!context.mounted) return;
-      await appState.loadSettings();
-      await appState.galleryState.reloadSettings();
-      await appState.fileBrowserState.reloadSettings();
       if (!context.mounted) return;
       AppSnackBar.success(context, importedMsg);
     } catch (e) {
@@ -350,13 +347,10 @@ class DataSection extends StatelessWidget {
           variant: AppButtonVariant.destructive,
           onPressed: () async {
             final appState = Provider.of<AppState>(context, listen: false);
-            await DatabaseService().resetAllSettings();
+            await appState.resetAllSettings();
             if (!context.mounted) return;
             Navigator.pop(context);
             appState.addLog('All settings reset to default.');
-            await appState.loadSettings();
-            await appState.galleryState.reloadSettings();
-            await appState.fileBrowserState.reloadSettings();
           },
         ),
       ],

@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../l10n/app_localizations.dart';
-import '../../services/db/database_service.dart';
 import '../../state/app_state.dart';
 import '../../widgets/dialogs/import_options_dialog.dart';
 import '../../widgets/settings/backup_error_text.dart';
@@ -58,15 +57,16 @@ Future<void> importBackupSettings(BuildContext context, AppLocalizations l10n) a
 
     if (confirmed != true || !context.mounted) return;
 
-    await DatabaseService().restoreBackup(
+    // AppState reloads the gallery and the browser as well as itself; this
+    // used to reload only the settings, leaving the output directory and the
+    // source list on their pre-import values until a restart.
+    await appState.restoreBackup(
       data,
       includePrompts: includePrompts,
       includeUsage: includeUsage,
       includeDirectories: includeDirs,
     );
 
-    if (!context.mounted) return;
-    await appState.loadSettings();
     if (!context.mounted) return;
     await appState.completeSetup();
     if (!context.mounted) return;
