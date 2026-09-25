@@ -53,5 +53,4 @@ int _opened = 0;
 ///
 /// A separate function because [DatabaseService] deliberately has no close:
 /// the one it wraps in production lives as long as the process does.
-Future<void> closeTestDatabase(DatabaseService service) async =>
-    (await service.database).close();
+Future<void> closeTestDatabase(DatabaseService service) async => (await service.database).close();

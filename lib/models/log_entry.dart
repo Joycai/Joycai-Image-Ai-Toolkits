@@ -4,10 +4,5 @@ class LogEntry {
   final String message;
   final String? taskId;
 
-  LogEntry({
-    required this.timestamp,
-    required this.level,
-    required this.message,
-    this.taskId,
-  });
+  LogEntry({required this.timestamp, required this.level, required this.message, this.taskId});
 }

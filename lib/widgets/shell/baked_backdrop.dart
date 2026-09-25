@@ -30,17 +30,13 @@ import '../../core/app_effects.dart';
 /// Alphas duplicated from [AuroraBackdrop]; they belong to this wall and stay
 /// far under 12% so a selected state still reads against it.
 class AuroraRecipe {
-  const AuroraRecipe({
-    required this.canvas,
-    required this.primary,
-    required this.surface,
-  });
+  const AuroraRecipe({required this.canvas, required this.primary, required this.surface});
 
   factory AuroraRecipe.of(ColorScheme scheme) => AuroraRecipe(
-        canvas: scheme.surfaceContainer,
-        primary: scheme.primary,
-        surface: scheme.surface,
-      );
+    canvas: scheme.surfaceContainer,
+    primary: scheme.primary,
+    surface: scheme.surface,
+  );
 
   final Color canvas;
   final Color primary;
@@ -93,11 +89,7 @@ class AuroraRecipe {
 
 /// Drop-in replacement for `AuroraBackdrop`, baked.
 class BakedAuroraBackdrop extends StatelessWidget {
-  const BakedAuroraBackdrop({
-    super.key,
-    this.child,
-    this.filterQuality = FilterQuality.medium,
-  });
+  const BakedAuroraBackdrop({super.key, this.child, this.filterQuality = FilterQuality.medium});
 
   final Widget? child;
 
@@ -159,8 +151,7 @@ class BakedBackdrop extends StatefulWidget {
 
   /// Whether this platform's default renderer is Impeller, which dithers
   /// gradients. Windows is pinned to Skia by its runner; Linux defaults to it.
-  static final bool _rendererDithers =
-      Platform.isMacOS || Platform.isIOS || Platform.isAndroid;
+  static final bool _rendererDithers = Platform.isMacOS || Platform.isIOS || Platform.isAndroid;
 
   /// Image pixels to bake per logical pixel of the window.
   ///
@@ -172,8 +163,7 @@ class BakedBackdrop extends StatefulWidget {
   static double texelsPerLogicalPixel({
     required double devicePixelRatio,
     required bool rendererDithers,
-  }) =>
-      rendererDithers ? devicePixelRatio : 1 / 4;
+  }) => rendererDithers ? devicePixelRatio : 1 / 4;
 
   @override
   State<BakedBackdrop> createState() => _BakedBackdropState();
@@ -231,12 +221,10 @@ class _BakedBackdropState extends State<BakedBackdrop> {
         final Size size = constraints.biggest;
         // Moving the window to a display with another scale re-bakes too.
         final double ratio = MediaQuery.maybeDevicePixelRatioOf(context) ?? 1;
-        final bool stale = _bakedFor != size ||
-            _bakedRatio != ratio ||
-            _bakedKey != widget.recipeKey;
+        final bool stale =
+            _bakedFor != size || _bakedRatio != ratio || _bakedKey != widget.recipeKey;
         if (stale && size.isFinite && !size.isEmpty) {
-          WidgetsBinding.instance
-              .addPostFrameCallback((_) => _bake(size, ratio));
+          WidgetsBinding.instance.addPostFrameCallback((_) => _bake(size, ratio));
         }
         final ui.Image? image = _image;
         // Before the first bake lands, paint the recipe live rather than show
@@ -247,11 +235,7 @@ class _BakedBackdropState extends State<BakedBackdrop> {
         // drain the wall out of every screenshot in the harness.
         final Widget ground = image == null
             ? CustomPaint(painter: _RecipePainter(widget.paint), size: size)
-            : RawImage(
-                image: image,
-                fit: BoxFit.fill,
-                filterQuality: widget.filterQuality,
-              );
+            : RawImage(image: image, fit: BoxFit.fill, filterQuality: widget.filterQuality);
         final Widget? child = widget.child;
         if (child == null) return ground;
         return Stack(fit: StackFit.expand, children: [ground, child]);

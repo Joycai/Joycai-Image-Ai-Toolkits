@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/assistant/prompt_optimizer_agent.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import '../../support/private_data_dir.dart';
@@ -28,22 +28,30 @@ void main() {
     PromptOptimizerAgent.debugRequestOverride = (messages, tools, options) async {
       declared.add(options[emptyReplyEndsTurnKey] == true);
       if (declared.length == 1) {
-        return LLMResponse(text: '', toolCalls: [
-          LLMToolCall(
-              id: 'c1', name: 'submit_prompt', arguments: const {'prompt': 'a prompt'}),
-        ]);
+        return LLMResponse(
+          text: '',
+          toolCalls: [
+            LLMToolCall(id: 'c1', name: 'submit_prompt', arguments: const {'prompt': 'a prompt'}),
+          ],
+        );
       }
       // What the wire delivers under the declaration: nothing at all.
       return LLMResponse(text: '', metadata: const {'finish_reason': 'stop'});
     };
 
     await PromptOptimizerAgent.runTurn(
-        session: session, modelIdentifier: 'm', referenceImages: const []);
+      session: session,
+      modelIdentifier: 'm',
+      referenceImages: const [],
+    );
 
     expect(declared, [false, true]);
     expect(session.promptVersions, 1);
-    expect(session.transcript.any((e) => e.kind == OptimizerEntryKind.error), isFalse,
-        reason: 'the empty ending after a delivered prompt is not a failure');
+    expect(
+      session.transcript.any((e) => e.kind == OptimizerEntryKind.error),
+      isFalse,
+      reason: 'the empty ending after a delivered prompt is not a failure',
+    );
   });
 
   test('a turn that opens on the user message never declares it', () async {
@@ -56,7 +64,10 @@ void main() {
     };
 
     await PromptOptimizerAgent.runTurn(
-        session: session, modelIdentifier: 'm', referenceImages: const []);
+      session: session,
+      modelIdentifier: 'm',
+      referenceImages: const [],
+    );
 
     expect(seen, isNotNull);
     expect(seen!.containsKey(emptyReplyEndsTurnKey), isFalse);

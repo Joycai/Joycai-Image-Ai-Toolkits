@@ -25,8 +25,7 @@ void main() {
 
   /// A solid [w]×[h] PNG of [color] (RGBA) at [name].
   String png(String name, int w, int h, img.Color color) {
-    final image = img.Image(width: w, height: h, numChannels: 4)
-      ..clear(color);
+    final image = img.Image(width: w, height: h, numChannels: 4)..clear(color);
     final path = p.join(dir.path, name);
     File(path).writeAsBytesSync(img.encodePng(image));
     return path;
@@ -39,12 +38,22 @@ void main() {
     final figure = png('figure.png', 40, 100, img.ColorRgba8(0, 0, 255, 255));
     final title = png('title.png', 20, 10, img.ColorRgba8(0, 255, 0, 255));
     set = ImageLayerSet('s', [
-      ImageLayer(path: title, setId: 's', zIndex: 2, name: 'title',
-          box: const LayerBox(70, 180, 90, 190)),
+      ImageLayer(
+        path: title,
+        setId: 's',
+        zIndex: 2,
+        name: 'title',
+        box: const LayerBox(70, 180, 90, 190),
+      ),
       ImageLayer(path: base, setId: 's', zIndex: 0),
-      ImageLayer(path: figure, setId: 's', zIndex: 1, name: 'figure',
-          description: 'the character',
-          box: const LayerBox(10, 20, 50, 120)),
+      ImageLayer(
+        path: figure,
+        setId: 's',
+        zIndex: 1,
+        name: 'figure',
+        description: 'the character',
+        box: const LayerBox(10, 20, 50, 120),
+      ),
     ]);
   });
 
@@ -52,38 +61,37 @@ void main() {
     tester.view.physicalSize = window;
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(ChangeNotifierProvider(
-      create: (_) => WorkbenchUIState(),
-      child: MaterialApp(
-        theme: buildAppTheme(
+    await tester.pumpWidget(
+      ChangeNotifierProvider(
+        create: (_) => WorkbenchUIState(),
+        child: MaterialApp(
+          theme: buildAppTheme(
             accent: ThemeAccent.fromSeed(Colors.blue),
-            brightness: Brightness.light),
-        locale: const Locale('en'),
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: LayerCanvasPage(set: set),
+            brightness: Brightness.light,
+          ),
+          locale: const Locale('en'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: LayerCanvasPage(set: set),
+        ),
       ),
-    ));
+    );
     // The base's size is read from the file, off the fake clock.
-    final canvas = find.byWidgetPredicate(
-        (w) => w is Image && w.key == ValueKey(set.base!.path));
+    final canvas = find.byWidgetPredicate((w) => w is Image && w.key == ValueKey(set.base!.path));
     for (var i = 0; i < 50 && canvas.evaluate().isEmpty; i++) {
-      await tester.runAsync(
-          () => Future<void>.delayed(const Duration(milliseconds: 20)));
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
       await tester.pump();
     }
   }
 
-  Rect rectOfImage(WidgetTester tester, String path) => tester.getRect(
-      find.byWidgetPredicate((w) => w is Image && w.key == ValueKey(path)));
+  Rect rectOfImage(WidgetTester tester, String path) =>
+      tester.getRect(find.byWidgetPredicate((w) => w is Image && w.key == ValueKey(path)));
 
-  testWidgets('each layer sits in its box, in the base\'s pixels',
-      (tester) async {
+  testWidgets('each layer sits in its box, in the base\'s pixels', (tester) async {
     await pumpCanvas(tester, const Size(1440, 900));
     final base = rectOfImage(tester, set.base!.path);
     final scale = base.width / 100;
-    expect(base.height / scale, closeTo(200, 0.01),
-        reason: 'the base keeps its own aspect');
+    expect(base.height / scale, closeTo(200, 0.01), reason: 'the base keeps its own aspect');
 
     final figure = rectOfImage(tester, set.overlays.first.path);
     expect((figure.left - base.left) / scale, closeTo(10, 0.01));
@@ -96,8 +104,7 @@ void main() {
     expect((title.bottom - base.top) / scale, closeTo(190, 0.01));
   });
 
-  testWidgets('the list runs top of the stack first; the eye hides a layer',
-      (tester) async {
+  testWidgets('the list runs top of the stack first; the eye hides a layer', (tester) async {
     await pumpCanvas(tester, const Size(1440, 900));
     final titleY = tester.getTopLeft(find.text('title')).dy;
     final figureY = tester.getTopLeft(find.text('figure')).dy;
@@ -107,13 +114,14 @@ void main() {
 
     await tester.tap(find.byTooltip('Hide layer').at(1)); // figure's row
     await tester.pump();
-    expect(find.byWidgetPredicate((w) =>
-        w is Image && w.key == ValueKey(set.overlays.first.path)), findsNothing);
+    expect(
+      find.byWidgetPredicate((w) => w is Image && w.key == ValueKey(set.overlays.first.path)),
+      findsNothing,
+    );
     expect(find.byTooltip('Show layer'), findsOneWidget);
   });
 
-  testWidgets('a tap on the canvas picks the topmost box under it',
-      (tester) async {
+  testWidgets('a tap on the canvas picks the topmost box under it', (tester) async {
     await pumpCanvas(tester, const Size(1440, 900));
     final base = rectOfImage(tester, set.base!.path);
     final scale = base.width / 100;
@@ -146,9 +154,12 @@ void main() {
       await pumpCanvas(tester, size);
       expect(find.text('title'), findsOneWidget, reason: '$size');
       expect(find.text('Base'), findsOneWidget, reason: '$size');
-      expect(find.byTooltip('Export composite').evaluate().isNotEmpty ||
-          find.text('Export composite').evaluate().isNotEmpty, isTrue,
-          reason: '$size');
+      expect(
+        find.byTooltip('Export composite').evaluate().isNotEmpty ||
+            find.text('Export composite').evaluate().isNotEmpty,
+        isTrue,
+        reason: '$size',
+      );
       expect(tester.takeException(), isNull, reason: '$size');
     }
   });
@@ -168,16 +179,21 @@ void main() {
     expect(rgb(60, 70), 0xFF0000, reason: 'outside every box');
 
     // Base hidden: the ground is transparent and the layers stay put.
-    final noBase = img.decodePng(await LayerCompositeService.composite(
-        set.overlays, 100, 200))!;
+    final noBase = img.decodePng(await LayerCompositeService.composite(set.overlays, 100, 200))!;
     expect(noBase.getPixel(5, 5).a, 0);
     expect(noBase.getPixel(30, 70).b, 255);
   });
 
   test('the export lands beside the base and never overwrites', () async {
     final base = set.base!.path;
-    final first = await LayerCompositeService.save(base, img.encodePng(img.Image(width: 1, height: 1)));
-    final second = await LayerCompositeService.save(base, img.encodePng(img.Image(width: 1, height: 1)));
+    final first = await LayerCompositeService.save(
+      base,
+      img.encodePng(img.Image(width: 1, height: 1)),
+    );
+    final second = await LayerCompositeService.save(
+      base,
+      img.encodePng(img.Image(width: 1, height: 1)),
+    );
     expect(p.basename(first), 'base_composite.png');
     expect(p.basename(second), 'base_composite (2).png');
     expect(p.dirname(first), p.dirname(base));

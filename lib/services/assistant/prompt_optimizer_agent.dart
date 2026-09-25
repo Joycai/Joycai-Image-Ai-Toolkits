@@ -6,16 +6,16 @@ import 'package:path/path.dart' as p;
 
 import '../../models/prompt.dart';
 import '../../models/result_feedback.dart';
-import 'assistant_context_usage.dart';
 import '../db/database_service.dart';
-import 'knowledge_base_service.dart';
+import '../db/repositories/assistant_note_repository.dart';
+import '../db/repositories/assistant_session_repository.dart';
 import '../llm/context_budget.dart';
 import '../llm/image_compression.dart';
 import '../llm/llm_dispatcher.dart';
 import '../llm/llm_service.dart';
 import '../llm/llm_types.dart';
-import '../db/repositories/assistant_note_repository.dart';
-import '../db/repositories/assistant_session_repository.dart';
+import 'assistant_context_usage.dart';
+import 'knowledge_base_service.dart';
 import 'sub_agent_runner.dart';
 
 part 'assistant_chat_entries.dart';
@@ -118,7 +118,8 @@ class PromptOptimizerAgent {
     String feedback,
     bool? satisfied,
     List<ResultFeedbackReason> reasons,
-  })? tryParseResultFeedback(String content) {
+  })?
+  tryParseResultFeedback(String content) {
     if (!content.startsWith(resultFeedbackMarker)) return null;
     final rest = content.substring(resultFeedbackMarker.length);
     final newline = rest.indexOf('\n');
@@ -130,8 +131,7 @@ class PromptOptimizerAgent {
       final image = header['image']?.toString() ?? '';
       if (image.isEmpty) return null;
       final rawVersion = header['prompt_version'];
-      final version =
-          rawVersion is int ? rawVersion : int.tryParse(rawVersion?.toString() ?? '');
+      final version = rawVersion is int ? rawVersion : int.tryParse(rawVersion?.toString() ?? '');
       // Absent on reports older than the rating (`3b`); an unknown value
       // reads as unrated rather than as a verdict the user never gave.
       final satisfied = switch (header['rating']) {
@@ -164,14 +164,14 @@ class PromptOptimizerAgent {
   /// history as [resultFeedbackMarker] messages, so this works identically
   /// for live and restored sessions and nothing can go stale.
   static Map<String, ({int? promptVersion, String feedback})> resultImageInfoByName(
-      List<LLMMessage> history) {
+    List<LLMMessage> history,
+  ) {
     final info = <String, ({int? promptVersion, String feedback})>{};
     for (final m in history) {
       if (m.role != LLMRole.user) continue;
       final parsed = tryParseResultFeedback(m.content);
       if (parsed == null) continue;
-      info[parsed.imageName] =
-          (promptVersion: parsed.promptVersion, feedback: parsed.feedback);
+      info[parsed.imageName] = (promptVersion: parsed.promptVersion, feedback: parsed.feedback);
     }
     return info;
   }
@@ -207,8 +207,7 @@ class PromptOptimizerAgent {
     required int occupied,
     required int budgetChars,
     required int messageCount,
-  }) =>
-      occupied >= budgetChars || messageCount > _compactMaxMessages;
+  }) => occupied >= budgetChars || messageCount > _compactMaxMessages;
 
   /// Where to fold: the history before the returned index becomes the
   /// summary. Null means do not compact this turn.
@@ -251,8 +250,7 @@ class PromptOptimizerAgent {
       keep = _keepRecentTurns;
     } else {
       if (starts.length <= _minKeepTurns) return null;
-      final maxKeep =
-          starts.length - 1 < _keepRecentTurns ? starts.length - 1 : _keepRecentTurns;
+      final maxKeep = starts.length - 1 < _keepRecentTurns ? starts.length - 1 : _keepRecentTurns;
       final target = (budgetChars * _retainTargetShare).floor();
       var fits = _minKeepTurns;
       for (int k = maxKeep; k >= _minKeepTurns; k--) {
@@ -274,8 +272,8 @@ class PromptOptimizerAgent {
     final boundary = starts[starts.length - keep];
     if (boundary <= 1) return null;
     final foldedTurns = starts.length - keep;
-    final headIsSummary = history.first.role == LLMRole.user &&
-        history.first.content.startsWith(summaryMarker);
+    final headIsSummary =
+        history.first.role == LLMRole.user && history.first.content.startsWith(summaryMarker);
     if (headIsSummary && foldedTurns <= 1) return null;
     return boundary;
   }
@@ -334,16 +332,17 @@ class PromptOptimizerAgent {
     final hasDraft = kinds.contains('draft');
     return LLMTool(
       name: 'delegate',
-      description: 'Hand a task to a sub-agent that works in its own '
+      description:
+          'Hand a task to a sub-agent that works in its own '
           'separate context. The sub-agent sees NOTHING of this conversation '
           '— write everything it needs to know into "task". '
           '${hasKnowledge ? 'kind "knowledge": broad research across '
-              'knowledge-base files (for reading one specific file you '
-              'already know, call read_knowledge_file directly). ' : ''}'
+                    'knowledge-base files (for reading one specific file you '
+                    'already know, call read_knowledge_file directly). ' : ''}'
           '${hasDraft ? 'kind "draft": study ONE reference image (image_id) '
-              'and draft a prompt fragment for it per your brief — use it '
-              'to cover many reference images without viewing them all '
-              'yourself. ' : ''}'
+                    'and draft a prompt fragment for it per your brief — use it '
+                    'to cover many reference images without viewing them all '
+                    'yourself. ' : ''}'
           'Returns a findings summary (full text retrievable via read_note).',
       parameters: {
         'type': 'object',
@@ -353,21 +352,20 @@ class PromptOptimizerAgent {
             'enum': [if (hasDraft) 'draft', if (hasKnowledge) 'knowledge'],
             'description': 'The kind of sub-agent.',
           },
-          'task': {
-            'type': 'string',
-            'description': 'The complete, self-contained brief.',
-          },
+          'task': {'type': 'string', 'description': 'The complete, self-contained brief.'},
           if (hasKnowledge)
             'paths': {
               'type': 'array',
               'items': {'type': 'string'},
-              'description': 'knowledge only, optional: knowledge-base file '
+              'description':
+                  'knowledge only, optional: knowledge-base file '
                   'paths (relative) the sub-agent should start from.',
             },
           if (hasDraft)
             'image_id': {
               'type': 'integer',
-              'description': 'draft only, required: the reference image id '
+              'description':
+                  'draft only, required: the reference image id '
                   '(same ids as list_reference_images / view_image).',
             },
         },
@@ -401,19 +399,19 @@ class PromptOptimizerAgent {
         ? _tools
         : [
             for (final t in _tools)
-              if (t.name != 'view_image' && t.name != 'list_reference_images') t
+              if (t.name != 'view_image' && t.name != 'list_reference_images') t,
           ];
     final tools = [
       ...baseTools,
       if (knowledgeMode || editMode) ..._knowledgeTools,
       if (editMode) ..._knowledgeWriteTools,
-      if (delegateKinds.isNotEmpty) ...[
-        delegateToolFor(delegateKinds),
-        ..._noteTools,
-      ],
+      if (delegateKinds.isNotEmpty) ...[delegateToolFor(delegateKinds), ..._noteTools],
     ];
     return contextExhausted
-        ? [for (final t in tools) if (t.name != 'read_knowledge_file') t]
+        ? [
+            for (final t in tools)
+              if (t.name != 'read_knowledge_file') t,
+          ]
         : tools;
   }
 
@@ -473,23 +471,24 @@ class PromptOptimizerAgent {
     // the session (and its persistence) for the UI; the model just never
     // hears about it.
     if (!acceptsImageInput && referenceImages.isNotEmpty) {
-      onLog?.call('This model does not accept image input — '
-          '${referenceImages.length} reference image(s) will not be offered to it.');
-      _noteImagesNotOffered(session, referenceImages.length,
-          modelIdentifier is int ? modelIdentifier : null);
+      onLog?.call(
+        'This model does not accept image input — '
+        '${referenceImages.length} reference image(s) will not be offered to it.',
+      );
+      _noteImagesNotOffered(
+        session,
+        referenceImages.length,
+        modelIdentifier is int ? modelIdentifier : null,
+      );
     }
-    final effectiveRefs =
-        acceptsImageInput ? referenceImages : const <Map<String, String>>[];
+    final effectiveRefs = acceptsImageInput ? referenceImages : const <Map<String, String>>[];
     final effectiveForceView = forceViewAllImages && acceptsImageInput;
     // Each delegate kind has its own precondition (playbook: enabled is not
     // available): knowledge needs a knowledge session; draft needs reference
     // images to draft from and a sub-agent model that can see them.
     final delegateKinds = <String>{
       if (kbSubAgentEnabled && knowledgeMode) 'knowledge',
-      if (kbSubAgentEnabled &&
-          effectiveRefs.isNotEmpty &&
-          kbSubAgentAcceptsImages)
-        'draft',
+      if (kbSubAgentEnabled && effectiveRefs.isNotEmpty && kbSubAgentAcceptsImages) 'draft',
     };
     // Weak local models tend to issue a single tool call per turn, so viewing
     // every reference image one by one needs list + N views + submit turns.
@@ -523,8 +522,13 @@ class PromptOptimizerAgent {
       refCount: effectiveRefs.length,
       forceView: effectiveForceView,
     );
-    _warnIfSystemPromptCrowds(session, systemPromptText,
-        knowledgeMode: knowledgeMode, contextWindow: contextWindow, onLog: onLog);
+    _warnIfSystemPromptCrowds(
+      session,
+      systemPromptText,
+      knowledgeMode: knowledgeMode,
+      contextWindow: contextWindow,
+      onLog: onLog,
+    );
 
     try {
       if (!await _prepareTurn(
@@ -569,8 +573,10 @@ class PromptOptimizerAgent {
         // What this request actually offers. Dispatch is gated on it below.
         final offered = {for (final t in activeTools) t.name};
 
-        final trimmedHistory =
-            _trimForSend(session.history, keepCurrentTurnImages: effectiveForceView);
+        final trimmedHistory = _trimForSend(
+          session.history,
+          keepCurrentTurnImages: effectiveForceView,
+        );
         // knowledgeEntryContent is captured once per task, but staging means no
         // edit can reach disk mid-turn, so the injected file map cannot go
         // stale within a turn.
@@ -640,8 +646,7 @@ class PromptOptimizerAgent {
             // tool calls, which is the wrong grain — a single turn is one long
             // request and almost all of the waiting happens inside it.
             isCancelled: isCancelled,
-            onToolArgumentChars: (chars) =>
-                session.streamingToolArgumentChars.value = chars,
+            onToolArgumentChars: (chars) => session.streamingToolArgumentChars.value = chars,
           );
         } on LLMCancelled {
           // The user pressed stop. Not a failure, so no error card: being
@@ -650,10 +655,7 @@ class PromptOptimizerAgent {
           // message is written below this block, never above it.
           return;
         } catch (e) {
-          session._addEntry(OptimizerChatEntry(
-            kind: OptimizerEntryKind.error,
-            text: e.toString(),
-          ));
+          session._addEntry(OptimizerChatEntry(kind: OptimizerEntryKind.error, text: e.toString()));
           rethrow;
         } finally {
           // Whatever the request ended in, the count describes a call that is
@@ -685,10 +687,12 @@ class PromptOptimizerAgent {
         final truncated = response.metadata['finish_reason'] == 'length';
         final emittedTokens = truncated ? LLMService.outputTokensOf(response.metadata) : 0;
         if (truncated) {
-          onLog?.call('The reply hit the model\'s output-token limit'
-              '${emittedTokens > 0 ? ' after $emittedTokens tokens' : ''} and '
-              'was cut off'
-              '${response.toolCalls.isNotEmpty ? ' — none of its tool calls will run' : ''}.');
+          onLog?.call(
+            'The reply hit the model\'s output-token limit'
+            '${emittedTokens > 0 ? ' after $emittedTokens tokens' : ''} and '
+            'was cut off'
+            '${response.toolCalls.isNotEmpty ? ' — none of its tool calls will run' : ''}.',
+          );
         }
 
         if (response.toolCalls.isEmpty) {
@@ -702,11 +706,13 @@ class PromptOptimizerAgent {
           if (text.isEmpty && truncated) {
             truncatedRounds++;
             if (truncatedRounds >= maxTruncatedRounds) {
-              session._addEntry(OptimizerChatEntry(
-                kind: OptimizerEntryKind.error,
-                text: truncationStopNoticeToken,
-                modelDbId: modelIdentifier is int ? modelIdentifier : null,
-              ));
+              session._addEntry(
+                OptimizerChatEntry(
+                  kind: OptimizerEntryKind.error,
+                  text: truncationStopNoticeToken,
+                  modelDbId: modelIdentifier is int ? modelIdentifier : null,
+                ),
+              );
               return;
             }
             continue;
@@ -715,7 +721,8 @@ class PromptOptimizerAgent {
           // the turn was for (`A3e`). Not the last round's: that one is the
           // status report [_finalRoundNudge] asks for, not an answer. Nor
           // the word that follows a delivered prompt: the card was the answer.
-          final deliverable = !knowledgeMode &&
+          final deliverable =
+              !knowledgeMode &&
               outputKind == PresetOutputKind.analysis &&
               !finalRound &&
               !_lastBatchSubmittedPrompt(outgoing);
@@ -723,30 +730,34 @@ class PromptOptimizerAgent {
             // No echo obligation without tool calls (the payload builder only
             // replays reasoning on tool-call-bearing messages), but keep the
             // record so persistence reflects what the model actually did.
-            session.history.add(LLMMessage(
-              role: LLMRole.assistant,
-              content: text,
-              reasoningContent: response.reasoningContent,
-              reasoningFieldName: response.reasoningFieldName,
-              reasoningSignature: response.reasoningSignature,
-              rawThinkingBlocks: response.rawThinkingBlocks,
-              rawThinkingModelId: response.rawThinkingModelId,
-              rawContentBlocks: response.rawContentBlocks,
-              rawModelParts: response.rawModelParts,
-              rawResponseItems: response.rawResponseItems,
-              truncated: truncated,
-              deliverable: deliverable,
-              modelDbId: modelIdentifier is int ? modelIdentifier : null,
-            ));
+            session.history.add(
+              LLMMessage(
+                role: LLMRole.assistant,
+                content: text,
+                reasoningContent: response.reasoningContent,
+                reasoningFieldName: response.reasoningFieldName,
+                reasoningSignature: response.reasoningSignature,
+                rawThinkingBlocks: response.rawThinkingBlocks,
+                rawThinkingModelId: response.rawThinkingModelId,
+                rawContentBlocks: response.rawContentBlocks,
+                rawModelParts: response.rawModelParts,
+                rawResponseItems: response.rawResponseItems,
+                truncated: truncated,
+                deliverable: deliverable,
+                modelDbId: modelIdentifier is int ? modelIdentifier : null,
+              ),
+            );
             // A cut chat reply stays a chat reply — it is what the model
             // said — but the line says where it stopped and why.
-            session._addEntry(OptimizerChatEntry(
-              kind: OptimizerEntryKind.assistant,
-              text: text,
-              truncated: truncated,
-              deliverable: deliverable,
-              modelDbId: modelIdentifier is int ? modelIdentifier : null,
-            ));
+            session._addEntry(
+              OptimizerChatEntry(
+                kind: OptimizerEntryKind.assistant,
+                text: text,
+                truncated: truncated,
+                deliverable: deliverable,
+                modelDbId: modelIdentifier is int ? modelIdentifier : null,
+              ),
+            );
           }
           return;
         }
@@ -756,30 +767,34 @@ class PromptOptimizerAgent {
         // request with 400 when a tool-calling turn's reasoning_content is not
         // replayed (reasoning.md §3), and _prepareChatPayload echoes it from
         // these fields under its original name.
-        session.history.add(LLMMessage(
-          role: LLMRole.assistant,
-          content: response.text,
-          reasoningContent: response.reasoningContent,
-          reasoningFieldName: response.reasoningFieldName,
-          reasoningSignature: response.reasoningSignature,
-          rawThinkingBlocks: response.rawThinkingBlocks,
-          rawThinkingModelId: response.rawThinkingModelId,
-          rawContentBlocks: response.rawContentBlocks,
-          rawModelParts: response.rawModelParts,
-          rawResponseItems: response.rawResponseItems,
-          toolCalls: response.toolCalls,
-          truncated: truncated,
-          modelDbId: modelIdentifier is int ? modelIdentifier : null,
-        ));
+        session.history.add(
+          LLMMessage(
+            role: LLMRole.assistant,
+            content: response.text,
+            reasoningContent: response.reasoningContent,
+            reasoningFieldName: response.reasoningFieldName,
+            reasoningSignature: response.reasoningSignature,
+            rawThinkingBlocks: response.rawThinkingBlocks,
+            rawThinkingModelId: response.rawThinkingModelId,
+            rawContentBlocks: response.rawContentBlocks,
+            rawModelParts: response.rawModelParts,
+            rawResponseItems: response.rawResponseItems,
+            toolCalls: response.toolCalls,
+            truncated: truncated,
+            modelDbId: modelIdentifier is int ? modelIdentifier : null,
+          ),
+        );
         if (response.text.trim().isNotEmpty) {
           // Narration beside the calls: a cut one ends mid-sentence, and
           // says so like a text-only reply would.
-          session._addEntry(OptimizerChatEntry(
-            kind: OptimizerEntryKind.assistant,
-            text: response.text.trim(),
-            truncated: truncated,
-            modelDbId: modelIdentifier is int ? modelIdentifier : null,
-          ));
+          session._addEntry(
+            OptimizerChatEntry(
+              kind: OptimizerEntryKind.assistant,
+              text: response.text.trim(),
+              truncated: truncated,
+              modelDbId: modelIdentifier is int ? modelIdentifier : null,
+            ),
+          );
         }
 
         // A reply cut mid-call runs none of its calls: half a JSON argument
@@ -792,23 +807,30 @@ class PromptOptimizerAgent {
         if (truncated) {
           truncatedRounds++;
           for (final call in response.toolCalls) {
-            session.history.add(LLMMessage(
-              role: LLMRole.tool,
-              content: jsonEncode(truncatedToolResult(
-                  emittedTokens: emittedTokens > 0 ? emittedTokens : null)),
-              toolCallId: call.id,
-              toolName: call.name,
-            ));
+            session.history.add(
+              LLMMessage(
+                role: LLMRole.tool,
+                content: jsonEncode(
+                  truncatedToolResult(emittedTokens: emittedTokens > 0 ? emittedTokens : null),
+                ),
+                toolCallId: call.id,
+                toolName: call.name,
+              ),
+            );
           }
           if (truncatedRounds >= maxTruncatedRounds) {
-            onLog?.call('Two consecutive replies were cut at the output limit '
-                '— stopping this turn. Raise the model\'s max output in its '
-                'settings.');
-            session._addEntry(OptimizerChatEntry(
-              kind: OptimizerEntryKind.error,
-              text: truncationStopNoticeToken,
-              modelDbId: modelIdentifier is int ? modelIdentifier : null,
-            ));
+            onLog?.call(
+              'Two consecutive replies were cut at the output limit '
+              '— stopping this turn. Raise the model\'s max output in its '
+              'settings.',
+            );
+            session._addEntry(
+              OptimizerChatEntry(
+                kind: OptimizerEntryKind.error,
+                text: truncationStopNoticeToken,
+                modelDbId: modelIdentifier is int ? modelIdentifier : null,
+              ),
+            );
             return;
           }
           continue;
@@ -874,26 +896,31 @@ class PromptOptimizerAgent {
             }
             result = dispatched;
           }
-          session.history.add(LLMMessage(
-            role: LLMRole.tool,
-            content: jsonEncode(result),
-            toolCallId: call.id,
-            toolName: call.name,
-          ));
+          session.history.add(
+            LLMMessage(
+              role: LLMRole.tool,
+              content: jsonEncode(result),
+              toolCallId: call.id,
+              toolName: call.name,
+            ),
+          );
         }
 
         for (final view in pendingViews) {
-          session.history.add(LLMMessage(
-            role: LLMRole.user,
-            content: '$viewResultMarker Reference image #${view['id']} (${view['name']}) is attached.',
-            attachments: [
-              LLMAttachment.fromFile(
-                File(view['path']!),
-                _mimeTypeFor(view['path']!),
-                referenceType: LLMReferenceType.viewOnly,
-              ),
-            ],
-          ));
+          session.history.add(
+            LLMMessage(
+              role: LLMRole.user,
+              content:
+                  '$viewResultMarker Reference image #${view['id']} (${view['name']}) is attached.',
+              attachments: [
+                LLMAttachment.fromFile(
+                  File(view['path']!),
+                  _mimeTypeFor(view['path']!),
+                  referenceType: LLMReferenceType.viewOnly,
+                ),
+              ],
+            ),
+          );
         }
 
         // Stop only after the batch is fully paired and executed views are
@@ -909,10 +936,9 @@ class PromptOptimizerAgent {
       // the user got no answer and has to be told why rather than left
       // watching the turn simply stop.
       onLog?.call('Reached the maximum of $maxTurns agent turns — stopping.');
-      session._addEntry(OptimizerChatEntry(
-        kind: OptimizerEntryKind.notice,
-        text: roundLimitNoticeToken,
-      ));
+      session._addEntry(
+        OptimizerChatEntry(kind: OptimizerEntryKind.notice, text: roundLimitNoticeToken),
+      );
     } finally {
       // Persist whatever this turn produced, even on error/cancel.
       try {
@@ -944,7 +970,10 @@ class PromptOptimizerAgent {
     if (session.history.length > session.persistedCount) {
       final startSeq = await repo.nextSeq(session.id);
       await repo.appendMessages(
-          session.id, startSeq, session.history.sublist(session.persistedCount));
+        session.id,
+        startSeq,
+        session.history.sublist(session.persistedCount),
+      );
       session.persistedCount = session.history.length;
     }
     final keepStr = await db.getSetting(retentionSettingKey);
@@ -1003,9 +1032,9 @@ class PromptOptimizerAgent {
   /// would be one more thing that can disagree with the card on screen about
   /// whether something has already been written.
   static List<OptimizerChatEntry> pendingKbEdits(PromptOptimizerSession session) => [
-        for (final e in session.transcript)
-          if (e.kind == OptimizerEntryKind.kbEdit && e.editState == KbEditState.pending) e,
-      ];
+    for (final e in session.transcript)
+      if (e.kind == OptimizerEntryKind.kbEdit && e.editState == KbEditState.pending) e,
+  ];
 
   /// How many tool steps the turn now running has taken.
   ///
@@ -1041,12 +1070,14 @@ class PromptOptimizerAgent {
       if (e.modelDbId == modelDbId && e.note == '$count') return;
       break;
     }
-    session._addEntry(OptimizerChatEntry(
-      kind: OptimizerEntryKind.notice,
-      text: imagesNotOfferedNoticeToken,
-      note: '$count',
-      modelDbId: modelDbId,
-    ));
+    session._addEntry(
+      OptimizerChatEntry(
+        kind: OptimizerEntryKind.notice,
+        text: imagesNotOfferedNoticeToken,
+        note: '$count',
+        modelDbId: modelDbId,
+      ),
+    );
   }
 
   /// Whether the tool results [messages] ends on belong to a batch that called
@@ -1061,8 +1092,7 @@ class PromptOptimizerAgent {
       // The image a view_image in the same batch attached: part of the
       // batch's results, not a turn of the user's.
       if (m.role == LLMRole.user && m.content.startsWith(viewResultMarker)) continue;
-      return m.role == LLMRole.assistant &&
-          m.toolCalls.any((c) => c.name == 'submit_prompt');
+      return m.role == LLMRole.assistant && m.toolCalls.any((c) => c.name == 'submit_prompt');
     }
     return false;
   }
@@ -1145,16 +1175,17 @@ class PromptOptimizerAgent {
     }
 
     final perToken = session.observedCharsPerToken ?? ContextBudget.charsPerToken;
-    final (int windowChars, ContextWindowBasis basis) =
-        switch (ContextBudget.modeOf(contextWindowTokens)) {
+    final (int windowChars, ContextWindowBasis basis) = switch (ContextBudget.modeOf(
+      contextWindowTokens,
+    )) {
       ContextWindowMode.specified => (
-          (contextWindowTokens! * perToken).round(),
-          ContextWindowBasis.configured,
-        ),
+        (contextWindowTokens! * perToken).round(),
+        ContextWindowBasis.configured,
+      ),
       ContextWindowMode.unset => (
-          (ContextBudget.defaultWindowTokens * perToken).round(),
-          ContextWindowBasis.assumed,
-        ),
+        (ContextBudget.defaultWindowTokens * perToken).round(),
+        ContextWindowBasis.assumed,
+      ),
       ContextWindowMode.unlimited => (0, ContextWindowBasis.unlimited),
     };
 
@@ -1183,9 +1214,10 @@ class PromptOptimizerAgent {
       _liveReadPages(session, relPath);
 
   @visibleForTesting
-  static Set<String> liveViewedPathsForTest(PromptOptimizerSession session,
-          {bool keepCurrentTurnImages = false}) =>
-      _liveViewedPaths(session, keepCurrentTurnImages: keepCurrentTurnImages);
+  static Set<String> liveViewedPathsForTest(
+    PromptOptimizerSession session, {
+    bool keepCurrentTurnImages = false,
+  }) => _liveViewedPaths(session, keepCurrentTurnImages: keepCurrentTurnImages);
 
   /// The outgoing copy of a whole history, windows applied.
   ///
@@ -1193,13 +1225,13 @@ class PromptOptimizerAgent {
   /// own but the agreement between them: what [_trimForSend] still carries
   /// must be exactly what [_liveViewedPaths] reports as live.
   @visibleForTesting
-  static List<LLMMessage> trimForSendForTest(List<LLMMessage> history,
-          {bool keepCurrentTurnImages = false}) =>
-      _trimForSend(history, keepCurrentTurnImages: keepCurrentTurnImages);
+  static List<LLMMessage> trimForSendForTest(
+    List<LLMMessage> history, {
+    bool keepCurrentTurnImages = false,
+  }) => _trimForSend(history, keepCurrentTurnImages: keepCurrentTurnImages);
 
   @visibleForTesting
-  static LLMMessage elideForTest(LLMMessage m,
-          {bool bulk = true, bool attachments = true}) =>
+  static LLMMessage elideForTest(LLMMessage m, {bool bulk = true, bool attachments = true}) =>
       _elide(m, bulk: bulk, attachments: attachments);
 
   /// The sub-agent's task message. Two shapes, not one template with an
@@ -1261,8 +1293,7 @@ class PromptOptimizerAgent {
       // invalidating single pages would be meaningless. Marking the point in
       // history rather than dropping a flag keeps the re-read that follows
       // able to satisfy the read-before-write rail again.
-      session.knowledgeStaleAt[relPath] =
-          session.history.isEmpty ? null : session.history.last;
+      session.knowledgeStaleAt[relPath] = session.history.isEmpty ? null : session.history.last;
       session._resolveKbEdit(editId, KbEditState.applied);
     } catch (e) {
       session._resolveKbEdit(editId, KbEditState.failed, error: '$e');
@@ -1322,8 +1353,9 @@ class PromptOptimizerAgent {
   /// The one call left dangling on purpose is a valid `ask_user` at the very
   /// end of the history — the suspended question of invariant 8, which
   /// [pendingAskUser] derives and the next turn pairs.
-  static List<LLMMessage> repairToolCallPairing(List<LLMMessage> history) =>
-      [for (final e in _repairPairingWithOrigins(history)) e.message];
+  static List<LLMMessage> repairToolCallPairing(List<LLMMessage> history) => [
+    for (final e in _repairPairingWithOrigins(history)) e.message,
+  ];
 
   @visibleForTesting
   static void cancelDanglingAskUserForTest(PromptOptimizerSession session) =>
@@ -1364,10 +1396,10 @@ class PromptOptimizerAgent {
     // turn by the caller, right after this.
     _pairDanglingAskUser(session, callId, {
       'status': 'ok',
-      'note': 'The user replied in free text instead of choosing options — '
+      'note':
+          'The user replied in free text instead of choosing options — '
           'see the user message that follows.',
     });
     session._resolveAskUser(callId, AskUserState.dismissed);
   }
-
 }

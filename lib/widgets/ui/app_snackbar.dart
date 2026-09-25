@@ -59,12 +59,11 @@ class AppSnackBar {
 
     // The dark half of the pair: `primary` in dark, its tone-80 relative in
     // light, which is the accent at the tone a dark ground reads.
-    final Color actionColor =
-        scheme.brightness == Brightness.dark ? scheme.primary : scheme.accentOnOverlay;
+    final Color actionColor = scheme.brightness == Brightness.dark
+        ? scheme.primary
+        : scheme.accentOnOverlay;
 
-    final bottom = Responsive.isMobile(context)
-        ? AppDock.clearanceOf(context)
-        : AppSpace.s16;
+    final bottom = Responsive.isMobile(context) ? AppDock.clearanceOf(context) : AppSpace.s16;
 
     final messenger = ScaffoldMessenger.of(context);
     // Removed, not hidden: a burst of calls (one failure per file) swaps the

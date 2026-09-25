@@ -9,29 +9,29 @@ import '../core/safety_settings.dart';
 import '../core/theme_accent.dart';
 import '../core/thumbnail_fit.dart';
 import '../l10n/app_localizations.dart';
+import '../models/app_image.dart';
+import '../models/llm_channel.dart';
+import '../models/llm_model.dart';
+import '../models/pricing_group.dart';
+import '../models/prompt.dart';
+import '../models/prompt_history_entry.dart';
+import '../models/spec_rate.dart';
+import '../models/tag.dart';
+import '../services/assistant/prompt_provenance.dart';
+import '../services/catalogue/channel_merge.dart';
+import '../services/catalogue/channel_merge_executor.dart';
+import '../services/db/database_service.dart';
 import '../services/llm/llm_debug_logger.dart';
 import '../services/llm/llm_dispatcher.dart';
+import '../services/llm/llm_service.dart';
 import '../services/llm/llm_types.dart';
 import '../services/llm/model_capabilities.dart';
 import '../services/llm/model_descriptor.dart';
 import '../services/llm/model_family.dart';
 import '../services/llm/model_routes.dart';
-import '../models/app_image.dart';
-import '../models/llm_channel.dart';
-import '../models/llm_model.dart';
-import '../models/pricing_group.dart';
-import '../models/spec_rate.dart';
-import '../models/prompt.dart';
-import '../models/prompt_history_entry.dart';
-import '../models/tag.dart';
-import '../services/catalogue/channel_merge.dart';
-import '../services/catalogue/channel_merge_executor.dart';
-import '../services/db/database_service.dart';
 import '../services/system/font_service.dart';
-import '../services/llm/llm_service.dart';
 import '../services/system/notification_service.dart';
 import '../services/system/ui_prefs.dart';
-import '../services/assistant/prompt_provenance.dart';
 import '../services/tasks/task_queue_service.dart';
 import 'downloader_state.dart';
 import 'file_browser_state.dart';
@@ -39,8 +39,8 @@ import 'file_staging_state.dart';
 import 'gallery_state.dart';
 import 'log_state.dart';
 import 'model_list_state.dart';
-import 'workbench_ui_state.dart';
 import 'task_list_state.dart';
+import 'workbench_ui_state.dart';
 
 part 'app_state_data.dart';
 part 'app_state_workbench.dart';
@@ -108,9 +108,7 @@ class AppState extends ChangeNotifier {
       modelListState = ModelListState(database: database),
       uiPrefs = UiPrefs(database: database) {
     // Wire up logs
-    galleryState.onLog = (msg, {level = 'INFO'}) {
-      addLog(msg, level: level);
-    };
+    galleryState.onLog = addLog;
 
     taskQueue.onTaskCompleted = (file) {
       galleryState.refreshImages();
@@ -123,7 +121,7 @@ class AppState extends ChangeNotifier {
 
       if (!notificationsEnabled) return;
 
-      final l10n = lookupAppLocalizations(locale ?? const Locale('en'));        
+      final l10n = lookupAppLocalizations(locale ?? const Locale('en'));
 
       if (task.status == TaskStatus.completed) {
         logState.clearErrorFlag(); // A success clears the stale error indicator
@@ -139,9 +137,7 @@ class AppState extends ChangeNotifier {
       }
     };
 
-    taskQueue.onLogAdded = (msg, {level = 'INFO', taskId}) {
-      addLog(msg, level: level, taskId: taskId);
-    };
+    taskQueue.onLogAdded = addLog;
 
     // Added, not assigned: the service keeps a listener list so another
     // subscriber cannot silently replace the console sink.
@@ -181,6 +177,7 @@ class AppState extends ChangeNotifier {
   /// have such a panel — the mask and crop tools have none, and a preference
   /// cannot conjure one.
   bool isConfigPanelExpanded = true;
+
   /// `A1 16a` draws the workbench's folder column at 236, and the number
   /// matters beyond the column: it was 400, which left the centre too narrow
   /// for the gallery toolbar to lay its controls out inline, so the toolbar's
@@ -188,6 +185,7 @@ class AppState extends ChangeNotifier {
   /// Only new installs see this — an existing width is restored from settings.
   double sidebarWidth = 220.0;
   double consoleHeight = 200.0;
+
   /// Kept in step with [LLMDebugLogger.enabled], which is what the protocols
   /// actually read — they must not import `lib/state/`. Write it through
   /// [setEnableApiDebug] (or [_syncApiDebug]) so the two never drift.
@@ -240,9 +238,8 @@ class AppState extends ChangeNotifier {
   /// this resolves to the platform's installed UI font (e.g. Microsoft YaHei),
   /// since a null family would fall back to the engine default rather than the
   /// real OS font. Otherwise it's the selected family name.
-  String? get themeFontFamily => fontFamily == AppConstants.systemFontKey
-      ? FontService.systemFontFamily
-      : fontFamily;
+  String? get themeFontFamily =>
+      fontFamily == AppConstants.systemFontKey ? FontService.systemFontFamily : fontFamily;
 
   // Language configuration
   Locale? locale;
@@ -329,11 +326,9 @@ class AppState extends ChangeNotifier {
     _channels = channels;
     _pricingGroups = pricingGroups;
 
-    _imageModels =
-        models.where((m) => m.tag == ModelTag.image.value).toList(growable: false);
+    _imageModels = models.where((m) => m.tag == ModelTag.image.value).toList(growable: false);
     _chatModels = models
-        .where((m) =>
-            m.tag == ModelTag.chat.value || m.tag == ModelTag.multimodal.value)
+        .where((m) => m.tag == ModelTag.chat.value || m.tag == ModelTag.multimodal.value)
         .toList(growable: false);
     _multimodalModels = models
         .where((m) => m.tag == ModelTag.multimodal.value)
@@ -354,10 +349,7 @@ class AppState extends ChangeNotifier {
   /// dozen rows. Computing it per load also keeps the list's *identity*
   /// stable, which is what lets `context.select` tell "unchanged" apart from
   /// "recomputed into an equal but different list".
-  static List<LLMChannel> _channelsServing(
-    List<LLMModel> models,
-    List<LLMChannel> channels,
-  ) {
+  static List<LLMChannel> _channelsServing(List<LLMModel> models, List<LLMChannel> channels) {
     final served = <int?>{for (final m in models) m.channelId};
     return channels.where((c) => served.contains(c.id)).toList(growable: false);
   }
@@ -373,19 +365,22 @@ class AppState extends ChangeNotifier {
   /// disagree again.
   bool _supportsVideoForType(LLMModel m) {
     final channel = _channels.cast<LLMChannel?>().firstWhere(
-        (c) => c?.id == m.channelId,
-        orElse: () => null);
+      (c) => c?.id == m.channelId,
+      orElse: () => null,
+    );
     if (channel == null) return false;
     final routed = RoutedChannel.forModel(channel, m);
-    return LLMDispatcher().canRunVideoJob(LLMModelConfig(
-      modelId: m.modelId,
-      channelType: routed.channelType,
-      endpoint: routed.endpoint,
-      apiKey: channel.apiKey,
-      tag: m.tag,
-      wireProtocol: routed.wireProtocol,
-      faceBases: routed.faceBases,
-    ));
+    return LLMDispatcher().canRunVideoJob(
+      LLMModelConfig(
+        modelId: m.modelId,
+        channelType: routed.channelType,
+        endpoint: routed.endpoint,
+        apiKey: channel.apiKey,
+        tag: m.tag,
+        wireProtocol: routed.wireProtocol,
+        faceBases: routed.faceBases,
+      ),
+    );
   }
 
   /// The layer-3 facts for [m] as its channel serves it: family (the
@@ -401,8 +396,9 @@ class AppState extends ChangeNotifier {
   /// left to go on.
   ModelDescriptor descriptorForModel(LLMModel m) {
     final channel = _channels.cast<LLMChannel?>().firstWhere(
-        (c) => c?.id == m.channelId,
-        orElse: () => null);
+      (c) => c?.id == m.channelId,
+      orElse: () => null,
+    );
     if (channel == null) return ModelDescriptor.of(m.modelId);
     final routed = RoutedChannel.forModel(channel, m);
     return LLMDispatcher.descriptorFor(
@@ -415,7 +411,10 @@ class AppState extends ChangeNotifier {
 
   bool isVideoCompatibleModel(int? modelDbId) {
     if (modelDbId == null) return false;
-    final model = _models.cast<LLMModel?>().firstWhere((m) => m?.id == modelDbId, orElse: () => null);
+    final model = _models.cast<LLMModel?>().firstWhere(
+      (m) => m?.id == modelDbId,
+      orElse: () => null,
+    );
     return model != null && _supportsVideoForType(model);
   }
 
@@ -428,7 +427,10 @@ class AppState extends ChangeNotifier {
   /// default, while that group still exists.
   int? defaultFeeGroupFor(int? channelId) {
     if (channelId == null) return null;
-    final channel = _channels.cast<LLMChannel?>().firstWhere((c) => c?.id == channelId, orElse: () => null);
+    final channel = _channels.cast<LLMChannel?>().firstWhere(
+      (c) => c?.id == channelId,
+      orElse: () => null,
+    );
     final groupId = channel?.defaultFeeGroupId;
     if (groupId == null) return null;
     return _pricingGroups.any((g) => g.id == groupId) ? groupId : null;
@@ -498,9 +500,10 @@ class AppState extends ChangeNotifier {
     final savedSafety = await _db.getSetting('safety_thresholds');
     if (savedSafety != null && savedSafety.isNotEmpty) {
       try {
-        safetyThresholds =
-            SafetySettings.normalize(jsonDecode(savedSafety) as Map);
-      } catch (_) {/* keep defaults on malformed data */}
+        safetyThresholds = SafetySettings.normalize(jsonDecode(savedSafety) as Map);
+      } catch (_) {
+        /* keep defaults on malformed data */
+      }
     }
 
     await taskListState.load();
@@ -509,8 +512,7 @@ class AppState extends ChangeNotifier {
     notificationsEnabled = (await _db.getSetting('notifications_enabled') ?? 'true') == 'true';
     isConsoleExpanded = (await _db.getSetting('is_console_expanded') ?? 'false') == 'true';
     isSidebarExpanded = (await _db.getSetting('is_sidebar_expanded') ?? 'true') == 'true';
-    isConfigPanelExpanded =
-        (await _db.getSetting('is_config_panel_expanded') ?? 'true') == 'true';
+    isConfigPanelExpanded = (await _db.getSetting('is_config_panel_expanded') ?? 'true') == 'true';
 
     final savedConsoleHeight = await _db.getSetting('console_height');
     if (savedConsoleHeight != null) {
@@ -529,7 +531,10 @@ class AppState extends ChangeNotifier {
     // Load theme mode
     final savedTheme = await _db.getSetting('theme_mode');
     if (savedTheme != null) {
-      themeMode = ThemeMode.values.firstWhere((e) => e.name == savedTheme, orElse: () => ThemeMode.system);
+      themeMode = ThemeMode.values.firstWhere(
+        (e) => e.name == savedTheme,
+        orElse: () => ThemeMode.system,
+      );
     }
 
     // Stored by preset key. The pre-pair `theme_seed_color` row is rewritten
@@ -576,11 +581,15 @@ class AppState extends ChangeNotifier {
     lastPrompt = await _db.getSetting('last_prompt') ?? '';
     lastVideoPrompt = await _db.getSetting('last_video_prompt') ?? '';
     useStream = (await _db.getSetting('workbench_use_stream') ?? 'true') == 'true';
-    compressReferenceImages = (await _db.getSetting('workbench_compress_reference_images') ?? 'false') == 'true';
+    compressReferenceImages =
+        (await _db.getSetting('workbench_compress_reference_images') ?? 'false') == 'true';
 
-    final savedWorkbenchTab = await _db.getSetting('workbench_tab_index');      
+    final savedWorkbenchTab = await _db.getSetting('workbench_tab_index');
     if (savedWorkbenchTab != null) {
-      workbenchTabIndex = (int.tryParse(savedWorkbenchTab) ?? 0).clamp(0, AppConstants.workbenchTabCount - 1);
+      workbenchTabIndex = (int.tryParse(savedWorkbenchTab) ?? 0).clamp(
+        0,
+        AppConstants.workbenchTabCount - 1,
+      );
     }
 
     isMarkdownWorkbench = (await _db.getSetting('is_markdown_workbench') ?? 'true') == 'true';
@@ -743,7 +752,7 @@ class AppState extends ChangeNotifier {
 
   void setWorkbenchTab(int index) {
     workbenchTabIndex = index.clamp(0, AppConstants.workbenchTabCount - 1);
-    _db.saveSetting('workbench_tab_index', workbenchTabIndex.toString());       
+    _db.saveSetting('workbench_tab_index', workbenchTabIndex.toString());
     notifyListeners();
   }
 

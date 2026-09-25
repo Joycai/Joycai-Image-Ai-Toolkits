@@ -20,27 +20,24 @@ void main() {
     TaskType type = TaskType.videoGenerate,
     TaskStatus status = TaskStatus.processing,
     String? operationName,
-  }) =>
-      TaskItem(
-        id: id,
-        type: type,
-        imagePaths: const [],
-        modelId: 'm',
-        parameters: const {},
-        status: status,
-        operationName: operationName,
-        operationSurface: operationName == null ? null : 'openai-videos',
-      );
+  }) => TaskItem(
+    id: id,
+    type: type,
+    imagePaths: const [],
+    modelId: 'm',
+    parameters: const {},
+    status: status,
+    operationName: operationName,
+    operationSurface: operationName == null ? null : 'openai-videos',
+  );
 
   test('operation_name round-trips through the row', () {
-    final restored =
-        TaskItem.fromMap(task('t', operationName: 'video_abc').toMap());
+    final restored = TaskItem.fromMap(task('t', operationName: 'video_abc').toMap());
     expect(restored.operationName, 'video_abc');
     expect(restored.operationSurface, 'openai-videos');
   });
 
-  test('an interrupted video task with a job id is requeued, not failed',
-      () async {
+  test('an interrupted video task with a job id is requeued, not failed', () async {
     final db = DatabaseService();
     await db.saveTask(task('video-resume', operationName: 'video_abc'));
     await db.saveTask(task('video-unsubmitted'));
@@ -48,9 +45,7 @@ void main() {
 
     await TaskRepository().cleanupStuckTasks();
 
-    final rows = {
-      for (final task in await TaskRepository().getRecentTasks(200)) task.id: task,
-    };
+    final rows = {for (final task in await TaskRepository().getRecentTasks(200)) task.id: task};
     expect(rows['video-resume']!.status, TaskStatus.pending);
     expect(rows['video-resume']!.operationName, 'video_abc');
     // Nothing was accepted upstream for these, so there is nothing to resume.
@@ -63,11 +58,9 @@ void main() {
   });
 
   test('a user retry forgets the job id and submits afresh', () async {
-    await DatabaseService().saveTask(task(
-      'video-retry',
-      status: TaskStatus.failed,
-      operationName: 'video_old',
-    ));
+    await DatabaseService().saveTask(
+      task('video-retry', status: TaskStatus.failed, operationName: 'video_old'),
+    );
 
     final queue = TaskQueueService();
     addTearDown(queue.dispose);

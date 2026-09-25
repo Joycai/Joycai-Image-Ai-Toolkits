@@ -27,19 +27,16 @@ class ChannelIdentityAvatar extends StatelessWidget {
     final TextStyle? slot = size >= 40
         ? textTheme.titleLarge
         : size >= 30
-            ? textTheme.titleSmall
-            : size >= 26
-                ? textTheme.labelMedium
-                : textTheme.labelSmall;
+        ? textTheme.titleSmall
+        : size >= 26
+        ? textTheme.labelMedium
+        : textTheme.labelSmall;
 
     return Container(
       width: size,
       height: size,
       alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(radius),
-      ),
+      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(radius)),
       child: trimmed.isEmpty
           ? Icon(Icons.cloud_queue, size: size * 0.55, color: Colors.white)
           : Text(
@@ -127,8 +124,7 @@ class ChannelDialogHeader extends StatelessWidget {
                   subtitle!,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: subtitleSlot?.copyWith(
-                      color: colorScheme.onSurfaceVariant),
+                  style: subtitleSlot?.copyWith(color: colorScheme.onSurfaceVariant),
                 ),
               ],
             ],
@@ -212,9 +208,7 @@ class ChannelListRowPreview extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: textTheme.labelLarge?.copyWith(
-                      color: showPlaceholder
-                          ? colorScheme.outline
-                          : colorScheme.onSurface,
+                      color: showPlaceholder ? colorScheme.outline : colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -224,18 +218,20 @@ class ChannelListRowPreview extends StatelessWidget {
                         Flexible(
                           child: Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: AppSpace.s6, vertical: 1),
+                              horizontal: AppSpace.s6,
+                              vertical: 1,
+                            ),
                             decoration: BoxDecoration(
                               color: color.withValues(alpha: 0.18),
-                              borderRadius:
-                                  BorderRadius.circular(AppRadius.xs),
+                              borderRadius: BorderRadius.circular(AppRadius.xs),
                             ),
                             child: Text(
                               tag,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: textTheme.labelSmall?.mono
-                                  .copyWith(color: colorScheme.onSurface),
+                              style: textTheme.labelSmall?.mono.copyWith(
+                                color: colorScheme.onSurface,
+                              ),
                             ),
                           ),
                         ),
@@ -244,8 +240,9 @@ class ChannelListRowPreview extends StatelessWidget {
                       Text(
                         subline,
                         maxLines: 1,
-                        style: textTheme.labelSmall?.mono
-                            .copyWith(color: colorScheme.onSurfaceVariant),
+                        style: textTheme.labelSmall?.mono.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     ],
                   ),

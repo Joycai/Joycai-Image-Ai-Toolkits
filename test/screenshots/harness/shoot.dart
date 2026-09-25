@@ -5,9 +5,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/constants.dart';
+import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
 import 'package:joycai_image_ai_toolkits/main.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
-import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
 import 'package:provider/provider.dart';
 
 import '../../support/real_async.dart';
@@ -21,16 +21,7 @@ import 'fixture_seed.dart';
 /// main.dart:256 `isMobilePlatform` reads `Platform.isAndroid || isIOS`, so it
 /// is always false here and no destinations are filtered out. See the caveat
 /// in docs/ui-screenshot-harness.md about the 390px shots.
-enum AppScreen {
-  workbench,
-  fileBrowser,
-  tasks,
-  downloader,
-  prompts,
-  models,
-  usage,
-  settings,
-}
+enum AppScreen { workbench, fileBrowser, tasks, downloader, prompts, models, usage, settings }
 
 class ShotSize {
   const ShotSize(this.label, this.size);
@@ -65,6 +56,7 @@ Future<void> shoot(
   required AppScreen screen,
   required ShotSize size,
   Brightness brightness = Brightness.light,
+
   /// The theme colour to render under. Defaults to [AppState]'s own, which is
   /// what the app opens with; pass one of [AppConstants.presetThemes] to check
   /// a screen against a different accent. Appears in the filename so two
@@ -77,11 +69,9 @@ Future<void> shoot(
 }) async {
   final String seedTag = accent == null
       ? ''
-      : '_${AppConstants.presetThemes.entries.firstWhere(
-            (e) => e.value == accent,
-            orElse: () => MapEntry('seed${accent.light.toARGB32()}', accent),
-          ).key.toLowerCase()}';
-  final String name = '${screen.name}_${size.label}_${brightness.name}'
+      : '_${AppConstants.presetThemes.entries.firstWhere((e) => e.value == accent, orElse: () => MapEntry('seed${accent.light.toARGB32()}', accent)).key.toLowerCase()}';
+  final String name =
+      '${screen.name}_${size.label}_${brightness.name}'
       '$seedTag${suffix == null ? '' : '_$suffix'}';
 
   await mountApp(
@@ -125,8 +115,7 @@ Future<void> mountApp(
   addTearDown(tester.view.reset);
 
   final AppState appState = AppState();
-  appState.themeMode =
-      brightness == Brightness.dark ? ThemeMode.dark : ThemeMode.light;
+  appState.themeMode = brightness == Brightness.dark ? ThemeMode.dark : ThemeMode.light;
   if (accent != null) appState.themeAccent = accent;
   appState.locale = locale;
   // Logs accumulate across shots and would make the console strip differ run
@@ -234,15 +223,16 @@ Widget _appTree(AppState appState) {
 /// [_warmImageCache] gave up on [path].
 class WarmUpStalled implements Exception {
   WarmUpStalled(this.path)
-      : pending = imageCache.pendingImageCount,
-        live = imageCache.liveImageCount;
+    : pending = imageCache.pendingImageCount,
+      live = imageCache.liveImageCount;
 
   final String path;
   final int pending;
   final int live;
 
   @override
-  String toString() => 'warm-up never finished for $path — an image load left '
+  String toString() =>
+      'warm-up never finished for $path — an image load left '
       'over from an earlier test? pending=$pending live=$live';
 }
 
@@ -257,10 +247,7 @@ const Duration _kWarmLimit = Duration(seconds: 10);
 /// hangs the process: nothing after it runs, and CI sits until the job's own
 /// timeout with no name and no path to show for it.
 Future<void> _warm(ImageProvider image, BuildContext context, String path) =>
-    precacheImage(image, context).timeout(
-      _kWarmLimit,
-      onTimeout: () => throw WarmUpStalled(path),
-    );
+    precacheImage(image, context).timeout(_kWarmLimit, onTimeout: () => throw WarmUpStalled(path));
 
 /// Decoding a [FileImage] is asynchronous, so without this every thumbnail
 /// captures as an empty box — the classic golden-test failure.

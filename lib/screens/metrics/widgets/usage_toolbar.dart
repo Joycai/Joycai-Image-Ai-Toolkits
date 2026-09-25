@@ -4,9 +4,9 @@ import 'package:intl/intl.dart';
 import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../widgets/glass/glass_controls.dart';
 import '../../../widgets/ui/app_button.dart';
 import '../../../widgets/ui/app_segmented_control.dart';
-import '../../../widgets/glass/glass_controls.dart';
 import 'usage_chrome.dart';
 import 'usage_controller.dart';
 import 'usage_range.dart';
@@ -61,12 +61,15 @@ class UsageToolbar extends StatelessWidget {
         // The heavier weight for every chip: the selection moves, and the
         // track must not change width when it does.
         final chipStyle = textTheme.labelMedium!.copyWith(fontWeight: FontWeight.w600);
-        final segmentWidth = _trackChrome +
+        final segmentWidth =
+            _trackChrome +
             usagePresets.fold<double>(
               0,
-              (sum, preset) => sum + measure(usagePresetLabel(l10n, preset), chipStyle) + _chipChrome,
+              (sum, preset) =>
+                  sum + measure(usagePresetLabel(l10n, preset), chipStyle) + _chipChrome,
             );
-        final labelledClearWidth = _buttonPadding * 2 +
+        final labelledClearWidth =
+            _buttonPadding * 2 +
             AppSize.iconMd +
             _buttonIconGap +
             measure(l10n.clearAll, textTheme.labelLarge!);

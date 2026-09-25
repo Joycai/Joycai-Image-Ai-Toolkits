@@ -74,8 +74,7 @@ void main() {
       abort.complete();
 
       await expectLater(sent, throwsA(isA<http.RequestAbortedException>()));
-      expect(DateTime.now().difference(started),
-          lessThan(const Duration(seconds: 5)));
+      expect(DateTime.now().difference(started), lessThan(const Duration(seconds: 5)));
     });
 
     test('without a trigger it sends what client.post sends', () async {
@@ -97,8 +96,7 @@ void main() {
       const headers = {'Content-Type': 'application/json', 'X-Custom': 'y'};
       final body = jsonEncode({'a': 'ü'});
 
-      final r = await sendJsonRequest(helperClient, url,
-          headers: headers, body: body);
+      final r = await sendJsonRequest(helperClient, url, headers: headers, body: body);
       await postClient.post(url, headers: headers, body: body);
 
       expect(r.statusCode, 200);
@@ -154,8 +152,7 @@ void main() {
     await seen.future.timeout(const Duration(seconds: 5));
     abort.complete();
 
-    await expectLater(
-        polling, throwsA(isA<http.RequestAbortedException>()));
+    await expectLater(polling, throwsA(isA<http.RequestAbortedException>()));
   });
 
   group('LLMService.chainCancellationProbe', () {
@@ -170,8 +167,7 @@ void main() {
           return callerSays;
         },
       };
-      final chained =
-          LLMService.chainCancellationProbe(options, () => hookSays)!;
+      final chained = LLMService.chainCancellationProbe(options, () => hookSays)!;
       final probe = chained[llmCancellationProbeKey] as bool Function();
 
       expect(probe(), isFalse);
@@ -182,8 +178,11 @@ void main() {
       hookSays = true;
       expect(probe(), isTrue);
       expect(chained['retryCount'], 1);
-      expect(options[llmCancellationProbeKey], isNot(same(probe)),
-          reason: 'the caller map is not mutated');
+      expect(
+        options[llmCancellationProbeKey],
+        isNot(same(probe)),
+        reason: 'the caller map is not mutated',
+      );
     });
 
     test('only the isCancelled hook still yields a probe', () {

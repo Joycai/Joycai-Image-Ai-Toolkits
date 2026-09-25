@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -11,16 +12,16 @@ import '../../services/tasks/task_list_ordering.dart';
 import '../../services/tasks/task_queue_service.dart';
 import '../../state/app_state.dart';
 import '../../state/task_list_state.dart';
+import '../../widgets/glass/app_glass.dart';
+import '../../widgets/glass/glass_controls.dart';
+import '../../widgets/shell/app_destinations.dart';
+import '../../widgets/tasks/app_run_console.dart';
 import '../../widgets/ui/app_button.dart';
 import '../../widgets/ui/app_dialog.dart';
 import '../../widgets/ui/app_icon_button.dart';
-import '../../widgets/tasks/app_run_console.dart';
 import '../../widgets/ui/app_segmented_control.dart';
 import '../../widgets/ui/app_switch.dart';
-import '../../widgets/glass/app_glass.dart';
-import '../../widgets/glass/glass_controls.dart';
 import '../../widgets/ui/scroll_edge_fade.dart';
-import '../../widgets/shell/app_destinations.dart';
 import 'task_queue_card.dart';
 
 part 'task_queue/task_queue_bands.dart';
@@ -116,8 +117,8 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
   final Set<String> _expanded = <String>{};
 
   void _toggle(String id) => setState(() {
-        if (!_expanded.remove(id)) _expanded.add(id);
-      });
+    if (!_expanded.remove(id)) _expanded.add(id);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -144,8 +145,16 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
     final positions = _queuePositions(queue);
 
     if (Responsive.isMobile(context)) {
-      return _buildPhone(context, queue, counts, tasks, positions, listState, l10n,
-          inBottomSheet: inBottomSheet);
+      return _buildPhone(
+        context,
+        queue,
+        counts,
+        tasks,
+        positions,
+        listState,
+        l10n,
+        inBottomSheet: inBottomSheet,
+      );
     }
 
     final content = _buildWide(context, queue, counts, tasks, positions, listState, l10n);
@@ -213,17 +222,17 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
     final statusWidth = phone ? 0.0 : taskStatusColumnWidth(context);
 
     Widget card(TaskItem task) => Padding(
-          key: ValueKey(task.id),
-          padding: const EdgeInsets.only(bottom: 8),
-          child: TaskQueueCard(
-            task: task,
-            position: positions[task.id] ?? 0,
-            expanded: _expanded.contains(task.id),
-            onToggle: () => _toggle(task.id),
-            statusColumnWidth: statusWidth,
-            compact: phone,
-          ),
-        );
+      key: ValueKey(task.id),
+      padding: const EdgeInsets.only(bottom: 8),
+      child: TaskQueueCard(
+        task: task,
+        position: positions[task.id] ?? 0,
+        expanded: _expanded.contains(task.id),
+        onToggle: () => _toggle(task.id),
+        statusColumnWidth: statusWidth,
+        compact: phone,
+      ),
+    );
 
     final pinned = tasks.pinned.length;
     final dividers = tasks.hasDivider ? 1 : 0;
@@ -262,8 +271,10 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
         description: l10n.submitTaskFromWorkbench,
         action: AppButton(
           label: l10n.goToWorkbench,
-          onPressed: () => Provider.of<AppState>(context, listen: false)
-              .navigateToScreen(AppDestination.workbench.index),
+          onPressed: () => Provider.of<AppState>(
+            context,
+            listen: false,
+          ).navigateToScreen(AppDestination.workbench.index),
         ),
         iconColor: scheme.outline,
       );
@@ -298,35 +309,43 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
   Future<void> _handleBulkAction(String action, TaskQueueService queue) async {
     if (action == 'clear_completed') {
       final toRemove = queue.queue
-          .where((t) =>
-              t.status == TaskStatus.completed ||
-              t.status == TaskStatus.failed ||
-              t.status == TaskStatus.cancelled)
+          .where(
+            (t) =>
+                t.status == TaskStatus.completed ||
+                t.status == TaskStatus.failed ||
+                t.status == TaskStatus.cancelled,
+          )
           .map((t) => t.id)
           .toList();
       for (final id in toRemove) {
-        queue.removeTask(id);
+        unawaited(queue.removeTask(id));
       }
     } else if (action == 'cancel_pending') {
-      final toCancel =
-          queue.queue.where((t) => t.status == TaskStatus.pending).map((t) => t.id).toList();
+      final toCancel = queue.queue
+          .where((t) => t.status == TaskStatus.pending)
+          .map((t) => t.id)
+          .toList();
       for (final id in toCancel) {
-        queue.cancelTask(id);
+        unawaited(queue.cancelTask(id));
       }
     } else if (action == 'clear_all') {
       // Waiting tasks are cancelled first and cleared with the finished ones.
       // A running task is left alone: cancelling it mid-write would let its
       // executor save the row back after the clear deleted it.
-      final waiting =
-          queue.queue.where((t) => t.status == TaskStatus.pending).map((t) => t.id).toList();
+      final waiting = queue.queue
+          .where((t) => t.status == TaskStatus.pending)
+          .map((t) => t.id)
+          .toList();
       for (final id in waiting) {
         await queue.cancelTask(id);
       }
       final toRemove = queue.queue
-          .where((t) =>
-              t.status == TaskStatus.completed ||
-              t.status == TaskStatus.failed ||
-              t.status == TaskStatus.cancelled)
+          .where(
+            (t) =>
+                t.status == TaskStatus.completed ||
+                t.status == TaskStatus.failed ||
+                t.status == TaskStatus.cancelled,
+          )
           .map((t) => t.id)
           .toList();
       for (final id in toRemove) {
@@ -374,7 +393,7 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
       ],
     );
     if (!mounted || confirmed != true) return;
-    _handleBulkAction('clear_all', queue);
+    unawaited(_handleBulkAction('clear_all', queue));
   }
 }
 
@@ -394,12 +413,7 @@ class TaskInfoRow extends StatelessWidget {
   /// card's menu (copy prompt).
   static const int maxValueLines = 4;
 
-  const TaskInfoRow({
-    super.key,
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
+  const TaskInfoRow({super.key, required this.icon, required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -419,7 +433,10 @@ class TaskInfoRow extends StatelessWidget {
             child: Icon(icon, size: AppSize.iconSm, color: colorScheme.onSurfaceVariant),
           ),
           const SizedBox(width: 8),
-          Text('$label: ', style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant)),
+          Text(
+            '$label: ',
+            style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+          ),
           Expanded(
             child: Text(
               value,

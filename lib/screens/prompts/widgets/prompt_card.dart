@@ -121,8 +121,8 @@ class PromptCard extends StatelessWidget {
     final Color borderColor = selected
         ? scheme.primary
         : isExpanded
-            ? scheme.accentRing
-            : scheme.outlineVariant;
+        ? scheme.accentRing
+        : scheme.outlineVariant;
     // The selected edge is a pixel heavier; the inset gives that pixel back so
     // the content does not shift when a card is picked.
     final inset = borderWidth - 1;
@@ -158,7 +158,13 @@ class PromptCard extends StatelessWidget {
     );
   }
 
-  Widget _buildBody(BuildContext context, ColorScheme scheme, double width, bool phone, double? gripInset) {
+  Widget _buildBody(
+    BuildContext context,
+    ColorScheme scheme,
+    double width,
+    bool phone,
+    double? gripInset,
+  ) {
     final l10n = AppLocalizations.of(context)!;
     final showActions = !selectionMode;
 
@@ -181,26 +187,48 @@ class PromptCard extends StatelessWidget {
           );
 
     final lead = <Widget>[
-      if (selectionMode) _SelectionCircle(selected: selected) else if (wideGrip == null) ?dragHandle,
+      if (selectionMode)
+        _SelectionCircle(selected: selected)
+      else if (wideGrip == null)
+        ?dragHandle,
       ?leading,
     ];
-    final leadWidth = (wideGrip != null ? gripInset! + _grip + _gap : 0.0) +
+    final leadWidth =
+        (wideGrip != null ? gripInset! + _grip + _gap : 0.0) +
         (selectionMode || (dragHandle != null && wideGrip == null) ? _grip : 0.0) +
         (leading != null ? AppSize.compact : 0.0) +
         _gap * lead.length;
 
-    final bool hasMoves = onMoveUp != null || onMoveDown != null || onMoveToTop != null || onMoveToBottom != null;
+    final bool hasMoves =
+        onMoveUp != null || onMoveDown != null || onMoveToTop != null || onMoveToBottom != null;
     final moves = <PromptCardAction>[
       if (hasMoves) ...[
-        PromptCardAction(icon: Icons.keyboard_arrow_up_rounded, label: l10n.moveUp, onPressed: onMoveUp),
-        PromptCardAction(icon: Icons.keyboard_arrow_down_rounded, label: l10n.moveDown, onPressed: onMoveDown),
-        PromptCardAction(icon: Icons.vertical_align_top_rounded, label: l10n.moveToTop, onPressed: onMoveToTop),
-        PromptCardAction(icon: Icons.vertical_align_bottom_rounded, label: l10n.moveToBottom, onPressed: onMoveToBottom),
+        PromptCardAction(
+          icon: Icons.keyboard_arrow_up_rounded,
+          label: l10n.moveUp,
+          onPressed: onMoveUp,
+        ),
+        PromptCardAction(
+          icon: Icons.keyboard_arrow_down_rounded,
+          label: l10n.moveDown,
+          onPressed: onMoveDown,
+        ),
+        PromptCardAction(
+          icon: Icons.vertical_align_top_rounded,
+          label: l10n.moveToTop,
+          onPressed: onMoveToTop,
+        ),
+        PromptCardAction(
+          icon: Icons.vertical_align_bottom_rounded,
+          label: l10n.moveToBottom,
+          onPressed: onMoveToBottom,
+        ),
       ],
     ];
     final moveCount = moves.length;
     final extraCount = actions?.length ?? 0;
-    final inlineWidth = (menuActions.length + moveCount + extraCount) * _action +
+    final inlineWidth =
+        (menuActions.length + moveCount + extraCount) * _action +
         (menuActions.isNotEmpty && moveCount > 0 ? GlassDivider.extent : 0);
     final hasTrailing = showActions && (menuActions.isNotEmpty || moveCount > 0 || extraCount > 0);
     final inline = !phone && width - leadWidth - _gap - inlineWidth >= _minContent;
@@ -209,7 +237,9 @@ class PromptCard extends StatelessWidget {
     if (hasTrailing) {
       if (inline) {
         for (final a in menuActions) {
-          trailing.add(_ActionGlyph(icon: a.icon, tooltip: a.label, danger: a.danger, onPressed: a.onPressed));
+          trailing.add(
+            _ActionGlyph(icon: a.icon, tooltip: a.label, danger: a.danger, onPressed: a.onPressed),
+          );
         }
         if (menuActions.isNotEmpty && moveCount > 0) {
           trailing.add(const GlassDivider(height: 16));
@@ -218,10 +248,12 @@ class PromptCard extends StatelessWidget {
           trailing.add(_ActionGlyph(icon: m.icon, tooltip: m.label, onPressed: m.onPressed));
         }
       } else {
-        trailing.add(_OverflowMenu(
-          actions: [...menuActions, ...moves],
-          dividerAt: menuActions.isNotEmpty && moveCount > 0 ? menuActions.length : null,
-        ));
+        trailing.add(
+          _OverflowMenu(
+            actions: [...menuActions, ...moves],
+            dividerAt: menuActions.isNotEmpty && moveCount > 0 ? menuActions.length : null,
+          ),
+        );
       }
       if (actions != null) trailing.addAll(actions!);
     }
@@ -245,8 +277,11 @@ class PromptCard extends StatelessWidget {
             prompt.content.replaceAll('\n', ' '),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: (phone ? Theme.of(context).textTheme.bodyMedium : Theme.of(context).textTheme.bodySmall)
-                ?.copyWith(color: scheme.onSurfaceVariant, height: AppType.proseHeight),
+            style:
+                (phone
+                        ? Theme.of(context).textTheme.bodyMedium
+                        : Theme.of(context).textTheme.bodySmall)
+                    ?.copyWith(color: scheme.onSurfaceVariant, height: AppType.proseHeight),
           ),
         ],
       ],
@@ -257,10 +292,7 @@ class PromptCard extends StatelessWidget {
         ?wideGrip,
         for (final w in lead) ...[w, const SizedBox(width: _gap)],
         Expanded(child: content),
-        if (trailing.isNotEmpty) ...[
-          const SizedBox(width: _gap),
-          ...trailing,
-        ],
+        if (trailing.isNotEmpty) ...[const SizedBox(width: _gap), ...trailing],
       ],
     );
 
@@ -287,12 +319,19 @@ class PromptCard extends StatelessWidget {
   }
 
   Widget _buildTitleLine(BuildContext context, ColorScheme scheme, bool phone) {
-    final base = phone ? Theme.of(context).textTheme.titleMedium! : Theme.of(context).textTheme.bodyMedium!;
+    final base = phone
+        ? Theme.of(context).textTheme.titleMedium!
+        : Theme.of(context).textTheme.bodyMedium!;
     final titleStyle = base.copyWith(
       fontWeight: FontWeight.w600,
       color: selected ? scheme.onAccentTint : scheme.onSurface,
     );
-    final title = Text(prompt.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: titleStyle);
+    final title = Text(
+      prompt.title,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: titleStyle,
+    );
     final chipsInline = showCategory && !phone && prompt.tags.isNotEmpty;
 
     if (badge == null && !chipsInline) return title;
@@ -305,10 +344,7 @@ class PromptCard extends StatelessWidget {
     return Row(
       children: [
         Flexible(flex: math.max(1, titleWidth.round()), child: title),
-        if (badge != null) ...[
-          const SizedBox(width: 8),
-          badge!,
-        ],
+        if (badge != null) ...[const SizedBox(width: 8), badge!],
         if (chipsInline) ...[
           const SizedBox(width: 8),
           Flexible(
@@ -334,12 +370,18 @@ class PromptCard extends StatelessWidget {
               data: prompt.content,
               density: AppMarkdownDensity.compact,
               selectable: true,
-              style: textTheme.bodyMedium?.copyWith(height: AppType.looseHeight, color: scheme.onSurface),
+              style: textTheme.bodyMedium?.copyWith(
+                height: AppType.looseHeight,
+                color: scheme.onSurface,
+              ),
             )
           : SelectionArea(
               child: Text(
                 prompt.content,
-                style: textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant, height: AppType.looseHeight),
+                style: textTheme.bodyMedium?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                  height: AppType.looseHeight,
+                ),
               ),
             ),
     );
@@ -439,8 +481,8 @@ class _OverflowMenu extends StatelessWidget {
           Text(
             action.label,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: ink(action.danger ? scheme.error : scheme.onSurface),
-                ),
+              color: ink(action.danger ? scheme.error : scheme.onSurface),
+            ),
           ),
         ],
       ),
@@ -509,10 +551,16 @@ class _TagChip extends StatelessWidget {
           SizedBox(
             width: 6,
             height: 6,
-            child: DecoratedBox(decoration: BoxDecoration(color: Color(tag.color), shape: BoxShape.circle)),
+            child: DecoratedBox(
+              decoration: BoxDecoration(color: Color(tag.color), shape: BoxShape.circle),
+            ),
           ),
           const SizedBox(width: 4),
-          Text(tag.name, maxLines: 1, style: _style(context).copyWith(color: scheme.onSurfaceVariant)),
+          Text(
+            tag.name,
+            maxLines: 1,
+            style: _style(context).copyWith(color: scheme.onSurfaceVariant),
+          ),
         ],
       ),
     );
@@ -530,7 +578,9 @@ class _TagChipLine extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final scheme = Theme.of(context).colorScheme;
-        final moreStyle = Theme.of(context).textTheme.labelSmall!.mono.copyWith(color: scheme.outline);
+        final moreStyle = Theme.of(
+          context,
+        ).textTheme.labelSmall!.mono.copyWith(color: scheme.outline);
         final max = constraints.maxWidth;
 
         final shown = <PromptTag>[];

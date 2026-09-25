@@ -173,9 +173,7 @@ class _PanelResizerState extends State<PanelResizer> {
                   children: [
                     if (widget.ruleSide == PanelRuleSide.leading) grip,
                     Expanded(
-                      child: ColoredBox(
-                        color: widget.ground ?? colorScheme.surfaceContainerLow,
-                      ),
+                      child: ColoredBox(color: widget.ground ?? colorScheme.surfaceContainerLow),
                     ),
                     if (widget.ruleSide == PanelRuleSide.trailing) grip,
                   ],
@@ -238,8 +236,7 @@ class PanelCard extends StatelessWidget {
         // A column is the spec's #FAFBFF, a step brighter than a card's
         // surface: with no radius and no gutter separating it from the canvas,
         // lightness is the only thing left to lift it.
-        color: ground ??
-            (isColumn ? colorScheme.surfaceContainerLow : colorScheme.surface),
+        color: ground ?? (isColumn ? colorScheme.surfaceContainerLow : colorScheme.surface),
         borderRadius: isColumn ? null : BorderRadius.circular(AppRadius.lg),
         clipBehavior: isColumn ? Clip.none : Clip.antiAlias,
         child: child,

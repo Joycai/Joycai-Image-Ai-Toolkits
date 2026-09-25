@@ -38,11 +38,7 @@ class TagAvatar extends StatelessWidget {
     return TagPlate(
       color: color ?? const Color(AppConstants.defaultTagColor),
       size: size,
-      child: Text(
-        tag.isEmpty ? '' : tag.characters.first.toUpperCase(),
-        maxLines: 1,
-        style: style,
-      ),
+      child: Text(tag.isEmpty ? '' : tag.characters.first.toUpperCase(), maxLines: 1, style: style),
     );
   }
 }

@@ -20,19 +20,23 @@ void main() {
   tearDown(() async => closeTestDatabase(db));
 
   Future<int> addModel(String modelId, {int? contextWindow}) async {
-    final channelId = await db.addChannel(LLMChannel(
-      displayName: 'Test Channel',
-      type: 'openai-api',
-      endpoint: 'https://test.example.com/v1',
-      apiKey: 'key-123',
-    ));
-    return db.addModel(LLMModel(
-      modelId: modelId,
-      modelName: modelId,
-      tag: 'chat',
-      channelId: channelId,
-      contextWindow: contextWindow,
-    ));
+    final channelId = await db.addChannel(
+      LLMChannel(
+        displayName: 'Test Channel',
+        type: 'openai-api',
+        endpoint: 'https://test.example.com/v1',
+        apiKey: 'key-123',
+      ),
+    );
+    return db.addModel(
+      LLMModel(
+        modelId: modelId,
+        modelName: modelId,
+        tag: 'chat',
+        channelId: channelId,
+        contextWindow: contextWindow,
+      ),
+    );
   }
 
   test('finds the window by database id', () async {

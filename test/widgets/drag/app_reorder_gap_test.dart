@@ -82,32 +82,39 @@ void main() {
     expect(gap.debugLabel, isNull);
   });
 
-  testWidgets('dragging a row down paints one row-sized gap where it would land, with its position', (tester) async {
-    await pumpList(tester);
+  testWidgets(
+    'dragging a row down paints one row-sized gap where it would land, with its position',
+    (tester) async {
+      await pumpList(tester);
 
-    final drag = await tester.startGesture(tester.getCenter(find.text('A')));
-    await tester.pump(const Duration(milliseconds: 50));
-    await drag.moveBy(const Offset(0, 20));
-    await tester.pump(const Duration(milliseconds: 16));
-    // Past B and C: the drop lands in the third place.
-    await drag.moveBy(const Offset(0, rowHeight * 2.5));
-    for (int i = 0; i < 30; i++) {
+      final drag = await tester.startGesture(tester.getCenter(find.text('A')));
+      await tester.pump(const Duration(milliseconds: 50));
+      await drag.moveBy(const Offset(0, 20));
       await tester.pump(const Duration(milliseconds: 16));
-    }
+      // Past B and C: the drop lands in the third place.
+      await drag.moveBy(const Offset(0, rowHeight * 2.5));
+      for (int i = 0; i < 30; i++) {
+        await tester.pump(const Duration(milliseconds: 16));
+      }
 
-    expect(gap.debugGaps, hasLength(1), reason: 'gaps: ${gap.debugGaps}');
-    final rect = gap.debugGaps.single;
-    // Inset by the row's own gap at the bottom.
-    expect(rect.height, closeTo(rowHeight - rowGap, 0.5));
-    expect(rect.top, closeTo(rowHeight * 2, 0.5), reason: 'the gap should sit in the third slot: $rect');
-    expect(gap.debugLabel, 'Drop at 3');
+      expect(gap.debugGaps, hasLength(1), reason: 'gaps: ${gap.debugGaps}');
+      final rect = gap.debugGaps.single;
+      // Inset by the row's own gap at the bottom.
+      expect(rect.height, closeTo(rowHeight - rowGap, 0.5));
+      expect(
+        rect.top,
+        closeTo(rowHeight * 2, 0.5),
+        reason: 'the gap should sit in the third slot: $rect',
+      );
+      expect(gap.debugLabel, 'Drop at 3');
 
-    await drag.up();
-    await tester.pumpAndSettle();
+      await drag.up();
+      await tester.pumpAndSettle();
 
-    expect(drops, 1);
-    expect(items.take(3), ['B', 'C', 'A']);
-  });
+      expect(drops, 1);
+      expect(items.take(3), ['B', 'C', 'A']);
+    },
+  );
 
   testWidgets('dragging to the bottom says it drops at the end', (tester) async {
     await pumpList(tester);

@@ -20,8 +20,10 @@ void main() {
   Color? resolve(ThemeData theme, Set<WidgetState> states) =>
       styleOf(theme).backgroundColor?.resolve(states);
 
-  ThemeData dark() => buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.dark);
-  ThemeData light() => buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light);
+  ThemeData dark() =>
+      buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.dark);
+  ThemeData light() =>
+      buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light);
 
   test('filled buttons take the scheme\'s primary, whatever the brightness', () {
     // The CTA is no longer a special case. It used to fill from a separate
@@ -32,8 +34,11 @@ void main() {
     for (final theme in [dark(), light()]) {
       expect(resolve(theme, {})!, theme.colorScheme.primary);
       expect(styleOf(theme).foregroundColor?.resolve({}), theme.colorScheme.onPrimary);
-      expect(styleOf(theme).elevation?.resolve({}), 0,
-          reason: '`00 · 1f` draws the CTA flat; a lifted fill glows under glass');
+      expect(
+        styleOf(theme).elevation?.resolve({}),
+        0,
+        reason: '`00 · 1f` draws the CTA flat; a lifted fill glows under glass',
+      );
     }
   });
 
@@ -62,8 +67,10 @@ void main() {
     expect(resolve(theme, {})!, accent.light);
     expect(resolve(theme, {})!, isNot(Colors.teal));
     expect(styleOf(theme).foregroundColor?.resolve({}), accent.onLight);
-    expect(Hct.fromInt(theme.colorScheme.primary.toARGB32()).tone,
-        closeTo(ThemeAccent.derivedLightTone, 0.5));
+    expect(
+      Hct.fromInt(theme.colorScheme.primary.toARGB32()).tone,
+      closeTo(ThemeAccent.derivedLightTone, 0.5),
+    );
   });
 
   test('text buttons take the accent as text, not bare primary', () {
@@ -75,13 +82,21 @@ void main() {
     for (final preset in AppConstants.presetThemes.entries) {
       for (final brightness in Brightness.values) {
         final theme = buildAppTheme(accent: preset.value, brightness: brightness);
-        expect(theme.textButtonTheme.style!.foregroundColor!.resolve({}), theme.colorScheme.accentText,
-            reason: '${preset.key} ${brightness.name}');
+        expect(
+          theme.textButtonTheme.style!.foregroundColor!.resolve({}),
+          theme.colorScheme.accentText,
+          reason: '${preset.key} ${brightness.name}',
+        );
       }
     }
     final orange = buildAppTheme(
-        accent: AppConstants.presetThemes['Orange']!, brightness: Brightness.light);
-    expect(orange.textButtonTheme.style!.foregroundColor!.resolve({}), isNot(orange.colorScheme.primary));
+      accent: AppConstants.presetThemes['Orange']!,
+      brightness: Brightness.light,
+    );
+    expect(
+      orange.textButtonTheme.style!.foregroundColor!.resolve({}),
+      isNot(orange.colorScheme.primary),
+    );
   });
 
   test('the FAB fills like the CTA it is', () {
@@ -105,8 +120,11 @@ void main() {
 
       // WCAG AA for normal text. Material guarantees this for a primary /
       // onPrimary pair taken from one scheme; taking them from two would not.
-      expect(ratio, greaterThanOrEqualTo(4.5),
-          reason: 'Fill $fill vs label $label in ${theme.brightness}');
+      expect(
+        ratio,
+        greaterThanOrEqualTo(4.5),
+        reason: 'Fill $fill vs label $label in ${theme.brightness}',
+      );
     }
   });
 
@@ -126,8 +144,10 @@ void main() {
       expect(bar.iconTheme!.resolve({})!.color, scheme.navForeground(selected: false));
       // Naming a colour replaces Material's whole state machine; the
       // disabled tone has to survive that.
-      expect(bar.iconTheme!.resolve({WidgetState.disabled})!.color,
-          scheme.onSurface.withValues(alpha: AppAlpha.disabled));
+      expect(
+        bar.iconTheme!.resolve({WidgetState.disabled})!.color,
+        scheme.onSurface.withValues(alpha: AppAlpha.disabled),
+      );
     }
   });
 
@@ -167,9 +187,7 @@ void main() {
               onPressed: () {},
               icon: const Icon(Icons.add, size: 18),
               label: const Text('New'),
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-              ),
+              style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 16)),
             ),
           ),
         ),
@@ -179,18 +197,27 @@ void main() {
     // The Material, not the FilledButton: the button pads itself out to a 48px
     // tap target that is not painted, so its size says nothing about the shape
     // the user sees.
-    final painted = find.descendant(of: find.byType(FilledButton), matching: find.byType(Material)).first;
+    final painted = find
+        .descendant(of: find.byType(FilledButton), matching: find.byType(Material))
+        .first;
 
     final material = tester.widget<Material>(painted);
     expect(material.shape, isA<RoundedRectangleBorder>());
-    expect((material.shape! as RoundedRectangleBorder).borderRadius,
-        BorderRadius.circular(appButtonRadius));
+    expect(
+      (material.shape! as RoundedRectangleBorder).borderRadius,
+      BorderRadius.circular(appButtonRadius),
+    );
 
-    expect(tester.getSize(painted).height, appButtonMinHeight,
-        reason: 'A density default shrank the button below its floor');
+    expect(
+      tester.getSize(painted).height,
+      appButtonMinHeight,
+      reason: 'A density default shrank the button below its floor',
+    );
   });
 
-  testWidgets('all three button types carry the app corner, not just the filled one', (tester) async {
+  testWidgets('all three button types carry the app corner, not just the filled one', (
+    tester,
+  ) async {
     // The theme used to define filledButtonTheme alone, so AppButton's `text`
     // and `destructiveOutline` variants — built on TextButton and
     // OutlinedButton — silently kept Material 3's StadiumBorder. A toolbar row
@@ -216,17 +243,20 @@ void main() {
     );
 
     for (final type in [FilledButton, OutlinedButton, TextButton]) {
-      final painted = find
-          .descendant(of: find.byType(type), matching: find.byType(Material))
-          .first;
+      final painted = find.descendant(of: find.byType(type), matching: find.byType(Material)).first;
       final shape = tester.widget<Material>(painted).shape;
 
       expect(shape, isA<RoundedRectangleBorder>(), reason: '$type kept a stadium shape');
-      expect((shape! as RoundedRectangleBorder).borderRadius,
-          BorderRadius.circular(appButtonRadius),
-          reason: '$type does not use the app corner');
-      expect(tester.getSize(painted).height, greaterThanOrEqualTo(appButtonMinHeight),
-          reason: '$type sits below the shared height floor');
+      expect(
+        (shape! as RoundedRectangleBorder).borderRadius,
+        BorderRadius.circular(appButtonRadius),
+        reason: '$type does not use the app corner',
+      );
+      expect(
+        tester.getSize(painted).height,
+        greaterThanOrEqualTo(appButtonMinHeight),
+        reason: '$type sits below the shared height floor',
+      );
     }
   });
 
@@ -244,7 +274,8 @@ void _noop() {}
 /// the unselected colour.
 void _metricsOnlyTests() {
   const seed = Colors.indigo;
-  ThemeData light() => buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light);
+  ThemeData light() =>
+      buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light);
 
   test('a scale slot really does carry a colour', () {
     // The premise. If Material ever stops stamping one, metricsOnly is dead
@@ -291,19 +322,21 @@ void _metricsOnlyTests() {
   testWidgets('a metricsOnly label takes the colour of the widget above it', (tester) async {
     // The end to end claim: inside a filled button the label must come out
     // the button's foreground, not the scale's onSurface.
-    await tester.pumpWidget(MaterialApp(
-      theme: light(),
-      home: Scaffold(
-        body: Center(
-          child: Builder(
-            builder: (context) => FilledButton(
-              onPressed: () {},
-              child: Text('Go', style: Theme.of(context).textTheme.bodySmall?.metricsOnly),
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: light(),
+        home: Scaffold(
+          body: Center(
+            child: Builder(
+              builder: (context) => FilledButton(
+                onPressed: () {},
+                child: Text('Go', style: Theme.of(context).textTheme.bodySmall?.metricsOnly),
+              ),
             ),
           ),
         ),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
 
     final rendered = tester

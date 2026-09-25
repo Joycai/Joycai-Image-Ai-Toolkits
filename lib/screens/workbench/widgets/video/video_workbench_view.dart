@@ -131,29 +131,32 @@ class _VideoWorkbenchOverlayState extends State<VideoWorkbenchOverlay> {
     final controller = VideoPlayerController.file(file);
     _controller = controller;
 
-    controller.initialize().then((_) {
-      if (!mounted || _controller != controller) {
-        controller.dispose();
-        return;
-      }
-      // One rebuild to show the player once initialized. Per-frame updates
-      // (play state, scrub position) are handled by self-listening leaf
-      // widgets below, so the whole overlay no longer rebuilds every frame,
-      // which is what spammed the accessibility-bridge AXTree errors.
-      setState(() {
-        _hasError = false;
-        _errorMessage = null;
-      });
-    }).catchError((error) {
-      if (!mounted || _controller != controller) {
-        controller.dispose();
-        return;
-      }
-      setState(() {
-        _hasError = true;
-        _errorMessage = error.toString();
-      });
-    });
+    controller
+        .initialize()
+        .then((_) {
+          if (!mounted || _controller != controller) {
+            controller.dispose();
+            return;
+          }
+          // One rebuild to show the player once initialized. Per-frame updates
+          // (play state, scrub position) are handled by self-listening leaf
+          // widgets below, so the whole overlay no longer rebuilds every frame,
+          // which is what spammed the accessibility-bridge AXTree errors.
+          setState(() {
+            _hasError = false;
+            _errorMessage = null;
+          });
+        })
+        .catchError((error) {
+          if (!mounted || _controller != controller) {
+            controller.dispose();
+            return;
+          }
+          setState(() {
+            _hasError = true;
+            _errorMessage = error.toString();
+          });
+        });
   }
 
   @override
@@ -233,7 +236,12 @@ class _VideoWorkbenchOverlayState extends State<VideoWorkbenchOverlay> {
 
   /// The desktop panel: the video on the left, title / facts / path on the
   /// right.
-  Widget _buildWide(BuildContext context, String path, _PlayerMetrics metrics, AppLocalizations l10n) {
+  Widget _buildWide(
+    BuildContext context,
+    String path,
+    _PlayerMetrics metrics,
+    AppLocalizations l10n,
+  ) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
@@ -268,10 +276,7 @@ class _VideoWorkbenchOverlayState extends State<VideoWorkbenchOverlay> {
                               style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
                             ),
                           ),
-                          if (badge != null) ...[
-                            const SizedBox(width: 8),
-                            badge,
-                          ],
+                          if (badge != null) ...[const SizedBox(width: 8), badge],
                         ],
                       ),
                     ),
@@ -372,10 +377,7 @@ class _VideoWorkbenchOverlayState extends State<VideoWorkbenchOverlay> {
                       ),
                     ),
                   ),
-                  if (badge != null) ...[
-                    const SizedBox(width: 8),
-                    badge,
-                  ],
+                  if (badge != null) ...[const SizedBox(width: 8), badge],
                 ],
               ),
               SizedBox(height: phone ? 2 : AppSpace.s4),
@@ -383,7 +385,10 @@ class _VideoWorkbenchOverlayState extends State<VideoWorkbenchOverlay> {
                 line,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: textTheme.labelSmall?.mono.copyWith(fontWeight: FontWeight.w400, color: lineColor),
+                style: textTheme.labelSmall?.mono.copyWith(
+                  fontWeight: FontWeight.w400,
+                  color: lineColor,
+                ),
               ),
             ],
           ),
@@ -425,7 +430,11 @@ class _VideoWorkbenchOverlayState extends State<VideoWorkbenchOverlay> {
       content = ColoredBox(
         color: colorScheme.surfaceContainerHigh,
         child: Center(
-          child: Icon(Icons.broken_image_outlined, size: metrics.playIcon, color: colorScheme.error),
+          child: Icon(
+            Icons.broken_image_outlined,
+            size: metrics.playIcon,
+            color: colorScheme.error,
+          ),
         ),
       );
     } else if (controller != null && controller.value.isInitialized) {
@@ -452,10 +461,7 @@ class _VideoWorkbenchOverlayState extends State<VideoWorkbenchOverlay> {
 
     return SizedBox.fromSize(
       size: metrics.video,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppRadius.control),
-        child: content,
-      ),
+      child: ClipRRect(borderRadius: BorderRadius.circular(AppRadius.control), child: content),
     );
   }
 
@@ -569,7 +575,8 @@ class _VideoWorkbenchOverlayState extends State<VideoWorkbenchOverlay> {
     return IconButton(
       icon: const Icon(Icons.close),
       tooltip: l10n.close,
-      onPressed: () => Provider.of<WorkbenchUIState>(context, listen: false).setLastGeneratedVideoPath(null),
+      onPressed: () =>
+          Provider.of<WorkbenchUIState>(context, listen: false).setLastGeneratedVideoPath(null),
       style: IconButton.styleFrom(
         foregroundColor: colorScheme.onSurfaceVariant,
         iconSize: AppSize.iconMd,
@@ -660,9 +667,18 @@ class _VideoSurfaceState extends State<_VideoSurface> {
                 child: VideoPlayer(controller),
               ),
             ),
-            _CentrePlayButton(controller: controller, hovering: _hovering, iconSize: widget.playIcon),
+            _CentrePlayButton(
+              controller: controller,
+              hovering: _hovering,
+              iconSize: widget.playIcon,
+            ),
             if (widget.compact)
-              Positioned(left: 0, right: 0, bottom: 0, child: _ProgressTrack(controller: controller))
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: _ProgressTrack(controller: controller),
+              )
             else
               Positioned(
                 left: AppSpace.s6,
@@ -686,7 +702,11 @@ void _togglePlay(VideoPlayerController controller) {
 }
 
 class _CentrePlayButton extends StatelessWidget {
-  const _CentrePlayButton({required this.controller, required this.hovering, required this.iconSize});
+  const _CentrePlayButton({
+    required this.controller,
+    required this.hovering,
+    required this.iconSize,
+  });
 
   final VideoPlayerController controller;
   final bool hovering;
@@ -722,7 +742,10 @@ class _CentrePlayButton extends StatelessWidget {
                       child: Container(
                         width: iconSize + 12,
                         height: iconSize + 12,
-                        decoration: const BoxDecoration(color: AppOverlay.imagePlate, shape: BoxShape.circle),
+                        decoration: const BoxDecoration(
+                          color: AppOverlay.imagePlate,
+                          shape: BoxShape.circle,
+                        ),
                         child: Icon(
                           value.isPlaying ? Icons.pause : Icons.play_arrow,
                           size: iconSize,
@@ -757,10 +780,10 @@ class _TransportBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final monoStyle = Theme.of(context).textTheme.labelSmall?.mono.copyWith(
-          fontWeight: FontWeight.w400,
-          color: AppOverlay.onImagePlate,
-          height: 1,
-        );
+      fontWeight: FontWeight.w400,
+      color: AppOverlay.onImagePlate,
+      height: 1,
+    );
     return Container(
       height: 24,
       padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -774,10 +797,8 @@ class _TransportBar extends StatelessWidget {
           const SizedBox(width: 8),
           ValueListenableBuilder<VideoPlayerValue>(
             valueListenable: controller,
-            builder: (context, value, _) => Text(
-              '${_clock(value.position)} / ${_clock(value.duration)}',
-              style: monoStyle,
-            ),
+            builder: (context, value, _) =>
+                Text('${_clock(value.position)} / ${_clock(value.duration)}', style: monoStyle),
           ),
           const SizedBox(width: 8),
           ValueListenableBuilder<VideoPlayerValue>(

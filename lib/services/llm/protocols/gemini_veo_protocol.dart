@@ -21,7 +21,8 @@ class GeminiVeoProtocol implements VideoJobProtocol {
     final config = target.config;
     final baseUrl = trimBaseUrl(config.endpoint);
     final url = target.decorateUrl(
-        Uri.parse('$baseUrl/models/${config.modelId}:predictLongRunning'));
+      Uri.parse('$baseUrl/models/${config.modelId}:predictLongRunning'),
+    );
 
     final headers = target.headers();
     final payload = prepareVeoPayload(history, options);
@@ -54,8 +55,13 @@ class GeminiVeoProtocol implements VideoJobProtocol {
         });
       }
 
-      final response = await sendJsonRequest(client, url,
-          headers: headers, body: jsonEncode(payload), options: options);
+      final response = await sendJsonRequest(
+        client,
+        url,
+        headers: headers,
+        body: jsonEncode(payload),
+        options: options,
+      );
 
       if (debugFile != null) {
         await LLMDebugLogger.appendLine(debugFile, 'Status: ${response.statusCode}');
@@ -84,22 +90,26 @@ class GeminiVeoProtocol implements VideoJobProtocol {
   }) async {
     final config = target.config;
     // Operation name usually starts with 'operations/'
-    final url = target.decorateUrl(
-        Uri.parse('${config.endpoint}/$operationName'));
+    final url = target.decorateUrl(Uri.parse('${config.endpoint}/$operationName'));
     logger?.call('Checking Google operation: $operationName', level: 'DEBUG');
 
     final headers = target.headers();
     final client = config.createClient();
     try {
-      final response = await sendJsonRequest(client, url,
-          headers: headers, body: '', options: options, method: 'GET');
+      final response = await sendJsonRequest(
+        client,
+        url,
+        headers: headers,
+        body: '',
+        options: options,
+        method: 'GET',
+      );
 
       // checkEnvelope: false — a *failed operation* is reported inside a 200
       // as `{done: true, error: {...}}`; [veoPollResult] turns it into an
       // error that names the operation, instead of the generic envelope check
       // discarding that context.
-      final data = decodeJsonBody(response,
-          apiName: 'Google operation poll', checkEnvelope: false);
+      final data = decodeJsonBody(response, apiName: 'Google operation poll', checkEnvelope: false);
       return veoPollResult(data, operationName, config.endpoint);
     } finally {
       client.close();
@@ -142,9 +152,11 @@ Map<String, dynamic> veoPollResult(
   if (error != null) {
     final code = error is Map ? error['code'] : null;
     final message = error is Map ? (error['message'] ?? error) : error;
-    throw LLMApiException('Veo operation $operationName failed'
-        '${code != null ? ' (code $code)' : ''}: $message',
-        isJobEnded: true);
+    throw LLMApiException(
+      'Veo operation $operationName failed'
+      '${code != null ? ' (code $code)' : ''}: $message',
+      isJobEnded: true,
+    );
   }
 
   final response = data['response'];
@@ -160,9 +172,10 @@ Map<String, dynamic> veoPollResult(
     }
   } else if (generated is Map && generated['raiMediaFilteredReasons'] != null) {
     throw LLMApiException(
-        'Veo operation $operationName finished without a video — filtered by '
-        'safety: ${generated['raiMediaFilteredReasons']}',
-        isJobEnded: true);
+      'Veo operation $operationName finished without a video — filtered by '
+      'safety: ${generated['raiMediaFilteredReasons']}',
+      isJobEnded: true,
+    );
   }
   return data;
 }

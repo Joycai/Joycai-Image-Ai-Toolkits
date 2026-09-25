@@ -51,7 +51,11 @@ extension _StepFlow on _CropResizeToolbarState {
               child: Text(l10n.saveToTemp),
             ),
             MenuItemButton(
-              leadingIcon: Icon(Icons.warning_amber_rounded, size: AppSize.iconLg, color: scheme.error),
+              leadingIcon: Icon(
+                Icons.warning_amber_rounded,
+                size: AppSize.iconLg,
+                color: scheme.error,
+              ),
               onPressed: busy ? null : () => _handleSave(overwrite: true),
               child: Text(l10n.overwriteSource, style: TextStyle(color: scheme.error)),
             ),
@@ -68,7 +72,9 @@ extension _StepFlow on _CropResizeToolbarState {
             showLabel: saveLabel,
             tooltip: saveLabel ? null : l10n.save,
             loading: busy,
-            onPressed: busy ? null : () => controller.isOpen ? controller.close() : controller.open(),
+            onPressed: busy
+                ? null
+                : () => controller.isOpen ? controller.close() : controller.open(),
           ),
         ),
       ]),
@@ -95,7 +101,12 @@ extension _StepFlow on _CropResizeToolbarState {
         final scheme = Theme.of(sheetContext).colorScheme;
         return SafeArea(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(AppSpace.s10, AppSpace.s6, AppSpace.s10, AppSpace.s10),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpace.s10,
+              AppSpace.s6,
+              AppSpace.s10,
+              AppSpace.s10,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -154,7 +165,9 @@ extension _StepFlow on _CropResizeToolbarState {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Expanded(child: _DialogNumberField(controller: _widthController, label: l10n.width)),
+                  Expanded(
+                    child: _DialogNumberField(controller: _widthController, label: l10n.width),
+                  ),
                   const SizedBox(width: AppSpace.s6),
                   Tooltip(
                     message: l10n.maintainAspectRatio,
@@ -184,7 +197,9 @@ extension _StepFlow on _CropResizeToolbarState {
                     ),
                   ),
                   const SizedBox(width: AppSpace.s6),
-                  Expanded(child: _DialogNumberField(controller: _heightController, label: l10n.height)),
+                  Expanded(
+                    child: _DialogNumberField(controller: _heightController, label: l10n.height),
+                  ),
                 ],
               ),
               const SizedBox(height: AppSpace.s10),

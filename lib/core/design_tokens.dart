@@ -357,13 +357,11 @@ extension AppAccent on ColorScheme {
   Color get accentText => onAccentTint;
 
   /// What a navigation item draws under itself when [selected].
-  Color navBackground({required bool selected}) =>
-      selected ? accentTint : Colors.transparent;
+  Color navBackground({required bool selected}) => selected ? accentTint : Colors.transparent;
 
   /// The ink a navigation item draws when [selected] — the deep ink — and the
   /// quiet grey otherwise.
-  Color navForeground({required bool selected}) =>
-      selected ? onAccentTint : onSurfaceVariant;
+  Color navForeground({required bool selected}) => selected ? onAccentTint : onSurfaceVariant;
 
   /// `--p-deep`: text and icons on [accentTint], and every accent-as-text.
   ///
@@ -386,48 +384,28 @@ extension AppAccent on ColorScheme {
 extension AppShadow on ColorScheme {
   /// A tile at rest in a grid.
   List<BoxShadow> get shadowResting => [
-        BoxShadow(
-          color: shadow.withValues(alpha: 0.06),
-          blurRadius: 2,
-          offset: const Offset(0, 1),
-        ),
-      ];
+    BoxShadow(color: shadow.withValues(alpha: 0.06), blurRadius: 2, offset: const Offset(0, 1)),
+  ];
 
   /// A segment lifted out of its track (`00 · 1f` 「分段」).
   List<BoxShadow> get shadowRaised => [
-        BoxShadow(
-          color: shadow.withValues(alpha: 0.08),
-          blurRadius: 2,
-          offset: const Offset(0, 1),
-        ),
-      ];
+    BoxShadow(color: shadow.withValues(alpha: 0.08), blurRadius: 2, offset: const Offset(0, 1)),
+  ];
 
   /// An opaque surface floating over scrolling content.
   List<BoxShadow> get shadowOverlay => [
-        BoxShadow(
-          color: shadow.withValues(alpha: 0.12),
-          blurRadius: 30,
-          offset: const Offset(0, 10),
-        ),
-      ];
+    BoxShadow(color: shadow.withValues(alpha: 0.12), blurRadius: 30, offset: const Offset(0, 10)),
+  ];
 
   /// Dialogs (`01 · 1h`: `0 24px 64px rgba(0,0,0,.28)`).
   List<BoxShadow> get shadowPanel => [
-        BoxShadow(
-          color: shadow.withValues(alpha: 0.28),
-          blurRadius: 64,
-          offset: const Offset(0, 24),
-        ),
-      ];
+    BoxShadow(color: shadow.withValues(alpha: 0.28), blurRadius: 64, offset: const Offset(0, 24)),
+  ];
 
   /// [shadowPanel] cast sideways, for a panel anchored to the right edge.
   List<BoxShadow> get shadowPanelSide => [
-        BoxShadow(
-          color: shadow.withValues(alpha: 0.20),
-          blurRadius: 30,
-          offset: const Offset(-8, 0),
-        ),
-      ];
+    BoxShadow(color: shadow.withValues(alpha: 0.20), blurRadius: 30, offset: const Offset(-8, 0)),
+  ];
 }
 
 /// Motion tokens (`00 · 1e`): three durations and one exception.
@@ -478,8 +456,7 @@ class AppMotion {
   ///
   /// Distinct from the app's own *reduce visual effects*
   /// ([AppEffects.reduced]), which governs translucency.
-  static bool prefersReduced(BuildContext context) =>
-      MediaQuery.disableAnimationsOf(context);
+  static bool prefersReduced(BuildContext context) => MediaQuery.disableAnimationsOf(context);
 
   /// [token], or no duration at all where the platform has asked for less
   /// motion. Every `duration:` in the app goes through this.
@@ -488,19 +465,15 @@ class AppMotion {
 
   /// M3 for a scene change, stepped down to M2 under reduce-visual-effects,
   /// and to nothing under the platform's reduce-motion.
-  static Duration sceneOf(BuildContext context) => durationOf(
-        context,
-        AppEffects.reduced(context) ? state : panel,
-      );
+  static Duration sceneOf(BuildContext context) =>
+      durationOf(context, AppEffects.reduced(context) ? state : panel);
 
   /// [sceneOf] for a piece coming in, and [exitFactor] of it for one going
   /// out. Every property of one scene change takes this one duration, so a
   /// slide and a fade that leave together also arrive together.
   static Duration sceneFor(BuildContext context, {required bool entering}) {
     final enter = sceneOf(context);
-    return entering
-        ? enter
-        : Duration(milliseconds: (enter.inMilliseconds * exitFactor).round());
+    return entering ? enter : Duration(milliseconds: (enter.inMilliseconds * exitFactor).round());
   }
 
   /// Whether the running dot may breathe.

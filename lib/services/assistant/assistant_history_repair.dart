@@ -2,8 +2,7 @@ part of 'prompt_optimizer_agent.dart';
 
 /// [PromptOptimizerAgent.repairToolCallPairing], with each output's index in the input (null for
 /// a stub) so a caller can rebase indices it holds.
-List<({LLMMessage message, int? origin})> _repairPairingWithOrigins(
-    List<LLMMessage> history) {
+List<({LLMMessage message, int? origin})> _repairPairingWithOrigins(List<LLMMessage> history) {
   final out = <({LLMMessage message, int? origin})>[];
   int i = 0;
   while (i < history.length) {
@@ -69,7 +68,10 @@ List<({LLMMessage message, int? origin})> _repairPairingWithOrigins(
       out.add((
         message: LLMMessage(
           role: LLMRole.tool,
-          content: jsonEncode({'status': 'not_run', 'message': PromptOptimizerAgent.notRunStubMessage}),
+          content: jsonEncode({
+            'status': 'not_run',
+            'message': PromptOptimizerAgent.notRunStubMessage,
+          }),
           toolCallId: c.id,
           toolName: c.name,
         ),
@@ -113,12 +115,14 @@ void _pairDanglingAskUser(
 
   final adjacent = history.skip(owner + 1).every((m) => m.role == LLMRole.tool);
   if (adjacent) {
-    history.add(LLMMessage(
-      role: LLMRole.tool,
-      content: jsonEncode(result),
-      toolCallId: callId,
-      toolName: 'ask_user',
-    ));
+    history.add(
+      LLMMessage(
+        role: LLMRole.tool,
+        content: jsonEncode(result),
+        toolCallId: callId,
+        toolName: 'ask_user',
+      ),
+    );
   } else {
     final owning = history[owner];
     history[owner] = LLMMessage(

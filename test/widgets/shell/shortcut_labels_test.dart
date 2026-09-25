@@ -29,9 +29,13 @@ void main() {
 
       for (final shortcut in AppShortcuts.all) {
         final label = shortcutLabel(l10n, shortcut);
-        expect(label, isNot(shortcut.id),
-            reason: '${shortcut.id} fell through to the default arm — add it '
-                'to the switch in widgets/shell/shortcut_labels.dart');
+        expect(
+          label,
+          isNot(shortcut.id),
+          reason:
+              '${shortcut.id} fell through to the default arm — add it '
+              'to the switch in widgets/shell/shortcut_labels.dart',
+        );
         expect(label.trim(), isNotEmpty, reason: shortcut.id);
       }
     });
@@ -41,8 +45,7 @@ void main() {
 
       for (final screen in ShortcutScreen.values) {
         for (final pane in ShortcutPane.values) {
-          expect(shortcutPaneLabel(l10n, screen, pane).trim(), isNotEmpty,
-              reason: '$screen/$pane');
+          expect(shortcutPaneLabel(l10n, screen, pane).trim(), isNotEmpty, reason: '$screen/$pane');
         }
       }
     });
@@ -53,7 +56,8 @@ void main() {
     expect(
       shortcutPaneLabel(l10n, ShortcutScreen.workbench, ShortcutPane.grid),
       isNot(shortcutPaneLabel(l10n, ShortcutScreen.fileBrowser, ShortcutPane.grid)),
-      reason: 'the same role, but the workbench calls it the gallery and the '
+      reason:
+          'the same role, but the workbench calls it the gallery and the '
           'browser calls it the file grid — the panel should use the word '
           'the screen uses',
     );

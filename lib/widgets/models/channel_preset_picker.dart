@@ -106,35 +106,30 @@ class _ChannelPresetPickerState extends State<_ChannelPresetPicker> {
                 ? ChannelProviderNoMatch(
                     l10n: l10n,
                     query: _searchCtrl.text.trim(),
-                    onUseCustom: () =>
-                        _pick(channelFallbackCustomPreset(), null),
+                    onUseCustom: () => _pick(channelFallbackCustomPreset(), null),
                   )
-                : ListView(
-                    padding: EdgeInsets.zero,
-                    children: _buildRows(l10n, matches),
-                  ),
+                : ListView(padding: EdgeInsets.zero, children: _buildRows(l10n, matches)),
           ),
         ],
       ),
     );
   }
 
-  List<Widget> _buildRows(
-    AppLocalizations l10n,
-    List<ChannelProviderPreset> matches,
-  ) {
+  List<Widget> _buildRows(AppLocalizations l10n, List<ChannelProviderPreset> matches) {
     final widgets = <Widget>[];
     for (final group in ChannelProviderGroup.values) {
       final inGroup = matches.where((p) => p.group == group).toList();
       if (inGroup.isEmpty) continue;
       // "First" is the first group *rendered*, so a filtered list does not
       // leave a gap above whichever group survived the search.
-      widgets.add(ChannelProviderGroupCaption(
-        l10n: l10n,
-        group: group,
-        count: inGroup.length,
-        first: widgets.isEmpty,
-      ));
+      widgets.add(
+        ChannelProviderGroupCaption(
+          l10n: l10n,
+          group: group,
+          count: inGroup.length,
+          first: widgets.isEmpty,
+        ),
+      );
       for (final preset in inGroup) {
         widgets.addAll(_buildRow(l10n, preset));
       }
@@ -148,8 +143,7 @@ class _ChannelPresetPickerState extends State<_ChannelPresetPicker> {
     final isExpanded = _expandedId == preset.id;
     // Route variants are not a choice here either: the editor's route table
     // enables the rest once the preset is picked.
-    final expands =
-        preset.hasVariants && !channelPresetVariantsAreRoutes(preset);
+    final expands = preset.hasVariants && !channelPresetVariantsAreRoutes(preset);
 
     return [
       ChannelProviderRow(
@@ -163,9 +157,7 @@ class _ChannelPresetPickerState extends State<_ChannelPresetPicker> {
             ? Icon(
                 isExpanded ? Icons.expand_less : Icons.expand_more,
                 size: AppSize.iconMd,
-                color: isExpanded
-                    ? colorScheme.onAccentTint
-                    : colorScheme.onSurfaceVariant,
+                color: isExpanded ? colorScheme.onAccentTint : colorScheme.onSurfaceVariant,
               )
             : null,
       ),
@@ -186,28 +178,25 @@ class _ChannelPresetPickerState extends State<_ChannelPresetPicker> {
                     child: SizedBox(
                       height: AppSize.control,
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpace.s10),
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpace.s10),
                         child: Row(
                           children: [
                             Expanded(
                               child: Text(
-                                channelProviderVariantLabel(
-                                    l10n, preset.id, variant.id),
+                                channelProviderVariantLabel(l10n, preset.id, variant.id),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: theme.textTheme.bodySmall
-                                    ?.copyWith(color: colorScheme.onSurface),
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: colorScheme.onSurface,
+                                ),
                               ),
                             ),
                             const SizedBox(width: AppSpace.s10),
                             Text(
-                              protocolFamilyLabel(
-                                l10n,
-                                Vendors.byId(variant.channelType).family,
+                              protocolFamilyLabel(l10n, Vendors.byId(variant.channelType).family),
+                              style: theme.textTheme.labelSmall?.mono.copyWith(
+                                color: colorScheme.outline,
                               ),
-                              style: theme.textTheme.labelSmall?.mono
-                                  .copyWith(color: colorScheme.outline),
                             ),
                           ],
                         ),

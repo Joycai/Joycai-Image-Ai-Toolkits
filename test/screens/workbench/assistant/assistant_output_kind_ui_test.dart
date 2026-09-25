@@ -15,12 +15,12 @@ import 'package:joycai_image_ai_toolkits/widgets/ui/app_neutral_marker.dart';
 import 'package:provider/provider.dart';
 
 SystemPrompt preset(int id, String title, PresetOutputKind kind) => SystemPrompt(
-      id: id,
-      title: title,
-      content: 'Instructions for $title.',
-      type: SystemPrompt.typeRefiner,
-      outputKind: kind,
-    );
+  id: id,
+  title: title,
+  content: 'Instructions for $title.',
+  type: SystemPrompt.typeRefiner,
+  outputKind: kind,
+);
 
 void main() {
   late AppLocalizations l10n;
@@ -41,33 +41,35 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
     final ui = WorkbenchUIState()..optimizerSession = session;
-    await tester.pumpWidget(ChangeNotifierProvider<WorkbenchUIState>.value(
-      value: ui,
-      child: MaterialApp(
-        locale: const Locale('en'),
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: Scaffold(
-          body: PromptOptimizerChatView(
-            inputCtrl: TextEditingController(),
-            onSend: () {},
-            onRetry: () {},
-            onApplyPrompt: (_) {},
-            onApplyKbEdit: (_) {},
-            onRejectKbEdit: (_) {},
-            onAnswerAskUser: (_, _) {},
-            isBusy: false,
-            presetChoices: OptimizerPresetChoices(
-              presets: presets,
-              selectedId: selectedKind == PresetOutputKind.analysis ? 2 : 1,
-              builtinSelected: false,
-              selectedKind: selectedKind,
-              onPick: (_) {},
+    await tester.pumpWidget(
+      ChangeNotifierProvider<WorkbenchUIState>.value(
+        value: ui,
+        child: MaterialApp(
+          locale: const Locale('en'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: PromptOptimizerChatView(
+              inputCtrl: TextEditingController(),
+              onSend: () {},
+              onRetry: () {},
+              onApplyPrompt: (_) {},
+              onApplyKbEdit: (_) {},
+              onRejectKbEdit: (_) {},
+              onAnswerAskUser: (_, _) {},
+              isBusy: false,
+              presetChoices: OptimizerPresetChoices(
+                presets: presets,
+                selectedId: selectedKind == PresetOutputKind.analysis ? 2 : 1,
+                builtinSelected: false,
+                selectedKind: selectedKind,
+                onPick: (_) {},
+              ),
             ),
           ),
         ),
       ),
-    ));
+    );
     await tester.pump();
   }
 
@@ -83,8 +85,9 @@ void main() {
     });
 
     for (final size in const [Size(1000, 800), Size(390, 800)]) {
-      testWidgets('asks what to look at under an analysis preset · ${size.width.round()}',
-          (tester) async {
+      testWidgets('asks what to look at under an analysis preset · ${size.width.round()}', (
+        tester,
+      ) async {
         await pumpChat(
           tester,
           session: PromptOptimizerSession(),
@@ -105,33 +108,35 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
       var sent = 0;
-      await tester.pumpWidget(ChangeNotifierProvider<WorkbenchUIState>.value(
-        value: WorkbenchUIState(),
-        child: MaterialApp(
-          locale: const Locale('en'),
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          home: Scaffold(
-            body: PromptOptimizerChatView(
-              inputCtrl: ctrl,
-              onSend: () => sent++,
-              onRetry: () {},
-              onApplyPrompt: (_) {},
-              onApplyKbEdit: (_) {},
-              onRejectKbEdit: (_) {},
-              onAnswerAskUser: (_, _) {},
-              isBusy: false,
-              presetChoices: OptimizerPresetChoices(
-                presets: presets,
-                selectedId: 2,
-                builtinSelected: false,
-                selectedKind: PresetOutputKind.analysis,
-                onPick: (_) {},
+      await tester.pumpWidget(
+        ChangeNotifierProvider<WorkbenchUIState>.value(
+          value: WorkbenchUIState(),
+          child: MaterialApp(
+            locale: const Locale('en'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(
+              body: PromptOptimizerChatView(
+                inputCtrl: ctrl,
+                onSend: () => sent++,
+                onRetry: () {},
+                onApplyPrompt: (_) {},
+                onApplyKbEdit: (_) {},
+                onRejectKbEdit: (_) {},
+                onAnswerAskUser: (_, _) {},
+                isBusy: false,
+                presetChoices: OptimizerPresetChoices(
+                  presets: presets,
+                  selectedId: 2,
+                  builtinSelected: false,
+                  selectedKind: PresetOutputKind.analysis,
+                  onPick: (_) {},
+                ),
               ),
             ),
           ),
         ),
-      ));
+      );
       await tester.pump();
       await tester.tap(find.text(l10n.optEmptyAnalysisExample1));
       await tester.pump();
@@ -167,21 +172,28 @@ void main() {
 
     testWidgets('can be copied, as the Markdown it was written in', (tester) async {
       String? copied;
-      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform,
-          (call) async {
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (
+        call,
+      ) async {
         if (call.method == 'Clipboard.setData') copied = (call.arguments as Map)['text'] as String;
         return null;
       });
-      addTearDown(() => tester.binding.defaultBinaryMessenger
-          .setMockMethodCallHandler(SystemChannels.platform, null));
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
 
       await pumpChat(
         tester,
         session: sessionWith(deliverable: true),
         selectedKind: PresetOutputKind.analysis,
       );
-      expect(find.text(l10n.optResultMeta('## Overview\nA **short** jacket.'.length)),
-          findsOneWidget);
+      expect(
+        find.text(l10n.optResultMeta('## Overview\nA **short** jacket.'.length)),
+        findsOneWidget,
+      );
 
       await tester.tap(find.text(l10n.optCopy));
       await tester.pump();

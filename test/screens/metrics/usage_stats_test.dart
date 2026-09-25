@@ -18,26 +18,25 @@ void main() {
     double? cachePrice,
     double outputPrice = 0.0,
     int? modelPk,
-  }) =>
-      TokenUsage(
-        modelId: 'm',
-        modelDbId: modelPk,
-        timestamp: at,
-        inputTokens: input,
-        cacheTokens: cache,
-        outputTokens: output,
-        inputPrice: inputPrice,
-        cachePrice: cachePrice,
-        outputPrice: outputPrice,
-      );
+  }) => TokenUsage(
+    modelId: 'm',
+    modelDbId: modelPk,
+    timestamp: at,
+    inputTokens: input,
+    cacheTokens: cache,
+    outputTokens: output,
+    inputPrice: inputPrice,
+    cachePrice: cachePrice,
+    outputPrice: outputPrice,
+  );
 
   LLMModel model(int id, int? feeGroupId) => LLMModel(
-        id: id,
-        modelId: 'm$id',
-        modelName: 'Model $id',
-        tag: 'chat',
-        feeGroupId: feeGroupId,
-      );
+    id: id,
+    modelId: 'm$id',
+    modelName: 'Model $id',
+    tag: 'chat',
+    feeGroupId: feeGroupId,
+  );
 
   group('spec-billed rows in calculateStats', () {
     TokenUsage specRow({
@@ -46,28 +45,28 @@ void main() {
       required double price,
       bool matched = true,
       int? modelPk,
-    }) =>
-        TokenUsage(
-          modelId: 'm',
-          modelDbId: modelPk,
-          timestamp: at,
-          billingMode: 'spec',
-          spec: UsageSpecBilling(
-            unit: unit,
-            units: units,
-            unitPrice: price,
-            snapshot: UsageSpecSnapshot(size: '1080p', matched: matched),
-          ),
-        );
+    }) => TokenUsage(
+      modelId: 'm',
+      modelDbId: modelPk,
+      timestamp: at,
+      billingMode: 'spec',
+      spec: UsageSpecBilling(
+        unit: unit,
+        units: units,
+        unitPrice: price,
+        snapshot: UsageSpecSnapshot(size: '1080p', matched: matched),
+      ),
+    );
 
     test('cost lands in the group\'s spec bucket with its unit count', () {
-      final stats = calculateStats([
-        specRow(unit: OutputUnit.second, units: 8, price: 0.30, modelPk: 1),
-        specRow(unit: OutputUnit.second, units: 5, price: 0.30, modelPk: 1),
-        specRow(unit: OutputUnit.image, units: 2, price: 0.03, modelPk: 1),
-      ], [
-        model(1, 42)
-      ]);
+      final stats = calculateStats(
+        [
+          specRow(unit: OutputUnit.second, units: 8, price: 0.30, modelPk: 1),
+          specRow(unit: OutputUnit.second, units: 5, price: 0.30, modelPk: 1),
+          specRow(unit: OutputUnit.image, units: 2, price: 0.03, modelPk: 1),
+        ],
+        [model(1, 42)],
+      );
 
       final usage = stats.groupUsage[42]!;
       expect(usage.specCost, closeTo(3.96, 1e-9));
@@ -80,24 +79,25 @@ void main() {
     });
 
     test('what reference images cost is its own part, and the group\'s total has it', () {
-      final stats = calculateStats([
-        TokenUsage(
-          modelId: 'seedream',
-          modelDbId: 1,
-          timestamp: at,
-          billingMode: 'spec',
-          spec: const UsageSpecBilling(
-            unit: OutputUnit.image,
-            units: 1,
-            unitPrice: 0.30,
-            inputImages: 3,
-            inputUnits: 2,
-            inputUnitPrice: 0.02,
+      final stats = calculateStats(
+        [
+          TokenUsage(
+            modelId: 'seedream',
+            modelDbId: 1,
+            timestamp: at,
+            billingMode: 'spec',
+            spec: const UsageSpecBilling(
+              unit: OutputUnit.image,
+              units: 1,
+              unitPrice: 0.30,
+              inputImages: 3,
+              inputUnits: 2,
+              inputUnitPrice: 0.02,
+            ),
           ),
-        ),
-      ], [
-        model(1, 42)
-      ]);
+        ],
+        [model(1, 42)],
+      );
 
       final usage = stats.groupUsage[42]!;
       expect(usage.specCost, closeTo(0.30, 1e-9), reason: 'output alone');
@@ -109,12 +109,13 @@ void main() {
     });
 
     test('requests no rate row covered are counted, not hidden in a zero', () {
-      final stats = calculateStats([
-        specRow(unit: OutputUnit.image, units: 1, price: 0.0, matched: false, modelPk: 1),
-        specRow(unit: OutputUnit.image, units: 1, price: 0.03, modelPk: 1),
-      ], [
-        model(1, 42)
-      ]);
+      final stats = calculateStats(
+        [
+          specRow(unit: OutputUnit.image, units: 1, price: 0.0, matched: false, modelPk: 1),
+          specRow(unit: OutputUnit.image, units: 1, price: 0.03, modelPk: 1),
+        ],
+        [model(1, 42)],
+      );
 
       expect(stats.groupUsage[42]!.unmatchedCount, 1);
     });
@@ -136,12 +137,10 @@ void main() {
         ),
         reportedCost: 0.05,
       );
-      final stats = calculateStats([
-        reported,
-        specRow(unit: OutputUnit.image, units: 1, price: 0.03, modelPk: 1),
-      ], [
-        model(1, 42)
-      ]);
+      final stats = calculateStats(
+        [reported, specRow(unit: OutputUnit.image, units: 1, price: 0.03, modelPk: 1)],
+        [model(1, 42)],
+      );
 
       final usage = stats.groupUsage[42]!;
       expect(usage.reportedCost, closeTo(0.05, 1e-9));
@@ -170,11 +169,10 @@ void main() {
     });
 
     test('attributes cache cost to the model\'s fee group', () {
-      final stats = calculateStats([
-        tokenRow(cache: 1000000, inputPrice: 4.0, cachePrice: 1.0, modelPk: 1),
-      ], [
-        model(1, 42)
-      ]);
+      final stats = calculateStats(
+        [tokenRow(cache: 1000000, inputPrice: 4.0, cachePrice: 1.0, modelPk: 1)],
+        [model(1, 42)],
+      );
 
       expect(stats.groupCosts[42], closeTo(1.0, 1e-9));
       expect(stats.totalCost, closeTo(1.0, 1e-9));
@@ -194,9 +192,7 @@ void main() {
     test('is the cached share of every prompt token in range', () {
       // input and cache are stored disjoint, so the denominator is their sum —
       // dividing by input alone would let the rate exceed 100%.
-      final stats = calculateStats([
-        tokenRow(input: 750, cache: 250, output: 40),
-      ], []);
+      final stats = calculateStats([tokenRow(input: 750, cache: 250, output: 40)], []);
 
       expect(stats.cacheHitRate, closeTo(0.25, 1e-9));
     });

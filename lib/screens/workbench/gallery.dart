@@ -8,27 +8,27 @@ import 'package:provider/provider.dart';
 
 import '../../core/app_shortcuts.dart';
 import '../../core/constants.dart';
-import '../../core/file_utils.dart';
-import '../../core/text_editing_focus.dart';
 import '../../core/design_tokens.dart';
+import '../../core/file_utils.dart';
+import '../../core/folder_outline_geometry.dart';
+import '../../core/folder_outline_labels.dart';
+import '../../core/folder_outline_spy.dart';
+import '../../core/text_editing_focus.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/app_image.dart';
 import '../../services/files/file_permission_service.dart';
 import '../../state/gallery_state.dart';
 import '../../widgets/dialogs/file_rename_dialog.dart';
 import '../../widgets/drag/app_drop_zone.dart';
-import '../../widgets/placeholders/permission_placeholder.dart';
+import '../../widgets/files/folder_group_header.dart';
+import '../../widgets/files/folder_outline_bar.dart';
 import '../../widgets/ui/focus_pane.dart';
 import 'widgets/gallery/gallery_file_actions.dart';
 import 'widgets/gallery/image_card.dart';
+import 'widgets/gallery/permission_placeholder.dart';
 import 'widgets/preview/media_preview_dialog.dart';
 import 'widgets/workbench_glass_toolbar.dart';
 import 'workbench_layout.dart';
-import '../../core/folder_outline_geometry.dart';
-import '../../core/folder_outline_labels.dart';
-import '../../core/folder_outline_spy.dart';
-import '../../widgets/files/folder_group_header.dart';
-import '../../widgets/files/folder_outline_bar.dart';
 
 /// Everything the grid reads out of [GalleryState], gathered so the selector
 /// in `build` can compare it in one go.
@@ -51,7 +51,8 @@ typedef _GridInputs = ({
 });
 
 _GridInputs _gridInputs(GalleryState s) {
-  final isResult = s.viewMode == GalleryViewMode.processed ||
+  final isResult =
+      s.viewMode == GalleryViewMode.processed ||
       (s.viewMode == GalleryViewMode.folder && s.folderViewIsResult);
   final isTemp = s.viewMode == GalleryViewMode.temp;
   final permissionPath = isResult
@@ -63,8 +64,7 @@ _GridInputs _gridInputs(GalleryState s) {
     isResult: isResult,
     isTemp: isTemp,
     permissionPath: permissionPath,
-    isUnreachable:
-        !isTemp && permissionPath != null && s.isPathUnreachable(permissionPath),
+    isUnreachable: !isTemp && permissionPath != null && s.isPathUnreachable(permissionPath),
     isScanning: s.isScanning,
     thumbnailSize: s.thumbnailSize,
   );
@@ -73,10 +73,7 @@ _GridInputs _gridInputs(GalleryState s) {
 /// The workbench gallery (`A1 · 1a`): cards straight on the window's aurora,
 /// scrolling under the floating toolbar and above the selection bar.
 class Gallery extends StatefulWidget {
-  const Gallery({
-    super.key,
-    this.extraBottomInset = 0,
-  });
+  const Gallery({super.key, this.extraBottomInset = 0});
 
   /// Space below the grid that something other than the layout's chrome
   /// covers — the video tab's player panel (`A2 · 1a`).
@@ -191,7 +188,7 @@ class _GalleryState extends State<Gallery> {
       showFileRenameDialog(
         context: context,
         filePath: selected.first.path,
-        onSuccess: () => state.refreshImages(),
+        onSuccess: state.refreshImages,
       );
       return KeyEventResult.handled;
     }
@@ -239,11 +236,8 @@ class _GalleryState extends State<Gallery> {
       ? WorkbenchGlassToolbar.phoneHeight + AppSpace.s10
       : WorkbenchGlassToolbar.inset + WorkbenchGlassToolbar.height + AppSpace.s6;
 
-  Future<void> _jumpTo(int index) => _outline.scrollTo(
-        index,
-        duration: AppMotion.sceneOf(context),
-        curve: AppMotion.emphasized,
-      );
+  Future<void> _jumpTo(int index) =>
+      _outline.scrollTo(index, duration: AppMotion.sceneOf(context), curve: AppMotion.emphasized);
 
   void _revealInTree(String path) {
     final layout = _layoutOf(context);
@@ -256,7 +250,7 @@ class _GalleryState extends State<Gallery> {
   void _handleDrop(DropDoneDetails details, GalleryState galleryState) {
     setState(() => _isDragging = false);
     final List<AppImage> newFiles = [];
-    for (var file in details.files) {
+    for (final file in details.files) {
       if (AppConstants.isSupportedFile(file.path)) {
         newFiles.add(AppImage(path: file.path, name: file.name));
       }
@@ -321,8 +315,8 @@ class _GalleryState extends State<Gallery> {
     final sortedPaths = grid.isTemp
         ? const <String>[]
         : (grid.isResult
-            ? galleryState.getGrouped(grid.images).keys.toList()
-            : galleryState.getSortedPaths(grid.images));
+              ? galleryState.getGrouped(grid.images).keys.toList()
+              : galleryState.getSortedPaths(grid.images));
     final showOutline = !grid.isTemp && sortedPaths.length > 1;
     final outlineTop = _outlineTop(phone);
     final insets = chrome.copyWith(
@@ -342,57 +336,67 @@ class _GalleryState extends State<Gallery> {
       // instead (`00f` 帧 3), which is the half that matters here.
       showActiveEdge: false,
       child: DropTarget(
-      onDragDone: (details) => _handleDrop(details, galleryState),
-      onDragEntered: (details) => setState(() => _isDragging = true),
-      onDragExited: (details) => setState(() => _isDragging = false),
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: _buildImageGrid(context, galleryState, grid, insets,
-                outlineLine: showOutline ? outlineTop + FolderOutlineBar.height : 0),
-          ),
-          // `A1b · 1a/1c`: the folder outline, a second glass under the
-          // toolbar (a small float on a phone). Always mounted while the
-          // view is grouped; it fades rather than pops (M2).
-          Positioned(
-            left: WorkbenchGlassToolbar.inset,
-            right: phone ? null : WorkbenchGlassToolbar.inset,
-            top: outlineTop,
-            child: IgnorePointer(
-              ignoring: !showOutline,
-              child: AnimatedOpacity(
-                opacity: showOutline ? 1 : 0,
-                duration: AppMotion.durationOf(context, AppMotion.state),
-                curve: AppMotion.enter,
-                child: showOutline
-                    ? _buildOutline(context, galleryState, grid, sortedPaths, phone: phone)
-                    : const SizedBox.shrink(),
+        onDragDone: (details) => _handleDrop(details, galleryState),
+        onDragEntered: (details) => setState(() => _isDragging = true),
+        onDragExited: (details) => setState(() => _isDragging = false),
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: _buildImageGrid(
+                context,
+                galleryState,
+                grid,
+                insets,
+                outlineLine: showOutline ? outlineTop + FolderOutlineBar.height : 0,
               ),
             ),
-          ),
-          // `00d · 1c` 整面投放: `--scrim` with no blur, between the floating
-          // toolbar and the bar below — as the frame draws it, so the
-          // chrome's glass never blurs a scrim.
-          if (_isDragging)
+            // `A1b · 1a/1c`: the folder outline, a second glass under the
+            // toolbar (a small float on a phone). Always mounted while the
+            // view is grouped; it fades rather than pops (M2).
             Positioned(
-              left: 0,
-              right: 0,
-              top: insets.top,
-              bottom: insets.bottom,
+              left: WorkbenchGlassToolbar.inset,
+              right: phone ? null : WorkbenchGlassToolbar.inset,
+              top: outlineTop,
               child: IgnorePointer(
-                child: AppDropSurfaceOverlay(
-                  title: l10n.galleryDropTitle,
-                  subtitle: l10n.galleryDropSystemHint,
+                ignoring: !showOutline,
+                child: AnimatedOpacity(
+                  opacity: showOutline ? 1 : 0,
+                  duration: AppMotion.durationOf(context, AppMotion.state),
+                  curve: AppMotion.enter,
+                  child: showOutline
+                      ? _buildOutline(context, galleryState, grid, sortedPaths, phone: phone)
+                      : const SizedBox.shrink(),
                 ),
               ),
             ),
-        ],
-      ),
+            // `00d · 1c` 整面投放: `--scrim` with no blur, between the floating
+            // toolbar and the bar below — as the frame draws it, so the
+            // chrome's glass never blurs a scrim.
+            if (_isDragging)
+              Positioned(
+                left: 0,
+                right: 0,
+                top: insets.top,
+                bottom: insets.bottom,
+                child: IgnorePointer(
+                  child: AppDropSurfaceOverlay(
+                    title: l10n.galleryDropTitle,
+                    subtitle: l10n.galleryDropSystemHint,
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
 
-  Future<void> _reAuthorize(BuildContext context, GalleryState state, String path, bool isResult) async {
+  Future<void> _reAuthorize(
+    BuildContext context,
+    GalleryState state,
+    String path,
+    bool isResult,
+  ) async {
     final String? newPath = await FilePermissionService().reAuthorize(
       path,
       title: isResult ? 'Authorize Output Directory' : 'Authorize Folder: $path',
@@ -403,7 +407,7 @@ class _GalleryState extends State<Gallery> {
         await state.updateOutputDirectory(newPath);
       } else {
         state.setViewFolder(newPath);
-        state.refreshImages();
+        unawaited(state.refreshImages());
       }
     }
   }
@@ -473,7 +477,9 @@ class _GalleryState extends State<Gallery> {
         padding: insets,
         // scaleDown so a short host shrinks the placeholder instead of
         // overflowing it.
-        child: Center(child: FittedBox(fit: BoxFit.scaleDown, child: empty)),
+        child: Center(
+          child: FittedBox(fit: BoxFit.scaleDown, child: empty),
+        ),
       );
     }
     final bool revealing = _lastBuiltEmpty;
@@ -485,12 +491,12 @@ class _GalleryState extends State<Gallery> {
     final globalIndexByPath = state.getGlobalIndex(images);
     final sortedPaths = isResult ? grouped.keys.toList() : state.getSortedPaths(images);
 
-
     final Widget gridView = LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth <= 0) return const SizedBox.shrink();
 
-        final bool showHeaders = !isTemp && (grouped.length > 1 || grid.mode == GalleryViewMode.all);
+        final bool showHeaders =
+            !isTemp && (grouped.length > 1 || grid.mode == GalleryViewMode.all);
 
         // The spy's offset table, from the same numbers the delegate below
         // lays out with. After the frame: a table change can move the
@@ -563,28 +569,38 @@ class _GalleryState extends State<Gallery> {
                             // The ordinal, not a bool: a card also has to
                             // repaint when its *place* in the selection shifts.
                             child: Selector<GalleryState, int>(
-                          selector: (_, state) => state.selectionNumberOf(imageFile.path),
-                          builder: (context, selectionNumber, _) {
-                            final isVideo = AppConstants.isVideoFile(imageFile.path);
-                            return ImageCard(
-                              imageFile: imageFile,
-                              selectionNumber: selectionNumber,
-                              thumbnailSize: grid.thumbnailSize,
-                              heroScope: kWorkbenchPreviewHeroScope,
-                              onTap: () {
-                                if (isVideo) {
-                                  showMediaPreview(context, galleryImages: images, initialIndex: globalIndex, heroScope: kWorkbenchPreviewHeroScope);
-                                } else {
-                                  _handleSelectionTap(state, imageFile);
-                                }
+                              selector: (_, state) => state.selectionNumberOf(imageFile.path),
+                              builder: (context, selectionNumber, _) {
+                                final isVideo = AppConstants.isVideoFile(imageFile.path);
+                                return ImageCard(
+                                  imageFile: imageFile,
+                                  selectionNumber: selectionNumber,
+                                  thumbnailSize: grid.thumbnailSize,
+                                  heroScope: kWorkbenchPreviewHeroScope,
+                                  onTap: () {
+                                    if (isVideo) {
+                                      showMediaPreview(
+                                        context,
+                                        galleryImages: images,
+                                        initialIndex: globalIndex,
+                                        heroScope: kWorkbenchPreviewHeroScope,
+                                      );
+                                    } else {
+                                      _handleSelectionTap(state, imageFile);
+                                    }
+                                  },
+                                  onDoubleTap: isVideo
+                                      ? null
+                                      : () {
+                                          showMediaPreview(
+                                            context,
+                                            galleryImages: images,
+                                            initialIndex: globalIndex,
+                                            heroScope: kWorkbenchPreviewHeroScope,
+                                          );
+                                        },
+                                );
                               },
-                              onDoubleTap: isVideo
-                                  ? null
-                                  : () {
-                                      showMediaPreview(context, galleryImages: images, initialIndex: globalIndex, heroScope: kWorkbenchPreviewHeroScope);
-                                    },
-                            );
-                          },
                             ),
                           ),
                         );
@@ -633,11 +649,7 @@ class _ScanningState extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const SizedBox(
-          width: 28,
-          height: 28,
-          child: CircularProgressIndicator(strokeWidth: 3),
-        ),
+        const SizedBox(width: 28, height: 28, child: CircularProgressIndicator(strokeWidth: 3)),
         const SizedBox(height: AppSpace.s10),
         Text(
           AppLocalizations.of(context)!.galleryScanning,
@@ -750,10 +762,12 @@ class _DashedRectPainter extends CustomPainter {
       ..strokeWidth = strokeWidth;
     final inset = strokeWidth / 2;
     final path = Path()
-      ..addRRect(RRect.fromRectAndRadius(
-        Rect.fromLTWH(inset, inset, size.width - strokeWidth, size.height - strokeWidth),
-        Radius.circular(radius),
-      ));
+      ..addRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(inset, inset, size.width - strokeWidth, size.height - strokeWidth),
+          Radius.circular(radius),
+        ),
+      );
     for (final ui.PathMetric metric in path.computeMetrics()) {
       double distance = 0;
       while (distance < metric.length) {

@@ -6,12 +6,7 @@ import 'package:path/path.dart' as p;
 
 import '../../core/app_paths.dart';
 
-enum SamplingMethod {
-  nearest,
-  linear,
-  cubic,
-  lanczos,
-}
+enum SamplingMethod { nearest, linear, cubic, lanczos }
 
 class _ImageProcessParams {
   final String sourcePath;
@@ -49,13 +44,16 @@ Uint8List _runImageProcess(_ImageProcessParams params) {
   if (image == null) throw Exception('Failed to decode image');
 
   // 1. Crop
-  if (params.cropX != null && params.cropY != null && params.cropWidth != null && params.cropHeight != null) {
+  if (params.cropX != null &&
+      params.cropY != null &&
+      params.cropWidth != null &&
+      params.cropHeight != null) {
     image = img.copyCrop(
-      image, 
-      x: params.cropX!, 
-      y: params.cropY!, 
-      width: params.cropWidth!, 
-      height: params.cropHeight!
+      image,
+      x: params.cropX!,
+      y: params.cropY!,
+      width: params.cropWidth!,
+      height: params.cropHeight!,
     );
   }
 
@@ -63,10 +61,14 @@ Uint8List _runImageProcess(_ImageProcessParams params) {
   if (params.width != null || params.height != null) {
     img.Interpolation filter;
     switch (params.sampling) {
-      case SamplingMethod.nearest: filter = img.Interpolation.nearest;
-      case SamplingMethod.linear: filter = img.Interpolation.linear;
-      case SamplingMethod.cubic: filter = img.Interpolation.cubic;
-      case SamplingMethod.lanczos: filter = img.Interpolation.average; // Lanczos not directly mapped, use average
+      case SamplingMethod.nearest:
+        filter = img.Interpolation.nearest;
+      case SamplingMethod.linear:
+        filter = img.Interpolation.linear;
+      case SamplingMethod.cubic:
+        filter = img.Interpolation.cubic;
+      case SamplingMethod.lanczos:
+        filter = img.Interpolation.average; // Lanczos not directly mapped, use average
     }
 
     image = img.copyResize(

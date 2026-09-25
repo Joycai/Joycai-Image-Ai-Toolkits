@@ -11,31 +11,38 @@ import 'package:joycai_image_ai_toolkits/widgets/models/context_window_slider.da
 /// Laid out 360 wide with the 20 inset, so the stops sit 40 apart from x = 20
 /// to x = 340, and the magnet's ±3% of the track is ±9.6px.
 void main() {
-  Future<List<double>> pump(WidgetTester tester, {required double value, bool enabled = true}) async {
+  Future<List<double>> pump(
+    WidgetTester tester, {
+    required double value,
+    bool enabled = true,
+  }) async {
     final changes = <double>[];
-    await tester.pumpWidget(MaterialApp(
-      theme: buildAppTheme(
-        accent: AppConstants.presetThemes.values.first,
-        brightness: Brightness.light,
-      ),
-      home: Scaffold(
-        body: Center(
-          child: SizedBox(
-            width: 360,
-            child: ContextWindowSlider(
-              value: value,
-              semanticLabel: 'probe',
-              semanticValueOf: (v) => '$v',
-              onChanged: enabled ? changes.add : null,
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildAppTheme(
+          accent: AppConstants.presetThemes.values.first,
+          brightness: Brightness.light,
+        ),
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 360,
+              child: ContextWindowSlider(
+                value: value,
+                semanticLabel: 'probe',
+                semanticValueOf: (v) => '$v',
+                onChanged: enabled ? changes.add : null,
+              ),
             ),
           ),
         ),
       ),
-    ));
+    );
     return changes;
   }
 
-  Offset at(WidgetTester tester, double x) => tester.getTopLeft(find.byType(ContextWindowSlider)) + Offset(x, 9);
+  Offset at(WidgetTester tester, double x) =>
+      tester.getTopLeft(find.byType(ContextWindowSlider)) + Offset(x, 9);
 
   testWidgets('a tap within the magnet lands on the stop', (tester) async {
     final changes = await pump(tester, value: 0);
@@ -78,19 +85,28 @@ void main() {
     expect(changes, isEmpty);
   });
 
-  testWidgets('the preset menu lists the nine stops and hands back the index picked', (tester) async {
+  testWidgets('the preset menu lists the nine stops and hands back the index picked', (
+    tester,
+  ) async {
     final picked = <int>[];
-    await tester.pumpWidget(MaterialApp(
-      theme: buildAppTheme(
-        accent: AppConstants.presetThemes.values.first,
-        brightness: Brightness.light,
-      ),
-      home: Scaffold(
-        body: Center(
-          child: ContextWindowPresetMenu(label: 'Presets', selected: 5, onSelected: picked.add, height: 32),
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildAppTheme(
+          accent: AppConstants.presetThemes.values.first,
+          brightness: Brightness.light,
+        ),
+        home: Scaffold(
+          body: Center(
+            child: ContextWindowPresetMenu(
+              label: 'Presets',
+              selected: 5,
+              onSelected: picked.add,
+              height: 32,
+            ),
+          ),
         ),
       ),
-    ));
+    );
     await tester.tap(find.text('Presets'));
     await tester.pumpAndSettle();
     expect(find.text('131,072'), findsOneWidget);

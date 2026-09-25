@@ -3,10 +3,7 @@ part of 'video_config_panel.dart';
 /// A card in the right column (`A2 · 1a`): the panel's ground, a hairline,
 /// r16, inset 10 — the image column's card, restated.
 class _PanelCard extends StatelessWidget {
-  const _PanelCard({
-    required this.child,
-    this.padding = const EdgeInsets.all(_kCardPadding),
-  });
+  const _PanelCard({required this.child, this.padding = const EdgeInsets.all(_kCardPadding)});
 
   final Widget child;
   final EdgeInsetsGeometry padding;
@@ -85,7 +82,10 @@ class _ToggleRow extends StatelessWidget {
                 child: Text.rich(
                   TextSpan(
                     children: [
-                      TextSpan(text: title, style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurface)),
+                      TextSpan(
+                        text: title,
+                        style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurface),
+                      ),
                       const WidgetSpan(child: SizedBox(width: AppSpace.s6)),
                       TextSpan(
                         text: hint,
@@ -132,7 +132,9 @@ class _WarningNotice extends StatelessWidget {
           Expanded(
             child: Text(
               message,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(color: semantic.onWarningContainer),
+              style: Theme.of(
+                context,
+              ).textTheme.labelSmall?.copyWith(color: semantic.onWarningContainer),
             ),
           ),
         ],

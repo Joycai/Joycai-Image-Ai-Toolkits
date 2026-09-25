@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../core/app_semantic_colors.dart';
-import '../../core/design_tokens.dart';
-import '../../services/files/file_permission_service.dart';
+import '../../../../core/app_semantic_colors.dart';
+import '../../../../core/design_tokens.dart';
+import '../../../../services/files/file_permission_service.dart';
 
 /// A folder the app can no longer read (`A1 · 1f` 权限不可达, `01 · 1e`
 /// macOS sandbox).
@@ -14,11 +14,7 @@ class PermissionPlaceholder extends StatelessWidget {
   final VoidCallback onReAuthorize;
   final String? customMessage;
 
-  const PermissionPlaceholder({
-    super.key,
-    required this.onReAuthorize,
-    this.customMessage,
-  });
+  const PermissionPlaceholder({super.key, required this.onReAuthorize, this.customMessage});
 
   @override
   Widget build(BuildContext context) {

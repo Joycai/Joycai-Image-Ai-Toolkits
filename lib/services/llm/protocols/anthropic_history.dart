@@ -59,10 +59,7 @@ List<Map<String, dynamic>> _labelAuthorText(List<Map<String, dynamic>> blocks) {
 /// labelled [anthropicAuthorTextLabel] (protocol 02 §2.1 rule 4, pitfalls 11
 /// §21). A message that already names itself (the assistant's
 /// `[view_image result]` note) is left alone.
-AnthropicHistory buildAnthropicHistory(
-  List<LLMMessage> history, {
-  String? modelId,
-}) {
+AnthropicHistory buildAnthropicHistory(List<LLMMessage> history, {String? modelId}) {
   final systemParts = <String>[];
   final messages = <Map<String, dynamic>>[];
 
@@ -76,8 +73,7 @@ AnthropicHistory buildAnthropicHistory(
       // Only the tool branch appends `tool_result` blocks, and those carry no
       // text — so the label can only ever land on author text.
       final joinsResults =
-          role == 'user' &&
-          existing.any((b) => b is Map && b['type'] == 'tool_result');
+          role == 'user' && existing.any((b) => b is Map && b['type'] == 'tool_result');
       existing.addAll(joinsResults ? _labelAuthorText(blocks) : blocks);
       return;
     }
@@ -117,9 +113,7 @@ AnthropicHistory buildAnthropicHistory(
           (modelId == null || msg.rawThinkingModelId == modelId)) {
         // Shallow copies, so a cache breakpoint stamped on the last block
         // later does not write into the persisted history.
-        append('assistant', [
-          for (final block in rawContent) Map<String, dynamic>.of(block),
-        ]);
+        append('assistant', [for (final block in rawContent) Map<String, dynamic>.of(block)]);
         continue;
       }
 
@@ -158,12 +152,7 @@ AnthropicHistory buildAnthropicHistory(
         blocks.add({'type': 'text', 'text': msg.content});
       }
       for (final call in msg.toolCalls) {
-        blocks.add({
-          'type': 'tool_use',
-          'id': call.id,
-          'name': call.name,
-          'input': call.arguments,
-        });
+        blocks.add({'type': 'tool_use', 'id': call.id, 'name': call.name, 'input': call.arguments});
       }
       append('assistant', blocks);
       continue;
@@ -172,10 +161,7 @@ AnthropicHistory buildAnthropicHistory(
     append('user', anthropicUserBlocks(msg));
   }
 
-  return AnthropicHistory(
-    systemParts.isEmpty ? null : systemParts.join('\n\n'),
-    messages,
-  );
+  return AnthropicHistory(systemParts.isEmpty ? null : systemParts.join('\n\n'), messages);
 }
 
 /// Text + image blocks of one user turn.

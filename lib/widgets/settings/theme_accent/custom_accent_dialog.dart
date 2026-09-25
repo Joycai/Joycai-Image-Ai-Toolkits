@@ -29,8 +29,9 @@ class _CustomAccentDialog extends StatefulWidget {
 
 class _CustomAccentDialogState extends State<_CustomAccentDialog> {
   late CustomAccentDerivation _derived = CustomAccent.derive(widget.initialSeed);
-  late final TextEditingController _hexController =
-      TextEditingController(text: CustomAccent.hex(widget.initialSeed));
+  late final TextEditingController _hexController = TextEditingController(
+    text: CustomAccent.hex(widget.initialSeed),
+  );
 
   @override
   void dispose() {
@@ -57,28 +58,30 @@ class _CustomAccentDialogState extends State<_CustomAccentDialog> {
       scrollable: true,
       dividedHeading: false,
       onClose: () => Navigator.pop(context),
-      content: LayoutBuilder(builder: (context, constraints) {
-        final Widget picker = _buildPicker(context);
-        final Widget result = _buildResult(context, l10n);
-        if (constraints.maxWidth < 440) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+      content: LayoutBuilder(
+        builder: (context, constraints) {
+          final Widget picker = _buildPicker(context);
+          final Widget result = _buildResult(context, l10n);
+          if (constraints.maxWidth < 440) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(child: SizedBox(width: 150, child: picker)),
+                const SizedBox(height: AppSpace.s16),
+                result,
+              ],
+            );
+          }
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Center(child: SizedBox(width: 150, child: picker)),
-              const SizedBox(height: AppSpace.s16),
-              result,
+              SizedBox(width: 150, child: picker),
+              const SizedBox(width: AppSpace.s16),
+              Expanded(child: result),
             ],
           );
-        }
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(width: 150, child: picker),
-            const SizedBox(width: AppSpace.s16),
-            Expanded(child: result),
-          ],
-        );
-      }),
+        },
+      ),
       actions: [
         AppButton(
           label: l10n.cancel,
@@ -163,35 +166,42 @@ class _CustomAccentDialogState extends State<_CustomAccentDialog> {
     final colorScheme = Theme.of(context).colorScheme;
     final CustomAccentVerdict verdict = _derived.verdict;
 
-    final (Color bannerBg, Color bannerInk, Color bannerText, IconData bannerIcon, String message) =
-        switch (verdict) {
+    final (
+      Color bannerBg,
+      Color bannerInk,
+      Color bannerText,
+      IconData bannerIcon,
+      String message,
+    ) = switch (verdict) {
       CustomAccentVerdict.passed => (
-          semantic.successContainer,
-          semantic.success,
-          semantic.onSuccessContainer,
-          Icons.check_circle,
-          l10n.customAccentPassed,
-        ),
+        semantic.successContainer,
+        semantic.success,
+        semantic.onSuccessContainer,
+        Icons.check_circle,
+        l10n.customAccentPassed,
+      ),
       CustomAccentVerdict.inkFallback => (
-          semantic.warningContainer,
-          semantic.warning,
-          semantic.onWarningContainer,
-          Icons.warning_amber_rounded,
-          l10n.customAccentInkFallback,
-        ),
+        semantic.warningContainer,
+        semantic.warning,
+        semantic.onWarningContainer,
+        Icons.warning_amber_rounded,
+        l10n.customAccentInkFallback,
+      ),
       CustomAccentVerdict.failed => (
-          colorScheme.errorContainer,
-          colorScheme.error,
-          colorScheme.onErrorContainer,
-          Icons.error_outline,
-          l10n.customAccentFailed,
-        ),
+        colorScheme.errorContainer,
+        colorScheme.error,
+        colorScheme.onErrorContainer,
+        Icons.error_outline,
+        l10n.customAccentFailed,
+      ),
     };
 
-    final AccentCheck white =
-        _derived.checks.firstWhere((c) => c.kind == AccentCheckKind.whiteOnAccent);
-    final AccentCheck? ink =
-        _derived.checks.where((c) => c.kind == AccentCheckKind.inkOnAccent).firstOrNull;
+    final AccentCheck white = _derived.checks.firstWhere(
+      (c) => c.kind == AccentCheckKind.whiteOnAccent,
+    );
+    final AccentCheck? ink = _derived.checks
+        .where((c) => c.kind == AccentCheckKind.inkOnAccent)
+        .firstOrNull;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -201,9 +211,13 @@ class _CustomAccentDialogState extends State<_CustomAccentDialog> {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(child: _PairPanel(accent: _derived.accent, brightness: Brightness.light)),
+            Expanded(
+              child: _PairPanel(accent: _derived.accent, brightness: Brightness.light),
+            ),
             const SizedBox(width: 8),
-            Expanded(child: _PairPanel(accent: _derived.accent, brightness: Brightness.dark)),
+            Expanded(
+              child: _PairPanel(accent: _derived.accent, brightness: Brightness.dark),
+            ),
           ],
         ),
         const SizedBox(height: AppSpace.s10),
@@ -230,9 +244,9 @@ class _CustomAccentDialogState extends State<_CustomAccentDialog> {
                     Text(
                       message,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: bannerText,
-                            height: AppType.proseHeight,
-                          ),
+                        color: bannerText,
+                        height: AppType.proseHeight,
+                      ),
                     ),
                     const SizedBox(height: AppSpace.s6),
                     Wrap(
@@ -257,13 +271,16 @@ class _CustomAccentDialogState extends State<_CustomAccentDialog> {
         ),
         const SizedBox(height: AppSpace.s10),
         for (final AccentCheck check in _derived.checks)
-          if (check.kind != AccentCheckKind.whiteOnAccent && check.kind != AccentCheckKind.inkOnAccent)
+          if (check.kind != AccentCheckKind.whiteOnAccent &&
+              check.kind != AccentCheckKind.inkOnAccent)
             Padding(
               padding: const EdgeInsets.only(bottom: 4),
               child: Row(
                 children: [
                   Icon(
-                    check.brightness == Brightness.light ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+                    check.brightness == Brightness.light
+                        ? Icons.light_mode_outlined
+                        : Icons.dark_mode_outlined,
                     size: AppSize.iconSm,
                     color: colorScheme.onSurfaceVariant,
                   ),

@@ -6,7 +6,8 @@ import 'package:joycai_image_ai_toolkits/services/assistant/knowledge_base_servi
 /// spliced whole file, so every rule here is about not touching the wrong
 /// lines — the failure mode is a rule silently lost or duplicated.
 void main() {
-  const file = '# Rules\n'
+  const file =
+      '# Rules\n'
       '\n'
       'intro\n'
       '\n'
@@ -28,7 +29,10 @@ void main() {
   group('replace_section', () {
     test('replaces the heading and everything under it up to the next heading of its level', () {
       final out = splice('## Lighting', '## Lighting\n\n- hard light\n');
-      expect(out, '# Rules\n\nintro\n\n## Lighting\n\n- hard light\n\n## Composition\n\n- rule of thirds\n');
+      expect(
+        out,
+        '# Rules\n\nintro\n\n## Lighting\n\n- hard light\n\n## Composition\n\n- rule of thirds\n',
+      );
     });
 
     test('a nested sub-heading belongs to its parent section and goes with it', () {
@@ -63,15 +67,27 @@ void main() {
 
     test('a heading-looking line inside a code fence is not a heading', () {
       const fenced = '## A\n```\n## not a heading\n```\n- a\n## B\n- b\n';
-      final out = KnowledgeBaseService.spliceSection(fenced, '## A', '## A\n- changed', append: false);
+      final out = KnowledgeBaseService.spliceSection(
+        fenced,
+        '## A',
+        '## A\n- changed',
+        append: false,
+      );
       expect(out, '## A\n- changed\n\n## B\n- b\n');
-      expect(() => KnowledgeBaseService.spliceSection(fenced, '## not a heading', 'x', append: false),
-          throwsA(isA<KbSectionNotFound>()));
+      expect(
+        () => KnowledgeBaseService.spliceSection(fenced, '## not a heading', 'x', append: false),
+        throwsA(isA<KbSectionNotFound>()),
+      );
     });
 
     test('CRLF files keep CRLF', () {
       final crlf = file.replaceAll('\n', '\r\n');
-      final out = KnowledgeBaseService.spliceSection(crlf, '## Lighting', '## Lighting\n- hard', append: false);
+      final out = KnowledgeBaseService.spliceSection(
+        crlf,
+        '## Lighting',
+        '## Lighting\n- hard',
+        append: false,
+      );
       expect(out, isNot(contains(RegExp(r'[^\r]\n'))));
       expect(out, contains('## Lighting\r\n- hard\r\n\r\n## Composition'));
     });
@@ -79,11 +95,13 @@ void main() {
     test('a heading not in the file throws, naming the ones that are', () {
       expect(
         () => splice('## Lightning', '## Lightning\n- x'),
-        throwsA(isA<KbSectionNotFound>().having(
-          (e) => e.message,
-          'message',
-          allOf(contains('## Lighting'), contains('## Composition'), contains('### Golden hour')),
-        )),
+        throwsA(
+          isA<KbSectionNotFound>().having(
+            (e) => e.message,
+            'message',
+            allOf(contains('## Lighting'), contains('## Composition'), contains('### Golden hour')),
+          ),
+        ),
       );
     });
 
@@ -104,7 +122,12 @@ void main() {
     });
 
     test('with no section: at the end of the file, after one blank line', () {
-      final out = KnowledgeBaseService.spliceSection(file, null, '## Colour\n- muted', append: true);
+      final out = KnowledgeBaseService.spliceSection(
+        file,
+        null,
+        '## Colour\n- muted',
+        append: true,
+      );
       expect(out, endsWith('- rule of thirds\n\n## Colour\n- muted\n'));
     });
 
@@ -114,9 +137,16 @@ void main() {
   });
 
   test('sectionHeadings lists ATX headings in order, skipping fences', () {
-    expect(KnowledgeBaseService.sectionHeadings(file),
-        ['# Rules', '## Lighting', '### Golden hour', '## Composition']);
-    expect(KnowledgeBaseService.sectionHeadings('```\n# no\n```\n#nospace\n####### seven\n'), isEmpty);
+    expect(KnowledgeBaseService.sectionHeadings(file), [
+      '# Rules',
+      '## Lighting',
+      '### Golden hour',
+      '## Composition',
+    ]);
+    expect(
+      KnowledgeBaseService.sectionHeadings('```\n# no\n```\n#nospace\n####### seven\n'),
+      isEmpty,
+    );
   });
 
   test('headingAbove names the section a line sits in', () {

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -11,21 +12,21 @@ import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/browser_file.dart';
 import '../../models/prompt.dart';
+import '../../services/db/database_service.dart';
 import '../../services/tasks/ai_rename_agent.dart';
 import '../../services/tasks/ai_rename_review.dart';
-import '../../services/db/database_service.dart';
 import '../../services/tasks/task_queue_service.dart';
 import '../../state/app_state.dart';
 import '../../state/file_browser_state.dart';
+import '../../widgets/files/transfer_dialog_parts.dart';
+import '../../widgets/glass/glass_controls.dart';
+import '../../widgets/models/chat_model_selector.dart';
 import '../../widgets/ui/app_button.dart';
 import '../../widgets/ui/app_dialog.dart';
 import '../../widgets/ui/app_dropdown.dart';
 import '../../widgets/ui/app_field_size.dart';
 import '../../widgets/ui/app_segmented_control.dart';
 import '../../widgets/ui/app_snackbar.dart';
-import '../../widgets/models/chat_model_selector.dart';
-import '../../widgets/glass/glass_controls.dart';
-import '../../widgets/files/transfer_dialog_parts.dart';
 
 part 'ai_rename/ai_rename_config.dart';
 part 'ai_rename/ai_rename_results.dart';
@@ -166,14 +167,14 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
     }
 
     final all = _files;
-    final targets = onlyPaths == null
-        ? all
-        : all.where((f) => onlyPaths.contains(f.path)).toList();
+    final targets = onlyPaths == null ? all : all.where((f) => onlyPaths.contains(f.path)).toList();
     if (targets.isEmpty) return;
 
-    _db.saveSetting('last_ai_rename_model_id', _selectedModelDbId.toString());
-    _db.saveSetting('last_ai_rename_system_prompt_id', _selectedTemplate?.id?.toString() ?? '');
-    _db.saveSetting('last_ai_rename_instructions', _instructionController.text);
+    unawaited(_db.saveSetting('last_ai_rename_model_id', _selectedModelDbId.toString()));
+    unawaited(
+      _db.saveSetting('last_ai_rename_system_prompt_id', _selectedTemplate?.id?.toString() ?? ''),
+    );
+    unawaited(_db.saveSetting('last_ai_rename_instructions', _instructionController.text));
 
     _update(() {
       _isGenerating = true;
@@ -188,11 +189,7 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
 
     try {
       final filesData = targets
-          .map((f) => {
-                'original_name': f.name,
-                'path': f.path,
-                'category': f.category.name,
-              })
+          .map((f) => {'original_name': f.name, 'path': f.path, 'category': f.category.name})
           .toList();
 
       await AiRenameAgent.collectProposals(
@@ -280,7 +277,7 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
                 'old_name': row.oldName,
                 'new_name': row.newName,
                 'overwrite': row.choice == RenameConflictChoice.overwrite,
-              }
+              },
           ],
         },
         type: TaskType.aiRename,
@@ -291,7 +288,7 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
       if (mounted) {
         Navigator.pop(context);
         AppSnackBar.info(context, l10n.taskSubmitted);
-        appState.fileBrowserState.refresh();
+        unawaited(appState.fileBrowserState.refresh());
       }
     } catch (e) {
       if (mounted) {
@@ -357,7 +354,7 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
                     template: _selectedTemplate,
                     generating: _isGenerating,
                     onEdit: _showNarrowConfigSheet,
-                    onGenerate: hasModels ? () => _generate() : null,
+                    onGenerate: hasModels ? _generate : null,
                     onStop: _stop,
                   ),
                   Expanded(child: _buildResults(l10n, hasModels, isNarrow)),
@@ -381,7 +378,8 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
   /// widest action set any row can carry and the badge beside it.
   bool _actionsMustFold(BuildContext context, AppLocalizations l10n, double width, bool narrow) {
     final textTheme = Theme.of(context).textTheme;
-    double action(String label) => measureGlassText(context, label, textTheme.labelMedium!) + _RowAction.chrome;
+    double action(String label) =>
+        measureGlassText(context, label, textTheme.labelMedium!) + _RowAction.chrome;
     double badge(String label) => measureGlassText(context, label, textTheme.labelSmall!) + 16;
 
     final actions = [
@@ -396,7 +394,15 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
       badge(l10n.conflictOverwrite),
     ].reduce(math.max);
 
-    final fixed = 28 + 32 + AppSpace.s10 + (narrow ? 0 : _kOldNameWidth + 8 + AppSize.iconSm + 8) + 8 + badges + 8 + actions;
+    final fixed =
+        28 +
+        32 +
+        AppSpace.s10 +
+        (narrow ? 0 : _kOldNameWidth + 8 + AppSize.iconSm + 8) +
+        8 +
+        badges +
+        8 +
+        actions;
     return width - fixed < _kMinNewNameWidth;
   }
 
@@ -428,9 +434,11 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
         // the long one would squeeze the summary out.
         final buttonText = textTheme.labelLarge!.copyWith(fontWeight: FontWeight.w600);
         final cancelWidth = measureGlassText(context, l10n.cancel, buttonText) + 20;
-        final applyWidth = measureGlassText(context, l10n.renameApplyCount(_applyCount), buttonText) + 28;
+        final applyWidth =
+            measureGlassText(context, l10n.renameApplyCount(_applyCount), buttonText) + 28;
         final useShort =
-            constraints.maxWidth - cancelWidth - applyWidth - AppSpace.s6 - 12 < _kMinFooterSummaryWidth;
+            constraints.maxWidth - cancelWidth - applyWidth - AppSpace.s6 - 12 <
+            _kMinFooterSummaryWidth;
 
         return Row(
           children: [
@@ -441,7 +449,10 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
                     TextSpan(text: lead),
                     if (unresolved != null) ...[
                       const TextSpan(text: ' · '),
-                      TextSpan(text: unresolved, style: TextStyle(color: colorScheme.onErrorContainer)),
+                      TextSpan(
+                        text: unresolved,
+                        style: TextStyle(color: colorScheme.onErrorContainer),
+                      ),
                     ],
                   ],
                 ),
@@ -460,7 +471,9 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
             AppButton(
               // Counts only the rows that will actually move. An unresolved
               // conflict subtracts itself and nothing else.
-              label: useShort ? l10n.renameApplyShort(_applyCount) : l10n.renameApplyCount(_applyCount),
+              label: useShort
+                  ? l10n.renameApplyShort(_applyCount)
+                  : l10n.renameApplyCount(_applyCount),
               loading: _isSubmitting,
               onPressed: (_applyCount == 0 || _isGenerating || _isSubmitting) ? null : _apply,
             ),

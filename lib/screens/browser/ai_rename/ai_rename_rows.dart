@@ -13,9 +13,9 @@ class _Caption extends StatelessWidget {
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
       style: Theme.of(context).textTheme.labelSmall!.copyWith(
-            color: Theme.of(context).colorScheme.onAccentTint,
-            letterSpacing: AppType.trackedLabelSpacing,
-          ),
+        color: Theme.of(context).colorScheme.onAccentTint,
+        letterSpacing: AppType.trackedLabelSpacing,
+      ),
     );
   }
 }
@@ -67,7 +67,9 @@ class _GeneratingRow extends StatelessWidget {
           Flexible(
             child: Text(
               label,
-              style: Theme.of(context).textTheme.bodySmall!.copyWith(color: colorScheme.onSurfaceVariant),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall!.copyWith(color: colorScheme.onSurfaceVariant),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -177,7 +179,11 @@ class _ResultRow extends StatelessWidget {
     if (row.skipped) {
       badge = TransferBadge(label: l10n.renameSkippedBadge, tone: TransferTone.track);
     } else if (unresolved) {
-      badge = TransferBadge(label: l10n.renameDuplicateBadge, tone: TransferTone.err, outlined: true);
+      badge = TransferBadge(
+        label: l10n.renameDuplicateBadge,
+        tone: TransferTone.err,
+        outlined: true,
+      );
     } else if (row.choice == RenameConflictChoice.overwrite) {
       badge = TransferBadge(label: l10n.conflictOverwrite, tone: TransferTone.err);
     } else if (row.autoRenamed) {

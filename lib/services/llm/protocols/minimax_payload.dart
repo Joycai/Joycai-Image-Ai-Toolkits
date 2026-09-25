@@ -16,12 +16,7 @@ import 'protocol.dart';
 
 /// Every path suffix a MiniMax channel may have been configured with, longest
 /// first so `/anthropic/v1` is never mistaken for a bare `/v1`.
-const List<String> _minimaxFaceSuffixes = [
-  '/anthropic/v1',
-  '/anthropic',
-  '/v1',
-  '/v2',
-];
+const List<String> _minimaxFaceSuffixes = ['/anthropic/v1', '/anthropic', '/v1', '/v2'];
 
 /// The bare host base with any known MiniMax face suffix stripped.
 String _minimaxHostBase(String endpoint) {
@@ -193,9 +188,10 @@ void throwIfMiniMaxImagesFailed(Map<String, dynamic> data) {
   final failed = _minimaxCount(metadata['failed_count']);
   if (success == 0 && failed != null && failed > 0) {
     throw LLMApiException(
-        'MiniMax Images API generated no image ($failed failed). This is '
-        'usually content moderation — the request itself succeeded.',
-        isEnvelope: true);
+      'MiniMax Images API generated no image ($failed failed). This is '
+      'usually content moderation — the request itself succeeded.',
+      isEnvelope: true,
+    );
   }
 }
 
@@ -228,9 +224,7 @@ enum MiniMaxVideoRole {
   /// `reference_audio` as a frame and invert the rule this predicate exists
   /// to enforce. A new role now defaults to the reference side, which is the
   /// safe one.
-  bool get isFrame =>
-      this == MiniMaxVideoRole.firstFrame ||
-      this == MiniMaxVideoRole.lastFrame;
+  bool get isFrame => this == MiniMaxVideoRole.firstFrame || this == MiniMaxVideoRole.lastFrame;
 }
 
 /// One resolved media item for [buildMiniMaxVideoPayload].
@@ -317,8 +311,9 @@ Map<String, dynamic> buildMiniMaxVideoPayload({
 /// The frames win when both are present: a first/last frame is a precise
 /// instruction the user placed deliberately, while reference images are
 /// supplementary. Returns the kept items first.
-(List<MiniMaxVideoMedia> kept, List<MiniMaxVideoMedia> dropped)
-    partitionMiniMaxVideoMedia(List<MiniMaxVideoMedia> media) {
+(List<MiniMaxVideoMedia> kept, List<MiniMaxVideoMedia> dropped) partitionMiniMaxVideoMedia(
+  List<MiniMaxVideoMedia> media,
+) {
   final hasFrame = media.any((m) => m.role.isFrame);
   if (!hasFrame) return (media, const []);
   return (

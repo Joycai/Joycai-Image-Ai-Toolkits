@@ -6,8 +6,8 @@ import '../../models/llm_channel.dart';
 import '../../models/llm_model.dart';
 import '../../state/app_state.dart';
 import '../ui/app_field_size.dart';
-import 'model_picker_options.dart';
 import '../ui/searchable_picker.dart';
+import 'model_picker_options.dart';
 
 /// How a [ChatModelSelector] presents itself.
 enum ChatModelSelectorStyle {
@@ -78,18 +78,18 @@ class ChatModelSelector extends StatelessWidget {
     final selectedChannel = selectedModel == null
         ? null
         : appState.allChannels.cast<LLMChannel?>().firstWhere(
-              (c) => c?.id == selectedModel!.channelId,
-              orElse: () => null,
-            );
+            (c) => c?.id == selectedModel!.channelId,
+            orElse: () => null,
+          );
 
     return SearchablePickerField<int>(
-      selected: selectedModel == null ? null : modelPickerOption(selectedModel, channel: selectedChannel),
+      selected: selectedModel == null
+          ? null
+          : modelPickerOption(selectedModel, channel: selectedChannel),
       // Built on open, not on build — and the channels are indexed once for
       // the whole list rather than scanned per model.
       optionsBuilder: () {
-        final byId = <int?, LLMChannel>{
-          for (final c in appState.allChannels) c.id: c,
-        };
+        final byId = <int?, LLMChannel>{for (final c in appState.allChannels) c.id: c};
         return [
           for (final m in chatModels)
             if (m.id != null) modelPickerOption(m, channel: byId[m.channelId]),
@@ -105,9 +105,9 @@ class ChatModelSelector extends StatelessWidget {
       decoration: isCard
           ? InputDecoration(
               labelText: label ?? l10n.model,
-              labelStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
+              labelStyle: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
               floatingLabelBehavior: FloatingLabelBehavior.always,
               filled: true,
               fillColor: colorScheme.surface,

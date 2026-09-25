@@ -30,36 +30,40 @@ void main() {
     tester.view.physicalSize = Size(width, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(MaterialApp(
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      locale: const Locale('en'),
-      home: Scaffold(
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: SpecRateTableEditor(
-            unit: unit,
-            onUnitChanged: (_) {},
-            rows: const [],
-            otherPriceCtrl: ctrls[0],
-            inputPriceCtrl: ctrls[1],
-            inputFreeCtrl: ctrls[2],
-            inputPriceInvalid: invalid,
-            inputFreeWithoutPrice: freeOnly,
-            onAddRow: () {},
-            onRemoveRow: (_) {},
-            onChanged: () {},
-            onSwitchToRequest: () {},
-            narrow: narrow,
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
+        home: Scaffold(
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: SpecRateTableEditor(
+              unit: unit,
+              onUnitChanged: (_) {},
+              rows: const [],
+              otherPriceCtrl: ctrls[0],
+              inputPriceCtrl: ctrls[1],
+              inputFreeCtrl: ctrls[2],
+              inputPriceInvalid: invalid,
+              inputFreeWithoutPrice: freeOnly,
+              onAddRow: () {},
+              onRemoveRow: (_) {},
+              onChanged: () {},
+              onSwitchToRequest: () {},
+              narrow: narrow,
+            ),
           ),
         ),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
   }
 
   for (final (name, narrow, width) in [('wide', false, 460.0), ('narrow', true, 390.0)]) {
-    testWidgets('a per-image table ends in the input row ($name), without overflow', (tester) async {
+    testWidgets('a per-image table ends in the input row ($name), without overflow', (
+      tester,
+    ) async {
       await pump(tester, narrow: narrow, width: width);
 
       expect(tester.takeException(), isNull);
@@ -83,7 +87,9 @@ void main() {
     expect(tester.getSize(find.byKey(price)).width, tester.getSize(other).width);
   });
 
-  testWidgets('per second and per clip keep the row, and say it counts frames (D2e)', (tester) async {
+  testWidgets('per second and per clip keep the row, and say it counts frames (D2e)', (
+    tester,
+  ) async {
     for (final unit in [OutputUnit.second, OutputUnit.clip]) {
       await pump(tester, unit: unit);
       expect(tester.takeException(), isNull, reason: unit.name);
@@ -107,39 +113,47 @@ void main() {
       tester.view.physicalSize = Size(width, 600);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
-      await tester.pumpWidget(MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        locale: const Locale('en'),
-        home: Scaffold(
-          body: Padding(
-            padding: const EdgeInsets.all(16),
-            child: SpecInputImagesBlock(
-              key: const ValueKey('block'),
-              inputPriceCtrl: ctrls[0],
-              inputFreeCtrl: ctrls[1],
-              inputPriceInvalid: false,
-              inputFreeWithoutPrice: false,
-              onChanged: () {},
-              narrow: narrow,
-              subtitle: 'Reference images sent with each request',
-              trailingBlank: trailingBlank,
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('en'),
+          home: Scaffold(
+            body: Padding(
+              padding: const EdgeInsets.all(16),
+              child: SpecInputImagesBlock(
+                key: const ValueKey('block'),
+                inputPriceCtrl: ctrls[0],
+                inputFreeCtrl: ctrls[1],
+                inputPriceInvalid: false,
+                inputFreeWithoutPrice: false,
+                onChanged: () {},
+                narrow: narrow,
+                subtitle: 'Reference images sent with each request',
+                trailingBlank: trailingBlank,
+              ),
             ),
           ),
         ),
-      ));
+      );
       await tester.pumpAndSettle();
     }
 
     await pumpBlock(false);
     expect(tester.takeException(), isNull);
     final block = find.byKey(const ValueKey('block'));
-    expect(tester.getTopRight(find.byKey(price)).dx, tester.getTopRight(block).dx,
-        reason: 'the price ends where the request field above it ends');
+    expect(
+      tester.getTopRight(find.byKey(price)).dx,
+      tester.getTopRight(block).dx,
+      reason: 'the price ends where the request field above it ends',
+    );
 
     await pumpBlock(true);
-    expect(tester.getTopRight(find.byKey(price)).dx, lessThan(tester.getTopRight(block).dx),
-        reason: 'under the table it leaves the delete column');
+    expect(
+      tester.getTopRight(find.byKey(price)).dx,
+      lessThan(tester.getTopRight(block).dx),
+      reason: 'under the table it leaves the delete column',
+    );
 
     await pumpBlock(false, narrow: true, width: 390);
     expect(tester.takeException(), isNull);
@@ -149,8 +163,15 @@ void main() {
   testWidgets('the free count takes digits only, three of them', (tester) async {
     await pump(tester);
     await tester.enterText(find.byKey(free), '1.5x279');
-    expect(tester.widget<TextField>(find.descendant(of: find.byKey(free), matching: find.byType(TextField)))
-        .controller!.text, '152');
+    expect(
+      tester
+          .widget<TextField>(
+            find.descendant(of: find.byKey(free), matching: find.byType(TextField)),
+          )
+          .controller!
+          .text,
+      '152',
+    );
   });
 
   testWidgets('a free count with no price is explained; a bad price is an error', (tester) async {
@@ -159,6 +180,10 @@ void main() {
 
     await pump(tester, invalid: true, freeOnly: true);
     expect(find.textContaining('not a valid non-negative number'), findsOneWidget);
-    expect(find.textContaining('Only a free count is set'), findsNothing, reason: 'one line, the error first');
+    expect(
+      find.textContaining('Only a free count is set'),
+      findsNothing,
+      reason: 'one line, the error first',
+    );
   });
 }

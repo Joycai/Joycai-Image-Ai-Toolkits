@@ -10,16 +10,16 @@ import '../../../l10n/app_localizations.dart';
 import '../../../models/prompt.dart';
 import '../../../services/assistant/assistant_context_usage.dart';
 import '../../../services/assistant/knowledge_base_service.dart';
-import '../../../services/llm/context_budget.dart';
 import '../../../services/assistant/prompt_optimizer_agent.dart';
+import '../../../services/llm/context_budget.dart';
 import '../../../state/app_state.dart';
+import '../../../widgets/models/chat_model_selector.dart';
 import '../../../widgets/ui/app_breathing_dot.dart';
 import '../../../widgets/ui/app_button.dart';
 import '../../../widgets/ui/app_dialog.dart';
 import '../../../widgets/ui/app_field_size.dart';
 import '../../../widgets/ui/app_segmented_control.dart';
 import '../../../widgets/ui/app_switch.dart';
-import '../../../widgets/models/chat_model_selector.dart';
 import '../../../widgets/ui/searchable_picker.dart';
 import 'optimizer_config/preset_summary.dart';
 import 'optimizer_context_card.dart';
@@ -176,8 +176,7 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
 
   /// No preset and no text: the built-in one — what the agent falls back to
   /// when it is handed nothing.
-  bool get _isBuiltinPreset =>
-      _template == null && (widget.selectedSysPrompt ?? '').trim().isEmpty;
+  bool get _isBuiltinPreset => _template == null && (widget.selectedSysPrompt ?? '').trim().isEmpty;
 
   /// Line counts per staged edit id — see [_KbWriteCards._pendingCounts].
   final Map<String, (int, int)> _kbEditCounts = {};
@@ -333,7 +332,8 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
   AppFieldSize get _fieldSize => _touch ? AppFieldSize.large : AppFieldSize.regular;
 
   /// The 11px secondary line every card uses for its notes.
-  TextStyle? _noteStyle(ColorScheme colorScheme, TextTheme textTheme) => textTheme.labelSmall?.copyWith(
+  TextStyle? _noteStyle(ColorScheme colorScheme, TextTheme textTheme) =>
+      textTheme.labelSmall?.copyWith(
         fontWeight: FontWeight.w400,
         color: colorScheme.onSurfaceVariant,
         height: AppType.proseHeight,
@@ -345,12 +345,12 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
 
   /// A row with a hairline above it and the card's rhythm under that hairline.
   Widget _hairlined(ColorScheme colorScheme, Widget child) => Container(
-        padding: const EdgeInsets.only(top: OptimizerPanelCard.gap),
-        decoration: BoxDecoration(
-          border: Border(top: BorderSide(color: colorScheme.outlineVariant)),
-        ),
-        child: child,
-      );
+    padding: const EdgeInsets.only(top: OptimizerPanelCard.gap),
+    decoration: BoxDecoration(
+      border: Border(top: BorderSide(color: colorScheme.outlineVariant)),
+    ),
+    child: child,
+  );
 
   Widget _buildModelCard(AppLocalizations l10n, ColorScheme colorScheme, AppState appState) {
     return OptimizerPanelCard(

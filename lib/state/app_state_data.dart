@@ -13,14 +13,17 @@ extension AppStateData on AppState {
     notify();
     return id;
   }
+
   Future<void> updatePromptTag(int id, PromptTag tag) async {
     await _db.updatePromptTag(id, tag);
     notify();
   }
+
   Future<void> deletePromptTag(int id) async {
     await _db.deletePromptTag(id);
     notify();
   }
+
   Future<void> updateTagOrder(List<int> ids) => _db.updateTagOrder(ids);
 
   // Prompts Methods
@@ -30,14 +33,17 @@ extension AppStateData on AppState {
     notify();
     return id;
   }
+
   Future<void> updatePrompt(int id, Prompt prompt, {List<int>? tagIds}) async {
     await _db.updatePrompt(id, prompt, tagIds: tagIds);
     notify();
   }
+
   Future<void> deletePrompt(int id) async {
     await _db.deletePrompt(id);
     notify();
   }
+
   Future<void> updatePromptOrder(List<int> ids) => _db.updatePromptOrder(ids);
 
   Future<void> deletePrompts(List<int> ids) async {
@@ -76,22 +82,27 @@ extension AppStateData on AppState {
     notify();
     return id;
   }
+
   Future<void> updateSystemPrompt(int id, SystemPrompt prompt, {List<int>? tagIds}) async {
     await _db.updateSystemPrompt(id, prompt, tagIds: tagIds);
     notify();
   }
+
   Future<void> deleteSystemPrompt(int id) async {
     await _db.deleteSystemPrompt(id);
     notify();
   }
+
   Future<void> deleteSystemPrompts(List<int> ids) async {
     await _db.deleteSystemPrompts(ids);
     notify();
   }
+
   Future<void> updateSystemPromptsTags(List<int> promptIds, List<int> tagIds) async {
     await _db.updateSystemPromptsTags(promptIds, tagIds);
     notify();
   }
+
   Future<void> updateSystemPromptOrder(List<int> ids) => _db.updateSystemPromptOrder(ids);
 
   Future<void> importPromptData(Map<String, dynamic> data, {bool replace = false}) async {
@@ -141,6 +152,7 @@ extension AppStateData on AppState {
       final to = plan.idMap[int.tryParse(stored ?? '')];
       return to == null ? stored : '$to';
     }
+
     lastSelectedModelId = remap(lastSelectedModelId);
     lastVideoModelId = remap(lastVideoModelId);
     final optimizer = plan.idMap[workbenchUIState.optSelectedModelDbId];
@@ -174,11 +186,7 @@ extension AppStateData on AppState {
     }
 
     reordered.insert(newIndex, reordered.removeAt(oldIndex));
-    _cacheData(
-      models: allModels,
-      channels: reordered,
-      pricingGroups: allPricingGroups,
-    );
+    _cacheData(models: allModels, channels: reordered, pricingGroups: allPricingGroups);
     notify();
 
     try {
@@ -245,11 +253,7 @@ extension AppStateData on AppState {
     }
 
     reordered.insert(newIndex, reordered.removeAt(oldIndex));
-    _cacheData(
-      models: allModels,
-      channels: allChannels,
-      pricingGroups: reordered,
-    );
+    _cacheData(models: allModels, channels: allChannels, pricingGroups: reordered);
     notify();
 
     try {

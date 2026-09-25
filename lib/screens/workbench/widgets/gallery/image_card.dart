@@ -20,12 +20,12 @@ import '../../../../state/workbench_ui_state.dart';
 import '../../../../widgets/drag/app_drag_follower.dart';
 import '../../../../widgets/drag/app_drag_session.dart';
 import '../../../../widgets/files/file_visuals.dart';
-import '../../../../widgets/ui/focus_pane.dart';
 import '../../../../widgets/glass/app_glass.dart';
-import 'gallery_file_actions.dart';
-import 'image_card_context_menu.dart';
+import '../../../../widgets/ui/focus_pane.dart';
 import '../layers/layer_canvas_page.dart';
 import '../preview/media_preview_dialog.dart' show previewHeroTag;
+import 'gallery_file_actions.dart';
+import 'image_card_context_menu.dart';
 
 /// The play glyph laid straight on a video frame (`A1 · 1a`:
 /// `rgba(255,255,255,.85)`).
@@ -140,8 +140,13 @@ class _ImageCardState extends State<ImageCard> {
     }
   }
 
-  Widget _buildThumbnail(BuildContext context, ColorScheme colorScheme, ThumbnailFit thumbFit,
-      {double? width, double? height}) {
+  Widget _buildThumbnail(
+    BuildContext context,
+    ColorScheme colorScheme,
+    ThumbnailFit thumbFit, {
+    double? width,
+    double? height,
+  }) {
     final isVideo = AppConstants.isVideoFile(widget.imageFile.path);
 
     if (isVideo) {
@@ -164,11 +169,7 @@ class _ImageCardState extends State<ImageCard> {
                   errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
                 ),
               ),
-            const Icon(
-              Icons.play_circle_outline,
-              size: 28,
-              color: _playGlyphInk,
-            ),
+            const Icon(Icons.play_circle_outline, size: 28, color: _playGlyphInk),
           ],
         ),
       );
@@ -184,7 +185,7 @@ class _ImageCardState extends State<ImageCard> {
         width: thumbnailDecodeWidth(context, width ?? widget.thumbnailSize),
       ),
       fit: thumbFit.boxFit,
-      errorBuilder: (context, error, stackTrace) => Container(
+      errorBuilder: (context, error, stackTrace) => ColoredBox(
         color: colorScheme.surfaceContainerHighest,
         child: Icon(Icons.broken_image, color: colorScheme.onSurfaceVariant),
       ),
@@ -242,8 +243,16 @@ class _ImageCardState extends State<ImageCard> {
           child: GestureDetector(
             onTap: widget.onTap,
             onDoubleTap: widget.onDoubleTap,
-            onSecondaryTapDown: (details) => showImageCardContextMenu(context, imageFile: widget.imageFile, position: details.globalPosition),
-            onLongPressStart: (details) => showImageCardContextMenu(context, imageFile: widget.imageFile, position: details.globalPosition),
+            onSecondaryTapDown: (details) => showImageCardContextMenu(
+              context,
+              imageFile: widget.imageFile,
+              position: details.globalPosition,
+            ),
+            onLongPressStart: (details) => showImageCardContextMenu(
+              context,
+              imageFile: widget.imageFile,
+              position: details.globalPosition,
+            ),
             child: AnimatedScale(
               scale: _isPressed ? 0.97 : 1.0,
               duration: AppMotion.durationOf(context, AppMotion.hover),
@@ -296,7 +305,11 @@ class _ImageCardState extends State<ImageCard> {
   }
 
   Widget _buildCardContent(
-      BuildContext context, ColorScheme colorScheme, bool isMobile, ThumbnailFit thumbFit) {
+    BuildContext context,
+    ColorScheme colorScheme,
+    bool isMobile,
+    ThumbnailFit thumbFit,
+  ) {
     final isVideo = AppConstants.isVideoFile(widget.imageFile.path);
     final selected = widget.isSelected;
     // A selection the keyboard no longer owns goes quiet — same number, same
@@ -327,20 +340,15 @@ class _ImageCardState extends State<ImageCard> {
           // list order — the halo first, the solid ring over it.
           boxShadow: switch ((selected, paneActive)) {
             (true, true) => [
-                BoxShadow(
-                  color: colorScheme.primary.withValues(alpha: _ringHaloAlpha),
-                  spreadRadius: 4,
-                ),
-                BoxShadow(
-                  color: colorScheme.primary,
-                  spreadRadius: 2,
-                ),
-              ],
+              BoxShadow(
+                color: colorScheme.primary.withValues(alpha: _ringHaloAlpha),
+                spreadRadius: 4,
+              ),
+              BoxShadow(color: colorScheme.primary, spreadRadius: 2),
+            ],
             // No halo while the region is idle: one flat neutral ring, so the
             // grid reads as "still picked, not listening".
-            (true, false) => [
-                BoxShadow(color: colorScheme.outline, spreadRadius: 2),
-              ],
+            (true, false) => [BoxShadow(color: colorScheme.outline, spreadRadius: 2)],
             _ => null,
           },
         ),
@@ -416,15 +424,18 @@ class _ImageCardState extends State<ImageCard> {
                       return _buildLayerBadge(context, z);
                     },
                   ),
-                  Builder(builder: (context) {
-                    final version = context.select<WorkbenchUIState, int?>(
-                        (w) => w.resultVersionByPath[widget.imageFile.path]);
-                    if (version == null) return const SizedBox.shrink();
-                    return Padding(
-                      padding: const EdgeInsets.only(left: AppSpace.s4),
-                      child: _buildPlateBadge(context, 'v$version', fontWeight: FontWeight.w500),
-                    );
-                  }),
+                  Builder(
+                    builder: (context) {
+                      final version = context.select<WorkbenchUIState, int?>(
+                        (w) => w.resultVersionByPath[widget.imageFile.path],
+                      );
+                      if (version == null) return const SizedBox.shrink();
+                      return Padding(
+                        padding: const EdgeInsets.only(left: AppSpace.s4),
+                        child: _buildPlateBadge(context, 'v$version', fontWeight: FontWeight.w500),
+                      );
+                    },
+                  ),
                 ],
               ),
             ),
@@ -441,10 +452,8 @@ class _ImageCardState extends State<ImageCard> {
                     duration: AppMotion.durationOf(context, AppMotion.hover),
                     switchInCurve: AppMotion.quick,
                     switchOutCurve: AppMotion.quick,
-                    layoutBuilder: (current, previous) => Stack(
-                      alignment: Alignment.bottomRight,
-                      children: [...previous, ?current],
-                    ),
+                    layoutBuilder: (current, previous) =>
+                        Stack(alignment: Alignment.bottomRight, children: [...previous, ?current]),
                     child: showActions
                         ? KeyedSubtree(
                             key: const ValueKey('image-card-actions'),
@@ -509,7 +518,9 @@ class _ImageCardState extends State<ImageCard> {
         onTap: () => openLayerCanvas(context, widget.imageFile.path),
         child: ConstrainedBox(
           constraints: const BoxConstraints(
-              minWidth: AppSize.iconButton, minHeight: AppSize.iconButton),
+            minWidth: AppSize.iconButton,
+            minHeight: AppSize.iconButton,
+          ),
           child: Align(
             alignment: Alignment.topRight,
             widthFactor: 1,
@@ -524,8 +535,7 @@ class _ImageCardState extends State<ImageCard> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.layers_outlined,
-                        size: 12, color: AppOverlay.onImagePlate),
+                    const Icon(Icons.layers_outlined, size: 12, color: AppOverlay.onImagePlate),
                     const SizedBox(width: 3),
                     Text(
                       label,
@@ -567,13 +577,13 @@ class _ImageCardState extends State<ImageCard> {
         '${widget.selectionNumber}',
         maxLines: 1,
         style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
-              color: paneActive ? colorScheme.onPrimary : colorScheme.surface,
-              fontWeight: FontWeight.w600,
-              height: 1,
-              // Tracking trails the last glyph and would push a lone digit
-              // off the circle's centre.
-              letterSpacing: 0,
-            ),
+          color: paneActive ? colorScheme.onPrimary : colorScheme.surface,
+          fontWeight: FontWeight.w600,
+          height: 1,
+          // Tracking trails the last glyph and would push a lone digit
+          // off the circle's centre.
+          letterSpacing: 0,
+        ),
       ),
     );
   }
@@ -684,9 +694,7 @@ class _ImageCardState extends State<ImageCard> {
           minimumSize: Size.zero,
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           // Concentric with the r6 strip across its 2px inset.
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.xs),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.xs)),
         ),
       ),
     );

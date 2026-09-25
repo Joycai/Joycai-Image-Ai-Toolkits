@@ -136,7 +136,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
   /// are the same objects: the card re-runs on every transcript change, the
   /// diff only when the edit itself does.
   final Map<String, ({String old, String next, List<DiffHunk> hunks, int added, int removed})>
-      _kbDiffs = {};
+  _kbDiffs = {};
 
   /// Edit ids whose full proposed content is expanded. Purely presentational.
   final Set<String> _expandedKbEdits = {};
@@ -223,17 +223,21 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
   }
 
   static Object _drawnFrom(PromptOptimizerSession s) => (
-        s.transcript,
-        s.isRunning,
-        s.runStartedAt,
-        s.promptVersions,
-        s.refinedPrompt,
-        s.usesKnowledgeBase,
-        s.mode,
-      );
+    s.transcript,
+    s.isRunning,
+    s.runStartedAt,
+    s.promptVersions,
+    s.refinedPrompt,
+    s.usesKnowledgeBase,
+    s.mode,
+  );
 
   /// [TextDiff] for a staged edit, computed once per edit content.
-  ({List<DiffHunk> hunks, int added, int removed}) _kbDiffFor(String editId, String old, String next) {
+  ({List<DiffHunk> hunks, int added, int removed}) _kbDiffFor(
+    String editId,
+    String old,
+    String next,
+  ) {
     final cached = _kbDiffs[editId];
     if (cached != null && identical(cached.old, old) && identical(cached.next, next)) {
       return (hunks: cached.hunks, added: cached.added, removed: cached.removed);
@@ -325,9 +329,8 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
     final rows = <_TranscriptRow>[];
     for (var i = 0; i < transcript.length; i++) {
       final entry = transcript[i];
-      final continuesGroup = entry.kind == OptimizerEntryKind.tool &&
-          rows.isNotEmpty &&
-          rows.last.isToolGroup;
+      final continuesGroup =
+          entry.kind == OptimizerEntryKind.tool && rows.isNotEmpty && rows.last.isToolGroup;
       if (continuesGroup) {
         rows.last.entries.add(entry);
       } else {
@@ -357,8 +360,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
     // finished. But the standing card follows `isBusy`, so the wait between
     // enqueueing and starting is not a disabled composer with nothing in the
     // conversation to explain it.
-    final bool liveTimeline =
-        session.isRunning && rows.isNotEmpty && rows.last.isToolGroup;
+    final bool liveTimeline = session.isRunning && rows.isNotEmpty && rows.last.isToolGroup;
     final int extra = widget.isBusy && !liveTimeline ? 1 : 0;
     // The distill wrap-up (`20d`·d), only once the turn is over and every
     // staged edit has been decided. Mutually exclusive with `extra` by
@@ -384,12 +386,10 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
         if (extra == 1 && index == rows.length) {
           child = _buildRunningCard(session, l10n, colorScheme);
         } else if (wrapUpAt != null && index == wrapUpAt) {
-          child = _buildDistillDoneCard(
-              session, distill!.applied, l10n, colorScheme);
+          child = _buildDistillDoneCard(session, distill!.applied, l10n, colorScheme);
         } else {
           // Rows after the spliced-in wrap-up card shift by one.
-          final rowIndex =
-              (wrapUpAt != null && index > wrapUpAt) ? index - 1 : index;
+          final rowIndex = (wrapUpAt != null && index > wrapUpAt) ? index - 1 : index;
           final row = rows[rowIndex];
           final isLast = rowIndex == rows.length - 1;
           child = row.isToolGroup
@@ -420,7 +420,12 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
   // Shared pieces
   // ---------------------------------------------------------------------------
 
-  Widget _buildEntry(OptimizerChatEntry entry, bool isLast, AppLocalizations l10n, ColorScheme colorScheme) {
+  Widget _buildEntry(
+    OptimizerChatEntry entry,
+    bool isLast,
+    AppLocalizations l10n,
+    ColorScheme colorScheme,
+  ) {
     final textTheme = Theme.of(context).textTheme;
     final semantic = context.semantic;
 
@@ -474,7 +479,8 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                 // `A3e 5e`: an analysis preset's answer is the deliverable, and
                 // this row is all the chrome it gets — no card, no version, no
                 // "apply": there is nowhere for an analysis to be applied to.
-                if (entry.deliverable) _buildResultActions(entry.text, l10n, colorScheme, textTheme),
+                if (entry.deliverable)
+                  _buildResultActions(entry.text, l10n, colorScheme, textTheme),
                 // The reply ends where the host cut it, not where the model
                 // stopped: said at the tail, in the caption tone, with the
                 // one place the fix lives.
@@ -485,10 +491,16 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                       crossAxisAlignment: WrapCrossAlignment.center,
                       spacing: AppSpace.s6,
                       children: [
-                        Icon(Icons.keyboard_tab, size: AppSize.iconSm, color: colorScheme.onSurfaceVariant),
+                        Icon(
+                          Icons.keyboard_tab,
+                          size: AppSize.iconSm,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
                         Text(
                           l10n.optTruncatedTail,
-                          style: textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                          style: textTheme.labelSmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
                         ),
                         if (widget.onOpenModelSettings != null)
                           AppButton(
@@ -587,7 +599,8 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
         {
           // The notices that ask the user to do something wear the warning
           // container; the compaction note is information.
-          final warn = entry.text == PromptOptimizerAgent.imageMissingNoticeToken ||
+          final warn =
+              entry.text == PromptOptimizerAgent.imageMissingNoticeToken ||
               entry.text == PromptOptimizerAgent.kbEntryTooLargeNoticeToken ||
               entry.text == PromptOptimizerAgent.roundLimitNoticeToken;
           final noticeText = switch (entry.text) {
@@ -622,11 +635,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
         // is exactly what just failed twice. The fix is the model's cap.
         final truncationStop = entry.text == PromptOptimizerAgent.truncationStopNoticeToken;
         return _besideAvatar(
-          _avatar(
-            Icons.error_outline,
-            ground: colorScheme.errorContainer,
-            ink: colorScheme.error,
-          ),
+          _avatar(Icons.error_outline, ground: colorScheme.errorContainer, ink: colorScheme.error),
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(12),
@@ -698,5 +707,4 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
   // ---------------------------------------------------------------------------
   // Knowledge edits
   // ---------------------------------------------------------------------------
-
 }

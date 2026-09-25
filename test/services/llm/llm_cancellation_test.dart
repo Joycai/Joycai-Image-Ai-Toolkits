@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:joycai_image_ai_toolkits/services/assistant/sub_agent_runner.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
-import 'package:joycai_image_ai_toolkits/services/assistant/sub_agent_runner.dart';
 
 /// Pins what "stop" means once it reaches the LLM layer.
 ///
@@ -32,9 +32,7 @@ void main() {
       // The neighbouring rule, pinned so that widening it to catch a
       // cancellation's torn-down connection would have to be a deliberate
       // edit to this expectation rather than a silent side effect.
-      expect(
-          LLMService.isRetryable(Exception('SocketException: reset by peer')),
-          isTrue);
+      expect(LLMService.isRetryable(Exception('SocketException: reset by peer')), isTrue);
     });
 
     test('says what happened without naming an error', () {
@@ -47,8 +45,7 @@ void main() {
       // was too slow, a cancel means nobody wants the work. Keeping them
       // separate types is what lets a caller show an error for one and
       // nothing at all for the other.
-      expect(LLMService.isRetryable(LLMDeadlineExceeded(Duration.zero)),
-          isFalse);
+      expect(LLMService.isRetryable(const LLMDeadlineExceeded(Duration.zero)), isFalse);
       expect(const LLMCancelled(), isNot(isA<LLMDeadlineExceeded>()));
     });
   });
@@ -57,8 +54,7 @@ void main() {
     LLMToolCall toolCall(String id) =>
         LLMToolCall(id: id, name: 'read_knowledge_file', arguments: {'path': 'x'});
 
-    test('a cancelled request becomes a cancelled result, not a failure',
-        () async {
+    test('a cancelled request becomes a cancelled result, not a failure', () async {
       // The delegate's caller reads `cancelled` to decide what to tell the
       // parent agent. Letting the exception escape would surface a stop as a
       // failed delegation — an error card for pressing a button that worked.
@@ -90,14 +86,11 @@ void main() {
         modelIdentifier: 'm',
         systemPrompt: 'sys',
         task: 'brief',
-        tools: [
-          LLMTool(name: 'read_knowledge_file', description: 'd', parameters: const {})
-        ],
+        tools: [LLMTool(name: 'read_knowledge_file', description: 'd', parameters: const {})],
         executeTool: (_, _) => {'ok': true},
         request: (messages, tools) async {
           if (turn++ == 0) {
-            return LLMResponse(
-                text: 'partial findings', toolCalls: [toolCall('c1')]);
+            return LLMResponse(text: 'partial findings', toolCalls: [toolCall('c1')]);
           }
           throw const LLMCancelled();
         },
@@ -107,8 +100,7 @@ void main() {
       expect(result.turnsUsed, 1);
     });
 
-    test('the between-turns check still short-circuits before any request',
-        () async {
+    test('the between-turns check still short-circuits before any request', () async {
       // The pre-existing checkpoint, kept: cancelling before the loop starts
       // must not open a connection at all.
       var requested = 0;
@@ -128,8 +120,7 @@ void main() {
       expect(requested, 0);
     });
 
-    test('an ordinary failure is still a failure, not a cancellation',
-        () async {
+    test('an ordinary failure is still a failure, not a cancellation', () async {
       // The guard on the guard: `on LLMCancelled` must not have widened into
       // a catch-all that turns every delegate error into a quiet stop.
       expect(
@@ -139,8 +130,7 @@ void main() {
           task: 'brief',
           tools: const [],
           executeTool: (_, _) => {},
-          request: (messages, tools) async =>
-              throw LLMApiException('relay exploded'),
+          request: (messages, tools) async => throw LLMApiException('relay exploded'),
         ),
         throwsA(isA<LLMApiException>()),
       );

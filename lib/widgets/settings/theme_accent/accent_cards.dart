@@ -20,35 +20,38 @@ class _CardGrid extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        LayoutBuilder(builder: (context, constraints) {
-          final double width = constraints.hasBoundedWidth
-              ? constraints.maxWidth
-              : 3 * ThemeAccentPreviewCard.width + 2 * _gap;
-          final int columns = ((width + _gap) / (_minCardWidth + _gap)).floor().clamp(2, 3);
-          final double cardWidth = ((width - _gap * (columns - 1)) / columns).floorToDouble();
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final double width = constraints.hasBoundedWidth
+                ? constraints.maxWidth
+                : 3 * ThemeAccentPreviewCard.width + 2 * _gap;
+            final int columns = ((width + _gap) / (_minCardWidth + _gap)).floor().clamp(2, 3);
+            final double cardWidth = ((width - _gap * (columns - 1)) / columns).floorToDouble();
 
-          return Wrap(
-            spacing: _gap,
-            runSpacing: _gap,
-            children: [
-              for (final MapEntry<String, ThemeAccent> preset in AppConstants.presetThemes.entries)
-                ThemeAccentPreviewCard(
-                  accent: preset.value,
-                  name: preset.key,
-                  selected: picker.selected == preset.value,
-                  onTap: () => picker.onSelect(preset.key),
-                  cardWidth: cardWidth,
-                ),
-              if (picker.onCustomSeed != null)
-                _CustomAccentCard(
-                  width: cardWidth,
-                  active: picker._customActive,
-                  accent: picker.selected,
-                  onTap: () => picker._openCustom(context),
-                ),
-            ],
-          );
-        }),
+            return Wrap(
+              spacing: _gap,
+              runSpacing: _gap,
+              children: [
+                for (final MapEntry<String, ThemeAccent> preset
+                    in AppConstants.presetThemes.entries)
+                  ThemeAccentPreviewCard(
+                    accent: preset.value,
+                    name: preset.key,
+                    selected: picker.selected == preset.value,
+                    onTap: () => picker.onSelect(preset.key),
+                    cardWidth: cardWidth,
+                  ),
+                if (picker.onCustomSeed != null)
+                  _CustomAccentCard(
+                    width: cardWidth,
+                    active: picker._customActive,
+                    accent: picker.selected,
+                    onTap: () => picker._openCustom(context),
+                  ),
+              ],
+            );
+          },
+        ),
         const SizedBox(height: AppSpace.s10),
         _Hint(l10n.themeColorHintCards, maxWidth: 640),
       ],
@@ -118,8 +121,8 @@ class _CardShellState extends State<_CardShell> {
             color: selected
                 ? colorScheme.primary
                 : _hovered
-                    ? colorScheme.accentRing
-                    : colorScheme.outlineVariant,
+                ? colorScheme.accentRing
+                : colorScheme.outlineVariant,
           ),
           boxShadow: rings,
         ),
@@ -140,9 +143,9 @@ class _CardShellState extends State<_CardShell> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                          color: selected ? colorScheme.onAccentTint : colorScheme.onSurface,
-                        ),
+                      fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                      color: selected ? colorScheme.onAccentTint : colorScheme.onSurface,
+                    ),
                   ),
                 ),
                 if (selected) Icon(Icons.check, size: AppSize.iconSm, color: colorScheme.primary),
@@ -285,8 +288,9 @@ class _PreviewHalf extends StatelessWidget {
     return Container(
       color: scheme.surface,
       padding: const EdgeInsets.all(8),
-      foregroundDecoration:
-          hairline ? BoxDecoration(border: Border.all(color: scheme.outlineVariant)) : null,
+      foregroundDecoration: hairline
+          ? BoxDecoration(border: Border.all(color: scheme.outlineVariant))
+          : null,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -348,9 +352,9 @@ class _PreviewHalf extends StatelessWidget {
             overflow: TextOverflow.clip,
             softWrap: false,
             style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
-                  fontWeight: FontWeight.w400,
-                  color: scheme.onSurfaceVariant,
-                ),
+              fontWeight: FontWeight.w400,
+              color: scheme.onSurfaceVariant,
+            ),
           ),
         ],
       ),

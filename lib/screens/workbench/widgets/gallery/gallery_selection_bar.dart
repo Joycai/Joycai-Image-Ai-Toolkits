@@ -8,10 +8,10 @@ import '../../../../models/app_image.dart';
 import '../../../../state/app_state.dart';
 import '../../../../state/gallery_state.dart';
 import '../../../../state/workbench_ui_state.dart';
-import '../../../../widgets/ui/app_button.dart';
-import '../../../../widgets/ui/app_dialog.dart';
 import '../../../../widgets/glass/app_glass.dart';
 import '../../../../widgets/glass/glass_controls.dart';
+import '../../../../widgets/ui/app_button.dart';
+import '../../../../widgets/ui/app_dialog.dart';
 import 'gallery_file_actions.dart';
 
 /// Empties the temporary workspace, behind a confirmation.
@@ -70,17 +70,10 @@ void confirmClearTempWorkspace(
 /// thumbnail-size slider, none of which it shows.
 ///
 /// [selected] compares by identity, which [GalleryState] guarantees.
-typedef _BarInputs = ({
-  List<AppImage> selected,
-  GalleryViewMode viewMode,
-  bool hasDropped,
-});
+typedef _BarInputs = ({List<AppImage> selected, GalleryViewMode viewMode, bool hasDropped});
 
-_BarInputs _barInputs(GalleryState s) => (
-      selected: s.selectedImages,
-      viewMode: s.viewMode,
-      hasDropped: s.droppedImages.isNotEmpty,
-    );
+_BarInputs _barInputs(GalleryState s) =>
+    (selected: s.selectedImages, viewMode: s.viewMode, hasDropped: s.droppedImages.isNotEmpty);
 
 class GallerySelectionBar extends StatelessWidget {
   const GallerySelectionBar({super.key});
@@ -142,71 +135,73 @@ class _BarContent extends StatelessWidget {
     final selected = inputs.selected;
 
     final countStyle = Theme.of(context).textTheme.bodySmall!.metricsOnly.copyWith(
-          fontWeight: FontWeight.w600,
-          color: scheme.onAccentTint,
-        );
+      fontWeight: FontWeight.w600,
+      color: scheme.onAccentTint,
+    );
     final countLabel = l10n.selectedCount(count);
 
-    final actions = <({IconData? icon, IconData compactIcon, String label, VoidCallback onTap, bool danger})>[
-      (
-        icon: null,
-        compactIcon: Icons.select_all,
-        label: l10n.selectAll,
-        onTap: gallery.selectAllImages,
-        danger: false,
-      ),
-      (
-        icon: null,
-        compactIcon: Icons.deselect,
-        label: l10n.clear,
-        onTap: gallery.clearImageSelection,
-        danger: false,
-      ),
-      (
-        icon: Icons.auto_awesome_outlined,
-        compactIcon: Icons.auto_awesome_outlined,
-        label: l10n.selectionSendToAssistant,
-        onTap: () {
-          context.read<WorkbenchUIState>().addAssistantImages(List.of(selected));
-          context.read<AppState>().setWorkbenchTab(4);
-        },
-        danger: false,
-      ),
-      if (isTemp)
-        (
-          icon: Icons.remove_circle_outline,
-          compactIcon: Icons.remove_circle_outline,
-          label: l10n.removeFromWorkspace,
-          // One pass, one notification — the same call the `Delete` key and
-          // the context menu make. Looping the single-image version re-filtered
-          // the workspace, re-validated the selection against all four
-          // collections and rebuilt the grid once per picture.
-          onTap: () =>
-              gallery.removeDroppedImages([for (final i in selected) i.path]),
-          danger: false,
-        )
-      else
-        (
-          icon: Icons.ios_share,
-          compactIcon: Icons.ios_share,
-          label: l10n.shareCount(count),
-          onTap: () {
-            // The share sheet's anchor on iPad: the bar's own centre.
-            final box = context.findRenderObject() as RenderBox?;
-            final origin = box == null ? Offset.zero : box.localToGlobal(box.size.center(Offset.zero));
-            shareImageFiles(context, List.of(selected), l10n, position: origin);
-          },
-          danger: false,
-        ),
-      if (canClearWorkspace)
-        (
-          icon: Icons.delete_sweep_outlined,
-          compactIcon: Icons.delete_sweep_outlined,
-          label: l10n.clearTempWorkspace,
-          onTap: () => confirmClearTempWorkspace(context, gallery, l10n),
-          danger: true,
-        ),
-    ];
+    final actions =
+        <({IconData? icon, IconData compactIcon, String label, VoidCallback onTap, bool danger})>[
+          (
+            icon: null,
+            compactIcon: Icons.select_all,
+            label: l10n.selectAll,
+            onTap: gallery.selectAllImages,
+            danger: false,
+          ),
+          (
+            icon: null,
+            compactIcon: Icons.deselect,
+            label: l10n.clear,
+            onTap: gallery.clearImageSelection,
+            danger: false,
+          ),
+          (
+            icon: Icons.auto_awesome_outlined,
+            compactIcon: Icons.auto_awesome_outlined,
+            label: l10n.selectionSendToAssistant,
+            onTap: () {
+              context.read<WorkbenchUIState>().addAssistantImages(List.of(selected));
+              context.read<AppState>().setWorkbenchTab(4);
+            },
+            danger: false,
+          ),
+          if (isTemp)
+            (
+              icon: Icons.remove_circle_outline,
+              compactIcon: Icons.remove_circle_outline,
+              label: l10n.removeFromWorkspace,
+              // One pass, one notification — the same call the `Delete` key and
+              // the context menu make. Looping the single-image version re-filtered
+              // the workspace, re-validated the selection against all four
+              // collections and rebuilt the grid once per picture.
+              onTap: () => gallery.removeDroppedImages([for (final i in selected) i.path]),
+              danger: false,
+            )
+          else
+            (
+              icon: Icons.ios_share,
+              compactIcon: Icons.ios_share,
+              label: l10n.shareCount(count),
+              onTap: () {
+                // The share sheet's anchor on iPad: the bar's own centre.
+                final box = context.findRenderObject() as RenderBox?;
+                final origin = box == null
+                    ? Offset.zero
+                    : box.localToGlobal(box.size.center(Offset.zero));
+                shareImageFiles(context, List.of(selected), l10n, position: origin);
+              },
+              danger: false,
+            ),
+          if (canClearWorkspace)
+            (
+              icon: Icons.delete_sweep_outlined,
+              compactIcon: Icons.delete_sweep_outlined,
+              label: l10n.clearTempWorkspace,
+              onTap: () => confirmClearTempWorkspace(context, gallery, l10n),
+              danger: true,
+            ),
+        ];
 
     // Groups: [select all, clear] | [send, share/remove] | [clear workspace].
     final dividerAfter = <int>{1, if (canClearWorkspace) actions.length - 2};
@@ -223,19 +218,18 @@ class _BarContent extends StatelessWidget {
 
     final compact = fullWidth() > maxWidth;
 
-    final children = <Widget>[
-      Text(countLabel, style: countStyle),
-      const SizedBox(width: 6),
-    ];
+    final children = <Widget>[Text(countLabel, style: countStyle), const SizedBox(width: 6)];
     for (int i = 0; i < actions.length; i++) {
       final a = actions[i];
-      children.add(GlassIconButton(
-        icon: compact ? a.compactIcon : a.icon,
-        label: compact ? null : a.label,
-        tooltip: compact ? a.label : null,
-        danger: a.danger,
-        onPressed: a.onTap,
-      ));
+      children.add(
+        GlassIconButton(
+          icon: compact ? a.compactIcon : a.icon,
+          label: compact ? null : a.label,
+          tooltip: compact ? a.label : null,
+          danger: a.danger,
+          onPressed: a.onTap,
+        ),
+      );
       if (dividerAfter.contains(i) && i != actions.length - 1) children.add(const GlassDivider());
     }
 

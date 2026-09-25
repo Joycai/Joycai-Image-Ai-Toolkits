@@ -158,9 +158,11 @@ String protocolFamilyFormatName(ProtocolFamily family) {
 /// The protocol itself hardly ever returns images, but the relay behind it
 /// may well be fronting a backend that does — so it is said, not blocked.
 String? wireProtocolCaveat(
-    AppLocalizations l10n, WireProtocol protocol, ProtocolFamily channelFamily) {
-  if (protocol == WireProtocol.chatImage &&
-      channelFamily == ProtocolFamily.anthropic) {
+  AppLocalizations l10n,
+  WireProtocol protocol,
+  ProtocolFamily channelFamily,
+) {
+  if (protocol == WireProtocol.chatImage && channelFamily == ProtocolFamily.anthropic) {
     return l10n.protocolChatImageUnlikely(protocolFamilyFormatName(channelFamily));
   }
   return null;

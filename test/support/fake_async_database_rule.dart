@@ -51,7 +51,11 @@ void installFakeAsyncDatabaseRule() {
     final String frames = StackTrace.current
         .toString()
         .split('\n')
-        .where((String l) => l.contains('package:joycai_image_ai_toolkits/') && !l.contains('database_service.dart'))
+        .where(
+          (String l) =>
+              l.contains('package:joycai_image_ai_toolkits/') &&
+              !l.contains('database_service.dart'),
+        )
         .take(4)
         .map((String l) => l.replaceFirst(RegExp(r'^#\d+\s+'), ''))
         .join('\n      ');
@@ -62,9 +66,11 @@ void installFakeAsyncDatabaseRule() {
     if (underFakeAsync.isEmpty) return;
     final String report = underFakeAsync.toSet().join('\n  -   ');
     underFakeAsync.clear();
-    fail('A database call started under fake async$when — see test/support/fake_async_database_rule.dart.\n'
-        'Make it in real async: AppState() in setUpAll, the action and its frame in tester.runAsync.\n'
-        '  -   $report');
+    fail(
+      'A database call started under fake async$when — see test/support/fake_async_database_rule.dart.\n'
+      'Make it in real async: AppState() in setUpAll, the action and its frame in tester.runAsync.\n'
+      '  -   $report',
+    );
   }
 
   // One recorded since the last test's check belongs to that test, not to the

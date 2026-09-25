@@ -63,8 +63,11 @@ void main() {
 
     expect(find.text('panel body'), findsOneWidget);
     expect(find.byType(DraggableScrollableSheet), findsOneWidget);
-    expect(tester.getSize(find.byType(AppSidePanel)).width, 400,
-        reason: 'the sheet kept the desktop panel width on a phone');
+    expect(
+      tester.getSize(find.byType(AppSidePanel)).width,
+      400,
+      reason: 'the sheet kept the desktop panel width on a phone',
+    );
   });
 
   testWidgets('tapping outside the panel closes it', (tester) async {
@@ -102,8 +105,11 @@ void main() {
     final chinese = currentLabel();
 
     expect(english, isNotEmpty);
-    expect(chinese, isNot(english),
-        reason: 'the barrier label is a hardcoded string, not a translated one');
+    expect(
+      chinese,
+      isNot(english),
+      reason: 'the barrier label is a hardcoded string, not a translated one',
+    );
   });
 
   testWidgets('the panel paints one surface, not two stacked ones', (tester) async {

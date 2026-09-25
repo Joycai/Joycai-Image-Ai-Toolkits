@@ -70,13 +70,14 @@ int _readCapNow(
   String systemPrompt,
   int? contextWindow, {
   bool keepCurrentTurnImages = false,
-}) =>
-    ContextBudget.readCapChars(
-      contextWindow,
-      PromptOptimizerAgent.occupiedChars(systemPrompt,
-          _trimForSend(session.history, keepCurrentTurnImages: keepCurrentTurnImages)),
-      observedCharsPerToken: session.observedCharsPerToken,
-    );
+}) => ContextBudget.readCapChars(
+  contextWindow,
+  PromptOptimizerAgent.occupiedChars(
+    systemPrompt,
+    _trimForSend(session.history, keepCurrentTurnImages: keepCurrentTurnImages),
+  ),
+  observedCharsPerToken: session.observedCharsPerToken,
+);
 
 /// Whether [m] is something the *user* actually said, as opposed to a
 /// message the agent injects into the user role.
@@ -110,8 +111,7 @@ bool _isFreeTextAskUserReply(LLMMessage m) {
 
 /// Index of the user message that opens the protected "recent" window
 /// (the last [_keepRecentTurns] real user turns). 0 = protect everything.
-int _recentBoundary(List<LLMMessage> history) =>
-    _boundaryOf(history, _keepRecentTurns);
+int _recentBoundary(List<LLMMessage> history) => _boundaryOf(history, _keepRecentTurns);
 
 /// The same, for image attachments — a shorter window, so always at or
 /// after [_recentBoundary].
@@ -123,8 +123,7 @@ int _recentBoundary(List<LLMMessage> history) =>
 /// re-view of a picture that is no longer being sent — the exact deadlock
 /// assistant-context.md's "Rejected" section describes, with no way out but
 /// restarting the app.
-int _attachmentBoundary(List<LLMMessage> history) =>
-    _boundaryOf(history, _keepAttachmentTurns);
+int _attachmentBoundary(List<LLMMessage> history) => _boundaryOf(history, _keepAttachmentTurns);
 
 int _boundaryOf(List<LLMMessage> history, int keepTurns) {
   int userSeen = 0;
@@ -230,12 +229,10 @@ int _staleFrom(PromptOptimizerSession session, String relPath) {
 /// describes for knowledge reads). [PromptOptimizerSession.viewedImagePaths]
 /// remains as the UI's "has been looked at" badge only; it no longer gates
 /// anything the model asks for.
-Set<String> _liveViewedPaths(PromptOptimizerSession session,
-    {bool keepCurrentTurnImages = false}) {
+Set<String> _liveViewedPaths(PromptOptimizerSession session, {bool keepCurrentTurnImages = false}) {
   final history = session.history;
   final paths = <String>{};
-  for (final i
-      in _liveAttachmentIndices(history, keepCurrentTurnImages: keepCurrentTurnImages)) {
+  for (final i in _liveAttachmentIndices(history, keepCurrentTurnImages: keepCurrentTurnImages)) {
     for (final att in history[i].attachments) {
       final path = att.path;
       if (path != null) paths.add(path);
@@ -249,11 +246,9 @@ Set<String> _liveViewedPaths(PromptOptimizerSession session,
 /// attachments dropped. User/assistant text and submit_prompt results are
 /// always kept. Tool call/result pairing is preserved (only contents are
 /// shortened), which Gemini requires.
-List<LLMMessage> _trimForSend(List<LLMMessage> history,
-    {bool keepCurrentTurnImages = false}) {
+List<LLMMessage> _trimForSend(List<LLMMessage> history, {bool keepCurrentTurnImages = false}) {
   final boundary = _recentBoundary(history);
-  final liveImages =
-      _liveAttachmentIndices(history, keepCurrentTurnImages: keepCurrentTurnImages);
+  final liveImages = _liveAttachmentIndices(history, keepCurrentTurnImages: keepCurrentTurnImages);
   var anyImageDropped = false;
   for (int i = 0; i < history.length && !anyImageDropped; i++) {
     anyImageDropped = _isViewWithAttachments(history[i]) && !liveImages.contains(i);
@@ -261,11 +256,7 @@ List<LLMMessage> _trimForSend(List<LLMMessage> history,
   if (boundary == 0 && !anyImageDropped) return history;
   return [
     for (int i = 0; i < history.length; i++)
-      _elide(
-        history[i],
-        bulk: i < boundary,
-        attachments: !liveImages.contains(i),
-      ),
+      _elide(history[i], bulk: i < boundary, attachments: !liveImages.contains(i)),
   ];
 }
 
@@ -286,11 +277,9 @@ bool _isViewWithAttachments(LLMMessage m) =>
 /// The one rule both [_trimForSend] and [_liveViewedPaths] read: whether an
 /// attachment is still sent and whether the model may ask for it again are
 /// two halves of it (invariant 4).
-Set<int> _liveAttachmentIndices(List<LLMMessage> history,
-    {bool keepCurrentTurnImages = false}) {
+Set<int> _liveAttachmentIndices(List<LLMMessage> history, {bool keepCurrentTurnImages = false}) {
   final windowStart = _attachmentBoundary(history);
-  final currentTurnStart =
-      keepCurrentTurnImages ? _boundaryOf(history, 1) : history.length;
+  final currentTurnStart = keepCurrentTurnImages ? _boundaryOf(history, 1) : history.length;
   final live = <int>{};
   var newer = 0;
   for (int i = history.length - 1; i >= windowStart; i--) {
@@ -306,11 +295,7 @@ Set<int> _liveAttachmentIndices(List<LLMMessage> history,
 /// applied. [bulk] governs knowledge/note reads and staged file bodies;
 /// [attachments] governs viewed images, which leave the request sooner —
 /// see [_keepAttachmentTurns].
-LLMMessage _elide(
-  LLMMessage m, {
-  required bool bulk,
-  required bool attachments,
-}) {
+LLMMessage _elide(LLMMessage m, {required bool bulk, required bool attachments}) {
   // read_note results elide exactly like knowledge reads: both are bulk
   // text the model pulled in on demand and can pull in again — notes even
   // more safely, since nothing ever rewrites a stored note.
@@ -322,7 +307,8 @@ LLMMessage _elide(
       role: LLMRole.tool,
       content: jsonEncode({
         'status': 'ok',
-        'note': 'Content elided to save context — it was read and processed earlier in this conversation.',
+        'note':
+            'Content elided to save context — it was read and processed earlier in this conversation.',
       }),
       toolCallId: m.toolCallId,
       toolName: m.toolName,
@@ -344,9 +330,11 @@ LLMMessage _elide(
   // does not need it back.
   if (bulk &&
       m.role == LLMRole.assistant &&
-      m.toolCalls.any((c) =>
-          c.name == 'write_knowledge_file' &&
-          (c.arguments['content']?.toString().length ?? 0) > 300)) {
+      m.toolCalls.any(
+        (c) =>
+            c.name == 'write_knowledge_file' &&
+            (c.arguments['content']?.toString().length ?? 0) > 300,
+      )) {
     return LLMMessage(
       role: LLMRole.assistant,
       content: m.content,
@@ -384,7 +372,8 @@ LLMMessage _elide(
               thoughtSignature: c.thoughtSignature,
               arguments: {
                 ...c.arguments,
-                'content': '(elided to save context — this edit was already '
+                'content':
+                    '(elided to save context — this edit was already '
                     'staged and shown to the user.)',
               },
             )
@@ -446,9 +435,11 @@ Future<void> _maybeCompact(
     // the request may fail with nothing but the provider's own error to
     // explain why.
     if (occupied >= budget) {
-      onLog?.call('Context is over budget ($occupied/$budget chars) but there '
-          'is nothing worth summarizing this turn — the system prompt or the '
-          'most recent turns alone exceed the budget.');
+      onLog?.call(
+        'Context is over budget ($occupied/$budget chars) but there '
+        'is nothing worth summarizing this turn — the system prompt or the '
+        'most recent turns alone exceed the budget.',
+      );
     }
     return;
   }
@@ -462,9 +453,11 @@ Future<void> _maybeCompact(
   // Held as an object, not an index: the summary request below is awaited,
   // and nothing guarantees the history keeps its shape until it returns.
   final boundaryMsg = session.history[boundary];
-  onLog?.call('Context budget reached ($occupied/$budget chars, '
-      '${(contextRatio * 100).round()}% of the window) — summarizing '
-      '${head.length} early messages.');
+  onLog?.call(
+    'Context budget reached ($occupied/$budget chars, '
+    '${(contextRatio * 100).round()}% of the window) — summarizing '
+    '${head.length} early messages.',
+  );
   String summaryText;
   try {
     final response = await PromptOptimizerAgent._request(
@@ -472,7 +465,8 @@ Future<void> _maybeCompact(
       messages: [
         LLMMessage(
           role: LLMRole.system,
-          content: 'You compress a prompt-engineering conversation into a '
+          content:
+              'You compress a prompt-engineering conversation into a '
               'dense working summary. Keep, verbatim where possible: the '
               'user\'s core request and all confirmed design/character '
               'details; every knowledge-base file already consulted (paths '
@@ -489,11 +483,7 @@ Future<void> _maybeCompact(
       contextId: contextId,
       // No web search: the summary must come from the transcript alone, and
       // a model with search on would otherwise search (and bill) here too.
-      options: const {
-        'retryCount': 2,
-        'usageTag': 'compaction',
-        llmNoServerToolsKey: true,
-      },
+      options: const {'retryCount': 2, 'usageTag': 'compaction', llmNoServerToolsKey: true},
       useStream: false,
       isCancelled: isCancelled,
     );
@@ -512,20 +502,25 @@ Future<void> _maybeCompact(
     // single network blip into permanently lost context. This turn runs on
     // the uncompacted history (layer 1 still elides), and because the
     // trigger is re-evaluated at the top of every turn, the next one retries.
-    onLog?.call('Summary generation failed ($e) — the history was left as '
-        'it was; compaction will be retried next turn.');
+    onLog?.call(
+      'Summary generation failed ($e) — the history was left as '
+      'it was; compaction will be retried next turn.',
+    );
     return;
   }
 
   final at = session.history.indexWhere((m) => identical(m, boundaryMsg));
   if (at < 0) {
-    onLog?.call('History changed while the summary was generated — '
-        'skipping this compaction.');
+    onLog?.call(
+      'History changed while the summary was generated — '
+      'skipping this compaction.',
+    );
     return;
   }
   final summaryMsg = LLMMessage(
     role: LLMRole.user,
-    content: '${PromptOptimizerAgent.summaryMarker}\n$summaryText'
+    content:
+        '${PromptOptimizerAgent.summaryMarker}\n$summaryText'
         '${foldedLatestPrompt == null ? '' : '\n\n${PromptOptimizerAgent.latestPromptMarker} v${session.promptVersions}\n$foldedLatestPrompt'}',
   );
   final tail = session.history.sublist(at);
@@ -534,10 +529,12 @@ Future<void> _maybeCompact(
     ..addAll([summaryMsg, ...tail]);
   session.persistedCount = session.history.length;
   await repo.compactAll(session.id, session.history);
-  session._addEntry(OptimizerChatEntry(
-    kind: OptimizerEntryKind.notice,
-    text: PromptOptimizerAgent.compactedNoticeToken,
-  ));
+  session._addEntry(
+    OptimizerChatEntry(
+      kind: OptimizerEntryKind.notice,
+      text: PromptOptimizerAgent.compactedNoticeToken,
+    ),
+  );
 }
 
 /// Plain-text rendering of history for the summarization call. Tool results
@@ -588,7 +585,8 @@ Future<void> _maybeCompact(
   final prompt = section.substring(newline + 1);
   if (prompt.isEmpty) return null;
   final version = int.tryParse(
-      RegExp(r' v(\d+)$').firstMatch(section.substring(0, newline).trimRight())?.group(1) ?? '');
+    RegExp(r' v(\d+)$').firstMatch(section.substring(0, newline).trimRight())?.group(1) ?? '',
+  );
   return (version: version, prompt: prompt);
 }
 
@@ -613,19 +611,25 @@ String _serializeForSummary(List<LLMMessage> messages) {
             // summary itself, and no version's text is for the model to
             // re-type (the note is what changed, and it stays).
             final body = call.arguments['prompt']?.toString() ?? '';
-            buffer.writeln('SUBMITTED PROMPT: (${body.length} chars, text omitted)'
-                '${call.arguments['note'] != null ? ' — ${call.arguments['note']}' : ''}');
+            buffer.writeln(
+              'SUBMITTED PROMPT: (${body.length} chars, text omitted)'
+              '${call.arguments['note'] != null ? ' — ${call.arguments['note']}' : ''}',
+            );
           } else if (call.name == 'ask_user') {
             final questions = AskUserQuestion.tryParse(call.arguments['questions']);
-            buffer.writeln('USER WAS ASKED: '
-                '${questions == null ? '(malformed questions)' : questions.map((q) => q.question).join(' | ')}');
+            buffer.writeln(
+              'USER WAS ASKED: '
+              '${questions == null ? '(malformed questions)' : questions.map((q) => q.question).join(' | ')}',
+            );
           } else if (call.name == 'write_knowledge_file') {
             // The generic branch below would jsonEncode the whole proposed
             // file into the summarization prompt.
             final body = call.arguments['content']?.toString() ?? '';
-            buffer.writeln('KB EDIT PROPOSED: ${call.arguments['path'] ?? ''} '
-                '(${body.length} chars, content omitted)'
-                '${call.arguments['note'] != null ? ' — ${call.arguments['note']}' : ''}');
+            buffer.writeln(
+              'KB EDIT PROPOSED: ${call.arguments['path'] ?? ''} '
+              '(${body.length} chars, content omitted)'
+              '${call.arguments['note'] != null ? ' — ${call.arguments['note']}' : ''}',
+            );
           } else {
             buffer.writeln('TOOL CALL: ${call.name} ${jsonEncode(call.arguments)}');
           }

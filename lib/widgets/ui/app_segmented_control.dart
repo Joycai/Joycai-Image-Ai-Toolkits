@@ -12,12 +12,7 @@ class AppSegment<T> {
   /// the mode is there, and why the one they want is missing.
   final bool enabled;
 
-  const AppSegment({
-    required this.value,
-    required this.label,
-    this.icon,
-    this.enabled = true,
-  });
+  const AppSegment({required this.value, required this.label, this.icon, this.enabled = true});
 }
 
 /// How an [AppSegmentedControl] marks the chosen option.
@@ -131,8 +126,7 @@ class _AppSegmentedControlState<T> extends State<AppSegmentedControl<T>> {
   /// selected.
   Rect? _indicator;
 
-  GlobalKey _keyFor(int index) =>
-      _segmentKeys.putIfAbsent(index, () => GlobalKey());
+  GlobalKey _keyFor(int index) => _segmentKeys.putIfAbsent(index, GlobalKey.new);
 
   /// Re-measures after every layout.
   ///
@@ -178,9 +172,7 @@ class _AppSegmentedControlState<T> extends State<AppSegmentedControl<T>> {
         color: outlinedTrack
             ? colorScheme.surfaceContainerLow
             : colorScheme.surfaceContainerHighest,
-        border: outlinedTrack
-            ? Border.all(color: colorScheme.outlineVariant)
-            : null,
+        border: outlinedTrack ? Border.all(color: colorScheme.outlineVariant) : null,
         // One step out from the chips it holds, so the gap between the two
         // curves stays even around the selected option's corners.
         borderRadius: BorderRadius.circular(AppRadius.md),
@@ -266,9 +258,9 @@ class _AppSegmentedControlState<T> extends State<AppSegmentedControl<T>> {
   /// crossfade; not invisible under a pill that is measured against those
   /// boxes, which is how this surfaced.
   BoxDecoration _chipHitDecoration() => BoxDecoration(
-        borderRadius: BorderRadius.circular(AppRadius.control),
-        border: Border.all(color: Colors.transparent),
-      );
+    borderRadius: BorderRadius.circular(AppRadius.control),
+    border: Border.all(color: Colors.transparent),
+  );
 
   Widget _buildSegment(BuildContext context, ColorScheme colorScheme, AppSegment<T> segment) {
     final selected = segment.value == widget.value;
@@ -329,13 +321,14 @@ class _AppSegmentedControlState<T> extends State<AppSegmentedControl<T>> {
                     segment.label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: (widget.compact
-                            ? Theme.of(context).textTheme.labelMedium
-                            : Theme.of(context).textTheme.bodySmall)
-                        ?.copyWith(
-                      fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                      color: tint,
-                    ),
+                    style:
+                        (widget.compact
+                                ? Theme.of(context).textTheme.labelMedium
+                                : Theme.of(context).textTheme.bodySmall)
+                            ?.copyWith(
+                              fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                              color: tint,
+                            ),
                   ),
                 ),
             ],

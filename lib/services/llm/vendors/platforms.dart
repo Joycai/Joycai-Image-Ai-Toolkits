@@ -162,9 +162,7 @@ class Platforms {
       id: anthropic,
       officialHost: 'https://api.anthropic.com',
       hosts: ['api.anthropic.com'],
-      routes: [
-        PlatformRoute(RouteKind.anthropic, '/v1', Vendors.anthropicRest),
-      ],
+      routes: [PlatformRoute(RouteKind.anthropic, '/v1', Vendors.anthropicRest)],
     ),
     PlatformProfile(
       id: google,
@@ -197,11 +195,7 @@ class Platforms {
       hosts: ['api.minimaxi.com', 'api.minimax.io', 'api.minimax.chat'],
       routes: [
         PlatformRoute(RouteKind.chat, '/v1', Vendors.minimax),
-        PlatformRoute(
-          RouteKind.anthropic,
-          '/anthropic/v1',
-          Vendors.minimaxAnthropic,
-        ),
+        PlatformRoute(RouteKind.anthropic, '/anthropic/v1', Vendors.minimaxAnthropic),
       ],
     ),
     PlatformProfile(
@@ -210,11 +204,7 @@ class Platforms {
       hosts: ['dashscope.aliyuncs.com', 'dashscope-intl.aliyuncs.com'],
       routes: [
         PlatformRoute(RouteKind.chat, '/compatible-mode/v1', Vendors.dashscope),
-        PlatformRoute(
-          RouteKind.anthropic,
-          '/apps/anthropic/v1',
-          Vendors.dashscope,
-        ),
+        PlatformRoute(RouteKind.anthropic, '/apps/anthropic/v1', Vendors.dashscope),
         PlatformRoute(RouteKind.dashscope, '/api/v1', Vendors.dashscopeNative),
       ],
     ),
@@ -230,11 +220,7 @@ class Platforms {
       untestedWebSearch: {RouteKind.anthropic},
       routes: [
         PlatformRoute(RouteKind.chat, '/v1', Vendors.newApiOpenAI),
-        PlatformRoute(
-          RouteKind.responses,
-          '/v1',
-          Vendors.newApiOpenAIResponses,
-        ),
+        PlatformRoute(RouteKind.responses, '/v1', Vendors.newApiOpenAIResponses),
         PlatformRoute(RouteKind.anthropic, '/v1', Vendors.newApiAnthropic),
         PlatformRoute(RouteKind.gemini, '/v1beta', Vendors.newApiGemini),
       ],
@@ -242,9 +228,7 @@ class Platforms {
     PlatformProfile(
       id: midjourney,
       hostFromUser: true,
-      routes: [
-        PlatformRoute(RouteKind.midjourney, '', Vendors.midjourneyProxy),
-      ],
+      routes: [PlatformRoute(RouteKind.midjourney, '', Vendors.midjourneyProxy)],
     ),
     PlatformProfile(
       id: ollama,
@@ -275,9 +259,7 @@ class Platforms {
     ),
   ];
 
-  static final Map<String, PlatformProfile> _byId = {
-    for (final p in all) p.id: p,
-  };
+  static final Map<String, PlatformProfile> _byId = {for (final p in all) p.id: p};
 
   /// The profile for [id]; unknown ids (a newer build's platform) read as
   /// [custom] — only the protocol-standard part, nothing private.
@@ -340,11 +322,7 @@ class Platforms {
   /// so every migrated route resolves exactly as its request did. Only a
   /// face the primary vendor never offered takes the platform's own vendor
   /// for it; a face the platform does not offer either resolves to null.
-  static String? routeVendor(
-    PlatformProfile platform,
-    String primaryVendorId,
-    RouteKind kind,
-  ) {
+  static String? routeVendor(PlatformProfile platform, String primaryVendorId, RouteKind kind) {
     final primary = Vendors.byId(primaryVendorId);
     if (primary.menuFor(Surface.chat).contains(kind.face)) {
       return primaryVendorId;
@@ -355,7 +333,6 @@ class Platforms {
   /// The routes a legacy channel of [vendorId] reached before routes
   /// existed: every chat face its vendor offered, default first.
   static List<RouteKind> legacyKinds(String vendorId) => [
-    for (final face in Vendors.byId(vendorId).menuFor(Surface.chat))
-      ?RouteKind.ofFace(face),
+    for (final face in Vendors.byId(vendorId).menuFor(Surface.chat)) ?RouteKind.ofFace(face),
   ];
 }

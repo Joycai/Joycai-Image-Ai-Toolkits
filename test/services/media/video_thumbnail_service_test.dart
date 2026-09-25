@@ -28,7 +28,7 @@ void main() {
     service
       ..cacheDirOverride = null
       ..extractorOverride = null
-      ..wait = (d) => Future<void>.delayed(d);
+      ..wait = Future<void>.delayed;
     await tmp.delete(recursive: true);
   });
 
@@ -91,8 +91,7 @@ void main() {
     expect(calls, 1);
   });
 
-  test('a cached thumbnail is returned without touching the extractor',
-      () async {
+  test('a cached thumbnail is returned without touching the extractor', () async {
     var calls = 0;
     service.extractorOverride = (src, dest) async {
       calls++;

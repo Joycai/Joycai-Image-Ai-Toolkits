@@ -92,10 +92,7 @@ String? openaiFinishReason(Object? raw) {
 Map<String, dynamic> openaiFinishMetadata(Object? raw) {
   final normalised = openaiFinishReason(raw);
   if (normalised == null) return const {};
-  return {
-    'finish_reason': normalised,
-    if (normalised != raw) 'finish_reason_raw': raw,
-  };
+  return {'finish_reason': normalised, if (normalised != raw) 'finish_reason_raw': raw};
 }
 
 String contentToText(Object? raw) {
@@ -179,9 +176,7 @@ Map<String, dynamic>? firstChoice(Map<String, dynamic> chunk) {
 /// text" is the test, not "present": `reasoning_content ?? reasoning` picked
 /// a relay's empty `reasoning_content: ""` over a non-empty `reasoning`,
 /// dropping the thought and remembering the wrong key for the echo.
-({String text, String field})? pickReasoningField(
-  Map<String, dynamic> source,
-) {
+({String text, String field})? pickReasoningField(Map<String, dynamic> source) {
   for (final field in const ['reasoning_content', 'reasoning']) {
     final value = source[field];
     if (value is String && value.isNotEmpty) return (text: value, field: field);

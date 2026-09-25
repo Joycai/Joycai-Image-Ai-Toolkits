@@ -77,10 +77,7 @@ const Set<String> _kGlassOwners = <String>{
 // ── Measuring ───────────────────────────────────────────────────────────────
 
 /// Every widget `debugPrintRebuildDirtyWidgets` reports for one pump.
-Future<List<String>> rebuildsFrom(
-  WidgetTester tester,
-  void Function() change,
-) async {
+Future<List<String>> rebuildsFrom(WidgetTester tester, void Function() change) async {
   final List<String> lines = <String>[];
   final DebugPrintCallback original = debugPrint;
   debugPrint = (String? message, {int? wrapWidth}) {
@@ -96,11 +93,7 @@ Future<List<String>> rebuildsFrom(
 
 /// Milliseconds a single build → layout → paint pass takes, averaged. See the
 /// header on why this is the weaker of the two figures.
-Future<double> costOf(
-  WidgetTester tester,
-  void Function() change, {
-  int runs = 20,
-}) async {
+Future<double> costOf(WidgetTester tester, void Function() change, {int runs = 20}) async {
   for (int i = 0; i < 3; i++) {
     change();
     await tester.pump();
@@ -158,8 +151,7 @@ Future<void> drain(WidgetTester tester) async {
 // ── Probes ──────────────────────────────────────────────────────────────────
 
 void main() {
-  final TestWidgetsFlutterBinding binding =
-      TestWidgetsFlutterBinding.ensureInitialized();
+  final TestWidgetsFlutterBinding binding = TestWidgetsFlutterBinding.ensureInitialized();
   late FixtureEnv env;
 
   setUpAll(() async {
@@ -177,8 +169,7 @@ void main() {
 
   tearDownAll(() => env.dispose());
 
-  testWidgets('workbench — what one gallery change rebuilds',
-      (WidgetTester tester) async {
+  testWidgets('workbench — what one gallery change rebuilds', (WidgetTester tester) async {
     await mountApp(
       tester,
       env: env,
@@ -188,24 +179,32 @@ void main() {
     );
     final gallery = AppState().galleryState;
     final images = gallery.currentViewImages;
-    say('\n══ WORKBENCH · ${images.length} images @ ${_kWindow.width.toInt()}×'
-        '${_kWindow.height.toInt()} ══');
+    say(
+      '\n══ WORKBENCH · ${images.length} images @ ${_kWindow.width.toInt()}×'
+      '${_kWindow.height.toInt()} ══',
+    );
 
     // A selection change with one already selected: the ordinary case, and
     // the one the per-card Selector exists for.
     gallery.toggleImageSelection(images.first);
     await tester.pump();
-    final List<String> pick =
-        await rebuildsFrom(tester, () => gallery.toggleImageSelection(images[1]));
-    say('  selection, one card changes   ${pick.length} builds  '
-        '${(await costOf(tester, () => gallery.toggleImageSelection(images[1]))).toStringAsFixed(1)} ms');
+    final List<String> pick = await rebuildsFrom(
+      tester,
+      () => gallery.toggleImageSelection(images[1]),
+    );
+    say(
+      '  selection, one card changes   ${pick.length} builds  '
+      '${(await costOf(tester, () => gallery.toggleImageSelection(images[1]))).toStringAsFixed(1)} ms',
+    );
     reportDependents(pick, 'GalleryState');
 
     // The empty ↔ non-empty boundary, which the phone layout's FAB turns on.
     gallery.clearImageSelection();
     await tester.pump();
     final List<String> firstPick = await rebuildsFrom(
-        tester, () => gallery.toggleImageSelection(images.first));
+      tester,
+      () => gallery.toggleImageSelection(images.first),
+    );
     say('  selection, empty ↔ not        ${firstPick.length} builds');
 
     // A whole size drag, one logical pixel at a time, the way a slider
@@ -228,35 +227,31 @@ void main() {
     say('  size drag 80→400 (321 events) $builds builds  ${sw.elapsedMilliseconds} ms total');
 
     // What the app's other notifiers cost from here.
-    say('  appState.notify()             '
-        '${(await costOf(tester, AppState().notify)).toStringAsFixed(1)} ms');
+    say(
+      '  appState.notify()             '
+      '${(await costOf(tester, AppState().notify)).toStringAsFixed(1)} ms',
+    );
     final queue = AppState().taskQueue;
-    say('  queue progress tick           '
-        '${(await rebuildsFrom(tester, () => queue.progressTick.value++)).length} builds');
+    say(
+      '  queue progress tick           '
+      '${(await rebuildsFrom(tester, () => queue.progressTick.value++)).length} builds',
+    );
     await drain(tester);
   });
 
-  testWidgets('tasks — what the queue costs as it grows',
-      (WidgetTester tester) async {
-    await mountApp(
-      tester,
-      env: env,
-      screen: AppScreen.tasks,
-      size: _kWindow,
-      label: 'probe-tasks',
-    );
+  testWidgets('tasks — what the queue costs as it grows', (WidgetTester tester) async {
+    await mountApp(tester, env: env, screen: AppScreen.tasks, size: _kWindow, label: 'probe-tasks');
     final queue = AppState().taskQueue;
     say('\n══ TASKS ══');
 
     Future<void> line(String label) async {
-      final int tick =
-          (await rebuildsFrom(tester, () => queue.progressTick.value++)).length;
-      final int structural =
-          (await rebuildsFrom(tester, queue.refreshQueue)).length;
-      final double cost =
-          await costOf(tester, () => queue.progressTick.value++);
-      say('  ${label.padRight(22)} progress tick $tick builds '
-          '(${cost.toStringAsFixed(1)} ms) · structural notify $structural builds');
+      final int tick = (await rebuildsFrom(tester, () => queue.progressTick.value++)).length;
+      final int structural = (await rebuildsFrom(tester, queue.refreshQueue)).length;
+      final double cost = await costOf(tester, () => queue.progressTick.value++);
+      say(
+        '  ${label.padRight(22)} progress tick $tick builds '
+        '(${cost.toStringAsFixed(1)} ms) · structural notify $structural builds',
+      );
     }
 
     await line('${queue.queue.length} tasks');
@@ -270,8 +265,7 @@ void main() {
     await drain(tester);
   });
 
-  testWidgets('file browser — what one browser change rebuilds',
-      (WidgetTester tester) async {
+  testWidgets('file browser — what one browser change rebuilds', (WidgetTester tester) async {
     await mountApp(
       tester,
       env: env,
@@ -288,10 +282,11 @@ void main() {
       // than the empty ↔ not boundary.
       browser.toggleSelection(files.first);
       await tester.pump();
-      final List<String> pick =
-          await rebuildsFrom(tester, () => browser.toggleSelection(files[1]));
-      say('  selection, one card changes   ${pick.length} builds  '
-          '${(await costOf(tester, () => browser.toggleSelection(files[1]))).toStringAsFixed(1)} ms');
+      final List<String> pick = await rebuildsFrom(tester, () => browser.toggleSelection(files[1]));
+      say(
+        '  selection, one card changes   ${pick.length} builds  '
+        '${(await costOf(tester, () => browser.toggleSelection(files[1]))).toStringAsFixed(1)} ms',
+      );
       reportDependents(pick, 'FileBrowserState');
 
       // Select-all is the worst case the grid has: every visible card's
@@ -304,15 +299,16 @@ void main() {
       await tester.pump();
     }
 
-    final List<String> flash =
-        await rebuildsFrom(tester, () => browser.flash(browser.sourceDirectories.first));
+    final List<String> flash = await rebuildsFrom(
+      tester,
+      () => browser.flash(browser.sourceDirectories.first),
+    );
     say('  folder pulse                  ${flash.length} builds');
     reportDependents(flash, 'FileBrowserState');
     await drain(tester);
   });
 
-  testWidgets('glass — layers per screen, and any that nest',
-      (WidgetTester tester) async {
+  testWidgets('glass — layers per screen, and any that nest', (WidgetTester tester) async {
     say('\n══ GLASS ══');
     say('  AppGlass\'s own budget: one full-width bar plus at most three');
     say('  layers visible at once. A nested filter samples an already blurred');
@@ -348,14 +344,15 @@ void main() {
         final String owner = chain.isEmpty ? '?' : chain.join('<');
         owners.add(under ? '$owner (NESTED)' : owner);
       }
-      say('  ${screen.name.padRight(12)} ${layers.length} layers'
-          '${nested > 0 ? ' · $nested NESTED' : ''}  ${owners.join(' · ')}');
+      say(
+        '  ${screen.name.padRight(12)} ${layers.length} layers'
+        '${nested > 0 ? ' · $nested NESTED' : ''}  ${owners.join(' · ')}',
+      );
       await drain(tester);
     }
   });
 
-  testWidgets('repaint boundaries — what an animation drags with it',
-      (WidgetTester tester) async {
+  testWidgets('repaint boundaries — what an animation drags with it', (WidgetTester tester) async {
     await mountApp(
       tester,
       env: env,
@@ -386,14 +383,15 @@ void main() {
         if (!name.startsWith('_')) crossed.add(name);
         return true;
       });
-      say('  breathing dot → crosses [${crossed.take(6).join(', ')}] '
-          '→ $boundary');
+      say(
+        '  breathing dot → crosses [${crossed.take(6).join(', ')}] '
+        '→ $boundary',
+      );
     }
     await drain(tester);
   });
 
-  testWidgets('assistant — what one session notification rebuilds',
-      (WidgetTester tester) async {
+  testWidgets('assistant — what one session notification rebuilds', (WidgetTester tester) async {
     // A running turn notifies the session several times a request (the
     // request basis, streaming, entries). The chat view listens to all of
     // it and setStates the whole transcript; the staged-edit card re-runs
@@ -413,10 +411,13 @@ void main() {
     final session = AppState().workbenchUIState.optimizerSession;
     say('\n══ ASSISTANT · ${session.transcript.length} entries ══');
     var flip = 0;
-    void notify() => session.recordRequestBasis(systemPromptChars: 1000 + (flip++ % 2), toolSchemaChars: 10);
+    void notify() =>
+        session.recordRequestBasis(systemPromptChars: 1000 + (flip++ % 2), toolSchemaChars: 10);
     final List<String> lines = await rebuildsFrom(tester, notify);
-    say('  session notify                ${lines.length} builds  '
-        '${(await costOf(tester, notify)).toStringAsFixed(2)} ms');
+    say(
+      '  session notify                ${lines.length} builds  '
+      '${(await costOf(tester, notify)).toStringAsFixed(2)} ms',
+    );
     reportDependents(lines, 'WorkbenchUIState');
     final Map<String, int> byType = <String, int>{};
     for (final String l in lines) {
@@ -435,17 +436,19 @@ void _addSynthetic(TaskQueueService service, int count, FixtureEnv env) {
   final List<TaskItem> queue = <TaskItem>[...service.queue];
   final int from = queue.length;
   for (int i = 0; i < count; i++) {
-    queue.add(TaskItem(
-      id: 'probe-${from + i}',
-      imagePaths: images,
-      parameters: const <String, dynamic>{'prompt': 'probe'},
-      modelId: 'probe-model',
-      modelDbId: 1,
-      channelTag: 'CH',
-      status: i % 4 == 0 ? TaskStatus.pending : TaskStatus.completed,
-      createdAt: DateTime.now().subtract(Duration(minutes: from + i)),
-      startTime: DateTime.now().subtract(const Duration(seconds: 20)),
-    ));
+    queue.add(
+      TaskItem(
+        id: 'probe-${from + i}',
+        imagePaths: images,
+        parameters: const <String, dynamic>{'prompt': 'probe'},
+        modelId: 'probe-model',
+        modelDbId: 1,
+        channelTag: 'CH',
+        status: i % 4 == 0 ? TaskStatus.pending : TaskStatus.completed,
+        createdAt: DateTime.now().subtract(Duration(minutes: from + i)),
+        startTime: DateTime.now().subtract(const Duration(seconds: 20)),
+      ),
+    );
   }
   service.setQueueForTest(queue);
 }

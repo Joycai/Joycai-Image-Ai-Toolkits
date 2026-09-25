@@ -7,11 +7,11 @@ import '../../../core/file_utils.dart';
 import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/system/runtime_info.dart';
+import '../../../widgets/shell/app_window_frame.dart';
 import '../../../widgets/ui/app_button.dart';
 import '../../../widgets/ui/app_section_label.dart';
 import '../../../widgets/ui/app_setting_row.dart';
 import '../../../widgets/ui/app_snackbar.dart';
-import '../../../widgets/shell/app_window_frame.dart';
 import 'settings_layout.dart';
 
 const String _githubUrl = 'https://github.com/Joycai/Joycai-Image-Ai-Toolkits';
@@ -114,8 +114,7 @@ class _AboutSectionState extends State<AboutSection> {
             context: context,
             applicationName: l10n.appTitle,
             applicationVersion: _info?.versionLine ?? '',
-            applicationLegalese:
-                l10n.aboutCopyright(DateTime.now().year, _copyrightHolder),
+            applicationLegalese: l10n.aboutCopyright(DateTime.now().year, _copyrightHolder),
           ),
         ),
         _LinkRow(
@@ -219,9 +218,7 @@ class _Identity extends StatelessWidget {
     // a wrong build number in a bug report is worse than a missing one.
     final Widget version = Text(
       info == null ? '' : l10n.aboutVersionBuild(info!.version, info!.buildNumber),
-      style: theme.textTheme.bodySmall?.mono.copyWith(
-        color: theme.colorScheme.onSurfaceVariant,
-      ),
+      style: theme.textTheme.bodySmall?.mono.copyWith(color: theme.colorScheme.onSurfaceVariant),
     );
 
     if (phone) {
@@ -244,7 +241,11 @@ class _Identity extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
-            children: [name, const SizedBox(height: AppSpace.s4), version],
+            children: [
+              name,
+              const SizedBox(height: AppSpace.s4),
+              version,
+            ],
           ),
         ),
       ],

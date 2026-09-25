@@ -17,30 +17,31 @@ void main() {
   const Key labelKey = ValueKey<String>('label');
 
   Future<void> pumpRow(WidgetTester tester, String id, double width) {
-    return tester.pumpWidget(MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: SizedBox(
-            width: width,
-            child: AppShortcutRow(
-              gap: 10,
-              shortcut: AppShortcuts.byId(id),
-              label: const Text(
-                'Delete folder',
-                key: labelKey,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+    return tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: width,
+              child: AppShortcutRow(
+                gap: 10,
+                shortcut: AppShortcuts.byId(id),
+                label: const Text(
+                  'Delete folder',
+                  key: labelKey,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ),
           ),
         ),
       ),
-    ));
+    );
   }
 
   for (final double width in <double>[240, 200]) {
-    testWidgets('delete at $width: keys wrap, nothing overflows',
-        (WidgetTester tester) async {
+    testWidgets('delete at $width: keys wrap, nothing overflows', (WidgetTester tester) async {
       await pumpRow(tester, AppShortcutIds.delete, width);
 
       expect(tester.takeException(), isNull);
@@ -50,13 +51,16 @@ void main() {
       // More than one line of 18-high caps: the later chords wrapped.
       expect(keys.height, greaterThan(18));
       // The name keeps a quarter of the row after the gap.
-      expect(tester.getSize(find.byKey(labelKey)).width,
-          greaterThanOrEqualTo((width - 10) * 0.25 - 0.5));
+      expect(
+        tester.getSize(find.byKey(labelKey)).width,
+        greaterThanOrEqualTo((width - 10) * 0.25 - 0.5),
+      );
     });
   }
 
-  testWidgets('a short chord stays on one line and leaves the name the rest',
-      (WidgetTester tester) async {
+  testWidgets('a short chord stays on one line and leaves the name the rest', (
+    WidgetTester tester,
+  ) async {
     await pumpRow(tester, AppShortcutIds.rename, 316);
 
     expect(tester.takeException(), isNull);

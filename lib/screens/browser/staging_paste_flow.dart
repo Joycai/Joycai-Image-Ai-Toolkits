@@ -16,10 +16,10 @@ import '../../models/browser_file.dart';
 import '../../services/files/file_transfer_service.dart';
 import '../../state/app_state.dart';
 import '../../state/file_staging_state.dart';
+import '../../widgets/files/transfer_dialog_parts.dart';
 import '../../widgets/ui/app_button.dart';
 import '../../widgets/ui/app_dialog.dart';
 import '../../widgets/ui/app_snackbar.dart';
-import '../../widgets/files/transfer_dialog_parts.dart';
 
 /// Runs a staging-area paste end to end: plan, resolve conflicts, execute with
 /// progress, then reconcile the staging list and the browser listing.
@@ -119,20 +119,22 @@ Future<void> _runAndReport(
 
   // Not awaited: the run owns its own lifetime, so "run in background" can
   // dismiss this dialog without taking the transfer down with it.
-  unawaited(showDialog<void>(
-    context: context,
-    animationStyle: appDialogAnimation(context),
-    barrierDismissible: false,
-    builder: (dialogContext) => _ProgressDialog(
-      plan: plan,
-      progress: progress,
-      onCancel: () => cancelled = true,
-      onBackground: () {
-        backgrounded = true;
-        Navigator.pop(dialogContext);
-      },
+  unawaited(
+    showDialog<void>(
+      context: context,
+      animationStyle: appDialogAnimation(context),
+      barrierDismissible: false,
+      builder: (dialogContext) => _ProgressDialog(
+        plan: plan,
+        progress: progress,
+        onCancel: () => cancelled = true,
+        onBackground: () {
+          backgrounded = true;
+          Navigator.pop(dialogContext);
+        },
+      ),
     ),
-  ));
+  );
 
   final outcome = await FileTransferService.execute(
     plan,
@@ -176,10 +178,10 @@ Future<void> _runAndReport(
 }
 
 String _summaryLine(AppLocalizations l10n, FileTransferOutcome outcome) => <String>[
-      l10n.pasteSucceededCount(outcome.succeeded.length),
-      if (outcome.skipped.isNotEmpty) l10n.pasteSkippedCount(outcome.skipped.length),
-      if (outcome.failed.isNotEmpty) l10n.pasteFailedCount(outcome.failed.length),
-    ].join(' · ');
+  l10n.pasteSucceededCount(outcome.succeeded.length),
+  if (outcome.skipped.isNotEmpty) l10n.pasteSkippedCount(outcome.skipped.length),
+  if (outcome.failed.isNotEmpty) l10n.pasteFailedCount(outcome.failed.length),
+].join(' · ');
 
 // ------------------------------------------------------------ 1b conflicts
 
@@ -210,12 +212,8 @@ Future<Map<String, FileConflictResolution>?> _askConflicts(
   return showDialog<Map<String, FileConflictResolution>>(
     context: context,
     animationStyle: appDialogAnimation(context),
-    builder: (_) => _ConflictDialog(
-      plan: plan,
-      conflicts: conflicts,
-      existing: existing,
-      incoming: incoming,
-    ),
+    builder: (_) =>
+        _ConflictDialog(plan: plan, conflicts: conflicts, existing: existing, incoming: incoming),
   );
 }
 
@@ -468,7 +466,8 @@ class _ConflictCard extends StatelessWidget {
                 child: _Side(
                   path: entry.sourcePath,
                   caption: l10n.conflictIncoming,
-                  meta: '${AppConstants.formatFileSize(entry.size)} · ${_shortDate(incoming?.modified)}',
+                  meta:
+                      '${AppConstants.formatFileSize(entry.size)} · ${_shortDate(incoming?.modified)}',
                   accent: true,
                 ),
               ),
@@ -479,7 +478,8 @@ class _ConflictCard extends StatelessWidget {
                     : _Side(
                         path: entry.targetPath,
                         caption: l10n.conflictAlreadyThere,
-                        meta: '${AppConstants.formatFileSize(existing!.size)} · ${_shortDate(existing!.modified)}',
+                        meta:
+                            '${AppConstants.formatFileSize(existing!.size)} · ${_shortDate(existing!.modified)}',
                         accent: false,
                       ),
               ),
@@ -501,15 +501,24 @@ class _ConflictCard extends StatelessWidget {
   }
 
   /// The four reasons a planned entry can clash, each in its own tone.
-  static Widget _reasonBadge(AppLocalizations l10n, FileTransferConflict conflict) => switch (conflict) {
-        FileTransferConflict.targetExists =>
-          TransferBadge(label: l10n.conflictReasonExists, tone: TransferTone.warn),
-        FileTransferConflict.duplicateInBatch =>
-          TransferBadge(label: l10n.conflictReasonDuplicate, tone: TransferTone.info),
-        FileTransferConflict.sameLocation =>
-          TransferBadge(label: l10n.conflictReasonSameLocation, tone: TransferTone.track),
-        FileTransferConflict.sourceMissing =>
-          TransferBadge(label: l10n.conflictReasonMissing, tone: TransferTone.err),
+  static Widget _reasonBadge(AppLocalizations l10n, FileTransferConflict conflict) =>
+      switch (conflict) {
+        FileTransferConflict.targetExists => TransferBadge(
+          label: l10n.conflictReasonExists,
+          tone: TransferTone.warn,
+        ),
+        FileTransferConflict.duplicateInBatch => TransferBadge(
+          label: l10n.conflictReasonDuplicate,
+          tone: TransferTone.info,
+        ),
+        FileTransferConflict.sameLocation => TransferBadge(
+          label: l10n.conflictReasonSameLocation,
+          tone: TransferTone.track,
+        ),
+        FileTransferConflict.sourceMissing => TransferBadge(
+          label: l10n.conflictReasonMissing,
+          tone: TransferTone.err,
+        ),
         FileTransferConflict.none => const SizedBox.shrink(),
       };
 }
@@ -524,7 +533,12 @@ class _Side extends StatelessWidget {
   /// The incoming caption speaks in the deep accent; the existing one in ink2.
   final bool accent;
 
-  const _Side({required this.path, required this.caption, required this.meta, required this.accent});
+  const _Side({
+    required this.path,
+    required this.caption,
+    required this.meta,
+    required this.accent,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -620,9 +634,9 @@ class _ChoiceTrack extends StatelessWidget {
         child: Text(
           label,
           style: Theme.of(context).textTheme.labelMedium!.copyWith(
-                color: ink,
-                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-              ),
+            color: ink,
+            fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+          ),
         ),
       ),
     );
@@ -667,7 +681,10 @@ class _ProgressDialog extends StatelessWidget {
           title: isMove
               ? l10n.pasteMovingCount(plan.entries.length)
               : l10n.pasteCopyingCount(plan.entries.length),
-          subtitle: l10n.pasteRoute(transferShortPath(sourceDir), transferShortPath(plan.destination)),
+          subtitle: l10n.pasteRoute(
+            transferShortPath(sourceDir),
+            transferShortPath(plan.destination),
+          ),
           subtitleTooltip: l10n.pasteRoute(sourceDir, plan.destination),
           badge: plan.crossVolume
               ? TransferBadge(label: l10n.pasteCrossVolumeTag, tone: TransferTone.warn)
@@ -732,11 +749,7 @@ class _ProgressDialog extends StatelessWidget {
               ),
             ),
             const Spacer(),
-            AppButton(
-              label: l10n.cancel,
-              variant: AppButtonVariant.secondary,
-              onPressed: onCancel,
-            ),
+            AppButton(label: l10n.cancel, variant: AppButtonVariant.secondary, onPressed: onCancel),
           ],
         ),
       ),
@@ -763,8 +776,8 @@ Future<void> _showSummary(
   final (IconData icon, TransferTone tone) = outcome.cancelled
       ? (Icons.cancel_outlined, TransferTone.neutral)
       : outcome.failed.isEmpty
-          ? (Icons.check_circle_outline, TransferTone.ok)
-          : (Icons.error_outline, TransferTone.err);
+      ? (Icons.check_circle_outline, TransferTone.ok)
+      : (Icons.error_outline, TransferTone.err);
 
   Future<void> retry() async {
     Navigator.pop(context);
@@ -838,10 +851,7 @@ Future<void> _showSummary(
           ),
         ),
         const SizedBox(width: AppSpace.s6),
-        AppButton(
-          label: l10n.finish,
-          onPressed: () => Navigator.pop(context),
-        ),
+        AppButton(label: l10n.finish, onPressed: () => Navigator.pop(context)),
       ],
     ),
   );

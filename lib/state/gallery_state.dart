@@ -30,19 +30,16 @@ import 'file_browser_state.dart' show FolderFlash;
 /// dedupe for free.
 Map<String, List<int>> _scanImagesIsolate(List<String> paths) {
   final Map<String, List<int>> results = {};
-  for (var path in paths) {
+  for (final path in paths) {
     try {
       final dir = Directory(path);
       if (dir.existsSync()) {
         final entities = dir.listSync(recursive: false);
-        for (var entity in entities) {
+        for (final entity in entities) {
           try {
             if (entity is File && AppConstants.isSupportedFile(entity.path)) {
               final stat = entity.statSync();
-              results[entity.path] = [
-                stat.modified.millisecondsSinceEpoch,
-                stat.size,
-              ];
+              results[entity.path] = [stat.modified.millisecondsSinceEpoch, stat.size];
             }
           } catch (_) {
             // Ignore individual file access errors
@@ -71,8 +68,7 @@ class GalleryState extends ChangeNotifier {
   // View State
   GalleryViewMode viewMode = GalleryViewMode.all;
   String? viewSourcePath; // Used when viewMode is folder
-  bool folderViewIsResult =
-      false; // Whether the browsed folder belongs to the result tree
+  bool folderViewIsResult = false; // Whether the browsed folder belongs to the result tree
 
   // Model-based image lists
   List<AppImage> galleryImages = [];
@@ -215,8 +211,10 @@ class GalleryState extends ChangeNotifier {
   /// The one row the source tree owes a pulse, on its own notifier for the
   /// same reason as [refreshTick]. Same shape as the browser's
   /// `FileBrowserState.flashCue`, so the tree rows can listen to either.
-  final ValueNotifier<FolderFlash> flashCue =
-      ValueNotifier<FolderFlash>((path: null, expanded: false));
+  final ValueNotifier<FolderFlash> flashCue = ValueNotifier<FolderFlash>((
+    path: null,
+    expanded: false,
+  ));
   Timer? _flashTimer;
 
   /// Asks the source tree to open to [path] and pulse its row — the folder
@@ -249,7 +247,7 @@ class GalleryState extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
-    for (var sub in _watchers.values) {
+    for (final sub in _watchers.values) {
       sub.cancel();
     }
     _outputWatcher?.cancel();
@@ -280,8 +278,7 @@ class GalleryState extends ChangeNotifier {
       await _db.saveSetting('result_cache_directory', resultCacheDirectory!);
 
       // On iOS, we also treat this as the primary output if not set
-      if (Platform.isIOS &&
-          (outputDirectory == null || outputDirectory!.isEmpty)) {
+      if (Platform.isIOS && (outputDirectory == null || outputDirectory!.isEmpty)) {
         outputDirectory = resultCacheDirectory;
         await _db.saveSetting('output_directory', outputDirectory!);
       }
@@ -296,8 +293,8 @@ class GalleryState extends ChangeNotifier {
 
     _setupOutputWatcher();
     _setupSourceWatchers();
-    _scanImages();
-    _scanProcessedImages();
+    unawaited(_scanImages());
+    unawaited(_scanProcessedImages());
     notifyListeners();
   }
 
@@ -306,7 +303,7 @@ class GalleryState extends ChangeNotifier {
   }
 
   void _setupSourceWatchers() {
-    for (var sub in _watchers.values) {
+    for (final sub in _watchers.values) {
       sub.cancel();
     }
     _watchers.clear();
@@ -314,7 +311,7 @@ class GalleryState extends ChangeNotifier {
     // iOS does not support directory watching
     if (Platform.isIOS) return;
 
-    for (var path in activeSourceDirectories) {
+    for (final path in activeSourceDirectories) {
       try {
         final dir = Directory(path);
         if (dir.existsSync()) {
@@ -349,16 +346,12 @@ class GalleryState extends ChangeNotifier {
 
   void _debouncedSourceScan() {
     _sourceScanTimer?.cancel();
-    _sourceScanTimer = Timer(const Duration(milliseconds: 500), () {
-      _scanImages();
-    });
+    _sourceScanTimer = Timer(const Duration(milliseconds: 500), _scanImages);
   }
 
   void _debouncedOutputScan() {
     _outputScanTimer?.cancel();
-    _outputScanTimer = Timer(const Duration(milliseconds: 500), () {
-      _scanProcessedImages();
-    });
+    _outputScanTimer = Timer(const Duration(milliseconds: 500), _scanProcessedImages);
   }
 
   Future<void> addBaseDirectory(String path) async {
@@ -373,7 +366,7 @@ class GalleryState extends ChangeNotifier {
       activeSourceDirectories = <String>[...activeSourceDirectories, path];
       await _db.addSourceDirectory(path);
       _log('Added base directory: $path');
-      _scanImages();
+      unawaited(_scanImages());
       _setupSourceWatchers();
       notifyListeners();
     }
@@ -383,12 +376,10 @@ class GalleryState extends ChangeNotifier {
     if (sourceDirectories.contains(path)) {
       sourceDirectories = List<String>.of(sourceDirectories)..remove(path);
       activeSourceDirectories = List<String>.of(activeSourceDirectories)
-        ..removeWhere(
-          (candidate) => p.equals(candidate, path) || p.isWithin(path, candidate),
-        );
+        ..removeWhere((candidate) => p.equals(candidate, path) || p.isWithin(path, candidate));
       await _db.removeSourceDirectory(path);
       _log('Removed base directory: $path');
-      _scanImages();
+      unawaited(_scanImages());
       _setupSourceWatchers();
       notifyListeners();
     }
@@ -428,8 +419,8 @@ class GalleryState extends ChangeNotifier {
     sourceDirectories = sources;
     activeSourceDirectories = active;
     _log('Followed folder change: $from -> $to');
-    _scanImages();
-    _scanProcessedImages();
+    unawaited(_scanImages());
+    unawaited(_scanProcessedImages());
     _setupSourceWatchers();
     notifyListeners();
   }
@@ -437,8 +428,7 @@ class GalleryState extends ChangeNotifier {
   Future<void> toggleDirectory(String path) async {
     bool isSelected;
     if (activeSourceDirectories.contains(path)) {
-      activeSourceDirectories = List<String>.of(activeSourceDirectories)
-        ..remove(path);
+      activeSourceDirectories = List<String>.of(activeSourceDirectories)..remove(path);
       isSelected = false;
       _log('Deselected directory: $path');
     } else {
@@ -447,7 +437,7 @@ class GalleryState extends ChangeNotifier {
       _log('Selected directory: $path');
     }
     await _db.updateDirectorySelection(path, isSelected);
-    _scanImages();
+    unawaited(_scanImages());
     _setupSourceWatchers();
     notifyListeners();
   }
@@ -462,7 +452,7 @@ class GalleryState extends ChangeNotifier {
 
     // Verify droppedImages (Temporary Workspace)
     final List<AppImage> existingDropped = [];
-    for (var img in droppedImages) {
+    for (final img in droppedImages) {
       if (await File(img.path).exists()) {
         existingDropped.add(img);
       }
@@ -515,8 +505,7 @@ class GalleryState extends ChangeNotifier {
   void _evictChanged(List<String> roots, Map<String, List<int>> scanned) {
     final rootSet = roots.toSet();
     _fingerprints.removeWhere(
-      (path, _) =>
-          rootSet.contains(p.dirname(path)) && !scanned.containsKey(path),
+      (path, _) => rootSet.contains(p.dirname(path)) && !scanned.containsKey(path),
     );
 
     scanned.forEach((path, current) {
@@ -556,9 +545,7 @@ class GalleryState extends ChangeNotifier {
     final scanned = await compute(_scanImagesIsolate, activeSourceDirectories);
     if (_disposed || generation != _sourceScanGeneration) return;
     _evictChanged(activeSourceDirectories, scanned);
-    galleryImages = scanned.keys
-        .map((p) => AppImage.fromFile(File(p)))
-        .toList();
+    galleryImages = scanned.keys.map((p) => AppImage.fromFile(File(p))).toList();
     notifyListeners();
   }
 
@@ -617,8 +604,7 @@ class GalleryState extends ChangeNotifier {
   /// collections and rebuilt the grid once per picture.
   void removeDroppedImages(Iterable<String> paths) {
     final gone = paths.toSet();
-    final remaining =
-        droppedImages.where((img) => !gone.contains(img.path)).toList();
+    final remaining = droppedImages.where((img) => !gone.contains(img.path)).toList();
     if (remaining.length == droppedImages.length) return;
     droppedImages = remaining;
     _cleanupSelection();
@@ -681,8 +667,7 @@ class GalleryState extends ChangeNotifier {
     // workspace was on screen found neither end and quietly degraded
     // Shift+click to a plain click.
     final view = currentViewImages;
-    final anchorIndex =
-        anchorPath == null ? -1 : view.indexWhere((i) => i.path == anchorPath);
+    final anchorIndex = anchorPath == null ? -1 : view.indexWhere((i) => i.path == anchorPath);
     final targetIndex = view.indexWhere((i) => i.path == image.path);
     if (anchorIndex == -1 || targetIndex == -1) {
       toggleImageSelection(image);
@@ -721,9 +706,7 @@ class GalleryState extends ChangeNotifier {
   /// does: in the temporary workspace or a single folder, "select all" has
   /// to mean what is on screen, not the aggregate behind it.
   void selectAllImages() {
-    selectedImages = currentViewImages
-        .where((img) => !AppConstants.isVideoFile(img.path))
-        .toList();
+    selectedImages = currentViewImages.where((img) => !AppConstants.isVideoFile(img.path)).toList();
     notifyListeners();
   }
 
@@ -757,7 +740,7 @@ class GalleryState extends ChangeNotifier {
     outputDirectory = path;
     await _db.saveSetting('output_directory', path);
     _setupOutputWatcher();
-    _scanProcessedImages();
+    unawaited(_scanProcessedImages());
     notifyListeners();
   }
 
@@ -811,10 +794,7 @@ class GalleryState extends ChangeNotifier {
     final checks = await Future.wait(
       paths
           .where((path) => path.isNotEmpty)
-          .map(
-            (path) async =>
-                MapEntry(path, await permissions.isPathUnreachableAsync(path)),
-          ),
+          .map((path) async => MapEntry(path, await permissions.isPathUnreachableAsync(path))),
     );
     if (_disposed) return;
     for (final result in checks) {

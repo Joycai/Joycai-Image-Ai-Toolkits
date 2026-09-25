@@ -5,16 +5,10 @@ class AppImage {
   final String path;
   final String name;
 
-  AppImage({
-    required this.path,
-    required this.name,
-  });
+  AppImage({required this.path, required this.name});
 
   factory AppImage.fromFile(File file) {
-    return AppImage(
-      path: file.path,
-      name: file.path.split(Platform.pathSeparator).last,
-    );
+    return AppImage(path: file.path, name: file.path.split(Platform.pathSeparator).last);
   }
 
   @override

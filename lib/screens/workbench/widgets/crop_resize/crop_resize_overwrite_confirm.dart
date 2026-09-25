@@ -54,12 +54,7 @@ extension _OverwriteConfirm on _CropResizeToolbarState {
                 Icon(Icons.image_outlined, size: 18, color: colorScheme.onSurfaceVariant),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    fileName,
-                    style: mono,
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                  ),
+                  child: Text(fileName, style: mono, overflow: TextOverflow.ellipsis, maxLines: 1),
                 ),
                 const SizedBox(width: 12),
                 Text(originalSize, style: mono?.copyWith(color: colorScheme.onSurfaceVariant)),

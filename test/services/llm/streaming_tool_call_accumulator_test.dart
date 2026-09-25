@@ -20,19 +20,19 @@ void main() {
             'id': 'call_abc',
             'type': 'function',
             'function': {'name': 'get_weather', 'arguments': ''},
-          }
+          },
         ])
         ..feed([
           {
             'index': 0,
             'function': {'arguments': '{"loc'},
-          }
+          },
         ])
         ..feed([
           {
             'index': 0,
             'function': {'arguments': 'ation":"Hangzhou"}'},
-          }
+          },
         ]);
 
       final calls = acc.flush();
@@ -50,13 +50,13 @@ void main() {
           'index': 0,
           'id': 'call_a',
           'function': {'name': 'submit_prompt', 'arguments': '{"p":'},
-        }
+        },
       ]);
       acc.feed([
         {
           'index': 0,
           'function': {'arguments': '"x"}'},
-        }
+        },
       ]);
       expect(acc.argumentChars, 9);
 
@@ -69,7 +69,7 @@ void main() {
             'index': 0,
             'id': 'call_a',
             'function': {'name': 'submit_prompt', 'arguments': args},
-          }
+          },
         ]);
       }
       expect(cumulative.argumentChars, 9);
@@ -95,13 +95,13 @@ void main() {
           {
             'index': 1,
             'function': {'arguments': 'ir":"/tmp"}'},
-          }
+          },
         ])
         ..feed([
           {
             'index': 0,
             'function': {'arguments': 'ath":"a.txt"}'},
-          }
+          },
         ]);
 
       final calls = acc.flush();
@@ -119,23 +119,23 @@ void main() {
             'index': 0,
             'id': 'c',
             'function': {'name': 'search', 'arguments': '{"filter":'},
-          }
+          },
         ])
         ..feed([
           {
             'index': 0,
             'function': {'arguments': '{'},
-          }
+          },
         ])
         ..feed([
           {
             'index': 0,
             'function': {'arguments': '"x":1}}'},
-          }
+          },
         ]);
 
       expect(acc.flush().single.arguments, {
-        'filter': {'x': 1}
+        'filter': {'x': 1},
       });
     });
 
@@ -151,17 +151,17 @@ void main() {
             'index': 0,
             'id': 'c',
             'function': {'name': 'search', 'arguments': '{"a":'},
-          }
+          },
         ])
         ..feed([
           {
             'index': 0,
             'function': {'arguments': '{"a":1}}'},
-          }
+          },
         ]);
 
       expect(acc.flush().single.arguments, {
-        'a': {'a': 1}
+        'a': {'a': 1},
       });
     });
 
@@ -181,8 +181,7 @@ void main() {
       expect(acc.flush().map((c) => c.name).toList(), ['one', 'two']);
     });
 
-    test('keeps index-less calls apart when they arrive in separate frames',
-        () {
+    test('keeps index-less calls apart when they arrive in separate frames', () {
       // The other way a relay omits index: each call complete, one per chunk,
       // every one at array position 0. Merging them by position blends two
       // calls into one — the id is what tells them apart.
@@ -271,7 +270,7 @@ void main() {
             'index': 2,
             'id': '',
             'function': {'name': 'noop', 'arguments': '{}'},
-          }
+          },
         ]);
 
       // Empty is treated as absent — two id-less calls in one batch must not
@@ -292,21 +291,21 @@ void main() {
             'index': 0,
             'id': 'call_1',
             'function': {'name': 'view_image', 'arguments': '{"path"'},
-          }
+          },
         ])
         ..feed([
           {
             'index': 0,
             'id': 'call_1',
             'function': {'name': 'view_image', 'arguments': '{"path":"a.png"}'},
-          }
+          },
         ])
         ..feed([
           {
             'index': 0,
             'id': 'call_1',
             'function': {'name': 'view_image', 'arguments': '{"path":"a.png"}'},
-          }
+          },
         ]);
 
       final call = acc.flush().single;
@@ -315,8 +314,7 @@ void main() {
       expect(call.arguments, {'path': 'a.png'});
     });
 
-    test('does not double a cumulative call that restates id but drops name',
-        () {
+    test('does not double a cumulative call that restates id but drops name', () {
       // A cumulative dialect that repeats the full arguments each frame and
       // keeps the id, but sends `name` only on the opener. The second frame is
       // a full restatement, not a delta — appending it would double the
@@ -328,14 +326,14 @@ void main() {
             'index': 0,
             'id': 'call_1',
             'function': {'name': 'view_image', 'arguments': '{"path":'},
-          }
+          },
         ])
         ..feed([
           {
             'index': 0,
             'id': 'call_1',
             'function': {'arguments': '{"path":"a.png"}'},
-          }
+          },
         ]);
 
       final call = acc.flush().single;
@@ -352,7 +350,7 @@ void main() {
             'index': 0,
             'id': 'c',
             'function': {'name': 'ping', 'arguments': ''},
-          }
+          },
         ]);
 
       expect(acc.flush().single.arguments, isEmpty);
@@ -368,7 +366,7 @@ void main() {
             'index': 0,
             'id': 'c',
             'function': {'name': 'write_file', 'arguments': '{"path":"a.txt"'},
-          }
+          },
         ]);
 
       final call = acc.flush().single;
@@ -386,7 +384,7 @@ void main() {
               'name': 'search',
               'arguments': {'q': 'hi'},
             },
-          }
+          },
         ]);
 
       expect(acc.flush().single.arguments, {'q': 'hi'});
@@ -409,7 +407,7 @@ void main() {
             'index': 0,
             'id': 'c',
             'function': {'name': 'ping', 'arguments': '{}'},
-          }
+          },
         ]);
 
       expect(acc.flush(), hasLength(1));

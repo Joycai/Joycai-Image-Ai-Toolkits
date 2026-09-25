@@ -65,9 +65,7 @@ class AppCard extends StatelessWidget {
         // The panel-edge tone, not `outlineVariant`. Same reasoning as the
         // column hairlines: the spec draws an edge *between surfaces* softer
         // than one inside a control.
-        side: outlined
-            ? BorderSide(color: colorScheme.surfaceContainerHigh)
-            : BorderSide.none,
+        side: outlined ? BorderSide(color: colorScheme.surfaceContainerHigh) : BorderSide.none,
       ),
       child: InkWell(
         onTap: onTap,

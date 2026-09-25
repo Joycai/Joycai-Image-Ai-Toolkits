@@ -171,8 +171,7 @@ const kChannelProviderPresets = <ChannelProviderPreset>[
       ChannelProviderVariant(
         id: 'openai-compatible',
         channelType: Vendors.openAIRest,
-        defaultEndpoint:
-            'https://generativelanguage.googleapis.com/v1beta/openai',
+        defaultEndpoint: 'https://generativelanguage.googleapis.com/v1beta/openai',
       ),
     ],
     searchAliases: ['gemini', 'genai'],
@@ -228,15 +227,7 @@ const kChannelProviderPresets = <ChannelProviderPreset>[
     // needs no preset of its own: every native base is derived from the
     // *path*, so a hand-typed intl endpoint works the same way.
     defaultEndpoint: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
-    searchAliases: [
-      'qianwen',
-      'qwen',
-      '千问',
-      '通义',
-      '百炼',
-      'bailian',
-      'dashscope',
-    ],
+    searchAliases: ['qianwen', 'qwen', '千问', '通义', '百炼', 'bailian', 'dashscope'],
     icon: Icons.water_drop_outlined,
   ),
   ChannelProviderPreset(
@@ -247,15 +238,7 @@ const kChannelProviderPresets = <ChannelProviderPreset>[
     listed: false,
     // Same aliases as the row above: someone searching 千问 has to see both,
     // or the search silently picks the face for them.
-    searchAliases: [
-      'qianwen',
-      'qwen',
-      '千问',
-      '通义',
-      '百炼',
-      'bailian',
-      'dashscope',
-    ],
+    searchAliases: ['qianwen', 'qwen', '千问', '通义', '百炼', 'bailian', 'dashscope'],
     icon: Icons.water_drop_outlined,
   ),
   // One company, two protocol families: MiniMax serves its Anthropic-format
@@ -288,14 +271,7 @@ const kChannelProviderPresets = <ChannelProviderPreset>[
         defaultEndpoint: 'https://api.minimaxi.com/anthropic/v1',
       ),
     ],
-    searchAliases: [
-      'minimaxi',
-      '海螺',
-      'hailuo',
-      'MiniMax-M3',
-      'MiniMax-H3',
-      'image-01',
-    ],
+    searchAliases: ['minimaxi', '海螺', 'hailuo', 'MiniMax-M3', 'MiniMax-H3', 'image-01'],
     icon: Icons.grain_outlined,
   ),
   ChannelProviderPreset(
@@ -439,17 +415,7 @@ const kChannelProviderPresets = <ChannelProviderPreset>[
         defaultEndpoint: 'https://ark.cn-beijing.volces.com/api/plan/v3',
       ),
     ],
-    searchAliases: [
-      '火山',
-      '方舟',
-      'volcengine',
-      'ark',
-      '豆包',
-      'doubao',
-      'seedream',
-      '字节',
-      'bytedance',
-    ],
+    searchAliases: ['火山', '方舟', 'volcengine', 'ark', '豆包', 'doubao', 'seedream', '字节', 'bytedance'],
     icon: Icons.local_fire_department_outlined,
   ),
 ];
@@ -466,9 +432,7 @@ final List<ChannelProviderPreset> kListedChannelProviderPresets = [
 /// (Ark's pay-as-you-go and plan). A channel gets every route anyway, so
 /// the first kind needs no choosing (`D1f · 4b`); the second still does.
 bool channelPresetVariantsAreRoutes(ChannelProviderPreset preset) {
-  final kinds = {
-    for (final v in preset.variants) Platforms.legacyKinds(v.channelType).firstOrNull,
-  };
+  final kinds = {for (final v in preset.variants) Platforms.legacyKinds(v.channelType).firstOrNull};
   return kinds.length > 1;
 }
 
@@ -516,8 +480,7 @@ ChannelRoutes plannedChannelRoutes(
 /// So: the preset whose default endpoint this channel actually sits on wins;
 /// failing that, an address only the user knows *is* the custom preset, whose
 /// silence about endpoints is the honest answer.
-ChannelProviderPreset? presetForChannelType(String channelType,
-    {String? endpoint}) {
+ChannelProviderPreset? presetForChannelType(String channelType, {String? endpoint}) {
   final matches = <ChannelProviderPreset>[
     for (final preset in kChannelProviderPresets)
       if (preset.hasVariants
@@ -579,10 +542,7 @@ ChannelProviderVariant? variantForChannelType(
 }
 
 /// Heading a group sits under, in the picker's declaration order.
-String channelProviderGroupLabel(
-  AppLocalizations l10n,
-  ChannelProviderGroup group,
-) {
+String channelProviderGroupLabel(AppLocalizations l10n, ChannelProviderGroup group) {
   switch (group) {
     case ChannelProviderGroup.vendor:
       return l10n.providerGroupVendor;
@@ -597,10 +557,7 @@ String channelProviderGroupLabel(
 
 /// The one-line qualifier printed beside a group heading — what this whole
 /// group will ask of you (spec D2 `16a` note ③).
-String channelProviderGroupHint(
-  AppLocalizations l10n,
-  ChannelProviderGroup group,
-) {
+String channelProviderGroupHint(AppLocalizations l10n, ChannelProviderGroup group) {
   switch (group) {
     case ChannelProviderGroup.vendor:
       return l10n.providerGroupVendorHint;
@@ -614,10 +571,7 @@ String channelProviderGroupHint(
 }
 
 /// The trailing note on a preset row: what it will ask for next.
-String channelProviderNeedLabel(
-  AppLocalizations l10n,
-  ChannelProviderNeed need,
-) {
+String channelProviderNeedLabel(AppLocalizations l10n, ChannelProviderNeed need) {
   switch (need) {
     case ChannelProviderNeed.keyOnly:
       return l10n.providerNeedKeyOnly;
@@ -671,10 +625,7 @@ String channelProviderTitle(AppLocalizations l10n, String id) {
   }
 }
 
-String channelProviderSubtitle(
-  AppLocalizations l10n,
-  ChannelProviderPreset preset,
-) {
+String channelProviderSubtitle(AppLocalizations l10n, ChannelProviderPreset preset) {
   switch (preset.id) {
     case 'anthropic-official':
       return 'api.anthropic.com';
@@ -751,11 +702,7 @@ String channelProviderVariantHint(AppLocalizations l10n, String presetId) {
   }
 }
 
-String channelProviderVariantLabel(
-  AppLocalizations l10n,
-  String presetId,
-  String variantId,
-) {
+String channelProviderVariantLabel(AppLocalizations l10n, String presetId, String variantId) {
   switch ('$presetId/$variantId') {
     case 'google/native':
       return l10n.variantGoogleNative;
@@ -799,16 +746,10 @@ String channelProviderVariantCaption(
   ChannelProviderVariant variant,
 ) {
   final family = Vendors.byId(variant.channelType).family;
-  final sameFormat = preset.variants
-      .every((v) => Vendors.byId(v.channelType).family == family);
-  final paths = {
-    for (final v in preset.variants) Uri.tryParse(v.defaultEndpoint ?? '')?.path,
-  };
+  final sameFormat = preset.variants.every((v) => Vendors.byId(v.channelType).family == family);
+  final paths = {for (final v in preset.variants) Uri.tryParse(v.defaultEndpoint ?? '')?.path};
   final path = Uri.tryParse(variant.defaultEndpoint ?? '')?.path;
-  if (sameFormat &&
-      paths.length == preset.variants.length &&
-      path != null &&
-      path.isNotEmpty) {
+  if (sameFormat && paths.length == preset.variants.length && path != null && path.isNotEmpty) {
     return path;
   }
   return protocolFamilyLabel(l10n, family);

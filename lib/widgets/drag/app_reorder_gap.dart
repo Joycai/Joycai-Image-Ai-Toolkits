@@ -87,36 +87,40 @@ class AppReorderGapController {
 
   /// Wraps one list item. The returned widget carries [key], as the list
   /// requires of what its item builder returns.
-  Widget item({required Key key, required int index, required Widget child}) =>
-      KeyedSubtree(key: key, child: _GapProbe(state: _state, index: index, child: child));
+  Widget item({required Key key, required int index, required Widget child}) => KeyedSubtree(
+    key: key,
+    child: _GapProbe(state: _state, index: index, child: child),
+  );
 
   /// The list's `onReorderStart`, calling [then] after the host has noted the
   /// drag.
   void Function(int index) onReorderStart([void Function(int index)? then]) => (index) {
-        _state._begin(index);
-        then?.call(index);
-      };
+    _state._begin(index);
+    then?.call(index);
+  };
 
   /// The list's `onReorderItem`, calling [then] first and then confirming the
   /// drop.
-  void Function(int oldIndex, int newIndex) onReorderItem(void Function(int oldIndex, int newIndex) then) =>
-      (oldIndex, newIndex) {
-        then(oldIndex, newIndex);
-        _state._dropped(oldIndex, newIndex);
-      };
+  void Function(int oldIndex, int newIndex) onReorderItem(
+    void Function(int oldIndex, int newIndex) then,
+  ) => (oldIndex, newIndex) {
+    then(oldIndex, newIndex);
+    _state._dropped(oldIndex, newIndex);
+  };
 
   /// [onReorderItem] for a list that can refuse a drop: [then] answers
   /// whether it moved anything. A refused drop ends the drag without the
   /// confirmation ring or the announcement — both would report a move the
   /// list is about to undo.
-  void Function(int oldIndex, int newIndex) onReorderItemIf(bool Function(int oldIndex, int newIndex) then) =>
-      (oldIndex, newIndex) {
-        if (then(oldIndex, newIndex)) {
-          _state._dropped(oldIndex, newIndex);
-        } else {
-          _state._dropped(oldIndex, oldIndex);
-        }
-      };
+  void Function(int oldIndex, int newIndex) onReorderItemIf(
+    bool Function(int oldIndex, int newIndex) then,
+  ) => (oldIndex, newIndex) {
+    if (then(oldIndex, newIndex)) {
+      _state._dropped(oldIndex, newIndex);
+    } else {
+      _state._dropped(oldIndex, oldIndex);
+    }
+  };
 }
 
 class _Geometry {
@@ -338,15 +342,24 @@ class _AppReorderGapState extends State<AppReorderGap> with SingleTickerProvider
     double crossStart = double.infinity;
     double crossEnd = double.negativeInfinity;
     for (final g in geometry) {
-      crossStart = vertical ? (g.rect.left < crossStart ? g.rect.left : crossStart) : (g.rect.top < crossStart ? g.rect.top : crossStart);
-      crossEnd = vertical ? (g.rect.right > crossEnd ? g.rect.right : crossEnd) : (g.rect.bottom > crossEnd ? g.rect.bottom : crossEnd);
+      crossStart = vertical
+          ? (g.rect.left < crossStart ? g.rect.left : crossStart)
+          : (g.rect.top < crossStart ? g.rect.top : crossStart);
+      crossEnd = vertical
+          ? (g.rect.right > crossEnd ? g.rect.right : crossEnd)
+          : (g.rect.bottom > crossEnd ? g.rect.bottom : crossEnd);
     }
 
-    final covered = [for (final g in geometry) (_start(g.rect), _end(g.rect))]..sort((a, b) => a.$1.compareTo(b.$1));
+    final covered = [for (final g in geometry) (_start(g.rect), _end(g.rect))]
+      ..sort((a, b) => a.$1.compareTo(b.$1));
     var cursor = bandStart;
     void addGap(double from, double to) {
       if (to - from < 1) return;
-      out.add(vertical ? Rect.fromLTRB(crossStart, from, crossEnd, to) : Rect.fromLTRB(from, crossStart, to, crossEnd));
+      out.add(
+        vertical
+            ? Rect.fromLTRB(crossStart, from, crossEnd, to)
+            : Rect.fromLTRB(from, crossStart, to, crossEnd),
+      );
     }
 
     for (final (start, end) in covered) {
@@ -365,8 +378,12 @@ class _AppReorderGapState extends State<AppReorderGap> with SingleTickerProvider
     int? before;
     int? after;
     for (final g in geometry) {
-      if (g.index < drag && g.shift > half) before = before == null || g.index < before ? g.index : before;
-      if (g.index > drag && g.shift < -half) after = after == null || g.index > after ? g.index : after;
+      if (g.index < drag && g.shift > half) {
+        before = before == null || g.index < before ? g.index : before;
+      }
+      if (g.index > drag && g.shift < -half) {
+        after = after == null || g.index > after ? g.index : after;
+      }
     }
     return before ?? after ?? drag;
   }
@@ -438,7 +455,9 @@ class _AppReorderGapState extends State<AppReorderGap> with SingleTickerProvider
                 ),
               ),
               if (widget.axis == Axis.vertical)
-                Positioned.fill(child: IgnorePointer(child: _EdgeScrollHint(edge: _edge))),
+                Positioned.fill(
+                  child: IgnorePointer(child: _EdgeScrollHint(edge: _edge)),
+                ),
             ],
           ),
         ),
@@ -540,7 +559,7 @@ class _GapPainter extends CustomPainter {
     canvas.save();
     canvas.clipRect(Offset.zero & size);
 
-    final radius = const Radius.circular(AppRadius.control);
+    const radius = Radius.circular(AppRadius.control);
     final fill = Paint()..color = tint;
     final dash = Paint()
       ..color = edge
@@ -634,12 +653,17 @@ class _EdgeScrollHint extends StatelessWidget {
                       border: Border.all(color: scheme.primary),
                     ),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: AppSpace.s10, vertical: AppSpace.s4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpace.s10,
+                        vertical: AppSpace.s4,
+                      ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            atStart ? Icons.keyboard_double_arrow_up : Icons.keyboard_double_arrow_down,
+                            atStart
+                                ? Icons.keyboard_double_arrow_up
+                                : Icons.keyboard_double_arrow_down,
                             size: AppSize.iconSm,
                             color: scheme.primary,
                           ),

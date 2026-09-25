@@ -123,8 +123,11 @@ class OptimizerReferencePanel extends StatelessWidget {
             (resultInfo.containsKey(images[i].name) ? results : refs).add(i);
           }
           // Newest version first — the card the user is about to act on.
-          results.sort((a, b) => (resultInfo[images[b].name]?.promptVersion ?? -1)
-              .compareTo(resultInfo[images[a].name]?.promptVersion ?? -1));
+          results.sort(
+            (a, b) => (resultInfo[images[b].name]?.promptVersion ?? -1).compareTo(
+              resultInfo[images[a].name]?.promptVersion ?? -1,
+            ),
+          );
 
           // `A3c`: the whole card is the drag source — at once under a mouse,
           // after a long press under a finger so a swipe still scrolls the
@@ -144,7 +147,9 @@ class OptimizerReferencePanel extends StatelessWidget {
               : touchDrag
               ? (Icons.touch_app_outlined, l10n.optRefReorderHintTouch)
               : (Icons.drag_indicator, l10n.optRefReorderHint);
-          final hintColor = turnLive && reorderable ? colorScheme.onSurfaceVariant : colorScheme.outline;
+          final hintColor = turnLive && reorderable
+              ? colorScheme.onSurfaceVariant
+              : colorScheme.outline;
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -192,8 +197,12 @@ class OptimizerReferencePanel extends StatelessWidget {
                               !taskQueue.hasLiveAssistantTurn(session.id) &&
                               workbenchUIState.reorderAssistantReferences(refs, from, to),
                         ),
-                        proxyDecorator: (child, index, animation) =>
-                            appReorderLiftDecorator(child, index, animation, slotPadding: _cardMargin),
+                        proxyDecorator: (child, index, animation) => appReorderLiftDecorator(
+                          child,
+                          index,
+                          animation,
+                          slotPadding: _cardMargin,
+                        ),
                         itemBuilder: (context, row) {
                           final index = refs[row];
                           final image = images[index];
@@ -216,7 +225,8 @@ class OptimizerReferencePanel extends StatelessWidget {
                               count: refs.length,
                               enabled: canReorder,
                               touch: touchDrag,
-                              onMove: (to) => workbenchUIState.reorderAssistantReferences(refs, row, to),
+                              onMove: (to) =>
+                                  workbenchUIState.reorderAssistantReferences(refs, row, to),
                               child: card,
                             ),
                           );
@@ -236,7 +246,12 @@ class OptimizerReferencePanel extends StatelessWidget {
                                   child: Divider(height: 1, color: colorScheme.outlineVariant),
                                 ),
                               Padding(
-                                padding: const EdgeInsets.fromLTRB(12, AppSpace.s10, 12, AppSpace.s6),
+                                padding: const EdgeInsets.fromLTRB(
+                                  12,
+                                  AppSpace.s10,
+                                  12,
+                                  AppSpace.s6,
+                                ),
                                 child: OptimizerPanelCaption(
                                   l10n.optResultImages,
                                   trailing: Text('${results.length}', style: countStyle),
@@ -357,7 +372,11 @@ class OptimizerReferencePanel extends StatelessWidget {
                     child: _Plate(
                       tooltip: l10n.optRemoveImage,
                       onTap: () => workbenchUIState.removeAssistantImage(image),
-                      child: const Icon(Icons.close, size: AppSize.iconSm, color: AppOverlay.onImagePlate),
+                      child: const Icon(
+                        Icons.close,
+                        size: AppSize.iconSm,
+                        color: AppOverlay.onImagePlate,
+                      ),
                     ),
                   ),
                 ],
@@ -387,17 +406,17 @@ class OptimizerReferencePanel extends StatelessWidget {
                         color: viewedColor,
                       ),
                       const SizedBox(width: AppSpace.s4),
-                        Flexible(
-                          child: Text(
-                            viewed ? l10n.optViewed : l10n.optNotViewed,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: textTheme.labelSmall?.copyWith(
-                              fontWeight: FontWeight.w400,
-                              color: viewedColor,
-                            ),
+                      Flexible(
+                        child: Text(
+                          viewed ? l10n.optViewed : l10n.optNotViewed,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: textTheme.labelSmall?.copyWith(
+                            fontWeight: FontWeight.w400,
+                            color: viewedColor,
                           ),
                         ),
+                      ),
                     ],
                   ),
                 ],
@@ -475,7 +494,11 @@ class OptimizerReferencePanel extends StatelessWidget {
                         if (viewed)
                           Tooltip(
                             message: l10n.optViewed,
-                            child: Icon(Icons.visibility_outlined, size: AppSize.iconSm, color: semantic.success),
+                            child: Icon(
+                              Icons.visibility_outlined,
+                              size: AppSize.iconSm,
+                              color: semantic.success,
+                            ),
                           ),
                       ],
                     ),
@@ -605,7 +628,10 @@ class _Plate extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        child: SizedBox.square(dimension: _size, child: Center(child: child)),
+        child: SizedBox.square(
+          dimension: _size,
+          child: Center(child: child),
+        ),
       ),
     );
     return tooltip == null ? plate : Tooltip(message: tooltip!, child: plate);

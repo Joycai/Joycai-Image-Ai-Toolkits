@@ -7,9 +7,13 @@ import 'package:joycai_image_ai_toolkits/services/tasks/task_queue_service.dart'
 /// submit row: the executor settles when the envelope reports the length
 /// rendered, the cost, or both — and leaves the row alone otherwise.
 void main() {
-  Map<String, dynamic> done({Object? renderedSeconds, double? reportedCost}) =>
-      videoDoneEnvelope('op', 'https://x/v.mp4',
-          requiresAuth: false, renderedSeconds: renderedSeconds, reportedCost: reportedCost);
+  Map<String, dynamic> done({Object? renderedSeconds, double? reportedCost}) => videoDoneEnvelope(
+    'op',
+    'https://x/v.mp4',
+    requiresAuth: false,
+    renderedSeconds: renderedSeconds,
+    reportedCost: reportedCost,
+  );
 
   test('both facts, as xAI reports them', () {
     final settle = videoSettlementOf(done(renderedSeconds: 1, reportedCost: 0.10))!;

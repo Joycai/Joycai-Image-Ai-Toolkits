@@ -18,10 +18,7 @@ class RouteParamChange {
 
   @override
   bool operator ==(Object other) =>
-      other is RouteParamChange &&
-      other.field == field &&
-      other.from == from &&
-      other.to == to;
+      other is RouteParamChange && other.field == field && other.from == from && other.to == to;
 
   @override
   int get hashCode => Object.hash(field, from, to);
@@ -40,11 +37,7 @@ class RouteSwitching {
 
   /// The reasoning rungs [model] has on [kind] — the ladder of the face that
   /// route speaks, through the vendor that serves it on this channel.
-  static List<ReasoningEffort?> ladderFor(
-    LLMModel model,
-    ChannelRoutes routes,
-    RouteKind kind,
-  ) {
+  static List<ReasoningEffort?> ladderFor(LLMModel model, ChannelRoutes routes, RouteKind kind) {
     final vendorId = routes.vendorOf(kind) ?? routes.primaryVendorId;
     return LLMDispatcher.reasoningLadder(
       channelType: vendorId,
@@ -67,10 +60,7 @@ class RouteSwitching {
   ///   always written it (on for any effort but Off), so the flag can never
   ///   outlive the effort it stood for.
   /// * The output cap is kept when positive: every chat face has one.
-  static RouteParams forRoute(
-    RouteParams params,
-    List<ReasoningEffort?> ladder,
-  ) {
+  static RouteParams forRoute(RouteParams params, List<ReasoningEffort?> ladder) {
     // The legacy flag alone means Medium — `effectiveReasoningEffort`.
     final effort =
         ReasoningEffort.tryParse(params.reasoningEffort) ??
@@ -84,10 +74,7 @@ class RouteSwitching {
     );
   }
 
-  static ReasoningEffort? _onLadder(
-    ReasoningEffort? effort,
-    List<ReasoningEffort?> ladder,
-  ) {
+  static ReasoningEffort? _onLadder(ReasoningEffort? effort, List<ReasoningEffort?> ladder) {
     if (effort == null) return null;
     if (ladder.contains(effort)) return effort;
     if (effort == ReasoningEffort.off) return null;
@@ -116,10 +103,7 @@ class RouteSwitching {
   static LLMModel normalizedForSave(LLMModel model, ChannelRoutes routes) {
     if (!ModelRoutes.usesRoutes(model)) return model;
     final kind = ModelRoutes.displayRoute(model, routes);
-    final params = forRoute(
-      RouteParams.ofModel(model),
-      ladderFor(model, routes, kind),
-    );
+    final params = forRoute(RouteParams.ofModel(model), ladderFor(model, routes, kind));
     final parked = {...ModelRoutes.parked(model)}..remove(kind);
     return model.withRouteState(
       activeRoute: kind.id,
@@ -137,23 +121,13 @@ class RouteSwitching {
   /// every per-route field overwritten, so nothing of the old route leaks
   /// into the new one. The model id and every model-scoped field (web
   /// search, context window, fee group…) are untouched.
-  static LLMModel switchRoute(
-    LLMModel model,
-    ChannelRoutes routes,
-    RouteKind to,
-  ) {
+  static LLMModel switchRoute(LLMModel model, ChannelRoutes routes, RouteKind to) {
     assert(ModelRoutes.usesRoutes(model));
     final from = _heldRoute(model, routes);
     if (from == to) return normalizedForSave(model, routes);
     final parked = {...ModelRoutes.parked(model)};
-    parked[from] = forRoute(
-      RouteParams.ofModel(model),
-      ladderFor(model, routes, from),
-    );
-    final loaded = forRoute(
-      parked.remove(to) ?? RouteParams.empty,
-      ladderFor(model, routes, to),
-    );
+    parked[from] = forRoute(RouteParams.ofModel(model), ladderFor(model, routes, from));
+    final loaded = forRoute(parked.remove(to) ?? RouteParams.empty, ladderFor(model, routes, to));
     return model.withRouteState(
       activeRoute: to.id,
       routeParams: ModelRoutes.encodeParked(parked),
@@ -186,16 +160,9 @@ class RouteSwitching {
 
   /// What [switchRoute] would change, for the preview shown before the user
   /// confirms. Only the fields that differ.
-  static List<RouteParamChange> preview(
-    LLMModel model,
-    ChannelRoutes routes,
-    RouteKind to,
-  ) {
+  static List<RouteParamChange> preview(LLMModel model, ChannelRoutes routes, RouteKind to) {
     final from = _heldRoute(model, routes);
-    final before = forRoute(
-      RouteParams.ofModel(model),
-      ladderFor(model, routes, from),
-    );
+    final before = forRoute(RouteParams.ofModel(model), ladderFor(model, routes, from));
     final after = RouteParams.ofModel(switchRoute(model, routes, to));
     return [
       if (before.reasoningEffort != after.reasoningEffort)
@@ -205,11 +172,7 @@ class RouteSwitching {
           after.reasoningEffort,
         ),
       if (before.enableThinking != after.enableThinking)
-        RouteParamChange(
-          RouteParamField.thinking,
-          before.enableThinking,
-          after.enableThinking,
-        ),
+        RouteParamChange(RouteParamField.thinking, before.enableThinking, after.enableThinking),
       if (before.maxOutputTokens != after.maxOutputTokens)
         RouteParamChange(
           RouteParamField.maxOutputTokens,
@@ -223,10 +186,7 @@ class RouteSwitching {
   /// having chosen it. Before the primary changes, each must be pinned to the
   /// primary it has — otherwise it silently moves to another wire carrying
   /// parameters set for the old one (standard 06 §1).
-  static List<LLMModel> pinFollowers(
-    Iterable<LLMModel> modelsOnChannel,
-    ChannelRoutes routes,
-  ) {
+  static List<LLMModel> pinFollowers(Iterable<LLMModel> modelsOnChannel, ChannelRoutes routes) {
     final primary = routes.primary.kind;
     bool follows(LLMModel m) {
       if (!ModelRoutes.usesRoutes(m)) return false;
@@ -277,8 +237,7 @@ class RouteSwitching {
       for (final m in modelsOnChannel)
         if (ModelRoutes.usesRoutes(m))
           if (RouteKind.tryParse(m.activeRoute) case final chosen?)
-            if (before.has(chosen) && !after.has(chosen))
-              recoverMissingRoute(m, after),
+            if (before.has(chosen) && !after.has(chosen)) recoverMissingRoute(m, after),
     ];
     return (pinned: pinned, moved: moved);
   }
@@ -292,8 +251,7 @@ class RouteSwitching {
   ) {
     var n = 0;
     for (final m in modelsOnChannel) {
-      if (ModelRoutes.usesRoutes(m) &&
-          ModelRoutes.displayRoute(m, routes) == kind) {
+      if (ModelRoutes.usesRoutes(m) && ModelRoutes.displayRoute(m, routes) == kind) {
         n++;
       }
     }

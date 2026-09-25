@@ -55,8 +55,7 @@ void main() {
 
   test('the editor offers a switch, not a ladder', () {
     expect(
-      LLMDispatcher.reasoningLadder(
-          channelType: Vendors.minimax, modelId: 'MiniMax-M3'),
+      LLMDispatcher.reasoningLadder(channelType: Vendors.minimax, modelId: 'MiniMax-M3'),
       const <ReasoningEffort?>[null, ReasoningEffort.off, ReasoningEffort.medium],
     );
   });

@@ -2,12 +2,11 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
-import 'package:provider/provider.dart';
-
 import '../../../state/file_browser_state.dart';
 import '../../../widgets/glass/glass_controls.dart' show measureGlassText;
 
@@ -32,17 +31,13 @@ import '../../../widgets/glass/glass_controls.dart' show measureGlassText;
 /// [_HeaderSummary], the one line that states it — the rest of the header,
 /// the search field and the staging button and the view toggle, has no part
 /// in a selection.
-typedef _HeaderInputs = ({
-  int fileCount,
-  int folderCount,
-  BrowserViewMode viewMode,
-});
+typedef _HeaderInputs = ({int fileCount, int folderCount, BrowserViewMode viewMode});
 
 _HeaderInputs _headerInputs(FileBrowserState s) => (
-      fileCount: s.filteredFiles.length,
-      folderCount: s.sourceDirectories.length,
-      viewMode: s.viewMode,
-    );
+  fileCount: s.filteredFiles.length,
+  folderCount: s.sourceDirectories.length,
+  viewMode: s.viewMode,
+);
 
 class BrowserHeader extends StatelessWidget {
   const BrowserHeader({
@@ -112,8 +107,9 @@ class BrowserHeader extends StatelessWidget {
     const separator = _HeaderSummary.separator;
     // `1c`: with the directory column behind the drawer, the subtitle takes
     // over its folder count.
-    final String? foldersLabel =
-        onOpenDrawer != null ? l10n.browserFoldersCount(inputs.folderCount) : null;
+    final String? foldersLabel = onOpenDrawer != null
+        ? l10n.browserFoldersCount(inputs.folderCount)
+        : null;
 
     return Container(
       height: height,
@@ -141,11 +137,18 @@ class BrowserHeader extends StatelessWidget {
                 measureGlassText(context, l10n.imagesSelected(fileCount), selectedStyle),
           );
           const double controlsWidth =
-              12 + AppSize.control + AppSpace.s6 + _ViewModeToggle.width + AppSpace.s6 + AppSize.control;
+              12 +
+              AppSize.control +
+              AppSpace.s6 +
+              _ViewModeToggle.width +
+              AppSpace.s6 +
+              AppSize.control;
           final double searchMin = _BrowserSearchField.minWidthFor(context, l10n.searchFilesHint);
           final bool collapsed =
-              leadWidth + textWidth + AppSpace.s16 + searchMin + controlsWidth > constraints.maxWidth;
-          final bool showCollapsedField = collapsed && (searchOpen || searchController.text.isNotEmpty);
+              leadWidth + textWidth + AppSpace.s16 + searchMin + controlsWidth >
+              constraints.maxWidth;
+          final bool showCollapsedField =
+              collapsed && (searchOpen || searchController.text.isNotEmpty);
 
           final Widget lead = narrowForm
               ? SizedBox.square(
@@ -331,8 +334,7 @@ class _HeaderSummary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final int selectedCount =
-        context.select<FileBrowserState, int>((s) => s.selectedFiles.length);
+    final int selectedCount = context.select<FileBrowserState, int>((s) => s.selectedFiles.length);
 
     return Text.rich(
       TextSpan(
@@ -489,7 +491,9 @@ class _BrowserSearchFieldState extends State<_BrowserSearchField> {
             const SizedBox(width: 8),
             ExcludeSemantics(
               child: Text(
-                focused ? AppLocalizations.of(context)!.browserSearchEscHint : _BrowserSearchField._shortcutLabel,
+                focused
+                    ? AppLocalizations.of(context)!.browserSearchEscHint
+                    : _BrowserSearchField._shortcutLabel,
                 maxLines: 1,
                 style: _BrowserSearchField._keyStyle(context).copyWith(color: scheme.outline),
               ),
@@ -568,11 +572,11 @@ class _StagingButton extends StatelessWidget {
                     '$count',
                     maxLines: 1,
                     style: Theme.of(context).textTheme.labelSmall!.mono.copyWith(
-                          color: scheme.onPrimary,
-                          fontWeight: FontWeight.w600,
-                          height: 1,
-                          letterSpacing: 0,
-                        ),
+                      color: scheme.onPrimary,
+                      fontWeight: FontWeight.w600,
+                      height: 1,
+                      letterSpacing: 0,
+                    ),
                   ),
                 ),
               ),
@@ -626,7 +630,12 @@ class _ViewModeToggle extends StatelessWidget {
 }
 
 class _ViewSegment extends StatefulWidget {
-  const _ViewSegment({required this.icon, required this.tooltip, required this.selected, required this.onTap});
+  const _ViewSegment({
+    required this.icon,
+    required this.tooltip,
+    required this.selected,
+    required this.onTap,
+  });
 
   final IconData icon;
   final String tooltip;
@@ -665,7 +674,9 @@ class _ViewSegmentState extends State<_ViewSegment> {
               decoration: BoxDecoration(
                 color: selected
                     ? scheme.surface
-                    : (_hovered ? scheme.onSurface.withValues(alpha: 0.06) : scheme.onSurface.withValues(alpha: 0)),
+                    : (_hovered
+                          ? scheme.onSurface.withValues(alpha: 0.06)
+                          : scheme.onSurface.withValues(alpha: 0)),
                 borderRadius: BorderRadius.circular(AppRadius.sm),
                 boxShadow: selected ? scheme.shadowRaised : null,
               ),

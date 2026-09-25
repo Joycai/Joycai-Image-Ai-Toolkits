@@ -98,8 +98,11 @@ void main() {
 
     expect(freed, 500);
     expect(fresh.existsSync(), isFalse);
-    expect(foreign.existsSync(), isFalse,
-        reason: 'Asked for the space back, the user means all of it');
+    expect(
+      foreign.existsSync(),
+      isFalse,
+      reason: 'Asked for the space back, the user means all of it',
+    );
     expect(Directory(p.join(sandbox.path, 'joycai', 'masks')).existsSync(), isTrue);
     expect(await TempStorageService.instance.measure(), 0);
   });

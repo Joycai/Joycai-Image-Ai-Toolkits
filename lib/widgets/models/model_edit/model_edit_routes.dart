@@ -125,8 +125,8 @@ extension _RouteSections on _ModelEditDialogState {
       state: k == current
           ? RouteBadgeState.current
           : k == _switchTarget || enabled.contains(k)
-              ? RouteBadgeState.configured
-              : RouteBadgeState.off,
+          ? RouteBadgeState.configured
+          : RouteBadgeState.off,
       trailingIcon: enabled.contains(k) || k == _switchTarget ? null : Icons.add,
       onTap: () => _onRouteTapped(k),
     );
@@ -183,12 +183,7 @@ extension _RouteSections on _ModelEditDialogState {
 
   /// `4d` ②: what switching to [to] changes, each row old → new; a value the
   /// new route never had reads 「未设置 · 不发」 on a dashed chip.
-  Widget _switchPreview(
-    BuildContext context,
-    ChannelRoutes routes,
-    RouteKind from,
-    RouteKind to,
-  ) {
+  Widget _switchPreview(BuildContext context, ChannelRoutes routes, RouteKind from, RouteKind to) {
     final l10n = widget.l10n;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
@@ -208,8 +203,11 @@ extension _RouteSections on _ModelEditDialogState {
     String? valueText(RouteParamField f, Object? v, {required bool onOff}) {
       if (v == null || v == false) return null;
       return switch (f) {
-        RouteParamField.reasoningEffort =>
-          _rungLabel(ReasoningEffort.tryParse(v as String), short: false, onOff: onOff),
+        RouteParamField.reasoningEffort => _rungLabel(
+          ReasoningEffort.tryParse(v as String),
+          short: false,
+          onOff: onOff,
+        ),
         RouteParamField.thinking => l10n.reasoningEffortOn,
         RouteParamField.maxOutputTokens => formatGroupedTokens(v as int),
       };

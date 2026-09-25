@@ -130,19 +130,14 @@ class OutputSpec {
   /// only a rate row that leaves the dimension blank can match them.
   static const Set<String> _unset = {'', 'auto', 'not_set', 'adaptive'};
 
-  factory OutputSpec.from(
-    Map<String, dynamic>? options, {
-    Map<String, dynamic>? metadata,
-  }) {
+  factory OutputSpec.from(Map<String, dynamic>? options, {Map<String, dynamic>? metadata}) {
     final size = normalizeSize(
       metadata?['output_size'] ?? options?['imageSize'] ?? options?['resolution'],
     );
     final quality = normalizeQuality(
       metadata?['output_quality'] ?? options?['quality'] ?? options?['videoQuality'],
     );
-    final seconds = normalizeSeconds(
-      metadata?['output_seconds'] ?? options?['seconds'],
-    );
+    final seconds = normalizeSeconds(metadata?['output_seconds'] ?? options?['seconds']);
     return OutputSpec(size: size, quality: quality, seconds: seconds);
   }
 
@@ -175,9 +170,5 @@ class OutputSpec {
   bool get isEmpty => size == null && quality == null && seconds == null;
 
   /// Compact human label: `1080p · high · 8s`, or empty for no spec.
-  String get label => [
-        ?size,
-        ?quality,
-        if (seconds != null) '${seconds}s',
-      ].join(' · ');
+  String get label => [?size, ?quality, if (seconds != null) '${seconds}s'].join(' · ');
 }

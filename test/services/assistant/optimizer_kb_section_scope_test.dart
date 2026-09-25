@@ -24,8 +24,9 @@ void main() {
   setUp(() {
     root = Directory.systemTemp.createTempSync('kb_scope_');
     File(p.join(root.path, 'README.md')).writeAsStringSync('# KB\n');
-    File(p.join(root.path, 'rules.md'))
-        .writeAsStringSync('# Rules\n\n## Lighting\n\n- soft\n\n## Composition\n\n- thirds\n');
+    File(
+      p.join(root.path, 'rules.md'),
+    ).writeAsStringSync('# Rules\n\n## Lighting\n\n- soft\n\n## Composition\n\n- thirds\n');
   });
   tearDown(() {
     PromptOptimizerAgent.debugRequestOverride = null;
@@ -39,12 +40,20 @@ void main() {
     PromptOptimizerAgent.debugRequestOverride = (messages, tools, options) async {
       requests++;
       return switch (requests) {
-        1 => LLMResponse(text: '', toolCalls: [
-            LLMToolCall(id: 'r', name: 'read_knowledge_file', arguments: const {'path': 'rules.md'}),
-          ]),
-        2 => LLMResponse(text: '', toolCalls: [
-            LLMToolCall(id: 'w', name: 'write_knowledge_file', arguments: writeArgs),
-          ]),
+        1 => LLMResponse(
+          text: '',
+          toolCalls: [
+            LLMToolCall(
+              id: 'r',
+              name: 'read_knowledge_file',
+              arguments: const {'path': 'rules.md'},
+            ),
+          ],
+        ),
+        2 => LLMResponse(
+          text: '',
+          toolCalls: [LLMToolCall(id: 'w', name: 'write_knowledge_file', arguments: writeArgs)],
+        ),
         _ => LLMResponse(text: 'done'),
       };
     };

@@ -14,12 +14,7 @@ const _geminiSizeParam = ParamSpec(
   labelKey: 'resolution',
   control: ParamControl.segmented,
   defaultValue: 'not_set',
-  options: [
-    ParamOption('not_set'),
-    ParamOption('1K'),
-    ParamOption('2K'),
-    ParamOption('4K'),
-  ],
+  options: [ParamOption('not_set'), ParamOption('1K'), ParamOption('2K'), ParamOption('4K')],
 );
 
 /// The ten-ratio aspect control every nanoBanana generation shares.
@@ -160,12 +155,7 @@ const _openaiQualityParam = ParamSpec(
   labelKey: 'quality',
   control: ParamControl.segmented,
   defaultValue: 'auto',
-  options: [
-    ParamOption('auto'),
-    ParamOption('low'),
-    ParamOption('medium'),
-    ParamOption('high'),
-  ],
+  options: [ParamOption('auto'), ParamOption('low'), ParamOption('medium'), ParamOption('high')],
 );
 
 /// gpt-image-2.5's quality ladder: the 2.5 generation (`-flare` /
@@ -231,11 +221,7 @@ const _veoResolutionParam = ParamSpec(
   labelKey: 'resolution',
   control: ParamControl.dropdown,
   defaultValue: '720p',
-  options: [
-    ParamOption('720p'),
-    ParamOption('1080p'),
-    ParamOption('4k'),
-  ],
+  options: [ParamOption('720p'), ParamOption('1080p'), ParamOption('4k')],
 );
 
 const _veoAspectRatioParam = ParamSpec(
@@ -243,10 +229,7 @@ const _veoAspectRatioParam = ParamSpec(
   labelKey: 'aspectRatio',
   control: ParamControl.dropdown,
   defaultValue: '16:9',
-  options: [
-    ParamOption('16:9'),
-    ParamOption('9:16'),
-  ],
+  options: [ParamOption('16:9'), ParamOption('9:16')],
 );
 
 /// Veo (Gemini `predictLongRunning`): the two controls above.
@@ -281,10 +264,7 @@ const _openaiVideo = ModelCapabilities(
       labelKey: 'quality',
       control: ParamControl.segmented,
       defaultValue: 'standard',
-      options: [
-        ParamOption('standard'),
-        ParamOption('high'),
-      ],
+      options: [ParamOption('standard'), ParamOption('high')],
     ),
   ],
 );
@@ -323,11 +303,7 @@ const _grokImagineVideo = ModelCapabilities(
       labelKey: 'resolution',
       control: ParamControl.segmented,
       defaultValue: '720p',
-      options: [
-        ParamOption('480p'),
-        ParamOption('720p'),
-        ParamOption('1080p'),
-      ],
+      options: [ParamOption('480p'), ParamOption('720p'), ParamOption('1080p')],
     ),
     ParamSpec(
       key: 'seconds',
@@ -376,11 +352,7 @@ const _dashscopeWanVideo = ModelCapabilities(
       labelKey: 'resolution',
       control: ParamControl.segmented,
       defaultValue: '1080p',
-      options: [
-        ParamOption('480p'),
-        ParamOption('720p'),
-        ParamOption('1080p'),
-      ],
+      options: [ParamOption('480p'), ParamOption('720p'), ParamOption('1080p')],
     ),
     ParamSpec(
       key: 'seconds',
@@ -701,11 +673,7 @@ const _dashscopeWanImage = ModelCapabilities(
       labelKey: 'resolution',
       control: ParamControl.customSize,
       defaultValue: 'not_set',
-      options: [
-        ParamOption('not_set'),
-        ParamOption('1K'),
-        ParamOption('2K'),
-      ],
+      options: [ParamOption('not_set'), ParamOption('1K'), ParamOption('2K')],
       sizeRules: kDashscopeWanSizeRules,
       sizeVocabulary: _dashscopeWanSizeVocabulary,
     ),
@@ -728,12 +696,7 @@ const _dashscopeWanImagePro = ModelCapabilities(
       labelKey: 'resolution',
       control: ParamControl.customSize,
       defaultValue: 'not_set',
-      options: [
-        ParamOption('not_set'),
-        ParamOption('1K'),
-        ParamOption('2K'),
-        ParamOption('4K'),
-      ],
+      options: [ParamOption('not_set'), ParamOption('1K'), ParamOption('2K'), ParamOption('4K')],
       sizeRules: kDashscopeWanProSizeRules,
       sizeVocabulary: _dashscopeWanProSizeVocabulary,
     ),
@@ -790,11 +753,7 @@ const _midjourney = ModelCapabilities(
       labelKey: 'mjMode',
       control: ParamControl.segmented,
       defaultValue: 'FAST',
-      options: [
-        ParamOption('RELAX'),
-        ParamOption('FAST'),
-        ParamOption('TURBO'),
-      ],
+      options: [ParamOption('RELAX'), ParamOption('FAST'), ParamOption('TURBO')],
     ),
     ParamSpec(
       key: 'mjQuality',
@@ -1003,10 +962,7 @@ const _minimaxVideo = ModelCapabilities(
       labelKey: 'resolution',
       control: ParamControl.segmented,
       defaultValue: '768P',
-      options: [
-        ParamOption('768P'),
-        ParamOption('2K'),
-      ],
+      options: [ParamOption('768P'), ParamOption('2K')],
     ),
     ParamSpec(
       key: 'seconds',
@@ -1225,23 +1181,14 @@ const _seedream50Pro = ModelCapabilities(
       labelKey: 'imageTask',
       control: ParamControl.segmented,
       defaultValue: 'generate',
-      options: [
-        ParamOption('generate'),
-        ParamOption('layers'),
-        ParamOption('transparent'),
-      ],
+      options: [ParamOption('generate'), ParamOption('layers'), ParamOption('transparent')],
     ),
     ParamSpec(
       key: 'imageSize',
       labelKey: 'resolution',
       control: ParamControl.segmented,
       defaultValue: '2K',
-      options: [
-        ParamOption('not_set'),
-        ParamOption('1K'),
-        ParamOption('1.5K'),
-        ParamOption('2K'),
-      ],
+      options: [ParamOption('not_set'), ParamOption('1K'), ParamOption('1.5K'), ParamOption('2K')],
     ),
     _seedreamAspectRatio,
     _seedreamOutputFormat,

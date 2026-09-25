@@ -24,11 +24,7 @@ void main() {
         expect(p.routes, isNotEmpty, reason: p.id);
         final kinds = <RouteKind>{};
         for (final r in p.routes) {
-          expect(
-            kinds.add(r.kind),
-            isTrue,
-            reason: '${p.id} lists ${r.kind.id} twice',
-          );
+          expect(kinds.add(r.kind), isTrue, reason: '${p.id} lists ${r.kind.id} twice');
           expect(vendorIds, contains(r.vendorId), reason: '${p.id}/${r.kind}');
           expect(
             Vendors.byId(r.vendorId).menuFor(Surface.chat),
@@ -75,24 +71,15 @@ void main() {
 
     test('a generic vendor is claimed by the host it points at', () {
       expect(
-        Platforms.inferPlatform(
-          Vendors.openAIRest,
-          'https://api.openai.com/v1',
-        ).id,
+        Platforms.inferPlatform(Vendors.openAIRest, 'https://api.openai.com/v1').id,
         Platforms.openai,
       );
       expect(
-        Platforms.inferPlatform(
-          Vendors.openAIResponsesRest,
-          'https://API.OpenAI.com/v1',
-        ).id,
+        Platforms.inferPlatform(Vendors.openAIResponsesRest, 'https://API.OpenAI.com/v1').id,
         Platforms.openai,
       );
       expect(
-        Platforms.inferPlatform(
-          Vendors.anthropicRest,
-          'https://api.anthropic.com/v1',
-        ).id,
+        Platforms.inferPlatform(Vendors.anthropicRest, 'https://api.anthropic.com/v1').id,
         Platforms.anthropic,
       );
       expect(
@@ -146,35 +133,25 @@ void main() {
         Platforms.routeVendor(ds, Vendors.dashscopeNative, RouteKind.anthropic),
         Vendors.dashscopeNative,
       );
-      expect(
-        Platforms.routeVendor(ds, Vendors.dashscope, RouteKind.dashscope),
-        Vendors.dashscope,
-      );
+      expect(Platforms.routeVendor(ds, Vendors.dashscope, RouteKind.dashscope), Vendors.dashscope);
     });
 
-    test(
-      'a face the primary vendor never offered takes the platform vendor',
-      () {
-        final newapi = Platforms.byId(Platforms.newapi);
-        expect(
-          Platforms.routeVendor(newapi, Vendors.newApiOpenAI, RouteKind.gemini),
-          Vendors.newApiGemini,
-        );
-        expect(
-          Platforms.routeVendor(
-            newapi,
-            Vendors.newApiGemini,
-            RouteKind.anthropic,
-          ),
-          Vendors.newApiAnthropic,
-        );
-        final mm = Platforms.byId(Platforms.minimax);
-        expect(
-          Platforms.routeVendor(mm, Vendors.minimax, RouteKind.anthropic),
-          Vendors.minimaxAnthropic,
-        );
-      },
-    );
+    test('a face the primary vendor never offered takes the platform vendor', () {
+      final newapi = Platforms.byId(Platforms.newapi);
+      expect(
+        Platforms.routeVendor(newapi, Vendors.newApiOpenAI, RouteKind.gemini),
+        Vendors.newApiGemini,
+      );
+      expect(
+        Platforms.routeVendor(newapi, Vendors.newApiGemini, RouteKind.anthropic),
+        Vendors.newApiAnthropic,
+      );
+      final mm = Platforms.byId(Platforms.minimax);
+      expect(
+        Platforms.routeVendor(mm, Vendors.minimax, RouteKind.anthropic),
+        Vendors.minimaxAnthropic,
+      );
+    });
 
     test('a face neither offers resolves to null', () {
       expect(
@@ -188,30 +165,19 @@ void main() {
     });
   });
 
-  test(
-    'legacyKinds lists every chat face the vendor offered, default first',
-    () {
-      expect(Platforms.legacyKinds(Vendors.openAIRest), [
-        RouteKind.chat,
-        RouteKind.responses,
-      ]);
-      expect(Platforms.legacyKinds(Vendors.xaiApi), [
-        RouteKind.responses,
-        RouteKind.chat,
-      ]);
-      expect(Platforms.legacyKinds(Vendors.dashscopeNative), [
-        RouteKind.dashscope,
-        RouteKind.chat,
-        RouteKind.anthropic,
-      ]);
-      expect(Platforms.legacyKinds(Vendors.deepseek), [RouteKind.chat]);
-      expect(Platforms.legacyKinds(Vendors.newApiGemini), [RouteKind.gemini]);
-      expect(Platforms.legacyKinds(Vendors.midjourneyProxy), [
-        RouteKind.midjourney,
-      ]);
-      for (final v in Vendors.all) {
-        expect(Platforms.legacyKinds(v.id), isNotEmpty, reason: v.id);
-      }
-    },
-  );
+  test('legacyKinds lists every chat face the vendor offered, default first', () {
+    expect(Platforms.legacyKinds(Vendors.openAIRest), [RouteKind.chat, RouteKind.responses]);
+    expect(Platforms.legacyKinds(Vendors.xaiApi), [RouteKind.responses, RouteKind.chat]);
+    expect(Platforms.legacyKinds(Vendors.dashscopeNative), [
+      RouteKind.dashscope,
+      RouteKind.chat,
+      RouteKind.anthropic,
+    ]);
+    expect(Platforms.legacyKinds(Vendors.deepseek), [RouteKind.chat]);
+    expect(Platforms.legacyKinds(Vendors.newApiGemini), [RouteKind.gemini]);
+    expect(Platforms.legacyKinds(Vendors.midjourneyProxy), [RouteKind.midjourney]);
+    for (final v in Vendors.all) {
+      expect(Platforms.legacyKinds(v.id), isNotEmpty, reason: v.id);
+    }
+  });
 }

@@ -38,12 +38,11 @@ void main() {
     List<String> sources, {
     FileTransferMode mode = FileTransferMode.copy,
     Directory? destination,
-  }) =>
-      FileTransferService.plan(
-        sourcePaths: sources,
-        destination: (destination ?? destDir).path,
-        mode: mode,
-      );
+  }) => FileTransferService.plan(
+    sourcePaths: sources,
+    destination: (destination ?? destDir).path,
+    mode: mode,
+  );
 
   group('plan', () {
     test('a clean paste reports no conflicts', () async {
@@ -70,8 +69,7 @@ void main() {
       expect(plan.entries.single.hasConflict, isTrue);
     });
 
-    test('two staged files landing on one name collide with each other',
-        () async {
+    test('two staged files landing on one name collide with each other', () async {
       // Neither is at the destination, so a plain "does the target exist"
       // check sees nothing wrong with either of them. The collision is
       // between the two, and only shows up if the plan remembers what the
@@ -128,17 +126,11 @@ void main() {
     test('counts up from (2), skipping every taken name', () async {
       await write(destDir, 'a.png', 'x');
 
-      expect(
-        p.basename(FileTransferService.uniqueTargetPath(destDir.path, 'a.png')),
-        'a (2).png',
-      );
+      expect(p.basename(FileTransferService.uniqueTargetPath(destDir.path, 'a.png')), 'a (2).png');
 
       await write(destDir, 'a (2).png', 'x');
 
-      expect(
-        p.basename(FileTransferService.uniqueTargetPath(destDir.path, 'a.png')),
-        'a (3).png',
-      );
+      expect(p.basename(FileTransferService.uniqueTargetPath(destDir.path, 'a.png')), 'a (3).png');
     });
 
     test('honours names claimed earlier in the same run', () async {
@@ -149,16 +141,14 @@ void main() {
       final claimed = {p.join(destDir.path, 'a (2).png')};
 
       expect(
-        p.basename(FileTransferService.uniqueTargetPath(destDir.path, 'a.png',
-            reserved: claimed)),
+        p.basename(FileTransferService.uniqueTargetPath(destDir.path, 'a.png', reserved: claimed)),
         'a (3).png',
       );
     });
 
     test('leaves a free name alone', () {
       expect(
-        p.basename(
-            FileTransferService.uniqueTargetPath(destDir.path, 'fresh.png')),
+        p.basename(FileTransferService.uniqueTargetPath(destDir.path, 'fresh.png')),
         'fresh.png',
       );
     });
@@ -180,15 +170,15 @@ void main() {
       final a = await write(sourceDir, 'a.png', 'aaa');
 
       final outcome = await FileTransferService.execute(
-          await planFor([a], mode: FileTransferMode.move));
+        await planFor([a], mode: FileTransferMode.move),
+      );
 
       expect(outcome.succeeded.length, 1);
       expect(File(a).existsSync(), isFalse);
       expect(File(p.join(destDir.path, 'a.png')).readAsStringSync(), 'aaa');
     });
 
-    test('an undecided conflict is skipped, never resolved by default',
-        () async {
+    test('an undecided conflict is skipped, never resolved by default', () async {
       final a = await write(sourceDir, 'a.png', 'new');
       await write(destDir, 'a.png', 'old');
 
@@ -199,8 +189,7 @@ void main() {
       expect(File(p.join(destDir.path, 'a.png')).readAsStringSync(), 'old');
     });
 
-    test('a target created after planning is not silently overwritten',
-        () async {
+    test('a target created after planning is not silently overwritten', () async {
       final a = await write(sourceDir, 'a.png', 'new');
       final plan = await planFor([a]);
       await write(destDir, 'a.png', 'arrived later');
@@ -210,10 +199,7 @@ void main() {
       expect(outcome.skipped, [a]);
       expect(outcome.succeeded, isEmpty);
       expect(File(a).readAsStringSync(), 'new');
-      expect(
-        File(p.join(destDir.path, 'a.png')).readAsStringSync(),
-        'arrived later',
-      );
+      expect(File(p.join(destDir.path, 'a.png')).readAsStringSync(), 'arrived later');
     });
 
     test('a move also preserves a target created after planning', () async {
@@ -225,10 +211,7 @@ void main() {
 
       expect(outcome.skipped, [a]);
       expect(File(a).readAsStringSync(), 'new');
-      expect(
-        File(p.join(destDir.path, 'a.png')).readAsStringSync(),
-        'arrived later',
-      );
+      expect(File(p.join(destDir.path, 'a.png')).readAsStringSync(), 'arrived later');
     });
 
     test('overwrite replaces the file at the destination', () async {
@@ -283,18 +266,12 @@ void main() {
 
       await FileTransferService.execute(
         await planFor([a, b]),
-        resolutions: {
-          a: FileConflictResolution.rename,
-          b: FileConflictResolution.rename,
-        },
+        resolutions: {a: FileConflictResolution.rename, b: FileConflictResolution.rename},
       );
 
-      expect(File(p.join(destDir.path, 'shot.png')).readAsStringSync(),
-          'existing');
-      expect(
-          File(p.join(destDir.path, 'shot (2).png')).readAsStringSync(), 'one');
-      expect(
-          File(p.join(destDir.path, 'shot (3).png')).readAsStringSync(), 'two');
+      expect(File(p.join(destDir.path, 'shot.png')).readAsStringSync(), 'existing');
+      expect(File(p.join(destDir.path, 'shot (2).png')).readAsStringSync(), 'one');
+      expect(File(p.join(destDir.path, 'shot (3).png')).readAsStringSync(), 'two');
     });
 
     test('cancelling stops between files and leaves the tail alone', () async {
@@ -322,7 +299,8 @@ void main() {
       final vanished = Directory(p.join(root.path, 'nowhere'));
 
       final outcome = await FileTransferService.execute(
-          await planFor([a, b], destination: vanished));
+        await planFor([a, b], destination: vanished),
+      );
 
       expect(outcome.failed.length, 2);
       expect(outcome.failed.first.sourcePath, a);
@@ -336,10 +314,7 @@ void main() {
       final b = await write(sourceDir, 'b.png', 'bb');
 
       final seen = <FileTransferProgress>[];
-      await FileTransferService.execute(
-        await planFor([a, b]),
-        onProgress: seen.add,
-      );
+      await FileTransferService.execute(await planFor([a, b]), onProgress: seen.add);
 
       expect(seen.first.index, 0);
       expect(seen.first.name, 'a.png');
@@ -368,8 +343,7 @@ void main() {
       expect(File(p.join(destDir.path, 'a.png')).readAsStringSync(), 'aaa');
     });
 
-    test('a cancel between the copy and the delete rolls the copy back',
-        () async {
+    test('a cancel between the copy and the delete rolls the copy back', () async {
       // The promise `12f` makes to the user in as many words: the copy is
       // undone, the source stays put. Without the rollback the destination
       // would keep a file from a run the user stopped, and the progress dialog
@@ -431,8 +405,7 @@ void main() {
   group('isLikelyCrossVolume', () {
     test('two paths under one root are not', () {
       expect(
-        FileTransferService.isLikelyCrossVolume(
-            p.join(sourceDir.path, 'a.png'), destDir.path),
+        FileTransferService.isLikelyCrossVolume(p.join(sourceDir.path, 'a.png'), destDir.path),
         isFalse,
       );
     });
@@ -443,11 +416,7 @@ void main() {
       // the method; asserted only where the answer exists.
       if (!Platform.isWindows) return;
 
-      expect(
-        FileTransferService.isLikelyCrossVolume(
-            r'C:\pictures\a.png', r'D:\archive'),
-        isTrue,
-      );
+      expect(FileTransferService.isLikelyCrossVolume(r'C:\pictures\a.png', r'D:\archive'), isTrue);
     });
   });
 }

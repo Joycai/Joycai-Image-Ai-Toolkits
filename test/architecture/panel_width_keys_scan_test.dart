@@ -29,8 +29,12 @@ void main() {
         }
       }
     }
-    expect(offenders, isEmpty,
-        reason: 'ask AppState.uiPrefs instead of naming the key:\n'
-            '  ${offenders.join('\n  ')}');
+    expect(
+      offenders,
+      isEmpty,
+      reason:
+          'ask AppState.uiPrefs instead of naming the key:\n'
+          '  ${offenders.join('\n  ')}',
+    );
   });
 }

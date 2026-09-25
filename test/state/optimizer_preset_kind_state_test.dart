@@ -6,12 +6,12 @@ import 'package:joycai_image_ai_toolkits/services/assistant/prompt_optimizer_age
 import 'package:joycai_image_ai_toolkits/state/workbench_ui_state.dart';
 
 SystemPrompt preset(int id, PresetOutputKind kind, {String content = 'TEXT'}) => SystemPrompt(
-      id: id,
-      title: 'p$id',
-      content: content,
-      type: SystemPrompt.typeRefiner,
-      outputKind: kind,
-    );
+  id: id,
+  title: 'p$id',
+  content: content,
+  type: SystemPrompt.typeRefiner,
+  outputKind: kind,
+);
 
 void main() {
   late WorkbenchUIState wui;
@@ -74,7 +74,8 @@ void main() {
   test('a knowledge session is queued without a preset', () {
     wui.loadOptimizerPreset(preset(1, PresetOutputKind.analysis));
     final params = wui.optimizerTurnParameters(
-        PromptOptimizerSession(mode: AssistantMode.knowledgeBase));
+      PromptOptimizerSession(mode: AssistantMode.knowledgeBase),
+    );
     expect(params.containsKey('systemPrompt'), isFalse);
     expect(params.containsKey('outputKind'), isFalse);
   });

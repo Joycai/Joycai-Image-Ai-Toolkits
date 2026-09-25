@@ -33,7 +33,8 @@ void main() {
 
   tearDownAll(() => env.dispose());
 
-  Finder inGroup(Finder matching) => find.descendant(of: find.byType(NavLensGroup), matching: matching);
+  Finder inGroup(Finder matching) =>
+      find.descendant(of: find.byType(NavLensGroup), matching: matching);
 
   List<Rect> iconRects(WidgetTester tester) {
     final icons = inGroup(find.byType(Icon));
@@ -66,15 +67,27 @@ void main() {
     expect(lensCentre(tester), closeTo(icons[AppScreen.workbench.index].center.dx, 0.5));
 
     try {
-      for (final screen in [AppScreen.fileBrowser, AppScreen.prompts, AppScreen.settings, AppScreen.tasks]) {
+      for (final screen in [
+        AppScreen.fileBrowser,
+        AppScreen.prompts,
+        AppScreen.settings,
+        AppScreen.tasks,
+      ]) {
         // Real async: each screen reads the database as it mounts.
         await inRealAsync(tester, () => AppState().navigateToScreen(screen.index));
         await settle(tester);
 
-        expect(tester.getRect(find.byType(NavLensGroup)), group, reason: 'the group moved on ${screen.name}');
+        expect(
+          tester.getRect(find.byType(NavLensGroup)),
+          group,
+          reason: 'the group moved on ${screen.name}',
+        );
         expect(iconRects(tester), icons, reason: 'an icon moved on ${screen.name}');
-        expect(lensCentre(tester), closeTo(icons[screen.index].center.dx, 0.5),
-            reason: 'the lens did not follow to ${screen.name}');
+        expect(
+          lensCentre(tester),
+          closeTo(icons[screen.index].center.dx, 0.5),
+          reason: 'the lens did not follow to ${screen.name}',
+        );
 
         final l10n = AppLocalizations.of(tester.element(find.byType(AppTitleBar)))!;
         final name = switch (screen) {

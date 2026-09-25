@@ -37,9 +37,15 @@ void main() {
       // generating nothing.
       final r = extractStructuredImages({
         'images': [
-          {'type': 'image_url', 'image_url': {'url': 'data:image/png;base64,$pixel'}},
-          {'type': 'image_url', 'image_url': {'url': 'https://cdn.example.com/a.png'}},
-        ]
+          {
+            'type': 'image_url',
+            'image_url': {'url': 'data:image/png;base64,$pixel'},
+          },
+          {
+            'type': 'image_url',
+            'image_url': {'url': 'https://cdn.example.com/a.png'},
+          },
+        ],
       });
       expect(r.bytes, hasLength(1));
       expect(r.bytes.first, [1, 2, 3]);
@@ -52,7 +58,7 @@ void main() {
           {'image_url': 'https://cdn.example.com/b.png'},
           {'url': 'data:image/png;base64,$pixel'},
           {'b64_json': pixel},
-        ]
+        ],
       });
       expect(flat.urls, ['https://cdn.example.com/b.png']);
       expect(flat.bytes, hasLength(2));
@@ -67,16 +73,38 @@ void main() {
     test('absent or malformed fields yield nothing, never a throw', () {
       expect(extractStructuredImages({}).isEmpty, isTrue);
       expect(extractStructuredImages({'images': 'nope'}).isEmpty, isTrue);
-      expect(extractStructuredImages({'images': ['nope']}).isEmpty, isTrue);
+      expect(
+        extractStructuredImages({
+          'images': ['nope'],
+        }).isEmpty,
+        isTrue,
+      );
       expect(extractStructuredImages({'image_data': '!!not base64!!'}).isEmpty, isTrue);
-      expect(extractStructuredImages({
-        'images': [{'image_url': {'url': 'ftp://example.com/x.png'}}]
-      }).isEmpty, isTrue);
+      expect(
+        extractStructuredImages({
+          'images': [
+            {
+              'image_url': {'url': 'ftp://example.com/x.png'},
+            },
+          ],
+        }).isEmpty,
+        isTrue,
+      );
     });
   });
 
   group('the same picture in several fields', () {
-    final png = base64Encode([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, ...List.filled(60, 7)]);
+    final png = base64Encode([
+      0x89,
+      0x50,
+      0x4E,
+      0x47,
+      0x0D,
+      0x0A,
+      0x1A,
+      0x0A,
+      ...List.filled(60, 7),
+    ]);
 
     test('image_b64_json and bare string entries are read', () {
       // A relay's gpt-image-2-via-chat put the picture here, in
@@ -117,8 +145,10 @@ void main() {
 
     test('a bare link is the image only for an image model', () {
       // A chat model that answers with a URL is citing, not delivering.
-      expect(wholeContentImage('https://s3.example/a.png?X-Amz-Expires=86400', imageReply: true)!.url,
-          'https://s3.example/a.png?X-Amz-Expires=86400');
+      expect(
+        wholeContentImage('https://s3.example/a.png?X-Amz-Expires=86400', imageReply: true)!.url,
+        'https://s3.example/a.png?X-Amz-Expires=86400',
+      );
       expect(wholeContentImage('https://s3.example/a.png', imageReply: false), isNull);
       expect(wholeContentImage('see https://s3.example/a.png', imageReply: true), isNull);
     });
@@ -127,8 +157,10 @@ void main() {
       expect(wholeContentImage('Sure', imageReply: true), isNull);
       // 64+ alphabet characters that decode to non-image bytes.
       expect(wholeContentImage('A' * 96, imageReply: true), isNull);
-      expect(wholeContentImage('Here is the image you asked for, rendered at 9:16.', imageReply: true),
-          isNull);
+      expect(
+        wholeContentImage('Here is the image you asked for, rendered at 9:16.', imageReply: true),
+        isNull,
+      );
     });
   });
 
@@ -142,16 +174,14 @@ void main() {
         isStreaming: false,
       );
       expect((payload['messages'] as List).single['content'], [
-        {'type': 'text', 'text': 'a red apple'}
+        {'type': 'text', 'text': 'a red apple'},
       ]);
     });
 
     test('a chat model keeps the string — the shape every host accepts', () {
-      final payload = OpenAIChatProtocol().buildChatPayloadForTest(
-        target('gpt-5-chat'),
-        [LLMMessage(role: LLMRole.user, content: 'hi')],
-        isStreaming: false,
-      );
+      final payload = OpenAIChatProtocol().buildChatPayloadForTest(target('gpt-5-chat'), [
+        LLMMessage(role: LLMRole.user, content: 'hi'),
+      ], isStreaming: false);
       // `.last`: a chat model also gets the default system line first.
       expect((payload['messages'] as List).last['content'], 'hi');
     });
@@ -161,20 +191,18 @@ void main() {
     test('a markdown image link is fetched whatever the host', () {
       // New API's own adapter writes `![image](data:…)`; relays that store
       // the file write the same shape with a link.
-      expect(
-        imageUrlsInText('here you go\n\n![image](https://cdn.example.com/a.png)'),
-        ['https://cdn.example.com/a.png'],
-      );
+      expect(imageUrlsInText('here you go\n\n![image](https://cdn.example.com/a.png)'), [
+        'https://cdn.example.com/a.png',
+      ]);
     });
 
     test('a bare link that is merely cited is left alone', () {
       // Downloading every URL a chat reply mentions is not acceptable; only
       // the historical Gemini bucket keeps its bare-link exemption.
       expect(imageUrlsInText('see https://cdn.example.com/a.png for details'), isEmpty);
-      expect(
-        imageUrlsInText('https://storage.googleapis.com/bucket/a.png'),
-        ['https://storage.googleapis.com/bucket/a.png'],
-      );
+      expect(imageUrlsInText('https://storage.googleapis.com/bucket/a.png'), [
+        'https://storage.googleapis.com/bucket/a.png',
+      ]);
     });
 
     test('data URIs are not URLs to fetch — the base64 scan already has them', () {
@@ -237,8 +265,10 @@ void main() {
         isStreaming: false,
       );
       expect((compat['image_config'] as Map).containsKey('image_size'), isFalse);
-      expect((compat['extra_body']['google']['image_config'] as Map).containsKey('image_size'),
-          isFalse);
+      expect(
+        (compat['extra_body']['google']['image_config'] as Map).containsKey('image_size'),
+        isFalse,
+      );
 
       final native = prepareGooglePayload(
         [LLMMessage(role: LLMRole.user, content: 'a cat')],
@@ -280,10 +310,7 @@ void main() {
 
     test('a text model does not', () {
       final payload = prepareGooglePayload(history, null, null);
-      expect(
-        (payload['generationConfig'] as Map).containsKey('responseModalities'),
-        isFalse,
-      );
+      expect((payload['generationConfig'] as Map).containsKey('responseModalities'), isFalse);
     });
 
     test('imageConfig keeps the native camelCase spelling', () {
@@ -293,8 +320,10 @@ void main() {
         null,
         emitsImages: true,
       );
-      expect(payload['generationConfig']['imageConfig'],
-          {'aspectRatio': '16:9', 'imageSize': '2K'});
+      expect(payload['generationConfig']['imageConfig'], {
+        'aspectRatio': '16:9',
+        'imageSize': '2K',
+      });
     });
 
     test('an attachment rides as inlineData.mimeType, and system as systemInstruction', () {
@@ -310,8 +339,9 @@ void main() {
             content: 'what colour',
             attachments: [
               LLMAttachment.fromBytes(
-                  Uint8List.fromList([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0]),
-                  'image/png'),
+                Uint8List.fromList([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0]),
+                'image/png',
+              ),
             ],
           ),
         ],
@@ -319,7 +349,11 @@ void main() {
         null,
       );
 
-      expect(payload['systemInstruction'], {'parts': [{'text': 'be terse'}]});
+      expect(payload['systemInstruction'], {
+        'parts': [
+          {'text': 'be terse'},
+        ],
+      });
       expect(payload.containsKey('system_instruction'), isFalse);
 
       final parts = ((payload['contents'] as List).single as Map)['parts'] as List;
@@ -352,7 +386,9 @@ void main() {
         ],
         {'aspectRatio': '1:1', 'imageSize': '1K'},
         null,
-        tools: [LLMTool(name: 'f', description: 'd', parameters: const {'type': 'object'})],
+        tools: [
+          LLMTool(name: 'f', description: 'd', parameters: const {'type': 'object'}),
+        ],
         emitsImages: true,
       );
 
@@ -381,13 +417,13 @@ void main() {
 
   group('Gemini blocking finish reasons', () {
     Map<String, dynamic> candidate(String finishReason, {List<dynamic>? parts}) => {
-          'candidates': [
-            {
-              'finishReason': finishReason,
-              if (parts != null) 'content': {'parts': parts},
-            }
-          ]
-        };
+      'candidates': [
+        {
+          'finishReason': finishReason,
+          if (parts != null) 'content': {'parts': parts},
+        },
+      ],
+    };
 
     test('a block that produced nothing is a failure, not an empty success', () {
       // IMAGE_SAFETY and PROHIBITED_CONTENT are what the image models return;
@@ -395,8 +431,7 @@ void main() {
       // no picture in it. The parser publishes; LLMService's single check
       // (contentBlockedFailure) fails the request after recording usage.
       for (final reason in ['IMAGE_SAFETY', 'PROHIBITED_CONTENT', 'SAFETY']) {
-        final metadata =
-            parseGoogleChunks(candidate(reason)).single.metadata;
+        final metadata = parseGoogleChunks(candidate(reason)).single.metadata;
         expect(metadata!['finish_reason'], 'content_filter', reason: reason);
         final failure = contentBlockedFailure(metadata);
         expect(failure, isNotNull, reason: reason);
@@ -418,7 +453,12 @@ void main() {
 
     test('a truncated answer is still an answer', () {
       final chunks = parseGoogleChunks(
-        candidate('MAX_TOKENS', parts: [{'text': 'as far as I got'}]),
+        candidate(
+          'MAX_TOKENS',
+          parts: [
+            {'text': 'as far as I got'},
+          ],
+        ),
       ).toList();
       expect(chunks.single.textPart, 'as far as I got');
     });
@@ -427,7 +467,12 @@ void main() {
       // It used to be kept as a successful short answer: the parser threw
       // only when the candidate was empty (errors 06 §2.3).
       final chunks = parseGoogleChunks(
-        candidate('SAFETY', parts: [{'text': 'partial'}]),
+        candidate(
+          'SAFETY',
+          parts: [
+            {'text': 'partial'},
+          ],
+        ),
       ).toList();
       expect(chunks.single.textPart, 'partial');
       expect(chunks.single.metadata!['finish_reason'], 'content_filter');
@@ -438,7 +483,12 @@ void main() {
       // Until this existed ③ published nothing under finish_reason, so the
       // assistant loop's `== 'length'` truncation check never fired for it.
       final stopped = parseGoogleChunks({
-        ...candidate('STOP', parts: [{'text': 'done'}]),
+        ...candidate(
+          'STOP',
+          parts: [
+            {'text': 'done'},
+          ],
+        ),
         'usageMetadata': {'promptTokenCount': 3, 'candidatesTokenCount': 1},
       }).toList();
       expect(stopped.single.metadata, {
@@ -448,7 +498,14 @@ void main() {
         'finish_reason': 'stop',
       });
 
-      final truncated = parseGoogleChunks(candidate('MAX_TOKENS', parts: [{'text': 'as far'}])).toList();
+      final truncated = parseGoogleChunks(
+        candidate(
+          'MAX_TOKENS',
+          parts: [
+            {'text': 'as far'},
+          ],
+        ),
+      ).toList();
       expect(truncated.single.metadata!['finish_reason'], 'length');
     });
 
@@ -493,8 +550,11 @@ void main() {
       // Normal ends and content blocks are not this check's business.
       for (final reason in ['STOP', 'MAX_TOKENS', 'SAFETY', 'IMAGE_PROHIBITED_CONTENT']) {
         final chunks = parseGoogleChunks(candidate(reason)).toList();
-        expect(geminiEmptyEndFailure(chunks.last.metadata, sawOutput: false), isNull,
-            reason: reason);
+        expect(
+          geminiEmptyEndFailure(chunks.last.metadata, sawOutput: false),
+          isNull,
+          reason: reason,
+        );
       }
     });
 
@@ -515,7 +575,12 @@ void main() {
     test('a protocol stop after text keeps the text', () {
       // With content the content is kept and the raw reason still rides along.
       final partial = parseGoogleChunks(
-        candidate('MISSING_THOUGHT_SIGNATURE', parts: [{'text': 'hm'}]),
+        candidate(
+          'MISSING_THOUGHT_SIGNATURE',
+          parts: [
+            {'text': 'hm'},
+          ],
+        ),
       ).toList();
       expect(partial.single.textPart, 'hm');
       expect(partial.single.metadata!['finish_reason_raw'], 'MISSING_THOUGHT_SIGNATURE');
@@ -524,10 +589,15 @@ void main() {
     test('a thought part is reasoning, never text', () {
       // `includeThoughts` returns the summary as a text part flagged
       // thought: true; glued into the text it reaches the deliverable.
-      final chunks = parseGoogleChunks(candidate('STOP', parts: [
-        {'text': 'let me think', 'thought': true},
-        {'text': 'the answer'},
-      ])).toList();
+      final chunks = parseGoogleChunks(
+        candidate(
+          'STOP',
+          parts: [
+            {'text': 'let me think', 'thought': true},
+            {'text': 'the answer'},
+          ],
+        ),
+      ).toList();
       expect(chunks[0].reasoningPart, 'let me think');
       expect(chunks[0].textPart, isNull);
       expect(chunks[1].textPart, 'the answer');
@@ -536,7 +606,7 @@ void main() {
 
     test('a usage-only chunk stays legal — streams end with one', () {
       final chunks = parseGoogleChunks({
-        'usageMetadata': {'promptTokenCount': 7}
+        'usageMetadata': {'promptTokenCount': 7},
       }).toList();
       expect(chunks.single.metadata, {'promptTokenCount': 7});
     });

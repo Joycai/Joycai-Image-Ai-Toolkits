@@ -8,6 +8,7 @@
 @Tags(<String>['screenshots'])
 library;
 
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -28,13 +29,14 @@ void main() {
     final BuildContext context = tester.element(find.byType(Scaffold).first);
     final AppImage image = AppImage.fromFile(File(env.fixtureImagePaths.first));
     // Not awaited: the dialog stays up for the shot.
-    // ignore: unawaited_futures
-    showResultFeedbackDialog(
-      context,
-      image: image,
-      promptVersion: 3,
-      runMeta: 'gpt-image-1 · 今天 14:02',
-      promptText: '深红丝绒背景，香水瓶居中，顶光，浅景深，商业静物摄影，8k',
+    unawaited(
+      showResultFeedbackDialog(
+        context,
+        image: image,
+        promptVersion: 3,
+        runMeta: 'gpt-image-1 · 今天 14:02',
+        promptText: '深红丝绒背景，香水瓶居中，顶光，浅景深，商业静物摄影，8k',
+      ),
     );
     await settle(tester);
     await tester.tap(find.byIcon(satisfied ? Icons.thumb_up_outlined : Icons.thumb_down_outlined));
@@ -43,15 +45,14 @@ void main() {
       await tester.tap(find.text('与提示不符'));
       await tester.tap(find.text('色彩 / 光线'));
       await settle(tester);
-      await tester.enterText(
-        find.byType(TextField).last,
-        '背景偏灰，不是提示里说的青绿渐变；鞋带处细节糊掉了，光也偏软',
-      );
+      await tester.enterText(find.byType(TextField).last, '背景偏灰，不是提示里说的青绿渐变；鞋带处细节糊掉了，光也偏软');
       await settle(tester);
     }
   }
 
-  testWidgets('workbench · resultFeedback satisfied @ desktop dark rose', (WidgetTester tester) async {
+  testWidgets('workbench · resultFeedback satisfied @ desktop dark rose', (
+    WidgetTester tester,
+  ) async {
     await shoot(
       tester,
       env: env,
@@ -64,7 +65,9 @@ void main() {
     );
   });
 
-  testWidgets('workbench · resultFeedback unsatisfied @ desktop light', (WidgetTester tester) async {
+  testWidgets('workbench · resultFeedback unsatisfied @ desktop light', (
+    WidgetTester tester,
+  ) async {
     await shoot(
       tester,
       env: env,

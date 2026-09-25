@@ -1,8 +1,8 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/assistant/prompt_optimizer_agent.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 
 /// Pins `repairToolCallPairing` (standard 07 §3.2, 10 §4.3): a restored or
 /// interrupted history must come back sendable, because an unanswered call or
@@ -10,21 +10,18 @@ import 'package:joycai_image_ai_toolkits/services/assistant/prompt_optimizer_age
 void main() {
   LLMMessage user(String text) => LLMMessage(role: LLMRole.user, content: text);
 
-  LLMMessage assistantCalls(List<String> ids, {String name = 'list_reference_images', String content = ''}) =>
-      LLMMessage(
-        role: LLMRole.assistant,
-        content: content,
-        toolCalls: [
-          for (final id in ids) LLMToolCall(id: id, name: name, arguments: const {}),
-        ],
-      );
+  LLMMessage assistantCalls(
+    List<String> ids, {
+    String name = 'list_reference_images',
+    String content = '',
+  }) => LLMMessage(
+    role: LLMRole.assistant,
+    content: content,
+    toolCalls: [for (final id in ids) LLMToolCall(id: id, name: name, arguments: const {})],
+  );
 
-  LLMMessage result(String id, {String name = 'list_reference_images'}) => LLMMessage(
-        role: LLMRole.tool,
-        content: '{"status":"ok"}',
-        toolCallId: id,
-        toolName: name,
-      );
+  LLMMessage result(String id, {String name = 'list_reference_images'}) =>
+      LLMMessage(role: LLMRole.tool, content: '{"status":"ok"}', toolCallId: id, toolName: name);
 
   const validQuestions = {
     'questions': [
@@ -42,7 +39,12 @@ void main() {
   List<LLMMessage> repair(List<LLMMessage> h) => PromptOptimizerAgent.repairToolCallPairing(h);
 
   test('an intact history comes back as the same objects', () {
-    final h = [user('go'), assistantCalls(['a']), result('a'), user('next')];
+    final h = [
+      user('go'),
+      assistantCalls(['a']),
+      result('a'),
+      user('next'),
+    ];
     final out = repair(h);
     expect(out, hasLength(h.length));
     for (var i = 0; i < h.length; i++) {
@@ -52,7 +54,12 @@ void main() {
 
   test('an unanswered call gets a [not run] stub at the end of its batch', () {
     // A dropped tool row: call b lost its result.
-    final out = repair([user('go'), assistantCalls(['a', 'b']), result('a'), user('next')]);
+    final out = repair([
+      user('go'),
+      assistantCalls(['a', 'b']),
+      result('a'),
+      user('next'),
+    ]);
     expect(out.map((m) => m.role), [
       LLMRole.user,
       LLMRole.assistant,
@@ -80,8 +87,7 @@ void main() {
       user('view'),
       result('a'), // not adjacent to its call
     ]);
-    expect(out.map((m) => m.role),
-        [LLMRole.user, LLMRole.assistant, LLMRole.tool, LLMRole.user]);
+    expect(out.map((m) => m.role), [LLMRole.user, LLMRole.assistant, LLMRole.tool, LLMRole.user]);
   });
 
   test('calls with empty ids are stripped, and an emptied assistant is dropped', () {
@@ -157,7 +163,12 @@ void main() {
     final restored = PromptOptimizerSession.fromStored(
       id: 's',
       mode: AssistantMode.systemPrompt,
-      history: [user('go'), assistantCalls(['a', 'b']), result('a'), user('next')],
+      history: [
+        user('go'),
+        assistantCalls(['a', 'b']),
+        result('a'),
+        user('next'),
+      ],
     );
     expect(restored.history, hasLength(5));
     expect(restored.persistedCount, 5);

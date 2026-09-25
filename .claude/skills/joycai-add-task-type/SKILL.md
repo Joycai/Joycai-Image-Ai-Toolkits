@@ -33,7 +33,7 @@ causes silent failures or tasks that get stuck in "processing" with no progress.
 - [ ] 4. Implement `_executeNewTypeTask(TaskItem task)` method
 - [ ] 5. Add l10n strings for task label / status messages (run `joycai-l10n` skill)
 - [ ] 6. Update task queue screen display label if needed
-- [ ] 7. Run `flutter analyze` — must report **"No issues found!"**
+- [ ] 7. Run `dart format lib test tool`, then `flutter analyze` — must report **"No issues found!"**
 
 ## Step 1 — TaskType Enum
 

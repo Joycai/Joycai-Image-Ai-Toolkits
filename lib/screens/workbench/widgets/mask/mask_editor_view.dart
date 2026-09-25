@@ -13,8 +13,8 @@ import '../../../../l10n/app_localizations.dart';
 import '../../../../state/app_state.dart';
 import '../../../../state/workbench_ui_state.dart';
 import '../../../../widgets/ui/app_button.dart';
-import 'drawing_canvas.dart';
 import '../canvas_overlays.dart';
+import 'drawing_canvas.dart';
 
 /// Space the picture keeps from the canvas' edges, and its corner radius
 /// (`A4A6` spec: 画布 r10，居中，四周留 10).
@@ -97,8 +97,7 @@ class _MaskEditorViewState extends State<MaskEditorView> {
   @override
   void didUpdateWidget(covariant MaskEditorView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.revision != widget.revision ||
-        oldWidget.mousePosition != widget.mousePosition) {
+    if (oldWidget.revision != widget.revision || oldWidget.mousePosition != widget.mousePosition) {
       _canvasRepaint = Listenable.merge([widget.revision, widget.mousePosition]);
     }
   }
@@ -278,7 +277,8 @@ class _MaskEditorViewState extends State<MaskEditorView> {
                                 onExit: (event) => widget.onHover(null),
                                 child: GestureDetector(
                                   onPanStart: (details) => widget.onPanStart(details.localPosition),
-                                  onPanUpdate: (details) => widget.onPanUpdate(details.localPosition),
+                                  onPanUpdate: (details) =>
+                                      widget.onPanUpdate(details.localPosition),
                                   // Its own boundary inside the export one:
                                   // strokes and the brush preview repaint
                                   // without dragging the picture underneath
@@ -298,7 +298,10 @@ class _MaskEditorViewState extends State<MaskEditorView> {
                                         return CustomPaint(
                                           painter: MaskPainter(paths: widget.paths),
                                           foregroundPainter: mouse != null
-                                              ? _BrushRingPainter(position: mouse, diameter: widget.brushSize)
+                                              ? _BrushRingPainter(
+                                                  position: mouse,
+                                                  diameter: widget.brushSize,
+                                                )
                                               : null,
                                         );
                                       },
@@ -456,7 +459,9 @@ class _BrushBadge extends StatelessWidget {
         return l10n.black;
       default:
         if (color.toARGB32() & 0x00FFFFFF == Colors.red.toARGB32() & 0x00FFFFFF) return l10n.red;
-        if (color.toARGB32() & 0x00FFFFFF == Colors.green.toARGB32() & 0x00FFFFFF) return l10n.green;
+        if (color.toARGB32() & 0x00FFFFFF == Colors.green.toARGB32() & 0x00FFFFFF) {
+          return l10n.green;
+        }
         return null;
     }
   }
@@ -472,8 +477,8 @@ class _BrushBadge extends StatelessWidget {
       label: isBinaryMode
           ? l10n.binaryModeActive
           : name == null
-              ? '${size.round()} px'
-              : l10n.maskBrushBadge(name, size.round()),
+          ? '${size.round()} px'
+          : l10n.maskBrushBadge(name, size.round()),
     );
   }
 }
@@ -503,9 +508,9 @@ class _ImageBadge extends StatelessWidget {
           // that changes under the slider should not reflow the label around
           // it every time a digit does.
           style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
-                fontWeight: FontWeight.w400,
-                color: inverted ? AppOverlay.ink : AppOverlay.onImagePlate,
-              ),
+            fontWeight: FontWeight.w400,
+            color: inverted ? AppOverlay.ink : AppOverlay.onImagePlate,
+          ),
         ),
       ),
     );
@@ -550,24 +555,22 @@ class _CanvasMessage extends StatelessWidget {
               title,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.onSurface,
-                  ),
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface,
+              ),
             ),
             if (body != null) ...[
               const SizedBox(height: 2),
               Text(
                 body,
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
               ),
             ],
             const SizedBox(height: AppSpace.s10),
-            AppButton(
-              label: actionLabel,
-              variant: AppButtonVariant.text,
-              onPressed: onAction,
-            ),
+            AppButton(label: actionLabel, variant: AppButtonVariant.text, onPressed: onAction),
           ],
         ),
       ),
@@ -585,11 +588,7 @@ class _MaskOutputCard extends StatelessWidget {
   /// A phone lays the card across the bottom of the canvas.
   final bool fullWidth;
 
-  const _MaskOutputCard({
-    required this.image,
-    required this.isBinaryMode,
-    required this.fullWidth,
-  });
+  const _MaskOutputCard({required this.image, required this.isBinaryMode, required this.fullWidth});
 
   @override
   Widget build(BuildContext context) {

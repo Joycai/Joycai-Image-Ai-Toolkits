@@ -16,14 +16,14 @@ import 'package:joycai_image_ai_toolkits/services/llm/model_capabilities.dart';
 /// the duration *and* was not told.
 void main() {
   ParamSpec slider({int? min, int? max, String defaultValue = '5'}) => ParamSpec(
-        key: 'seconds',
-        labelKey: 'videoSeconds',
-        control: ParamControl.slider,
-        defaultValue: defaultValue,
-        options: const [],
-        min: min,
-        max: max,
-      );
+    key: 'seconds',
+    labelKey: 'videoSeconds',
+    control: ParamControl.slider,
+    defaultValue: defaultValue,
+    options: const [],
+    min: min,
+    max: max,
+  );
 
   group('slider validity', () {
     test('accepts any integer inside the declared range', () {
@@ -69,9 +69,7 @@ void main() {
 
   group('the video families that ship a slider', () {
     ParamSpec secondsOf(String modelId) =>
-        ModelCapabilities.forModel(modelId)
-            .videoParams
-            .firstWhere((p) => p.key == 'seconds');
+        ModelCapabilities.forModel(modelId).videoParams.firstWhere((p) => p.key == 'seconds');
 
     test('MiniMax-H3 accepts its documented 4-15s window', () {
       final spec = secondsOf('MiniMax-H3');
@@ -102,8 +100,7 @@ void main() {
       expect(spec.normalize('16'), '6', reason: 'its default is 6, not 5');
     });
 
-    test('the families share one param store, so cross-family values degrade',
-        () {
+    test('the families share one param store, so cross-family values degrade', () {
       // The store is keyed by model *family* (app_state_workbench
       // `_familyKey`), and every one of these classifies as openaiVideo — so
       // one `seconds` value is shared across sora / grok / wan3 / H3. A 30s
@@ -133,9 +130,9 @@ void main() {
     test('size rules still widen a non-slider spec', () {
       // gpt-image-2's arbitrary WxH sizes ride this path; the slider branch
       // must not have displaced it.
-      final spec = ModelCapabilities.forModel('gpt-image-2')
-          .imageParams
-          .firstWhere((p) => p.key == 'imageSize');
+      final spec = ModelCapabilities.forModel(
+        'gpt-image-2',
+      ).imageParams.firstWhere((p) => p.key == 'imageSize');
       expect(spec.sizeRules, isNotNull);
       expect(spec.isValid('1024x1024'), isTrue);
     });

@@ -63,13 +63,11 @@ class _VideoThumbnailState extends State<VideoThumbnail> {
           Image.file(File(_thumbnailPath!), fit: widget.fit),
           Container(color: Colors.black26),
           if (widget.showPlayIcon)
-            const Center(
-              child: Icon(Icons.play_circle_outline, color: Colors.white, size: 24),
-            ),
+            const Center(child: Icon(Icons.play_circle_outline, color: Colors.white, size: 24)),
         ],
       );
     }
-    return Container(
+    return ColoredBox(
       color: Colors.white10,
       child: Center(
         child: widget.showPlayIcon

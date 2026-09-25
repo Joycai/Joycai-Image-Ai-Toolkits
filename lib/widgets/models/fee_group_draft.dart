@@ -34,13 +34,17 @@ class FeeGroupDraft extends ChangeNotifier {
     // The catch-all is the pinned bottom row; blank when the group has none
     // (unlisted specs then bill at zero, which the editor says out loud).
     final other = rates.where((r) => r.isCatchAll).firstOrNull;
-    otherPriceCtrl = TextEditingController(text: other == null ? '' : other.price.toStringAsFixed(4));
+    otherPriceCtrl = TextEditingController(
+      text: other == null ? '' : other.price.toStringAsFixed(4),
+    );
     specRows.addAll(rates.where((r) => !r.isCatchAll).map(SpecRateDraft.of));
     // Blank when zero: most groups charge nothing for inputs, and an empty
     // row is what keeps that quiet (`D2c · 22a`).
     final inputPrice = g?.inputUnitPrice ?? 0.0;
     final inputFree = g?.inputFreeUnits ?? 0;
-    inputImagePriceCtrl = TextEditingController(text: inputPrice > 0 ? inputPrice.toStringAsFixed(4) : '');
+    inputImagePriceCtrl = TextEditingController(
+      text: inputPrice > 0 ? inputPrice.toStringAsFixed(4) : '',
+    );
     inputFreeCtrl = TextEditingController(text: inputFree > 0 ? '$inputFree' : '');
 
     for (final ctrl in _controllers) {
@@ -71,17 +75,16 @@ class FeeGroupDraft extends ChangeNotifier {
   late final String _initial;
   bool _disposed = false;
 
-  List<TextEditingController> get _controllers =>
-      [
-        nameCtrl,
-        inputPriceCtrl,
-        cacheInputPriceCtrl,
-        outputPriceCtrl,
-        requestPriceCtrl,
-        otherPriceCtrl,
-        inputImagePriceCtrl,
-        inputFreeCtrl,
-      ];
+  List<TextEditingController> get _controllers => [
+    nameCtrl,
+    inputPriceCtrl,
+    cacheInputPriceCtrl,
+    outputPriceCtrl,
+    requestPriceCtrl,
+    otherPriceCtrl,
+    inputImagePriceCtrl,
+    inputFreeCtrl,
+  ];
 
   bool get isNew => group == null;
   bool get isToken => billingMode == 'token';
@@ -105,7 +108,8 @@ class FeeGroupDraft extends ChangeNotifier {
 
   /// A blank catch-all is allowed (it means zero, and the table says so);
   /// anything typed there must parse.
-  bool get otherPriceInvalid => otherPriceCtrl.text.trim().isNotEmpty && _parsePrice(otherPriceCtrl.text) == null;
+  bool get otherPriceInvalid =>
+      otherPriceCtrl.text.trim().isNotEmpty && _parsePrice(otherPriceCtrl.text) == null;
 
   /// Blank is "inputs are free"; anything typed must parse. Checked only
   /// while the row is on screen — spec or request mode — so a value parked
@@ -174,10 +178,7 @@ class FeeGroupDraft extends ChangeNotifier {
   /// makes unlisted specs bill at zero and count as unmatched.
   List<SpecRate> specRates() {
     final other = _parsePrice(otherPriceCtrl.text);
-    return [
-      for (final row in specRows) row.toRate(),
-      if (other != null) SpecRate(price: other),
-    ];
+    return [for (final row in specRows) row.toRate(), if (other != null) SpecRate(price: other)];
   }
 
   PricingGroup toGroup() {
@@ -204,18 +205,18 @@ class FeeGroupDraft extends ChangeNotifier {
   }
 
   String _snapshot() => [
-        nameCtrl.text,
-        billingMode,
-        inputPriceCtrl.text,
-        cacheInputPriceCtrl.text,
-        outputPriceCtrl.text,
-        requestPriceCtrl.text,
-        outputUnit.name,
-        otherPriceCtrl.text,
-        inputImagePriceCtrl.text,
-        inputFreeCtrl.text,
-        for (final r in specRows) '${r.size}|${r.quality}|${r.seconds}|${r.priceCtrl.text}',
-      ].join('\x00');
+    nameCtrl.text,
+    billingMode,
+    inputPriceCtrl.text,
+    cacheInputPriceCtrl.text,
+    outputPriceCtrl.text,
+    requestPriceCtrl.text,
+    outputUnit.name,
+    otherPriceCtrl.text,
+    inputImagePriceCtrl.text,
+    inputFreeCtrl.text,
+    for (final r in specRows) '${r.size}|${r.quality}|${r.seconds}|${r.priceCtrl.text}',
+  ].join('\x00');
 
   /// Writes the draft: the new group's id, or the edited group's.
   ///

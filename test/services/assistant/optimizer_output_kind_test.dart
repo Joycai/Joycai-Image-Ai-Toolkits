@@ -13,7 +13,8 @@ import '../../support/private_data_dir.dart';
 /// rather than rebuilt from the agent's constants: the promise of this round
 /// is that no existing preset behaves differently, and only a copy can hold
 /// the agent to it. Rewording the frame on purpose means rewording this.
-const _promptFrame = 'PRESET\n\n'
+const _promptFrame =
+    'PRESET\n\n'
     '---\n'
     'You are working inside an interactive prompt-optimization chat. The '
     'user gives you a rough idea or an existing prompt and you produce a '
@@ -79,7 +80,11 @@ void main() {
     session.addUserTurn('look at reference image 1');
     if (kind == null) {
       await PromptOptimizerAgent.runTurn(
-          session: session, modelIdentifier: 'm', systemPrompt: 'PRESET', referenceImages: refs);
+        session: session,
+        modelIdentifier: 'm',
+        systemPrompt: 'PRESET',
+        referenceImages: refs,
+      );
     } else {
       await PromptOptimizerAgent.runTurn(
         session: session,
@@ -145,7 +150,10 @@ void main() {
         for (final m in session.history) LLMMessage.fromJson(m.toJson()).withModelDbId(7),
       ];
       final restored = PromptOptimizerSession.fromStored(
-          id: session.id, mode: AssistantMode.systemPrompt, history: stored);
+        id: session.id,
+        mode: AssistantMode.systemPrompt,
+        history: stored,
+      );
       expect(restored.transcript.last.text, '## Overview\nA jacket.');
       expect(restored.transcript.last.deliverable, isTrue);
     });
@@ -156,9 +164,10 @@ void main() {
       PromptOptimizerAgent.debugRequestOverride = (messages, tools, options) async {
         calls++;
         if (calls == 1) {
-          return LLMResponse(text: 'Let me look.', toolCalls: [
-            LLMToolCall(id: 'c1', name: 'list_reference_images', arguments: const {}),
-          ]);
+          return LLMResponse(
+            text: 'Let me look.',
+            toolCalls: [LLMToolCall(id: 'c1', name: 'list_reference_images', arguments: const {})],
+          );
         }
         return LLMResponse(text: 'The answer.');
       };
@@ -183,7 +192,10 @@ void main() {
       PromptOptimizerAgent.debugRequestOverride = (messages, tools, options) async {
         seen.add(options[emptyReplyEndsTurnKey] == true);
         if (seen.length == 1) {
-          return LLMResponse(text: '', toolCalls: [LLMToolCall(id: 'c1', name: tool, arguments: args)]);
+          return LLMResponse(
+            text: '',
+            toolCalls: [LLMToolCall(id: 'c1', name: tool, arguments: args)],
+          );
         }
         return LLMResponse(text: 'The answer.');
       };
@@ -221,7 +233,11 @@ void main() {
 
   test('a channel merge re-linking an entry keeps it the deliverable', () {
     final entry = OptimizerChatEntry(
-        kind: OptimizerEntryKind.assistant, text: 'a', deliverable: true, modelDbId: 1);
+      kind: OptimizerEntryKind.assistant,
+      text: 'a',
+      deliverable: true,
+      modelDbId: 1,
+    );
     expect(entry.copyWith(modelDbId: 2).deliverable, isTrue);
   });
 
@@ -231,9 +247,12 @@ void main() {
     PromptOptimizerAgent.debugRequestOverride = (messages, tools, options) async {
       calls++;
       if (calls == 1) {
-        return LLMResponse(text: '', toolCalls: [
-          LLMToolCall(id: 'c1', name: 'submit_prompt', arguments: const {'prompt': 'p'}),
-        ]);
+        return LLMResponse(
+          text: '',
+          toolCalls: [
+            LLMToolCall(id: 'c1', name: 'submit_prompt', arguments: const {'prompt': 'p'}),
+          ],
+        );
       }
       return LLMResponse(text: 'There you go.');
     };
@@ -247,13 +266,16 @@ void main() {
     final withView = [
       ...session.history.take(session.history.length - 1),
       LLMMessage(
-          role: LLMRole.user,
-          content: '${PromptOptimizerAgent.viewResultMarker} Reference image #1 (a.png) is attached.'),
+        role: LLMRole.user,
+        content: '${PromptOptimizerAgent.viewResultMarker} Reference image #1 (a.png) is attached.',
+      ),
     ];
     expect(PromptOptimizerAgent.lastBatchSubmittedPromptForTest(withView), isTrue);
     expect(
-      PromptOptimizerAgent.lastBatchSubmittedPromptForTest(
-          [...withView, LLMMessage(role: LLMRole.user, content: 'thanks')]),
+      PromptOptimizerAgent.lastBatchSubmittedPromptForTest([
+        ...withView,
+        LLMMessage(role: LLMRole.user, content: 'thanks'),
+      ]),
       isFalse,
     );
   });
@@ -264,9 +286,12 @@ void main() {
     PromptOptimizerAgent.debugRequestOverride = (messages, tools, options) async {
       calls++;
       if (calls == 1) {
-        return LLMResponse(text: '', toolCalls: [
-          LLMToolCall(id: 'c1', name: 'submit_prompt', arguments: const {'prompt': 'p'}),
-        ]);
+        return LLMResponse(
+          text: '',
+          toolCalls: [
+            LLMToolCall(id: 'c1', name: 'submit_prompt', arguments: const {'prompt': 'p'}),
+          ],
+        );
       }
       return LLMResponse(text: 'There you go.');
     };

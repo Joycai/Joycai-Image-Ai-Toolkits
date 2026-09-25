@@ -4,19 +4,22 @@ import 'package:joycai_image_ai_toolkits/widgets/ui/app_disclosure_chevron.dart'
 
 /// Both trees' chevrons turn rather than swap glyphs (`plans/README.md`).
 void main() {
-  Future<void> pump(WidgetTester tester, bool open, {bool reduce = false}) =>
-      tester.pumpWidget(MaterialApp(
-        home: MediaQuery(
-          data: MediaQueryData(disableAnimations: reduce),
-          child: Center(child: AppDisclosureChevron(open: open, size: 14)),
-        ),
-      ));
+  Future<void> pump(WidgetTester tester, bool open, {bool reduce = false}) => tester.pumpWidget(
+    MaterialApp(
+      home: MediaQuery(
+        data: MediaQueryData(disableAnimations: reduce),
+        child: Center(child: AppDisclosureChevron(open: open, size: 14)),
+      ),
+    ),
+  );
 
   double turns(WidgetTester tester) => tester
-      .widget<RotationTransition>(find.descendant(
-        of: find.byType(AnimatedRotation),
-        matching: find.byType(RotationTransition),
-      ))
+      .widget<RotationTransition>(
+        find.descendant(
+          of: find.byType(AnimatedRotation),
+          matching: find.byType(RotationTransition),
+        ),
+      )
       .turns
       .value;
 

@@ -61,7 +61,11 @@ void main() {
 
   testWidgets('headings step down to the body, from whatever size the body is', (tester) async {
     for (final double body in [12, 14]) {
-      await pump(tester, '# one\n\n## two\n\n### three\n\n#### four\n\nbody', style: TextStyle(fontSize: body));
+      await pump(
+        tester,
+        '# one\n\n## two\n\n### three\n\n#### four\n\nbody',
+        style: TextStyle(fontSize: body),
+      );
       expect(sizeOf(tester, 'one'), greaterThan(sizeOf(tester, 'two')));
       expect(sizeOf(tester, 'two'), greaterThan(sizeOf(tester, 'three')));
       expect(sizeOf(tester, 'three'), greaterThan(sizeOf(tester, 'body')));
@@ -93,7 +97,8 @@ void main() {
   testWidgets('a list is one group: its items sit closer than paragraphs do', (tester) async {
     await pump(tester, 'para one\n\npara two\n\n- item one\n- item two');
     double gap(String a, String b) =>
-        tester.getRect(find.text(b, findRichText: true)).top - tester.getRect(find.text(a, findRichText: true)).bottom;
+        tester.getRect(find.text(b, findRichText: true)).top -
+        tester.getRect(find.text(a, findRichText: true)).bottom;
 
     expect(gap('item one', 'item two'), AppMarkdownMetrics.prose.itemGap);
     expect(gap('para one', 'para two'), AppMarkdownMetrics.prose.blockGap);
@@ -111,11 +116,15 @@ void main() {
     expect(b - a, AppMarkdownMetrics.listIndent);
   });
 
-  testWidgets('an ordered list keeps one text column from 9 to 10, and honours its start', (tester) async {
+  testWidgets('an ordered list keeps one text column from 9 to 10, and honours its start', (
+    tester,
+  ) async {
     await pump(tester, [for (int i = 0; i < 4; i++) '${i + 8}. item$i'].join('\n'));
     expect(find.text('8.'), findsOneWidget);
     expect(find.text('11.'), findsOneWidget);
-    final lefts = {for (int i = 0; i < 4; i++) tester.getRect(find.text('item$i', findRichText: true)).left};
+    final lefts = {
+      for (int i = 0; i < 4; i++) tester.getRect(find.text('item$i', findRichText: true)).left,
+    };
     expect(lefts, hasLength(1));
   });
 
@@ -149,7 +158,10 @@ void main() {
     await pump(tester, '# one\n\n## two');
     expect(find.byKey(h2Bar), findsOneWidget);
     final scheme = Theme.of(tester.element(find.byType(AppMarkdown))).colorScheme;
-    expect((tester.widget<Container>(find.byKey(h2Bar)).decoration! as BoxDecoration).color, scheme.primary);
+    expect(
+      (tester.widget<Container>(find.byKey(h2Bar)).decoration! as BoxDecoration).color,
+      scheme.primary,
+    );
 
     await pump(tester, '# one\n\n## two', density: AppMarkdownDensity.compact);
     expect(find.byKey(h2Bar), findsNothing);
@@ -197,13 +209,21 @@ void main() {
 
   testWidgets('a code block keeps its lines, names its language and copies whole', (tester) async {
     String? copied;
-    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (
+      call,
+    ) async {
       if (call.method == 'Clipboard.setData') copied = (call.arguments as Map)['text'] as String;
       return null;
     });
-    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
 
-    const code = '{\n  "lens": "35mm f/1.8, a line long enough that it would wrap if it were allowed to wrap at all"\n}';
+    const code =
+        '{\n  "lens": "35mm f/1.8, a line long enough that it would wrap if it were allowed to wrap at all"\n}';
     await pump(tester, '```json\n$code\n```', width: 300);
     expect(tester.takeException(), isNull);
     expect(find.text('json'), findsOneWidget);
@@ -226,7 +246,10 @@ void main() {
     const table = '| param | value |\n|---|:-:|\n| lens | **35mm** |\n| stop | f/1.8 |';
     await pump(tester, table, width: 500);
     expect(tester.takeException(), isNull);
-    expect(tester.getSize(find.byType(Table)).width, closeTo(498, 0.01)); // the measure, less the frame
+    expect(
+      tester.getSize(find.byType(Table)).width,
+      closeTo(498, 0.01),
+    ); // the measure, less the frame
     expect(sizeOf(tester, 'param'), lessThan(sizeOf(tester, 'lens')));
 
     await pump(tester, '| a | b |\n|---|---|\n| ${'wide ' * 40} | x |', width: 200);
@@ -237,17 +260,21 @@ void main() {
   testWidgets('every element can be asked its intrinsic height', (tester) async {
     // The workbench's config panel wraps the editor — and so its preview — in
     // an IntrinsicHeight. One LayoutBuilder anywhere in here would throw.
-    const everything = '# h\n\n## h\n\ntext\n\n- a\n  - b\n\n1. one\n\n- [x] t\n\n> q\n\n'
+    const everything =
+        '# h\n\n## h\n\ntext\n\n- a\n  - b\n\n1. one\n\n- [x] t\n\n> q\n\n'
         '| a | b |\n|---|---|\n| c | d |\n\n```json\n{}\n```\n\n---\n\n![alt](https://example.com/x.png)';
     await tester.pumpWidget(
-      MaterialApp(
+      const MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: const Scaffold(
+        home: Scaffold(
           body: SingleChildScrollView(
             // Width first: intrinsic height is asked *at* a width, and has to be the
             // one the text is then laid out at.
-            child: SizedBox(width: 320, child: IntrinsicHeight(child: AppMarkdown(data: everything))),
+            child: SizedBox(
+              width: 320,
+              child: IntrinsicHeight(child: AppMarkdown(data: everything)),
+            ),
           ),
         ),
       ),
@@ -260,31 +287,40 @@ void main() {
     await pump(tester, '> first\n>\n> second');
     final scheme = Theme.of(tester.element(find.byType(AppMarkdown))).colorScheme;
     expect(spans(tester).firstWhere((s) => s.$1 == 'first').$2.color, scheme.onSurfaceVariant);
-    final gap = tester.getRect(find.text('second', findRichText: true)).top -
+    final gap =
+        tester.getRect(find.text('second', findRichText: true)).top -
         tester.getRect(find.text('first', findRichText: true)).bottom;
     expect(gap, AppMarkdownMetrics.prose.blockGap);
   });
 
-  testWidgets('the ambient text scale reaches every kind of text, and the marks beside it', (tester) async {
+  testWidgets('the ambient text scale reaches every kind of text, and the marks beside it', (
+    tester,
+  ) async {
     Future<void> at(double scale) => tester.pumpWidget(
-          MaterialApp(
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
-            supportedLocales: AppLocalizations.supportedLocales,
-            home: MediaQuery(
-              data: MediaQueryData(textScaler: TextScaler.linear(scale)),
-              child: const Scaffold(
-                body: SingleChildScrollView(
-                  child: SizedBox(width: 600, child: AppMarkdown(data: '## heading\n\nparagraph\n\n- item')),
-                ),
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: MediaQuery(
+          data: MediaQueryData(textScaler: TextScaler.linear(scale)),
+          child: const Scaffold(
+            body: SingleChildScrollView(
+              child: SizedBox(
+                width: 600,
+                child: AppMarkdown(data: '## heading\n\nparagraph\n\n- item'),
               ),
             ),
           ),
-        );
+        ),
+      ),
+    );
 
     double h(String text) => tester.getSize(find.text(text, findRichText: true)).height;
 
     await at(1);
-    final heading = h('heading'), paragraph = h('paragraph'), item = h('item'), bullet = h('•');
+    final heading = h('heading');
+    final paragraph = h('paragraph');
+    final item = h('item');
+    final bullet = h('•');
     final bar = tester.getSize(find.byKey(h2Bar)).height;
 
     await at(2);

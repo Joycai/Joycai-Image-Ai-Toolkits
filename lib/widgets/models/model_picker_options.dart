@@ -16,11 +16,11 @@ import '../ui/searchable_picker.dart';
 
 /// A channel, badged with its tag.
 PickerOption<int> channelPickerOption(LLMChannel c) => PickerOption<int>(
-      value: c.id!,
-      label: c.displayName,
-      badge: c.tag,
-      badgeColor: c.tag == null ? null : Color(c.tagColor ?? AppConstants.defaultTagColor),
-    );
+  value: c.id!,
+  label: c.displayName,
+  badge: c.tag,
+  badgeColor: c.tag == null ? null : Color(c.tagColor ?? AppConstants.defaultTagColor),
+);
 
 /// A model, with its id as the second line and its channel's tag as a badge.
 ///
@@ -30,10 +30,11 @@ PickerOption<int> channelPickerOption(LLMChannel c) => PickerOption<int>(
 /// workbench panels already filter to one channel, and repeating its tag on
 /// every row there would say nothing.
 PickerOption<int> modelPickerOption(LLMModel m, {LLMChannel? channel}) => PickerOption<int>(
-      value: m.id!,
-      label: m.modelName,
-      secondary: m.modelId == m.modelName ? null : m.modelId,
-      badge: channel?.tag,
-      badgeColor:
-          channel?.tag == null ? null : Color(channel!.tagColor ?? AppConstants.defaultTagColor),
-    );
+  value: m.id!,
+  label: m.modelName,
+  secondary: m.modelId == m.modelName ? null : m.modelId,
+  badge: channel?.tag,
+  badgeColor: channel?.tag == null
+      ? null
+      : Color(channel!.tagColor ?? AppConstants.defaultTagColor),
+);

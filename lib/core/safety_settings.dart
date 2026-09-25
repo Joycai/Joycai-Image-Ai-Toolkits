@@ -32,8 +32,7 @@ class SafetySettings {
   /// Key used both for the DB setting and for the task-parameter map.
   static const String paramKey = 'safetySettings';
 
-  static Map<String, String> defaults() =>
-      {for (final c in categories) c: defaultThreshold};
+  static Map<String, String> defaults() => {for (final c in categories) c: defaultThreshold};
 
   /// Validates a raw (possibly persisted/JSON-decoded) map into a complete
   /// category→threshold map, dropping unknown keys and bad values.
@@ -54,8 +53,7 @@ class SafetySettings {
   static List<Map<String, String>> toApiList(dynamic raw) {
     final map = normalize(raw is Map ? raw : null);
     return [
-      for (final entry in map.entries)
-        {'category': entry.key, 'threshold': entry.value}
+      for (final entry in map.entries) {'category': entry.key, 'threshold': entry.value},
     ];
   }
 

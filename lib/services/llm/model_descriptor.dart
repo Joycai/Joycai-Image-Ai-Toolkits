@@ -62,22 +62,20 @@ class ModelDescriptor {
   /// parameter table.
   factory ModelDescriptor.of(String modelId, {WireProtocol? servedBy}) {
     final byId = _cache.putIfAbsent(
+      modelId,
+      () => ModelDescriptor._(
         modelId,
-        () => ModelDescriptor._(
-              modelId,
-              ModelFamilyClassifier.classify(modelId),
-              ModelCapabilities.forModel(modelId),
-            ));
+        ModelFamilyClassifier.classify(modelId),
+        ModelCapabilities.forModel(modelId),
+      ),
+    );
     if (servedBy == null) return byId;
     final served = _familyServedBy(byId.family, servedBy);
     if (served == null) return byId;
-    return _servedCache.putIfAbsent(
-        (modelId, servedBy),
-        () => ModelDescriptor._(
-              modelId,
-              served,
-              ModelCapabilities.forProtocol(servedBy),
-            ));
+    return _servedCache.putIfAbsent((
+      modelId,
+      servedBy,
+    ), () => ModelDescriptor._(modelId, served, ModelCapabilities.forProtocol(servedBy)));
   }
 
   /// The family [protocol] makes of a model whose id classified as [id], or
@@ -90,41 +88,37 @@ class ModelDescriptor {
     switch (protocol) {
       case WireProtocol.openaiImages:
         // xAI's image ids already fall back to this surface on relays.
-        return unlessServes(
-            const [ModelFamily.openaiImage, ModelFamily.xaiImage],
-            ModelFamily.openaiImage);
+        return unlessServes(const [
+          ModelFamily.openaiImage,
+          ModelFamily.xaiImage,
+        ], ModelFamily.openaiImage);
       case WireProtocol.xaiImages:
         return unlessServes(const [ModelFamily.xaiImage], ModelFamily.xaiImage);
       case WireProtocol.geminiImagen:
-        return unlessServes(
-            const [ModelFamily.geminiImagen], ModelFamily.geminiImagen);
+        return unlessServes(const [ModelFamily.geminiImagen], ModelFamily.geminiImagen);
       case WireProtocol.dashscopeImagesSync:
       case WireProtocol.dashscopeImagesAsync:
-        return unlessServes(
-            const [ModelFamily.dashscopeImage], ModelFamily.dashscopeImage);
+        return unlessServes(const [ModelFamily.dashscopeImage], ModelFamily.dashscopeImage);
       case WireProtocol.minimaxImages:
-        return unlessServes(
-            const [ModelFamily.minimaxImage], ModelFamily.minimaxImage);
+        return unlessServes(const [ModelFamily.minimaxImage], ModelFamily.minimaxImage);
       case WireProtocol.arkImages:
-        return unlessServes(
-            const [ModelFamily.seedreamImage], ModelFamily.seedreamImage);
+        return unlessServes(const [ModelFamily.seedreamImage], ModelFamily.seedreamImage);
       case WireProtocol.openaiVideos:
       case WireProtocol.xaiVideos:
       case WireProtocol.dashscopeVideo:
       case WireProtocol.minimaxVideo:
       case WireProtocol.minimaxH3BaseVideo:
-        return unlessServes(
-            const [ModelFamily.openaiVideo], ModelFamily.openaiVideo);
+        return unlessServes(const [ModelFamily.openaiVideo], ModelFamily.openaiVideo);
       case WireProtocol.geminiVeo:
-        return unlessServes(
-            const [ModelFamily.geminiVideo], ModelFamily.geminiVideo);
+        return unlessServes(const [ModelFamily.geminiVideo], ModelFamily.geminiVideo);
       case WireProtocol.chatImage:
         // The image families that already draw through chat keep their
         // tables; anything else becomes an image generator with no
         // parameters of its own.
-        return unlessServes(
-            const [ModelFamily.geminiImage, ModelFamily.midjourney],
-            _chatSibling(id));
+        return unlessServes(const [
+          ModelFamily.geminiImage,
+          ModelFamily.midjourney,
+        ], _chatSibling(id));
       case WireProtocol.openaiChat:
       case WireProtocol.openaiResponses:
       case WireProtocol.anthropicChat:
@@ -187,8 +181,7 @@ class ModelDescriptor {
   /// Read by the native chat protocol to pick between the two paths. A fact
   /// about the model, not about the vendor — which is why it is answered
   /// here rather than by a branch inside the protocol.
-  bool get needsMultimodalChatSurface =>
-      ModelFamilyClassifier.isDashScopeMultimodalChat(modelId);
+  bool get needsMultimodalChatSurface => ModelFamilyClassifier.isDashScopeMultimodalChat(modelId);
 
   /// Whether this is a Claude of the generation (4.5 and earlier) that knows
   /// only the manual thinking form and rejects the adaptive one.
@@ -197,8 +190,7 @@ class ModelDescriptor {
   /// `ThinkingDialect`: both generations live on one host under one key, so
   /// the vendor can only say what the *current* spelling is, and this is the
   /// per-model exception. False for anything not recognizably a Claude id.
-  bool get usesLegacyAnthropicThinking =>
-      ModelFamilyClassifier.isLegacyClaudeThinking(modelId);
+  bool get usesLegacyAnthropicThinking => ModelFamilyClassifier.isLegacyClaudeThinking(modelId);
 
   /// Which `thinkingConfig` field generation ③ may send for this model.
   ///
@@ -211,8 +203,8 @@ class ModelDescriptor {
   /// [ModelFamilyClassifier.geminiThinkingGeneration].
   GeminiThinkingGeneration get geminiThinking =>
       capabilities.isImageGenerator || capabilities.isVideoGenerator
-          ? GeminiThinkingGeneration.none
-          : ModelFamilyClassifier.geminiThinkingGeneration(modelId);
+      ? GeminiThinkingGeneration.none
+      : ModelFamilyClassifier.geminiThinkingGeneration(modelId);
 
   /// True for the `mock-*` ids the simulated long-running-operation path
   /// accepts. Here rather than in the dispatcher because model-id sniffing is

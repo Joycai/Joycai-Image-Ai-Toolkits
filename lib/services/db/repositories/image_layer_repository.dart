@@ -24,36 +24,29 @@ class ImageLayerRepository {
   /// layer badge. A new map on every change — never mutated — so a listener
   /// can compare by identity. Filled by [loadPaths] when the database opens;
   /// the table holds a few rows per decomposition, so all of it fits.
-  static final ValueNotifier<Map<String, int>> layeredPaths =
-      ValueNotifier(const <String, int>{});
+  static final ValueNotifier<Map<String, int>> layeredPaths = ValueNotifier(const <String, int>{});
 
   /// Fills [layeredPaths] from the table.
   Future<void> loadPaths() async {
     final db = await _db;
     final rows = await db.query('image_layers', columns: ['path', 'z_index']);
-    layeredPaths.value = {
-      for (final r in rows) r['path'] as String: r['z_index'] as int,
-    };
+    layeredPaths.value = {for (final r in rows) r['path'] as String: r['z_index'] as int};
   }
 
   Future<void> save(ImageLayer layer, {DateTime? now}) async {
     final db = await _db;
-    await db.insert(
-      'image_layers',
-      {
-        'path': layer.path,
-        'set_id': layer.setId,
-        'z_index': layer.zIndex,
-        'name': layer.name,
-        'description': layer.description,
-        'box_left': layer.box?.left,
-        'box_top': layer.box?.top,
-        'box_right': layer.box?.right,
-        'box_bottom': layer.box?.bottom,
-        'created_at': (now ?? DateTime.now()).toIso8601String(),
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    await db.insert('image_layers', {
+      'path': layer.path,
+      'set_id': layer.setId,
+      'z_index': layer.zIndex,
+      'name': layer.name,
+      'description': layer.description,
+      'box_left': layer.box?.left,
+      'box_top': layer.box?.top,
+      'box_right': layer.box?.right,
+      'box_bottom': layer.box?.bottom,
+      'created_at': (now ?? DateTime.now()).toIso8601String(),
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
     layeredPaths.value = {...layeredPaths.value, layer.path: layer.zIndex};
   }
 
@@ -62,12 +55,16 @@ class ImageLayerRepository {
   /// (no layer above the base survives).
   Future<ImageLayerSet?> setFor(String path) async {
     final db = await _db;
-    final own = await db.query('image_layers',
-        columns: ['set_id'], where: 'path = ?', whereArgs: [path], limit: 1);
+    final own = await db.query(
+      'image_layers',
+      columns: ['set_id'],
+      where: 'path = ?',
+      whereArgs: [path],
+      limit: 1,
+    );
     if (own.isEmpty) return null;
     final setId = own.single['set_id'] as String;
-    final rows = await db.query('image_layers',
-        where: 'set_id = ?', whereArgs: [setId]);
+    final rows = await db.query('image_layers', where: 'set_id = ?', whereArgs: [setId]);
     final layers = [
       for (final r in rows)
         if (File(r['path'] as String).existsSync()) _fromRow(r),
@@ -92,8 +89,7 @@ class ImageLayerRepository {
     final prefix = from.endsWith(p.separator) ? from : '$from${p.separator}';
     final known = layeredPaths.value;
     final overwrote = known.containsKey(to);
-    final carries =
-        known.keys.any((path) => path == from || path.startsWith(prefix));
+    final carries = known.keys.any((path) => path == from || path.startsWith(prefix));
     if (!overwrote && !carries) return;
     try {
       if (overwrote) await _forget(to);
@@ -138,17 +134,17 @@ class ImageLayerRepository {
   }
 
   static ImageLayer _fromRow(Map<String, Object?> r) {
-    final l = r['box_left'], t = r['box_top'];
-    final rt = r['box_right'], b = r['box_bottom'];
+    final l = r['box_left'];
+    final t = r['box_top'];
+    final rt = r['box_right'];
+    final b = r['box_bottom'];
     return ImageLayer(
       path: r['path'] as String,
       setId: r['set_id'] as String,
       zIndex: r['z_index'] as int,
       name: r['name'] as String?,
       description: r['description'] as String?,
-      box: l is int && t is int && rt is int && b is int
-          ? LayerBox(l, t, rt, b)
-          : null,
+      box: l is int && t is int && rt is int && b is int ? LayerBox(l, t, rt, b) : null,
     );
   }
 }

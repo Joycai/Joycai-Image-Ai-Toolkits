@@ -33,11 +33,11 @@ void main() {
   final held = <HttpRequest>[];
 
   LLMModelConfig configFor(String modelId) => LLMModelConfig(
-        modelId: modelId,
-        channelType: Vendors.openAIRest,
-        endpoint: 'http://127.0.0.1:${server.port}/v1',
-        apiKey: 'k',
-      );
+    modelId: modelId,
+    channelType: Vendors.openAIRest,
+    endpoint: 'http://127.0.0.1:${server.port}/v1',
+    apiKey: 'k',
+  );
 
   setUp(() async {
     binding.defaultBinaryMessenger.setMockMethodCallHandler(
@@ -63,12 +63,10 @@ void main() {
     LLMClientPool.disposeAll();
   });
 
-  test('a stream that finished is billed even when cancel lands at its end',
-      () async {
+  test('a stream that finished is billed even when cancel lands at its end', () async {
     server.listen((request) async {
       await request.drain<void>();
-      request.response.headers.contentType =
-          ContentType('text', 'event-stream');
+      request.response.headers.contentType = ContentType('text', 'event-stream');
       for (final line in [
         'data: {"choices":[{"delta":{"content":"done"},"finish_reason":"stop"}]}',
         'data: {"choices":[],"usage":{"prompt_tokens":3,"completion_tokens":2}}',
@@ -92,44 +90,49 @@ void main() {
     }();
 
     await expectLater(consumed, throwsA(isA<LLMCancelled>()));
-    expect(rows, hasLength(1),
-        reason: 'the finished stream was billed and must be recorded');
+    expect(rows, hasLength(1), reason: 'the finished stream was billed and must be recorded');
     expect(rows.single.inputTokens, 3);
   });
 
-  test('a consumer that leaves after the first picture is billed for the references too',
-      () async {
+  test('a consumer that leaves after the first picture is billed for the references too', () async {
     // `D2c`: the closing chunk holds the full metadata and may never come,
     // so each picture carries the count of references it was made from.
     final png = base64Decode(
-        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==');
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+    );
     server.listen((request) async {
       await request.drain<void>();
       request.response.headers.contentType = ContentType.json;
-      request.response.write(jsonEncode({
-        'data': [
-          {'b64_json': base64Encode(png)},
-        ],
-      }));
+      request.response.write(
+        jsonEncode({
+          'data': [
+            {'b64_json': base64Encode(png)},
+          ],
+        }),
+      );
       await request.response.close();
     });
     LLMService.configResolverOverride = (_) => LLMModelConfig(
-          modelId: 'grok-imagine-image',
-          channelType: Vendors.xaiApi,
-          endpoint: 'http://127.0.0.1:${server.port}/v1',
-          apiKey: 'k',
-          billingMode: 'spec',
-          outputRates: const [SpecRate(price: 0.04)],
-          inputUnitFee: 0.01,
-        );
+      modelId: 'grok-imagine-image',
+      channelType: Vendors.xaiApi,
+      endpoint: 'http://127.0.0.1:${server.port}/v1',
+      apiKey: 'k',
+      billingMode: 'spec',
+      outputRates: const [SpecRate(price: 0.04)],
+      inputUnitFee: 0.01,
+    );
 
     await for (final chunk in LLMService().requestStream(
       modelIdentifier: 'grok-imagine-image',
       messages: [
-        LLMMessage(role: LLMRole.user, content: 'merge', attachments: [
-          LLMAttachment.fromBytes(png, 'image/png'),
-          LLMAttachment.fromBytes(png, 'image/png'),
-        ]),
+        LLMMessage(
+          role: LLMRole.user,
+          content: 'merge',
+          attachments: [
+            LLMAttachment.fromBytes(png, 'image/png'),
+            LLMAttachment.fromBytes(png, 'image/png'),
+          ],
+        ),
       ],
     )) {
       if (chunk.imagePart != null) break; // Saved the picture; stopped listening.
@@ -145,8 +148,7 @@ void main() {
     expect(rows.single.cost, closeTo(0.04 + 0.02, 1e-9));
   });
 
-  test('a cancel after the submit body is sent keeps the job ticket',
-      () async {
+  test('a cancel after the submit body is sent keeps the job ticket', () async {
     var cancelled = false;
     server.listen((request) async {
       await request.drain<void>();
@@ -165,8 +167,11 @@ void main() {
       options: {llmCancellationProbeKey: () => cancelled},
     );
 
-    expect(ticket.name, 'video_1',
-        reason: 'the id is what the executor cancels the upstream job by');
+    expect(
+      ticket.name,
+      'video_1',
+      reason: 'the id is what the executor cancels the upstream job by',
+    );
     expect(rows, hasLength(1), reason: 'the accepted submit is billed');
   });
 
@@ -186,16 +191,18 @@ void main() {
     final submit = LLMService().startLongRunning(
       modelIdentifier: 'sora-2',
       messages: [
-        LLMMessage(role: LLMRole.user, content: 'a cat', attachments: [
-          LLMAttachment.fromBytes(frame, 'image/png',
-              referenceType: LLMReferenceType.firstFrame),
-        ]),
+        LLMMessage(
+          role: LLMRole.user,
+          content: 'a cat',
+          attachments: [
+            LLMAttachment.fromBytes(frame, 'image/png', referenceType: LLMReferenceType.firstFrame),
+          ],
+        ),
       ],
       options: {llmCancellationProbeKey: () => cancelled},
     );
 
-    await expectLater(submit.timeout(const Duration(seconds: 10)),
-        throwsA(isA<LLMCancelled>()));
+    await expectLater(submit.timeout(const Duration(seconds: 10)), throwsA(isA<LLMCancelled>()));
     expect(rows, isEmpty, reason: 'no job was created, nothing is billed');
   });
 }

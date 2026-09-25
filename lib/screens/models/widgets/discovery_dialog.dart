@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 
-import '../../core/app_theme.dart';
-import '../../core/design_tokens.dart';
-import '../../core/responsive.dart';
-import '../../l10n/app_localizations.dart';
-import '../../models/llm_channel.dart';
-import '../../models/llm_model.dart';
-import '../../services/llm/llm_types.dart';
-import '../../services/llm/model_discovery_service.dart';
-import '../../services/llm/model_family.dart';
-import '../../services/catalogue/model_id_uniqueness.dart';
-import '../../state/app_state.dart';
-import '../ui/model_tag_chip.dart';
-import '../ui/app_button.dart';
-import '../ui/app_search_field.dart';
-import '../ui/app_dialog.dart';
+import '../../../core/app_theme.dart';
+import '../../../core/design_tokens.dart';
+import '../../../core/responsive.dart';
+import '../../../l10n/app_localizations.dart';
+import '../../../models/llm_channel.dart';
+import '../../../models/llm_model.dart';
+import '../../../services/catalogue/model_id_uniqueness.dart';
+import '../../../services/llm/llm_types.dart';
+import '../../../services/llm/model_discovery_service.dart';
+import '../../../services/llm/model_family.dart';
+import '../../../state/app_state.dart';
+import '../../../widgets/ui/app_button.dart';
+import '../../../widgets/ui/app_dialog.dart';
+import '../../../widgets/ui/app_search_field.dart';
+import '../../../widgets/ui/model_tag_chip.dart';
 
 /// Fetches a channel's model list and adds the ones picked (`D1a · 1c`).
 ///
@@ -70,7 +70,11 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
         _filtered = List.from(_discovered);
       } else {
         _filtered = _discovered
-            .where((m) => m.displayName.toLowerCase().contains(query) || m.modelId.toLowerCase().contains(query))
+            .where(
+              (m) =>
+                  m.displayName.toLowerCase().contains(query) ||
+                  m.modelId.toLowerCase().contains(query),
+            )
             .toList();
       }
     });
@@ -105,7 +109,11 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
   }
 
   bool _isModelAdded(DiscoveredModel m) {
-    return isModelIdTaken(widget.appState.allModels, channelId: widget.channel.id, modelId: m.modelId);
+    return isModelIdTaken(
+      widget.appState.allModels,
+      channelId: widget.channel.id,
+      modelId: m.modelId,
+    );
   }
 
   List<DiscoveredModel> get _available => _filtered.where((m) => !_isModelAdded(m)).toList();
@@ -115,8 +123,8 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
   void _deselectAll() => setState(_selectedIds.clear);
 
   void _toggle(DiscoveredModel m) => setState(() {
-        if (!_selectedIds.remove(m.modelId)) _selectedIds.add(m.modelId);
-      });
+    if (!_selectedIds.remove(m.modelId)) _selectedIds.add(m.modelId);
+  });
 
   bool get _ready => !_isLoading && _error == null && _discovered.isNotEmpty;
 
@@ -130,7 +138,10 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
         backgroundColor: scheme.surface,
         appBar: AppBar(
           title: Text(l10n.fetchModels),
-          leading: IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+          leading: IconButton(
+            icon: const Icon(Icons.close),
+            onPressed: () => Navigator.pop(context),
+          ),
           bottom: PreferredSize(
             preferredSize: const Size.fromHeight(52),
             child: Padding(
@@ -163,7 +174,12 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
       // an error and a list, and without one the dialog would resize under
       // the pointer each time discovery moves on.
       maxHeight: media.height.clamp(280.0, 640.0),
-      contentPadding: const EdgeInsets.fromLTRB(AppSpace.s22, AppSpace.s10, AppSpace.s22, AppSpace.s16),
+      contentPadding: const EdgeInsets.fromLTRB(
+        AppSpace.s22,
+        AppSpace.s10,
+        AppSpace.s22,
+        AppSpace.s16,
+      ),
       content: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -183,7 +199,11 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
     );
   }
 
-  Widget _buildAddButton(AppLocalizations l10n, {AppButtonSize size = AppButtonSize.normal, bool fullWidth = false}) {
+  Widget _buildAddButton(
+    AppLocalizations l10n, {
+    AppButtonSize size = AppButtonSize.normal,
+    bool fullWidth = false,
+  }) {
     return AppButton(
       label: l10n.addSelected(_selectedIds.length),
       icon: Icons.add,
@@ -220,7 +240,12 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(l10n.selectModelsToAdd, maxLines: 1, overflow: TextOverflow.ellipsis, style: textTheme.titleLarge),
+              Text(
+                l10n.selectModelsToAdd,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: textTheme.titleLarge,
+              ),
               const SizedBox(height: 2),
               Text(
                 subtitle,
@@ -240,7 +265,8 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
   Widget _buildToolbar(BuildContext context, AppLocalizations l10n) {
     final theme = Theme.of(context);
     final available = _ready ? _available : const <DiscoveredModel>[];
-    final allSelected = available.isNotEmpty && available.every((m) => _selectedIds.contains(m.modelId));
+    final allSelected =
+        available.isNotEmpty && available.every((m) => _selectedIds.contains(m.modelId));
 
     return Row(
       children: [
@@ -293,7 +319,9 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
             const SizedBox(height: AppSpace.s16),
             Text(
               l10n.discoveringModels,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
             ),
           ],
         ),
@@ -352,7 +380,12 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
               separatorBuilder: (_, _) => Divider(height: 1, color: scheme.outlineVariant),
               itemBuilder: (context, index) {
                 final m = _filtered[index];
-                return _buildRow(context, m, isAdded: _isModelAdded(m), isSelected: _selectedIds.contains(m.modelId));
+                return _buildRow(
+                  context,
+                  m,
+                  isAdded: _isModelAdded(m),
+                  isSelected: _selectedIds.contains(m.modelId),
+                );
               },
             ),
           ),
@@ -362,15 +395,20 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
         Text(
           l10n.discoveryCapabilitiesNote,
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: scheme.onSurfaceVariant,
-                height: AppType.tightHeight,
-              ),
+            color: scheme.onSurfaceVariant,
+            height: AppType.tightHeight,
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildRow(BuildContext context, DiscoveredModel m, {required bool isAdded, required bool isSelected}) {
+  Widget _buildRow(
+    BuildContext context,
+    DiscoveredModel m, {
+    required bool isAdded,
+    required bool isSelected,
+  }) {
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final showName = m.displayName.isNotEmpty && m.displayName != m.modelId;
@@ -442,21 +480,23 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
     setState(() => _adding = true);
     // Every model picked here starts in the channel's default fee group.
     final feeGroupId = widget.appState.defaultFeeGroupFor(widget.channel.id);
-    for (var id in _selectedIds) {
+    for (final id in _selectedIds) {
       final m = _discovered.firstWhere((dm) => dm.modelId == id);
       // What the listing said about the model's window seeds the new row;
       // absent stays unset (the editor's "not set"), never a guess. The
       // output cap is deliberately not seeded — see `discoveredLimitsOf`.
       final limits = discoveredLimitsOf(m);
-      await widget.appState.addModel(LLMModel(
-        modelId: m.modelId,
-        modelName: m.displayName,
-        tag: _inferTag(m),
-        sortOrder: widget.appState.allModels.length,
-        channelId: widget.channel.id,
-        feeGroupId: feeGroupId,
-        contextWindow: limits.contextWindow,
-      ));
+      await widget.appState.addModel(
+        LLMModel(
+          modelId: m.modelId,
+          modelName: m.displayName,
+          tag: _inferTag(m),
+          sortOrder: widget.appState.allModels.length,
+          channelId: widget.channel.id,
+          feeGroupId: feeGroupId,
+          contextWindow: limits.contextWindow,
+        ),
+      );
     }
     if (mounted) Navigator.pop(context);
   }
@@ -485,7 +525,11 @@ class _CheckMark extends StatelessWidget {
         border: added || checked ? null : Border.all(color: scheme.outlineVariant, width: 1.5),
       ),
       child: added || checked
-          ? Icon(Icons.check, size: AppSize.iconSm, color: added ? scheme.outline : scheme.onPrimary)
+          ? Icon(
+              Icons.check,
+              size: AppSize.iconSm,
+              color: added ? scheme.outline : scheme.onPrimary,
+            )
           : null,
     );
   }
@@ -530,12 +574,11 @@ class _StateView extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
             ),
-            if (action != null) ...[
-              const SizedBox(height: AppSpace.s16),
-              action!,
-            ],
+            if (action != null) ...[const SizedBox(height: AppSpace.s16), action!],
           ],
         ),
       ),

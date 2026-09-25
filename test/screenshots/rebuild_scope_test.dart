@@ -22,10 +22,7 @@ import 'harness/fixture_seed.dart';
 import 'harness/shoot.dart';
 
 /// Every widget `debugPrintRebuildDirtyWidgets` reports for one pump.
-Future<List<String>> rebuiltBy(
-  WidgetTester tester,
-  void Function() change,
-) async {
+Future<List<String>> rebuiltBy(WidgetTester tester, void Function() change) async {
   final List<String> lines = <String>[];
   final DebugPrintCallback original = debugPrint;
   debugPrint = (String? message, {int? wrapWidth}) {
@@ -46,8 +43,7 @@ int timesRebuilt(List<String> lines, String name) =>
     lines.where((String line) => line.contains(name)).length;
 
 void main() {
-  final TestWidgetsFlutterBinding binding =
-      TestWidgetsFlutterBinding.ensureInitialized();
+  final TestWidgetsFlutterBinding binding = TestWidgetsFlutterBinding.ensureInitialized();
   late FixtureEnv env;
 
   setUpAll(() async {
@@ -61,8 +57,9 @@ void main() {
 
   tearDownAll(() => env.dispose());
 
-  testWidgets('picking a picture rebuilds the selection, not the workbench',
-      (WidgetTester tester) async {
+  testWidgets('picking a picture rebuilds the selection, not the workbench', (
+    WidgetTester tester,
+  ) async {
     await mountApp(
       tester,
       env: env,
@@ -87,8 +84,10 @@ void main() {
     gallery.toggleImageSelection(images.first);
     await tester.pump();
 
-    final List<String> lines =
-        await rebuiltBy(tester, () => gallery.toggleImageSelection(images[1]));
+    final List<String> lines = await rebuiltBy(
+      tester,
+      () => gallery.toggleImageSelection(images[1]),
+    );
 
     // What must rebuild: the bar that counts the selection.
     expect(lines, rebuilt('GallerySelectionBar'));
@@ -96,21 +95,38 @@ void main() {
     // What must not. Each of these subscribed to the whole GalleryState for
     // one narrow fact, so a selection change rebuilt the entire folder tree,
     // the toolbar and both glass shells with it.
-    expect(lines, isNot(rebuilt('FolderList')),
-        reason: 'the folder column draws no part of the selection');
-    expect(lines, isNot(rebuilt('DirectoryTreeItem')),
-        reason: 'a tree row needs the refresh tick, not the whole notifier');
-    expect(lines, isNot(rebuilt('ResultTreeItem')),
-        reason: 'a tree row needs the refresh tick, not the whole notifier');
-    expect(lines, isNot(rebuilt('WorkbenchGlassToolbar')),
-        reason: 'the toolbar shows which view is current, not what is picked');
-    expect(lines, isNot(rebuilt('WorkbenchScreen')),
-        reason: 'on a desktop window the FAB that reads the selection is not '
-            'even drawn — the screen must not subscribe to it');
+    expect(
+      lines,
+      isNot(rebuilt('FolderList')),
+      reason: 'the folder column draws no part of the selection',
+    );
+    expect(
+      lines,
+      isNot(rebuilt('DirectoryTreeItem')),
+      reason: 'a tree row needs the refresh tick, not the whole notifier',
+    );
+    expect(
+      lines,
+      isNot(rebuilt('ResultTreeItem')),
+      reason: 'a tree row needs the refresh tick, not the whole notifier',
+    );
+    expect(
+      lines,
+      isNot(rebuilt('WorkbenchGlassToolbar')),
+      reason: 'the toolbar shows which view is current, not what is picked',
+    );
+    expect(
+      lines,
+      isNot(rebuilt('WorkbenchScreen')),
+      reason:
+          'on a desktop window the FAB that reads the selection is not '
+          'even drawn — the screen must not subscribe to it',
+    );
   });
 
-  testWidgets('a session notification reaches the usage card, not the assistant',
-      (WidgetTester tester) async {
+  testWidgets('a session notification reaches the usage card, not the assistant', (
+    WidgetTester tester,
+  ) async {
     // The session notifies several times a request for the usage readout
     // alone. The chat host, the toolbar, the left tree and the config panel
     // each rebuilt everything under them for it — 1,122 widget builds per
@@ -154,8 +170,7 @@ void main() {
     await tester.pump(const Duration(seconds: 5));
   });
 
-  testWidgets('dragging the size slider does not rebuild the chrome',
-      (WidgetTester tester) async {
+  testWidgets('dragging the size slider does not rebuild the chrome', (WidgetTester tester) async {
     await mountApp(
       tester,
       env: env,
@@ -169,23 +184,26 @@ void main() {
     await tester.pump();
 
     // One step of the slider's ladder — see snapThumbnailSize.
-    final List<String> lines =
-        await rebuiltBy(tester, () => gallery.setThumbnailSize(168));
+    final List<String> lines = await rebuiltBy(tester, () => gallery.setThumbnailSize(168));
 
     expect(lines, isNot(rebuilt('FolderList')));
     expect(lines, isNot(rebuilt('GallerySelectionBar')));
     expect(lines, isNot(rebuilt('DirectoryTreeItem')));
 
     // And a move inside one step reaches nothing at all.
-    final List<String> none =
-        await rebuiltBy(tester, () => gallery.setThumbnailSize(170));
-    expect(none, isEmpty,
-        reason: 'a slider position the layout cannot distinguish from the '
-            'last one must not reach the widget tree');
+    final List<String> none = await rebuiltBy(tester, () => gallery.setThumbnailSize(170));
+    expect(
+      none,
+      isEmpty,
+      reason:
+          'a slider position the layout cannot distinguish from the '
+          'last one must not reach the widget tree',
+    );
   });
 
-  testWidgets('a progress tick reaches the running card, not the task screen',
-      (WidgetTester tester) async {
+  testWidgets('a progress tick reaches the running card, not the task screen', (
+    WidgetTester tester,
+  ) async {
     await mountApp(
       tester,
       env: env,
@@ -198,31 +216,37 @@ void main() {
     expect(
       queue.queue.where((t) => t.status == TaskStatus.processing),
       isNotEmpty,
-      reason: 'the fixture must have a running task for the tick to mean '
+      reason:
+          'the fixture must have a running task for the tick to mean '
           'anything',
     );
 
     // The 500ms estimate moving. It reaches the running card's progress edge
     // and the console strip's percentage — and stops there.
-    final List<String> tick =
-        await rebuiltBy(tester, () => queue.progressTick.value++);
-    expect(tick, isNot(rebuilt('TaskQueueScreen')),
-        reason: 'the filter, the sort and the queue-position pass must not '
-            'run twice a second');
+    final List<String> tick = await rebuiltBy(tester, () => queue.progressTick.value++);
+    expect(
+      tick,
+      isNot(rebuilt('TaskQueueScreen')),
+      reason:
+          'the filter, the sort and the queue-position pass must not '
+          'run twice a second',
+    );
     expect(tick, isNot(rebuilt('_GroupDivider')));
 
     // The queue's *shape* changing is a different matter: that is what the
     // screen draws, and it must still rebuild for it.
-    final List<String> structural =
-        await rebuiltBy(tester, queue.refreshQueue);
+    final List<String> structural = await rebuiltBy(tester, queue.refreshQueue);
     expect(structural, rebuilt('TaskQueueScreen'));
-    expect(structural.length, greaterThan(tick.length * 3),
-        reason: 'if the two notifications cost the same, the split has been '
-            'undone somewhere');
+    expect(
+      structural.length,
+      greaterThan(tick.length * 3),
+      reason:
+          'if the two notifications cost the same, the split has been '
+          'undone somewhere',
+    );
   });
 
-  testWidgets('registering a folder does reach the folder column',
-      (WidgetTester tester) async {
+  testWidgets('registering a folder does reach the folder column', (WidgetTester tester) async {
     // The other half of narrowing a subscription: a selector that compares a
     // list by identity only fires if the state hands back a *new* list. The
     // class documents that it always does; these two paths did not, and
@@ -246,18 +270,20 @@ void main() {
     await tester.runAsync(() => gallery.addBaseDirectory(added));
     final List<String> lines = await rebuiltBy(tester, () {});
     expect(gallery.sourceDirectories, contains(added));
-    expect(lines, rebuilt('FolderList'),
-        reason: 'the column lists the source folders — it must rebuild when '
-            'one is registered');
+    expect(
+      lines,
+      rebuilt('FolderList'),
+      reason:
+          'the column lists the source folders — it must rebuild when '
+          'one is registered',
+    );
 
     await tester.runAsync(() => gallery.removeBaseDirectory(added));
     final List<String> removal = await rebuiltBy(tester, () {});
-    expect(removal, rebuilt('FolderList'),
-        reason: 'and when one is taken off the list');
+    expect(removal, rebuilt('FolderList'), reason: 'and when one is taken off the list');
   });
 
-  testWidgets('a folder pulse reaches one tree row, not the browser',
-      (WidgetTester tester) async {
+  testWidgets('a folder pulse reaches one tree row, not the browser', (WidgetTester tester) async {
     await mountApp(
       tester,
       env: env,
@@ -273,8 +299,10 @@ void main() {
     // notifyListeners — twice, once to set and once to clear 1.5s later — so
     // the file grid, the filter bar and every other row rebuilt for a cue
     // none of them draw.
-    final List<String> pulse =
-        await rebuiltBy(tester, () => browser.flash(browser.sourceDirectories.first));
+    final List<String> pulse = await rebuiltBy(
+      tester,
+      () => browser.flash(browser.sourceDirectories.first),
+    );
     expect(pulse, rebuilt('DirectoryTreeItem'));
     expect(pulse, isNot(rebuilt('FileBrowserScreen')));
     expect(pulse, isNot(rebuilt('FolderList')));
@@ -288,31 +316,39 @@ void main() {
     // empty ↔ not boundary.
     browser.toggleSelection(files.first);
     await tester.pump();
-    final List<String> pick =
-        await rebuiltBy(tester, () => browser.toggleSelection(files[1]));
+    final List<String> pick = await rebuiltBy(tester, () => browser.toggleSelection(files[1]));
 
     expect(pick, isNot(rebuilt('FolderList')));
     expect(pick, isNot(rebuilt('DirectoryTreeItem')));
     // The grid is where this cost sat: the screen watched the whole notifier,
     // so picking one file rebuilt the header, the filter bar, the tree and
     // every visible tile. Each tile carries its own subscription now.
-    expect(pick, isNot(rebuilt('FileBrowserScreen')),
-        reason: 'the layout draws no part of the selection');
-    expect(pick, isNot(rebuilt('_FileArea')),
-        reason: 'the area draws the file list, not what is picked');
+    expect(
+      pick,
+      isNot(rebuilt('FileBrowserScreen')),
+      reason: 'the layout draws no part of the selection',
+    );
+    expect(
+      pick,
+      isNot(rebuilt('_FileArea')),
+      reason: 'the area draws the file list, not what is picked',
+    );
     expect(pick, isNot(rebuilt('BrowserFilterBar')));
     // The header states the count, so one line of it has to move — but only
     // that line. Rebuilding the header took the search field, the staging
     // button, the view toggle and the refresh button with it, and re-ran the
     // width measurement that decides whether the header collapses.
-    expect(pick, rebuilt('_HeaderSummary'),
-        reason: 'the subtitle states how many files are picked');
-    expect(pick, isNot(rebuilt('BrowserHeader')),
-        reason: 'and nothing else in the header does');
+    expect(
+      pick,
+      rebuilt('_HeaderSummary'),
+      reason: 'the subtitle states how many files are picked',
+    );
+    expect(pick, isNot(rebuilt('BrowserHeader')), reason: 'and nothing else in the header does');
     expect(
       timesRebuilt(pick, 'FileCard('),
       lessThanOrEqualTo(2),
-      reason: 'one tile changed — at most it and the one that lost the '
+      reason:
+          'one tile changed — at most it and the one that lost the '
           'anchor may rebuild, never the whole grid',
     );
     browser.clearSelection();

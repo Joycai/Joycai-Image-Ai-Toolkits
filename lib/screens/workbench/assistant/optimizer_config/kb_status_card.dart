@@ -4,7 +4,11 @@ part of '../optimizer_config_panel.dart';
 extension _KnowledgeCards on _OptimizerConfigPanelState {
   /// `A3b 1b`'s knowledge card: a status badge, then either what the base
   /// holds or what is wrong with it and the way out.
-  Widget _buildKnowledgeStatus(AppLocalizations l10n, ColorScheme colorScheme, TextTheme textTheme) {
+  Widget _buildKnowledgeStatus(
+    AppLocalizations l10n,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+  ) {
     final semantic = context.semantic;
     final status = widget.kbStatus;
     final noteStyle = _noteStyle(colorScheme, textTheme);
@@ -16,17 +20,25 @@ extension _KnowledgeCards on _OptimizerConfigPanelState {
     // gone) and the warning wash (a folder missing its entry file).
     final (String label, Color background, Color foreground) = switch (status) {
       KbStatus.ok => (
-          widget.running ? l10n.optKbSearching : l10n.optKbReady,
-          colorScheme.accentTint,
-          colorScheme.onAccentTint,
-        ),
-      KbStatus.notSet => (l10n.notSet, colorScheme.surfaceContainerHighest, colorScheme.onSurfaceVariant),
-      KbStatus.missingDir => (l10n.kbInvalidDir, colorScheme.errorContainer, colorScheme.onErrorContainer),
+        widget.running ? l10n.optKbSearching : l10n.optKbReady,
+        colorScheme.accentTint,
+        colorScheme.onAccentTint,
+      ),
+      KbStatus.notSet => (
+        l10n.notSet,
+        colorScheme.surfaceContainerHighest,
+        colorScheme.onSurfaceVariant,
+      ),
+      KbStatus.missingDir => (
+        l10n.kbInvalidDir,
+        colorScheme.errorContainer,
+        colorScheme.onErrorContainer,
+      ),
       KbStatus.missingEntry => (
-          l10n.optKbEntryMissingShort(KnowledgeBaseService.entryFileName),
-          semantic.warningContainer,
-          semantic.onWarningContainer,
-        ),
+        l10n.optKbEntryMissingShort(KnowledgeBaseService.entryFileName),
+        semantic.warningContainer,
+        semantic.onWarningContainer,
+      ),
     };
     final badge = OptimizerTagBadge(
       label: label,
@@ -93,8 +105,10 @@ extension _KnowledgeCards on _OptimizerConfigPanelState {
         // "Content updated", not "last indexed": there is no index. The
         // question the user is asking is whether the edit they just made will
         // be picked up, which the newest file timestamp answers directly.
-        if (stats != null) Text(l10n.optKbTreeStats(stats.files, stats.directories), style: noteStyle),
-        if (updated != null) Text(l10n.optKbContentUpdated(_formatStamp(updated)), style: noteStyle),
+        if (stats != null)
+          Text(l10n.optKbTreeStats(stats.files, stats.directories), style: noteStyle),
+        if (updated != null)
+          Text(l10n.optKbContentUpdated(_formatStamp(updated)), style: noteStyle),
         Wrap(
           spacing: AppSpace.s10,
           runSpacing: AppSpace.s4,

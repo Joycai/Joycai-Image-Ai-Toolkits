@@ -74,7 +74,11 @@ class _SizePopoverRoute extends PopupRoute<void> {
   Duration get reverseTransitionDuration => duration * AppMotion.exitFactor;
 
   @override
-  Widget buildPage(BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation) {
+  Widget buildPage(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+  ) {
     final scheme = Theme.of(context).colorScheme;
     final padding = MediaQuery.paddingOf(context);
     return themes.wrap(
@@ -87,8 +91,11 @@ class _SizePopoverRoute extends PopupRoute<void> {
             borderRadius: BorderRadius.circular(AppRadius.lg),
             padding: const EdgeInsets.all(AppSpace.s6),
             reducedColor: scheme.surfaceContainerLow,
-            child: Container(
-              decoration: BoxDecoration(color: scheme.surface, borderRadius: BorderRadius.circular(AppRadius.control)),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: scheme.surface,
+                borderRadius: BorderRadius.circular(AppRadius.control),
+              ),
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(11),
                 child: builder(context, () => Navigator.of(context).maybePop()),
@@ -108,7 +115,11 @@ class _SizePopoverRoute extends PopupRoute<void> {
     Widget child,
   ) {
     if (AppMotion.prefersReduced(context)) return child;
-    final curved = CurvedAnimation(parent: animation, curve: AppMotion.emphasized, reverseCurve: AppMotion.quick);
+    final curved = CurvedAnimation(
+      parent: animation,
+      curve: AppMotion.emphasized,
+      reverseCurve: AppMotion.quick,
+    );
     return AnimatedBuilder(
       animation: curved,
       child: child,
@@ -167,5 +178,7 @@ class _SizePopoverLayout extends SingleChildLayoutDelegate {
 
   @override
   bool shouldRelayout(_SizePopoverLayout oldDelegate) =>
-      oldDelegate.anchorRect != anchorRect || oldDelegate.width != width || oldDelegate.padding != padding;
+      oldDelegate.anchorRect != anchorRect ||
+      oldDelegate.width != width ||
+      oldDelegate.padding != padding;
 }

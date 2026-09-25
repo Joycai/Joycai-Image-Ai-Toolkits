@@ -58,7 +58,10 @@ extension _CapabilitySections on _ModelEditDialogState {
               if (asyncPinned)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
-                  child: ModelEditNotice(tone: ModelEditTone.info, text: l10n.protocolAsyncQueueNote),
+                  child: ModelEditNotice(
+                    tone: ModelEditTone.info,
+                    text: l10n.protocolAsyncQueueNote,
+                  ),
                 ),
               const SizedBox(width: double.infinity),
             ],
@@ -70,9 +73,10 @@ extension _CapabilitySections on _ModelEditDialogState {
 
   Widget _previewSection(BuildContext context) {
     final l10n = widget.l10n;
-    final feeGroup = widget.appState.allPricingGroups
-        .cast<PricingGroup?>()
-        .firstWhere((g) => g?.id == feeGroupId, orElse: () => null);
+    final feeGroup = widget.appState.allPricingGroups.cast<PricingGroup?>().firstWhere(
+      (g) => g?.id == feeGroupId,
+      orElse: () => null,
+    );
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -80,11 +84,7 @@ extension _CapabilitySections on _ModelEditDialogState {
       children: [
         _caption(l10n.cardPreview),
         const SizedBox(height: AppSpace.s6),
-        ModelEditCardPreview(
-          model: _draftModel,
-          channel: _selectedChannel,
-          feeGroup: feeGroup,
-        ),
+        ModelEditCardPreview(model: _draftModel, channel: _selectedChannel, feeGroup: feeGroup),
       ],
     );
   }

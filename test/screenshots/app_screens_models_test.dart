@@ -32,40 +32,40 @@ void main() {
   for (final _FeeGroupShot shot in _feeGroupShots) {
     for (final String sizeLabel in shot.sizes) {
       for (final Brightness brightness in Brightness.values) {
-      testWidgets('feeGroupEditor · ${shot.name} @ $sizeLabel ${brightness.name}', (
-        WidgetTester tester,
-      ) async {
-        await shoot(
-          tester,
-          env: env,
-          screen: AppScreen.usage,
-          size: kShotSizes.firstWhere((ShotSize s) => s.label == sizeLabel),
-          brightness: brightness,
-          suffix: shot.name,
-          after: (WidgetTester tester) async {
-            // `of` scopes the search, and the per-request shot is why it
-            // exists: "按次计费" is both a segment inside the dialog and the
-            // mode badge on a card behind it, and an unscoped `.first` found
-            // the card — a tap outside the barrier, which closed the dialog
-            // the shot was meant to photograph.
-            Future<void> tapText(String label, {Finder? of}) async {
-              final Finder finder = of == null
-                  ? find.text(label)
-                  : find.descendant(of: of, matching: find.text(label));
-              if (finder.evaluate().isEmpty) return;
-              await tester.tap(finder.first, warnIfMissed: false);
-              // Six, not four: the phone's tab switch is still sliding at
-              // 400ms, and a tap that lands mid-slide opens nothing.
-              for (int i = 0; i < 6; i++) {
-                await tester.pump(const Duration(milliseconds: 100));
+        testWidgets('feeGroupEditor · ${shot.name} @ $sizeLabel ${brightness.name}', (
+          WidgetTester tester,
+        ) async {
+          await shoot(
+            tester,
+            env: env,
+            screen: AppScreen.usage,
+            size: kShotSizes.firstWhere((ShotSize s) => s.label == sizeLabel),
+            brightness: brightness,
+            suffix: shot.name,
+            after: (WidgetTester tester) async {
+              // `of` scopes the search, and the per-request shot is why it
+              // exists: "按次计费" is both a segment inside the dialog and the
+              // mode badge on a card behind it, and an unscoped `.first` found
+              // the card — a tap outside the barrier, which closed the dialog
+              // the shot was meant to photograph.
+              Future<void> tapText(String label, {Finder? of}) async {
+                final Finder finder = of == null
+                    ? find.text(label)
+                    : find.descendant(of: of, matching: find.text(label));
+                if (finder.evaluate().isEmpty) return;
+                await tester.tap(finder.first, warnIfMissed: false);
+                // Six, not four: the phone's tab switch is still sliding at
+                // 400ms, and a tap that lands mid-slide opens nothing.
+                for (int i = 0; i < 6; i++) {
+                  await tester.pump(const Duration(milliseconds: 100));
+                }
               }
-            }
 
-            await tapText('费率组');
-            await shot.open(tester, tapText);
-          },
-        );
-      });
+              await tapText('费率组');
+              await shot.open(tester, tapText);
+            },
+          );
+        });
       }
     }
   }
@@ -133,9 +133,7 @@ void main() {
     ('wizardArk', false),
     ('wizardArk2', true),
   ]) {
-    testWidgets('channelWizard ark @ desktop light $suffix', (
-      WidgetTester tester,
-    ) async {
+    testWidgets('channelWizard ark @ desktop light $suffix', (WidgetTester tester) async {
       await shoot(
         tester,
         env: env,
@@ -163,9 +161,9 @@ void main() {
           await tester.tap(add.first, warnIfMissed: false);
           await settle();
           await tester.enterText(
-              find.descendant(
-                  of: find.byType(Dialog), matching: find.byType(TextField)),
-              '火山');
+            find.descendant(of: find.byType(Dialog), matching: find.byType(TextField)),
+            '火山',
+          );
           await settle();
           await tapText('火山方舟');
           await tapText('下一步');

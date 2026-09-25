@@ -152,7 +152,10 @@ void main() {
       expect(
         contentToText([
           {'type': 'text', 'text': 'part one '},
-          {'type': 'image_url', 'image_url': {'url': 'data:…'}},
+          {
+            'type': 'image_url',
+            'image_url': {'url': 'data:…'},
+          },
           {'type': 'text', 'text': 'part two'},
         ]),
         'part one part two',
@@ -163,7 +166,12 @@ void main() {
       expect(contentToText(null), '');
       expect(contentToText(42), '');
       expect(contentToText([]), '');
-      expect(contentToText([{'type': 'image_url'}]), '');
+      expect(
+        contentToText([
+          {'type': 'image_url'},
+        ]),
+        '',
+      );
     });
   });
 
@@ -232,14 +240,23 @@ void main() {
     test('a missing or malformed choices field reads as absent', () {
       expect(firstChoice({'usage': {}}), isNull);
       expect(firstChoice({'choices': 'nope'}), isNull);
-      expect(firstChoice({'choices': ['nope']}), isNull);
+      expect(
+        firstChoice({
+          'choices': ['nope'],
+        }),
+        isNull,
+      );
     });
 
     test('a real choice is returned as a typed map', () {
       final choice = firstChoice({
         'choices': [
-          {'index': 0, 'delta': {'content': 'hi'}, 'finish_reason': null}
-        ]
+          {
+            'index': 0,
+            'delta': {'content': 'hi'},
+            'finish_reason': null,
+          },
+        ],
       });
       expect(choice?['delta']['content'], 'hi');
     });
@@ -248,7 +265,9 @@ void main() {
   group('throwIfEnvelopeError', () {
     test('error field throws with the upstream message', () {
       expect(
-        () => throwIfEnvelopeError({'error': {'message': 'insufficient credits'}}),
+        () => throwIfEnvelopeError({
+          'error': {'message': 'insufficient credits'},
+        }),
         throwsA(predicate((e) => e.toString().contains('insufficient credits'))),
       );
     });
@@ -256,14 +275,16 @@ void main() {
     test('base_resp non-zero status throws — an expired key must not read as an empty reply', () {
       expect(
         () => throwIfEnvelopeError({
-          'base_resp': {'status_code': 1004, 'status_msg': 'invalid api key'}
+          'base_resp': {'status_code': 1004, 'status_msg': 'invalid api key'},
         }),
         throwsA(predicate((e) => e.toString().contains('1004'))),
       );
     });
 
     test('base_resp zero and clean bodies pass', () {
-      throwIfEnvelopeError({'base_resp': {'status_code': 0}});
+      throwIfEnvelopeError({
+        'base_resp': {'status_code': 0},
+      });
       throwIfEnvelopeError({'choices': []});
     });
   });
@@ -272,26 +293,22 @@ void main() {
     final protocol = OpenAIChatProtocol();
 
     test('a tool-calling assistant turn replays reasoning under its original field name', () {
-      final payload = protocol.buildChatPayloadForTest(
-        target('some-model'),
-        [
-          LLMMessage(role: LLMRole.user, content: 'hi'),
-          LLMMessage(
-            role: LLMRole.assistant,
-            content: '',
-            reasoningContent: 'thought hard',
-            reasoningFieldName: 'reasoning_content',
-            toolCalls: [
-              LLMToolCall(id: 'call_1', name: 'f', arguments: {'x': 1}),
-            ],
-          ),
-          LLMMessage(role: LLMRole.tool, content: '{}', toolCallId: 'call_1', toolName: 'f'),
-        ],
-        isStreaming: false,
-      );
+      final payload = protocol.buildChatPayloadForTest(target('some-model'), [
+        LLMMessage(role: LLMRole.user, content: 'hi'),
+        LLMMessage(
+          role: LLMRole.assistant,
+          content: '',
+          reasoningContent: 'thought hard',
+          reasoningFieldName: 'reasoning_content',
+          toolCalls: [
+            LLMToolCall(id: 'call_1', name: 'f', arguments: {'x': 1}),
+          ],
+        ),
+        LLMMessage(role: LLMRole.tool, content: '{}', toolCallId: 'call_1', toolName: 'f'),
+      ], isStreaming: false);
 
-      final assistant = (payload['messages'] as List)
-          .lastWhere((m) => (m as Map)['role'] == 'assistant') as Map;
+      final assistant =
+          (payload['messages'] as List).lastWhere((m) => (m as Map)['role'] == 'assistant') as Map;
       expect(assistant['reasoning_content'], 'thought hard');
       // The nested tool shape and the nullable-but-present content survive.
       expect(assistant.containsKey('content'), isTrue);
@@ -300,41 +317,33 @@ void main() {
     });
 
     test('the alternate field name is echoed as received', () {
-      final payload = protocol.buildChatPayloadForTest(
-        target('some-model'),
-        [
-          LLMMessage(
-            role: LLMRole.assistant,
-            content: 'partial',
-            reasoningContent: 'r',
-            reasoningFieldName: 'reasoning',
-            toolCalls: [LLMToolCall(id: 'c', name: 'f', arguments: {})],
-          ),
-        ],
-        isStreaming: false,
-      );
-      final assistant = (payload['messages'] as List)
-          .lastWhere((m) => (m as Map)['role'] == 'assistant') as Map;
+      final payload = protocol.buildChatPayloadForTest(target('some-model'), [
+        LLMMessage(
+          role: LLMRole.assistant,
+          content: 'partial',
+          reasoningContent: 'r',
+          reasoningFieldName: 'reasoning',
+          toolCalls: [LLMToolCall(id: 'c', name: 'f', arguments: {})],
+        ),
+      ], isStreaming: false);
+      final assistant =
+          (payload['messages'] as List).lastWhere((m) => (m as Map)['role'] == 'assistant') as Map;
       expect(assistant['reasoning'], 'r');
       expect(assistant.containsKey('reasoning_content'), isFalse);
     });
 
     test('inline reasoning (no field name) is never echoed', () {
-      final payload = protocol.buildChatPayloadForTest(
-        target('some-model'),
-        [
-          LLMMessage(
-            role: LLMRole.assistant,
-            content: '',
-            reasoningContent: 'from <think>',
-            reasoningFieldName: null,
-            toolCalls: [LLMToolCall(id: 'c', name: 'f', arguments: {})],
-          ),
-        ],
-        isStreaming: false,
-      );
-      final assistant = (payload['messages'] as List)
-          .lastWhere((m) => (m as Map)['role'] == 'assistant') as Map;
+      final payload = protocol.buildChatPayloadForTest(target('some-model'), [
+        LLMMessage(
+          role: LLMRole.assistant,
+          content: '',
+          reasoningContent: 'from <think>',
+          reasoningFieldName: null,
+          toolCalls: [LLMToolCall(id: 'c', name: 'f', arguments: {})],
+        ),
+      ], isStreaming: false);
+      final assistant =
+          (payload['messages'] as List).lastWhere((m) => (m as Map)['role'] == 'assistant') as Map;
       expect(assistant.containsKey('reasoning_content'), isFalse);
       expect(assistant.containsKey('reasoning'), isFalse);
     });
@@ -350,59 +359,49 @@ void main() {
               .firstOrNull;
 
       LLMMessage toolTurn(String? producer) => LLMMessage(
-            role: LLMRole.assistant,
-            content: '',
-            reasoningContent: 'deepseek thought',
-            reasoningFieldName: 'reasoning_content',
-            rawThinkingModelId: producer,
-            toolCalls: [LLMToolCall(id: 'c', name: 'f', arguments: {})],
-          );
+        role: LLMRole.assistant,
+        content: '',
+        reasoningContent: 'deepseek thought',
+        reasoningFieldName: 'reasoning_content',
+        rawThinkingModelId: producer,
+        toolCalls: [LLMToolCall(id: 'c', name: 'f', arguments: {})],
+      );
 
       test('the producing model gets its reasoning back', () {
-        final payload = protocol.buildChatPayloadForTest(
-          target('deepseek-v4-pro'),
-          [toolTurn('deepseek-v4-pro')],
-          isStreaming: false,
-        );
+        final payload = protocol.buildChatPayloadForTest(target('deepseek-v4-pro'), [
+          toolTurn('deepseek-v4-pro'),
+        ], isStreaming: false);
         expect(assistantOf(payload)!['reasoning_content'], 'deepseek thought');
       });
 
       test('another model does not', () {
-        final payload = protocol.buildChatPayloadForTest(
-          target('gpt-5-chat'),
-          [toolTurn('deepseek-v4-pro')],
-          isStreaming: false,
-        );
+        final payload = protocol.buildChatPayloadForTest(target('gpt-5-chat'), [
+          toolTurn('deepseek-v4-pro'),
+        ], isStreaming: false);
         expect(assistantOf(payload)!.containsKey('reasoning_content'), isFalse);
       });
 
       test('a legacy turn with no recorded producer is still echoed', () {
         // Sessions persisted before the producer was recorded must keep
         // working — DeepSeek 400s a tool turn replayed without its reasoning.
-        final payload = protocol.buildChatPayloadForTest(
-          target('gpt-5-chat'),
-          [toolTurn(null)],
-          isStreaming: false,
-        );
+        final payload = protocol.buildChatPayloadForTest(target('gpt-5-chat'), [
+          toolTurn(null),
+        ], isStreaming: false);
         expect(assistantOf(payload)!['reasoning_content'], 'deepseek thought');
       });
     });
 
     test('an assistant turn without tool calls does not echo reasoning', () {
-      final payload = protocol.buildChatPayloadForTest(
-        target('some-model'),
-        [
-          LLMMessage(
-            role: LLMRole.assistant,
-            content: 'plain reply',
-            reasoningContent: 'r',
-            reasoningFieldName: 'reasoning_content',
-          ),
-        ],
-        isStreaming: false,
-      );
-      final assistant = (payload['messages'] as List)
-          .lastWhere((m) => (m as Map)['role'] == 'assistant') as Map;
+      final payload = protocol.buildChatPayloadForTest(target('some-model'), [
+        LLMMessage(
+          role: LLMRole.assistant,
+          content: 'plain reply',
+          reasoningContent: 'r',
+          reasoningFieldName: 'reasoning_content',
+        ),
+      ], isStreaming: false);
+      final assistant =
+          (payload['messages'] as List).lastWhere((m) => (m as Map)['role'] == 'assistant') as Map;
       expect(assistant.containsKey('reasoning_content'), isFalse);
     });
   });
@@ -413,15 +412,13 @@ void main() {
     final protocol = OpenAIChatProtocol();
 
     List<Map> messagesOf(String modelId, List<LLMMessage> history) =>
-        (protocol.buildChatPayloadForTest(target(modelId), history,
-                isStreaming: false)['messages'] as List)
+        (protocol.buildChatPayloadForTest(target(modelId), history, isStreaming: false)['messages']
+                as List)
             .cast<Map>();
 
     test('a conversation without one gets the neutral line first', () {
-      final messages = messagesOf(
-          'gpt-5-chat', [LLMMessage(role: LLMRole.user, content: 'hi')]);
-      expect(messages.first,
-          {'role': 'system', 'content': openaiDefaultSystemPrompt});
+      final messages = messagesOf('gpt-5-chat', [LLMMessage(role: LLMRole.user, content: 'hi')]);
+      expect(messages.first, {'role': 'system', 'content': openaiDefaultSystemPrompt});
       expect(messages.last['content'], 'hi');
     });
 
@@ -436,8 +433,9 @@ void main() {
 
     test('an image generator on the chat route is left alone', () {
       // The relay turns that call into an images request.
-      final messages = messagesOf('gemini-2.5-flash-image',
-          [LLMMessage(role: LLMRole.user, content: 'a red apple')]);
+      final messages = messagesOf('gemini-2.5-flash-image', [
+        LLMMessage(role: LLMRole.user, content: 'a red apple'),
+      ]);
       expect(messages.any((m) => m['role'] == 'system'), isFalse);
     });
   });
@@ -462,8 +460,7 @@ void main() {
       expect(ModelDescriptor.of('deepseek-chat').acceptsImageInput, isFalse);
       expect(ModelDescriptor.of('deepseek-reasoner').acceptsImageInput, isFalse);
       expect(ModelDescriptor.of('deepseek-v4-pro').acceptsImageInput, isFalse);
-      expect(ModelDescriptor.of('deepseek-ai/DeepSeek-V3').acceptsImageInput,
-          isFalse);
+      expect(ModelDescriptor.of('deepseek-ai/DeepSeek-V3').acceptsImageInput, isFalse);
       expect(ModelDescriptor.of('gpt-5-chat').acceptsImageInput, isTrue);
       expect(ModelDescriptor.of('gemini-2.5-flash').acceptsImageInput, isTrue);
     });
@@ -472,12 +469,8 @@ void main() {
       expect(ModelDescriptor.of('deepseek-flash').acceptsImageInput, isTrue);
       // Legacy names, still callable and now served by V4.1-Flash.
       expect(ModelDescriptor.of('deepseek-v4-flash').acceptsImageInput, isTrue);
-      expect(
-          ModelDescriptor.of('deepseek-v4-flash-vision-exp').acceptsImageInput,
-          isTrue);
-      expect(
-          ModelDescriptor.of('deepseek-ai/deepseek-vl2').acceptsImageInput,
-          isTrue);
+      expect(ModelDescriptor.of('deepseek-v4-flash-vision-exp').acceptsImageInput, isTrue);
+      expect(ModelDescriptor.of('deepseek-ai/deepseek-vl2').acceptsImageInput, isTrue);
     });
   });
 
@@ -500,10 +493,9 @@ void main() {
       );
     }
 
-    Map<String, dynamic> payloadFor(LLMTarget t) => protocol
-        .buildChatPayloadForTest(
-            t, [LLMMessage(role: LLMRole.user, content: 'hi')],
-            isStreaming: false);
+    Map<String, dynamic> payloadFor(LLMTarget t) => protocol.buildChatPayloadForTest(t, [
+      LLMMessage(role: LLMRole.user, content: 'hi'),
+    ], isStreaming: false);
 
     test('default sends no field at all', () {
       // Minimal common denominator: every proactively sent field is one some
@@ -569,11 +561,9 @@ void main() {
           apiKey: 'k',
           reasoningEffort: ReasoningEffort.off,
         );
-        final p = payloadFor(LLMTarget(
-          config: config,
-          vendor: Vendors.byId(id),
-          model: ModelDescriptor.of('m'),
-        ));
+        final p = payloadFor(
+          LLMTarget(config: config, vendor: Vendors.byId(id), model: ModelDescriptor.of('m')),
+        );
         expect(p.containsKey('thinking'), isFalse, reason: id);
         expect(p.containsKey('enable_thinking'), isFalse, reason: id);
         expect(p['reasoning_effort'], 'none', reason: id);
@@ -614,8 +604,7 @@ void main() {
           ]) {
             final on = payloadFor(bailian(vendor, level));
             expect(on['enable_thinking'], isTrue, reason: level.name);
-            expect(on.containsKey('reasoning_effort'), isFalse,
-                reason: level.name);
+            expect(on.containsKey('reasoning_effort'), isFalse, reason: level.name);
           }
 
           final byDefault = payloadFor(bailian(vendor, null));
@@ -633,10 +622,7 @@ void main() {
           [LLMMessage(role: LLMRole.user, content: 'hi')],
           isStreaming: false,
           tools: [
-            LLMTool(
-                name: 'f',
-                description: 'd',
-                parameters: const {'type': 'object'}),
+            LLMTool(name: 'f', description: 'd', parameters: const {'type': 'object'}),
           ],
         );
         expect(p['enable_thinking'], isTrue);
@@ -646,9 +632,9 @@ void main() {
 
     test('an explicit level beats the legacy flag', () {
       expect(
-          payloadFor(effortTarget(effort: ReasoningEffort.off, legacy: true))[
-              'reasoning_effort'],
-          'none');
+        payloadFor(effortTarget(effort: ReasoningEffort.off, legacy: true))['reasoning_effort'],
+        'none',
+      );
     });
   });
 

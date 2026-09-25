@@ -90,16 +90,18 @@ extension _DistillCards on _PromptOptimizerChatViewState {
                     padding: const EdgeInsets.symmetric(vertical: 3),
                     child: Row(
                       children: [
-                        Icon(Icons.description_outlined,
-                            size: AppSize.iconSm, color: colorScheme.onSurfaceVariant),
+                        Icon(
+                          Icons.description_outlined,
+                          size: AppSize.iconSm,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
                         const SizedBox(width: 8),
                         Flexible(
                           child: Text(
                             edit.targetPath ?? '',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: textTheme.bodySmall?.mono
-                                .copyWith(color: colorScheme.onSurface),
+                            style: textTheme.bodySmall?.mono.copyWith(color: colorScheme.onSurface),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -157,8 +159,7 @@ extension _DistillCards on _PromptOptimizerChatViewState {
     AppSemanticColors semantic,
     ColorScheme colorScheme,
   ) {
-    final (added, removed) =
-        TextDiff.counts(edit.oldContent ?? '', edit.newContent ?? '');
+    final (added, removed) = TextDiff.counts(edit.oldContent ?? '', edit.newContent ?? '');
     final style = textTheme.labelSmall?.mono.copyWith(fontWeight: FontWeight.w600);
     return [
       if (added > 0) Text('+$added', style: style?.copyWith(color: semantic.success)),
@@ -184,7 +185,8 @@ extension _DistillCards on _PromptOptimizerChatViewState {
 /// list tail, so continuing the conversation does not leave it floating
 /// below later messages with a version badge that no longer matches.
 ({List<OptimizerChatEntry> applied, int insertBefore})? _distillOutcome(
-    List<OptimizerChatEntry> transcript) {
+  List<OptimizerChatEntry> transcript,
+) {
   int distillIndex = -1;
   for (var i = transcript.length - 1; i >= 0; i--) {
     if (transcript[i].kind == OptimizerEntryKind.kbDistill) {

@@ -4,8 +4,8 @@ import 'package:joycai_image_ai_toolkits/core/app_semantic_colors.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/core/design_tokens.dart';
 import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
-import 'package:joycai_image_ai_toolkits/widgets/ui/app_snackbar.dart';
 import 'package:joycai_image_ai_toolkits/widgets/glass/app_glass.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_snackbar.dart';
 
 /// Covers [AppSnackBar]'s four outcomes (`01 全局壳层 · 1d / 1h`).
 ///
@@ -20,15 +20,14 @@ void main() {
     void Function(BuildContext) onPressed, {
     Color seedColor = seed,
     Brightness brightness = Brightness.light,
-  }) =>
-      MaterialApp(
-        theme: buildAppTheme(accent: ThemeAccent.fromSeed(seedColor), brightness: brightness),
-        home: Builder(
-          builder: (context) => Scaffold(
-            body: ElevatedButton(onPressed: () => onPressed(context), child: const Text('Trigger')),
-          ),
-        ),
-      );
+  }) => MaterialApp(
+    theme: buildAppTheme(accent: ThemeAccent.fromSeed(seedColor), brightness: brightness),
+    home: Builder(
+      builder: (context) => Scaffold(
+        body: ElevatedButton(onPressed: () => onPressed(context), child: const Text('Trigger')),
+      ),
+    ),
+  );
 
   Future<SnackBar> trigger(WidgetTester tester, Widget app) async {
     await tester.pumpWidget(app);
@@ -39,8 +38,8 @@ void main() {
 
   /// The glass the toast is drawn on.
   AppGlass pillOf(WidgetTester tester) => tester.widget<AppGlass>(
-        find.descendant(of: find.byType(SnackBar), matching: find.byType(AppGlass)),
-      );
+    find.descendant(of: find.byType(SnackBar), matching: find.byType(AppGlass)),
+  );
 
   /// The colour of the toast's leading glyph.
   Color glyphColour(WidgetTester tester, IconData icon) =>
@@ -50,8 +49,11 @@ void main() {
     final bar = await trigger(tester, host((c) => AppSnackBar.success(c, 'Saved')));
 
     expect(find.text('Saved'), findsOneWidget);
-    expect(bar.backgroundColor, Colors.transparent,
-        reason: 'the SnackBar itself paints nothing; the pill is the toast');
+    expect(
+      bar.backgroundColor,
+      Colors.transparent,
+      reason: 'the SnackBar itself paints nothing; the pill is the toast',
+    );
     expect(pillOf(tester).tone, GlassTone.dark);
     expect(pillOf(tester).grade, GlassGrade.float);
     expect(glyphColour(tester, Icons.check_circle), AppSemanticColors.dark.success);
@@ -73,10 +75,7 @@ void main() {
 
   testWidgets('nothing about a toast follows the seed', (tester) async {
     for (final Color other in <Color>[Colors.orange, Colors.pink, Colors.teal]) {
-      await trigger(
-        tester,
-        host((c) => AppSnackBar.success(c, 'Saved'), seedColor: other),
-      );
+      await trigger(tester, host((c) => AppSnackBar.success(c, 'Saved'), seedColor: other));
       expect(pillOf(tester).tone, GlassTone.dark, reason: '$other');
       expect(glyphColour(tester, Icons.check_circle), AppSemanticColors.dark.success);
     }
@@ -84,10 +83,7 @@ void main() {
 
   testWidgets('nor the brightness — the ground is pinned in both', (tester) async {
     for (final Brightness brightness in Brightness.values) {
-      await trigger(
-        tester,
-        host((c) => AppSnackBar.error(c, 'Failed'), brightness: brightness),
-      );
+      await trigger(tester, host((c) => AppSnackBar.error(c, 'Failed'), brightness: brightness));
       expect(pillOf(tester).tone, GlassTone.dark, reason: '$brightness');
       expect(glyphColour(tester, Icons.error), AppOverlay.danger);
     }
@@ -96,11 +92,13 @@ void main() {
   testWidgets('an action label is the accent at a tone that survives the ink', (tester) async {
     await trigger(
       tester,
-      host((c) => AppSnackBar.error(
-            c,
-            'Failed',
-            action: AppSnackBarAction(label: 'Retry', onPressed: () {}),
-          )),
+      host(
+        (c) => AppSnackBar.error(
+          c,
+          'Failed',
+          action: AppSnackBarAction(label: 'Retry', onPressed: () {}),
+        ),
+      ),
     );
 
     final theme = buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light);
@@ -117,20 +115,24 @@ void main() {
 
     final actionable = await trigger(
       tester,
-      host((c) => AppSnackBar.info(
-            c,
-            'Queued',
-            action: AppSnackBarAction(label: 'View', onPressed: () {}),
-          )),
+      host(
+        (c) => AppSnackBar.info(
+          c,
+          'Queued',
+          action: AppSnackBarAction(label: 'View', onPressed: () {}),
+        ),
+      ),
     );
     expect(actionable.duration, const Duration(seconds: 8));
   });
 
   testWidgets('a second call replaces the first instead of queuing behind it', (tester) async {
-    await tester.pumpWidget(host((context) {
-      AppSnackBar.info(context, 'First');
-      AppSnackBar.error(context, 'Second');
-    }));
+    await tester.pumpWidget(
+      host((context) {
+        AppSnackBar.info(context, 'First');
+        AppSnackBar.error(context, 'Second');
+      }),
+    );
     await tester.tap(find.text('Trigger'));
     await tester.pumpAndSettle();
 
@@ -138,20 +140,23 @@ void main() {
     expect(find.text('First'), findsNothing);
   });
 
-  testWidgets('replacing a toast already on screen swaps it, it does not play an exit',
-      (tester) async {
+  testWidgets('replacing a toast already on screen swaps it, it does not play an exit', (
+    tester,
+  ) async {
     // Fixed pumps rather than pumpAndSettle: `hideCurrentSnackBar` would
     // still show 'First' a frame later; only `removeCurrentSnackBar` has
     // swapped the contents by now.
     int calls = 0;
-    await tester.pumpWidget(host((context) {
-      calls++;
-      if (calls == 1) {
-        AppSnackBar.info(context, 'First');
-      } else {
-        AppSnackBar.error(context, 'Second');
-      }
-    }));
+    await tester.pumpWidget(
+      host((context) {
+        calls++;
+        if (calls == 1) {
+          AppSnackBar.info(context, 'First');
+        } else {
+          AppSnackBar.error(context, 'Second');
+        }
+      }),
+    );
 
     await tester.tap(find.text('Trigger'));
     await tester.pumpAndSettle();

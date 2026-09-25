@@ -15,42 +15,42 @@ void main() {
   final GlobalKey button = GlobalKey();
 
   Widget app() => MaterialApp(
-        builder: (context, child) => Column(
-          children: [
-            const SizedBox(height: bar, width: double.infinity),
-            Expanded(child: child!),
-          ],
-        ),
-        home: Scaffold(
-          body: Align(
-            alignment: Alignment.topLeft,
-            child: Padding(
-              padding: const EdgeInsets.only(left: 120, top: 80),
-              child: Builder(
-                builder: (context) => SizedBox(
-                  key: button,
-                  width: 100,
-                  height: 28,
-                  child: GestureDetector(
-                    onTap: () {
-                      final box = context.findRenderObject()! as RenderBox;
-                      showAppGlassMenu(
-                        context,
-                        position: box.localToGlobal(Offset(0, box.size.height + 4)),
-                        entries: const [
-                          AppGlassMenuItem(label: 'one', checked: true, radio: true),
-                          AppGlassMenuItem(label: 'two', checked: false, radio: true),
-                        ],
-                      );
-                    },
-                    child: const ColoredBox(color: Colors.red),
-                  ),
-                ),
+    builder: (context, child) => Column(
+      children: [
+        const SizedBox(height: bar, width: double.infinity),
+        Expanded(child: child!),
+      ],
+    ),
+    home: Scaffold(
+      body: Align(
+        alignment: Alignment.topLeft,
+        child: Padding(
+          padding: const EdgeInsets.only(left: 120, top: 80),
+          child: Builder(
+            builder: (context) => SizedBox(
+              key: button,
+              width: 100,
+              height: 28,
+              child: GestureDetector(
+                onTap: () {
+                  final box = context.findRenderObject()! as RenderBox;
+                  showAppGlassMenu(
+                    context,
+                    position: box.localToGlobal(Offset(0, box.size.height + 4)),
+                    entries: const [
+                      AppGlassMenuItem(label: 'one', checked: true, radio: true),
+                      AppGlassMenuItem(label: 'two', checked: false, radio: true),
+                    ],
+                  );
+                },
+                child: const ColoredBox(color: Colors.red),
               ),
             ),
           ),
         ),
-      );
+      ),
+    ),
+  );
 
   testWidgets('a menu below a button hangs 4px under it, title bar or not', (tester) async {
     await tester.pumpWidget(app());
@@ -64,22 +64,24 @@ void main() {
   });
 
   testWidgets('the same point without a frame lands in the same place', (tester) async {
-    await tester.pumpWidget(MaterialApp(
-      home: Builder(
-        builder: (context) => Scaffold(
-          body: Center(
-            child: TextButton(
-              onPressed: () => showAppGlassMenu(
-                context,
-                position: const Offset(200, 150),
-                entries: const [AppGlassMenuItem(label: 'one')],
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: Center(
+              child: TextButton(
+                onPressed: () => showAppGlassMenu(
+                  context,
+                  position: const Offset(200, 150),
+                  entries: const [AppGlassMenuItem(label: 'one')],
+                ),
+                child: const Text('open'),
               ),
-              child: const Text('open'),
             ),
           ),
         ),
       ),
-    ));
+    );
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
     expect(tester.getTopLeft(find.byType(AppGlassMenu)), const Offset(200, 150));

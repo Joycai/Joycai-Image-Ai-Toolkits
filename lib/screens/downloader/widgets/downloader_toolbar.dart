@@ -7,10 +7,10 @@ import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../state/downloader_state.dart';
+import '../../../widgets/glass/glass_controls.dart';
+import '../../../widgets/models/chat_model_selector.dart';
 import '../../../widgets/ui/app_field_size.dart';
 import '../../../widgets/ui/app_switch.dart';
-import '../../../widgets/models/chat_model_selector.dart';
-import '../../../widgets/glass/glass_controls.dart';
 import 'downloader_inputs.dart';
 
 export 'downloader_advanced_dialog.dart' show showDownloaderAdvancedDialog;
@@ -145,7 +145,8 @@ class DownloaderToolbar extends StatelessWidget {
           final urlMin = AppSize.control + measure(l10n.websiteUrlHint, urlStyle) + AppSpace.s10;
           final whatMin = AppSpace.s10 + measure(l10n.whatToFindHint, bodyStyle) + AppSpace.s10;
 
-          final oneRow = _plate +
+          final oneRow =
+              _plate +
               titleWidth +
               urlMin +
               whatMin +
@@ -158,10 +159,14 @@ class DownloaderToolbar extends StatelessWidget {
             // The buttons drop by the caption's height so their centres meet
             // the input boxes' centres (`margin-top 14`), measured rather than
             // pinned so a larger text scale keeps them aligned.
-            final captionBlock = downloaderLineHeight(context, downloaderCaptionStyle(context)) + AppSpace.s4;
+            final captionBlock =
+                downloaderLineHeight(context, downloaderCaptionStyle(context)) + AppSpace.s4;
             return Container(
               constraints: const BoxConstraints(minHeight: _height),
-              padding: const EdgeInsets.symmetric(horizontal: kDownloaderGutter, vertical: AppSpace.s10),
+              padding: const EdgeInsets.symmetric(
+                horizontal: kDownloaderGutter,
+                vertical: AppSpace.s10,
+              ),
               alignment: Alignment.center,
               child: Row(
                 children: [
@@ -169,9 +174,15 @@ class DownloaderToolbar extends StatelessWidget {
                   const SizedBox(width: kDownloaderGap),
                   SizedBox(width: titleWidth, child: title),
                   const SizedBox(width: kDownloaderGap),
-                  Expanded(flex: 7, child: _CaptionedField(caption: l10n.websiteUrl, child: urlField)),
+                  Expanded(
+                    flex: 7,
+                    child: _CaptionedField(caption: l10n.websiteUrl, child: urlField),
+                  ),
                   const SizedBox(width: kDownloaderGap),
-                  Expanded(flex: 5, child: _CaptionedField(caption: l10n.whatToFind, child: requirementField)),
+                  Expanded(
+                    flex: 5,
+                    child: _CaptionedField(caption: l10n.whatToFind, child: requirementField),
+                  ),
                   const SizedBox(width: kDownloaderGap),
                   SizedBox(
                     width: _modelWidth,
@@ -183,14 +194,18 @@ class DownloaderToolbar extends StatelessWidget {
                     child: _FindImagesButton(analyzing: isAnalyzing, onPressed: onAnalyze),
                   ),
                   const SizedBox(width: kDownloaderGap),
-                  Padding(padding: EdgeInsets.only(top: captionBlock), child: gear),
+                  Padding(
+                    padding: EdgeInsets.only(top: captionBlock),
+                    child: gear,
+                  ),
                 ],
               ),
             );
           }
 
           // Folded (`1c`): 12 + 40 + 10 + 32 + 12.
-          final labelledFind = AppSize.large +
+          final labelledFind =
+              AppSize.large +
                   AppSpace.s10 +
                   measure(l10n.imageDownloader, titleStyle) +
                   kDownloaderGap +
@@ -203,27 +218,35 @@ class DownloaderToolbar extends StatelessWidget {
           const gap = SizedBox(width: kDownloaderGap);
           final rows = <Widget>[];
           if (urlMin + whatMin + _foldedModelWidth + 2 * kDownloaderGap <= available) {
-            rows.add(sized(Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(flex: 7, child: urlField),
-                gap,
-                Expanded(flex: 5, child: requirementField),
-                gap,
-                SizedBox(width: _foldedModelWidth, child: modelSelector),
-              ],
-            )));
+            rows.add(
+              sized(
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(flex: 7, child: urlField),
+                    gap,
+                    Expanded(flex: 5, child: requirementField),
+                    gap,
+                    SizedBox(width: _foldedModelWidth, child: modelSelector),
+                  ],
+                ),
+              ),
+            );
           } else if (whatMin + _foldedModelWidth + kDownloaderGap <= available) {
             rows
               ..add(sized(urlField))
-              ..add(sized(Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Expanded(child: requirementField),
-                  gap,
-                  SizedBox(width: _foldedModelWidth, child: modelSelector),
-                ],
-              )));
+              ..add(
+                sized(
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(child: requirementField),
+                      gap,
+                      SizedBox(width: _foldedModelWidth, child: modelSelector),
+                    ],
+                  ),
+                ),
+              );
           } else {
             rows
               ..add(sized(urlField))
@@ -232,7 +255,10 @@ class DownloaderToolbar extends StatelessWidget {
           }
 
           return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: kDownloaderGutter, vertical: kDownloaderGap),
+            padding: const EdgeInsets.symmetric(
+              horizontal: kDownloaderGutter,
+              vertical: kDownloaderGap,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -255,10 +281,7 @@ class DownloaderToolbar extends StatelessWidget {
                     ],
                   ),
                 ),
-                for (final row in rows) ...[
-                  const SizedBox(height: AppSpace.s10),
-                  row,
-                ],
+                for (final row in rows) ...[const SizedBox(height: AppSpace.s10), row],
               ],
             ),
           );
@@ -309,7 +332,13 @@ class _TitleBlock extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, maxLines: 1, softWrap: false, overflow: TextOverflow.ellipsis, style: titleStyle),
+        Text(
+          title,
+          maxLines: 1,
+          softWrap: false,
+          overflow: TextOverflow.ellipsis,
+          style: titleStyle,
+        ),
         if (subtitle != null) ...[
           const SizedBox(height: 2),
           Text(
@@ -409,7 +438,10 @@ class _FindImagesButton extends StatelessWidget {
     );
 
     final Widget content = iconOnly
-        ? SizedBox.square(dimension: AppSize.large, child: Center(child: glyph))
+        ? SizedBox.square(
+            dimension: AppSize.large,
+            child: Center(child: glyph),
+          )
         : SizedBox(
             width: widthFor(context),
             height: AppSize.large,
@@ -455,12 +487,7 @@ class _FindImagesButton extends StatelessWidget {
       ),
     );
     if (iconOnly) button = Tooltip(message: label, child: button);
-    return Semantics(
-      button: true,
-      enabled: enabled,
-      label: iconOnly ? label : null,
-      child: button,
-    );
+    return Semantics(button: true, enabled: enabled, label: iconOnly ? label : null, child: button);
   }
 }
 
@@ -513,7 +540,12 @@ class DownloaderOptionsStrip extends StatelessWidget {
         builder: (context, constraints) {
           double action(String label) =>
               DownloaderActionButton.widthFor(context, label: label, height: AppSize.compact);
-          final fullWidth = measureGlassText(context, l10n.manualHtmlMode, manualStyle.copyWith(fontWeight: FontWeight.w500)) +
+          final fullWidth =
+              measureGlassText(
+                context,
+                l10n.manualHtmlMode,
+                manualStyle.copyWith(fontWeight: FontWeight.w500),
+              ) +
               AppSpace.s6 +
               AppSwitch.size.width +
               kDownloaderGap +

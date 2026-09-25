@@ -49,17 +49,11 @@ class Recorder {
   Future<Seen> chat(LLMModelConfig config) async {
     seen.clear();
     try {
-      await LLMDispatcher().generate(config, [
-        LLMMessage(role: LLMRole.user, content: 'hi'),
-      ]);
+      await LLMDispatcher().generate(config, [LLMMessage(role: LLMRole.user, content: 'hi')]);
     } catch (_) {
       // The 500 is the point.
     }
-    expect(
-      seen,
-      hasLength(1),
-      reason: '${config.channelType} ${config.endpoint}',
-    );
+    expect(seen, hasLength(1), reason: '${config.channelType} ${config.endpoint}');
     return seen.single;
   }
 
@@ -83,19 +77,15 @@ class Recorder {
 }
 
 /// The config every request was built from before routes existed.
-LLMModelConfig legacyConfig(
-  String type,
-  String endpoint,
-  String modelId,
-  String? pin,
-) => LLMModelConfig(
-  modelId: modelId,
-  channelType: type,
-  endpoint: endpoint,
-  apiKey: 'k',
-  tag: 'chat',
-  wireProtocol: pin,
-);
+LLMModelConfig legacyConfig(String type, String endpoint, String modelId, String? pin) =>
+    LLMModelConfig(
+      modelId: modelId,
+      channelType: type,
+      endpoint: endpoint,
+      apiKey: 'k',
+      tag: 'chat',
+      wireProtocol: pin,
+    );
 
 /// The config the resolver builds now, through the model's route.
 LLMModelConfig routedConfig(LLMChannel channel, LLMModel model) {
@@ -130,61 +120,16 @@ void main() {
   });
   tearDownAll(() => rec.server.close(force: true));
 
-  group(
-    'every legacy (channel, pin) sends the same request through routes',
-    () {
-      test('each preset at its own path, each chat face', () async {
-        var checked = 0;
-        for (final p in kChannelProviderPresets) {
-          final variants = p.hasVariants
-              ? [
-                  for (final v in p.variants)
-                    (v.channelType, v.defaultEndpoint, v.endpointSuffix),
-                ]
-              : [(p.channelType, p.defaultEndpoint, p.endpointSuffix)];
-          for (final (type, preset, suffix) in variants) {
-            if (type == Vendors.midjourneyProxy) continue;
-            final path = preset == null
-                ? suffix
-                : ChannelRoutes.splitHost(preset).$2;
-            final endpoint = '${rec.host}$path';
-            final channel = LLMChannel(
-              displayName: p.id,
-              endpoint: endpoint,
-              apiKey: 'k',
-              type: type,
-            );
-            final modelId = type.startsWith('dashscope')
-                ? 'qwen-plus'
-                : 'test-model';
-            for (final face in Vendors.byId(type).menuFor(Surface.chat)) {
-              for (final pin in {null, face.id}) {
-                if (pin == null &&
-                    face != Vendors.byId(type).menuFor(Surface.chat).first) {
-                  continue;
-                }
-                final before = await rec.chat(
-                  legacyConfig(type, endpoint, modelId, pin),
-                );
-                final after = await rec.chat(
-                  routedConfig(channel, chat(modelId, pin: pin)),
-                );
-                expect(after, before, reason: '$type pin=$pin');
-                checked++;
-              }
-            }
-          }
-        }
-        expect(checked, greaterThan(25));
-      });
-
-      test('discovery on every preset lists from the same address', () async {
-        for (final p in kChannelProviderPresets) {
-          final type = p.channelType;
+  group('every legacy (channel, pin) sends the same request through routes', () {
+    test('each preset at its own path, each chat face', () async {
+      var checked = 0;
+      for (final p in kChannelProviderPresets) {
+        final variants = p.hasVariants
+            ? [for (final v in p.variants) (v.channelType, v.defaultEndpoint, v.endpointSuffix)]
+            : [(p.channelType, p.defaultEndpoint, p.endpointSuffix)];
+        for (final (type, preset, suffix) in variants) {
           if (type == Vendors.midjourneyProxy) continue;
-          final path = p.defaultEndpoint == null
-              ? p.endpointSuffix
-              : ChannelRoutes.splitHost(p.defaultEndpoint!).$2;
+          final path = preset == null ? suffix : ChannelRoutes.splitHost(preset).$2;
           final endpoint = '${rec.host}$path';
           final channel = LLMChannel(
             displayName: p.id,
@@ -192,40 +137,59 @@ void main() {
             apiKey: 'k',
             type: type,
           );
-          final routed = RoutedChannel.primary(channel);
-          final before = await rec.discover(
-            LLMModelConfig(
-              modelId: 'discovery',
-              channelType: type,
-              endpoint: endpoint,
-              apiKey: 'k',
-            ),
-          );
-          final after = await rec.discover(
-            LLMModelConfig(
-              modelId: 'discovery',
-              channelType: routed.channelType,
-              endpoint: routed.endpoint,
-              apiKey: 'k',
-              faceBases: routed.faceBases,
-            ),
-          );
-          expect(after, before, reason: type);
+          final modelId = type.startsWith('dashscope') ? 'qwen-plus' : 'test-model';
+          for (final face in Vendors.byId(type).menuFor(Surface.chat)) {
+            for (final pin in {null, face.id}) {
+              if (pin == null && face != Vendors.byId(type).menuFor(Surface.chat).first) {
+                continue;
+              }
+              final before = await rec.chat(legacyConfig(type, endpoint, modelId, pin));
+              final after = await rec.chat(routedConfig(channel, chat(modelId, pin: pin)));
+              expect(after, before, reason: '$type pin=$pin');
+              checked++;
+            }
+          }
         }
-      });
-    },
-  );
+      }
+      expect(checked, greaterThan(25));
+    });
+
+    test('discovery on every preset lists from the same address', () async {
+      for (final p in kChannelProviderPresets) {
+        final type = p.channelType;
+        if (type == Vendors.midjourneyProxy) continue;
+        final path = p.defaultEndpoint == null
+            ? p.endpointSuffix
+            : ChannelRoutes.splitHost(p.defaultEndpoint!).$2;
+        final endpoint = '${rec.host}$path';
+        final channel = LLMChannel(displayName: p.id, endpoint: endpoint, apiKey: 'k', type: type);
+        final routed = RoutedChannel.primary(channel);
+        final before = await rec.discover(
+          LLMModelConfig(modelId: 'discovery', channelType: type, endpoint: endpoint, apiKey: 'k'),
+        );
+        final after = await rec.discover(
+          LLMModelConfig(
+            modelId: 'discovery',
+            channelType: routed.channelType,
+            endpoint: routed.endpoint,
+            apiKey: 'k',
+            faceBases: routed.faceBases,
+          ),
+        );
+        expect(after, before, reason: type);
+      }
+    });
+  });
 
   group('a merged relay channel', () {
     late LLMChannel channel;
     setUp(() {
-      final routes =
-          ChannelRoutes.create(Platforms.byId(Platforms.newapi), rec.host, [
-            RouteKind.chat,
-            RouteKind.responses,
-            RouteKind.anthropic,
-            RouteKind.gemini,
-          ]);
+      final routes = ChannelRoutes.create(Platforms.byId(Platforms.newapi), rec.host, [
+        RouteKind.chat,
+        RouteKind.responses,
+        RouteKind.anthropic,
+        RouteKind.gemini,
+      ]);
       channel = LLMChannel(
         displayName: 'relay',
         endpoint: routes.primaryAddress,
@@ -243,23 +207,17 @@ void main() {
         RouteKind.gemini: (Vendors.newApiGemini, '/v1beta'),
       };
       for (final MapEntry(key: kind, value: (type, path)) in legacy.entries) {
-        final modelId = kind == RouteKind.gemini
-            ? 'gemini-2.5-flash'
-            : 'claude-sonnet-5';
-        final before = await rec.chat(
-          legacyConfig(type, '${rec.host}$path', modelId, null),
-        );
-        final after = await rec.chat(
-          routedConfig(channel, chat(modelId, route: kind.id)),
-        );
+        final modelId = kind == RouteKind.gemini ? 'gemini-2.5-flash' : 'claude-sonnet-5';
+        final before = await rec.chat(legacyConfig(type, '${rec.host}$path', modelId, null));
+        final after = await rec.chat(routedConfig(channel, chat(modelId, route: kind.id)));
         expect(after, before, reason: kind.id);
       }
     });
 
     test('a path the user set is honored for chat and for discovery', () async {
-      final routes = RoutedChannel.routesOf(channel)
-          .withPath(RouteKind.gemini, '${rec.host}/g/v1beta')
-          .withPath(RouteKind.chat, '/api/v1');
+      final routes = RoutedChannel.routesOf(
+        channel,
+      ).withPath(RouteKind.gemini, '${rec.host}/g/v1beta').withPath(RouteKind.chat, '/api/v1');
       final moved = LLMChannel(
         displayName: 'relay',
         endpoint: routes.primaryAddress,
@@ -267,13 +225,8 @@ void main() {
         type: routes.primaryVendorId,
         routes: routes.encode(),
       );
-      final g = await rec.chat(
-        routedConfig(moved, chat('gemini-2.5-flash', route: 'gemini')),
-      );
-      expect(
-        Uri.parse(g.url).path,
-        startsWith('/g/v1beta/models/gemini-2.5-flash'),
-      );
+      final g = await rec.chat(routedConfig(moved, chat('gemini-2.5-flash', route: 'gemini')));
+      expect(Uri.parse(g.url).path, startsWith('/g/v1beta/models/gemini-2.5-flash'));
       final c = await rec.chat(routedConfig(moved, chat('gpt-5.2')));
       expect(Uri.parse(c.url).path, '/api/v1/chat/completions');
     });
@@ -284,11 +237,11 @@ void main() {
     // moved route reads the old route's carriers as a different model would.
     late LLMChannel channel;
     setUp(() {
-      final routes = ChannelRoutes.create(
-        Platforms.byId(Platforms.newapi),
-        rec.host,
-        [RouteKind.chat, RouteKind.anthropic, RouteKind.responses],
-      );
+      final routes = ChannelRoutes.create(Platforms.byId(Platforms.newapi), rec.host, [
+        RouteKind.chat,
+        RouteKind.anthropic,
+        RouteKind.responses,
+      ]);
       channel = LLMChannel(
         displayName: 'relay',
         endpoint: routes.primaryAddress,
@@ -300,63 +253,50 @@ void main() {
 
     const modelId = 'claude-sonnet-5';
 
-    test(
-      'an Anthropic thinking block is not sent over Chat Completions',
-      () async {
-        final history = [
-          LLMMessage(role: LLMRole.user, content: 'hi'),
-          LLMMessage(
-            role: LLMRole.assistant,
-            content: 'hello',
-            reasoningContent: 'SECRET-THOUGHT',
-            reasoningSignature: 'SIG-123',
-            rawThinkingBlocks: [
-              {
-                'type': 'thinking',
-                'thinking': 'SECRET-THOUGHT',
-                'signature': 'SIG-123',
-              },
-            ],
-            rawThinkingModelId: modelId,
-          ),
-          LLMMessage(role: LLMRole.user, content: 'again'),
-        ];
-        final onChat = await rec.send(
-          routedConfig(channel, chat(modelId, route: 'chat')),
-          history,
-        );
-        expect(onChat.body, isNot(contains('SIG-123')));
-        expect(onChat.body, isNot(contains('SECRET-THOUGHT')));
-        final onResponses = await rec.send(
-          routedConfig(channel, chat(modelId, route: 'responses')),
-          history,
-        );
-        expect(onResponses.body, isNot(contains('SIG-123')));
-      },
-    );
+    test('an Anthropic thinking block is not sent over Chat Completions', () async {
+      final history = [
+        LLMMessage(role: LLMRole.user, content: 'hi'),
+        LLMMessage(
+          role: LLMRole.assistant,
+          content: 'hello',
+          reasoningContent: 'SECRET-THOUGHT',
+          reasoningSignature: 'SIG-123',
+          rawThinkingBlocks: [
+            {'type': 'thinking', 'thinking': 'SECRET-THOUGHT', 'signature': 'SIG-123'},
+          ],
+          rawThinkingModelId: modelId,
+        ),
+        LLMMessage(role: LLMRole.user, content: 'again'),
+      ];
+      final onChat = await rec.send(routedConfig(channel, chat(modelId, route: 'chat')), history);
+      expect(onChat.body, isNot(contains('SIG-123')));
+      expect(onChat.body, isNot(contains('SECRET-THOUGHT')));
+      final onResponses = await rec.send(
+        routedConfig(channel, chat(modelId, route: 'responses')),
+        history,
+      );
+      expect(onResponses.body, isNot(contains('SIG-123')));
+    });
 
-    test(
-      'a Chat Completions reasoning field is not sent over Anthropic',
-      () async {
-        final history = [
-          LLMMessage(role: LLMRole.user, content: 'hi'),
-          LLMMessage(
-            role: LLMRole.assistant,
-            content: 'hello',
-            reasoningContent: 'SECRET-THOUGHT',
-            reasoningFieldName: 'reasoning_content',
-            rawThinkingModelId: modelId,
-          ),
-          LLMMessage(role: LLMRole.user, content: 'again'),
-        ];
-        final onAnthropic = await rec.send(
-          routedConfig(channel, chat(modelId, route: 'anthropic')),
-          history,
-        );
-        expect(onAnthropic.body, isNot(contains('reasoning_content')));
-        expect(onAnthropic.body, isNot(contains('SECRET-THOUGHT')));
-      },
-    );
+    test('a Chat Completions reasoning field is not sent over Anthropic', () async {
+      final history = [
+        LLMMessage(role: LLMRole.user, content: 'hi'),
+        LLMMessage(
+          role: LLMRole.assistant,
+          content: 'hello',
+          reasoningContent: 'SECRET-THOUGHT',
+          reasoningFieldName: 'reasoning_content',
+          rawThinkingModelId: modelId,
+        ),
+        LLMMessage(role: LLMRole.user, content: 'again'),
+      ];
+      final onAnthropic = await rec.send(
+        routedConfig(channel, chat(modelId, route: 'anthropic')),
+        history,
+      );
+      expect(onAnthropic.body, isNot(contains('reasoning_content')));
+      expect(onAnthropic.body, isNot(contains('SECRET-THOUGHT')));
+    });
   });
 
   group('LLMConfigResolver', () {
@@ -364,56 +304,52 @@ void main() {
     databaseFactory = databaseFactoryFfi;
     usePrivateDataDir('joycai_route_resolution_test');
 
-    test(
-      'resolves the model route, and refuses a route that is gone',
-      () async {
-        final db = DatabaseService();
-        final routes = ChannelRoutes.create(
-          Platforms.byId(Platforms.newapi),
-          'https://relay.example.com',
-          [RouteKind.chat, RouteKind.gemini],
-        );
-        final channelId = await db.addChannel(LLMChannel(
+    test('resolves the model route, and refuses a route that is gone', () async {
+      final db = DatabaseService();
+      final routes = ChannelRoutes.create(
+        Platforms.byId(Platforms.newapi),
+        'https://relay.example.com',
+        [RouteKind.chat, RouteKind.gemini],
+      );
+      final channelId = await db.addChannel(
+        LLMChannel(
           displayName: 'relay',
           type: routes.primaryVendorId,
           endpoint: routes.primaryAddress,
           apiKey: 'k',
           routes: routes.encode(),
-        ));
-        final onGemini = await db.addModel(LLMModel(
+        ),
+      );
+      final onGemini = await db.addModel(
+        LLMModel(
           modelId: 'gemini-2.5-flash',
           modelName: 'g',
           tag: 'chat',
           channelId: channelId,
           activeRoute: 'gemini',
-        ));
-        final onAnthropic = await db.addModel(LLMModel(
+        ),
+      );
+      final onAnthropic = await db.addModel(
+        LLMModel(
           modelId: 'claude-sonnet-5',
           modelName: 'c',
           tag: 'chat',
           channelId: channelId,
           activeRoute: 'anthropic',
-        ));
+        ),
+      );
 
-        final config = await LLMConfigResolver().resolveConfig(onGemini);
-        expect(config.channelType, Vendors.newApiGemini);
-        expect(config.endpoint, 'https://relay.example.com/v1beta');
-        expect(
-          config.faceBases[WireProtocol.openaiChat],
-          'https://relay.example.com/v1',
-        );
+      final config = await LLMConfigResolver().resolveConfig(onGemini);
+      expect(config.channelType, Vendors.newApiGemini);
+      expect(config.endpoint, 'https://relay.example.com/v1beta');
+      expect(config.faceBases[WireProtocol.openaiChat], 'https://relay.example.com/v1');
 
-        await expectLater(
-          LLMConfigResolver().resolveConfig(onAnthropic),
-          throwsA(
-            isA<LLMConfigException>().having(
-              (e) => e.kind,
-              'kind',
-              LLMConfigErrorKind.routeNotFound,
-            ),
-          ),
-        );
-      },
-    );
+      await expectLater(
+        LLMConfigResolver().resolveConfig(onAnthropic),
+        throwsA(
+          isA<LLMConfigException>().having((e) => e.kind, 'kind', LLMConfigErrorKind.routeNotFound),
+        ),
+      );
+    });
   });
 }

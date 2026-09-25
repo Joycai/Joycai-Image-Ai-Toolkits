@@ -25,8 +25,10 @@ enum CookieRetention {
   /// How long after its last use a row is dropped, or null for never.
   final Duration? lifetime;
 
-  static CookieRetention fromId(String? id) => CookieRetention.values
-      .firstWhere((r) => r.id == id, orElse: () => CookieRepository.defaultRetention);
+  static CookieRetention fromId(String? id) => CookieRetention.values.firstWhere(
+    (r) => r.id == id,
+    orElse: () => CookieRepository.defaultRetention,
+  );
 }
 
 /// The downloader's remembered cookies (`downloader_cookies`): the last few
@@ -84,8 +86,12 @@ class CookieRepository {
     if (host.isEmpty) return null;
     await _prune(now ?? DateTime.now());
     final db = await _db;
-    final rows = await db.query('downloader_cookies',
-        columns: ['cookies'], where: 'host = ?', whereArgs: [host]);
+    final rows = await db.query(
+      'downloader_cookies',
+      columns: ['cookies'],
+      where: 'host = ?',
+      whereArgs: [host],
+    );
     final value = rows.isEmpty ? null : rows.first['cookies'] as String?;
     return (value == null || value.isEmpty) ? null : value;
   }
@@ -105,8 +111,11 @@ class CookieRepository {
     if (lifetime == null) return;
     final db = await _db;
     // ISO-8601 strings in one zone order like the instants they name.
-    await db.delete('downloader_cookies',
-        where: 'last_used < ?', whereArgs: [now.subtract(lifetime).toIso8601String()]);
+    await db.delete(
+      'downloader_cookies',
+      where: 'last_used < ?',
+      whereArgs: [now.subtract(lifetime).toIso8601String()],
+    );
   }
 
   /// [parameters] as a task row may store them: without the `cookies` a

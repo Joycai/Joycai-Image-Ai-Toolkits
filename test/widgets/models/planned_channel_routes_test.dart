@@ -5,8 +5,7 @@ import 'package:joycai_image_ai_toolkits/widgets/models/channel_provider_presets
 /// `D1f · 4b`: a new channel gets every route its platform offers — a
 /// custom one only the protocol it names.
 void main() {
-  ChannelProviderPreset preset(String id) =>
-      kChannelProviderPresets.firstWhere((p) => p.id == id);
+  ChannelProviderPreset preset(String id) => kChannelProviderPresets.firstWhere((p) => p.id == id);
 
   test('New API gets all four routes, Chat Completions primary', () {
     final r = plannedChannelRoutes(

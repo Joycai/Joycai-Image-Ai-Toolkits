@@ -143,8 +143,7 @@ class FolderOutlineSpy {
   void _onScroll() {
     if (_locked) return;
     final controller = _controller;
-    final offset =
-        controller != null && controller.hasClients ? controller.offset : 0.0;
+    final offset = controller != null && controller.hasClients ? controller.offset : 0.0;
     final next = FolderOutlineGeometry.sectionAt(_offsets, offset + _line);
     if (next != currentIndex.value) currentIndex.value = next;
   }
@@ -197,14 +196,14 @@ class _LayoutKey {
 
   @override
   int get hashCode => Object.hash(
-        Object.hashAll(counts),
-        columns,
-        cellExtent,
-        headerExtent,
-        spacing,
-        topInset,
-        line,
-        leading,
-        trailing,
-      );
+    Object.hashAll(counts),
+    columns,
+    cellExtent,
+    headerExtent,
+    spacing,
+    topInset,
+    line,
+    leading,
+    trailing,
+  );
 }

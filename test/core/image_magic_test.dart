@@ -35,8 +35,7 @@ void main() {
     });
 
     test('bytes that are not an image answer null, never a guess', () {
-      expect(imageMimeFromBytes(Uint8List.fromList('<!doctype html>'.codeUnits)),
-          isNull);
+      expect(imageMimeFromBytes(Uint8List.fromList('<!doctype html>'.codeUnits)), isNull);
       expect(imageMimeFromBytes(Uint8List(0)), isNull);
       expect(imageMimeFromBytes(Uint8List.fromList([0x89, 0x50])), isNull);
     });
@@ -44,12 +43,11 @@ void main() {
     test('a short buffer that still carries a full signature is recognized', () {
       // A JPEG header is three bytes; a buffer shorter than the WEBP window
       // must not be refused on length alone.
-      expect(imageMimeFromBytes(Uint8List.fromList([0xFF, 0xD8, 0xFF])),
-          'image/jpeg');
+      expect(imageMimeFromBytes(Uint8List.fromList([0xFF, 0xD8, 0xFF])), 'image/jpeg');
       expect(
-          imageMimeFromBytes(
-              Uint8List.fromList([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A])),
-          'image/png');
+        imageMimeFromBytes(Uint8List.fromList([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A])),
+        'image/png',
+      );
     });
   });
 
@@ -62,8 +60,7 @@ void main() {
 
     test('falls back only when the format is unknown', () {
       expect(imageExtensionFromBytes(Uint8List.fromList([1, 2, 3])), '.png');
-      expect(imageExtensionFromBytes(Uint8List.fromList([1, 2, 3]), fallback: '.bin'),
-          '.bin');
+      expect(imageExtensionFromBytes(Uint8List.fromList([1, 2, 3]), fallback: '.bin'), '.bin');
     });
   });
 
@@ -77,8 +74,7 @@ void main() {
     });
 
     test('unrecognized bytes keep the declaration — it is all there is', () {
-      expect(resolveImageMime(Uint8List.fromList([1, 2, 3]), 'image/avif'),
-          'image/avif');
+      expect(resolveImageMime(Uint8List.fromList([1, 2, 3]), 'image/avif'), 'image/avif');
     });
   });
 }

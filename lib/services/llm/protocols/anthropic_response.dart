@@ -29,10 +29,7 @@ class ServerToolRun {
 /// itself succeeded, and `max_uses_exceeded` is the brake doing its job.
 void logAnthropicServerToolRun(ServerToolRun run, LLMLogger? logger) {
   if (run.error != null) {
-    logger?.call(
-      'Host ran ${run.name}("${run.query}") and it failed: ${run.error}',
-      level: 'WARN',
-    );
+    logger?.call('Host ran ${run.name}("${run.query}") and it failed: ${run.error}', level: 'WARN');
     return;
   }
   logger?.call(
@@ -158,9 +155,7 @@ AnthropicContent parseAnthropicContent(Object? rawContent) {
         final input = block['input'];
         final query = input is Map ? (input['query']?.toString() ?? '') : '';
         runsByCallId[block['id']?.toString() ?? ''] = serverToolRuns.length;
-        serverToolRuns.add(
-          ServerToolRun(block['name']?.toString() ?? '', query, const []),
-        );
+        serverToolRuns.add(ServerToolRun(block['name']?.toString() ?? '', query, const []));
       } else if (type == 'web_search_tool_result') {
         hasServerTool = true;
         final parsed = parseAnthropicWebSearchResult(block['content']);
@@ -176,14 +171,7 @@ AnthropicContent parseAnthropicContent(Object? rawContent) {
         } else {
           // A result with no call in front of it: keep the sources anyway
           // rather than lose them to a bookkeeping mismatch.
-          serverToolRuns.add(
-            ServerToolRun(
-              'web_search',
-              '',
-              parsed.results,
-              error: parsed.error,
-            ),
-          );
+          serverToolRuns.add(ServerToolRun('web_search', '', parsed.results, error: parsed.error));
         }
       }
       // `redacted_thinking` is an opaque encrypted blob — there is nothing to
@@ -205,16 +193,16 @@ AnthropicContent parseAnthropicContent(Object? rawContent) {
               if (block is Map) block.cast<String, dynamic>(),
           ]
         : const [],
-    turnIncomplete:
-        hasServerTool && lastVisibleType == 'web_search_tool_result',
+    turnIncomplete: hasServerTool && lastVisibleType == 'web_search_tool_result',
   );
 }
 
 /// The `content` of a `web_search_tool_result` block, which is either a list
 /// of results or — when the search itself failed — a single error object
 /// (`{type: web_search_tool_result_error, error_code}`) in the same field.
-({List<({String title, String url})> results, String? error})
-parseAnthropicWebSearchResult(Object? content) {
+({List<({String title, String url})> results, String? error}) parseAnthropicWebSearchResult(
+  Object? content,
+) {
   final results = <({String title, String url})>[];
   if (content is Map) {
     final code = content['error_code']?.toString();

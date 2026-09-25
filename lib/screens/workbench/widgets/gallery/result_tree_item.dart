@@ -23,12 +23,7 @@ class ResultTreeItem extends StatefulWidget {
   /// Nesting level — 0 for a root. See [DirectoryTreeItem.depth].
   final int depth;
 
-  const ResultTreeItem({
-    super.key,
-    required this.path,
-    this.isRoot = false,
-    this.depth = 0,
-  });
+  const ResultTreeItem({super.key, required this.path, this.isRoot = false, this.depth = 0});
 
   @override
   State<ResultTreeItem> createState() => _ResultTreeItemState();
@@ -83,8 +78,9 @@ class _ResultTreeItemState extends State<ResultTreeItem> {
           subDirs.add(entity);
         }
       }
-      subDirs.sort((a, b) =>
-          p.basename(a.path).toLowerCase().compareTo(p.basename(b.path).toLowerCase()));
+      subDirs.sort(
+        (a, b) => p.basename(a.path).toLowerCase().compareTo(p.basename(b.path).toLowerCase()),
+      );
       if (mounted) {
         setState(() {
           _subDirectories = subDirs;
@@ -113,16 +109,18 @@ class _ResultTreeItemState extends State<ResultTreeItem> {
     final metrics = FolderTreeMetrics.of(context);
 
     // Off GalleryState directly — AppState no longer forwards its changes.
-    final isViewing = context.select<GalleryState, bool>((state) =>
-        state.viewMode == GalleryViewMode.folder &&
-        state.folderViewIsResult &&
-        state.viewSourcePath == widget.path);
+    final isViewing = context.select<GalleryState, bool>(
+      (state) =>
+          state.viewMode == GalleryViewMode.folder &&
+          state.folderViewIsResult &&
+          state.viewSourcePath == widget.path,
+    );
 
     final TreeDisclosure disclosure = _subDirectories != null && _subDirectories!.isEmpty
         ? TreeDisclosure.none
         : _isLoading
-            ? TreeDisclosure.loading
-            : (_isExpanded ? TreeDisclosure.expanded : TreeDisclosure.collapsed);
+        ? TreeDisclosure.loading
+        : (_isExpanded ? TreeDisclosure.expanded : TreeDisclosure.collapsed);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -141,13 +139,15 @@ class _ResultTreeItemState extends State<ResultTreeItem> {
           ),
         ),
         if (_isExpanded && _subDirectories != null)
-          ..._subDirectories!.map((dir) => ResultTreeItem(
-                // Keyed by path so a child's expansion follows its directory
-                // when siblings come and go across refreshes.
-                key: ValueKey(dir.path),
-                path: dir.path,
-                depth: widget.depth + 1,
-              )),
+          ..._subDirectories!.map(
+            (dir) => ResultTreeItem(
+              // Keyed by path so a child's expansion follows its directory
+              // when siblings come and go across refreshes.
+              key: ValueKey(dir.path),
+              path: dir.path,
+              depth: widget.depth + 1,
+            ),
+          ),
       ],
     );
   }

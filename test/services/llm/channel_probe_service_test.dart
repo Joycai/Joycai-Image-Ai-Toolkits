@@ -44,19 +44,19 @@ class _FakeDispatcher extends LLMDispatcher {
 
 void main() {
   LLMModelConfig config({String type = Vendors.openAIRest}) => LLMModelConfig(
-        modelId: 'any',
-        channelType: type,
-        endpoint: 'https://relay.example.com/v1',
-        apiKey: 'k',
-      );
+    modelId: 'any',
+    channelType: type,
+    endpoint: 'https://relay.example.com/v1',
+    apiKey: 'k',
+  );
 
   DiscoveredModel model(String id) =>
       DiscoveredModel(modelId: id, displayName: id, rawData: const {});
 
   test('/models answering is the whole story: ok + count', () async {
     final probe = ChannelProbeService(
-        dispatcher: _FakeDispatcher(
-            onDiscover: () async => [model('a'), model('b')]));
+      dispatcher: _FakeDispatcher(onDiscover: () async => [model('a'), model('b')]),
+    );
     final r = await probe.probe(config());
     expect(r.status, ChannelProbeStatus.ok);
     expect(r.modelCount, 2);
@@ -64,53 +64,52 @@ void main() {
 
   test('401/403 is auth, not unreachable', () async {
     final probe = ChannelProbeService(
-        dispatcher: _FakeDispatcher(
-            onDiscover: () async =>
-                throw LLMApiException('nope', statusCode: 401)));
+      dispatcher: _FakeDispatcher(
+        onDiscover: () async => throw LLMApiException('nope', statusCode: 401),
+      ),
+    );
     expect((await probe.probe(config())).status, ChannelProbeStatus.authFailed);
   });
 
-  test('missing /models falls back; a protocol-shaped rejection = connected',
-      () async {
+  test('missing /models falls back; a protocol-shaped rejection = connected', () async {
     // "No /models" is how many relays are configured — the completion probe
     // asks the API surface itself, with an impossible model name so nothing
     // can bill a real generation.
     final fake = _FakeDispatcher(
       onDiscover: () async => throw LLMApiException('gone', statusCode: 404),
-      onGenerate: () async =>
-          throw LLMApiException('unknown model', statusCode: 400),
+      onGenerate: () async => throw LLMApiException('unknown model', statusCode: 400),
     );
     final r = await ChannelProbeService(dispatcher: fake).probe(config());
     expect(r.status, ChannelProbeStatus.connectedNoModels);
     expect(fake.generateModelId, ChannelProbeService.probeModelId);
   });
 
-  test('a 2xx completion for the impossible model still means connected',
-      () async {
+  test('a 2xx completion for the impossible model still means connected', () async {
     final fake = _FakeDispatcher(
       onDiscover: () async => throw LLMApiException('gone', statusCode: 405),
       onGenerate: () async => LLMResponse(text: 'hello'),
     );
-    expect((await ChannelProbeService(dispatcher: fake).probe(config())).status,
-        ChannelProbeStatus.connectedNoModels);
+    expect(
+      (await ChannelProbeService(dispatcher: fake).probe(config())).status,
+      ChannelProbeStatus.connectedNoModels,
+    );
   });
 
-  test('an HTML answer on either step is "not an API", not a key problem',
-      () async {
+  test('an HTML answer on either step is "not an API", not a key problem', () async {
     final direct = ChannelProbeService(
-        dispatcher: _FakeDispatcher(
-            onDiscover: () async =>
-                throw LLMApiException('html', isNonJsonBody: true)));
+      dispatcher: _FakeDispatcher(
+        onDiscover: () async => throw LLMApiException('html', isNonJsonBody: true),
+      ),
+    );
     expect((await direct.probe(config())).status, ChannelProbeStatus.notAnApi);
 
     final onFallback = ChannelProbeService(
-        dispatcher: _FakeDispatcher(
-      onDiscover: () async => throw LLMApiException('gone', statusCode: 404),
-      onGenerate: () async =>
-          throw LLMApiException('html', isNonJsonBody: true),
-    ));
-    expect((await onFallback.probe(config())).status,
-        ChannelProbeStatus.notAnApi);
+      dispatcher: _FakeDispatcher(
+        onDiscover: () async => throw LLMApiException('gone', statusCode: 404),
+        onGenerate: () async => throw LLMApiException('html', isNonJsonBody: true),
+      ),
+    );
+    expect((await onFallback.probe(config())).status, ChannelProbeStatus.notAnApi);
   });
 
   test('402 is an empty wallet, not a connected channel', () async {
@@ -118,26 +117,31 @@ void main() {
     // error before resolving the model — a protocol-shaped rejection, which
     // the completion probe used to read as "connected".
     final outOfCredit = LLMApiException(
-        "You're out of credits — this request needs \$0.000074", statusCode: 402);
+      "You're out of credits — this request needs \$0.000074",
+      statusCode: 402,
+    );
 
     final viaProbe = ChannelProbeService(
-        dispatcher: _FakeDispatcher(
-            onDiscover: () async => throw LLMApiException('no', statusCode: 404),
-            onGenerate: () async => throw outOfCredit));
+      dispatcher: _FakeDispatcher(
+        onDiscover: () async => throw LLMApiException('no', statusCode: 404),
+        onGenerate: () async => throw outOfCredit,
+      ),
+    );
     final r = await viaProbe.probe(config());
     expect(r.status, ChannelProbeStatus.unreachable);
     expect(r.detail, contains('out of credits'));
 
     // And on /models itself, where some hosts gate it too.
     final viaModels = ChannelProbeService(
-        dispatcher: _FakeDispatcher(onDiscover: () async => throw outOfCredit));
+      dispatcher: _FakeDispatcher(onDiscover: () async => throw outOfCredit),
+    );
     expect((await viaModels.probe(config())).status, ChannelProbeStatus.unreachable);
   });
 
   test('network-level failure reads as unreachable with the detail', () async {
     final probe = ChannelProbeService(
-        dispatcher:
-            _FakeDispatcher(onDiscover: () async => throw Exception('refused')));
+      dispatcher: _FakeDispatcher(onDiscover: () async => throw Exception('refused')),
+    );
     final r = await probe.probe(config());
     expect(r.status, ChannelProbeStatus.unreachable);
     expect(r.detail, contains('refused'));
@@ -154,37 +158,38 @@ void main() {
     expect(fake.generateOptions?['maxTokens'], 1);
   });
 
-  test('429 / 5xx is a busy upstream, not an unreachable host (B13)',
-      () async {
+  test('429 / 5xx is a busy upstream, not an unreachable host (B13)', () async {
     for (final code in [429, 500, 502, 503]) {
       final onModels = ChannelProbeService(
-          dispatcher: _FakeDispatcher(
-              onDiscover: () async =>
-                  throw LLMApiException('busy $code', statusCode: code)));
+        dispatcher: _FakeDispatcher(
+          onDiscover: () async => throw LLMApiException('busy $code', statusCode: code),
+        ),
+      );
       final r = await onModels.probe(config());
       expect(r.status, ChannelProbeStatus.upstreamError, reason: '$code');
       expect(r.detail, contains('busy'));
 
       final onCompletion = ChannelProbeService(
-          dispatcher: _FakeDispatcher(
-        onDiscover: () async => throw LLMApiException('gone', statusCode: 404),
-        onGenerate: () async =>
-            throw LLMApiException('busy $code', statusCode: code),
-      ));
-      expect((await onCompletion.probe(config())).status,
-          ChannelProbeStatus.upstreamError,
-          reason: 'completion $code');
+        dispatcher: _FakeDispatcher(
+          onDiscover: () async => throw LLMApiException('gone', statusCode: 404),
+          onGenerate: () async => throw LLMApiException('busy $code', statusCode: code),
+        ),
+      );
+      expect(
+        (await onCompletion.probe(config())).status,
+        ChannelProbeStatus.upstreamError,
+        reason: 'completion $code',
+      );
     }
     // 501 still means "no such path" and falls back to the completion probe.
     final notImplemented = _FakeDispatcher(
       onDiscover: () async => throw LLMApiException('nope', statusCode: 501),
-      onGenerate: () async =>
-          throw LLMApiException('unknown model', statusCode: 400),
+      onGenerate: () async => throw LLMApiException('unknown model', statusCode: 400),
     );
     expect(
-        (await ChannelProbeService(dispatcher: notImplemented).probe(config()))
-            .status,
-        ChannelProbeStatus.connectedNoModels);
+      (await ChannelProbeService(dispatcher: notImplemented).probe(config())).status,
+      ChannelProbeStatus.connectedNoModels,
+    );
   });
 
   test('midjourney channels are not probed at all', () async {
@@ -192,8 +197,9 @@ void main() {
     // it would report success against any URL — and a real request would
     // start a paid generation.
     final fake = _FakeDispatcher();
-    final r = await ChannelProbeService(dispatcher: fake)
-        .probe(config(type: Vendors.midjourneyProxy));
+    final r = await ChannelProbeService(
+      dispatcher: fake,
+    ).probe(config(type: Vendors.midjourneyProxy));
     expect(r.status, ChannelProbeStatus.notSupported);
     expect(fake.discoverCalls, 0);
     expect(fake.generateCalls, 0);
@@ -207,14 +213,18 @@ void main() {
       onDiscover: () async => throw LLMApiException('no', statusCode: 404),
       onGenerate: () async => throw LLMApiException('{"type":"error"}', statusCode: 400),
     );
-    await ChannelProbeService(dispatcher: dispatcher).probe(LLMModelConfig(
-      modelId: ChannelProbeService.probeModelId,
-      channelType: Vendors.dashscope,
-      endpoint: 'https://dashscope.aliyuncs.com/apps/anthropic/v1',
-      apiKey: 'k',
-      wireProtocol: 'anthropic-chat',
-      faceBases: const {WireProtocol.anthropicChat: 'https://dashscope.aliyuncs.com/apps/anthropic/v1'},
-    ));
+    await ChannelProbeService(dispatcher: dispatcher).probe(
+      LLMModelConfig(
+        modelId: ChannelProbeService.probeModelId,
+        channelType: Vendors.dashscope,
+        endpoint: 'https://dashscope.aliyuncs.com/apps/anthropic/v1',
+        apiKey: 'k',
+        wireProtocol: 'anthropic-chat',
+        faceBases: const {
+          WireProtocol.anthropicChat: 'https://dashscope.aliyuncs.com/apps/anthropic/v1',
+        },
+      ),
+    );
     expect(dispatcher.generateConfig?.modelId, ChannelProbeService.probeModelId);
     expect(dispatcher.generateConfig?.wireProtocol, 'anthropic-chat');
     expect(dispatcher.generateConfig?.faceBases, isNotEmpty);

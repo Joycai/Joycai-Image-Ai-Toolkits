@@ -15,7 +15,12 @@ import '../ui/scroll_edge_fade.dart';
 /// how many files its section holds, and whether the last scan could read it.
 @immutable
 class FolderOutlineEntry {
-  const FolderOutlineEntry({required this.path, required this.label, required this.count, this.unreachable = false});
+  const FolderOutlineEntry({
+    required this.path,
+    required this.label,
+    required this.count,
+    this.unreachable = false,
+  });
 
   final String path;
   final String label;
@@ -109,21 +114,34 @@ class FolderOutlineBar extends StatefulWidget {
   static const double _menuWidth = 220;
   static const double _menuWidthPhone = 290;
 
-  static TextStyle labelStyle(BuildContext context, {required bool lit}) => Theme.of(
-    context,
-  ).textTheme.labelMedium!.metricsOnly.copyWith(fontWeight: lit ? FontWeight.w600 : FontWeight.w500);
+  static TextStyle labelStyle(BuildContext context, {required bool lit}) => Theme.of(context)
+      .textTheme
+      .labelMedium!
+      .metricsOnly
+      .copyWith(fontWeight: lit ? FontWeight.w600 : FontWeight.w500);
 
-  static TextStyle countStyle(BuildContext context) =>
-      Theme.of(context).textTheme.labelSmall!.mono.metricsOnly.copyWith(fontWeight: FontWeight.w400);
+  static TextStyle countStyle(BuildContext context) => Theme.of(
+    context,
+  ).textTheme.labelSmall!.mono.metricsOnly.copyWith(fontWeight: FontWeight.w400);
 
   /// The width one chip takes, measured at the lit weight so lighting one
   /// never widens the row.
-  static double chipWidth(BuildContext context, FolderOutlineEntry entry, {required bool withCount}) {
+  static double chipWidth(
+    BuildContext context,
+    FolderOutlineEntry entry, {
+    required bool withCount,
+  }) {
     final label = measureGlassText(context, entry.label, labelStyle(context, lit: true));
     final count = withCount && !entry.unreachable
         ? AppSpace.s6 + measureGlassText(context, '${entry.count}', countStyle(context))
         : 0.0;
-    return (_ChipLayout.padLeft + AppSize.iconMd + AppSpace.s6 + label + count + _ChipLayout.padRight).ceilToDouble();
+    return (_ChipLayout.padLeft +
+            AppSize.iconMd +
+            AppSpace.s6 +
+            label +
+            count +
+            _ChipLayout.padRight)
+        .ceilToDouble();
   }
 
   /// The level the row takes at [available] width, in the declared order.
@@ -354,7 +372,9 @@ class _FolderOutlineBarState extends State<FolderOutlineBar> {
           ),
         const AppGlassMenuDivider(),
         AppGlassMenuHeading(
-          entry.unreachable ? entry.path : '${entry.path} · ${l10n.folderOutlineFilesCount(entry.count)}',
+          entry.unreachable
+              ? entry.path
+              : '${entry.path} · ${l10n.folderOutlineFilesCount(entry.count)}',
         ),
       ],
     );
@@ -433,7 +453,9 @@ class _OutlineChipState extends State<_OutlineChip> {
   KeyEventResult _onKey(FocusNode node, KeyEvent event) {
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
     final key = event.logicalKey;
-    if (key == LogicalKeyboardKey.enter || key == LogicalKeyboardKey.numpadEnter || key == LogicalKeyboardKey.space) {
+    if (key == LogicalKeyboardKey.enter ||
+        key == LogicalKeyboardKey.numpadEnter ||
+        key == LogicalKeyboardKey.space) {
       widget.onTap();
       return KeyEventResult.handled;
     }
@@ -487,14 +509,16 @@ class _OutlineChipState extends State<_OutlineChip> {
       foregroundDecoration: BoxDecoration(
         borderRadius: radius,
         border: Border.all(color: _focused ? scheme.primary : Colors.transparent),
-        boxShadow: _focused
-            ? [BoxShadow(color: scheme.accentRing, spreadRadius: 3)]
-            : const [],
+        boxShadow: _focused ? [BoxShadow(color: scheme.accentRing, spreadRadius: 3)] : const [],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(unreachable ? Icons.lock_person : Icons.folder_outlined, size: AppSize.iconMd, color: iconColor),
+          Icon(
+            unreachable ? Icons.lock_person : Icons.folder_outlined,
+            size: AppSize.iconMd,
+            color: iconColor,
+          ),
           const SizedBox(width: AppSpace.s6),
           Text(
             entry.label,
@@ -589,7 +613,8 @@ class _CollapsedChip extends StatelessWidget {
               clipBehavior: Clip.hardEdge,
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  const fixed = AppSize.iconMd + AppSpace.s6 + AppSpace.s6 + AppSpace.s4 + AppSize.iconSm;
+                  const fixed =
+                      AppSize.iconMd + AppSpace.s6 + AppSpace.s6 + AppSpace.s4 + AppSize.iconSm;
                   final countWidth = measureGlassText(
                     context,
                     '${index + 1}/${entries.length}',
@@ -598,7 +623,12 @@ class _CollapsedChip extends StatelessWidget {
                   final tight = constraints.maxWidth < fixed + countWidth;
                   final row = _row(context, scheme, entry, index);
                   return tight
-                      ? OverflowBox(alignment: Alignment.centerLeft, minWidth: 0, maxWidth: double.infinity, child: row)
+                      ? OverflowBox(
+                          alignment: Alignment.centerLeft,
+                          minWidth: 0,
+                          maxWidth: double.infinity,
+                          child: row,
+                        )
                       : row;
                 },
               ),
@@ -624,7 +654,10 @@ class _CollapsedChip extends StatelessWidget {
             entry.label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: FolderOutlineBar.labelStyle(context, lit: true).copyWith(color: scheme.onAccentTint),
+            style: FolderOutlineBar.labelStyle(
+              context,
+              lit: true,
+            ).copyWith(color: scheme.onAccentTint),
           ),
         ),
         const SizedBox(width: AppSpace.s6),

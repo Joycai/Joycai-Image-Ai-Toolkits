@@ -109,8 +109,7 @@ class ModelFamilyClassifier {
   /// would silently make the reasoning control do nothing. It also costs
   /// nothing at the default effort, which sends no field at all.
   static GeminiThinkingGeneration geminiThinkingGeneration(String modelId) {
-    final m = RegExp(r'gemini-(\d+)(?:\.(\d+))?')
-        .firstMatch(modelId.toLowerCase());
+    final m = RegExp(r'gemini-(\d+)(?:\.(\d+))?').firstMatch(modelId.toLowerCase());
     if (m == null) return GeminiThinkingGeneration.level;
     final major = int.parse(m.group(1)!);
     final minor = int.tryParse(m.group(2) ?? '') ?? 0;
@@ -124,10 +123,7 @@ class ModelFamilyClassifier {
     final id = modelId.toLowerCase();
 
     // --- Midjourney family (matches MJ / Niji ids served via proxy) ---
-    if (id.startsWith('mj_') ||
-        id == 'mj' ||
-        id.contains('midjourney') ||
-        isNijiVariant(id)) {
+    if (id.startsWith('mj_') || id == 'mj' || id.contains('midjourney') || isNijiVariant(id)) {
       return ModelFamily.midjourney;
     }
 
@@ -186,8 +182,7 @@ class ModelFamilyClassifier {
     // (`minimaxai/…` diverges at the eighth character), and the same M3/H3
     // one-letter caution applies: `minimaxai/minimax-m3` (chat, also
     // self-hostable) must stay out of the video family.
-    if (id.startsWith('minimax-h3') ||
-        id.startsWith('minimaxai/minimax-h3')) {
+    if (id.startsWith('minimax-h3') || id.startsWith('minimaxai/minimax-h3')) {
       return ModelFamily.openaiVideo;
     }
 
@@ -261,9 +256,7 @@ class ModelFamilyClassifier {
     if (id.contains('gpt-image') || id.contains('gpt-image-1')) {
       return ModelFamily.openaiImage;
     }
-    if (id.startsWith('gpt') ||
-        id.contains('gpt-') ||
-        _isOpenAIReasoning(id)) {
+    if (id.startsWith('gpt') || id.contains('gpt-') || _isOpenAIReasoning(id)) {
       return ModelFamily.openaiChat;
     }
 
@@ -279,8 +272,7 @@ class ModelFamilyClassifier {
   /// the midjourney family (it drives the proxy's `botType`), which is why it
   /// is a named predicate here rather than another [ModelFamily] value. Lives
   /// in this rule table so the string rule exists exactly once.
-  static bool isNijiVariant(String modelId) =>
-      modelId.toLowerCase().contains('niji');
+  static bool isNijiVariant(String modelId) => modelId.toLowerCase().contains('niji');
 
   /// Ids DashScope serves only on its **multimodal** native chat endpoint
   /// (`multimodal-generation/generation`) rather than the text one.
@@ -322,9 +314,7 @@ class ModelFamilyClassifier {
   static bool isTextOnlyChat(String modelId) {
     final id = modelId.toLowerCase();
     if (!id.contains('deepseek')) return false;
-    return !id.contains('flash') &&
-        !id.contains('-vl') &&
-        !id.contains('vision');
+    return !id.contains('flash') && !id.contains('-vl') && !id.contains('vision');
   }
 
   /// Claude ids whose generation knows only the **manual** thinking form
@@ -345,15 +335,14 @@ class ModelFamilyClassifier {
   static bool isLegacyClaudeThinking(String modelId) {
     final id = modelId.toLowerCase();
     if (!id.contains('claude')) return false;
-    final m = RegExp(r'claude(?:[-_](?:opus|sonnet|haiku))?[-_](\d+)(?:[-_.](\d+))?')
-        .firstMatch(id);
+    final m = RegExp(
+      r'claude(?:[-_](?:opus|sonnet|haiku))?[-_](\d+)(?:[-_.](\d+))?',
+    ).firstMatch(id);
     if (m == null) return false;
     final major = int.parse(m.group(1)!);
     final minorRaw = m.group(2);
     // A trailing 8-digit date (`-20250514`) is not a minor version.
-    final minor = (minorRaw == null || minorRaw.length >= 4)
-        ? 0
-        : int.parse(minorRaw);
+    final minor = (minorRaw == null || minorRaw.length >= 4) ? 0 : int.parse(minorRaw);
     if (major < 4) return true;
     return major == 4 && minor <= 5;
   }
@@ -391,8 +380,9 @@ class ModelFamilyClassifier {
   /// The separator is `-` in the dated ids and `.` in the plan's aliases; the
   /// six-digit date after the version (`-250828`) is never read as a minor.
   static (int, int)? seedreamVersion(String modelId) {
-    final m = RegExp(r'seedream[-_]?(\d+)(?:[-_.](\d{1,2}))?(?!\d)')
-        .firstMatch(modelId.toLowerCase());
+    final m = RegExp(
+      r'seedream[-_]?(\d+)(?:[-_.](\d{1,2}))?(?!\d)',
+    ).firstMatch(modelId.toLowerCase());
     if (m == null) return null;
     return (int.parse(m.group(1)!), int.tryParse(m.group(2) ?? '') ?? 0);
   }
@@ -417,8 +407,7 @@ class ModelFamilyClassifier {
 
     // Heuristics that don't map to a provider family but still inform tagging.
     final id = modelId.toLowerCase();
-    if (id.contains('claude') &&
-        (id.contains('opus') || id.contains('sonnet'))) {
+    if (id.contains('claude') && (id.contains('opus') || id.contains('sonnet'))) {
       return 'multimodal';
     }
     if (id.contains('vision')) return 'multimodal';

@@ -56,12 +56,12 @@ class AppSectionLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final style = Theme.of(context).textTheme.labelMedium?.copyWith(
-          fontWeight: FontWeight.w600,
-          letterSpacing: AppType.trackedLabelSpacing,
-          color: tone == AppSectionTone.accent
-              ? colorScheme.onAccentTint
-              : colorScheme.onSurfaceVariant,
-        );
+      fontWeight: FontWeight.w600,
+      letterSpacing: AppType.trackedLabelSpacing,
+      color: tone == AppSectionTone.accent
+          ? colorScheme.onAccentTint
+          : colorScheme.onSurfaceVariant,
+    );
     // A no-op on the CJK these labels are usually written in, and
     // deliberately kept anyway: the app ships English and Japanese too, and
     // the spec's caption is upper case there.

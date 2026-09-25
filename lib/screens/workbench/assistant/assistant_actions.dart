@@ -52,16 +52,17 @@ extension _AssistantActions on _WorkbenchScreenState {
       title: l10n.optSysPromptPick,
       searchHint: l10n.optSysPromptSearch,
       icon: Icons.notes_outlined,
-      selected: _loadedPreset(wui)?.id ??
+      selected:
+          _loadedPreset(wui)?.id ??
           ((wui.optSelectedSysPrompt ?? '').trim().isEmpty ? builtinPresetPickerId : null),
       options: presetPickerOptions(l10n, Theme.of(context).colorScheme, _optSysPrompts),
     );
     if (picked == null || !mounted) return;
     await _handlePickPreset(
       _optSysPrompts.cast<SystemPrompt?>().firstWhere(
-            (p) => p?.id == picked.value,
-            orElse: () => null,
-          ),
+        (p) => p?.id == picked.value,
+        orElse: () => null,
+      ),
     );
   }
 
@@ -85,8 +86,7 @@ extension _AssistantActions on _WorkbenchScreenState {
     // if something else asks.
     if (_optRunningForSession(session)) return;
     // 出词 ⇄ 维护 keeps the conversation, so there is nothing to confirm.
-    final sameSession =
-        session.usesKnowledgeBase && PromptOptimizerSession.isKnowledgeMode(next);
+    final sameSession = session.usesKnowledgeBase && PromptOptimizerSession.isKnowledgeMode(next);
     if (!sameSession && session.transcript.isNotEmpty) {
       final l10n = AppLocalizations.of(context)!;
       final target = next == AssistantMode.systemPrompt
@@ -197,9 +197,7 @@ extension _AssistantActions on _WorkbenchScreenState {
   /// so a failure part-way leaves the edits before it on disk and the rest
   /// still pending — which is what the cards will then show.
   Future<void> _handleKbEditApplyAll(PromptOptimizerSession session) async {
-    final ids = [
-      for (final e in PromptOptimizerAgent.pendingKbEdits(session)) e.editId!,
-    ];
+    final ids = [for (final e in PromptOptimizerAgent.pendingKbEdits(session)) e.editId!];
     for (final id in ids) {
       if (!mounted) return;
       await _handleKbEditApply(session, id);
@@ -218,14 +216,11 @@ extension _AssistantActions on _WorkbenchScreenState {
     // generation run with it unchanged can be tagged. The version is looked
     // up by text rather than taken as "the latest" — every prompt card has
     // its own apply button, so the user can apply v2 after v3 exists.
-    final session =
-        Provider.of<WorkbenchUIState>(context, listen: false).optimizerSession;
-    final version =
-        PromptProvenance.versionForPromptText(session.transcript, prompt);
+    final session = Provider.of<WorkbenchUIState>(context, listen: false).optimizerSession;
+    final version = PromptProvenance.versionForPromptText(session.transcript, prompt);
     _appState!.appliedAssistantPrompt = version == null
         ? null
-        : AppliedAssistantPrompt(
-            sessionId: session.id, version: version, text: prompt);
+        : AppliedAssistantPrompt(sessionId: session.id, version: version, text: prompt);
     _appState!.updateWorkbenchConfig(prompt: prompt);
     _appState!.setWorkbenchTab(0);
     AppSnackBar.info(context, AppLocalizations.of(context)!.promptApplied);

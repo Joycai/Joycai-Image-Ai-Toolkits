@@ -15,12 +15,7 @@ const int anthropicDefaultMaxTokens = 8192;
 
 /// The four image media types Anthropic accepts. Anything else is re-encoded
 /// on the way out — see [ImageCompressor.coerceMediaType].
-const Set<String> anthropicImageMediaTypes = {
-  'image/jpeg',
-  'image/png',
-  'image/gif',
-  'image/webp',
-};
+const Set<String> anthropicImageMediaTypes = {'image/jpeg', 'image/png', 'image/gif', 'image/webp'};
 
 /// The versioned type identifier of the server-side web search tool.
 ///

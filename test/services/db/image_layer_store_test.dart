@@ -48,8 +48,7 @@ void main() {
       ]) {
         final path = p.join(folder, 'l$z.png');
         touch(path);
-        await repo.save(ImageLayer(
-            path: path, setId: 'set', zIndex: z, name: 'n$z', box: box));
+        await repo.save(ImageLayer(path: path, setId: 'set', zIndex: z, name: 'n$z', box: box));
       }
     }
 
@@ -59,13 +58,13 @@ void main() {
       expect(set!.layers.map((l) => l.zIndex), [0, 1, 2]);
       expect(set.base!.box, isNull);
       expect(set.overlays.first.box, const LayerBox(27, 0, 888, 1137));
-      expect(ImageLayerRepository.layeredPaths.value,
-          {for (var z = 0; z < 3; z++) p.join(dir.path, 'l$z.png'): z});
+      expect(ImageLayerRepository.layeredPaths.value, {
+        for (var z = 0; z < 3; z++) p.join(dir.path, 'l$z.png'): z,
+      });
       expect(await repo.setFor(p.join(dir.path, 'other.png')), isNull);
     });
 
-    test('files gone from disk drop out; no layer left means no set',
-        () async {
+    test('files gone from disk drop out; no layer left means no set', () async {
       await saveSet(dir.path);
       File(p.join(dir.path, 'l1.png')).deleteSync();
       final set = await repo.setFor(p.join(dir.path, 'l0.png'));
@@ -89,20 +88,17 @@ void main() {
       await repo.move(folder, moved);
       final set = await repo.setFor(p.join(moved, 'title.png'));
       expect(set!.layers.map((l) => p.dirname(l.path)).toSet(), {moved});
-      expect(ImageLayerRepository.layeredPaths.value.keys,
-          everyElement(startsWith(moved)));
+      expect(ImageLayerRepository.layeredPaths.value.keys, everyElement(startsWith(moved)));
     });
 
-    test('overwriting a layer file with an ordinary one retires its row',
-        () async {
+    test('overwriting a layer file with an ordinary one retires its row', () async {
       await saveSet(dir.path);
       final other = touch(p.join(dir.path, 'other.png')).path;
       final target = p.join(dir.path, 'l2.png');
       File(target).deleteSync();
       File(other).renameSync(target);
       await repo.move(other, target);
-      expect(ImageLayerRepository.layeredPaths.value.containsKey(target),
-          isFalse);
+      expect(ImageLayerRepository.layeredPaths.value.containsKey(target), isFalse);
       final set = await repo.setFor(p.join(dir.path, 'l0.png'));
       expect(set!.layers.map((l) => l.zIndex), [0, 1]);
     });
@@ -113,14 +109,15 @@ void main() {
       await saveSet(p.join(dir.path, 'ab')); // same set id, different rows
       await repo.move(folder, p.join(dir.path, 'z'));
       expect(
-          ImageLayerRepository.layeredPaths.value.keys
-              .where((path) => path.startsWith(p.join(dir.path, 'ab'))),
-          hasLength(3));
+        ImageLayerRepository.layeredPaths.value.keys.where(
+          (path) => path.startsWith(p.join(dir.path, 'ab')),
+        ),
+        hasLength(3),
+      );
     });
   });
 
-  test('a decomposition task stores base and layers with their boxes',
-      () async {
+  test('a decomposition task stores base and layers with their boxes', () async {
     final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     addTearDown(() => server.close(force: true));
     server.listen((request) async {
@@ -133,44 +130,49 @@ void main() {
       await utf8.decodeStream(request);
       final base = 'http://127.0.0.1:${server.port}';
       request.response.headers.contentType = ContentType.json;
-      request.response.write(jsonEncode({
-        'data': [
-          {
-            'url': '$base/img/1.png',
-            'z_index': 1,
-            'name': 'figure',
-            'description': 'the character',
-            'bounding_box': {
-              'absolute': [27, 0, 888, 1137],
+      request.response.write(
+        jsonEncode({
+          'data': [
+            {
+              'url': '$base/img/1.png',
+              'z_index': 1,
+              'name': 'figure',
+              'description': 'the character',
+              'bounding_box': {
+                'absolute': [27, 0, 888, 1137],
+              },
             },
-          },
-          {'url': '$base/img/0.png', 'z_index': 0},
-        ],
-        'usage': {'generated_images': 2},
-      }));
+            {'url': '$base/img/0.png', 'z_index': 0},
+          ],
+          'usage': {'generated_images': 2},
+        }),
+      );
       await request.response.close();
     });
 
     final outDir = Directory(p.join(dataDir.path, 'out'))..createSync();
     final db = DatabaseService();
     await db.saveSetting('output_directory', outDir.path);
-    final channelId = await db.addChannel(LLMChannel(
-      displayName: 'Ark',
-      endpoint: 'http://127.0.0.1:${server.port}/api/plan/v3',
-      apiKey: 'k',
-      type: Vendors.volcengineArk,
-    ));
-    final modelId = await db.addModel(LLMModel(
-      modelId: 'doubao-seedream-5-0-pro-260628',
-      modelName: 'Seedream pro',
-      tag: 'image',
-      channelId: channelId,
-    ));
+    final channelId = await db.addChannel(
+      LLMChannel(
+        displayName: 'Ark',
+        endpoint: 'http://127.0.0.1:${server.port}/api/plan/v3',
+        apiKey: 'k',
+        type: Vendors.volcengineArk,
+      ),
+    );
+    final modelId = await db.addModel(
+      LLMModel(
+        modelId: 'doubao-seedream-5-0-pro-260628',
+        modelName: 'Seedream pro',
+        tag: 'image',
+        channelId: channelId,
+      ),
+    );
 
     final queue = TaskQueueService();
     addTearDown(queue.dispose);
-    await queue.addTask(const [], modelId, {'prompt': '', 'watermark': 'off'},
-        id: 'layers');
+    await queue.addTask(const [], modelId, {'prompt': '', 'watermark': 'off'}, id: 'layers');
     final task = queue.queue.firstWhere((t) => t.id == 'layers');
     for (var i = 0; i < 400 && task.status != TaskStatus.completed; i++) {
       if (task.status == TaskStatus.failed) fail(task.logs.join('\n'));
@@ -192,4 +194,5 @@ void main() {
 
 /// A 1×1 transparent PNG.
 final Uint8List _png = base64Decode(
-    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==');
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+);

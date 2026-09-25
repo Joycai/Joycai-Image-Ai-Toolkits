@@ -2,14 +2,20 @@ part of 'crop_resize_toolbar.dart';
 
 extension _WideRow on _CropResizeToolbarState {
   /// Steps [f] down until the row fits [width], and reports whether it does.
-  bool _fitRow(BuildContext context, _Fit f, double width, {required String? info, required String samplingLabel}) {
+  bool _fitRow(
+    BuildContext context,
+    _Fit f,
+    double width, {
+    required String? info,
+    required String samplingLabel,
+  }) {
     double measure() => _measureRow(
-          context,
-          f,
-          info: info,
-          customMode: _customRatioMode,
-          samplingLabel: samplingLabel,
-        );
+      context,
+      f,
+      info: info,
+      customMode: _customRatioMode,
+      samplingLabel: samplingLabel,
+    );
 
     final steps = <VoidCallback>[
       // 1 · decoration.
@@ -156,9 +162,13 @@ extension _WideRow on _CropResizeToolbarState {
       ),
       child: Row(
         children: [
-          Expanded(child: _BareNumberField(controller: _ratioXController, textAlign: TextAlign.center)),
+          Expanded(
+            child: _BareNumberField(controller: _ratioXController, textAlign: TextAlign.center),
+          ),
           Text(':', style: _valueStyle(context).copyWith(color: ink2)),
-          Expanded(child: _BareNumberField(controller: _ratioYController, textAlign: TextAlign.center)),
+          Expanded(
+            child: _BareNumberField(controller: _ratioYController, textAlign: TextAlign.center),
+          ),
         ],
       ),
     );

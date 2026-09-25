@@ -31,16 +31,14 @@ void main() {
   });
 
   test('without a usage echo, the size actually sent is published', () {
-    final meta =
-        dashscopeImageMetadata(data: const {}, imageCount: 2, sentSize: '1K');
+    final meta = dashscopeImageMetadata(data: const {}, imageCount: 2, sentSize: '1K');
     expect(meta['output_size'], '1K');
     expect(meta['image_count'], 2);
     expect(OutputSpec.from(null, metadata: meta).size, '1K');
   });
 
   test('no usage and no size still yields non-empty metadata', () {
-    final meta =
-        dashscopeImageMetadata(data: const {}, imageCount: 1, sentSize: null);
+    final meta = dashscopeImageMetadata(data: const {}, imageCount: 1, sentSize: null);
     expect(meta, {'image_count': 1});
   });
 

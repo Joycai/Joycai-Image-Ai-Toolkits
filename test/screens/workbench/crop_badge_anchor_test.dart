@@ -32,24 +32,24 @@ void main() {
   tearDownAll(() => env.dispose());
 
   Future<void> openCrop(WidgetTester tester) => mountApp(
-        tester,
-        env: env,
-        screen: AppScreen.workbench,
-        size: const Size(1440, 900),
-        label: 'crop-badge',
-        before: (_) async {
-          final AppState s = AppState();
-          s.setWorkbenchTab(3);
-          seedCropSource(s);
-        },
-      );
+    tester,
+    env: env,
+    screen: AppScreen.workbench,
+    size: const Size(1440, 900),
+    label: 'crop-badge',
+    before: (_) async {
+      final AppState s = AppState();
+      s.setWorkbenchTab(3);
+      seedCropSource(s);
+    },
+  );
 
   /// The badge's own text: it *starts* with two bare numbers either side of a
   /// spaced `×`. The toolbar's source caption and the output card carry sizes
   /// too, but after a word, and unspaced.
   Finder badge() => find.byWidgetPredicate(
-        (Widget w) => w is Text && RegExp(r'^\d+ × \d+').hasMatch(w.data ?? ''),
-      );
+    (Widget w) => w is Text && RegExp(r'^\d+ × \d+').hasMatch(w.data ?? ''),
+  );
 
   testWidgets('the selection is measured before anything is dragged', (WidgetTester tester) async {
     await openCrop(tester);
@@ -81,11 +81,17 @@ void main() {
     final Rect selectionOnScreen = selection.shift(canvas.topLeft);
 
     final Rect drawn = tester.getRect(badge());
-    expect(selectionOnScreen.contains(drawn.topLeft), isTrue,
-        reason: 'badge $drawn is outside the selection $selectionOnScreen');
+    expect(
+      selectionOnScreen.contains(drawn.topLeft),
+      isTrue,
+      reason: 'badge $drawn is outside the selection $selectionOnScreen',
+    );
     // Along the top edge and centred on it, not merely somewhere inside.
     expect(drawn.top - selectionOnScreen.top, lessThan(24));
-    expect((drawn.center.dx - selectionOnScreen.center.dx).abs(), lessThan(2),
-        reason: 'badge $drawn is not centred on the selection $selectionOnScreen');
+    expect(
+      (drawn.center.dx - selectionOnScreen.center.dx).abs(),
+      lessThan(2),
+      reason: 'badge $drawn is not centred on the selection $selectionOnScreen',
+    );
   });
 }

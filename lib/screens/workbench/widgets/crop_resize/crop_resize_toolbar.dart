@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:extended_image/extended_image.dart';
@@ -13,14 +14,14 @@ import '../../../../services/media/image_metadata_service.dart';
 import '../../../../services/media/image_processing_service.dart';
 import '../../../../state/app_state.dart';
 import '../../../../state/workbench_ui_state.dart';
+import '../../../../widgets/glass/app_glass.dart';
+import '../../../../widgets/glass/glass_controls.dart';
 import '../../../../widgets/ui/app_button.dart';
 import '../../../../widgets/ui/app_dialog.dart';
 import '../../../../widgets/ui/app_dropdown.dart';
 import '../../../../widgets/ui/app_field_size.dart';
 import '../../../../widgets/ui/app_setting_row.dart';
 import '../../../../widgets/ui/app_snackbar.dart';
-import '../../../../widgets/glass/app_glass.dart';
-import '../../../../widgets/glass/glass_controls.dart';
 
 part 'crop_resize_controls.dart';
 part 'crop_resize_metrics.dart';
@@ -70,9 +71,9 @@ class CropResizeToolbar extends StatefulWidget {
     final widestSampling = _kSamplingLabels.values.reduce(
       (a, b) =>
           measureGlassText(context, a, GlassIconButton.labelStyle(context)) >=
-                  measureGlassText(context, b, GlassIconButton.labelStyle(context))
-              ? a
-              : b,
+              measureGlassText(context, b, GlassIconButton.labelStyle(context))
+          ? a
+          : b,
     );
     final fit = _Fit()..saveSubtitle = _saveSubtitleFitsHeight(context);
     return _measureRow(
@@ -193,15 +194,20 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
     _isAutoUpdating = true;
     if (ratio != null) {
       if (ratio == 1.0) {
-        _ratioXController.text = '1'; _ratioYController.text = '1';
+        _ratioXController.text = '1';
+        _ratioYController.text = '1';
       } else if (ratio > 1.3 && ratio < 1.4) {
-        _ratioXController.text = '4'; _ratioYController.text = '3';
+        _ratioXController.text = '4';
+        _ratioYController.text = '3';
       } else if (ratio > 1.7 && ratio < 1.8) {
-        _ratioXController.text = '16'; _ratioYController.text = '9';
+        _ratioXController.text = '16';
+        _ratioYController.text = '9';
       } else if (ratio > 0.7 && ratio < 0.8) {
-        _ratioXController.text = '3'; _ratioYController.text = '4';
+        _ratioXController.text = '3';
+        _ratioYController.text = '4';
       } else if (ratio > 0.5 && ratio < 0.6) {
-        _ratioXController.text = '9'; _ratioYController.text = '16';
+        _ratioXController.text = '9';
+        _ratioYController.text = '16';
       }
     } else {
       _ratioXController.clear();
@@ -320,11 +326,9 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
       final confirmed = await _confirmOverwrite(
         l10n: l10n,
         fileName: sourceImage.name,
-        originalSize:
-            originalMeta != null ? '${originalMeta.width}×${originalMeta.height}' : '–',
+        originalSize: originalMeta != null ? '${originalMeta.width}×${originalMeta.height}' : '–',
         outputSize: '$outputWidth×$outputHeight',
-        copyDestination:
-            '${l10n.cropResizeTempWorkspaceLabel} / ${copyTarget.fileName}',
+        copyDestination: '${l10n.cropResizeTempWorkspaceLabel} / ${copyTarget.fileName}',
       );
 
       if (confirmed == null) return;
@@ -337,10 +341,14 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
     try {
       SamplingMethod sampling;
       switch (uiState.samplingMethod) {
-        case 'nearest': sampling = SamplingMethod.nearest;
-        case 'linear': sampling = SamplingMethod.linear;
-        case 'cubic': sampling = SamplingMethod.cubic;
-        default: sampling = SamplingMethod.lanczos;
+        case 'nearest':
+          sampling = SamplingMethod.nearest;
+        case 'linear':
+          sampling = SamplingMethod.linear;
+        case 'cubic':
+          sampling = SamplingMethod.cubic;
+        default:
+          sampling = SamplingMethod.lanczos;
       }
 
       // Resolved before the work, not after: the encoder is chosen from the
@@ -392,7 +400,7 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
         appState.galleryState.addDroppedFiles([newFile]);
       }
 
-      appState.galleryState.refreshImages();
+      unawaited(appState.galleryState.refreshImages());
       appState.setWorkbenchTab(0);
     } on UnsupportedImageFormatException {
       // Named separately from the generic catch: this one is not a failure the

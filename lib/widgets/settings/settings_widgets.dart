@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../core/app_semantic_colors.dart';
@@ -36,11 +38,7 @@ class ThemeSelector extends StatelessWidget {
   final AppState appState;
   final AppLocalizations l10n;
 
-  const ThemeSelector({
-    super.key,
-    required this.appState,
-    required this.l10n,
-  });
+  const ThemeSelector({super.key, required this.appState, required this.l10n});
 
   @override
   Widget build(BuildContext context) {
@@ -64,7 +62,12 @@ class ThemeSelector extends StatelessWidget {
                   height: phone ? AppSize.touch : AppSize.large,
                   selected: appState.themeMode == mode,
                   onTap: () => appState.setThemeMode(mode),
-                  child: _TileLabel(icon: icon, label: label, selected: appState.themeMode == mode, centered: true),
+                  child: _TileLabel(
+                    icon: icon,
+                    label: label,
+                    selected: appState.themeMode == mode,
+                    centered: true,
+                  ),
                 ),
               ),
             ],
@@ -79,11 +82,7 @@ class ThemeColorSelector extends StatelessWidget {
   final AppState appState;
   final AppLocalizations l10n;
 
-  const ThemeColorSelector({
-    super.key,
-    required this.appState,
-    required this.l10n,
-  });
+  const ThemeColorSelector({super.key, required this.appState, required this.l10n});
 
   @override
   Widget build(BuildContext context) {
@@ -134,11 +133,7 @@ class LanguageSelector extends StatelessWidget {
   final AppState appState;
   final AppLocalizations l10n;
 
-  const LanguageSelector({
-    super.key,
-    required this.appState,
-    required this.l10n,
-  });
+  const LanguageSelector({super.key, required this.appState, required this.l10n});
 
   @override
   Widget build(BuildContext context) {
@@ -161,9 +156,11 @@ class LanguageSelector extends StatelessWidget {
             final lang = languages[index];
             final isSelected =
                 (lang.$1 == null && appState.locale == null) ||
-                    (lang.$1 != null &&
-                        appState.locale?.languageCode == (lang.$1!.contains('_') ? lang.$1!.split('_')[0] : lang.$1) &&
-                        (appState.locale?.scriptCode == (lang.$1!.contains('_') ? lang.$1!.split('_')[1] : null)));
+                (lang.$1 != null &&
+                    appState.locale?.languageCode ==
+                        (lang.$1!.contains('_') ? lang.$1!.split('_')[0] : lang.$1) &&
+                    (appState.locale?.scriptCode ==
+                        (lang.$1!.contains('_') ? lang.$1!.split('_')[1] : null)));
 
             return _OptionCard(
               label: lang.$2,
@@ -175,7 +172,9 @@ class LanguageSelector extends StatelessWidget {
                   appState.setLocale(null);
                 } else if (code.contains('_')) {
                   final parts = code.split('_');
-                  appState.setLocale(Locale.fromSubtags(languageCode: parts[0], scriptCode: parts[1]));
+                  appState.setLocale(
+                    Locale.fromSubtags(languageCode: parts[0], scriptCode: parts[1]),
+                  );
                 } else {
                   appState.setLocale(Locale(code));
                 }
@@ -195,11 +194,7 @@ class FontSelector extends StatefulWidget {
   final AppState appState;
   final AppLocalizations l10n;
 
-  const FontSelector({
-    super.key,
-    required this.appState,
-    required this.l10n,
-  });
+  const FontSelector({super.key, required this.appState, required this.l10n});
 
   @override
   State<FontSelector> createState() => _FontSelectorState();
@@ -219,7 +214,8 @@ class _FontSelectorState extends State<FontSelector> {
   Future<void> _checkDownloads() async {
     final found = <String>{};
     for (final choice in AppConstants.fontChoices) {
-      if (FontService.isDownloadable(choice.key) && await FontService.instance.isDownloaded(choice.key)) {
+      if (FontService.isDownloadable(choice.key) &&
+          await FontService.instance.isDownloaded(choice.key)) {
         found.add(choice.key);
       }
     }
@@ -257,17 +253,21 @@ class _FontSelectorState extends State<FontSelector> {
               note: isSystem
                   ? l10n.fontFollowSystem
                   : !onDemand
-                      ? null
-                      : onDisk
-                          ? l10n.fontDownloadedOffline
-                          : '${AppConstants.formatFileSize(meta.totalBytes)} · ${l10n.fontNotDownloaded}',
+                  ? null
+                  : onDisk
+                  ? l10n.fontDownloadedOffline
+                  : '${AppConstants.formatFileSize(meta.totalBytes)} · ${l10n.fontNotDownloaded}',
               trailing: isSelected
                   ? null
                   : onDemand && !onDisk
-                      ? Icon(Icons.download_outlined, size: AppSize.iconMd, color: colorScheme.onAccentTint)
-                      : onDemand
-                          ? Icon(Icons.check, size: AppSize.iconMd, color: semantic.success)
-                          : null,
+                  ? Icon(
+                      Icons.download_outlined,
+                      size: AppSize.iconMd,
+                      color: colorScheme.onAccentTint,
+                    )
+                  : onDemand
+                  ? Icon(Icons.check, size: AppSize.iconMd, color: semantic.success)
+                  : null,
               onTap: () => _selectFont(context, choice.key),
             );
           },
@@ -300,7 +300,7 @@ class _FontSelectorState extends State<FontSelector> {
     );
     if (ok == true && context.mounted) {
       await appState.setFontFamily(key);
-      _checkDownloads();
+      unawaited(_checkDownloads());
     }
   }
 }
@@ -406,7 +406,11 @@ class _FontDownloadDialogState extends State<_FontDownloadDialog> {
                 children: [
                   Padding(
                     padding: const EdgeInsets.only(top: 1),
-                    child: Icon(Icons.error_outline, size: AppSize.iconSm, color: colorScheme.error),
+                    child: Icon(
+                      Icons.error_outline,
+                      size: AppSize.iconSm,
+                      color: colorScheme.error,
+                    ),
                   ),
                   const SizedBox(width: AppSpace.s6),
                   Expanded(
@@ -494,11 +498,12 @@ class _ChoiceTileState extends State<_ChoiceTile> {
               color: selected || _focused
                   ? colorScheme.primary
                   : _hovered
-                      ? colorScheme.accentRing
-                      : colorScheme.outlineVariant,
+                  ? colorScheme.accentRing
+                  : colorScheme.outlineVariant,
             ),
             boxShadow: [
-              if (_focused) BoxShadow(color: colorScheme.accentRing, spreadRadius: selected ? 5 : 3),
+              if (_focused)
+                BoxShadow(color: colorScheme.accentRing, spreadRadius: selected ? 5 : 3),
               if (selected) BoxShadow(color: colorScheme.primary, spreadRadius: 2),
             ],
           ),
@@ -540,9 +545,9 @@ class _TileLabel extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                    color: ink,
-                  ),
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                color: ink,
+              ),
             ),
           ),
         ],

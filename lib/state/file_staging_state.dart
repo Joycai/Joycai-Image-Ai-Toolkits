@@ -195,13 +195,15 @@ class FileStagingState extends ChangeNotifier {
         continue;
       }
       changed = true;
-      items.add(BrowserFile(
-        path: moved,
-        name: item.name,
-        category: item.category,
-        size: item.size,
-        modified: item.modified,
-      ));
+      items.add(
+        BrowserFile(
+          path: moved,
+          name: item.name,
+          category: item.category,
+          size: item.size,
+          modified: item.modified,
+        ),
+      );
     }
     final destination = _destination == null
         ? null
@@ -249,13 +251,15 @@ class FileStagingState extends ChangeNotifier {
           missing.add(item.path);
           refreshed.add(item);
         } else {
-          refreshed.add(BrowserFile(
-            path: item.path,
-            name: item.name,
-            category: item.category,
-            size: stat.size,
-            modified: stat.modified,
-          ));
+          refreshed.add(
+            BrowserFile(
+              path: item.path,
+              name: item.name,
+              category: item.category,
+              size: stat.size,
+              modified: stat.modified,
+            ),
+          );
         }
       } on FileSystemException {
         // Unreachable is not the same as gone — a disconnected network share

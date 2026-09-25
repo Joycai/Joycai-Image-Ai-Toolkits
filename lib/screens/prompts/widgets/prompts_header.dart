@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../widgets/glass/glass_controls.dart';
 import '../../../widgets/ui/app_button.dart';
 import '../../../widgets/ui/app_icon_button.dart';
 import '../../../widgets/ui/app_search_field.dart';
 import '../../../widgets/ui/app_segmented_control.dart';
-import '../../../widgets/glass/glass_controls.dart';
 import 'prompt_library_parts.dart';
 
 /// Horizontal inset of both column headers.
@@ -45,7 +45,11 @@ class PromptTemplateTypeSegmented extends StatelessWidget {
   final String value;
   final ValueChanged<String> onChanged;
 
-  static List<String> labels(AppLocalizations l10n) => [l10n.filterAll, l10n.typeRefiner, l10n.typeRename];
+  static List<String> labels(AppLocalizations l10n) => [
+    l10n.filterAll,
+    l10n.typeRefiner,
+    l10n.typeRename,
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -236,7 +240,8 @@ class PromptsMainHeader extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final countLabel = l10n.nSelected(selectionCount);
 
-    final full = AppSize.iconButton +
+    final full =
+        AppSize.iconButton +
         _kGap +
         measureGlassText(context, countLabel, _titleStyle(context)) +
         _kGap +
@@ -273,7 +278,11 @@ class PromptsMainHeader extends StatelessWidget {
             onPressed: onDelete,
           ),
         ] else ...[
-          AppIconButton(icon: Icons.label_outline, tooltip: l10n.categorize, onPressed: onCategorize),
+          AppIconButton(
+            icon: Icons.label_outline,
+            tooltip: l10n.categorize,
+            onPressed: onCategorize,
+          ),
           const SizedBox(width: AppSpace.s6),
           AppIconButton(
             icon: Icons.delete_outline,
@@ -288,7 +297,8 @@ class PromptsMainHeader extends StatelessWidget {
 
   Widget _buildCategories(BuildContext context, double width) {
     final l10n = AppLocalizations.of(context)!;
-    final full = AppSize.control +
+    final full =
+        AppSize.control +
         _kGap +
         measureGlassText(context, l10n.categoriesTab, _titleStyle(context)) +
         _kGap +
@@ -320,7 +330,10 @@ class PromptsMainHeader extends StatelessWidget {
     final viewLabels = [l10n.userPrompts, l10n.systemTemplates];
     final viewWidth = _segmentedWidth(context, viewLabels);
     final typeWidth = _segmentedWidth(context, PromptTemplateTypeSegmented.labels(l10n));
-    final ioLabelled = _buttonWidth(context, l10n.actionImport) + AppSpace.s6 + _buttonWidth(context, l10n.actionExport);
+    final ioLabelled =
+        _buttonWidth(context, l10n.actionImport) +
+        AppSpace.s6 +
+        _buttonWidth(context, l10n.actionExport);
     final addLabelled = _buttonWidth(context, addLabel);
 
     bool ioFolded = false;

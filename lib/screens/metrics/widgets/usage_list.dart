@@ -72,8 +72,8 @@ class UsageList extends StatelessWidget {
     final form = Responsive.isMobile(context)
         ? _TableForm.phone
         : Responsive.isDesktop(context)
-            ? _TableForm.desktop
-            : _TableForm.tablet;
+        ? _TableForm.desktop
+        : _TableForm.tablet;
     final days = _groupByDay(usageData);
 
     return Column(
@@ -130,7 +130,9 @@ class UsageList extends StatelessWidget {
           const SizedBox(height: AppSpace.s4),
           Text(
             l10n.noUsageInRangeHint,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
             textAlign: TextAlign.center,
           ),
         ],
@@ -144,15 +146,15 @@ class UsageList extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     Widget caption(String label, {TextAlign align = TextAlign.start}) => Text(
-          label.toUpperCase(),
-          textAlign: align,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                letterSpacing: AppType.trackedLabelSpacing,
-                color: colorScheme.onSurfaceVariant,
-              ),
-        );
+      label.toUpperCase(),
+      textAlign: align,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+        letterSpacing: AppType.trackedLabelSpacing,
+        color: colorScheme.onSurfaceVariant,
+      ),
+    );
 
     return Container(
       height: 40,
@@ -168,7 +170,10 @@ class UsageList extends StatelessWidget {
           const SizedBox(width: columnGap),
           SizedBox(width: timeWidth, child: caption(l10n.usageColumnTime)),
           const SizedBox(width: columnGap),
-          SizedBox(width: costWidth, child: caption(l10n.usageColumnCost, align: TextAlign.end)),
+          SizedBox(
+            width: costWidth,
+            child: caption(l10n.usageColumnCost, align: TextAlign.end),
+          ),
           const SizedBox(width: columnGap + chevronWidth),
         ],
       ),
@@ -270,9 +275,9 @@ class UsageList extends StatelessWidget {
                 l10n.usageLoadMoreStatus(perPage, usageData.length, total),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.labelSmall?.mono.copyWith(color: colorScheme.onSurfaceVariant),
               ),
             ),
           ],
@@ -417,7 +422,10 @@ class _UsageRowState extends State<_UsageRow> {
               child: ConstrainedBox(
                 constraints: BoxConstraints(minHeight: minHeight),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: UsageList.inset, vertical: AppSpace.s6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: UsageList.inset,
+                    vertical: AppSpace.s6,
+                  ),
                   child: summary,
                 ),
               ),
@@ -720,7 +728,10 @@ class _UsageRowState extends State<_UsageRow> {
           text: spec,
           children: [
             if (input.isNotEmpty)
-              TextSpan(text: '$joiner$input', style: TextStyle(color: colorScheme.onSurfaceVariant)),
+              TextSpan(
+                text: '$joiner$input',
+                style: TextStyle(color: colorScheme.onSurfaceVariant),
+              ),
           ],
         ),
         maxLines: 1,
@@ -734,9 +745,9 @@ class _UsageRowState extends State<_UsageRow> {
     return Text(
       DateFormat('HH:mm').format(_row.timestamp),
       maxLines: 1,
-      style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
+      style: Theme.of(
+        context,
+      ).textTheme.labelSmall?.mono.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
     );
   }
 
@@ -765,7 +776,8 @@ class _UsageRowState extends State<_UsageRow> {
     if (reported == null || !tooltip) return text;
     final l10n = AppLocalizations.of(context)!;
     return Tooltip(
-      message: '${l10n.usageReportedCost}: \$${reported.toStringAsFixed(4)}\n'
+      message:
+          '${l10n.usageReportedCost}: \$${reported.toStringAsFixed(4)}\n'
           '${l10n.usageTableEstimate}: \$${_row.snapshotCost.toStringAsFixed(4)}',
       child: text,
     );
@@ -855,7 +867,12 @@ class _UsageRowState extends State<_UsageRow> {
         (l10n.outputTokens, _exact(_row.outputTokens), muted: false, wide: false),
       ],
       if (_isSpecRow) ...[
-        (l10n.usageSpecColumn, _specLabel?.isNotEmpty == true ? _specLabel! : '—', muted: false, wide: false),
+        (
+          l10n.usageSpecColumn,
+          _specLabel?.isNotEmpty == true ? _specLabel! : '—',
+          muted: false,
+          wide: false,
+        ),
         (l10n.usageUnitPrice, money(spec?.unitPrice ?? 0), muted: demoted, wide: false),
       ]
       // `D2e · 24e`: a request-billed row that charged inputs is the spec
@@ -884,14 +901,17 @@ class _UsageRowState extends State<_UsageRow> {
     ];
 
     Widget pair((String, String, {bool muted, bool wide}) entry) => Row(
-          children: [
-            Expanded(
-              child: Text(entry.$1, style: labelStyle, maxLines: 1, overflow: TextOverflow.ellipsis),
-            ),
-            const SizedBox(width: 8),
-            Text(entry.$2, style: entry.muted ? valueStyle?.copyWith(color: colorScheme.outline) : valueStyle),
-          ],
-        );
+      children: [
+        Expanded(
+          child: Text(entry.$1, style: labelStyle, maxLines: 1, overflow: TextOverflow.ellipsis),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          entry.$2,
+          style: entry.muted ? valueStyle?.copyWith(color: colorScheme.outline) : valueStyle,
+        ),
+      ],
+    );
 
     final phone = widget.form == _TableForm.phone;
 

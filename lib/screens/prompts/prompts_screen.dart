@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -8,9 +10,9 @@ import '../../models/prompt.dart';
 import '../../models/tag.dart';
 import '../../services/system/ui_prefs.dart';
 import '../../state/app_state.dart';
+import '../../widgets/glass/app_glass.dart';
 import '../../widgets/tasks/app_run_console.dart';
 import '../../widgets/ui/app_search_field.dart';
-import '../../widgets/glass/app_glass.dart';
 import '../../widgets/ui/panel_resizer.dart';
 import '../batch/task_queue_screen.dart';
 import 'prompts_io.dart';
@@ -167,28 +169,30 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
   // --- Derived lists ---------------------------------------------------------
 
   List<Prompt> get _filteredUser => _userPrompts.where((p) {
-        final matchesSearch = p.title.toLowerCase().contains(_searchQuery) ||
-            p.content.toLowerCase().contains(_searchQuery);
-        if (_selectedFilterTagIds.isEmpty) return matchesSearch;
-        final promptTagIds = p.tags.map((t) => t.id!).toSet();
-        final matchesTags = _filterMatchAll
-            ? _selectedFilterTagIds.every((id) => promptTagIds.contains(id))
-            : _selectedFilterTagIds.any((id) => promptTagIds.contains(id));
-        return matchesSearch && matchesTags;
-      }).toList();
+    final matchesSearch =
+        p.title.toLowerCase().contains(_searchQuery) ||
+        p.content.toLowerCase().contains(_searchQuery);
+    if (_selectedFilterTagIds.isEmpty) return matchesSearch;
+    final promptTagIds = p.tags.map((t) => t.id!).toSet();
+    final matchesTags = _filterMatchAll
+        ? _selectedFilterTagIds.every(promptTagIds.contains)
+        : _selectedFilterTagIds.any(promptTagIds.contains);
+    return matchesSearch && matchesTags;
+  }).toList();
 
   List<SystemPrompt> get _filteredSystem => _systemPrompts.where((p) {
-        final matchesType = _selectedSystemType == 'all' || p.type == _selectedSystemType;
-        final matchesSearch = p.title.toLowerCase().contains(_searchQuery) ||
-            p.content.toLowerCase().contains(_searchQuery);
-        return matchesType && matchesSearch;
-      }).toList();
+    final matchesType = _selectedSystemType == 'all' || p.type == _selectedSystemType;
+    final matchesSearch =
+        p.title.toLowerCase().contains(_searchQuery) ||
+        p.content.toLowerCase().contains(_searchQuery);
+    return matchesType && matchesSearch;
+  }).toList();
 
   /// Number of user prompts carrying each tag id.
   Map<int, int> _computeTagCounts() => {
-        for (final t in _tags)
-          t.id!: _userPrompts.where((p) => p.tags.any((pt) => pt.id == t.id)).length,
-      };
+    for (final t in _tags)
+      t.id!: _userPrompts.where((p) => p.tags.any((pt) => pt.id == t.id)).length,
+  };
 
   String _addLabel(AppLocalizations l10n) {
     if (_tabController.index == 1) return l10n.newTemplate;
@@ -229,9 +233,20 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
     final l10n = AppLocalizations.of(context)!;
     final isUser = _tabController.index == 0;
     final titles = isUser
-        ? [for (final p in _userPrompts) if (_selectedIds.contains(p.id)) p.title]
-        : [for (final p in _systemPrompts) if (_selectedIds.contains(p.id)) p.title];
-    final confirmed = await showBulkDeleteConfirm(context, l10n, _selectedIds.length, titles: titles);
+        ? [
+            for (final p in _userPrompts)
+              if (_selectedIds.contains(p.id)) p.title,
+          ]
+        : [
+            for (final p in _systemPrompts)
+              if (_selectedIds.contains(p.id)) p.title,
+          ];
+    final confirmed = await showBulkDeleteConfirm(
+      context,
+      l10n,
+      _selectedIds.length,
+      titles: titles,
+    );
     if (confirmed && mounted) {
       final appState = Provider.of<AppState>(context, listen: false);
       if (isUser) {
@@ -240,13 +255,18 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
         await appState.deleteSystemPrompts(_selectedIds.toList());
       }
       _clearSelection();
-      _loadData();
+      unawaited(_loadData());
     }
   }
 
   Future<void> _handleBulkCategorize() async {
     final l10n = AppLocalizations.of(context)!;
-    final targetTagIds = await showBulkCategorizeDialog(context, l10n, _tags, count: _selectedIds.length);
+    final targetTagIds = await showBulkCategorizeDialog(
+      context,
+      l10n,
+      _tags,
+      count: _selectedIds.length,
+    );
     if (targetTagIds != null && mounted) {
       final appState = Provider.of<AppState>(context, listen: false);
       if (_tabController.index == 0) {
@@ -255,14 +275,15 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
         await appState.updateSystemPromptsTags(_selectedIds.toList(), targetTagIds);
       }
       _clearSelection();
-      _loadData();
+      unawaited(_loadData());
     }
   }
 
   /// Whether the list on [tab] is narrowed in a way that turns dragging off.
   bool _reorderBlocked(int tab, List<Prompt> filteredUser, List<SystemPrompt> filteredSystem) {
     if (tab == 0) {
-      return (_searchQuery.isNotEmpty || _selectedFilterTagIds.isNotEmpty) && filteredUser.isNotEmpty;
+      return (_searchQuery.isNotEmpty || _selectedFilterTagIds.isNotEmpty) &&
+          filteredUser.isNotEmpty;
     }
     if (tab == 1) return _searchQuery.isNotEmpty && filteredSystem.isNotEmpty;
     return false;
@@ -285,7 +306,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
       searchQuery: _searchQuery,
       selectedFilterTagIds: _selectedFilterTagIds,
       onRefresh: _loadData,
-      onShowEditDialog: (l, {prompt}) => _showPromptDialog(l, prompt: prompt),
+      onShowEditDialog: _showPromptDialog,
       onConfirmDelete: _confirmDelete,
       selectedIds: _selectedIds,
       isSelectionMode: _isSelectionMode,
@@ -300,7 +321,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
       allPrompts: _systemPrompts,
       searchQuery: _searchQuery,
       onRefresh: _loadData,
-      onShowEditDialog: (l, {prompt}) => _showSystemPromptDialog(l, prompt: prompt),
+      onShowEditDialog: _showSystemPromptDialog,
       onConfirmDelete: _confirmDelete,
       header: header,
       selectedIds: _selectedIds,
@@ -315,7 +336,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
       tags: _tags,
       promptCounts: _computeTagCounts(),
       onRefresh: _loadData,
-      onShowEditDialog: (l, {tag}) => _showTagDialog(l, tag: tag),
+      onShowEditDialog: _showTagDialog,
       onConfirmDelete: _confirmDeleteTag,
     );
   }
@@ -358,7 +379,11 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
           ),
           actions: _isSelectionMode
               ? [
-                  IconButton(icon: const Icon(Icons.close), tooltip: l10n.cancel, onPressed: _clearSelection),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    tooltip: l10n.cancel,
+                    onPressed: _clearSelection,
+                  ),
                   const SizedBox(width: AppSpace.s6),
                 ]
               : [
@@ -367,7 +392,11 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                     onImport: () => _importPrompts(l10n),
                     onExport: () => _exportPrompts(l10n),
                   ),
-                  IconButton(icon: const Icon(Icons.add), tooltip: _addLabel(l10n), onPressed: _handleAddAction),
+                  IconButton(
+                    icon: const Icon(Icons.add),
+                    tooltip: _addLabel(l10n),
+                    onPressed: _handleAddAction,
+                  ),
                   const SizedBox(width: AppSpace.s6),
                 ],
           bottom: PreferredSize(
@@ -382,7 +411,11 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                       borderRadius: BorderRadius.circular(AppRadius.control),
                     ),
                     // 40: a phone app bar's touch slot, not the pointer 32.
-                    child: AppSearchField(controller: _searchCtrl, hint: l10n.filterPrompts, height: 40),
+                    child: AppSearchField(
+                      controller: _searchCtrl,
+                      hint: l10n.filterPrompts,
+                      height: 40,
+                    ),
                   ),
                 ),
                 SizedBox(
@@ -397,7 +430,9 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                     labelColor: scheme.onAccentTint,
                     unselectedLabelColor: scheme.onSurfaceVariant,
                     labelStyle: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-                    unselectedLabelStyle: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+                    unselectedLabelStyle: textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
                     tabs: [
                       Tab(height: tabRow, text: l10n.userPrompts),
                       Tab(height: tabRow, text: l10n.systemTemplates),
@@ -425,7 +460,10 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
             child: TabBarView(
               controller: _tabController,
               children: [
-                _withReorderStrip(_reorderBlocked(0, filteredUser, filteredSystem), _buildUserList(filteredUser)),
+                _withReorderStrip(
+                  _reorderBlocked(0, filteredUser, filteredSystem),
+                  _buildUserList(filteredUser),
+                ),
                 _withReorderStrip(
                   _reorderBlocked(1, filteredUser, filteredSystem),
                   _buildSystemList(
@@ -504,16 +542,15 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
         PanelResizer(
           shape: PanelShape.column,
           onDrag: (dx) => setState(() {
-            _dragSidebarWidth = ((_dragSidebarWidth ?? _sidebarWidth) + dx)
-                .clamp(_minSidebarWidth - _kDragSlack, _maxSidebarWidth + _kDragSlack);
+            _dragSidebarWidth = ((_dragSidebarWidth ?? _sidebarWidth) + dx).clamp(
+              _minSidebarWidth - _kDragSlack,
+              _maxSidebarWidth + _kDragSlack,
+            );
             _sidebarWidth = _dragSidebarWidth!.clamp(_minSidebarWidth, _maxSidebarWidth);
           }),
           onDragEnd: () {
             _dragSidebarWidth = null;
-            context
-                .read<AppState>()
-                .uiPrefs
-                .savePanelWidth(UiPanel.promptsSidebar, _sidebarWidth);
+            context.read<AppState>().uiPrefs.savePanelWidth(UiPanel.promptsSidebar, _sidebarWidth);
           },
         ),
 
@@ -548,7 +585,10 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                     onClear: _clearFilterTags,
                   ),
                 Expanded(
-                  child: _withReorderStrip(_reorderBlocked(tab, filteredUser, filteredSystem), content),
+                  child: _withReorderStrip(
+                    _reorderBlocked(tab, filteredUser, filteredSystem),
+                    content,
+                  ),
                 ),
               ],
             ),
@@ -571,17 +611,21 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
 
   // --- Dialog wrappers: delegate to prompt_dialogs.dart, then reload on change ---
 
-  void _confirmDelete(AppLocalizations l10n, dynamic prompt, {required bool isSystem}) async {
+  Future<void> _confirmDelete(
+    AppLocalizations l10n,
+    dynamic prompt, {
+    required bool isSystem,
+  }) async {
     final deleted = await showDeletePromptConfirm(context, l10n, prompt, isSystem: isSystem);
-    if (deleted) _loadData();
+    if (deleted) unawaited(_loadData());
   }
 
-  void _confirmDeleteTag(AppLocalizations l10n, PromptTag tag) async {
+  Future<void> _confirmDeleteTag(AppLocalizations l10n, PromptTag tag) async {
     final deleted = await showDeleteTagConfirm(context, l10n, tag);
-    if (deleted) _loadData();
+    if (deleted) unawaited(_loadData());
   }
 
-  void _showTagDialog(AppLocalizations l10n, {PromptTag? tag}) async {
+  Future<void> _showTagDialog(AppLocalizations l10n, {PromptTag? tag}) async {
     final saved = await showTagEditDialog(
       context,
       l10n,
@@ -589,10 +633,10 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
       tags: _tags,
       promptCount: tag == null ? 0 : _computeTagCounts()[tag.id] ?? 0,
     );
-    if (saved) _loadData();
+    if (saved) unawaited(_loadData());
   }
 
-  void _showSystemPromptDialog(AppLocalizations l10n, {SystemPrompt? prompt}) async {
+  Future<void> _showSystemPromptDialog(AppLocalizations l10n, {SystemPrompt? prompt}) async {
     final saved = await showSystemPromptEditDialog(
       context,
       l10n,
@@ -601,10 +645,10 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
       tags: _tags,
       defaultType: _selectedSystemType == 'all' ? 'refiner' : _selectedSystemType,
     );
-    if (saved) _loadData();
+    if (saved) unawaited(_loadData());
   }
 
-  void _showPromptDialog(AppLocalizations l10n, {Prompt? prompt}) async {
+  Future<void> _showPromptDialog(AppLocalizations l10n, {Prompt? prompt}) async {
     final saved = await showPromptEditDialog(
       context,
       l10n,
@@ -612,7 +656,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
       userPrompts: _userPrompts,
       tags: _tags,
     );
-    if (saved) _loadData();
+    if (saved) unawaited(_loadData());
   }
 
   Future<void> _exportPrompts(AppLocalizations l10n) async {
@@ -627,6 +671,6 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
 
   Future<void> _importPrompts(AppLocalizations l10n) async {
     final imported = await importPrompts(context, l10n);
-    if (imported && mounted) _loadData();
+    if (imported && mounted) unawaited(_loadData());
   }
 }

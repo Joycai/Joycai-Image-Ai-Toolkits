@@ -12,16 +12,15 @@ import 'package:joycai_image_ai_toolkits/services/tasks/task_list_ordering.dart'
 void main() {
   final DateTime t0 = DateTime(2026, 9, 2, 13, 0);
 
-  TaskItem task(String id, TaskStatus status, int minute, {DateTime? started}) =>
-      TaskItem(
-        id: id,
-        imagePaths: const <String>[],
-        modelId: 'm',
-        parameters: const <String, dynamic>{},
-        status: status,
-        createdAt: t0.add(Duration(minutes: minute)),
-        startTime: started,
-      );
+  TaskItem task(String id, TaskStatus status, int minute, {DateTime? started}) => TaskItem(
+    id: id,
+    imagePaths: const <String>[],
+    modelId: 'm',
+    parameters: const <String, dynamic>{},
+    status: status,
+    createdAt: t0.add(Duration(minutes: minute)),
+    startTime: started,
+  );
 
   List<String> ids(Iterable<TaskItem> tasks) => tasks.map((t) => t.id).toList();
 
@@ -182,9 +181,7 @@ void main() {
     test('tasks created in the same instant keep submission order, in the sort direction', () {
       // A batch submit stamps several tasks with one clock reading. Dart's
       // sort is not stable, so this is the case the explicit index exists for.
-      final batch = <TaskItem>[
-        for (int i = 0; i < 6; i++) task('b$i', TaskStatus.completed, 0),
-      ];
+      final batch = <TaskItem>[for (int i = 0; i < 6; i++) task('b$i', TaskStatus.completed, 0)];
       final newest = arrangeTasks(
         batch,
         filter: TaskFilter.all,
@@ -202,13 +199,23 @@ void main() {
     });
 
     test('the same input arranges the same way every time', () {
-      final first = ids(arrangeTasks(queue,
-              filter: TaskFilter.all, order: TaskSortOrder.newestFirst, pinActive: true)
-          .rest);
+      final first = ids(
+        arrangeTasks(
+          queue,
+          filter: TaskFilter.all,
+          order: TaskSortOrder.newestFirst,
+          pinActive: true,
+        ).rest,
+      );
       for (int i = 0; i < 5; i++) {
-        final again = ids(arrangeTasks(queue,
-                filter: TaskFilter.all, order: TaskSortOrder.newestFirst, pinActive: true)
-            .rest);
+        final again = ids(
+          arrangeTasks(
+            queue,
+            filter: TaskFilter.all,
+            order: TaskSortOrder.newestFirst,
+            pinActive: true,
+          ).rest,
+        );
         expect(again, first);
       }
     });

@@ -18,8 +18,7 @@ import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 void main() {
   final dispatcher = LLMDispatcher();
 
-  LLMModelConfig config(String modelId, String channelType,
-          {String? tag, String? wireProtocol}) =>
+  LLMModelConfig config(String modelId, String channelType, {String? tag, String? wireProtocol}) =>
       LLMModelConfig(
         modelId: modelId,
         channelType: channelType,
@@ -29,36 +28,29 @@ void main() {
         wireProtocol: wireProtocol,
       );
 
-  ModelDescriptor served(String modelId, String channelType,
-          {String? tag, String? wireProtocol}) =>
+  ModelDescriptor served(String modelId, String channelType, {String? tag, String? wireProtocol}) =>
       dispatcher
-          .resolveTarget(config(modelId, channelType,
-              tag: tag, wireProtocol: wireProtocol))
+          .resolveTarget(config(modelId, channelType, tag: tag, wireProtocol: wireProtocol))
           .model;
 
-  List<String> imageKeys(ModelCapabilities c) =>
-      c.imageParams.map((p) => p.key).toList();
-  List<String> videoKeys(ModelCapabilities c) =>
-      c.videoParams.map((p) => p.key).toList();
+  List<String> imageKeys(ModelCapabilities c) => c.imageParams.map((p) => p.key).toList();
+  List<String> videoKeys(ModelCapabilities c) => c.videoParams.map((p) => p.key).toList();
 
   group('the kind declares the surface', () {
     test('a tag overrides what the id classifies as', () {
       expect(LLMDispatcher.surfaceForModel('nano-banana-pro'), Surface.chat);
-      expect(LLMDispatcher.surfaceForModel('nano-banana-pro', tag: 'image'),
-          Surface.imageGen);
-      expect(LLMDispatcher.surfaceForModel('my-sora', tag: 'video'),
-          Surface.videoJob);
-      expect(LLMDispatcher.surfaceForModel('gpt-image-1', tag: 'chat'),
-          Surface.chat);
+      expect(LLMDispatcher.surfaceForModel('nano-banana-pro', tag: 'image'), Surface.imageGen);
+      expect(LLMDispatcher.surfaceForModel('my-sora', tag: 'video'), Surface.videoJob);
+      expect(LLMDispatcher.surfaceForModel('gpt-image-1', tag: 'chat'), Surface.chat);
     });
 
     test('multimodal and refiner are chat; no tag falls back to the id', () {
-      expect(LLMDispatcher.surfaceForModel('gemini-2.5-flash-image',
-          tag: 'multimodal'), Surface.chat);
-      expect(LLMDispatcher.surfaceForModel('gpt-image-1', tag: 'refiner'),
-          Surface.chat);
-      expect(LLMDispatcher.surfaceForModel('gpt-image-1', tag: ''),
-          Surface.imageGen);
+      expect(
+        LLMDispatcher.surfaceForModel('gemini-2.5-flash-image', tag: 'multimodal'),
+        Surface.chat,
+      );
+      expect(LLMDispatcher.surfaceForModel('gpt-image-1', tag: 'refiner'), Surface.chat);
+      expect(LLMDispatcher.surfaceForModel('gpt-image-1', tag: ''), Surface.imageGen);
     });
   });
 
@@ -94,12 +86,16 @@ void main() {
         for (final id in ids) {
           final tag = ModelFamilyClassifier.inferTag(id);
           final reason = '$id (tag $tag) on ${vendor.id}';
-          expect(identical(served(id, vendor.id, tag: tag), served(id, vendor.id)),
-              isTrue,
-              reason: reason);
-          expect(LLMDispatcher.autoProtocolFor(vendor.id, id, tag: tag),
-              LLMDispatcher.autoProtocolFor(vendor.id, id),
-              reason: reason);
+          expect(
+            identical(served(id, vendor.id, tag: tag), served(id, vendor.id)),
+            isTrue,
+            reason: reason,
+          );
+          expect(
+            LLMDispatcher.autoProtocolFor(vendor.id, id, tag: tag),
+            LLMDispatcher.autoProtocolFor(vendor.id, id),
+            reason: reason,
+          );
         }
       }
     });
@@ -114,20 +110,19 @@ void main() {
               vendor.family != ProtocolFamily.gemini) {
             continue;
           }
-          expect(identical(served(id, vendor.id), ModelDescriptor.of(id)),
-              isTrue,
-              reason: '$id on ${vendor.id}');
+          expect(
+            identical(served(id, vendor.id), ModelDescriptor.of(id)),
+            isTrue,
+            reason: '$id on ${vendor.id}',
+          );
         }
       }
     });
   });
 
   group('relay image models', () {
-    test('an unrecognized alias tagged image gets a menu and draws through chat',
-        () {
-      final menu = LLMDispatcher.protocolMenu(
-          Vendors.openAIRest, 'nano-banana-pro',
-          tag: 'image');
+    test('an unrecognized alias tagged image gets a menu and draws through chat', () {
+      final menu = LLMDispatcher.protocolMenu(Vendors.openAIRest, 'nano-banana-pro', tag: 'image');
       expect(menu.options, [WireProtocol.openaiImages, WireProtocol.chatImage]);
       expect(menu.auto, WireProtocol.chatImage);
 
@@ -139,26 +134,34 @@ void main() {
     });
 
     test('pinned to the Images API, it routes there with its parameters', () {
-      final pinned = config('nano-banana-pro', Vendors.openAIRest,
-          tag: 'image', wireProtocol: 'openai-images');
+      final pinned = config(
+        'nano-banana-pro',
+        Vendors.openAIRest,
+        tag: 'image',
+        wireProtocol: 'openai-images',
+      );
       final model = dispatcher.resolveTarget(pinned).model;
       expect(model.family, ModelFamily.openaiImage);
-      expect(imageKeys(model.capabilities),
-          imageKeys(ModelCapabilities.forModel('gpt-image-1')));
+      expect(imageKeys(model.capabilities), imageKeys(ModelCapabilities.forModel('gpt-image-1')));
       // Single-shot is the Images API branch's signature.
       expect(dispatcher.streamIsSingleShot(pinned), isTrue);
-      expect(dispatcher.streamIsSingleShot(
-              config('nano-banana-pro', Vendors.openAIRest, tag: 'image')),
-          isFalse);
+      expect(
+        dispatcher.streamIsSingleShot(config('nano-banana-pro', Vendors.openAIRest, tag: 'image')),
+        isFalse,
+      );
     });
 
     test('gpt-image-1 can be sent through chat, and is not by default', () {
       expect(
-          dispatcher.streamIsSingleShot(
-              config('gpt-image-1', Vendors.openAIRest, tag: 'image')),
-          isTrue);
-      final viaChat = config('gpt-image-1', Vendors.openAIRest,
-          tag: 'image', wireProtocol: 'chat-image');
+        dispatcher.streamIsSingleShot(config('gpt-image-1', Vendors.openAIRest, tag: 'image')),
+        isTrue,
+      );
+      final viaChat = config(
+        'gpt-image-1',
+        Vendors.openAIRest,
+        tag: 'image',
+        wireProtocol: 'chat-image',
+      );
       expect(dispatcher.streamIsSingleShot(viaChat), isFalse);
       expect(dispatcher.resolveTarget(viaChat).model.family, ModelFamily.other);
     });
@@ -168,19 +171,23 @@ void main() {
       // explicitly must not strip the DashScope table — or the generation-
       // sized deadline that comes with it.
       final auto = config('qwen-image-3.0', Vendors.openAIRest, tag: 'image');
-      final pinned = config('qwen-image-3.0', Vendors.openAIRest,
-          tag: 'image', wireProtocol: 'chat-image');
-      expect(identical(dispatcher.resolveTarget(pinned).model,
-              ModelDescriptor.of('qwen-image-3.0')),
-          isTrue);
+      final pinned = config(
+        'qwen-image-3.0',
+        Vendors.openAIRest,
+        tag: 'image',
+        wireProtocol: 'chat-image',
+      );
+      expect(
+        identical(dispatcher.resolveTarget(pinned).model, ModelDescriptor.of('qwen-image-3.0')),
+        isTrue,
+      );
       expect(dispatcher.generateTimeout(pinned), dispatcher.generateTimeout(auto));
     });
 
     test('Imagen through chat stays a Gemini family', () {
       // The OpenAI-compatible chat wire adds its Gemini extensions by family;
       // demoting to `other` would drop them without a sound.
-      final model = ModelDescriptor.of('imagen-4.0',
-          servedBy: WireProtocol.chatImage);
+      final model = ModelDescriptor.of('imagen-4.0', servedBy: WireProtocol.chatImage);
       expect(model.family, ModelFamily.geminiChat);
       expect(model.isGeminiFamily, isTrue);
     });
@@ -189,101 +196,87 @@ void main() {
   group('relay video models', () {
     test('an unrecognized alias tagged video reaches the video surface', () {
       final tagged = config('my-sora', Vendors.openAIRest, tag: 'video');
-      expect(LLMDispatcher.autoProtocolFor(Vendors.openAIRest, 'my-sora',
-          tag: 'video'), WireProtocol.openaiVideos);
+      expect(
+        LLMDispatcher.autoProtocolFor(Vendors.openAIRest, 'my-sora', tag: 'video'),
+        WireProtocol.openaiVideos,
+      );
       expect(dispatcher.canRunVideoJob(tagged), isTrue);
       final model = dispatcher.resolveTarget(tagged).model;
       expect(model.family, ModelFamily.openaiVideo);
-      expect(videoKeys(model.capabilities),
-          videoKeys(ModelCapabilities.forModel('sora-2')));
+      expect(videoKeys(model.capabilities), videoKeys(ModelCapabilities.forModel('sora-2')));
     });
 
     test('without the video kind it stays out of the picker', () {
-      expect(dispatcher.canRunVideoJob(
-          config('my-sora', Vendors.openAIRest, tag: 'chat')), isFalse);
-      expect(dispatcher.canRunVideoJob(config('my-sora', Vendors.openAIRest)),
-          isFalse);
+      expect(
+        dispatcher.canRunVideoJob(config('my-sora', Vendors.openAIRest, tag: 'chat')),
+        isFalse,
+      );
+      expect(dispatcher.canRunVideoJob(config('my-sora', Vendors.openAIRest)), isFalse);
     });
 
     test("Bailian's native channel lists wan video and not its chat models", () {
       // canRunVideoJob and startLongRunning read one route
       // (_videoSubmitRoute): the picker and the submit cannot disagree.
-      expect(dispatcher.canRunVideoJob(config('wan3.0-video', Vendors.dashscopeNative)),
-          isTrue);
-      expect(dispatcher.canRunVideoJob(config('qwen3-max', Vendors.dashscopeNative)),
-          isFalse);
+      expect(dispatcher.canRunVideoJob(config('wan3.0-video', Vendors.dashscopeNative)), isTrue);
+      expect(dispatcher.canRunVideoJob(config('qwen3-max', Vendors.dashscopeNative)), isFalse);
     });
 
-    test('a kind of chat on a recognized video id takes it off the video route',
-        () {
-      expect(dispatcher.canRunVideoJob(config('sora-2', Vendors.openAIRest)),
-          isTrue);
-      expect(dispatcher.canRunVideoJob(
-          config('sora-2', Vendors.openAIRest, tag: 'chat')), isFalse);
+    test('a kind of chat on a recognized video id takes it off the video route', () {
+      expect(dispatcher.canRunVideoJob(config('sora-2', Vendors.openAIRest)), isTrue);
+      expect(dispatcher.canRunVideoJob(config('sora-2', Vendors.openAIRest, tag: 'chat')), isFalse);
     });
   });
 
   group('channels without generic media surfaces', () {
-    test('an Anthropic relay offers only chat for images, nothing for video',
-        () {
-      final image = LLMDispatcher.protocolMenu(
-          Vendors.newApiAnthropic, 'img-fast',
-          tag: 'image');
+    test('an Anthropic relay offers only chat for images, nothing for video', () {
+      final image = LLMDispatcher.protocolMenu(Vendors.newApiAnthropic, 'img-fast', tag: 'image');
       expect(image.options, [WireProtocol.chatImage]);
       expect(image.auto, WireProtocol.chatImage);
 
-      final video = LLMDispatcher.protocolMenu(
-          Vendors.newApiAnthropic, 'my-sora',
-          tag: 'video');
+      final video = LLMDispatcher.protocolMenu(Vendors.newApiAnthropic, 'my-sora', tag: 'video');
       expect(video.options, isEmpty);
       expect(video.auto, isNull);
       expect(video.fixed, isFalse);
-      expect(dispatcher.canRunVideoJob(
-          config('my-sora', Vendors.newApiAnthropic, tag: 'video')), isFalse);
+      expect(
+        dispatcher.canRunVideoJob(config('my-sora', Vendors.newApiAnthropic, tag: 'video')),
+        isFalse,
+      );
     });
 
-    test("DeepSeek keeps today's route for a recognized id and nothing more",
-        () {
-      final menu =
-          LLMDispatcher.protocolMenu(Vendors.deepseek, 'sora-2', tag: 'video');
+    test("DeepSeek keeps today's route for a recognized id and nothing more", () {
+      final menu = LLMDispatcher.protocolMenu(Vendors.deepseek, 'sora-2', tag: 'video');
       expect(menu.auto, WireProtocol.openaiVideos);
       expect(menu.options, [WireProtocol.openaiVideos]);
-      expect(LLMDispatcher.protocolMenu(Vendors.deepseek, 'my-sora',
-          tag: 'video').auto, isNull);
+      expect(LLMDispatcher.protocolMenu(Vendors.deepseek, 'my-sora', tag: 'video').auto, isNull);
     });
 
     test('the local runtimes stay closed until their docs are checked', () {
       for (final vendor in [Vendors.ollama, Vendors.lmStudio]) {
-        expect(
-            LLMDispatcher.protocolMenu(vendor, 'flux-local', tag: 'image')
-                .options,
-            [WireProtocol.chatImage],
-            reason: vendor);
+        expect(LLMDispatcher.protocolMenu(vendor, 'flux-local', tag: 'image').options, [
+          WireProtocol.chatImage,
+        ], reason: vendor);
       }
     });
 
     test('xAI answers an unrecognized video model with its own surface', () {
       final tagged = config('grok-next', Vendors.xaiApi, tag: 'video');
-      expect(LLMDispatcher.autoProtocolFor(Vendors.xaiApi, 'grok-next',
-          tag: 'video'), WireProtocol.xaiVideos);
+      expect(
+        LLMDispatcher.autoProtocolFor(Vendors.xaiApi, 'grok-next', tag: 'video'),
+        WireProtocol.xaiVideos,
+      );
       expect(dispatcher.canRunVideoJob(tagged), isTrue);
     });
 
     test('Midjourney is a fixed route, not a missing one', () {
-      final menu = LLMDispatcher.protocolMenu(
-          Vendors.midjourneyProxy, 'mj_imagine',
-          tag: 'image');
+      final menu = LLMDispatcher.protocolMenu(Vendors.midjourneyProxy, 'mj_imagine', tag: 'image');
       expect(menu.fixed, isTrue);
       expect(menu.options, isEmpty);
     });
   });
 
   group('first-party vendors', () {
-    test('a DashScope model the classifier has not met can be pinned native',
-        () {
-      final menu = LLMDispatcher.protocolMenu(
-          Vendors.dashscope, 'wan3.5-image',
-          tag: 'image');
+    test('a DashScope model the classifier has not met can be pinned native', () {
+      final menu = LLMDispatcher.protocolMenu(Vendors.dashscope, 'wan3.5-image', tag: 'image');
       expect(menu.options, [
         WireProtocol.dashscopeImagesSync,
         WireProtocol.dashscopeImagesAsync,
@@ -291,25 +284,30 @@ void main() {
       ]);
       expect(menu.auto, WireProtocol.chatImage);
 
-      final pinned = config('wan3.5-image', Vendors.dashscope,
-          tag: 'image', wireProtocol: 'dashscope-images-sync');
+      final pinned = config(
+        'wan3.5-image',
+        Vendors.dashscope,
+        tag: 'image',
+        wireProtocol: 'dashscope-images-sync',
+      );
       final model = dispatcher.resolveTarget(pinned).model;
       expect(model.family, ModelFamily.dashscopeImage);
       expect(model.capabilities.longRunning, isTrue);
       expect(dispatcher.streamIsSingleShot(pinned), isTrue);
     });
 
-    test("MiniMax's image surface is offered for, not forced on, qwen-image",
-        () {
-      final menu = LLMDispatcher.protocolMenu(Vendors.minimax, 'qwen-image',
-          tag: 'image');
+    test("MiniMax's image surface is offered for, not forced on, qwen-image", () {
+      final menu = LLMDispatcher.protocolMenu(Vendors.minimax, 'qwen-image', tag: 'image');
       expect(menu.auto, WireProtocol.chatImage);
       expect(menu.options, contains(WireProtocol.minimaxImages));
 
-      final pinned = config('qwen-image', Vendors.minimax,
-          tag: 'image', wireProtocol: 'minimax-images');
-      expect(dispatcher.resolveTarget(pinned).model.family,
-          ModelFamily.minimaxImage);
+      final pinned = config(
+        'qwen-image',
+        Vendors.minimax,
+        tag: 'image',
+        wireProtocol: 'minimax-images',
+      );
+      expect(dispatcher.resolveTarget(pinned).model.family, ModelFamily.minimaxImage);
       expect(dispatcher.streamIsSingleShot(pinned), isTrue);
     });
   });
@@ -317,35 +315,56 @@ void main() {
   group('staleness and the cache', () {
     test('changing the kind strands a selection on the old surface', () {
       expect(
-          LLMDispatcher.isStaleProtocolSelection(
-              Vendors.dashscope, 'wan2.7-image', 'dashscope-images-async',
-              tag: 'image'),
-          isFalse);
+        LLMDispatcher.isStaleProtocolSelection(
+          Vendors.dashscope,
+          'wan2.7-image',
+          'dashscope-images-async',
+          tag: 'image',
+        ),
+        isFalse,
+      );
       expect(
-          LLMDispatcher.isStaleProtocolSelection(
-              Vendors.dashscope, 'wan2.7-image', 'dashscope-images-async',
-              tag: 'chat'),
-          isTrue);
+        LLMDispatcher.isStaleProtocolSelection(
+          Vendors.dashscope,
+          'wan2.7-image',
+          'dashscope-images-async',
+          tag: 'chat',
+        ),
+        isTrue,
+      );
       // And a stale selection routes as auto.
       expect(
-          dispatcher.generateTimeout(config('wan2.7-image', Vendors.dashscope,
-              tag: 'chat', wireProtocol: 'dashscope-images-async')),
-          dispatcher.generateTimeout(
-              config('wan2.7-image', Vendors.dashscope, tag: 'chat')));
+        dispatcher.generateTimeout(
+          config(
+            'wan2.7-image',
+            Vendors.dashscope,
+            tag: 'chat',
+            wireProtocol: 'dashscope-images-async',
+          ),
+        ),
+        dispatcher.generateTimeout(config('wan2.7-image', Vendors.dashscope, tag: 'chat')),
+      );
     });
 
     test('one id under two selections is two descriptors', () {
-      final images = served('nano-banana-pro', Vendors.openAIRest,
-          tag: 'image', wireProtocol: 'openai-images');
-      final chat = served('nano-banana-pro', Vendors.newApiOpenAI,
-          tag: 'image', wireProtocol: 'chat-image');
+      final images = served(
+        'nano-banana-pro',
+        Vendors.openAIRest,
+        tag: 'image',
+        wireProtocol: 'openai-images',
+      );
+      final chat = served(
+        'nano-banana-pro',
+        Vendors.newApiOpenAI,
+        tag: 'image',
+        wireProtocol: 'chat-image',
+      );
       expect(images.family, ModelFamily.openaiImage);
       expect(chat.family, ModelFamily.other);
       expect(chat.capabilities.imageParams, isEmpty);
       // And the id's own descriptor was not overwritten by either.
       expect(ModelDescriptor.of('nano-banana-pro').family, ModelFamily.other);
-      expect(ModelDescriptor.of('nano-banana-pro').capabilities.isImageGenerator,
-          isFalse);
+      expect(ModelDescriptor.of('nano-banana-pro').capabilities.isImageGenerator, isFalse);
     });
 
     test('the descriptor door agrees with resolveTarget', () {
@@ -354,8 +373,7 @@ void main() {
         modelId: 'my-sora',
         tag: 'video',
       );
-      expect(identical(viaDoor, served('my-sora', Vendors.openAIRest, tag: 'video')),
-          isTrue);
+      expect(identical(viaDoor, served('my-sora', Vendors.openAIRest, tag: 'video')), isTrue);
     });
   });
 }

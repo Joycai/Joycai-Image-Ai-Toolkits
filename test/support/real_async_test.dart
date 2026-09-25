@@ -1,6 +1,8 @@
 // Pins what `real_async.dart`'s helpers promise, since every widget test that
 // reaches the database now stands on them.
 
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/services/db/database_service.dart';
@@ -57,8 +59,7 @@ void main() {
     }
 
     await runAsyncRethrowing(tester, () async {
-      // ignore: unawaited_futures
-      chain();
+      unawaited(chain());
       await databaseIdle();
     });
     expect(finished, 5);
@@ -80,15 +81,16 @@ void main() {
 
     await expectLater(
       runAsyncRethrowing(tester, () async {
-        // ignore: unawaited_futures
-        poll();
+        unawaited(poll());
         try {
           await databaseIdle(giveUpAfter: const Duration(milliseconds: 100));
         } finally {
           polling = false;
         }
       }),
-      throwsA(isA<TestFailure>().having((TestFailure f) => f.message, 'message', contains('polling'))),
+      throwsA(
+        isA<TestFailure>().having((TestFailure f) => f.message, 'message', contains('polling')),
+      ),
     );
     await tester.runAsync(() => closeTestDatabase(db));
   });

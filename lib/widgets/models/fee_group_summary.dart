@@ -5,24 +5,24 @@ import '../../services/llm/output_spec.dart';
 
 /// The display name of a spec-billed group's unit (`D2b`: 按张 / 按秒 / 按条).
 String specUnitLabel(AppLocalizations l10n, OutputUnit unit) => switch (unit) {
-      OutputUnit.image => l10n.specUnitImage,
-      OutputUnit.second => l10n.specUnitSecond,
-      OutputUnit.clip => l10n.specUnitClip,
-    };
+  OutputUnit.image => l10n.specUnitImage,
+  OutputUnit.second => l10n.specUnitSecond,
+  OutputUnit.clip => l10n.specUnitClip,
+};
 
 /// The suffix after a unit price: `/张` `/秒` `/条`.
 String specUnitSuffix(AppLocalizations l10n, OutputUnit unit) => switch (unit) {
-      OutputUnit.image => l10n.specUnitSuffixImage,
-      OutputUnit.second => l10n.specUnitSuffixSecond,
-      OutputUnit.clip => l10n.specUnitSuffixClip,
-    };
+  OutputUnit.image => l10n.specUnitSuffixImage,
+  OutputUnit.second => l10n.specUnitSuffixSecond,
+  OutputUnit.clip => l10n.specUnitSuffixClip,
+};
 
 /// How a request is counted, stated beside the unit chips.
 String specUnitNote(AppLocalizations l10n, OutputUnit unit) => switch (unit) {
-      OutputUnit.image => l10n.specUnitNoteImage,
-      OutputUnit.second => l10n.specUnitNoteSecond,
-      OutputUnit.clip => l10n.specUnitNoteClip,
-    };
+  OutputUnit.image => l10n.specUnitNoteImage,
+  OutputUnit.second => l10n.specUnitNoteSecond,
+  OutputUnit.clip => l10n.specUnitNoteClip,
+};
 
 /// One rate row's conditions as the editor and the usage page spell them:
 /// `1080p · high · 8s`, or 「任意」 for the catch-all.

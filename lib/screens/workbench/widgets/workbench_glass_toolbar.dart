@@ -13,12 +13,12 @@ import '../../../l10n/app_localizations.dart';
 import '../../../models/app_image.dart';
 import '../../../state/app_state.dart';
 import '../../../state/gallery_state.dart';
-import '../../../widgets/ui/app_button.dart';
-import '../../../widgets/ui/app_dialog.dart';
 import '../../../widgets/dialogs/thumbnail_size_dialog.dart';
+import '../../../widgets/files/thumbnail_fit_toggle.dart';
 import '../../../widgets/glass/app_glass.dart';
 import '../../../widgets/glass/glass_controls.dart';
-import '../../../widgets/files/thumbnail_fit_toggle.dart';
+import '../../../widgets/ui/app_button.dart';
+import '../../../widgets/ui/app_dialog.dart';
 import '../workbench_layout.dart';
 import 'gallery/gallery_selection_bar.dart';
 
@@ -39,9 +39,7 @@ abstract final class WorkbenchTab {
 Future<void> pickImagesIntoWorkspace(GalleryState galleryState) async {
   final picked = await ImagePicker().pickMultiImage();
   if (picked.isEmpty) return;
-  galleryState.addDroppedFiles(
-    picked.map((f) => AppImage(path: f.path, name: f.name)).toList(),
-  );
+  galleryState.addDroppedFiles(picked.map((f) => AppImage(path: f.path, name: f.name)).toList());
   galleryState.setViewMode(GalleryViewMode.temp);
 }
 
@@ -62,7 +60,8 @@ enum _Fold { import, refresh, fit, size }
 /// Which of the three gallery views [GalleryState] is currently showing.
 _View _currentView(GalleryState s) {
   if (s.viewMode == GalleryViewMode.temp) return _View.workspace;
-  final bool isResult = s.viewMode == GalleryViewMode.processed ||
+  final bool isResult =
+      s.viewMode == GalleryViewMode.processed ||
       (s.viewMode == GalleryViewMode.folder && s.folderViewIsResult);
   return isResult ? _View.results : _View.sources;
 }
@@ -104,23 +103,27 @@ class _ToolDef {
 
 /// The tab strip's five items (`00e · 1b`): 画廊 / 对比器 / 蒙版 / 裁剪 / 助手.
 List<_ToolDef> _tabs(AppLocalizations l10n) => [
-      _ToolDef(_kGalleryTab, Icons.grid_view, l10n.wbToolGalleryShort, l10n.wbToolGalleryShort),
-      _ToolDef(WorkbenchTab.comparator, Icons.compare, l10n.wbToolComparatorShort, l10n.comparator),
-      _ToolDef(WorkbenchTab.mask, Icons.brush_outlined, l10n.wbToolMaskShort, l10n.maskEditor),
-      _ToolDef(WorkbenchTab.crop, Icons.crop, l10n.wbToolCropShort, l10n.cropAndResize),
-      _ToolDef(WorkbenchTab.assistant, Icons.auto_awesome_outlined, l10n.wbToolAssistantShort,
-          l10n.promptOptimizer),
-    ];
+  _ToolDef(_kGalleryTab, Icons.grid_view, l10n.wbToolGalleryShort, l10n.wbToolGalleryShort),
+  _ToolDef(WorkbenchTab.comparator, Icons.compare, l10n.wbToolComparatorShort, l10n.comparator),
+  _ToolDef(WorkbenchTab.mask, Icons.brush_outlined, l10n.wbToolMaskShort, l10n.maskEditor),
+  _ToolDef(WorkbenchTab.crop, Icons.crop, l10n.wbToolCropShort, l10n.cropAndResize),
+  _ToolDef(
+    WorkbenchTab.assistant,
+    Icons.auto_awesome_outlined,
+    l10n.wbToolAssistantShort,
+    l10n.promptOptimizer,
+  ),
+];
 
 List<GlassSegment<int>> _tabSegments(List<_ToolDef> tabs) => [
-      for (final t in tabs)
-        GlassSegment(value: t.index, label: t.shortLabel, icon: t.icon, tooltip: t.fullLabel),
-    ];
+  for (final t in tabs)
+    GlassSegment(value: t.index, label: t.shortLabel, icon: t.icon, tooltip: t.fullLabel),
+];
 
 List<GlassSegment<int>> _modeSegments(AppLocalizations l10n) => [
-      GlassSegment(value: WorkbenchTab.image, label: l10n.wbModeImage, icon: Icons.image_outlined),
-      GlassSegment(value: WorkbenchTab.video, label: l10n.wbModeVideo, icon: Icons.movie_outlined),
-    ];
+  GlassSegment(value: WorkbenchTab.image, label: l10n.wbModeImage, icon: Icons.image_outlined),
+  GlassSegment(value: WorkbenchTab.video, label: l10n.wbModeVideo, icon: Icons.movie_outlined),
+];
 
 /// The three views, always all three: a segment that appeared only while it
 /// was the view could be left but never returned to, and it moved the bar's
@@ -133,34 +136,39 @@ List<GlassSegment<_View>> _viewSegments(
   AppLocalizations l10n, {
   required bool phone,
   bool iconOnly = false,
-}) =>
-    [
-      GlassSegment(
-        value: _View.sources,
-        label: phone ? l10n.galleryViewSourcesShort : l10n.allSources,
-        icon: iconOnly ? Icons.photo_library_outlined : null,
-        tooltip: l10n.allSources,
-      ),
-      GlassSegment(
-        value: _View.results,
-        label: phone ? l10n.galleryViewResultsShort : l10n.allResults,
-        icon: iconOnly ? Icons.auto_awesome_motion_outlined : null,
-        tooltip: l10n.allResults,
-      ),
-      GlassSegment(
-        value: _View.workspace,
-        label: l10n.galleryViewWorkspace,
-        icon: iconOnly ? Icons.inbox_outlined : null,
-        tooltip: l10n.tempWorkspace,
-      ),
-    ];
+}) => [
+  GlassSegment(
+    value: _View.sources,
+    label: phone ? l10n.galleryViewSourcesShort : l10n.allSources,
+    icon: iconOnly ? Icons.photo_library_outlined : null,
+    tooltip: l10n.allSources,
+  ),
+  GlassSegment(
+    value: _View.results,
+    label: phone ? l10n.galleryViewResultsShort : l10n.allResults,
+    icon: iconOnly ? Icons.auto_awesome_motion_outlined : null,
+    tooltip: l10n.allResults,
+  ),
+  GlassSegment(
+    value: _View.workspace,
+    label: l10n.galleryViewWorkspace,
+    icon: iconOnly ? Icons.inbox_outlined : null,
+    tooltip: l10n.tempWorkspace,
+  ),
+];
 
 /// The Tools menu button's width; [label] is what it shows — the active
 /// tool's name on a tool tab, 「工具」 otherwise.
-double _toolsMenuWidth(BuildContext context, AppLocalizations l10n, {required bool compact, String? label}) =>
-    compact
-        ? 10 + AppSize.iconLg + 4 + AppSize.iconMd + 10
-        : GlassIconButton.widthFor(context, label: label ?? l10n.wbTools, hasIcon: false) + 4 + AppSize.iconMd;
+double _toolsMenuWidth(
+  BuildContext context,
+  AppLocalizations l10n, {
+  required bool compact,
+  String? label,
+}) => compact
+    ? 10 + AppSize.iconLg + 4 + AppSize.iconMd + 10
+    : GlassIconButton.widthFor(context, label: label ?? l10n.wbTools, hasIcon: false) +
+          4 +
+          AppSize.iconMd;
 
 double _tabStripWidth(BuildContext context, List<_ToolDef> tabs, {required bool labels}) =>
     GlassSegmented.widthFor(context, _tabSegments(tabs), showLabels: labels, dense: true);
@@ -324,13 +332,13 @@ class _WorkbenchGlassToolbarState extends State<WorkbenchGlassToolbar> {
 
 /// Lays [children] out with the bar's 4px gap.
 Widget _barRow(List<Widget> children) => Row(
-      children: [
-        for (int i = 0; i < children.length; i++) ...[
-          if (i > 0) const SizedBox(width: WorkbenchGlassToolbar._gap),
-          children[i],
-        ],
-      ],
-    );
+  children: [
+    for (int i = 0; i < children.length; i++) ...[
+      if (i > 0) const SizedBox(width: WorkbenchGlassToolbar._gap),
+      children[i],
+    ],
+  ],
+);
 
 double _sumWithGaps(List<double> widths) =>
     widths.fold<double>(0, (a, b) => a + b) +
@@ -344,16 +352,15 @@ Widget _tabStrip({
   required bool labels,
   required bool phone,
   required ValueChanged<int> onSelect,
-}) =>
-    GlassSegmented<int>(
-      segments: _tabSegments(tabs),
-      value: WorkbenchTab.isGallery(active) ? _kGalleryTab : active,
-      onChanged: onSelect,
-      showLabels: labels,
-      accent: true,
-      dense: true,
-      segmentHeight: phone ? AppSize.control : AppSize.compact,
-    );
+}) => GlassSegmented<int>(
+  segments: _tabSegments(tabs),
+  value: WorkbenchTab.isGallery(active) ? _kGalleryTab : active,
+  onChanged: onSelect,
+  showLabels: labels,
+  accent: true,
+  dense: true,
+  segmentHeight: phone ? AppSize.control : AppSize.compact,
+);
 
 /// The bar's first control on every tab, so the strip after it never moves.
 /// A tab without a left panel keeps it, disabled.
@@ -369,7 +376,12 @@ class _SidebarToggle extends StatelessWidget {
     final isSidebarExpanded = context.select<AppState, bool>((s) => s.isSidebarExpanded);
 
     if (!layout.hasLeftPanel) {
-      return GlassIconButton(icon: Icons.menu, tooltip: l10n.workbench, size: size, onPressed: null);
+      return GlassIconButton(
+        icon: Icons.menu,
+        tooltip: l10n.workbench,
+        size: size,
+        onPressed: null,
+      );
     }
     if (layout.leftInDrawer) {
       return GlassIconButton(
@@ -431,8 +443,8 @@ class _GalleryRow extends StatelessWidget {
     // parameter column the preference is still collapsed, and without this
     // the button would appear there and bring nothing back.
     final configCollapsed = !context.select<AppState, bool>((s) => s.isConfigPanelExpanded);
-    final showTune = !phone &&
-        (layout.rightInDrawer || (configCollapsed && layout.canShowRightPanel));
+    final showTune =
+        !phone && (layout.rightInDrawer || (configCollapsed && layout.canShowRightPanel));
 
     bool viewLabels = true;
     double viewNatural() => viewLabels
@@ -537,7 +549,8 @@ class _GalleryRow extends StatelessWidget {
           active: fit == ThumbnailFit.fill,
           tooltip: thumbnailFitLabel(l10n, fit),
           onPressed: () => appState.setThumbnailFit(
-              fit == ThumbnailFit.fill ? ThumbnailFit.fit : ThumbnailFit.fill),
+            fit == ThumbnailFit.fill ? ThumbnailFit.fit : ThumbnailFit.fill,
+          ),
         ),
       if (!folded.contains(_Fold.refresh))
         GlassIconButton(
@@ -556,8 +569,7 @@ class _GalleryRow extends StatelessWidget {
         GlassIconButton(
           icon: Icons.tune,
           tooltip: l10n.wbGenerationConfig,
-          onPressed: () =>
-              _openRightPanel(context, configCollapsed: configCollapsed),
+          onPressed: () => _openRightPanel(context, configCollapsed: configCollapsed),
         ),
     ];
 
@@ -596,8 +608,7 @@ class _ToolRow extends StatelessWidget {
     // only with its metadata switch on, so `canShowRightPanel` is what stops
     // this offering a column that is not there.
     final configCollapsed = !context.select<AppState, bool>((s) => s.isConfigPanelExpanded);
-    final showTune =
-        layout.rightInDrawer || (configCollapsed && layout.canShowRightPanel);
+    final showTune = layout.rightInDrawer || (configCollapsed && layout.canShowRightPanel);
 
     final tabLabels = !phone && _tabLabelsFit(context, width);
     final controlsFloor = controls == null ? 0.0 : math.min(controlsWidth, _kControlsFloor);
@@ -608,18 +619,17 @@ class _ToolRow extends StatelessWidget {
     bool inline = !phone;
     bool compact = false;
     double measure() => _sumWithGaps([
-          leading,
-          inline
-              ? _tabStripWidth(context, tabs, labels: tabLabels)
-              : _toolsMenuWidth(context, l10n, compact: compact, label: activeLabel),
-          if (controls != null) ...[if (!phone) GlassDivider.extent, controlsFloor],
-          if (showTune) AppSize.control,
-        ]);
+      leading,
+      inline
+          ? _tabStripWidth(context, tabs, labels: tabLabels)
+          : _toolsMenuWidth(context, l10n, compact: compact, label: activeLabel),
+      if (controls != null) ...[if (!phone) GlassDivider.extent, controlsFloor],
+      if (showTune) AppSize.control,
+    ]);
     if (measure() > width) inline = false;
     if (measure() > width) compact = true;
 
-    void select(int index) =>
-        tabController.index = index == _kGalleryTab ? galleryTarget : index;
+    void select(int index) => tabController.index = index == _kGalleryTab ? galleryTarget : index;
 
     return _barRow([
       // A phone tool with no panel to open leads with the way back instead
@@ -653,8 +663,7 @@ class _ToolRow extends StatelessWidget {
         GlassIconButton(
           icon: Icons.tune,
           tooltip: l10n.wbGenerationConfig,
-          onPressed: () =>
-              _openRightPanel(context, configCollapsed: configCollapsed),
+          onPressed: () => _openRightPanel(context, configCollapsed: configCollapsed),
         ),
     ]);
   }
@@ -693,9 +702,11 @@ class _ToolsMenuButton extends StatelessWidget {
       menuChildren: [
         for (final t in tools)
           MenuItemButton(
-            leadingIcon: Icon(t.icon,
-                size: AppSize.iconLg,
-                color: t.index == activeIndex ? scheme.primary : null),
+            leadingIcon: Icon(
+              t.icon,
+              size: AppSize.iconLg,
+              color: t.index == activeIndex ? scheme.primary : null,
+            ),
             onPressed: () => onSelect(t.index),
             child: Text(t.fullLabel),
           ),
@@ -742,16 +753,19 @@ class _ToolsMenuButton extends StatelessWidget {
                       ),
                     )
                   else
-                  Text(
-                    activeTool?.shortLabel ?? l10n.wbTools,
-                    style: GlassIconButton.labelStyle(context).copyWith(
-                      fontWeight: FontWeight.w500,
-                      color: isActive ? scheme.onAccentTint : ink,
+                    Text(
+                      activeTool?.shortLabel ?? l10n.wbTools,
+                      style: GlassIconButton.labelStyle(context).copyWith(
+                        fontWeight: FontWeight.w500,
+                        color: isActive ? scheme.onAccentTint : ink,
+                      ),
                     ),
-                  ),
                   const SizedBox(width: 4),
-                  Icon(Icons.expand_more,
-                      size: AppSize.iconMd, color: isActive ? scheme.onAccentTint : ink),
+                  Icon(
+                    Icons.expand_more,
+                    size: AppSize.iconMd,
+                    color: isActive ? scheme.onAccentTint : ink,
+                  ),
                 ],
               ),
             ),
@@ -833,7 +847,11 @@ class _ThumbnailSizeButton extends StatelessWidget {
 /// live here (select all, clearing the workspace, capture on touch, the
 /// concurrency limit on a phone).
 class _GalleryOverflowMenu extends StatelessWidget {
-  const _GalleryOverflowMenu({required this.folded, required this.phone, this.size = AppSize.control});
+  const _GalleryOverflowMenu({
+    required this.folded,
+    required this.phone,
+    this.size = AppSize.control,
+  });
 
   final Set<_Fold> folded;
   final bool phone;
@@ -849,8 +867,9 @@ class _GalleryOverflowMenu extends StatelessWidget {
     final isTouch = Platform.isAndroid || Platform.isIOS;
     // The one gallery fact the closed button's menu turns on. Everything else
     // it reads — the size to open the slider at, the actions — is one-shot.
-    final canClearWorkspace = context.select<GalleryState, bool>((s) =>
-        s.viewMode == GalleryViewMode.temp && s.droppedImages.isNotEmpty);
+    final canClearWorkspace = context.select<GalleryState, bool>(
+      (s) => s.viewMode == GalleryViewMode.temp && s.droppedImages.isNotEmpty,
+    );
 
     return MenuAnchor(
       menuChildren: [
@@ -908,7 +927,11 @@ class _GalleryOverflowMenu extends StatelessWidget {
         if (canClearWorkspace) ...[
           const Divider(height: 9),
           MenuItemButton(
-            leadingIcon: Icon(Icons.delete_sweep_outlined, size: AppSize.iconLg, color: scheme.error),
+            leadingIcon: Icon(
+              Icons.delete_sweep_outlined,
+              size: AppSize.iconLg,
+              color: scheme.error,
+            ),
             onPressed: () => confirmClearTempWorkspace(context, gallery, l10n),
             child: Text(l10n.clearTempWorkspace, style: TextStyle(color: scheme.error)),
           ),

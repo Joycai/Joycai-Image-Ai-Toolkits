@@ -7,10 +7,10 @@ import '../../models/llm_channel.dart';
 import '../../models/llm_model.dart';
 import '../../models/spec_rate.dart';
 import '../../services/llm/model_capabilities.dart';
+import '../../widgets/models/model_picker_options.dart';
 import '../../widgets/ui/app_dropdown.dart';
 import '../../widgets/ui/app_field_size.dart';
 import '../../widgets/ui/app_segmented_control.dart';
-import '../../widgets/models/model_picker_options.dart';
 import '../../widgets/ui/searchable_picker.dart';
 import 'widgets/size_picker/size_field.dart';
 
@@ -142,7 +142,9 @@ class ModelSelectionSection extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.end,
-                        style: textTheme.labelSmall?.mono.copyWith(color: colorScheme.onSurfaceVariant),
+                        style: textTheme.labelSmall?.mono.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
                       ),
               ),
               const SizedBox(width: AppSpace.s4),
@@ -210,8 +212,7 @@ class ModelSelectionSection extends StatelessWidget {
               ),
             ),
           ),
-          if (modelInChannel != null)
-            _buildModelSpecificOptions(context, modelInChannel, l10n),
+          if (modelInChannel != null) _buildModelSpecificOptions(context, modelInChannel, l10n),
         ],
       ),
     );
@@ -226,7 +227,10 @@ class ModelSelectionSection extends StatelessWidget {
           curve: AppMotion.enter,
           alignment: AlignmentDirectional.topStart,
           child: isExpanded
-              ? Padding(padding: const EdgeInsets.only(top: _kGap), child: body)
+              ? Padding(
+                  padding: const EdgeInsets.only(top: _kGap),
+                  child: body,
+                )
               : const SizedBox(width: double.infinity),
         ),
       ],
@@ -272,14 +276,16 @@ class ModelSelectionSection extends StatelessWidget {
       } else if (pendingHalf == null) {
         pendingHalf = cell;
       } else {
-        rows.add(Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(child: pendingHalf),
-            const SizedBox(width: AppSpace.s6),
-            Expanded(child: cell),
-          ],
-        ));
+        rows.add(
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: pendingHalf),
+              const SizedBox(width: AppSpace.s6),
+              Expanded(child: cell),
+            ],
+          ),
+        );
         pendingHalf = null;
       }
     }
@@ -301,7 +307,12 @@ class ModelSelectionSection extends StatelessWidget {
   }
 
   /// One grid cell: an 11px secondary caption over its control.
-  Widget _buildParamCell(BuildContext context, LLMModel model, ParamSpec spec, AppLocalizations l10n) {
+  Widget _buildParamCell(
+    BuildContext context,
+    LLMModel model,
+    ParamSpec spec,
+    AppLocalizations l10n,
+  ) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
@@ -330,10 +341,7 @@ class ModelSelectionSection extends StatelessWidget {
         // lifted out on the panel's ground.
         control = AppSegmentedControl<String>(
           segments: spec.options
-              .map((o) => AppSegment(
-                    value: o.value,
-                    label: _optionLabel(l10n, spec.key, o.value),
-                  ))
+              .map((o) => AppSegment(value: o.value, label: _optionLabel(l10n, spec.key, o.value)))
               .toList(),
           value: current,
           onChanged: (v) => onImageParamChanged(model, spec.key, v),
@@ -419,9 +427,7 @@ class ModelSelectionSection extends StatelessWidget {
   String _optionLabel(AppLocalizations l10n, String paramKey, String value) {
     if (value == 'auto' || value == 'not_set') return l10n.optionAuto;
     // Two-state switches share one on/off vocabulary.
-    if (paramKey == 'promptExtend' ||
-        paramKey == 'webSearch' ||
-        paramKey == 'watermark') {
+    if (paramKey == 'promptExtend' || paramKey == 'webSearch' || paramKey == 'watermark') {
       switch (value) {
         case 'on':
           return l10n.promptExtendOn;

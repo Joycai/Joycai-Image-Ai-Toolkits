@@ -106,16 +106,14 @@ void main() {
   // time -- so it is checked at a size wide enough to be realistic on a
   // working machine, in every locale the app ships.
   for (final locale in AppLocalizations.supportedLocales) {
-    testWidgets('the action grid lays out on desktop in ${locale.toLanguageTag()}',
-        (tester) async {
+    testWidgets('the action grid lays out on desktop in ${locale.toLanguageTag()}', (tester) async {
       seedScratchFiles(987654321); // "941.9 MB"
       await pump(tester, isMobile: false, locale: locale);
 
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('the action grid lays out on mobile in ${locale.toLanguageTag()}',
-        (tester) async {
+    testWidgets('the action grid lays out on mobile in ${locale.toLanguageTag()}', (tester) async {
       seedScratchFiles(987654321);
       await pump(tester, isMobile: true, locale: locale);
 
@@ -139,10 +137,7 @@ void main() {
     // settings pane says there is nothing here. "(0 B)" would be noise.
     expect(find.text('Clear Temporary Files'), findsOneWidget);
     final button = tester.widget<OutlinedButton>(
-      find.ancestor(
-        of: find.text('Clear Temporary Files'),
-        matching: find.byType(OutlinedButton),
-      ),
+      find.ancestor(of: find.text('Clear Temporary Files'), matching: find.byType(OutlinedButton)),
     );
     expect(button.onPressed, isNull);
   });

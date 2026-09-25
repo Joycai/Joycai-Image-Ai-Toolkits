@@ -72,8 +72,7 @@ class CustomAccent {
   static const double ringTone = 62;
 
   /// The seed for a [hue] (HCT degrees) picked on the ring.
-  static Color seedForHue(double hue) =>
-      Color(Hct.from(hue % 360, ringChroma, ringTone).toInt());
+  static Color seedForHue(double hue) => Color(Hct.from(hue % 360, ringChroma, ringTone).toInt());
 
   /// Where tone 44 stops being the hue and becomes brown — amber through
   /// yellow-green. Orange (`#FF9800`) sits inside it; deep orange and lime
@@ -103,7 +102,10 @@ class CustomAccent {
 
     // The greys do not follow the accent, so any scheme will do for them.
     final ThemeAccent reference = AppConstants.presetThemes[AppConstants.defaultThemeAccentKey]!;
-    final ColorScheme darkNeutrals = buildAppColorScheme(accent: reference, brightness: Brightness.dark);
+    final ColorScheme darkNeutrals = buildAppColorScheme(
+      accent: reference,
+      brightness: Brightness.dark,
+    );
 
     double darkTone = math.max(hct.tone, ThemeAccent.derivedDarkTone);
     Color dark = hct.tone >= ThemeAccent.derivedDarkTone ? opaque : _atTone(hct, darkTone);

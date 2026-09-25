@@ -24,11 +24,7 @@ void main() {
   late FixtureEnv env;
   setUpScreenSuite((FixtureEnv e) => env = e);
 
-  shootMatrix(() => env, const <AppScreen>[
-    AppScreen.tasks,
-    AppScreen.prompts,
-    AppScreen.settings,
-  ]);
+  shootMatrix(() => env, const <AppScreen>[AppScreen.tasks, AppScreen.prompts, AppScreen.settings]);
 
   // The phone-width settings shot only ever photographs the category list;
   // the appearance card — where the theme-colour chooser takes its compact
@@ -64,8 +60,9 @@ void main() {
     // where they genuinely might not.
     (kShotSizes.first, Brightness.light),
   ]) {
-    testWidgets('settings · keyboard @ ${size.label} ${brightness.name}',
-        (WidgetTester tester) async {
+    testWidgets('settings · keyboard @ ${size.label} ${brightness.name}', (
+      WidgetTester tester,
+    ) async {
       await shoot(
         tester,
         env: env,
@@ -174,10 +171,9 @@ void main() {
       brightness: Brightness.light,
       suffix: 'menu',
       after: (WidgetTester tester) async {
-        await tester.tap(find.descendant(
-          of: find.byType(AppBar),
-          matching: find.byIcon(Icons.more_vert),
-        ));
+        await tester.tap(
+          find.descendant(of: find.byType(AppBar), matching: find.byIcon(Icons.more_vert)),
+        );
         for (int p = 0; p < 5; p++) {
           await tester.pump(const Duration(milliseconds: 100));
         }

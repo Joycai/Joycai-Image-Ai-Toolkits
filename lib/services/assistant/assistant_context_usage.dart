@@ -104,8 +104,7 @@ class ContextUsageSnapshot {
   /// True when a proportion of the window can be drawn at all.
   bool get hasWindow => windowChars > 0;
 
-  int get usedChars =>
-      slices.values.fold<int>(0, (sum, value) => sum + (value < 0 ? 0 : value));
+  int get usedChars => slices.values.fold<int>(0, (sum, value) => sum + (value < 0 ? 0 : value));
 
   int get remainingChars => (windowChars - usedChars).clamp(0, windowChars);
 

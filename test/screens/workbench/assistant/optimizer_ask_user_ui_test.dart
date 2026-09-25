@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/assistant/prompt_optimizer_view.dart';
-import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/assistant/prompt_optimizer_agent.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/state/workbench_ui_state.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_button.dart';
 import 'package:provider/provider.dart';
@@ -17,37 +17,39 @@ void main() {
   PromptOptimizerSession sessionWithPendingCard() {
     final live = PromptOptimizerSession(mode: AssistantMode.systemPrompt);
     live.addUserTurn('优化提示词');
-    live.history.add(LLMMessage(
-      role: LLMRole.assistant,
-      content: '',
-      toolCalls: [
-        LLMToolCall(
-          id: 'ask_1',
-          name: 'ask_user',
-          arguments: {
-            'questions': [
-              {
-                'header': '鞋型',
-                'question': '鞋子是哪种类型？',
-                'options': [
-                  {'label': '一体袜靴'},
-                  {'label': '普通短靴'},
-                ],
-              },
-              {
-                'header': '画幅',
-                'question': '想用哪种画幅？',
-                'multi_select': true,
-                'options': [
-                  {'label': '3:2'},
-                  {'label': '9:16'},
-                ],
-              },
-            ],
-          },
-        ),
-      ],
-    ));
+    live.history.add(
+      LLMMessage(
+        role: LLMRole.assistant,
+        content: '',
+        toolCalls: [
+          LLMToolCall(
+            id: 'ask_1',
+            name: 'ask_user',
+            arguments: {
+              'questions': [
+                {
+                  'header': '鞋型',
+                  'question': '鞋子是哪种类型？',
+                  'options': [
+                    {'label': '一体袜靴'},
+                    {'label': '普通短靴'},
+                  ],
+                },
+                {
+                  'header': '画幅',
+                  'question': '想用哪种画幅？',
+                  'multi_select': true,
+                  'options': [
+                    {'label': '3:2'},
+                    {'label': '9:16'},
+                  ],
+                },
+              ],
+            },
+          ),
+        ],
+      ),
+    );
     return PromptOptimizerSession.fromStored(
       id: 'ui_test',
       mode: AssistantMode.systemPrompt,
@@ -67,37 +69,34 @@ void main() {
     final ui = WorkbenchUIState();
     ui.optimizerSession = session;
 
-    await tester.pumpWidget(ChangeNotifierProvider<WorkbenchUIState>.value(
-      value: ui,
-      child: MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: Scaffold(
-          body: PromptOptimizerChatView(
-            inputCtrl: TextEditingController(),
-            onSend: () {},
-            onRetry: () {},
-            onApplyPrompt: (_) {},
-            onApplyKbEdit: (_) {},
-            onRejectKbEdit: (_) {},
-            onAnswerAskUser: onAnswer ?? (_, _) {},
-            isBusy: false,
+    await tester.pumpWidget(
+      ChangeNotifierProvider<WorkbenchUIState>.value(
+        value: ui,
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: PromptOptimizerChatView(
+              inputCtrl: TextEditingController(),
+              onSend: () {},
+              onRetry: () {},
+              onApplyPrompt: (_) {},
+              onApplyKbEdit: (_) {},
+              onRejectKbEdit: (_) {},
+              onAnswerAskUser: onAnswer ?? (_, _) {},
+              isBusy: false,
+            ),
           ),
         ),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
   }
 
-  AppButton confirmButton(WidgetTester tester) => tester.widget(
-        find.ancestor(
-          of: find.text('Send answers'),
-          matching: find.byType(AppButton),
-        ),
-      );
+  AppButton confirmButton(WidgetTester tester) =>
+      tester.widget(find.ancestor(of: find.text('Send answers'), matching: find.byType(AppButton)));
 
-  testWidgets('confirm stays disabled until every question is answered',
-      (tester) async {
+  testWidgets('confirm stays disabled until every question is answered', (tester) async {
     await pumpChat(tester, sessionWithPendingCard());
 
     expect(find.text('鞋子是哪种类型？'), findsOneWidget);

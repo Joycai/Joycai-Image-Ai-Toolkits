@@ -6,7 +6,11 @@ import '../../../../services/llm/output_spec.dart';
 /// gpt's `auto` is "the model decides"; qwen's and wan's `not_set` are *not*
 /// automatic — the app chooses — so they say what the app sends. [long] is
 /// the popover's fuller qwen wording.
-(String, String) sentinelTexts(AppLocalizations l10n, SizeSentinelMeaning meaning, {bool long = false}) {
+(String, String) sentinelTexts(
+  AppLocalizations l10n,
+  SizeSentinelMeaning meaning, {
+  bool long = false,
+}) {
   return switch (meaning) {
     SizeSentinelMeaning.modelDecides => (l10n.imageSizeAuto, l10n.imageSizeHintGpt),
     SizeSentinelMeaning.followsInput => (

@@ -13,15 +13,15 @@ void main() {
   tearDown(() => LLMService.usageSinkOverride = null);
 
   LLMModelConfig config({String billingMode = 'token'}) => LLMModelConfig(
-        modelId: 'grok-imagine-image-2.0',
-        channelType: 'xai-api',
-        endpoint: 'https://example.invalid/v1',
-        apiKey: 'k',
-        billingMode: billingMode,
-        requestFee: 0.02,
-        outputRates: const [SpecRate(size: '1K', quality: 'medium', price: 0.06)],
-        inputUnitFee: 0.01,
-      );
+    modelId: 'grok-imagine-image-2.0',
+    channelType: 'xai-api',
+    endpoint: 'https://example.invalid/v1',
+    apiKey: 'k',
+    billingMode: billingMode,
+    requestFee: 0.02,
+    outputRates: const [SpecRate(size: '1K', quality: 'medium', price: 0.06)],
+    inputUnitFee: 0.01,
+  );
 
   Future<TokenUsage> record(
     LLMModelConfig config,
@@ -31,7 +31,12 @@ void main() {
   }) async {
     final rows = <TokenUsage>[];
     LLMService.usageSinkOverride = (row) async => rows.add(row);
-    await LLMService().recordUsageForTest(config, metadata, options: options, imageCount: imageCount);
+    await LLMService().recordUsageForTest(
+      config,
+      metadata,
+      options: options,
+      imageCount: imageCount,
+    );
     return rows.single;
   }
 

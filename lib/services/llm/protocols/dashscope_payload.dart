@@ -54,9 +54,7 @@ String dashscopeAnthropicBase(String endpoint) {
 /// unchanged.
 String dashscopeCompatibleBase(String endpoint) {
   final base = _dashscopeHostBase(endpoint);
-  return base.endsWith('/compatible-mode/v1')
-      ? base
-      : '$base/compatible-mode/v1';
+  return base.endsWith('/compatible-mode/v1') ? base : '$base/compatible-mode/v1';
 }
 
 /// The bare host base with any known DashScope face suffix stripped.
@@ -234,33 +232,28 @@ Map<String, dynamic> buildDashScopeImagePayload({
     size = null;
   } else {
     final requested = sizeSpec.normalize(readStringOption(options, 'imageSize'));
-    size = dashscopeSize({'imageSize': requested}) ??
+    size =
+        dashscopeSize({'imageSize': requested}) ??
         switch (shape) {
           // wan takes the tier presets directly, and its own omitted default
           // is the 2K tier — the same double-price trap as qwen's.
           ImageRequestShape.dashscopeWan => '1K',
-          ImageRequestShape.dashscopeQwen ||
-          ImageRequestShape.none =>
-            dashscopeQwenDefaultSize(
-              inputSize,
-              rules: sizeSpec.sizeRules ?? kDashscopeQwenSizeRules,
-            ),
+          ImageRequestShape.dashscopeQwen || ImageRequestShape.none => dashscopeQwenDefaultSize(
+            inputSize,
+            rules: sizeSpec.sizeRules ?? kDashscopeQwenSizeRules,
+          ),
         };
   }
   final promptExtend = dashscopePromptExtend(options);
-  final parameters = <String, dynamic>{
-    'n': 1,
-    'size': ?size,
-    'prompt_extend': ?promptExtend,
-  };
+  final parameters = <String, dynamic>{'n': 1, 'size': ?size, 'prompt_extend': ?promptExtend};
 
-  final images = [for (final ref in imageRefs) {'image': ref}];
+  final images = [
+    for (final ref in imageRefs) {'image': ref},
+  ];
   final text = {'text': prompt};
   final content = switch (shape) {
     ImageRequestShape.dashscopeWan => [text, ...images],
-    ImageRequestShape.dashscopeQwen ||
-    ImageRequestShape.none =>
-      [...images, text],
+    ImageRequestShape.dashscopeQwen || ImageRequestShape.none => [...images, text],
   };
   return {
     'model': modelId,
@@ -352,14 +345,11 @@ List<String> dashscopeImageRefs(Map<String, dynamic> data) {
 /// ever carry one). Shared by every native
 /// surface (chat, image sync, image async) so one of them cannot start
 /// spilling image bytes into the debug log while the others do not.
-Map<String, dynamic> dashscopePayloadForLog(
-    Map<String, dynamic> payload, int refs) {
+Map<String, dynamic> dashscopePayloadForLog(Map<String, dynamic> payload, int refs) {
   if (refs == 0) return payload;
   final note = '[messages with $refs inline reference image(s)]';
   return {
     for (final entry in payload.entries)
-      entry.key: (entry.key == 'input' || entry.key == 'messages')
-          ? note
-          : entry.value,
+      entry.key: (entry.key == 'input' || entry.key == 'messages') ? note : entry.value,
   };
 }

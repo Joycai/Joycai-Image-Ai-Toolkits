@@ -83,10 +83,7 @@ void main() {
       expect(identical(appState.imageModels, appState.imageModels), isTrue);
       expect(identical(appState.chatModels, appState.chatModels), isTrue);
       expect(identical(appState.videoModels, appState.videoModels), isTrue);
-      expect(
-        identical(appState.multimodalModels, appState.multimodalModels),
-        isTrue,
-      );
+      expect(identical(appState.multimodalModels, appState.multimodalModels), isTrue);
     });
   });
 
@@ -109,8 +106,7 @@ void main() {
       return state;
     }
 
-    testWidgets('a GalleryState selector fires on a selection change',
-        (tester) async {
+    testWidgets('a GalleryState selector fires on a selection change', (tester) async {
       final galleryState = await settledGalleryState(tester);
       var builds = 0;
 
@@ -140,8 +136,7 @@ void main() {
       expect(find.text('1'), findsOneWidget);
     });
 
-    testWidgets('the same selector ignores an unrelated AppState change',
-        (tester) async {
+    testWidgets('the same selector ignores an unrelated AppState change', (tester) async {
       final appState = AppState();
       final galleryState = await settledGalleryState(tester);
       var builds = 0;

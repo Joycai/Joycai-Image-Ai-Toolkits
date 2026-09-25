@@ -58,8 +58,10 @@ class _SizeFieldState extends State<SizeField> {
 
   ImageSizeVocabulary get _vocab => widget.spec.sizeVocabulary!;
 
-  String? get _sentinel =>
-      widget.spec.options.map((o) => o.value).where((v) => v == 'auto' || v == 'not_set').firstOrNull;
+  String? get _sentinel => widget.spec.options
+      .map((o) => o.value)
+      .where((v) => v == 'auto' || v == 'not_set')
+      .firstOrNull;
 
   /// The size the value draws, when it has one to turn: pixels only — a
   /// keyword or a sentinel is a square, and turning a square does nothing.
@@ -148,11 +150,14 @@ class _SizeFieldState extends State<SizeField> {
                       Text(
                         primary,
                         maxLines: 1,
-                        style: (keyword || parseWxH(widget.value) != null ? text.bodySmall?.mono : text.bodySmall)
-                            ?.copyWith(
-                              color: scheme.onSurface,
-                              fontWeight: keyword ? FontWeight.w700 : FontWeight.w500,
-                            ),
+                        style:
+                            (keyword || parseWxH(widget.value) != null
+                                    ? text.bodySmall?.mono
+                                    : text.bodySmall)
+                                ?.copyWith(
+                                  color: scheme.onSurface,
+                                  fontWeight: keyword ? FontWeight.w700 : FontWeight.w500,
+                                ),
                       ),
                       const SizedBox(width: AppSpace.s6),
                       Expanded(
@@ -194,7 +199,9 @@ class _SizeFieldState extends State<SizeField> {
                   child: Icon(
                     Icons.swap_horiz,
                     size: AppSize.iconMd,
-                    color: swap == null ? scheme.outline.withValues(alpha: AppAlpha.disabled) : scheme.onSurfaceVariant,
+                    color: swap == null
+                        ? scheme.outline.withValues(alpha: AppAlpha.disabled)
+                        : scheme.onSurfaceVariant,
                   ),
                 ),
               ),
@@ -221,7 +228,9 @@ class _SizeFieldState extends State<SizeField> {
                   l10n.imageSizeFellBack(
                     sizeValueText(fellBack),
                     widget.modelName,
-                    _sentinel == null ? sizeValueText(widget.value) : sentinelTexts(l10n, _vocab.sentinel).$1,
+                    _sentinel == null
+                        ? sizeValueText(widget.value)
+                        : sentinelTexts(l10n, _vocab.sentinel).$1,
                   ),
                   style: text.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
                 ),
@@ -255,7 +264,11 @@ class _SizeFieldState extends State<SizeField> {
     final parsed = SizeValue.parse(widget.value, sentinel: _sentinel, tiers: _vocab.tiers);
     switch (parsed) {
       case SizeDimsValue(:final width, :final height):
-        return (sizeValueText(widget.value), ratioLabel(width, height, chips: _vocab.ratios), false);
+        return (
+          sizeValueText(widget.value),
+          ratioLabel(width, height, chips: _vocab.ratios),
+          false,
+        );
       case SizeTierValue(:final tier):
         return (tier, l10n.imageSizeKeywordHint('1:1'), true);
       case SizeSentinelValue():

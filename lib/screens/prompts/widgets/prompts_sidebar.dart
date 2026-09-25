@@ -156,7 +156,10 @@ class _SidebarRow extends StatelessWidget {
                     children: [
                       // One column for the glyph and the dots, so the labels
                       // line up under "All".
-                      SizedBox(width: AppSize.iconMd, child: Center(child: leading)),
+                      SizedBox(
+                        width: AppSize.iconMd,
+                        child: Center(child: leading),
+                      ),
                       const SizedBox(width: AppSpace.s10),
                       Expanded(
                         child: Text(

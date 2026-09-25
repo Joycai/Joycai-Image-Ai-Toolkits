@@ -45,10 +45,7 @@ class DashScopeImagesAsyncProtocol implements ImageGenProtocol {
     LLMLogger? logger,
   }) async {
     final config = target.config;
-    final userMsg = history.lastWhere(
-      (m) => m.role == LLMRole.user,
-      orElse: () => history.last,
-    );
+    final userMsg = history.lastWhere((m) => m.role == LLMRole.user, orElse: () => history.last);
 
     final cancelled = cancellationProbeOf(options);
 
@@ -65,13 +62,11 @@ class DashScopeImagesAsyncProtocol implements ImageGenProtocol {
       final bytes = await readAttachmentBytes(att);
       if (bytes == null) continue;
       inputSize ??= ImageCompressor.dimensionsOf(bytes);
-      imageRefs.add(
-          'data:${resolveImageMime(bytes, att.mimeType)};base64,${base64Encode(bytes)}');
+      imageRefs.add('data:${resolveImageMime(bytes, att.mimeType)};base64,${base64Encode(bytes)}');
     }
 
     final base = dashscopeNativeBase(config.endpoint);
-    final submitUrl =
-        Uri.parse('$base/services/aigc/image-generation/generation');
+    final submitUrl = Uri.parse('$base/services/aigc/image-generation/generation');
     final payload = buildDashScopeImagePayload(
       modelId: config.modelId,
       shape: target.model.capabilities.imageRequestShape,
@@ -82,23 +77,17 @@ class DashScopeImagesAsyncProtocol implements ImageGenProtocol {
       sizeSpec: dashscopeSizeSpec(target),
     );
 
-    logger?.call(
-        'Submitting DashScope async image task to: ${submitUrl.host}',
-        level: 'DEBUG');
+    logger?.call('Submitting DashScope async image task to: ${submitUrl.host}', level: 'DEBUG');
 
     final client = config.createClient();
     try {
       LLMDebugLog? debugFile;
       if (LLMDebugLogger.enabled) {
-        debugFile = await LLMDebugLogger.startLog(
-          config.modelId,
-          'DashScope (Image Async Task)',
-          {
-            'url': redactUrl(submitUrl),
-            'headers': target.headers(),
-            'body': dashscopePayloadForLog(payload, imageRefs.length),
-          },
-        );
+        debugFile = await LLMDebugLogger.startLog(config.modelId, 'DashScope (Image Async Task)', {
+          'url': redactUrl(submitUrl),
+          'headers': target.headers(),
+          'body': dashscopePayloadForLog(payload, imageRefs.length),
+        });
       }
 
       final started = DateTime.now();
@@ -106,24 +95,20 @@ class DashScopeImagesAsyncProtocol implements ImageGenProtocol {
       final submitResponse = await sendJsonRequest(
         client,
         submitUrl,
-        headers: {
-          ...target.headers(),
-          'X-DashScope-Async': 'enable',
-        },
+        headers: {...target.headers(), 'X-DashScope-Async': 'enable'},
         body: jsonEncode(payload),
         options: options,
       );
-      final submitData = decodeJsonBody(submitResponse,
-          apiName: 'DashScope image task submit');
+      final submitData = decodeJsonBody(submitResponse, apiName: 'DashScope image task submit');
       throwIfDashScopeError(submitData);
 
       final output = submitData['output'];
-      final taskId =
-          output is Map ? output['task_id']?.toString() : null;
+      final taskId = output is Map ? output['task_id']?.toString() : null;
       if (taskId == null || taskId.isEmpty) {
         throw LLMApiException(
-            'DashScope image task submit returned no task_id: '
-            '${submitResponse.body}');
+          'DashScope image task submit returned no task_id: '
+          '${submitResponse.body}',
+        );
       }
 
       // The task id goes into the logs the moment it exists — if the poll
@@ -145,29 +130,30 @@ class DashScopeImagesAsyncProtocol implements ImageGenProtocol {
         jobId: taskId,
         // One deadline over the whole job, submit included.
         deadline: _overallDeadline - DateTime.now().difference(started),
-        interval: (n) =>
-            n < _densePolls ? _initialPollInterval : _relaxedPollInterval,
+        interval: (n) => n < _densePolls ? _initialPollInterval : _relaxedPollInterval,
         isCancelled: cancelled,
         logger: logger,
         fetch: () async {
-          final pollResponse = await sendJsonRequest(client, pollUrl,
-              headers: target.headers(),
-              body: '',
-              options: options,
-              method: 'GET');
+          final pollResponse = await sendJsonRequest(
+            client,
+            pollUrl,
+            headers: target.headers(),
+            body: '',
+            options: options,
+            method: 'GET',
+          );
           // checkEnvelope: false — a FAILED task arrives inside a 200 and is
           // this loop's own business to report, with the task id attached.
-          return decodeJsonBody(pollResponse,
-              apiName: 'DashScope task poll', checkEnvelope: false);
+          return decodeJsonBody(pollResponse, apiName: 'DashScope task poll', checkEnvelope: false);
         },
         interpret: (data) async {
           polls++;
           final taskOutput = data['output'];
           final status = requireJobStatus(
-                  taskOutput is Map ? taskOutput['task_status'] : null,
-                  job: 'DashScope image task',
-                  jobId: taskId)
-              .toUpperCase();
+            taskOutput is Map ? taskOutput['task_status'] : null,
+            job: 'DashScope image task',
+            jobId: taskId,
+          ).toUpperCase();
 
           if (debugFile != null) {
             await LLMDebugLogger.appendLine(debugFile, 'poll #$polls: $status');
@@ -176,23 +162,25 @@ class DashScopeImagesAsyncProtocol implements ImageGenProtocol {
           switch (status) {
             case 'SUCCEEDED':
               if (debugFile != null) {
-                await LLMDebugLogger.appendLine(
-                    debugFile, 'Body: ${jsonEncode(data)}');
+                await LLMDebugLogger.appendLine(debugFile, 'Body: ${jsonEncode(data)}');
               }
-              return _collectResult(data, taskId, client, logger,
-                  sentSize: dashscopeSentSize(payload),
-                  inputImages: imageRefs.length,
-                  abortTrigger: abortTriggerOf(options));
+              return _collectResult(
+                data,
+                taskId,
+                client,
+                logger,
+                sentSize: dashscopeSentSize(payload),
+                inputImages: imageRefs.length,
+                abortTrigger: abortTriggerOf(options),
+              );
             case 'FAILED':
             case 'CANCELED':
             case 'UNKNOWN':
-              throw dashscopeTaskFailure('DashScope image task', taskId,
-                  status, taskOutput);
+              throw dashscopeTaskFailure('DashScope image task', taskId, status, taskOutput);
             default:
               // PENDING / RUNNING / anything newer — keep waiting under the
               // overall deadline.
-              logger?.call('DashScope image task $taskId: $status',
-                  level: 'DEBUG');
+              logger?.call('DashScope image task $taskId: $status', level: 'DEBUG');
               return null;
           }
         },
@@ -213,29 +201,33 @@ class DashScopeImagesAsyncProtocol implements ImageGenProtocol {
     Future<void>? abortTrigger,
   }) async {
     final images = await resolveImageRefs(
-        dashscopeImageRefs(data), client, logger,
-        source: 'DashScope image task $taskId',
-        abortTrigger: abortTrigger);
+      dashscopeImageRefs(data),
+      client,
+      logger,
+      source: 'DashScope image task $taskId',
+      abortTrigger: abortTrigger,
+    );
 
     if (images.isEmpty) {
       // One deliverable — nothing to return is a failure, not an empty
       // success (the executor cannot tell those apart).
-      throw LLMApiException(
-          'DashScope image task $taskId succeeded but returned no image.');
+      throw LLMApiException('DashScope image task $taskId succeeded but returned no image.');
     }
 
     logger?.call(
-        'DashScope async task complete. Images: ${images.length} '
-        '(downloaded inline; upstream URLs expire in 24h)',
-        level: 'DEBUG');
+      'DashScope async task complete. Images: ${images.length} '
+      '(downloaded inline; upstream URLs expire in 24h)',
+      level: 'DEBUG',
+    );
 
     // With `prompt_extend` on, the task result carries the rewritten prompt
     // as `output.results[].actual_prompt` (documented for async calls only —
     // the synchronous surface returns none). Standard 13 §1.
     final output = data['output'];
     final revised = revisedPromptFrom(
-        output is Map ? output['results'] : null,
-        key: 'actual_prompt');
+      output is Map ? output['results'] : null,
+      key: 'actual_prompt',
+    );
 
     return LLMResponse(
       text: revised,
@@ -254,7 +246,6 @@ class DashScopeImagesAsyncProtocol implements ImageGenProtocol {
       },
     );
   }
-
 }
 
 /// The error a terminal DashScope task status (FAILED / CANCELED / UNKNOWN)
@@ -265,12 +256,13 @@ class DashScopeImagesAsyncProtocol implements ImageGenProtocol {
 /// prose). UNKNOWN gets the expiry note on both surfaces: task records live
 /// 24 h, and an expired id reports UNKNOWN rather than "not found" — a
 /// different failure from a task that ran and failed (standard 14 §3.3).
-LLMApiException dashscopeTaskFailure(
-    String surface, String taskId, String status, Object? output) {
+LLMApiException dashscopeTaskFailure(String surface, String taskId, String status, Object? output) {
   final code = output is Map ? output['code'] : null;
   final message = output is Map ? output['message'] : null;
-  return LLMApiException('$surface $taskId $status'
-      '${code != null ? ' ($code)' : ''}'
-      '${message != null ? ': $message' : ''}'
-      '${status == 'UNKNOWN' ? ' (task ids expire after 24h — an expired task also reports UNKNOWN)' : ''}');
+  return LLMApiException(
+    '$surface $taskId $status'
+    '${code != null ? ' ($code)' : ''}'
+    '${message != null ? ': $message' : ''}'
+    '${status == 'UNKNOWN' ? ' (task ids expire after 24h — an expired task also reports UNKNOWN)' : ''}',
+  );
 }

@@ -74,8 +74,11 @@ void main() {
       for (int page = 1; page <= first.totalPages; page++) {
         buffer.write(kb.readFile(root.path, 'big.md', page: page, maxChars: 1000).content);
       }
-      expect(buffer.toString(), body,
-          reason: 'concatenating every page must reproduce the file exactly');
+      expect(
+        buffer.toString(),
+        body,
+        reason: 'concatenating every page must reproduce the file exactly',
+      );
     });
 
     test('an out-of-range page clamps rather than throwing', () {

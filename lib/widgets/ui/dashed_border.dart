@@ -32,13 +32,9 @@ class DashedBorder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => CustomPaint(
-        painter: _DashedBorderPainter(
-          color: color,
-          radius: radius,
-          strokeWidth: strokeWidth,
-        ),
-        child: child,
-      );
+    painter: _DashedBorderPainter(color: color, radius: radius, strokeWidth: strokeWidth),
+    child: child,
+  );
 }
 
 /// Strokes [rrect] as a dash of 5 and a gap of 4 with [paint] (a stroke paint).
@@ -52,14 +48,16 @@ void drawDashedRRect(Canvas canvas, RRect rrect, Paint paint) {
   for (final metric in path.computeMetrics()) {
     var distance = 0.0;
     while (distance < metric.length) {
-      canvas.drawPath(metric.extractPath(distance, (distance + dash).clamp(0.0, metric.length)), paint);
+      canvas.drawPath(
+        metric.extractPath(distance, (distance + dash).clamp(0.0, metric.length)),
+        paint,
+      );
       distance += dash + gap;
     }
   }
 }
 
 class _DashedBorderPainter extends CustomPainter {
-
   final Color color;
   final double radius;
   final double strokeWidth;
@@ -77,7 +75,11 @@ class _DashedBorderPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth;
 
-    drawDashedRRect(canvas, RRect.fromRectAndRadius(Offset.zero & size, Radius.circular(radius)), paint);
+    drawDashedRRect(
+      canvas,
+      RRect.fromRectAndRadius(Offset.zero & size, Radius.circular(radius)),
+      paint,
+    );
   }
 
   @override

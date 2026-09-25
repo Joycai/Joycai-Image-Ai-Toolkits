@@ -1,8 +1,8 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/assistant/prompt_optimizer_agent.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 
 /// Which knowledge files the assistant's current answer rests on.
 ///
@@ -17,54 +17,78 @@ void main() {
   /// `read_knowledge_file` that actually returned content.
   void recordRead(PromptOptimizerSession session, String path, {int page = 1}) {
     final callId = 'call_${session.history.length}';
-    session.history.add(LLMMessage(
-      role: LLMRole.assistant,
-      content: '',
-      toolCalls: [
-        LLMToolCall(id: callId, name: 'read_knowledge_file', arguments: {'path': path, 'page': page}),
-      ],
-    ));
-    session.history.add(LLMMessage(
-      role: LLMRole.tool,
-      content: jsonEncode({'path': path, 'page': page, 'total_pages': 1, 'content': 'rule body'}),
-      toolCallId: callId,
-      toolName: 'read_knowledge_file',
-    ));
+    session.history.add(
+      LLMMessage(
+        role: LLMRole.assistant,
+        content: '',
+        toolCalls: [
+          LLMToolCall(
+            id: callId,
+            name: 'read_knowledge_file',
+            arguments: {'path': path, 'page': page},
+          ),
+        ],
+      ),
+    );
+    session.history.add(
+      LLMMessage(
+        role: LLMRole.tool,
+        content: jsonEncode({'path': path, 'page': page, 'total_pages': 1, 'content': 'rule body'}),
+        toolCallId: callId,
+        toolName: 'read_knowledge_file',
+      ),
+    );
   }
 
   /// What the agent returns when the model asks for a page it already has.
   void recordCacheHit(PromptOptimizerSession session, String path) {
     final callId = 'call_${session.history.length}';
-    session.history.add(LLMMessage(
-      role: LLMRole.assistant,
-      content: '',
-      toolCalls: [
-        LLMToolCall(id: callId, name: 'read_knowledge_file', arguments: {'path': path, 'page': 1}),
-      ],
-    ));
-    session.history.add(LLMMessage(
-      role: LLMRole.tool,
-      content: jsonEncode({'status': 'ok', 'path': path, 'note': 'already in the conversation'}),
-      toolCallId: callId,
-      toolName: 'read_knowledge_file',
-    ));
+    session.history.add(
+      LLMMessage(
+        role: LLMRole.assistant,
+        content: '',
+        toolCalls: [
+          LLMToolCall(
+            id: callId,
+            name: 'read_knowledge_file',
+            arguments: {'path': path, 'page': 1},
+          ),
+        ],
+      ),
+    );
+    session.history.add(
+      LLMMessage(
+        role: LLMRole.tool,
+        content: jsonEncode({'status': 'ok', 'path': path, 'note': 'already in the conversation'}),
+        toolCallId: callId,
+        toolName: 'read_knowledge_file',
+      ),
+    );
   }
 
   void recordFailedRead(PromptOptimizerSession session, String path) {
     final callId = 'call_${session.history.length}';
-    session.history.add(LLMMessage(
-      role: LLMRole.assistant,
-      content: '',
-      toolCalls: [
-        LLMToolCall(id: callId, name: 'read_knowledge_file', arguments: {'path': path, 'page': 1}),
-      ],
-    ));
-    session.history.add(LLMMessage(
-      role: LLMRole.tool,
-      content: jsonEncode({'status': 'error', 'message': 'Directory not found: $path'}),
-      toolCallId: callId,
-      toolName: 'read_knowledge_file',
-    ));
+    session.history.add(
+      LLMMessage(
+        role: LLMRole.assistant,
+        content: '',
+        toolCalls: [
+          LLMToolCall(
+            id: callId,
+            name: 'read_knowledge_file',
+            arguments: {'path': path, 'page': 1},
+          ),
+        ],
+      ),
+    );
+    session.history.add(
+      LLMMessage(
+        role: LLMRole.tool,
+        content: jsonEncode({'status': 'error', 'message': 'Directory not found: $path'}),
+        toolCallId: callId,
+        toolName: 'read_knowledge_file',
+      ),
+    );
   }
 
   void userSays(PromptOptimizerSession session, String text) {
@@ -156,12 +180,14 @@ void main() {
     // Listing a directory is not reading a document.
     final s = newSession();
     userSays(s, 'go');
-    s.history.add(LLMMessage(
-      role: LLMRole.tool,
-      content: jsonEncode({'files': [], 'path': '07_footwear'}),
-      toolCallId: 'c1',
-      toolName: 'list_knowledge_files',
-    ));
+    s.history.add(
+      LLMMessage(
+        role: LLMRole.tool,
+        content: jsonEncode({'files': [], 'path': '07_footwear'}),
+        toolCallId: 'c1',
+        toolName: 'list_knowledge_files',
+      ),
+    );
 
     expect(cited(s), isEmpty);
   });

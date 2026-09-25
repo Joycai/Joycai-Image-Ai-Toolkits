@@ -1,7 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/model_capabilities.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/model_family.dart';
-import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendor_profile.dart' show WireProtocol;
+import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendor_profile.dart'
+    show WireProtocol;
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 
 /// Veo's resolution and ratio are declared like every other family's video
@@ -21,16 +22,17 @@ void main() {
   });
 
   test('Sora keeps the two inputs its size is built from', () {
-    expect(keys(ModelCapabilities.forFamily(ModelFamily.openaiVideo)),
-        containsAll(['resolution', 'aspectRatio', 'seconds', 'videoQuality']));
+    expect(
+      keys(ModelCapabilities.forFamily(ModelFamily.openaiVideo)),
+      containsAll(['resolution', 'aspectRatio', 'seconds', 'videoQuality']),
+    );
   });
 
   test("the old fixed controls' choice carries over, without overwriting", () async {
     final settings = {'last_video_resolution': '1080p', 'last_video_aspect_ratio': '9:16'};
-    final seeded = await legacyVeoVideoParams(
-      const {'openaiVideo.resolution': '720p'},
-      (key) async => settings[key],
-    );
+    final seeded = await legacyVeoVideoParams(const {
+      'openaiVideo.resolution': '720p',
+    }, (key) async => settings[key]);
     expect(seeded, {
       'geminiVideo.resolution': '1080p',
       'geminiVideo.aspectRatio': '9:16',

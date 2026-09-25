@@ -32,11 +32,11 @@ void main() {
     rows = [];
     LLMService.usageSinkOverride = (row) async => rows.add(row);
     LLMService.configResolverOverride = (_) => LLMModelConfig(
-          modelId: 'claude-opus-5',
-          channelType: Vendors.anthropicRest,
-          endpoint: 'http://127.0.0.1:${server.port}/v1',
-          apiKey: 'k',
-        );
+      modelId: 'claude-opus-5',
+      channelType: Vendors.anthropicRest,
+      endpoint: 'http://127.0.0.1:${server.port}/v1',
+      apiKey: 'k',
+    );
   });
 
   tearDown(() async {
@@ -55,22 +55,64 @@ void main() {
   }
 
   final pausedLeg = <Map<String, dynamic>>[
-    {'type': 'message_start', 'message': {'usage': {'input_tokens': 5}}},
-    {'type': 'content_block_start', 'index': 0, 'content_block': {'type': 'text', 'text': ''}},
-    {'type': 'content_block_delta', 'index': 0, 'delta': {'type': 'text_delta', 'text': 'Let me look.'}},
+    {
+      'type': 'message_start',
+      'message': {
+        'usage': {'input_tokens': 5},
+      },
+    },
+    {
+      'type': 'content_block_start',
+      'index': 0,
+      'content_block': {'type': 'text', 'text': ''},
+    },
+    {
+      'type': 'content_block_delta',
+      'index': 0,
+      'delta': {'type': 'text_delta', 'text': 'Let me look.'},
+    },
     {'type': 'content_block_stop', 'index': 0},
-    {'type': 'content_block_start', 'index': 1, 'content_block': {'type': 'server_tool_use', 'id': 'srv', 'name': 'web_search', 'input': {}}},
-    {'type': 'content_block_delta', 'index': 1, 'delta': {'type': 'input_json_delta', 'partial_json': '{"query":"q"}'}},
+    {
+      'type': 'content_block_start',
+      'index': 1,
+      'content_block': {'type': 'server_tool_use', 'id': 'srv', 'name': 'web_search', 'input': {}},
+    },
+    {
+      'type': 'content_block_delta',
+      'index': 1,
+      'delta': {'type': 'input_json_delta', 'partial_json': '{"query":"q"}'},
+    },
     {'type': 'content_block_stop', 'index': 1},
-    {'type': 'message_delta', 'delta': {'stop_reason': 'pause_turn'}, 'usage': {'output_tokens': 7}},
+    {
+      'type': 'message_delta',
+      'delta': {'stop_reason': 'pause_turn'},
+      'usage': {'output_tokens': 7},
+    },
     {'type': 'message_stop'},
   ];
   final finalLeg = <Map<String, dynamic>>[
-    {'type': 'message_start', 'message': {'usage': {'input_tokens': 9}}},
-    {'type': 'content_block_start', 'index': 0, 'content_block': {'type': 'text', 'text': ''}},
-    {'type': 'content_block_delta', 'index': 0, 'delta': {'type': 'text_delta', 'text': 'Found it.'}},
+    {
+      'type': 'message_start',
+      'message': {
+        'usage': {'input_tokens': 9},
+      },
+    },
+    {
+      'type': 'content_block_start',
+      'index': 0,
+      'content_block': {'type': 'text', 'text': ''},
+    },
+    {
+      'type': 'content_block_delta',
+      'index': 0,
+      'delta': {'type': 'text_delta', 'text': 'Found it.'},
+    },
     {'type': 'content_block_stop', 'index': 0},
-    {'type': 'message_delta', 'delta': {'stop_reason': 'end_turn'}, 'usage': {'output_tokens': 3}},
+    {
+      'type': 'message_delta',
+      'delta': {'stop_reason': 'end_turn'},
+      'usage': {'output_tokens': 3},
+    },
     {'type': 'message_stop'},
   ];
 
@@ -92,9 +134,11 @@ void main() {
     expect(bodies, hasLength(2));
     final replayed = (bodies[1]['messages'] as List).last as Map;
     expect(replayed['role'], 'assistant');
-    expect((replayed['content'] as List).map((b) => (b as Map)['type']),
-        contains('server_tool_use'),
-        reason: 'the paused message goes back unchanged');
+    expect(
+      (replayed['content'] as List).map((b) => (b as Map)['type']),
+      contains('server_tool_use'),
+      reason: 'the paused message goes back unchanged',
+    );
     expect(text.toString(), 'Let me look.\n\nFound it.');
     expect(rows, hasLength(2), reason: 'every leg is a billed request');
   });

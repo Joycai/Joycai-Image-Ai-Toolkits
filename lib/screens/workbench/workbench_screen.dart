@@ -16,8 +16,8 @@ import '../../core/app_shortcuts.dart';
 import '../../core/app_theme.dart';
 import '../../core/constants.dart';
 import '../../core/design_tokens.dart';
-import '../../core/text_editing_focus.dart';
 import '../../core/responsive.dart';
+import '../../core/text_editing_focus.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/app_image.dart';
 import '../../models/llm_model.dart';
@@ -31,35 +31,35 @@ import '../../services/tasks/task_queue_service.dart';
 import '../../state/app_state.dart';
 import '../../state/gallery_state.dart';
 import '../../state/workbench_ui_state.dart';
+import '../../widgets/models/model_edit_dialog.dart';
 import '../../widgets/shell/app_destinations.dart';
+import '../../widgets/tasks/app_run_console.dart';
 import '../../widgets/ui/app_button.dart';
 import '../../widgets/ui/app_dialog.dart';
 import '../../widgets/ui/app_field_size.dart';
-import '../../widgets/tasks/app_run_console.dart';
 import '../../widgets/ui/app_snackbar.dart';
 import '../../widgets/ui/listenable_selector.dart';
 import '../../widgets/ui/searchable_picker.dart';
-import '../../widgets/models/model_edit_dialog.dart';
-import 'widgets/mask/drawing_canvas.dart';
 import '../batch/task_queue_screen.dart';
-import 'unified_sidebar.dart';
 import '../prompts/widgets/prompt_dialogs.dart';
-import 'gallery.dart';
-import 'widgets/gallery/gallery_selection_bar.dart';
-import 'widgets/video/video_gallery_area.dart';
-import 'widgets/workbench_glass_toolbar.dart';
 import 'assistant/optimizer_config_panel.dart';
 import 'assistant/optimizer_left_panel.dart';
 import 'assistant/prompt_optimizer_toolbar.dart';
 import 'assistant/prompt_optimizer_view.dart';
+import 'gallery.dart';
+import 'unified_sidebar.dart';
 import 'widgets/compare/comparator_toolbar.dart';
 import 'widgets/compare/comparator_view.dart';
 import 'widgets/compare/metadata_inspector.dart';
 import 'widgets/crop_resize/crop_resize_toolbar.dart';
 import 'widgets/crop_resize/crop_resize_view.dart';
+import 'widgets/gallery/gallery_selection_bar.dart';
+import 'widgets/mask/drawing_canvas.dart';
 import 'widgets/mask/mask_editor_toolbar.dart';
 import 'widgets/mask/mask_editor_view.dart';
 import 'widgets/video/video_config_panel.dart';
+import 'widgets/video/video_gallery_area.dart';
+import 'widgets/workbench_glass_toolbar.dart';
 import 'workbench_config_panel.dart';
 import 'workbench_layout.dart';
 
@@ -114,9 +114,10 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
   /// enablement needs and no more.
   final ValueNotifier<int> _maskRevision = ValueNotifier<int>(0);
   final ValueNotifier<Offset?> _maskMouse = ValueNotifier<Offset?>(null);
-  
+
   // Prompt Optimizer State
   final TextEditingController _optInputCtrl = TextEditingController();
+
   /// Every refiner template in the library. `10g` picks from all of them —
   /// the tag-filtered subset the old two-dropdown form needed went with it.
   List<SystemPrompt> _optSysPrompts = [];
@@ -131,17 +132,17 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     if (_appState == null) {
       _appState = Provider.of<AppState>(context, listen: false);
       _initTabController();
-      
+
       _appState!.addListener(_onAppStateChanged);
-      
+
       // Listen for manual data send from UI State
       _workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
       _workbenchUIState!.addListener(_onWorkbenchUIChanged);
-      
+
       final taskService = Provider.of<TaskQueueService>(context, listen: false);
       _taskSubscription?.cancel();
       _taskSubscription = taskService.eventStream.listen(_onTaskEvent);
-      
+
       _loadOptimizerData();
     }
   }
@@ -165,9 +166,10 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     final session = uiState.optimizerSession;
     if (session.promptVersions == 0) return;
     final taskService = Provider.of<TaskQueueService>(context, listen: false);
-    final task = taskService.queue
-        .cast<TaskItem?>()
-        .firstWhere((t) => t!.id == event.taskId, orElse: () => null);
+    final task = taskService.queue.cast<TaskItem?>().firstWhere(
+      (t) => t!.id == event.taskId,
+      orElse: () => null,
+    );
     if (task == null) return;
     if (task.parameters[PromptProvenance.sessionParamKey] != session.id) {
       return;
@@ -262,7 +264,10 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
       await _appState!.updateSystemPrompt(
         template.id!,
         template.withContent(content),
-        tagIds: [for (final t in template.tags) if (t.id != null) t.id!],
+        tagIds: [
+          for (final t in template.tags)
+            if (t.id != null) t.id!,
+        ],
       );
       // Re-read rather than patch the local copy: the saved row is now what
       // "unsaved" is measured against, and a stale in-memory template would
@@ -311,14 +316,14 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
 
   void _onAppStateChanged() {
     if (!mounted || _appState == null) return;
-    
+
     if (_appState!.workbenchTabIndex != _lastKnownTabIndex) {
       _lastKnownTabIndex = _appState!.workbenchTabIndex;
       final targetIndex = _lastKnownTabIndex.clamp(0, _tabController.length - 1);
       if (_tabController.index != targetIndex) {
-         _tabController.index = targetIndex;
+        _tabController.index = targetIndex;
       }
-      
+
       // Re-validate the knowledge base whenever the assistant tab is opened
       // (the user may have just changed the folder in Settings).
       if (_tabController.index == 4) _refreshKbStatus();
@@ -329,17 +334,17 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
   // Both go through setState as well as the revision: they change whether the
   // toolbar's undo and clear are enabled, which is drawn from this build.
   void _handleMaskUndo() => setState(() {
-        if (_maskPaths.isNotEmpty) {
-          _maskPaths.removeLast();
-          _maskRevision.value++;
-        }
-      });
+    if (_maskPaths.isNotEmpty) {
+      _maskPaths.removeLast();
+      _maskRevision.value++;
+    }
+  });
 
   void _handleMaskClear() => setState(() {
-        _maskPaths.clear();
-        _maskRevision.value++;
-      });
-  
+    _maskPaths.clear();
+    _maskRevision.value++;
+  });
+
   Future<void> _handleMaskSave({bool binary = false, bool selectAfterSave = true}) async {
     final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
     final sourceImage = workbenchUIState.maskEditorSourceImage;
@@ -355,9 +360,10 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     }
 
     try {
-      final RenderRepaintBoundary? boundary = _maskRepaintKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      final RenderRepaintBoundary? boundary =
+          _maskRepaintKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
       if (boundary == null) return;
-      
+
       // Get image dimensions to maintain resolution
       final bytes = await File(sourceImage.path).readAsBytes();
       final codec = await ui.instantiateImageCodec(bytes);
@@ -377,7 +383,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
       final prefix = binary ? 'mask_only' : 'mask';
       final fileName = '${prefix}_${p.basenameWithoutExtension(sourceImage.path)}_$timestamp.png';
       final filePath = p.join(maskDir.path, fileName);
-      
+
       await File(filePath).writeAsBytes(pngBytes);
 
       if (Platform.isIOS) {
@@ -388,7 +394,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
 
       final maskFile = AppImage(path: filePath, name: fileName);
       _appState!.galleryState.addDroppedFiles([maskFile]);
-      
+
       if (selectAfterSave) {
         _appState!.galleryState.toggleImageSelection(maskFile);
         _appState!.galleryState.setViewMode(GalleryViewMode.temp);
@@ -413,8 +419,12 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     if (_appState == null) return;
     _lastKnownTabIndex = _appState!.workbenchTabIndex.clamp(0, AppConstants.workbenchTabCount - 1);
 
-    _tabController = TabController(length: AppConstants.workbenchTabCount, vsync: this, initialIndex: _lastKnownTabIndex);
-    
+    _tabController = TabController(
+      length: AppConstants.workbenchTabCount,
+      vsync: this,
+      initialIndex: _lastKnownTabIndex,
+    );
+
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {
         if (_tabController.index != _lastKnownTabIndex) {
@@ -570,11 +580,13 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
           // callback that fires on every mouse move.
           onHover: (pos) => _maskMouse.value = pos,
           onPanStart: (pos) {
-            _maskPaths.add(DrawingPath(
-              points: [pos],
-              color: _maskSelectedColor.withValues(alpha: _maskOpacity),
-              strokeWidth: _maskBrushSize,
-            ));
+            _maskPaths.add(
+              DrawingPath(
+                points: [pos],
+                color: _maskSelectedColor.withValues(alpha: _maskOpacity),
+                strokeWidth: _maskBrushSize,
+              ),
+            );
             _maskRevision.value++;
             // Once per stroke, for the toolbar's `hasPaths`.
             setState(() {});
@@ -655,8 +667,8 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     // crossed between empty and not. `isNarrow` rather than `isMobile`
     // because WorkbenchLayout switches to the phone form on *content* width,
     // which trails the window by the width of the rail.
-    final hasSelection = isNarrow &&
-        context.select<GalleryState, bool>((g) => g.selectedImages.isNotEmpty);
+    final hasSelection =
+        isNarrow && context.select<GalleryState, bool>((g) => g.selectedImages.isNotEmpty);
 
     // Context-aware FAB icon for mobile (null = no FAB for that tab)
     final IconData? fabIcon = switch (tab) {
@@ -680,7 +692,8 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
           ? const VideoTabSelectionBar()
           : (isGalleryTab ? const GallerySelectionBar() : null),
       centerScrollsUnderToolbar: isGalleryTab,
-      hasLeftPanel: tab == WorkbenchTab.image || tab == WorkbenchTab.video || tab == WorkbenchTab.assistant,
+      hasLeftPanel:
+          tab == WorkbenchTab.image || tab == WorkbenchTab.video || tab == WorkbenchTab.assistant,
       hasRightPanel: tab != WorkbenchTab.mask && tab != WorkbenchTab.crop,
       rightPanelTitle: isGalleryTab ? l10n.wbGenerationConfig : null,
       leftPanel: leftPanel,

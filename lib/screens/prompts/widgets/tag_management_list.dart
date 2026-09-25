@@ -49,7 +49,8 @@ class _TagManagementListState extends State<TagManagementList> {
     super.didUpdateWidget(oldWidget);
     final pending = _optimistic;
     if (pending == null) return;
-    final sameSet = pending.length == widget.tags.length &&
+    final sameSet =
+        pending.length == widget.tags.length &&
         pending.map((t) => t.id).toSet().containsAll(widget.tags.map((t) => t.id));
     var sameOrder = sameSet;
     for (int i = 0; sameOrder && i < pending.length; i++) {
@@ -89,7 +90,9 @@ class _TagManagementListState extends State<TagManagementList> {
       touch: phone,
       slotPadding: const EdgeInsets.only(bottom: _kCardGap),
       builder: (context, gap) {
-        final reorder = gap.onReorderItem((oldIndex, newIndex) => _reorder(tags, oldIndex, newIndex));
+        final reorder = gap.onReorderItem(
+          (oldIndex, newIndex) => _reorder(tags, oldIndex, newIndex),
+        );
         return ReorderableListView.builder(
           padding: EdgeInsets.fromLTRB(horizontal, 12, horizontal, 12),
           itemCount: tags.length,
@@ -141,7 +144,11 @@ class _TagManagementListState extends State<TagManagementList> {
                               minWidth: 2 * 14 + 20,
                               maxWidth: 2 * 14 + 20,
                               alignment: AlignmentDirectional.centerStart,
-                              child: PromptDragHandle(index: index, enabled: true, onBlockedTap: () {}),
+                              child: PromptDragHandle(
+                                index: index,
+                                enabled: true,
+                                onBlockedTap: () {},
+                              ),
                             ),
                           )
                         else ...[
@@ -158,7 +165,9 @@ class _TagManagementListState extends State<TagManagementList> {
                                   tag.name,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+                                  style: textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 8),

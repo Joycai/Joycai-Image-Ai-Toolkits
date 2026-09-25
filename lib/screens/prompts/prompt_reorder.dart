@@ -11,7 +11,10 @@
 /// are not in [fullIds] are ignored rather than taking a place they never had.
 List<int> mergeSubsetOrder(List<int> fullIds, List<int> subsetInNewOrder) {
   final present = fullIds.toSet();
-  final order = [for (final id in subsetInNewOrder) if (present.contains(id)) id];
+  final order = [
+    for (final id in subsetInNewOrder)
+      if (present.contains(id)) id,
+  ];
   final subset = order.toSet();
   var next = 0;
   return [
@@ -22,7 +25,10 @@ List<int> mergeSubsetOrder(List<int> fullIds, List<int> subsetInNewOrder) {
 
 /// [ids] with [id] moved to the front (or the back when [toEnd]).
 List<int> moveIdToEdge(List<int> ids, int id, {required bool toEnd}) {
-  final rest = [for (final other in ids) if (other != id) other];
+  final rest = [
+    for (final other in ids)
+      if (other != id) other,
+  ];
   return toEnd ? [...rest, id] : [id, ...rest];
 }
 

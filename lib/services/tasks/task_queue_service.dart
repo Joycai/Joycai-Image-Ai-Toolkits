@@ -2,30 +2,31 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
+
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 
-import '../../core/image_magic.dart';
 import '../../core/file_utils.dart';
+import '../../core/image_magic.dart';
 import '../../core/video_magic.dart';
 import '../../models/image_layer.dart';
 import '../../models/llm_model.dart';
 import '../../models/prompt.dart';
 import '../../models/task_item.dart';
-import 'ai_rename_agent.dart';
+import '../assistant/knowledge_base_service.dart';
+import '../assistant/prompt_optimizer_agent.dart';
 import '../db/database_service.dart';
 import '../db/repositories/cookie_repository.dart';
 import '../db/repositories/image_layer_repository.dart';
-import '../assistant/knowledge_base_service.dart';
 import '../llm/image_compression.dart';
 import '../llm/job_poll.dart';
 import '../llm/llm_service.dart';
 import '../llm/llm_types.dart';
 import '../llm/model_descriptor.dart';
 import '../llm/output_spec.dart' show reportedCostOf;
-import '../assistant/prompt_optimizer_agent.dart';
 import '../media/web_scraper_service.dart';
+import 'ai_rename_agent.dart';
 
 // Re-export the task data model so existing importers of this file keep working.
 export '../../models/task_item.dart';
@@ -90,13 +91,8 @@ class TaskQueueService extends ChangeNotifier {
 
   void _emit(String taskId, TaskEventType type, [dynamic data]) {
     if (_disposed) return;
-    final task = _queue.cast<TaskItem?>().firstWhere(
-      (t) => t?.id == taskId,
-      orElse: () => null,
-    );
-    _eventController.add(
-      TaskEvent(taskId: taskId, taskType: task?.type, type: type, data: data),
-    );
+    final task = _queue.cast<TaskItem?>().firstWhere((t) => t?.id == taskId, orElse: () => null);
+    _eventController.add(TaskEvent(taskId: taskId, taskType: task?.type, type: type, data: data));
   }
 
   Function(File)? onTaskCompleted;
@@ -119,15 +115,16 @@ class TaskQueueService extends ChangeNotifier {
   /// running. Wider than the session's own `isRunning`, which only flips once
   /// the turn starts: a queued turn has already fixed the reference images it
   /// sends, in the order they had when it was added.
-  bool hasLiveAssistantTurn(String sessionId) => _queue.any((t) =>
-      t.type == TaskType.promptRefine &&
-      t.parameters['sessionId'] == sessionId &&
-      (t.status == TaskStatus.pending || t.status == TaskStatus.processing));
+  bool hasLiveAssistantTurn(String sessionId) => _queue.any(
+    (t) =>
+        t.type == TaskType.promptRefine &&
+        t.parameters['sessionId'] == sessionId &&
+        (t.status == TaskStatus.pending || t.status == TaskStatus.processing),
+  );
   int get concurrencyLimit => _concurrencyLimit;
   int get runningCount => _runningCount;
 
-  TaskQueueService({DatabaseService? database})
-    : _db = database ?? DatabaseService() {
+  TaskQueueService({DatabaseService? database}) : _db = database ?? DatabaseService() {
     _loadFuture = _loadRecentTasks();
   }
 
@@ -180,8 +177,7 @@ class TaskQueueService extends ChangeNotifier {
     final models = await _db.getModels();
     final names = {
       for (final m in models)
-        if (m.id != null)
-          m.id!: m.modelName.isNotEmpty ? m.modelName : m.modelId,
+        if (m.id != null) m.id!: m.modelName.isNotEmpty ? m.modelName : m.modelId,
     };
     return [
       for (final task in tasks)
@@ -211,7 +207,6 @@ class TaskQueueService extends ChangeNotifier {
     String? channelTag;
     int? channelColor;
 
-
     if (modelIdentifier is int) {
       modelDbId = modelIdentifier;
       // Fetch model and channel info for visual continuity in history
@@ -222,9 +217,7 @@ class TaskQueueService extends ChangeNotifier {
       );
       if (model != null) {
         if (modelIdDisplay == null) {
-          modelIdStr = model.modelName.isNotEmpty
-              ? model.modelName
-              : model.modelId;
+          modelIdStr = model.modelName.isNotEmpty ? model.modelName : model.modelId;
         }
         final channelId = model.channelId;
         if (channelId != null) {
@@ -249,17 +242,13 @@ class TaskQueueService extends ChangeNotifier {
       useStream: useStream,
     );
     if (type == TaskType.imageProcess) {
-      task.addLog(
-        'Task created for ${imagePaths.length} images using $modelIdStr.',
-      );
+      task.addLog('Task created for ${imagePaths.length} images using $modelIdStr.');
     } else if (type == TaskType.imageDownload) {
       task.addLog('Download task created for ${imagePaths.length} URLs.');
     } else if (type == TaskType.promptRefine) {
       task.addLog('Prompt refinement task created using $modelIdStr.');
     } else if (type == TaskType.aiRename) {
-      task.addLog(
-        'AI Batch Rename task created for ${imagePaths.length} files using $modelIdStr.',
-      );
+      task.addLog('AI Batch Rename task created for ${imagePaths.length} files using $modelIdStr.');
     } else if (type == TaskType.videoGenerate) {
       task.addLog('Video generation task created using $modelIdStr.');
     }
@@ -283,8 +272,7 @@ class TaskQueueService extends ChangeNotifier {
       // `status != cancelled` guards already handle the finalization.
       // Without this, a running video task polls its LRO for up to 30
       // minutes with no way to stop it, holding a concurrency slot.
-      if (task.status == TaskStatus.pending ||
-          task.status == TaskStatus.processing) {
+      if (task.status == TaskStatus.pending || task.status == TaskStatus.processing) {
         task.status = TaskStatus.cancelled;
         task.addLog('Task cancelled by user.');
         _emit(task.id, TaskEventType.statusChanged, task.status);
@@ -303,8 +291,7 @@ class TaskQueueService extends ChangeNotifier {
   static bool canResumeVideoJob(TaskItem task) =>
       task.type == TaskType.videoGenerate &&
       (task.operationName?.isNotEmpty ?? false) &&
-      (task.status == TaskStatus.failed ||
-          task.status == TaskStatus.cancelled);
+      (task.status == TaskStatus.failed || task.status == TaskStatus.cancelled);
 
   /// Re-queues a video task on its existing upstream job: the executor
   /// resumes polling it (with a fresh deadline) and downloads the result,
@@ -314,8 +301,10 @@ class TaskQueueService extends ChangeNotifier {
     if (index == -1) return;
     final task = _queue[index];
     if (!canResumeVideoJob(task)) return;
-    task.addLog('Resuming upstream job ${task.operationName}; no new job is '
-        'submitted.');
+    task.addLog(
+      'Resuming upstream job ${task.operationName}; no new job is '
+      'submitted.',
+    );
     await _requeue(task);
   }
 
@@ -324,8 +313,7 @@ class TaskQueueService extends ChangeNotifier {
     final index = _queue.indexWhere((t) => t.id == taskId);
     if (index == -1) return;
     final task = _queue[index];
-    if (task.status != TaskStatus.failed &&
-        task.status != TaskStatus.cancelled) {
+    if (task.status != TaskStatus.failed && task.status != TaskStatus.cancelled) {
       return;
     }
     // A retry is a request for a fresh attempt, so a video task forgets its
@@ -394,9 +382,7 @@ class TaskQueueService extends ChangeNotifier {
     if (_disposed || _runningCount >= _concurrencyLimit) return;
 
     try {
-      final nextTask = _queue.firstWhere(
-        (task) => task.status == TaskStatus.pending,
-      );
+      final nextTask = _queue.firstWhere((task) => task.status == TaskStatus.pending);
 
       _runningCount++;
       _startProgressTimer();
@@ -422,7 +408,7 @@ class TaskQueueService extends ChangeNotifier {
       level: 'RUNNING',
       taskId: task.id,
     );
-    _db.saveTask(task);
+    unawaited(_db.saveTask(task));
     _notify();
 
     try {
@@ -465,11 +451,11 @@ class TaskQueueService extends ChangeNotifier {
 
       // Update Estimation Checkpoint
       if (task.status == TaskStatus.completed && task.modelDbId != null) {
-        _handleEstimationCheckpoint(task.modelDbId!);
+        unawaited(_handleEstimationCheckpoint(task.modelDbId!));
       }
 
       _runningCount--;
-      _db.saveTask(task);
+      unawaited(_db.saveTask(task));
       onTaskFinished?.call(task);
       _notify();
       _attemptNextExecution();
@@ -490,12 +476,7 @@ class TaskQueueService extends ChangeNotifier {
       if (count >= 10 || mean == 0) {
         await _updateModelCheckpoint(modelDbId);
       } else {
-        await _db.updateModelEstimation(
-          modelDbId,
-          mean,
-          model.estSdMs ?? 0.0,
-          count,
-        );
+        await _db.updateModelEstimation(modelDbId, mean, model.estSdMs ?? 0.0, count);
       }
     }
   }
@@ -503,10 +484,7 @@ class TaskQueueService extends ChangeNotifier {
   void _startProgressTimer() {
     _progressTimer?.cancel();
     _cachedModelsForProgress = null;
-    _progressTimer = Timer.periodic(
-      const Duration(milliseconds: 500),
-      (_) => _updateProgress(),
-    );
+    _progressTimer = Timer.periodic(const Duration(milliseconds: 500), (_) => _updateProgress());
   }
 
   void _stopProgressTimer() {
@@ -520,7 +498,7 @@ class TaskQueueService extends ChangeNotifier {
     _cachedModelsForProgress ??= await _db.getModels();
     final models = _cachedModelsForProgress!;
 
-    for (var task in _queue) {
+    for (final task in _queue) {
       if (task.status == TaskStatus.processing && task.startTime != null) {
         hasActive = true;
         // Find checkpoint for this model
@@ -535,9 +513,7 @@ class TaskQueueService extends ChangeNotifier {
 
           if (mean > 0) {
             final targetMs = mean + (2 * sd);
-            final elapsed = DateTime.now()
-                .difference(task.startTime!)
-                .inMilliseconds;
+            final elapsed = DateTime.now().difference(task.startTime!).inMilliseconds;
             task.progress = math.min(elapsed / targetMs, 0.99);
           }
         }
@@ -559,8 +535,7 @@ class TaskQueueService extends ChangeNotifier {
       final mean = durations.reduce((a, b) => a + b) / durations.length;
       // Calculate Standard Deviation
       final variance =
-          durations.map((d) => math.pow(d - mean, 2)).reduce((a, b) => a + b) /
-          durations.length;
+          durations.map((d) => math.pow(d - mean, 2)).reduce((a, b) => a + b) / durations.length;
       final sd = math.sqrt(variance);
 
       await _db.updateModelEstimation(modelDbId, mean, sd, 0);

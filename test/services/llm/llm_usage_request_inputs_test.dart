@@ -11,17 +11,16 @@ import 'package:joycai_image_ai_toolkits/services/llm/output_spec.dart';
 void main() {
   tearDown(() => LLMService.usageSinkOverride = null);
 
-  LLMModelConfig config({double inputUnitFee = 0.01, int inputFreeUnits = 0}) =>
-      LLMModelConfig(
-        modelId: 'grok-imagine-video-1.5',
-        channelType: 'openai-api',
-        endpoint: 'https://relay.invalid/v1',
-        apiKey: 'k',
-        billingMode: 'request',
-        requestFee: 0.08,
-        inputUnitFee: inputUnitFee,
-        inputFreeUnits: inputFreeUnits,
-      );
+  LLMModelConfig config({double inputUnitFee = 0.01, int inputFreeUnits = 0}) => LLMModelConfig(
+    modelId: 'grok-imagine-video-1.5',
+    channelType: 'openai-api',
+    endpoint: 'https://relay.invalid/v1',
+    apiKey: 'k',
+    billingMode: 'request',
+    requestFee: 0.08,
+    inputUnitFee: inputUnitFee,
+    inputFreeUnits: inputFreeUnits,
+  );
 
   Future<TokenUsage> record(LLMModelConfig config, Map<String, dynamic> metadata) async {
     final rows = <TokenUsage>[];
@@ -70,7 +69,11 @@ void main() {
         billingMode: mode,
         inputUnitFee: 0.01,
       );
-      expect(LLMService.requestInputBilling(c, const {inputImageCountKey: 2}), isNull, reason: mode);
+      expect(
+        LLMService.requestInputBilling(c, const {inputImageCountKey: 2}),
+        isNull,
+        reason: mode,
+      );
     }
   });
 }

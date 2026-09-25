@@ -49,7 +49,11 @@ class ModelsActionButton extends StatelessWidget {
   /// The width this button takes with its label shown, or the 32 square.
   static double widthFor(BuildContext context, String label, {bool showLabel = true}) {
     if (!showLabel) return AppSize.control;
-    return (_padStart + AppSize.iconMd + _gap + measureGlassText(context, label, labelStyle(context)) + _padEnd)
+    return (_padStart +
+            AppSize.iconMd +
+            _gap +
+            measureGlassText(context, label, labelStyle(context)) +
+            _padEnd)
         .ceilToDouble();
   }
 
@@ -63,17 +67,17 @@ class ModelsActionButton extends StatelessWidget {
     final Color background = !enabled && primary
         ? scheme.surfaceContainerHighest
         : (primary
-            ? scheme.primary
-            : active
-                ? scheme.accentTint
-                : scheme.surface);
+              ? scheme.primary
+              : active
+              ? scheme.accentTint
+              : scheme.surface);
     final Color labelColor = !enabled
         ? scheme.onSurface.withValues(alpha: AppAlpha.disabled)
         : (primary
-            ? scheme.onPrimary
-            : active
-                ? scheme.onAccentTint
-                : scheme.onSurface);
+              ? scheme.onPrimary
+              : active
+              ? scheme.onAccentTint
+              : scheme.onSurface);
     // On an active button the glyph carries the state — it is the one thing
     // that says which way the list runs — so it keeps the label's ink instead
     // of stepping back to the weak one.
@@ -97,7 +101,9 @@ class ModelsActionButton extends StatelessWidget {
               ],
             ),
           )
-        : Center(child: Icon(icon, size: AppSize.iconMd, color: iconColor));
+        : Center(
+            child: Icon(icon, size: AppSize.iconMd, color: iconColor),
+          );
 
     Widget button = Material(
       color: background,
@@ -176,8 +182,14 @@ class ModelsPanelFields extends StatelessWidget {
         inputDecorationTheme: theme.inputDecorationTheme.copyWith(
           filled: true,
           fillColor: fill ?? theme.colorScheme.surface,
-          prefixIconConstraints: const BoxConstraints(minWidth: AppSize.control, minHeight: AppSize.control),
-          suffixIconConstraints: const BoxConstraints(minWidth: AppSize.control, minHeight: AppSize.control),
+          prefixIconConstraints: const BoxConstraints(
+            minWidth: AppSize.control,
+            minHeight: AppSize.control,
+          ),
+          suffixIconConstraints: const BoxConstraints(
+            minWidth: AppSize.control,
+            minHeight: AppSize.control,
+          ),
         ),
       ),
       child: child,
@@ -236,12 +248,7 @@ class ModelsEmptyState extends StatelessWidget {
             ],
             if (actions.isNotEmpty) ...[
               const SizedBox(height: AppSpace.s16),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                alignment: WrapAlignment.center,
-                children: actions,
-              ),
+              Wrap(spacing: 8, runSpacing: 8, alignment: WrapAlignment.center, children: actions),
             ],
           ],
         ),

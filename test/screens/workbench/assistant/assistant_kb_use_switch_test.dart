@@ -6,13 +6,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/assistant/optimizer_config_panel.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/assistant/prompt_optimizer_view.dart';
-import 'package:joycai_image_ai_toolkits/state/app_state.dart';
-import 'package:provider/provider.dart';
 import 'package:joycai_image_ai_toolkits/services/assistant/knowledge_base_service.dart';
 import 'package:joycai_image_ai_toolkits/services/assistant/prompt_optimizer_agent.dart';
 import 'package:joycai_image_ai_toolkits/services/db/database_service.dart';
 import 'package:joycai_image_ai_toolkits/services/db/repositories/assistant_session_repository.dart';
+import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/state/workbench_ui_state.dart';
+import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import '../../../support/in_memory_database.dart';
@@ -74,25 +74,27 @@ void main() {
         ..switchKnowledgeUse(AssistantMode.knowledgeEdit);
       final ui = WorkbenchUIState()..optimizerSession = session;
 
-      await tester.pumpWidget(ChangeNotifierProvider<WorkbenchUIState>.value(
-        value: ui,
-        child: MaterialApp(
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          home: Scaffold(
-            body: PromptOptimizerChatView(
-              inputCtrl: TextEditingController(),
-              onSend: () {},
-              onRetry: () {},
-              onApplyPrompt: (_) {},
-              onApplyKbEdit: (_) {},
-              onRejectKbEdit: (_) {},
-              onAnswerAskUser: (_, _) {},
-              isBusy: false,
+      await tester.pumpWidget(
+        ChangeNotifierProvider<WorkbenchUIState>.value(
+          value: ui,
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(
+              body: PromptOptimizerChatView(
+                inputCtrl: TextEditingController(),
+                onSend: () {},
+                onRetry: () {},
+                onApplyPrompt: (_) {},
+                onApplyKbEdit: (_) {},
+                onRejectKbEdit: (_) {},
+                onAnswerAskUser: (_, _) {},
+                isBusy: false,
+              ),
             ),
           ),
         ),
-      ));
+      );
       await tester.pump();
       final l10n = await AppLocalizations.delegate.load(const Locale('en'));
 
@@ -102,36 +104,37 @@ void main() {
     });
 
     testWidgets('edits left waiting by a switch stay listed in the panel', (tester) async {
-      final session = PromptOptimizerSession(mode: AssistantMode.knowledgeEdit)
-        ..addUserTurn('x');
+      final session = PromptOptimizerSession(mode: AssistantMode.knowledgeEdit)..addUserTurn('x');
       session.stageKbEditForTest(relPath: 'rules/a.md', newContent: 'a', oldContent: 'A');
       session.switchKnowledgeUse(AssistantMode.knowledgeBase);
 
-      await tester.pumpWidget(ChangeNotifierProvider<AppState>.value(
-        value: AppState(),
-        child: MaterialApp(
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          home: Scaffold(
-            body: OptimizerConfigPanel(
-              selectedModelDbId: null,
-              selectedSysPrompt: null,
-              sysPromptTemplateId: null,
-              mode: session.mode,
-              kbStatus: KbStatus.ok,
-              kbPath: '/tmp/kb',
-              sysPrompts: const [],
-              pendingKbEdits: PromptOptimizerAgent.pendingKbEdits(session),
-              onModelChanged: (_) {},
-              onSysPromptChanged: (_) {},
-              onPresetLoaded: (_) {},
-              onSaveTemplate: (_, _) async {},
-              onModeChanged: (_) {},
-              onScaffoldKb: () async {},
+      await tester.pumpWidget(
+        ChangeNotifierProvider<AppState>.value(
+          value: AppState(),
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(
+              body: OptimizerConfigPanel(
+                selectedModelDbId: null,
+                selectedSysPrompt: null,
+                sysPromptTemplateId: null,
+                mode: session.mode,
+                kbStatus: KbStatus.ok,
+                kbPath: '/tmp/kb',
+                sysPrompts: const [],
+                pendingKbEdits: PromptOptimizerAgent.pendingKbEdits(session),
+                onModelChanged: (_) {},
+                onSysPromptChanged: (_) {},
+                onPresetLoaded: (_) {},
+                onSaveTemplate: (_, _) async {},
+                onModeChanged: (_) {},
+                onScaffoldKb: () async {},
+              ),
             ),
           ),
         ),
-      ));
+      );
       await tester.pumpAndSettle();
       final l10n = await AppLocalizations.delegate.load(const Locale('en'));
 
@@ -164,8 +167,7 @@ void main() {
     });
 
     test('edits staged before the switch stay answerable after it', () {
-      final session = PromptOptimizerSession(mode: AssistantMode.knowledgeEdit)
-        ..addUserTurn('x');
+      final session = PromptOptimizerSession(mode: AssistantMode.knowledgeEdit)..addUserTurn('x');
       session.stageKbEditForTest(relPath: 'a.md', newContent: 'a', oldContent: 'A');
       session.switchKnowledgeUse(AssistantMode.knowledgeBase);
 
@@ -176,8 +178,7 @@ void main() {
     });
 
     test('toggling with nothing said in between leaves one divider, the latest', () {
-      final session = PromptOptimizerSession(mode: AssistantMode.knowledgeBase)
-        ..addUserTurn('x');
+      final session = PromptOptimizerSession(mode: AssistantMode.knowledgeBase)..addUserTurn('x');
       session.switchKnowledgeUse(AssistantMode.knowledgeEdit);
       final length = session.transcript.length;
       session.switchKnowledgeUse(AssistantMode.knowledgeBase);
@@ -197,8 +198,7 @@ void main() {
     });
 
     test('hands out a new transcript list rather than growing the old one', () {
-      final session = PromptOptimizerSession(mode: AssistantMode.knowledgeBase)
-        ..addUserTurn('x');
+      final session = PromptOptimizerSession(mode: AssistantMode.knowledgeBase)..addUserTurn('x');
       final before = session.transcript;
       session.switchKnowledgeUse(AssistantMode.knowledgeEdit);
       expect(identical(before, session.transcript), isFalse);

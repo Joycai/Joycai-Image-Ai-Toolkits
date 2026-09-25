@@ -21,10 +21,7 @@ void main() {
       // row behind it makes `byId` throw a StateError from inside a key
       // handler — on every keystroke, and invisibly to the analyzer, since
       // the ids are plain strings. A row no constant names is dead data.
-      expect(
-        AppShortcutIds.all.toSet(),
-        AppShortcuts.all.map((s) => s.id).toSet(),
-      );
+      expect(AppShortcutIds.all.toSet(), AppShortcuts.all.map((s) => s.id).toSet());
       for (final id in AppShortcutIds.all) {
         expect(() => AppShortcuts.byId(id), returnsNormally, reason: id);
       }
@@ -50,9 +47,13 @@ void main() {
             expect(s.panes, isEmpty, reason: '${s.id} is app level');
           case ShortcutLayer.screen:
             expect(s.screens, isNotEmpty, reason: '${s.id} names no screen');
-            expect(s.panes, isEmpty,
-                reason: '${s.id} is screen level but names a pane — selection '
-                    'keys belong to the pane layer (plan D1)');
+            expect(
+              s.panes,
+              isEmpty,
+              reason:
+                  '${s.id} is screen level but names a pane — selection '
+                  'keys belong to the pane layer (plan D1)',
+            );
           case ShortcutLayer.pane:
             expect(s.screens, isNotEmpty, reason: '${s.id} names no screen');
             expect(s.panes, isNotEmpty, reason: '${s.id} names no pane');
@@ -80,8 +81,10 @@ void main() {
               if (!key.existsOn(macOS: macOS)) continue;
               final owner = inScope[key];
               if (owner != null) {
-                collisions.add('$scope: $key claimed by both $owner and '
-                    '${shortcut.id}');
+                collisions.add(
+                  '$scope: $key claimed by both $owner and '
+                  '${shortcut.id}',
+                );
               } else {
                 inScope[key] = shortcut.id;
               }
@@ -89,10 +92,14 @@ void main() {
           }
         }
 
-        expect(collisions, isEmpty,
-            reason: 'two rows answer the same chord in the same scope, so '
-                'which one runs depends on registration order:\n'
-                '  ${collisions.join('\n  ')}');
+        expect(
+          collisions,
+          isEmpty,
+          reason:
+              'two rows answer the same chord in the same scope, so '
+              'which one runs depends on registration order:\n'
+              '  ${collisions.join('\n  ')}',
+        );
       });
     }
 
@@ -105,7 +112,8 @@ void main() {
         expect(
           bare.contains(LogicalKeyboardKey.delete),
           bare.contains(LogicalKeyboardKey.backspace),
-          reason: '${s.id}: on a Mac keyboard the main-block key is Backspace, '
+          reason:
+              '${s.id}: on a Mac keyboard the main-block key is Backspace, '
               'so a row bound to one must be bound to the other',
         );
       }
@@ -115,20 +123,25 @@ void main() {
       for (final id in [AppShortcutIds.delete, AppShortcutIds.deleteFolder]) {
         final chord = AppShortcuts.byId(id).keys.singleWhere((k) => k.primary);
         expect(chord.key, LogicalKeyboardKey.backspace);
-        expect(chord.macOSOnly, isTrue,
-            reason: 'Ctrl+Backspace means "delete the previous word" off '
-                'macOS and belongs to text fields, not to a file grid');
+        expect(
+          chord.macOSOnly,
+          isTrue,
+          reason:
+              'Ctrl+Backspace means "delete the previous word" off '
+              'macOS and belongs to text fields, not to a file grid',
+        );
         expect(chord.existsOn(macOS: false), isFalse);
       }
     });
 
     test('a run of number keys reads as a range, anything else does not', () {
-      expect(AppShortcuts.byId(AppShortcutIds.navigateToDestination).isDigitRange,
-          isTrue);
-      expect(AppShortcuts.byId(AppShortcutIds.selectWorkbenchTool).isDigitRange,
-          isTrue);
-      expect(AppShortcuts.byId(AppShortcutIds.delete).isDigitRange, isFalse,
-          reason: 'three chords, but not digits');
+      expect(AppShortcuts.byId(AppShortcutIds.navigateToDestination).isDigitRange, isTrue);
+      expect(AppShortcuts.byId(AppShortcutIds.selectWorkbenchTool).isDigitRange, isTrue);
+      expect(
+        AppShortcuts.byId(AppShortcutIds.delete).isDigitRange,
+        isFalse,
+        reason: 'three chords, but not digits',
+      );
 
       // A row longer than the number row answers no rather than walking off
       // the end of the table it measures against.
@@ -167,15 +180,12 @@ void main() {
 
     test('Esc lives at two tiers on purpose — the ladder, not a collision', () {
       final esc = AppShortcuts.all
-          .where((s) => s.keys
-              .any((k) => k.key == LogicalKeyboardKey.escape && !k.primary))
+          .where((s) => s.keys.any((k) => k.key == LogicalKeyboardKey.escape && !k.primary))
           .map((s) => s.id)
           .toSet();
       expect(esc, {AppShortcutIds.exitSearch, AppShortcutIds.clearSelection});
-      expect(AppShortcuts.byId(AppShortcutIds.exitSearch).layer,
-          ShortcutLayer.screen);
-      expect(AppShortcuts.byId(AppShortcutIds.clearSelection).layer,
-          ShortcutLayer.pane);
+      expect(AppShortcuts.byId(AppShortcutIds.exitSearch).layer, ShortcutLayer.screen);
+      expect(AppShortcuts.byId(AppShortcutIds.clearSelection).layer, ShortcutLayer.pane);
     });
 
     test('the file operations are claimed on both screens', () {
@@ -195,14 +205,14 @@ void main() {
         AppShortcutIds.deleteFolder,
         AppShortcutIds.newSubfolder,
       ]) {
-        expect(AppShortcuts.byId(id).screens, {ShortcutScreen.fileBrowser},
-            reason: id);
+        expect(AppShortcuts.byId(id).screens, {ShortcutScreen.fileBrowser}, reason: id);
       }
       for (final id in shared) {
         expect(
           AppShortcuts.byId(id).screens,
           {ShortcutScreen.fileBrowser, ShortcutScreen.workbench},
-          reason: '$id is the whole point of this round: one key, one meaning, '
+          reason:
+              '$id is the whole point of this round: one key, one meaning, '
               'on both screens',
         );
       }
@@ -210,16 +220,17 @@ void main() {
 
     test('the workbench tree claims nothing', () {
       expect(
-          AppShortcuts.forPane(ShortcutScreen.workbench, ShortcutPane.tree),
-          isEmpty,
-          reason: 'it is the same widget as the browser tree but with folder '
-              'management switched off');
+        AppShortcuts.forPane(ShortcutScreen.workbench, ShortcutPane.tree),
+        isEmpty,
+        reason:
+            'it is the same widget as the browser tree but with folder '
+            'management switched off',
+      );
     });
 
     test('the grid claims the selection keys on both screens', () {
       for (final screen in ShortcutScreen.values) {
-        final ids =
-            AppShortcuts.forPane(screen, ShortcutPane.grid).map((s) => s.id);
+        final ids = AppShortcuts.forPane(screen, ShortcutPane.grid).map((s) => s.id);
         expect(
           ids,
           containsAll([
@@ -239,10 +250,10 @@ void main() {
     // A KeyDownEvent carries the key; the modifiers come from the keyboard
     // state, so both are driven here.
     KeyEvent down(LogicalKeyboardKey key) => KeyDownEvent(
-          physicalKey: PhysicalKeyboardKey.keyA,
-          logicalKey: key,
-          timeStamp: Duration.zero,
-        );
+      physicalKey: PhysicalKeyboardKey.keyA,
+      logicalKey: key,
+      timeStamp: Duration.zero,
+    );
 
     /// A keyboard with exactly [held] down.
     HardwareKeyboard keyboardWith(Set<LogicalKeyboardKey> held) {
@@ -250,11 +261,9 @@ void main() {
       var stamp = Duration.zero;
       for (final key in held) {
         stamp += const Duration(milliseconds: 1);
-        keyboard.handleKeyEvent(KeyDownEvent(
-          physicalKey: _physicalFor(key),
-          logicalKey: key,
-          timeStamp: stamp,
-        ));
+        keyboard.handleKeyEvent(
+          KeyDownEvent(physicalKey: _physicalFor(key), logicalKey: key, timeStamp: stamp),
+        );
       }
       return keyboard;
     }
@@ -265,39 +274,38 @@ void main() {
       final withControl = keyboardWith({LogicalKeyboardKey.controlLeft});
 
       expect(
-          selectAll.matches(down(LogicalKeyboardKey.keyA),
-              macOS: true, keyboard: withMeta),
-          isTrue);
+        selectAll.matches(down(LogicalKeyboardKey.keyA), macOS: true, keyboard: withMeta),
+        isTrue,
+      );
       expect(
-          selectAll.matches(down(LogicalKeyboardKey.keyA),
-              macOS: true, keyboard: withControl),
-          isFalse,
-          reason: 'Ctrl+A is a text-editing binding on macOS; this table never '
-              'claims it there');
+        selectAll.matches(down(LogicalKeyboardKey.keyA), macOS: true, keyboard: withControl),
+        isFalse,
+        reason:
+            'Ctrl+A is a text-editing binding on macOS; this table never '
+            'claims it there',
+      );
       expect(
-          selectAll.matches(down(LogicalKeyboardKey.keyA),
-              macOS: false, keyboard: withControl),
-          isTrue);
+        selectAll.matches(down(LogicalKeyboardKey.keyA), macOS: false, keyboard: withControl),
+        isTrue,
+      );
       expect(
-          selectAll.matches(down(LogicalKeyboardKey.keyA),
-              macOS: false, keyboard: withMeta),
-          isFalse);
+        selectAll.matches(down(LogicalKeyboardKey.keyA), macOS: false, keyboard: withMeta),
+        isFalse,
+      );
     });
 
     test('an extra modifier does not match', () {
       final selectAll = AppShortcuts.byId(AppShortcutIds.selectAll);
-      final metaShift = keyboardWith(
-          {LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.shiftLeft});
+      final metaShift = keyboardWith({LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.shiftLeft});
       expect(
-          selectAll.matches(down(LogicalKeyboardKey.keyA),
-              macOS: true, keyboard: metaShift),
-          isFalse);
+        selectAll.matches(down(LogicalKeyboardKey.keyA), macOS: true, keyboard: metaShift),
+        isFalse,
+      );
     });
 
     test('Cmd+1…8 navigates, Cmd+Alt+1…5 does not', () {
       final meta = keyboardWith({LogicalKeyboardKey.metaLeft});
-      final metaAlt =
-          keyboardWith({LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.altLeft});
+      final metaAlt = keyboardWith({LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.altLeft});
 
       const digits = [
         LogicalKeyboardKey.digit1,
@@ -311,8 +319,7 @@ void main() {
       ];
       for (var i = 0; i < digits.length; i++) {
         expect(
-          AppShortcuts.navigationIndexFor(down(digits[i]),
-              macOS: true, keyboard: meta),
+          AppShortcuts.navigationIndexFor(down(digits[i]), macOS: true, keyboard: meta),
           i,
           reason: 'Cmd+${i + 1} is destination $i',
         );
@@ -321,38 +328,50 @@ void main() {
       // The workbench's tool tabs share the digits; only the modifier keeps
       // them apart, which is why matching is exact.
       expect(
-          AppShortcuts.navigationIndexFor(down(LogicalKeyboardKey.digit1),
-              macOS: true, keyboard: metaAlt),
-          -1);
+        AppShortcuts.navigationIndexFor(
+          down(LogicalKeyboardKey.digit1),
+          macOS: true,
+          keyboard: metaAlt,
+        ),
+        -1,
+      );
       expect(
-          AppShortcuts.workbenchToolIndexFor(down(LogicalKeyboardKey.digit1),
-              macOS: true, keyboard: metaAlt),
-          0);
+        AppShortcuts.workbenchToolIndexFor(
+          down(LogicalKeyboardKey.digit1),
+          macOS: true,
+          keyboard: metaAlt,
+        ),
+        0,
+      );
       expect(
-          AppShortcuts.workbenchToolIndexFor(down(LogicalKeyboardKey.digit1),
-              macOS: true, keyboard: meta),
-          -1);
+        AppShortcuts.workbenchToolIndexFor(
+          down(LogicalKeyboardKey.digit1),
+          macOS: true,
+          keyboard: meta,
+        ),
+        -1,
+      );
     });
 
     test('a key up never matches', () {
       final meta = keyboardWith({LogicalKeyboardKey.metaLeft});
-      final up = KeyUpEvent(
+      const up = KeyUpEvent(
         physicalKey: PhysicalKeyboardKey.keyA,
         logicalKey: LogicalKeyboardKey.keyA,
-        timeStamp: const Duration(milliseconds: 2),
+        timeStamp: Duration(milliseconds: 2),
       );
       expect(
-          AppShortcuts.byId(AppShortcutIds.selectAll)
-              .matches(up, macOS: true, keyboard: meta),
-          isFalse);
+        AppShortcuts.byId(AppShortcutIds.selectAll).matches(up, macOS: true, keyboard: meta),
+        isFalse,
+      );
     });
   });
 }
 
 PhysicalKeyboardKey _physicalFor(LogicalKeyboardKey key) => switch (key) {
-      LogicalKeyboardKey.metaLeft => PhysicalKeyboardKey.metaLeft,
-      LogicalKeyboardKey.controlLeft => PhysicalKeyboardKey.controlLeft,
-      LogicalKeyboardKey.shiftLeft => PhysicalKeyboardKey.shiftLeft,
-      LogicalKeyboardKey.altLeft => PhysicalKeyboardKey.altLeft,
-      _ => PhysicalKeyboardKey.keyA,
-    };
+  LogicalKeyboardKey.metaLeft => PhysicalKeyboardKey.metaLeft,
+  LogicalKeyboardKey.controlLeft => PhysicalKeyboardKey.controlLeft,
+  LogicalKeyboardKey.shiftLeft => PhysicalKeyboardKey.shiftLeft,
+  LogicalKeyboardKey.altLeft => PhysicalKeyboardKey.altLeft,
+  _ => PhysicalKeyboardKey.keyA,
+};

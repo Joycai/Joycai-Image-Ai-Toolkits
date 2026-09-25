@@ -36,10 +36,12 @@ Stream<LLMResponseChunk> _idleGuarded(
   Duration? first,
   Duration? subsequent,
   bool firstIsDeadline = false,
-}) => _guard(stream,
-    first: first ?? _firstChunkGap,
-    subsequent: subsequent ?? _idleGap,
-    firstIsDeadline: firstIsDeadline);
+}) => _guard(
+  stream,
+  first: first ?? _firstChunkGap,
+  subsequent: subsequent ?? _idleGap,
+  firstIsDeadline: firstIsDeadline,
+);
 
 Stream<T> _guard<T>(
   Stream<T> stream, {
@@ -51,12 +53,15 @@ Stream<T> _guard<T>(
   var gap = first;
   var awaitingFirst = true;
   try {
-    while (await iterator.moveNext().timeout(gap, onTimeout: () {
-      if (awaitingFirst && firstIsDeadline) {
-        throw LLMDeadlineExceeded(first);
-      }
-      throw TimeoutException('No stream chunk within $gap', gap);
-    })) {
+    while (await iterator.moveNext().timeout(
+      gap,
+      onTimeout: () {
+        if (awaitingFirst && firstIsDeadline) {
+          throw LLMDeadlineExceeded(first);
+        }
+        throw TimeoutException('No stream chunk within $gap', gap);
+      },
+    )) {
       awaitingFirst = false;
       gap = subsequent;
       yield iterator.current;

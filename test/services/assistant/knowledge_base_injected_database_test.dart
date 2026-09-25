@@ -40,11 +40,9 @@ void main() {
 
     // Every field flipped away from its default, so a policy that silently
     // fell back to the defaults cannot pass.
-    await kb.setWritePolicy(const KbWritePolicy(
-      allowWrites: false,
-      confirmEachWrite: false,
-      backupBeforeOverwrite: true,
-    ));
+    await kb.setWritePolicy(
+      const KbWritePolicy(allowWrites: false, confirmEachWrite: false, backupBeforeOverwrite: true),
+    );
 
     final policy = await kb.getWritePolicy();
     expect(policy.allowWrites, isFalse);
@@ -57,26 +55,20 @@ void main() {
     addTearDown(() => closeTestDatabase(other));
 
     await KnowledgeBaseService(database: other).setRoot(r'D:\other');
-    await KnowledgeBaseService(database: other).setWritePolicy(const KbWritePolicy(
-      allowWrites: false,
-      confirmEachWrite: false,
-      backupBeforeOverwrite: true,
-    ));
+    await KnowledgeBaseService(database: other).setWritePolicy(
+      const KbWritePolicy(allowWrites: false, confirmEachWrite: false, backupBeforeOverwrite: true),
+    );
 
     // Nothing leaked into the database this test owns...
     expect(await KnowledgeBaseService(database: db).getRoot(), isNull);
-    expect(await KnowledgeBaseService(database: db).getWritePolicy(),
-        KbWritePolicy.defaults);
+    expect(await KnowledgeBaseService(database: db).getWritePolicy(), KbWritePolicy.defaults);
     // ...and the one that was written still holds it.
     expect(await KnowledgeBaseService(database: other).getRoot(), r'D:\other');
-    expect(
-        (await KnowledgeBaseService(database: other).getWritePolicy()).allowWrites,
-        isFalse);
+    expect((await KnowledgeBaseService(database: other).getWritePolicy()).allowWrites, isFalse);
   });
 
   test('no database means the app-wide instance, unchanged', () {
     expect(identical(KnowledgeBaseService(), KnowledgeBaseService()), isTrue);
-    expect(identical(KnowledgeBaseService(), KnowledgeBaseService(database: db)),
-        isFalse);
+    expect(identical(KnowledgeBaseService(), KnowledgeBaseService(database: db)), isFalse);
   });
 }

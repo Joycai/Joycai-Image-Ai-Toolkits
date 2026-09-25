@@ -34,10 +34,7 @@ class MiniMaxH3BaseVideoProtocol implements VideoJobProtocol {
     LLMLogger? logger,
   }) async {
     final config = target.config;
-    final userMsg = history.lastWhere(
-      (m) => m.role == LLMRole.user,
-      orElse: () => history.last,
-    );
+    final userMsg = history.lastWhere((m) => m.role == LLMRole.user, orElse: () => history.last);
 
     final media = <MiniMaxH3Media>[];
     for (final att in userMsg.attachments) {
@@ -52,8 +49,7 @@ class MiniMaxH3BaseVideoProtocol implements VideoJobProtocol {
         default:
           role = MiniMaxH3Role.reference;
       }
-      media.add(MiniMaxH3Media(
-          role, minimaxH3FileUri(path, windows: Platform.isWindows)));
+      media.add(MiniMaxH3Media(role, minimaxH3FileUri(path, windows: Platform.isWindows)));
     }
 
     final (kept, dropped) = partitionMiniMaxH3Media(media);
@@ -82,40 +78,35 @@ class MiniMaxH3BaseVideoProtocol implements VideoJobProtocol {
     );
 
     final url = Uri.parse('${trimBaseUrl(config.endpoint)}/videos');
-    logger?.call('Submitting MiniMax H3 local video job to: ${url.host}',
-        level: 'DEBUG');
+    logger?.call('Submitting MiniMax H3 local video job to: ${url.host}', level: 'DEBUG');
 
     LLMDebugLog? debugFile;
     if (LLMDebugLogger.enabled) {
-      debugFile = await LLMDebugLogger.startLog(
-        config.modelId,
-        'MiniMax H3 Local (Video Submit)',
-        {
-          'url': redactUrl(url),
-          'payload': payload,
-        },
-      );
+      debugFile = await LLMDebugLogger.startLog(config.modelId, 'MiniMax H3 Local (Video Submit)', {
+        'url': redactUrl(url),
+        'payload': payload,
+      });
     }
 
     final client = config.createClient();
     try {
-      final response = await sendJsonRequest(client, url,
-          headers: target.headers(),
-          body: jsonEncode(payload),
-          options: options);
+      final response = await sendJsonRequest(
+        client,
+        url,
+        headers: target.headers(),
+        body: jsonEncode(payload),
+        options: options,
+      );
 
       if (debugFile != null) {
-        await LLMDebugLogger.appendLine(
-            debugFile, 'Status: ${response.statusCode}');
+        await LLMDebugLogger.appendLine(debugFile, 'Status: ${response.statusCode}');
         await LLMDebugLogger.appendLine(debugFile, 'Body: ${response.body}');
       }
 
-      final data =
-          decodeJsonBody(response, apiName: 'MiniMax H3 local video submit');
+      final data = decodeJsonBody(response, apiName: 'MiniMax H3 local video submit');
       final id = data['id']?.toString();
       if (id == null || id.isEmpty) {
-        throw LLMApiException(
-            'MiniMax H3 local video submit returned no id: ${response.body}');
+        throw LLMApiException('MiniMax H3 local video submit returned no id: ${response.body}');
       }
       logger?.call('MiniMax H3 local video job id: $id', level: 'INFO');
       return VideoSubmission(id, inputImages: kept.length);
@@ -137,22 +128,27 @@ class MiniMaxH3BaseVideoProtocol implements VideoJobProtocol {
 
     final client = config.createClient();
     try {
-      final response = await sendJsonRequest(client, url,
-          headers: target.headers(),
-          body: '',
-          options: options,
-          method: 'GET');
+      final response = await sendJsonRequest(
+        client,
+        url,
+        headers: target.headers(),
+        body: '',
+        options: options,
+        method: 'GET',
+      );
       // checkEnvelope: false — a failed job arrives as a 200 with an `error`
       // beside `status`, and the status machine in the payload helper owns
       // that case and names the operation in its message.
-      final data = decodeJsonBody(response,
-          apiName: 'MiniMax H3 local video poll', checkEnvelope: false);
+      final data = decodeJsonBody(
+        response,
+        apiName: 'MiniMax H3 local video poll',
+        checkEnvelope: false,
+      );
       // The poll body carries no video URL; the finished MP4 lives at the
       // job's own /content endpoint (auth headers travel with the download —
       // VendorProfile.downloadHeaders — for anyone who fronted the service
       // with an authenticated proxy).
-      return minimaxH3PollEnvelope(
-          data, operationName, '$baseUrl/videos/$operationName/content');
+      return minimaxH3PollEnvelope(data, operationName, '$baseUrl/videos/$operationName/content');
     } finally {
       client.close();
     }
@@ -166,20 +162,21 @@ class MiniMaxH3BaseVideoProtocol implements VideoJobProtocol {
   /// These files cannot be removed at submit time — the server dereferences
   /// them asynchronously during generation — so they are reaped later by
   /// [sweepStaleTempRefs] at startup instead.
-  Future<String?> _attachmentFilePath(
-      LLMAttachment att, LLMLogger? logger) async {
+  Future<String?> _attachmentFilePath(LLMAttachment att, LLMLogger? logger) async {
     if (att.path != null) return att.path;
     final bytes = att.bytes;
     if (bytes == null) return null;
     final file = File(
-        '${Directory.systemTemp.path}${Platform.pathSeparator}'
-        '$minimaxH3TempRefPrefix'
-        '${DateTime.now().microsecondsSinceEpoch}.${extForMime(att.mimeType)}');
+      '${Directory.systemTemp.path}${Platform.pathSeparator}'
+      '$minimaxH3TempRefPrefix'
+      '${DateTime.now().microsecondsSinceEpoch}.${extForMime(att.mimeType)}',
+    );
     await file.writeAsBytes(bytes);
     logger?.call(
-        'MiniMax H3 local: in-memory reference image written to '
-        '${file.path} so it can travel as a file:// URI.',
-        level: 'INFO');
+      'MiniMax H3 local: in-memory reference image written to '
+      '${file.path} so it can travel as a file:// URI.',
+      level: 'INFO',
+    );
     return file.path;
   }
 
@@ -193,8 +190,7 @@ class MiniMaxH3BaseVideoProtocol implements VideoJobProtocol {
   static Future<void> sweepStaleTempRefs() async {
     final now = DateTime.now();
     try {
-      await for (final entity
-          in Directory.systemTemp.list(followLinks: false)) {
+      await for (final entity in Directory.systemTemp.list(followLinks: false)) {
         if (entity is! File) continue;
         final segments = entity.uri.pathSegments;
         final name = segments.isEmpty ? '' : segments.last;

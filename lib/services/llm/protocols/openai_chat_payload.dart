@@ -24,11 +24,7 @@ Map<String, dynamic> prepareOpenAIChatPayload(
   final messages = history.map((msg) {
     // Tool result message.
     if (msg.role == LLMRole.tool) {
-      return {
-        'role': 'tool',
-        'tool_call_id': msg.toolCallId,
-        'content': msg.content,
-      };
+      return {'role': 'tool', 'tool_call_id': msg.toolCallId, 'content': msg.content};
     }
 
     // Assistant message carrying tool calls.
@@ -48,18 +44,14 @@ Map<String, dynamic> prepareOpenAIChatPayload(
         // persisted before one was recorded — is still echoed.
         if (msg.reasoningContent != null &&
             msg.reasoningFieldName != null &&
-            (msg.rawThinkingModelId == null ||
-                msg.rawThinkingModelId == target.config.modelId))
+            (msg.rawThinkingModelId == null || msg.rawThinkingModelId == target.config.modelId))
           msg.reasoningFieldName!: msg.reasoningContent,
         'tool_calls': msg.toolCalls
             .map(
               (tc) => {
                 'id': tc.id,
                 'type': 'function',
-                'function': {
-                  'name': tc.name,
-                  'arguments': jsonEncode(tc.arguments),
-                },
+                'function': {'name': tc.name, 'arguments': jsonEncode(tc.arguments)},
               },
             )
             .toList(),
@@ -75,9 +67,7 @@ Map<String, dynamic> prepareOpenAIChatPayload(
       // URL or image data URI`) while accepting a one-element array with
       // the same text — and there is no other way around it. Chat models
       // keep the string: it is the shape every host accepts.
-      content =
-          (msg.role == LLMRole.user &&
-              target.model.capabilities.isImageGenerator)
+      content = (msg.role == LLMRole.user && target.model.capabilities.isImageGenerator)
           ? [
               {'type': 'text', 'text': msg.content},
             ]
@@ -87,15 +77,12 @@ Map<String, dynamic> prepareOpenAIChatPayload(
       if (msg.content.isNotEmpty) {
         parts.add({'type': 'text', 'text': msg.content});
       }
-      for (var attachment in msg.attachments) {
+      for (final attachment in msg.attachments) {
         if (attachment.path == null && attachment.bytes == null) continue;
         final resolved = ImageCompressor.readForApi(attachment);
         parts.add({
           'type': 'image_url',
-          'image_url': {
-            'url':
-                'data:${resolved.mimeType};base64,${base64Encode(resolved.bytes)}',
-          },
+          'image_url': {'url': 'data:${resolved.mimeType};base64,${base64Encode(resolved.bytes)}'},
         });
       }
       content = parts;
@@ -114,10 +101,7 @@ Map<String, dynamic> prepareOpenAIChatPayload(
   // translating that call into an images request.
   if (!history.any((m) => m.role == LLMRole.system) &&
       !target.model.capabilities.isImageGenerator) {
-    messages.insert(0, {
-      'role': 'system',
-      'content': openaiDefaultSystemPrompt,
-    });
+    messages.insert(0, {'role': 'system', 'content': openaiDefaultSystemPrompt});
   }
 
   final effort = target.config.effectiveReasoningEffort;
@@ -140,10 +124,7 @@ Map<String, dynamic> prepareOpenAIChatPayload(
     //
     // Read per face: a multi-face vendor can spell thinking differently
     // on ① than on its other faces (Bailian's ① switch).
-    ...openaiThinkingFields(
-      target.vendor.thinkingFor(WireProtocol.openaiChat),
-      effort,
-    ),
+    ...openaiThinkingFields(target.vendor.thinkingFor(WireProtocol.openaiChat), effort),
   };
 
   if (tools != null && tools.isNotEmpty) {
@@ -151,11 +132,7 @@ Map<String, dynamic> prepareOpenAIChatPayload(
         .map(
           (t) => {
             'type': 'function',
-            'function': {
-              'name': t.name,
-              'description': t.description,
-              'parameters': t.parameters,
-            },
+            'function': {'name': t.name, 'description': t.description, 'parameters': t.parameters},
           },
         )
         .toList();
@@ -171,8 +148,7 @@ Map<String, dynamic> prepareOpenAIChatPayload(
   // an unknown top-level field. The search is traceless on this wire (no
   // sources come back), so nothing is parsed or logged for it (pitfalls 11
   // §A10).
-  if (target.config.enableWebSearch &&
-      target.vendor.sendsWebSearchOn(WireProtocol.openaiChat)) {
+  if (target.config.enableWebSearch && target.vendor.sendsWebSearchOn(WireProtocol.openaiChat)) {
     payload['enable_search'] = true;
   }
 
@@ -204,15 +180,14 @@ Map<String, dynamic> prepareOpenAIChatPayload(
 /// ①'s spelling of the app's reasoning vocabulary, or null for "send
 /// nothing". One translation table per family (playbook 03) — the app's
 /// own words never reach the wire.
-String? openaiReasoningEffortWire(ReasoningEffort? effort) =>
-    switch (effort) {
-      null => null,
-      ReasoningEffort.off => 'none',
-      ReasoningEffort.low => 'low',
-      ReasoningEffort.medium => 'medium',
-      ReasoningEffort.high => 'high',
-      ReasoningEffort.max => 'max',
-    };
+String? openaiReasoningEffortWire(ReasoningEffort? effort) => switch (effort) {
+  null => null,
+  ReasoningEffort.off => 'none',
+  ReasoningEffort.low => 'low',
+  ReasoningEffort.medium => 'medium',
+  ReasoningEffort.high => 'high',
+  ReasoningEffort.max => 'max',
+};
 
 /// The reasoning fields for [dialect] at [effort]: `reasoning_effort` on
 /// the generic ① wire, plus — or instead, for "off" — the top-level
@@ -221,10 +196,7 @@ String? openaiReasoningEffortWire(ReasoningEffort? effort) =>
 /// `enable_thinking` switch **instead of** `reasoning_effort` on a face
 /// that declares [ThinkingDialect.openaiEnableThinking]. Empty for the
 /// default level on every dialect.
-Map<String, dynamic> openaiThinkingFields(
-  ThinkingDialect dialect,
-  ReasoningEffort? effort,
-) {
+Map<String, dynamic> openaiThinkingFields(ThinkingDialect dialect, ReasoningEffort? effort) {
   if (effort == null) return const {};
   if (dialect == ThinkingDialect.openaiEnableThinking) {
     // 03 §3 switch dialect, ① spelling: a boolean, and no reasoning_effort
@@ -233,9 +205,7 @@ Map<String, dynamic> openaiThinkingFields(
   }
   if (dialect == ThinkingDialect.openaiAdaptiveObject) {
     return {
-      'thinking': {
-        'type': effort == ReasoningEffort.off ? 'disabled' : 'adaptive',
-      },
+      'thinking': {'type': effort == ReasoningEffort.off ? 'disabled' : 'adaptive'},
     };
   }
   if (dialect != ThinkingDialect.openaiThinkingObject) {
@@ -270,23 +240,17 @@ Map<String, dynamic> openaiThinkingFields(
 /// derives `responseModalities` from the model name and takes safety
 /// thresholds from its own server-side config — but they are what other
 /// OpenAI-shaped Gemini hosts read, and an unknown field costs nothing.
-void _applyGeminiCompatExtensions(
-  Map<String, dynamic> payload,
-  Map<String, dynamic>? options,
-) {
+void _applyGeminiCompatExtensions(Map<String, dynamic> payload, Map<String, dynamic>? options) {
   payload['modalities'] = ['image', 'text'];
 
-  payload['safety_settings'] = SafetySettings.toApiList(
-    options?[SafetySettings.paramKey],
-  );
+  payload['safety_settings'] = SafetySettings.toApiList(options?[SafetySettings.paramKey]);
 
   if (options == null) return;
 
   // Only these two keys are portable; `person_generation` /
   // `number_of_images` belong to the top-level dialect alone.
   final portable = <String, dynamic>{};
-  if (options.containsKey('aspectRatio') &&
-      options['aspectRatio'] != 'not_set') {
+  if (options.containsKey('aspectRatio') && options['aspectRatio'] != 'not_set') {
     portable['aspect_ratio'] = options['aspectRatio'];
   }
   final size = options['imageSize'];
@@ -295,11 +259,7 @@ void _applyGeminiCompatExtensions(
   }
   if (portable.isEmpty) return;
 
-  payload['image_config'] = {
-    'person_generation': 'allow_all',
-    ...portable,
-    'number_of_images': 1,
-  };
+  payload['image_config'] = {'person_generation': 'allow_all', ...portable, 'number_of_images': 1};
 
   final extraBody = (payload['extra_body'] as Map<String, dynamic>?) ?? {};
   final google = (extraBody['google'] as Map<String, dynamic>?) ?? {};

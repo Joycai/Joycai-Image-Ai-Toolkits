@@ -183,8 +183,7 @@ class ModelCapabilities {
     // by the id's tail: `grok-imagine-image` is a prefix of every later
     // version's id.
     if (family == ModelFamily.xaiImage &&
-        (id.endsWith('grok-imagine-image') ||
-            id.endsWith('grok-imagine-image-quality'))) {
+        (id.endsWith('grok-imagine-image') || id.endsWith('grok-imagine-image-quality'))) {
       return _xaiImageLegacy;
     }
 
@@ -216,8 +215,7 @@ class ModelCapabilities {
     // deployments carry different tables: the open checkpoints generate 768p
     // only, so the cloud table's 768P/2K resolution control would be a knob
     // whose upper half silently does nothing.
-    if (family == ModelFamily.openaiVideo &&
-        id.startsWith('minimaxai/minimax-h3')) {
+    if (family == ModelFamily.openaiVideo && id.startsWith('minimaxai/minimax-h3')) {
       return _minimaxH3Base;
     }
 
@@ -264,9 +262,7 @@ class ModelCapabilities {
     final version = ModelFamilyClassifier.seedreamVersion(modelId);
     switch (version) {
       case (5, 0):
-        return ModelFamilyClassifier.isSeedreamPro(modelId)
-            ? _seedream50Pro
-            : _seedream50Lite;
+        return ModelFamilyClassifier.isSeedreamPro(modelId) ? _seedream50Pro : _seedream50Lite;
       case (4, 5):
         return _seedream45;
       case (4, 0):

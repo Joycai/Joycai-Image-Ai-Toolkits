@@ -15,8 +15,8 @@ import '../../../widgets/ui/app_dialog.dart';
 import '../../../widgets/ui/app_field_size.dart';
 import '../../../widgets/ui/app_labelled_field.dart';
 import '../../../widgets/ui/app_segmented_control.dart';
-import 'color_picker_widget.dart';
 import '../../../widgets/ui/markdown_editor.dart';
+import 'color_picker_widget.dart';
 import 'prompt_library_parts.dart';
 
 /// Dialogs for the Prompt Library screen (`C1 · 1d`).
@@ -30,7 +30,11 @@ import 'prompt_library_parts.dart';
 /// captions over 32px column-filled fields, the footer on the column colour.
 
 /// A 32px single-line field on the column fill, as dialog forms draw it.
-Widget _dialogField(BuildContext context, TextEditingController controller, {bool autofocus = false}) {
+Widget _dialogField(
+  BuildContext context,
+  TextEditingController controller, {
+  bool autofocus = false,
+}) {
   final scheme = Theme.of(context).colorScheme;
   final style = Theme.of(context).textTheme.bodyMedium;
   return TextField(
@@ -66,18 +70,20 @@ Future<bool> showPromptEditDialog(
   String? initialContent,
 }) async {
   final titleCtrl = TextEditingController(text: prompt?.title ?? initialTitle ?? '');
-  final contentCtrl =
-      MarkdownTextEditingController(text: prompt?.content ?? initialContent ?? '');
+  final contentCtrl = MarkdownTextEditingController(text: prompt?.content ?? initialContent ?? '');
   bool isMarkdown = prompt?.isMarkdown ?? true;
 
   final Set<int> selectedTagIds = {};
   if (prompt != null) {
-    for (var t in prompt.tags) {
+    for (final t in prompt.tags) {
       if (t.id != null) selectedTagIds.add(t.id!);
     }
   } else {
     // Default to 'General' tag if creating new
-    final generalTag = tags.cast<PromptTag?>().firstWhere((t) => t?.name == 'General', orElse: () => null);
+    final generalTag = tags.cast<PromptTag?>().firstWhere(
+      (t) => t?.name == 'General',
+      orElse: () => null,
+    );
     if (generalTag != null && generalTag.id != null) {
       selectedTagIds.add(generalTag.id!);
     }
@@ -101,14 +107,22 @@ Future<bool> showPromptEditDialog(
             AppLabelledField(
               label: l10n.title,
               size: AppFieldSize.regular,
-              child: _dialogField(context, titleCtrl, autofocus: prompt == null && titleCtrl.text.isEmpty),
+              child: _dialogField(
+                context,
+                titleCtrl,
+                autofocus: prompt == null && titleCtrl.text.isEmpty,
+              ),
             ),
             if (tags.isNotEmpty) ...[
               const SizedBox(height: AppSpace.s16),
               AppLabelledField(
                 label: l10n.tagCategory,
                 size: AppFieldSize.regular,
-                child: _TagChips(tags: tags, selectedTagIds: selectedTagIds, setDialogState: setDialogState),
+                child: _TagChips(
+                  tags: tags,
+                  selectedTagIds: selectedTagIds,
+                  setDialogState: setDialogState,
+                ),
               ),
             ],
             const SizedBox(height: AppSpace.s16),
@@ -142,7 +156,11 @@ Future<bool> showPromptEditDialog(
                 content: contentCtrl.text,
                 isMarkdown: isMarkdown,
                 // Read by the add path only: an update never writes the position.
-                sortOrder: prompt?.sortOrder ?? (userPrompts.isEmpty ? 0 : userPrompts.map((p) => p.sortOrder).reduce(math.max) + 1),
+                sortOrder:
+                    prompt?.sortOrder ??
+                    (userPrompts.isEmpty
+                        ? 0
+                        : userPrompts.map((p) => p.sortOrder).reduce(math.max) + 1),
               );
               if (prompt == null) {
                 await appState.addPrompt(data, tagIds: selectedTagIds.toList());
@@ -171,8 +189,7 @@ Future<bool> showSystemPromptEditDialog(
   PresetOutputKind initialOutputKind = PresetOutputKind.prompt,
 }) async {
   final titleCtrl = TextEditingController(text: prompt?.title ?? '');
-  final contentCtrl =
-      MarkdownTextEditingController(text: prompt?.content ?? initialContent ?? '');
+  final contentCtrl = MarkdownTextEditingController(text: prompt?.content ?? initialContent ?? '');
   bool isMarkdown = prompt?.isMarkdown ?? true;
   String selectedType = prompt?.type ?? defaultType;
   // Kept while the type is switched away and back: choosing 「AI 重命名」 by
@@ -181,7 +198,7 @@ Future<bool> showSystemPromptEditDialog(
 
   final Set<int> selectedTagIds = {};
   if (prompt != null) {
-    for (var t in prompt.tags) {
+    for (final t in prompt.tags) {
       if (t.id != null) selectedTagIds.add(t.id!);
     }
   }
@@ -218,8 +235,16 @@ Future<bool> showSystemPromptEditDialog(
                   // instead of overflowing it (`A3e 5g`).
                   expand: true,
                   segments: [
-                    AppSegment(value: 'refiner', label: l10n.typeRefiner, icon: Icons.text_snippet_outlined),
-                    AppSegment(value: 'rename', label: l10n.typeRename, icon: Icons.drive_file_rename_outline),
+                    AppSegment(
+                      value: 'refiner',
+                      label: l10n.typeRefiner,
+                      icon: Icons.text_snippet_outlined,
+                    ),
+                    AppSegment(
+                      value: 'rename',
+                      label: l10n.typeRename,
+                      icon: Icons.drive_file_rename_outline,
+                    ),
                   ],
                   value: selectedType,
                   onChanged: (v) => setDialogState(() => selectedType = v),
@@ -247,7 +272,11 @@ Future<bool> showSystemPromptEditDialog(
                 AppLabelledField(
                   label: l10n.tagCategory,
                   size: AppFieldSize.regular,
-                  child: _TagChips(tags: tags, selectedTagIds: selectedTagIds, setDialogState: setDialogState),
+                  child: _TagChips(
+                    tags: tags,
+                    selectedTagIds: selectedTagIds,
+                    setDialogState: setDialogState,
+                  ),
                 ),
               ],
               const SizedBox(height: AppSpace.s16),
@@ -283,12 +312,20 @@ Future<bool> showSystemPromptEditDialog(
                   outputKind: outputKind,
                   isMarkdown: isMarkdown,
                   // Read by the add path only: an update never writes the position.
-                  sortOrder: prompt?.sortOrder ?? (systemPrompts.isEmpty ? 0 : systemPrompts.map((p) => p.sortOrder).reduce(math.max) + 1),
+                  sortOrder:
+                      prompt?.sortOrder ??
+                      (systemPrompts.isEmpty
+                          ? 0
+                          : systemPrompts.map((p) => p.sortOrder).reduce(math.max) + 1),
                 );
                 if (prompt == null) {
                   await appState.addSystemPrompt(data, tagIds: selectedTagIds.toList());
                 } else {
-                  await appState.updateSystemPrompt(prompt.id!, data, tagIds: selectedTagIds.toList());
+                  await appState.updateSystemPrompt(
+                    prompt.id!,
+                    data,
+                    tagIds: selectedTagIds.toList(),
+                  );
                 }
                 if (context.mounted) Navigator.pop(context, true);
               },
@@ -345,7 +382,11 @@ Future<bool> showTagEditDialog(
                 showColorWheel: true,
               ),
               const SizedBox(height: AppSpace.s16),
-              _CategoryPreview(nameController: nameCtrl, color: Color(selectedColor), count: promptCount),
+              _CategoryPreview(
+                nameController: nameCtrl,
+                color: Color(selectedColor),
+                count: promptCount,
+              ),
             ],
           ),
           actions: [
@@ -365,7 +406,9 @@ Future<bool> showTagEditDialog(
                   // category an ordinary, deletable one.
                   isSystem: tag?.isSystem ?? false,
                   // Read by the add path only: an update never writes the position.
-                  sortOrder: tag?.sortOrder ?? (tags.isEmpty ? 0 : tags.map((t) => t.sortOrder).reduce(math.max) + 1),
+                  sortOrder:
+                      tag?.sortOrder ??
+                      (tags.isEmpty ? 0 : tags.map((t) => t.sortOrder).reduce(math.max) + 1),
                 );
                 if (tag == null) {
                   await appState.addPromptTag(data);
@@ -469,9 +512,9 @@ Future<bool> showBulkDeleteConfirm(
   const int shown = 8;
   final scheme = Theme.of(context).colorScheme;
   final monoStyle = Theme.of(context).textTheme.labelSmall!.mono.copyWith(
-        fontWeight: FontWeight.w400,
-        color: scheme.onSurfaceVariant,
-      );
+    fontWeight: FontWeight.w400,
+    color: scheme.onSurfaceVariant,
+  );
 
   final confirmed = await AppDialog.show<bool>(
     context,
@@ -551,7 +594,9 @@ Future<List<int>?> showBulkCategorizeDialog(
             children: [
               Text(
                 l10n.selectCategoriesToApply,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
               ),
               const SizedBox(height: 12),
               _TagChips(tags: tags, selectedTagIds: targetTagIds, setDialogState: setDialogState),
@@ -563,10 +608,7 @@ Future<List<int>?> showBulkCategorizeDialog(
               variant: AppButtonVariant.text,
               onPressed: () => Navigator.pop(context, false),
             ),
-            AppButton(
-              label: l10n.apply,
-              onPressed: () => Navigator.pop(context, true),
-            ),
+            AppButton(label: l10n.apply, onPressed: () => Navigator.pop(context, true)),
           ],
         );
       },
@@ -638,11 +680,7 @@ class _TagChips extends StatelessWidget {
   final Set<int> selectedTagIds;
   final StateSetter setDialogState;
 
-  const _TagChips({
-    required this.tags,
-    required this.selectedTagIds,
-    required this.setDialogState,
-  });
+  const _TagChips({required this.tags, required this.selectedTagIds, required this.setDialogState});
 
   @override
   Widget build(BuildContext context) {
@@ -699,18 +737,18 @@ class _CategoryPreview extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w500,
-                        color: empty ? scheme.outline : scheme.onSurface,
-                      ),
+                    fontWeight: FontWeight.w500,
+                    color: empty ? scheme.outline : scheme.onSurface,
+                  ),
                 ),
               ),
               const SizedBox(width: AppSpace.s10),
               Text(
                 l10n.promptCount(count),
                 style: Theme.of(context).textTheme.labelSmall!.mono.copyWith(
-                      fontWeight: FontWeight.w400,
-                      color: scheme.onSurfaceVariant,
-                    ),
+                  fontWeight: FontWeight.w400,
+                  color: scheme.onSurfaceVariant,
+                ),
               ),
             ],
           );

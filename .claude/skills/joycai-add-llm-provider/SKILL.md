@@ -66,7 +66,7 @@ a new vendor.
 - [ ] 4. Models with new parameters? Extend layer 3:
       `model_capabilities.dart` (ParamSpec tables) and, if a new family is
       needed, `model_family.dart` + the dispatcher routing.
-- [ ] 5. `flutter analyze` — must report **"No issues found!"**
+- [ ] 5. `dart format lib test tool`, then `flutter analyze` — must report **"No issues found!"**
 - [ ] 6. `flutter test` — the vendor auth tests live in
       `test/services/llm/google_auth_headers_test.dart`; add cases for a new auth scheme.
 
@@ -90,7 +90,7 @@ a new vendor.
       payload — `LLMService._recordUsage` understands OpenAI
       (`prompt_tokens`/`completion_tokens`) and Google
       (`promptTokenCount`/`candidatesTokenCount`) keys.
-- [ ] 6. `flutter analyze` + `flutter test`.
+- [ ] 6. `dart format lib test tool`, `flutter analyze` + `flutter test`.
 
 ## Key types
 

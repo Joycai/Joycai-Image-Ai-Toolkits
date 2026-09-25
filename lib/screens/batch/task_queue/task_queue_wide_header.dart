@@ -11,10 +11,12 @@ extension _WideHeader on _TaskQueueScreenState {
     final textTheme = Theme.of(context).textTheme;
     final queue = Provider.of<AppState>(context, listen: false).taskQueue;
 
-    final VoidCallback? cancelPending =
-        counts.pending == 0 ? null : () => _handleBulkAction('cancel_pending', queue);
-    final VoidCallback? clearCompleted =
-        counts.settled == 0 ? null : () => _handleBulkAction('clear_completed', queue);
+    final VoidCallback? cancelPending = counts.pending == 0
+        ? null
+        : () => _handleBulkAction('cancel_pending', queue);
+    final VoidCallback? clearCompleted = counts.settled == 0
+        ? null
+        : () => _handleBulkAction('clear_completed', queue);
     final VoidCallback? clearAll = counts.clearable == 0 ? null : _confirmClearAll;
 
     final titleStyle = textTheme.titleLarge!;
@@ -35,8 +37,10 @@ extension _WideHeader on _TaskQueueScreenState {
         // An outlined button with an icon: 14 padding either side, a 16 glyph
         // and 8 between it and the label.
         final labelStyle = textTheme.labelLarge!;
-        double labelled(String label) => measureGlassText(context, label, labelStyle) + 14 + 16 + 8 + 14;
-        final labelledWidth = labelled(l10n.cancelAllPending) +
+        double labelled(String label) =>
+            measureGlassText(context, label, labelStyle) + 14 + 16 + 8 + 14;
+        final labelledWidth =
+            labelled(l10n.cancelAllPending) +
             buttonGap +
             labelled(l10n.clearCompleted) +
             buttonGap +
@@ -47,8 +51,8 @@ extension _WideHeader on _TaskQueueScreenState {
         final fit = block + labelledWidth <= room
             ? _HeaderFit.labelled
             : block + iconsWidth <= room
-                ? _HeaderFit.icons
-                : _HeaderFit.folded;
+            ? _HeaderFit.icons
+            : _HeaderFit.folded;
 
         return Row(
           children: [
@@ -95,7 +99,11 @@ extension _WideHeader on _TaskQueueScreenState {
               ),
               const SizedBox(width: buttonGap),
             ] else if (fit == _HeaderFit.icons) ...[
-              AppIconButton(icon: Icons.block, tooltip: l10n.cancelAllPending, onPressed: cancelPending),
+              AppIconButton(
+                icon: Icons.block,
+                tooltip: l10n.cancelAllPending,
+                onPressed: cancelPending,
+              ),
               const SizedBox(width: buttonGap),
               AppIconButton(
                 icon: Icons.cleaning_services_outlined,
@@ -134,8 +142,12 @@ extension _WideHeader on _TaskQueueScreenState {
     );
   }
 
-  MenuItemButton _clearAllItem(ColorScheme scheme, AppLocalizations l10n, VoidCallback? onPressed,
-      {ButtonStyle? style}) {
+  MenuItemButton _clearAllItem(
+    ColorScheme scheme,
+    AppLocalizations l10n,
+    VoidCallback? onPressed, {
+    ButtonStyle? style,
+  }) {
     final enabled = onPressed != null;
     return MenuItemButton(
       style: style,
@@ -165,8 +177,16 @@ extension _WideHeader on _TaskQueueScreenState {
         counts.running > 0 ? scheme.onAccentTint : ink2,
         counts.running > 0 ? FontWeight.w600 : FontWeight.w400,
       ),
-      ('${counts.pending} ${short ? l10n.statusShortPending : l10n.pendingTasks}', ink2, FontWeight.w400),
-      ('${counts.done} ${short ? l10n.statusShortDone : l10n.completedTasks}', ink2, FontWeight.w400),
+      (
+        '${counts.pending} ${short ? l10n.statusShortPending : l10n.pendingTasks}',
+        ink2,
+        FontWeight.w400,
+      ),
+      (
+        '${counts.done} ${short ? l10n.statusShortDone : l10n.completedTasks}',
+        ink2,
+        FontWeight.w400,
+      ),
       (
         '${counts.failed} ${short ? l10n.statusShortFailed : l10n.failedTasks}',
         counts.failed > 0 ? scheme.onErrorContainer : ink2,
@@ -206,13 +226,18 @@ extension _WideHeader on _TaskQueueScreenState {
         // AppSegmentedControl, compact: a 3px track inset, 10 either side of
         // a 14px glyph and 7 before its label.
         final segmentLabels = [l10n.sortNewestFirst, l10n.sortOldestFirst];
-        final sortFull = 6 +
+        final sortFull =
+            6 +
             segmentLabels.fold<double>(
-                0, (sum, label) => sum + 10 + 14 + 7 + measureGlassText(context, label, segLabelStyle) + 10);
+              0,
+              (sum, label) =>
+                  sum + 10 + 14 + 7 + measureGlassText(context, label, segLabelStyle) + 10,
+            );
         final sortIcons = 6 + segmentLabels.length * (10 + 14 + 10.0);
 
         final showPin = listState.filter == TaskFilter.all;
-        final pinLabelWidth = measureGlassText(
+        final pinLabelWidth =
+            measureGlassText(
               context,
               l10n.pinActiveTasks,
               textTheme.bodySmall!.copyWith(fontWeight: FontWeight.w500),
@@ -280,13 +305,13 @@ extension _WideHeader on _TaskQueueScreenState {
   }
 
   List<(TaskFilter, String, int)> _filterEntries(List<TaskItem> queue, AppLocalizations l10n) => [
-        for (final (filter, label) in <(TaskFilter, String)>[
-          (TaskFilter.all, l10n.filterAll),
-          (TaskFilter.running, l10n.processingTasks),
-          (TaskFilter.pending, l10n.pendingTasks),
-          (TaskFilter.done, l10n.completedTasks),
-          (TaskFilter.failed, l10n.failedTasks),
-        ])
-          (filter, label, queue.where(filter.matches).length),
-      ];
+    for (final (filter, label) in <(TaskFilter, String)>[
+      (TaskFilter.all, l10n.filterAll),
+      (TaskFilter.running, l10n.processingTasks),
+      (TaskFilter.pending, l10n.pendingTasks),
+      (TaskFilter.done, l10n.completedTasks),
+      (TaskFilter.failed, l10n.failedTasks),
+    ])
+      (filter, label, queue.where(filter.matches).length),
+  ];
 }

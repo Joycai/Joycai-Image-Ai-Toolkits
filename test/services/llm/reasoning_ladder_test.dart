@@ -8,13 +8,17 @@ import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 /// effect is nothing, so these pin, wire by wire, which rungs each one tells
 /// apart — and that a model whose requests never carry reasoning has none.
 void main() {
-  List<ReasoningEffort?> ladder(String channelType, String modelId,
-          {String? tag, String? wireProtocol}) =>
-      LLMDispatcher.reasoningLadder(
-          channelType: channelType,
-          modelId: modelId,
-          tag: tag,
-          wireProtocol: wireProtocol);
+  List<ReasoningEffort?> ladder(
+    String channelType,
+    String modelId, {
+    String? tag,
+    String? wireProtocol,
+  }) => LLMDispatcher.reasoningLadder(
+    channelType: channelType,
+    modelId: modelId,
+    tag: tag,
+    wireProtocol: wireProtocol,
+  );
 
   const full = <ReasoningEffort?>[
     null,
@@ -26,11 +30,7 @@ void main() {
   ];
 
   // A switch with no intensity: Default (send nothing), an explicit Off, on.
-  const onOff = <ReasoningEffort?>[
-    null,
-    ReasoningEffort.off,
-    ReasoningEffort.medium,
-  ];
+  const onOff = <ReasoningEffort?>[null, ReasoningEffort.off, ReasoningEffort.medium];
 
   test('the OpenAI wire sends every rung as its own value', () {
     expect(ladder(Vendors.openAIRest, 'gpt-5'), full);
@@ -49,31 +49,23 @@ void main() {
     test('a compatible-mode channel pinned to the ④ face', () {
       // Bailian's ④ face takes the manual budget form: on or off.
       expect(
-          ladder(Vendors.dashscope, 'qwen-plus', wireProtocol: 'anthropic-chat'),
-          const <ReasoningEffort?>[null, ReasoningEffort.medium]);
+        ladder(Vendors.dashscope, 'qwen-plus', wireProtocol: 'anthropic-chat'),
+        const <ReasoningEffort?>[null, ReasoningEffort.medium],
+      );
     });
 
     test('a native channel pinned to the ① face', () {
-      expect(
-          ladder(Vendors.dashscopeNative, 'qwen3-max',
-              wireProtocol: 'openai-chat'),
-          onOff);
+      expect(ladder(Vendors.dashscopeNative, 'qwen3-max', wireProtocol: 'openai-chat'), onOff);
     });
 
     test('a compatible-mode channel pinned to the native face', () {
-      expect(
-          ladder(Vendors.dashscope, 'qwen3-max', wireProtocol: 'dashscope-chat'),
-          onOff);
+      expect(ladder(Vendors.dashscope, 'qwen3-max', wireProtocol: 'dashscope-chat'), onOff);
     });
 
     test('a stale or off-menu pin reads as auto, exactly as routing does', () {
-      expect(
-          ladder(Vendors.dashscope, 'qwen-plus', wireProtocol: 'quantum-chat'),
-          onOff);
+      expect(ladder(Vendors.dashscope, 'qwen-plus', wireProtocol: 'quantum-chat'), onOff);
       // The generic ① vendor has no ④ face to pin.
-      expect(
-          ladder(Vendors.openAIRest, 'gpt-5', wireProtocol: 'anthropic-chat'),
-          full);
+      expect(ladder(Vendors.openAIRest, 'gpt-5', wireProtocol: 'anthropic-chat'), full);
     });
   });
 
@@ -99,8 +91,11 @@ void main() {
   });
 
   test('DashScope native is Default, an explicit Off, and on', () {
-    expect(ladder(Vendors.dashscopeNative, 'qwen3-max'),
-        <ReasoningEffort?>[null, ReasoningEffort.off, ReasoningEffort.medium]);
+    expect(ladder(Vendors.dashscopeNative, 'qwen3-max'), <ReasoningEffort?>[
+      null,
+      ReasoningEffort.off,
+      ReasoningEffort.medium,
+    ]);
   });
 
   test('Gemini offers the rungs thinkingConfig tells apart: Max is High', () {

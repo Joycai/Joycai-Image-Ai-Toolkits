@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../../core/app_semantic_colors.dart';
-import '../../core/app_theme.dart';
-import '../../core/design_tokens.dart';
-import '../../l10n/app_localizations.dart';
-import '../../services/llm/channel_probe_service.dart';
-import '../ui/app_button.dart';
+import '../../../core/app_semantic_colors.dart';
+import '../../../core/app_theme.dart';
+import '../../../core/design_tokens.dart';
+import '../../../l10n/app_localizations.dart';
+import '../../../services/llm/channel_probe_service.dart';
+import '../../../widgets/ui/app_button.dart';
 
 /// The verdict of a connection test as a card (`D1b 1c`, six results): a 44
 /// icon plate, a 600 title, an 11px line of detail, and — where trying again
@@ -15,12 +15,7 @@ import '../ui/app_button.dart';
 /// every status the service can return has a card, and the detail line is the
 /// provider's own words where the service passed them on.
 class ChannelProbeResultCard extends StatelessWidget {
-  const ChannelProbeResultCard({
-    super.key,
-    required this.l10n,
-    required this.result,
-    this.onRetry,
-  });
+  const ChannelProbeResultCard({super.key, required this.l10n, required this.result, this.onRetry});
 
   final AppLocalizations l10n;
   final ChannelProbeResult result;
@@ -30,8 +25,7 @@ class ChannelProbeResultCard extends StatelessWidget {
   /// while a probe is already running.
   final VoidCallback? onRetry;
 
-  static String _clip(String s) =>
-      s.length > 160 ? '${s.substring(0, 160)}…' : s;
+  static String _clip(String s) => s.length > 160 ? '${s.substring(0, 160)}…' : s;
 
   @override
   Widget build(BuildContext context) {
@@ -50,68 +44,68 @@ class ChannelProbeResultCard extends StatelessWidget {
       bool retryable,
     ) = switch (result.status) {
       ChannelProbeStatus.ok => (
-          Icons.check_circle,
-          semantic.successContainer,
-          semantic.onSuccessContainer,
-          l10n.probeOk,
-          '${result.modelCount ?? 0} ${l10n.probeModels} · ${l10n.probeOkNext}',
-          null,
-          false,
-        ),
+        Icons.check_circle,
+        semantic.successContainer,
+        semantic.onSuccessContainer,
+        l10n.probeOk,
+        '${result.modelCount ?? 0} ${l10n.probeModels} · ${l10n.probeOkNext}',
+        null,
+        false,
+      ),
       ChannelProbeStatus.connectedNoModels => (
-          Icons.cloud_done,
-          semantic.warningContainer,
-          semantic.onWarningContainer,
-          l10n.probeConnectedNoModels,
-          l10n.probeNoModelsNext,
-          null,
-          false,
-        ),
+        Icons.cloud_done,
+        semantic.warningContainer,
+        semantic.onWarningContainer,
+        l10n.probeConnectedNoModels,
+        l10n.probeNoModelsNext,
+        null,
+        false,
+      ),
       ChannelProbeStatus.authFailed => (
-          Icons.key_off,
-          colorScheme.errorContainer,
-          colorScheme.onErrorContainer,
-          l10n.probeAuthFailed,
-          l10n.probeAuthFailedNext,
-          result.detail,
-          true,
-        ),
+        Icons.key_off,
+        colorScheme.errorContainer,
+        colorScheme.onErrorContainer,
+        l10n.probeAuthFailed,
+        l10n.probeAuthFailedNext,
+        result.detail,
+        true,
+      ),
       ChannelProbeStatus.notAnApi => (
-          Icons.help_outline,
-          colorScheme.errorContainer,
-          colorScheme.onErrorContainer,
-          l10n.probeNotAnApi,
-          l10n.probeNotAnApiNext,
-          result.detail,
-          false,
-        ),
+        Icons.help_outline,
+        colorScheme.errorContainer,
+        colorScheme.onErrorContainer,
+        l10n.probeNotAnApi,
+        l10n.probeNotAnApiNext,
+        result.detail,
+        false,
+      ),
       ChannelProbeStatus.unreachable => (
-          Icons.wifi_off,
-          colorScheme.errorContainer,
-          colorScheme.onErrorContainer,
-          l10n.probeUnreachable,
-          l10n.probeUnreachableNext,
-          result.detail,
-          true,
-        ),
+        Icons.wifi_off,
+        colorScheme.errorContainer,
+        colorScheme.onErrorContainer,
+        l10n.probeUnreachable,
+        l10n.probeUnreachableNext,
+        result.detail,
+        true,
+      ),
       ChannelProbeStatus.upstreamError => (
-          Icons.cloud_off,
-          semantic.warningContainer,
-          semantic.onWarningContainer,
-          l10n.probeUpstreamError,
-          l10n.probeUpstreamErrorNext,
-          result.detail,
-          true,
-        ),
+        Icons.cloud_off,
+        semantic.warningContainer,
+        semantic.onWarningContainer,
+        l10n.probeUpstreamError,
+        l10n.probeUpstreamErrorNext,
+        result.detail,
+        true,
+      ),
       ChannelProbeStatus.notSupported => (
-          Icons.block,
-          semantic.warningContainer,
-          semantic.onWarningContainer,
-          l10n.probeNotSupported,
-          l10n.probeNotSupportedNext,
-          null,
-          false,
-        ),
+        Icons.block,
+        semantic.warningContainer,
+        semantic.onWarningContainer,
+        l10n.probeNotSupported,
+        l10n.probeNotSupportedNext,
+        null,
+        false,
+      ),
     };
 
     return Semantics(
@@ -141,14 +135,18 @@ class ChannelProbeResultCard extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: theme.textTheme.labelLarge
-                        ?.copyWith(fontWeight: FontWeight.w600, color: ink),
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: ink,
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     next,
-                    style: theme.textTheme.labelSmall
-                        ?.copyWith(fontWeight: FontWeight.w400, color: ink),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      fontWeight: FontWeight.w400,
+                      color: ink,
+                    ),
                   ),
                   if (detail != null && detail.isNotEmpty) ...[
                     const SizedBox(height: 2),
@@ -156,8 +154,10 @@ class ChannelProbeResultCard extends StatelessWidget {
                       _clip(detail),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.labelSmall?.mono
-                          .copyWith(fontWeight: FontWeight.w400, color: ink),
+                      style: theme.textTheme.labelSmall?.mono.copyWith(
+                        fontWeight: FontWeight.w400,
+                        color: ink,
+                      ),
                     ),
                   ],
                 ],

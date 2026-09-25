@@ -16,13 +16,13 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 /// The temp directory tree every fixture writes into.
 class FixtureEnv {
   FixtureEnv._(this.root)
-      : dataDir = Directory(p.join(root.path, 'data')),
-        tempDir = Directory(p.join(root.path, 'temp')),
-        docsDir = Directory(p.join(root.path, 'docs')),
-        sourceDir = Directory(p.join(root.path, 'source')),
-        outputDir = Directory(p.join(root.path, 'output')),
-        browserDir = Directory(p.join(root.path, 'browser')),
-        knowledgeDir = Directory(p.join(root.path, 'knowledge'));
+    : dataDir = Directory(p.join(root.path, 'data')),
+      tempDir = Directory(p.join(root.path, 'temp')),
+      docsDir = Directory(p.join(root.path, 'docs')),
+      sourceDir = Directory(p.join(root.path, 'source')),
+      outputDir = Directory(p.join(root.path, 'output')),
+      browserDir = Directory(p.join(root.path, 'browser')),
+      knowledgeDir = Directory(p.join(root.path, 'knowledge'));
 
   final Directory root;
 
@@ -74,9 +74,7 @@ FixtureEnv installFixtureEnv(TestWidgetsFlutterBinding binding) {
   // systemTemp and every test file opens the same database — `flutter test`
   // runs files concurrently, so they race for its lock and whoever does the
   // most I/O loses with "database is locked".
-  final FixtureEnv env = FixtureEnv._(
-    Directory.systemTemp.createTempSync('joycai_ui_shots'),
-  );
+  final FixtureEnv env = FixtureEnv._(Directory.systemTemp.createTempSync('joycai_ui_shots'));
   for (final Directory dir in <Directory>[
     env.dataDir,
     env.tempDir,

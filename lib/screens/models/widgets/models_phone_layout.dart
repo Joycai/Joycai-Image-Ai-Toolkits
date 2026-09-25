@@ -15,12 +15,12 @@ import '../../../widgets/drag/app_reorder_gap.dart';
 import '../../../widgets/glass/app_glass.dart';
 import '../../../widgets/glass/app_glass_menu.dart';
 import '../../../widgets/glass/glass_controls.dart';
-import '../../../widgets/models/channel_avatar.dart';
+import '../../../widgets/models/model_card.dart';
+import '../../../widgets/models/models_controls.dart';
+import 'channel_avatar.dart';
 import 'channel_merge_review.dart';
 import 'channel_row.dart';
-import '../../../widgets/models/model_card.dart';
 import 'models_actions.dart';
-import '../../../widgets/models/models_controls.dart';
 
 /// The phone form (`D1a · 1d`): a G1 top bar — the title, an add action for
 /// whichever tab is showing, and the Models / Channels tabs — over two lists
@@ -52,7 +52,12 @@ class ModelsPhoneLayout extends StatelessWidget {
                 child: TabBarView(
                   children: [
                     _PhoneModelsTab(appState: appState, actions: actions, top: top, bottom: bottom),
-                    _PhoneChannelsTab(appState: appState, actions: actions, top: top, bottom: bottom),
+                    _PhoneChannelsTab(
+                      appState: appState,
+                      actions: actions,
+                      top: top,
+                      bottom: bottom,
+                    ),
                   ],
                 ),
               ),
@@ -82,8 +87,8 @@ class ModelsPhoneLayout extends StatelessWidget {
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                            color: GlassInk.maybeOf(context)?.ink,
-                                          ),
+                                        color: GlassInk.maybeOf(context)?.ink,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -102,8 +107,9 @@ class ModelsPhoneLayout extends StatelessWidget {
                                         GlassIconButton(
                                           icon: Icons.add,
                                           tooltip: onModels ? l10n.addModel : l10n.addChannel,
-                                          onPressed:
-                                              onModels ? () => actions.addModel(null) : actions.addChannel,
+                                          onPressed: onModels
+                                              ? () => actions.addModel(null)
+                                              : actions.addChannel,
                                         ),
                                       ],
                                     );
@@ -221,36 +227,40 @@ class _PhoneModelsTab extends StatelessWidget {
     final entries = <WidgetBuilder>[];
 
     Widget card(LLMModel model, LLMChannel channel, {required bool named}) => Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: ModelCard(
-            model: model,
-            channel: channel,
-            feeGroup: groups[model.feeGroupId],
-            size: ModelCardSize.phone,
-            showChannel: named,
-            onTap: () => actions.editModel(model),
-          ),
-        );
+      padding: const EdgeInsets.only(bottom: 8),
+      child: ModelCard(
+        model: model,
+        channel: channel,
+        feeGroup: groups[model.feeGroupId],
+        size: ModelCardSize.phone,
+        showChannel: named,
+        onTap: () => actions.editModel(model),
+      ),
+    );
 
     if (listState.groupByChannel) {
       for (final (i, channel) in channels.indexed) {
         final models = listState.arrange(appState.getModelsForChannel(channel.id));
-        entries.add((_) => _PhoneChannelSection(
-              channel: channel,
-              modelCount: models.length,
-              first: i == 0,
-              actions: actions,
-            ));
+        entries.add(
+          (_) => _PhoneChannelSection(
+            channel: channel,
+            modelCount: models.length,
+            first: i == 0,
+            actions: actions,
+          ),
+        );
         if (models.isEmpty) {
-          entries.add((context) => Padding(
-                padding: const EdgeInsets.only(left: 4, bottom: 8),
-                child: Text(
-                  l10n.noModelsConfigured,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.outline,
-                      ),
-                ),
-              ));
+          entries.add(
+            (context) => Padding(
+              padding: const EdgeInsets.only(left: 4, bottom: 8),
+              child: Text(
+                l10n.noModelsConfigured,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.outline),
+              ),
+            ),
+          );
         }
         for (final model in models) {
           entries.add((_) => card(model, channel, named: false));

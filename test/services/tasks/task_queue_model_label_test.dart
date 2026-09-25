@@ -20,21 +20,19 @@ void main() {
   usePrivateDataDir('joycai_task_label_test');
 
   Future<int> addModel({required String modelId, required String modelName}) =>
-      DatabaseService().addModel(LLMModel(
-        modelId: modelId,
-        modelName: modelName,
-        tag: 'chat',
-      ));
+      DatabaseService().addModel(LLMModel(modelId: modelId, modelName: modelName, tag: 'chat'));
 
   Future<void> storeTask(String id, {required String modelId, int? modelDbId}) =>
-      DatabaseService().saveTask(TaskItem(
-        id: id,
-        imagePaths: const <String>[],
-        modelId: modelId,
-        modelDbId: modelDbId,
-        parameters: const <String, dynamic>{},
-        status: TaskStatus.completed,
-      ));
+      DatabaseService().saveTask(
+        TaskItem(
+          id: id,
+          imagePaths: const <String>[],
+          modelId: modelId,
+          modelDbId: modelDbId,
+          parameters: const <String, dynamic>{},
+          status: TaskStatus.completed,
+        ),
+      );
 
   /// A service that has finished loading [holding]'s row, and runs nothing:
   /// the queue is what is under test, not the executors.
@@ -43,8 +41,11 @@ void main() {
     for (var i = 0; i < 200 && !service.queue.any((t) => t.id == holding); i++) {
       await Future<void>.delayed(const Duration(milliseconds: 10));
     }
-    expect(service.queue.any((t) => t.id == holding), isTrue,
-        reason: 'the service never finished loading its rows');
+    expect(
+      service.queue.any((t) => t.id == holding),
+      isTrue,
+      reason: 'the service never finished loading its rows',
+    );
     service.updateConcurrency(0);
     return service;
   }
@@ -64,12 +65,21 @@ void main() {
     final dbId = await addModel(modelId: 'gemini-3.5-flash', modelName: 'Gemini 3.5 Flash');
     final service = await idleService();
 
-    await service.addTask(const <String>[], dbId, const <String, dynamic>{},
-        type: TaskType.promptRefine, useStream: false, id: 'refine-1');
+    await service.addTask(
+      const <String>[],
+      dbId,
+      const <String, dynamic>{},
+      type: TaskType.promptRefine,
+      useStream: false,
+      id: 'refine-1',
+    );
 
     final task = added(service, 'refine-1');
-    expect(task.modelId, 'Gemini 3.5 Flash',
-        reason: 'the card would show the primary key instead of the name');
+    expect(
+      task.modelId,
+      'Gemini 3.5 Flash',
+      reason: 'the card would show the primary key instead of the name',
+    );
     expect(task.modelDbId, dbId, reason: 'routing still goes by the row id');
   });
 
@@ -77,8 +87,14 @@ void main() {
     final dbId = await addModel(modelId: 'qwen-image-edit', modelName: '');
     final service = await idleService();
 
-    await service.addTask(const <String>[], dbId, const <String, dynamic>{},
-        type: TaskType.promptRefine, useStream: false, id: 'refine-2');
+    await service.addTask(
+      const <String>[],
+      dbId,
+      const <String, dynamic>{},
+      type: TaskType.promptRefine,
+      useStream: false,
+      id: 'refine-2',
+    );
 
     expect(added(service, 'refine-2').modelId, 'qwen-image-edit');
   });
@@ -89,8 +105,11 @@ void main() {
 
     final service = await serviceHolding('legacy-1');
 
-    expect(added(service, 'legacy-1').modelId, 'Veo 4',
-        reason: 'tasks queued before the fix keep showing the primary key');
+    expect(
+      added(service, 'legacy-1').modelId,
+      'Veo 4',
+      reason: 'tasks queued before the fix keep showing the primary key',
+    );
   });
 
   test('a title that is not the row id is left alone', () async {
@@ -106,8 +125,13 @@ void main() {
     final dbId = await addModel(modelId: 'gpt-image-2', modelName: 'GPT Image 2');
     final service = await idleService();
 
-    await service.addTask(const <String>[], dbId, const <String, dynamic>{},
-        modelIdDisplay: '[R]gpt-image-2', id: 'image-1');
+    await service.addTask(
+      const <String>[],
+      dbId,
+      const <String, dynamic>{},
+      modelIdDisplay: '[R]gpt-image-2',
+      id: 'image-1',
+    );
 
     expect(added(service, 'image-1').modelId, '[R]gpt-image-2');
   });

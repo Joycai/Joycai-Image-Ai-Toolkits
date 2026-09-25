@@ -40,14 +40,16 @@ void main() {
 
       // Identified from the bytes, not from the name we gave it.
       final decoded = img.findFormatForData(bytes);
-      expect(decoded, img.findFormatForData(File(source).readAsBytesSync()),
-          reason: 'a .$format target must contain $format bytes');
+      expect(
+        decoded,
+        img.findFormatForData(File(source).readAsBytesSync()),
+        reason: 'a .$format target must contain $format bytes',
+      );
       expect(img.decodeImage(bytes)?.width, 4);
     });
   }
 
-  test('a format that cannot be encoded fails loudly instead of writing PNG',
-      () async {
+  test('a format that cannot be encoded fails loudly instead of writing PNG', () async {
     // .avif is the case that actually occurs: AppConstants.isImageFile accepts
     // it, and `image` decodes but cannot encode it.
     final source = writeSource('png');
@@ -68,9 +70,11 @@ void main() {
     File(target).writeAsBytesSync([1, 2, 3]);
 
     expect(
-      () => ImageProcessingService()
-          .saveImage(bytes: img.encodePng(img.Image(width: 1, height: 1)),
-              targetPath: target, allowOverwrite: false),
+      () => ImageProcessingService().saveImage(
+        bytes: img.encodePng(img.Image(width: 1, height: 1)),
+        targetPath: target,
+        allowOverwrite: false,
+      ),
       throwsA(isA<FileSystemException>()),
     );
 

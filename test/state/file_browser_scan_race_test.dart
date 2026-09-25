@@ -57,8 +57,7 @@ void main() {
     await state.refresh();
     await superseded;
 
-    expect(state.allFiles, isEmpty,
-        reason: 'the superseded scan put the turned-off folder back');
+    expect(state.allFiles, isEmpty, reason: 'the superseded scan put the turned-off folder back');
     expect(state.isScanning, isFalse);
     state.dispose();
   });

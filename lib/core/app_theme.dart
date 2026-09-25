@@ -129,9 +129,17 @@ class _ErrorRoles {
   final Color onContainer;
 
   static const light = _ErrorRoles(
-    Color(0xFFC2312F), Color(0xFFFFFFFF), Color(0xFFFBE0DF), Color(0xFF8C1F1E));
+    Color(0xFFC2312F),
+    Color(0xFFFFFFFF),
+    Color(0xFFFBE0DF),
+    Color(0xFF8C1F1E),
+  );
   static const dark = _ErrorRoles(
-    Color(0xFFF0655F), Color(0xFF2A0B0A), Color(0xFF4A1E1C), Color(0xFFFFC2BE));
+    Color(0xFFF0655F),
+    Color(0xFF2A0B0A),
+    Color(0xFF4A1E1C),
+    Color(0xFFFFC2BE),
+  );
 }
 
 /// The app's palette: accents from the pair, greys from [_Neutrals], status
@@ -146,10 +154,7 @@ class _ErrorRoles {
 ///   (Orange in light; every dark half).
 /// - `onPrimaryFixedVariant` (light) / `primaryFixedDim` (dark): `--p-deep`,
 ///   tone 30 / tone 80 — see [AppAccent.onAccentTint].
-ColorScheme buildAppColorScheme({
-  required ThemeAccent accent,
-  required Brightness brightness,
-}) {
+ColorScheme buildAppColorScheme({required ThemeAccent accent, required Brightness brightness}) {
   // Memoised: the theme-colour picker builds both schemes of every preset on
   // each rebuild, and each `fromSeed` is ~50 HCT solves.
   final cached = _schemeCache[(accent, brightness)];
@@ -221,15 +226,15 @@ ThemeData buildAppTheme({
     // ground asks for its role explicitly.
     scaffoldBackgroundColor: Colors.transparent,
     canvasColor: colorScheme.surface,
-    extensions: [
-      brightness == Brightness.dark ? AppSemanticColors.dark : AppSemanticColors.light,
-    ],
+    extensions: [brightness == Brightness.dark ? AppSemanticColors.dark : AppSemanticColors.light],
     inputDecorationTheme: _buildInputDecorationTheme(colorScheme),
     switchTheme: _buildSwitchTheme(colorScheme),
     checkboxTheme: _buildCheckboxTheme(colorScheme),
     radioTheme: RadioThemeData(
-      fillColor: WidgetStateProperty.resolveWith((states) =>
-          states.contains(WidgetState.selected) ? colorScheme.primary : colorScheme.outline),
+      fillColor: WidgetStateProperty.resolveWith(
+        (states) =>
+            states.contains(WidgetState.selected) ? colorScheme.primary : colorScheme.outline,
+      ),
       visualDensity: VisualDensity.compact,
     ),
     // `01 · 1h`: an opaque panel at r22 over the scheme's scrim.
@@ -259,18 +264,16 @@ ThemeData buildAppTheme({
     menuTheme: MenuThemeData(
       style: MenuStyle(
         backgroundColor: WidgetStatePropertyAll(colorScheme.surface),
-        shape: WidgetStatePropertyAll(RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          side: BorderSide(color: colorScheme.outlineVariant),
-        )),
+        shape: WidgetStatePropertyAll(
+          RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            side: BorderSide(color: colorScheme.outlineVariant),
+          ),
+        ),
         padding: const WidgetStatePropertyAll(EdgeInsets.all(AppSpace.s6)),
       ),
     ),
-    dividerTheme: DividerThemeData(
-      color: colorScheme.outlineVariant,
-      thickness: 1,
-      space: 1,
-    ),
+    dividerTheme: DividerThemeData(color: colorScheme.outlineVariant, thickness: 1, space: 1),
     // `00 · 1f` 「列表行」: 40 tall, r10, a 12% wash under the deep ink when
     // selected.
     listTileTheme: ListTileThemeData(
@@ -464,9 +467,9 @@ ThemeData buildAppTheme({
 /// expressible through [InputDecoration]; `AppTextField` draws it.
 InputDecorationTheme _buildInputDecorationTheme(ColorScheme colorScheme) {
   OutlineInputBorder border(Color color, double width) => OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppRadius.control),
-        borderSide: BorderSide(color: color, width: width),
-      );
+    borderRadius: BorderRadius.circular(AppRadius.control),
+    borderSide: BorderSide(color: color, width: width),
+  );
 
   return InputDecorationTheme(
     filled: false,
@@ -507,7 +510,9 @@ SwitchThemeData _buildSwitchTheme(ColorScheme colorScheme) {
           : colorScheme.surfaceContainerHighest;
     }),
     trackOutlineColor: WidgetStateProperty.resolveWith((states) {
-      return states.contains(WidgetState.selected) ? Colors.transparent : colorScheme.outlineVariant;
+      return states.contains(WidgetState.selected)
+          ? Colors.transparent
+          : colorScheme.outlineVariant;
     }),
     thumbIcon: const WidgetStatePropertyAll(null),
   );
@@ -552,11 +557,8 @@ CheckboxThemeData _buildCheckboxTheme(ColorScheme colorScheme) {
 ///
 /// Mono 12 / 11 is a role, not a slot: `style.mono`.
 TextTheme _buildTextTheme(ColorScheme colorScheme, String? fontFamily) {
-  TextStyle slot(double size, FontWeight weight) => TextStyle(
-        fontSize: size,
-        fontWeight: weight,
-        letterSpacing: AppType.trackingFor(size),
-      );
+  TextStyle slot(double size, FontWeight weight) =>
+      TextStyle(fontSize: size, fontWeight: weight, letterSpacing: AppType.trackingFor(size));
 
   final merged = TextTheme(
     headlineLarge: slot(28, FontWeight.w600),
@@ -578,8 +580,8 @@ TextTheme _buildTextTheme(ColorScheme colorScheme, String? fontFamily) {
 
 Color _navInk(ColorScheme colorScheme, Set<WidgetState> states) =>
     states.contains(WidgetState.disabled)
-        ? colorScheme.onSurface.withValues(alpha: AppAlpha.disabled)
-        : colorScheme.navForeground(selected: states.contains(WidgetState.selected));
+    ? colorScheme.onSurface.withValues(alpha: AppAlpha.disabled)
+    : colorScheme.navForeground(selected: states.contains(WidgetState.selected));
 
 /// The scheme a destructive *fill* takes its colours from.
 ///
@@ -588,10 +590,9 @@ Color _navInk(ColorScheme colorScheme, Set<WidgetState> states) =>
 /// white at only ~3:1, so the fill keeps the light red in both — the same
 /// committed weight as the primary CTA, differing only in hue.
 ColorScheme errorFillScheme() {
-  return ColorScheme.fromSeed(seedColor: _ErrorRoles.light.error).copyWith(
-    primary: _ErrorRoles.light.error,
-    onPrimary: _ErrorRoles.light.onError,
-  );
+  return ColorScheme.fromSeed(
+    seedColor: _ErrorRoles.light.error,
+  ).copyWith(primary: _ErrorRoles.light.error, onPrimary: _ErrorRoles.light.onError);
 }
 
 /// The monospaced faces to ask for, best first. The design sets numbers,
@@ -641,18 +642,18 @@ extension AppTextScaleMetrics on TextStyle {
   /// `inherit: true` is forced: `TextStyle.merge` returns the incoming style
   /// wholesale when it is false, dropping the colour this exists to inherit.
   TextStyle get metricsOnly => const TextStyle().copyWith(
-        inherit: true,
-        fontFamily: fontFamily,
-        fontFamilyFallback: fontFamilyFallback,
-        fontSize: fontSize,
-        fontWeight: fontWeight,
-        fontStyle: fontStyle,
-        letterSpacing: letterSpacing,
-        wordSpacing: wordSpacing,
-        height: height,
-        leadingDistribution: leadingDistribution,
-        textBaseline: textBaseline,
-        fontFeatures: fontFeatures,
-        fontVariations: fontVariations,
-      );
+    inherit: true,
+    fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
+    fontSize: fontSize,
+    fontWeight: fontWeight,
+    fontStyle: fontStyle,
+    letterSpacing: letterSpacing,
+    wordSpacing: wordSpacing,
+    height: height,
+    leadingDistribution: leadingDistribution,
+    textBaseline: textBaseline,
+    fontFeatures: fontFeatures,
+    fontVariations: fontVariations,
+  );
 }

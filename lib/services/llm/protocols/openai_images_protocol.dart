@@ -14,8 +14,7 @@ import 'protocol.dart';
 /// singular — sending `image[]` for a single picture 400s there, while
 /// `image` is accepted everywhere a single picture is. So the field name
 /// follows the count instead of being the plural always.
-String openaiImageEditFieldName(int imageCount) =>
-    imageCount > 1 ? 'image[]' : 'image';
+String openaiImageEditFieldName(int imageCount) => imageCount > 1 ? 'image[]' : 'image';
 
 /// Native OpenAI image generation / editing:
 /// `POST /images/generations` (JSON) and `POST /images/edits` (multipart).
@@ -32,10 +31,7 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
     LLMLogger? logger,
   }) async {
     final config = target.config;
-    final userMsg = history.lastWhere(
-      (m) => m.role == LLMRole.user,
-      orElse: () => history.last,
-    );
+    final userMsg = history.lastWhere((m) => m.role == LLMRole.user, orElse: () => history.last);
     final prompt = userMsg.content;
 
     // Cap the reference images to what the model accepts (gpt-image-1: 16).
@@ -50,10 +46,12 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
     // With input images this is an *edit*; otherwise a text-to-image generation.
     final isEdit = inputImages.isNotEmpty;
     final url = Uri.parse('$baseUrl/images/${isEdit ? 'edits' : 'generations'}');
-    logger?.call('Preparing OpenAI Images request (${isEdit ? 'edit' : 'generate'}) to: ${url.host}', level: 'DEBUG');
+    logger?.call(
+      'Preparing OpenAI Images request (${isEdit ? 'edit' : 'generate'}) to: ${url.host}',
+      level: 'DEBUG',
+    );
 
-    final size = resolveImageSize(
-        optionsWithCheckedSize(target, options, logger: logger));
+    final size = resolveImageSize(optionsWithCheckedSize(target, options, logger: logger));
     final quality = _resolveQuality(options);
     final client = config.createClient();
     // Files actually attached to the edit — an unreadable attachment is not.
@@ -64,8 +62,11 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
 
       if (isEdit) {
         // Abortable like every non-streaming send (see sendJsonRequest).
-        final request = http.AbortableMultipartRequest('POST', url,
-            abortTrigger: abortTriggerOf(options));
+        final request = http.AbortableMultipartRequest(
+          'POST',
+          url,
+          abortTrigger: abortTriggerOf(options),
+        );
         // Auth comes from the vendor profile (layer 2) like every other
         // surface — a hardcoded bearer header worked only because today's
         // OpenAI-family vendors all happen to use one, and would have failed
@@ -87,12 +88,9 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
           if (bytes == null) continue;
           // With an explicit Content-Type per part — see [imageMultipartFile]
           // for the relay that 400s on the octet-stream default.
-          request.files.add(imageMultipartFile(
-            field,
-            bytes,
-            declaredMime: att.mimeType,
-            baseName: 'image_$i',
-          ));
+          request.files.add(
+            imageMultipartFile(field, bytes, declaredMime: att.mimeType, baseName: 'image_$i'),
+          );
           sentImages++;
         }
 
@@ -124,8 +122,13 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
           });
         }
 
-        response = await sendJsonRequest(client, url,
-            headers: headers, body: jsonEncode(payload), options: options);
+        response = await sendJsonRequest(
+          client,
+          url,
+          headers: headers,
+          body: jsonEncode(payload),
+          options: options,
+        );
       }
 
       if (debugFile != null) {
@@ -148,16 +151,18 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
       final refs = <String>[
         for (final item in items)
           if (item is Map)
-            if (item['b64_json'] is String &&
-                (item['b64_json'] as String).isNotEmpty)
+            if (item['b64_json'] is String && (item['b64_json'] as String).isNotEmpty)
               item['b64_json'] as String
-            else if (item['url'] is String &&
-                (item['url'] as String).isNotEmpty)
+            else if (item['url'] is String && (item['url'] as String).isNotEmpty)
               item['url'] as String,
       ];
-      final images = await resolveImageRefs(refs, client, logger,
-          source: 'OpenAI Images API',
-          abortTrigger: abortTriggerOf(options));
+      final images = await resolveImageRefs(
+        refs,
+        client,
+        logger,
+        source: 'OpenAI Images API',
+        abortTrigger: abortTriggerOf(options),
+      );
 
       if (images.isEmpty) {
         // The Images API has exactly one deliverable. Returning an empty
@@ -165,8 +170,10 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
         // that produced nothing, which is indistinguishable from a model
         // refusing — so say what actually came back instead.
         final body = response.body;
-        throw LLMApiException('OpenAI Images API returned no image: '
-            '${body.length > 500 ? '${body.substring(0, 500)}…' : body}');
+        throw LLMApiException(
+          'OpenAI Images API returned no image: '
+          '${body.length > 500 ? '${body.substring(0, 500)}…' : body}',
+        );
       }
 
       logger?.call('Images parse complete. Images: ${images.length}', level: 'DEBUG');

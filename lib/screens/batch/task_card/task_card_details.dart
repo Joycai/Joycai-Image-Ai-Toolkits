@@ -45,7 +45,11 @@ class TaskExpandedDetails extends StatelessWidget {
             }
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [left, const SizedBox(height: _gap), right],
+              children: [
+                left,
+                const SizedBox(height: _gap),
+                right,
+              ],
             );
           },
         ),
@@ -209,7 +213,8 @@ class _DetailPanes extends StatelessWidget {
     // The prompt is already in the fact table beside this card.
     final params = [
       for (final entry in task.parameters.entries)
-        if (entry.key != 'prompt' && '${entry.value ?? ''}'.isNotEmpty) '${entry.key}: ${entry.value}',
+        if (entry.key != 'prompt' && '${entry.value ?? ''}'.isNotEmpty)
+          '${entry.key}: ${entry.value}',
     ];
 
     return Column(
@@ -242,8 +247,11 @@ class _DetailPanes extends StatelessWidget {
                 ),
           child: task.resultPaths.isEmpty
               ? (task.status == TaskStatus.failed
-                  ? Text(l10n.taskNoOutputsFailed, style: mono.copyWith(color: scheme.onSurfaceVariant))
-                  : dash)
+                    ? Text(
+                        l10n.taskNoOutputsFailed,
+                        style: mono.copyWith(color: scheme.onSurfaceVariant),
+                      )
+                    : dash)
               : Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [

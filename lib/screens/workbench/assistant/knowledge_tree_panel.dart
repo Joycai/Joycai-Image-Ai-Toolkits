@@ -84,11 +84,7 @@ class KnowledgeTreePanel extends StatefulWidget {
   /// per-row badges, which folders start open, and the footer count.
   final List<OptimizerChatEntry> pendingKbEdits;
 
-  const KnowledgeTreePanel({
-    super.key,
-    required this.kbPath,
-    this.pendingKbEdits = const [],
-  });
+  const KnowledgeTreePanel({super.key, required this.kbPath, this.pendingKbEdits = const []});
 
   @override
   State<KnowledgeTreePanel> createState() => _KnowledgeTreePanelState();
@@ -145,8 +141,7 @@ class _KnowledgeTreePanelState extends State<KnowledgeTreePanel> {
     // would be synchronous IO for a tree that cannot have changed.
     // …except when an edit is *answered*, which is when a create appears on
     // disk. Cheap to detect: the pending count only ever falls that way.
-    if (widget.kbPath != old.kbPath ||
-        old.pendingKbEdits.length > widget.pendingKbEdits.length) {
+    if (widget.kbPath != old.kbPath || old.pendingKbEdits.length > widget.pendingKbEdits.length) {
       _load();
     }
   }
@@ -216,9 +211,9 @@ class _KnowledgeTreePanelState extends State<KnowledgeTreePanel> {
   /// Staged edits by target path, so a row can find its own in one lookup
   /// rather than scanning the list per row.
   Map<String, OptimizerChatEntry> get _editsByPath => {
-        for (final e in widget.pendingKbEdits)
-          if (e.targetPath != null) e.targetPath!: e,
-      };
+    for (final e in widget.pendingKbEdits)
+      if (e.targetPath != null) e.targetPath!: e,
+  };
 
   /// The scanned tree plus the files the agent has proposed creating.
   ///
@@ -362,10 +357,7 @@ class _KnowledgeTreePanelState extends State<KnowledgeTreePanel> {
                         style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
                       ),
                     ),
-                    if (count != null) ...[
-                      const SizedBox(width: AppSpace.s6),
-                      count,
-                    ],
+                    if (count != null) ...[const SizedBox(width: AppSpace.s6), count],
                   ],
                 )
               else
@@ -566,8 +558,8 @@ class _KnowledgeTreePanelState extends State<KnowledgeTreePanel> {
           borderRadius: BorderRadius.circular(AppRadius.sm),
           onTap: entry.isDir
               ? () => setState(() {
-                    if (!_expanded.remove(entry.relPath)) _expanded.add(entry.relPath);
-                  })
+                  if (!_expanded.remove(entry.relPath)) _expanded.add(entry.relPath);
+                })
               : () => _openFile(entry.relPath),
           child: SizedBox(
             height: density.row,

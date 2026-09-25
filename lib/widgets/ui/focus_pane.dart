@@ -72,8 +72,7 @@ class FocusPane extends StatefulWidget {
   /// The region that owns the keyboard right now, or null when none does —
   /// a legal state (just after a screen opens, or after a click on the
   /// chrome), in which no pane-level key is claimed at all.
-  static final ValueNotifier<ShortcutPane?> active =
-      ValueNotifier<ShortcutPane?>(null);
+  static final ValueNotifier<ShortcutPane?> active = ValueNotifier<ShortcutPane?>(null);
 
   /// *Which* pane made the current claim, as an object rather than a name.
   ///
@@ -96,8 +95,7 @@ class FocusPane extends StatefulWidget {
   /// True outside any pane, so a widget reused off a pane keeps its normal
   /// look.
   static bool activeOf(BuildContext context) =>
-      context.dependOnInheritedWidgetOfExactType<_PaneActiveScope>()?.active ??
-      true;
+      context.dependOnInheritedWidgetOfExactType<_PaneActiveScope>()?.active ?? true;
 
   @override
   State<FocusPane> createState() => _FocusPaneState();
@@ -211,6 +209,5 @@ class _PaneActiveScope extends InheritedWidget {
   final bool active;
 
   @override
-  bool updateShouldNotify(_PaneActiveScope oldWidget) =>
-      oldWidget.active != active;
+  bool updateShouldNotify(_PaneActiveScope oldWidget) => oldWidget.active != active;
 }

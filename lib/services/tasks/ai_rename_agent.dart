@@ -30,11 +30,11 @@ class RenameProposal {
   });
 
   RenameProposal copyWith({String? newName, bool? overwrite}) => RenameProposal(
-        path: path,
-        oldName: oldName,
-        newName: newName ?? this.newName,
-        overwrite: overwrite ?? this.overwrite,
-      );
+    path: path,
+    oldName: oldName,
+    newName: newName ?? this.newName,
+    overwrite: overwrite ?? this.overwrite,
+  );
 }
 
 /// A batch ended without the model ever calling a tool, even after one nudge,
@@ -46,7 +46,8 @@ class AiRenameNoToolCallsException implements Exception {
   const AiRenameNoToolCallsException(this.fileCount);
 
   @override
-  String toString() => 'The model answered without calling any tool, twice, so '
+  String toString() =>
+      'The model answered without calling any tool, twice, so '
       'none of the $fileCount file(s) in this batch were renamed. It may not '
       'support tool calling.';
 }
@@ -68,9 +69,28 @@ class AiRenameNoToolCallsException implements Exception {
 class AiRenameAgent {
   static const String _windowsIllegal = r'<>:"/\|?*';
   static const Set<String> _windowsReserved = {
-    'CON', 'PRN', 'AUX', 'NUL',
-    'COM1', 'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 'COM7', 'COM8', 'COM9',
-    'LPT1', 'LPT2', 'LPT3', 'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9',
+    'CON',
+    'PRN',
+    'AUX',
+    'NUL',
+    'COM1',
+    'COM2',
+    'COM3',
+    'COM4',
+    'COM5',
+    'COM6',
+    'COM7',
+    'COM8',
+    'COM9',
+    'LPT1',
+    'LPT2',
+    'LPT3',
+    'LPT4',
+    'LPT5',
+    'LPT6',
+    'LPT7',
+    'LPT8',
+    'LPT9',
   };
 
   static const int _maxTurns = 16;
@@ -83,16 +103,15 @@ class AiRenameAgent {
   static final List<LLMTool> _tools = [
     LLMTool(
       name: 'list_files',
-      description: 'List the files selected for renaming. Returns a JSON array of '
+      description:
+          'List the files selected for renaming. Returns a JSON array of '
           '{id, name, category} objects.',
-      parameters: {
-        'type': 'object',
-        'properties': <String, dynamic>{},
-      },
+      parameters: {'type': 'object', 'properties': <String, dynamic>{}},
     ),
     LLMTool(
       name: 'rename_file',
-      description: 'Propose a new file name for one file, identified by its id '
+      description:
+          'Propose a new file name for one file, identified by its id '
           'from list_files. The rename is staged, not applied immediately. Call '
           'this once per file that should be renamed. Keep the original file '
           'extension unless instructed otherwise.',
@@ -167,8 +186,10 @@ class AiRenameAgent {
       );
       onBatchProgress?.call(batch + 1, totalBatches);
       if (totalBatches > 1) {
-        onLog?.call('Batch ${batch + 1}/$totalBatches: ${chunk.length} file(s) '
-            '(${start + 1}-${start + chunk.length} of ${filesData.length}).');
+        onLog?.call(
+          'Batch ${batch + 1}/$totalBatches: ${chunk.length} file(s) '
+          '(${start + 1}-${start + chunk.length} of ${filesData.length}).',
+        );
       }
 
       try {
@@ -190,14 +211,11 @@ class AiRenameAgent {
         // server is likely misconfigured; surface the error to the caller.
         if (proposals.isEmpty && batch == 0) rethrow;
         consecutiveFailures++;
-        onBatchFailed?.call(
-          batch + 1,
-          totalBatches,
-          e,
-          [for (final f in chunk) f['path'] ?? ''],
+        onBatchFailed?.call(batch + 1, totalBatches, e, [for (final f in chunk) f['path'] ?? '']);
+        onLog?.call(
+          'Batch ${batch + 1}/$totalBatches failed: $e — '
+          'keeping the ${proposals.length} rename(s) staged so far.',
         );
-        onLog?.call('Batch ${batch + 1}/$totalBatches failed: $e — '
-            'keeping the ${proposals.length} rename(s) staged so far.');
         if (consecutiveFailures >= 2) {
           onLog?.call('Two consecutive batches failed — stopping early.');
           break;
@@ -222,13 +240,11 @@ class AiRenameAgent {
     Future<LLMResponse> Function(List<LLMMessage> messages, List<LLMTool> tools)? request,
   }) async {
     final messages = <LLMMessage>[
-      LLMMessage(
-        role: LLMRole.system,
-        content: _buildSystemPrompt(systemPrompt),
-      ),
+      LLMMessage(role: LLMRole.system, content: _buildSystemPrompt(systemPrompt)),
       LLMMessage(
         role: LLMRole.user,
-        content: 'User instructions: '
+        content:
+            'User instructions: '
             '${(instructions == null || instructions.trim().isEmpty) ? "No additional instructions." : instructions.trim()}\n\n'
             'There are ${chunk.length} file(s) selected. '
             'Use the list_files tool to read them, then stage a rename for each file with the rename_file tool.',
@@ -248,20 +264,20 @@ class AiRenameAgent {
         response = request != null
             ? await request(List.of(messages), _tools)
             : await LLMService().request(
-          modelIdentifier: modelIdentifier,
-          messages: messages,
-          tools: _tools,
-          contextId: contextId,
-          // A rename batch is many small calls rather than one long answer,
-          // so this is not the deadline fix it is for the Prompt Assistant —
-          // but the same routing decision applies, and a chunked request is
-          // the one that survives a slow relay.
-          useStream: true,
-          // Same reason as the Prompt Assistant: the check above only fires
-          // between turns, so without this a closed dialog left the current
-          // request (and its retries) running to completion.
-          isCancelled: isCancelled,
-        );
+                modelIdentifier: modelIdentifier,
+                messages: messages,
+                tools: _tools,
+                contextId: contextId,
+                // A rename batch is many small calls rather than one long answer,
+                // so this is not the deadline fix it is for the Prompt Assistant —
+                // but the same routing decision applies, and a chunked request is
+                // the one that survives a slow relay.
+                useStream: true,
+                // Same reason as the Prompt Assistant: the check above only fires
+                // between turns, so without this a closed dialog left the current
+                // request (and its retries) running to completion.
+                isCancelled: isCancelled,
+              );
       } on LLMCancelled {
         return;
       }
@@ -275,17 +291,22 @@ class AiRenameAgent {
         // staging them. Ask once; a second tool-free reply fails the batch.
         if (nudged) throw AiRenameNoToolCallsException(chunk.length);
         nudged = true;
-        onLog?.call('The model answered without calling any tool — asking it '
-            'once more to use the tools.');
+        onLog?.call(
+          'The model answered without calling any tool — asking it '
+          'once more to use the tools.',
+        );
         if (response.text.trim().isNotEmpty) {
           messages.add(LLMMessage(role: LLMRole.assistant, content: response.text));
         }
-        messages.add(LLMMessage(
-          role: LLMRole.user,
-          content: 'You have not called any tool, so nothing has been renamed '
-              'yet. Call list_files, then call rename_file once for each file '
-              'that should be renamed.',
-        ));
+        messages.add(
+          LLMMessage(
+            role: LLMRole.user,
+            content:
+                'You have not called any tool, so nothing has been renamed '
+                'yet. Call list_files, then call rename_file once for each file '
+                'that should be renamed.',
+          ),
+        );
         continue;
       }
       usedTools = true;
@@ -293,19 +314,21 @@ class AiRenameAgent {
       // Echo the assistant turn (with its tool calls) back into history,
       // reasoning included — DeepSeek-style endpoints 400 on the next request
       // of a tool loop when reasoning_content is not replayed.
-      messages.add(LLMMessage(
-        role: LLMRole.assistant,
-        content: response.text,
-        reasoningContent: response.reasoningContent,
-        reasoningFieldName: response.reasoningFieldName,
-        reasoningSignature: response.reasoningSignature,
-        rawThinkingBlocks: response.rawThinkingBlocks,
-        rawThinkingModelId: response.rawThinkingModelId,
-        rawContentBlocks: response.rawContentBlocks,
-        rawModelParts: response.rawModelParts,
-        rawResponseItems: response.rawResponseItems,
-        toolCalls: response.toolCalls,
-      ));
+      messages.add(
+        LLMMessage(
+          role: LLMRole.assistant,
+          content: response.text,
+          reasoningContent: response.reasoningContent,
+          reasoningFieldName: response.reasoningFieldName,
+          reasoningSignature: response.reasoningSignature,
+          rawThinkingBlocks: response.rawThinkingBlocks,
+          rawThinkingModelId: response.rawThinkingModelId,
+          rawContentBlocks: response.rawContentBlocks,
+          rawModelParts: response.rawModelParts,
+          rawResponseItems: response.rawResponseItems,
+          toolCalls: response.toolCalls,
+        ),
+      );
 
       // Pairing invariant (same rule PromptOptimizerAgent enforces): once the
       // assistant message with tool calls is in [messages], every call gets a
@@ -326,12 +349,14 @@ class AiRenameAgent {
         } else {
           result = _executeTool(call, chunk, proposals, onLog);
         }
-        messages.add(LLMMessage(
-          role: LLMRole.tool,
-          content: jsonEncode(result),
-          toolCallId: call.id,
-          toolName: call.name,
-        ));
+        messages.add(
+          LLMMessage(
+            role: LLMRole.tool,
+            content: jsonEncode(result),
+            toolCallId: call.id,
+            toolName: call.name,
+          ),
+        );
       }
       if (cancelledMidBatch) return;
     }
@@ -373,7 +398,9 @@ class AiRenameAgent {
             continue;
           }
           if (placedThisRun.contains(newPath.toLowerCase())) {
-            onLog?.call('Skipped (would replace a file this run just renamed): ${proposal.newName}');
+            onLog?.call(
+              'Skipped (would replace a file this run just renamed): ${proposal.newName}',
+            );
             continue;
           }
           // Deleted rather than renamed over: `File.rename` onto an existing
@@ -410,7 +437,7 @@ class AiRenameAgent {
                 'id': i + 1,
                 'name': filesData[i]['original_name'],
                 'category': filesData[i]['category'],
-              }
+              },
           ],
         };
 
@@ -428,7 +455,8 @@ class AiRenameAgent {
           onLog?.call('Tool call rejected: unknown file id "$rawId"');
           return {
             'status': 'error',
-            'message': 'Unknown id. Use an id exactly as returned by list_files '
+            'message':
+                'Unknown id. Use an id exactly as returned by list_files '
                 '(1..${filesData.length}).',
           };
         }
@@ -436,12 +464,14 @@ class AiRenameAgent {
           onLog?.call('Tool call rejected: unsafe name "$newName"');
           return {
             'status': 'error',
-            'message': 'Invalid new_name: it must be a plain file name without '
+            'message':
+                'Invalid new_name: it must be a plain file name without '
                 'directory separators, ".." sequences, or control characters.',
           };
         }
-        final duplicate = proposals.entries
-            .any((e) => e.key != path && e.value.newName.toLowerCase() == newName.toLowerCase());
+        final duplicate = proposals.entries.any(
+          (e) => e.key != path && e.value.newName.toLowerCase() == newName.toLowerCase(),
+        );
         if (duplicate) {
           onLog?.call('Tool call rejected: duplicate target "$newName"');
           return {
@@ -450,11 +480,7 @@ class AiRenameAgent {
           };
         }
 
-        proposals[path] = RenameProposal(
-          path: path,
-          oldName: p.basename(path),
-          newName: newName,
-        );
+        proposals[path] = RenameProposal(path: path, oldName: p.basename(path), newName: newName);
         onLog?.call('Staged rename: ${p.basename(path)} -> $newName');
         return {'status': 'ok', 'staged': newName};
 
@@ -492,9 +518,7 @@ class AiRenameAgent {
 
     if (windows ?? Platform.isWindows) {
       if (name.endsWith('.') || name.endsWith(' ')) return false;
-      if (name.runes.any(
-        (rune) => _windowsIllegal.contains(String.fromCharCode(rune)),
-      )) {
+      if (name.runes.any((rune) => _windowsIllegal.contains(String.fromCharCode(rune)))) {
         return false;
       }
       final stem = name.split('.').first.toUpperCase();

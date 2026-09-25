@@ -106,7 +106,9 @@ void main() {
   for (final _EditorShot shot in _editorShots) {
     for (final String sizeLabel in shot.sizes) {
       for (final Brightness brightness in shot.brightnesses) {
-        testWidgets('modelEditor ${shot.suffix} @ $sizeLabel ${brightness.name}', (WidgetTester tester) async {
+        testWidgets('modelEditor ${shot.suffix} @ $sizeLabel ${brightness.name}', (
+          WidgetTester tester,
+        ) async {
           await shoot(
             tester,
             env: env,

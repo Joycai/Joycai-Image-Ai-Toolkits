@@ -3,9 +3,9 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
-import '../database_service.dart';
-import '../../llm/llm_types.dart';
 import '../../assistant/prompt_optimizer_agent.dart';
+import '../../llm/llm_types.dart';
+import '../database_service.dart';
 
 /// Metadata row of a persisted assistant conversation.
 class AssistantSessionMeta {
@@ -80,7 +80,12 @@ class AssistantSessionRepository {
   }) async {
     final db = await _getDb();
     final now = DateTime.now().millisecondsSinceEpoch;
-    final existing = await db.query('assistant_sessions', where: 'id = ?', whereArgs: [id], limit: 1);
+    final existing = await db.query(
+      'assistant_sessions',
+      where: 'id = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
     if (existing.isEmpty) {
       await db.insert('assistant_sessions', {
         'id': id,
@@ -124,18 +129,19 @@ class AssistantSessionRepository {
     final now = DateTime.now().millisecondsSinceEpoch;
     final batch = db.batch();
     for (int i = 0; i < messages.length; i++) {
-      batch.insert(
-        'assistant_messages',
-        {
-          'session_id': sessionId,
-          'seq': startSeq + i,
-          'message': jsonEncode(messages[i].toJson()),
-          'created_at': now,
-        },
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
+      batch.insert('assistant_messages', {
+        'session_id': sessionId,
+        'seq': startSeq + i,
+        'message': jsonEncode(messages[i].toJson()),
+        'created_at': now,
+      }, conflictAlgorithm: ConflictAlgorithm.replace);
     }
-    batch.update('assistant_sessions', {'updated_at': now}, where: 'id = ?', whereArgs: [sessionId]);
+    batch.update(
+      'assistant_sessions',
+      {'updated_at': now},
+      where: 'id = ?',
+      whereArgs: [sessionId],
+    );
     await batch.commit(noResult: true);
   }
 
@@ -169,7 +175,12 @@ class AssistantSessionRepository {
           'created_at': now,
         });
       }
-      await txn.update('assistant_sessions', {'updated_at': now}, where: 'id = ?', whereArgs: [sessionId]);
+      await txn.update(
+        'assistant_sessions',
+        {'updated_at': now},
+        where: 'id = ?',
+        whereArgs: [sessionId],
+      );
     });
   }
 
@@ -188,7 +199,10 @@ class AssistantSessionRepository {
   /// Messages for replay: compacted rows excluded, summary rows included.
   /// Individually corrupt rows are dropped with a debug log — a damaged
   /// message must not make the whole conversation unopenable.
-  Future<List<StoredAssistantMessage>> loadMessages(String sessionId, {bool includeCompacted = false}) async {
+  Future<List<StoredAssistantMessage>> loadMessages(
+    String sessionId, {
+    bool includeCompacted = false,
+  }) async {
     final db = await _getDb();
     final rows = await db.query(
       'assistant_messages',
@@ -206,16 +220,20 @@ class AssistantSessionRepository {
         // (PromptOptimizerAgent.repairToolCallPairing) absorbs the gap it
         // leaves.
         if (!LLMRole.values.asNameMap().containsKey(json['role'])) {
-          debugPrint('assistant_messages: dropping row seq=${row['seq']} '
-              'with unknown role ${json['role']}');
+          debugPrint(
+            'assistant_messages: dropping row seq=${row['seq']} '
+            'with unknown role ${json['role']}',
+          );
           continue;
         }
-        result.add(StoredAssistantMessage(
-          seq: row['seq'] as int,
-          message: LLMMessage.fromJson(json),
-          compacted: row['compacted'] == 1,
-          isSummary: row['is_summary'] == 1,
-        ));
+        result.add(
+          StoredAssistantMessage(
+            seq: row['seq'] as int,
+            message: LLMMessage.fromJson(json),
+            compacted: row['compacted'] == 1,
+            isSummary: row['is_summary'] == 1,
+          ),
+        );
       } catch (e) {
         debugPrint('assistant_messages: dropping corrupt row seq=${row['seq']}: $e');
       }
@@ -269,8 +287,12 @@ class AssistantSessionRepository {
         final to = idMap[linked];
         if (to == null) continue;
         json['modelDbId'] = to;
-        await txn.update('assistant_messages', {'message': jsonEncode(json)},
-            where: 'id = ?', whereArgs: [id]);
+        await txn.update(
+          'assistant_messages',
+          {'message': jsonEncode(json)},
+          where: 'id = ?',
+          whereArgs: [id],
+        );
       }
     });
   }

@@ -15,14 +15,16 @@ Widget _paramGrid(List<_ParamCell> cells) {
     } else if (pending == null) {
       pending = cell;
     } else {
-      rows.add(Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(child: pending),
-          const SizedBox(width: _kParamGap),
-          Expanded(child: cell),
-        ],
-      ));
+      rows.add(
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: pending),
+            const SizedBox(width: _kParamGap),
+            Expanded(child: cell),
+          ],
+        ),
+      );
       pending = null;
     }
   }
@@ -70,10 +72,10 @@ extension _ParamControls on _VideoConfigPanelState {
         // on the panel's ground.
         return AppSegmentedControl<String>(
           segments: spec.options
-              .map((o) => AppSegment(
-                    value: o.value,
-                    label: _videoOptionLabel(l10n, spec.key, o.value),
-                  ))
+              .map(
+                (o) =>
+                    AppSegment(value: o.value, label: _videoOptionLabel(l10n, spec.key, o.value)),
+              )
               .toList(),
           value: current,
           onChanged: (v) => appState.setVideoParam(model, spec.key, v),
@@ -105,9 +107,9 @@ extension _ParamControls on _VideoConfigPanelState {
                 child: SliderTheme(
                   // Material's 24px overlay would otherwise decide the row's
                   // height instead of the grid's control height.
-                  data: SliderTheme.of(context).copyWith(
-                    overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
-                  ),
+                  data: SliderTheme.of(
+                    context,
+                  ).copyWith(overlayShape: const RoundSliderOverlayShape(overlayRadius: 12)),
                   child: Slider(
                     value: value.toDouble(),
                     min: lo.toDouble(),
@@ -123,7 +125,9 @@ extension _ParamControls on _VideoConfigPanelState {
                 child: Text(
                   '${value}s',
                   textAlign: TextAlign.end,
-                  style: theme.textTheme.labelSmall?.mono.copyWith(color: theme.colorScheme.onSurface),
+                  style: theme.textTheme.labelSmall?.mono.copyWith(
+                    color: theme.colorScheme.onSurface,
+                  ),
                 ),
               ),
             ],

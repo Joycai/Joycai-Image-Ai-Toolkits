@@ -13,8 +13,14 @@ void main() {
     });
 
     test('labels are 4k through 128k', () {
-      expect(OutputCapScale.stops.map(OutputCapScale.label).toList(),
-          ['4k', '8k', '16k', '32k', '64k', '128k']);
+      expect(OutputCapScale.stops.map(OutputCapScale.label).toList(), [
+        '4k',
+        '8k',
+        '16k',
+        '32k',
+        '64k',
+        '128k',
+      ]);
     });
 
     test('a typed value between two stops sits in proportion between them', () {

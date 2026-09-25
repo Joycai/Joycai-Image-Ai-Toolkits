@@ -10,7 +10,8 @@ extension _Composer on _PromptOptimizerChatViewState {
   /// possible, and the hint under the field says so.
   bool _isSendKey(KeyEvent event) {
     if (event is! KeyDownEvent) return false;
-    final isEnter = event.logicalKey == LogicalKeyboardKey.enter ||
+    final isEnter =
+        event.logicalKey == LogicalKeyboardKey.enter ||
         event.logicalKey == LogicalKeyboardKey.numpadEnter;
     return isEnter && !HardwareKeyboard.instance.isShiftPressed;
   }
@@ -105,11 +106,7 @@ extension _Composer on _PromptOptimizerChatViewState {
   /// colour, not filled — stopping is a way out, not the action the screen is
   /// built around. Icon-only; the label is the tooltip and the `Esc` hint
   /// beside it.
-  Widget _buildStopButton(
-    AppLocalizations l10n,
-    ColorScheme colorScheme, {
-    required bool phone,
-  }) {
+  Widget _buildStopButton(AppLocalizations l10n, ColorScheme colorScheme, {required bool phone}) {
     final double side = phone ? AppSize.touch : AppSize.control;
     return SizedBox.square(
       dimension: side,
@@ -169,7 +166,9 @@ extension _Composer on _PromptOptimizerChatViewState {
       child: Align(
         alignment: Alignment.topCenter,
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: _PromptOptimizerChatViewState._transcriptMaxWidth),
+          constraints: const BoxConstraints(
+            maxWidth: _PromptOptimizerChatViewState._transcriptMaxWidth,
+          ),
           child: Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -222,8 +221,8 @@ extension _Composer on _PromptOptimizerChatViewState {
                         hintText: busy
                             ? l10n.optChatBusyHint
                             : _analysisPresetLoaded(session)
-                                ? l10n.optChatHintAnalysis
-                                : l10n.optChatHint,
+                            ? l10n.optChatHintAnalysis
+                            : l10n.optChatHint,
                         hintStyle: textTheme.bodyMedium?.copyWith(
                           color: colorScheme.outline,
                           height: AppType.proseHeight,
@@ -265,9 +264,7 @@ extension _Composer on _PromptOptimizerChatViewState {
                                     label: l10n.optAttachedImages(attachedCount),
                                     // Muted while a turn runs: nothing is
                                     // about to leave with anything.
-                                    ink: busy
-                                        ? colorScheme.outline
-                                        : colorScheme.onSurfaceVariant,
+                                    ink: busy ? colorScheme.outline : colorScheme.onSurfaceVariant,
                                   ),
                                 if (showDistill)
                                   _buildDistillChip(l10n, colorScheme, enabled: canDistill),

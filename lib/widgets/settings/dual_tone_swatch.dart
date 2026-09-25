@@ -75,10 +75,14 @@ class _DualToneSwatchState extends State<DualToneSwatch> {
   @override
   Widget build(BuildContext context) {
     final ColorScheme colorScheme = Theme.of(context).colorScheme;
-    final Color light =
-        buildAppColorScheme(accent: widget.accent, brightness: Brightness.light).primary;
-    final Color dark =
-        buildAppColorScheme(accent: widget.accent, brightness: Brightness.dark).primary;
+    final Color light = buildAppColorScheme(
+      accent: widget.accent,
+      brightness: Brightness.light,
+    ).primary;
+    final Color dark = buildAppColorScheme(
+      accent: widget.accent,
+      brightness: Brightness.dark,
+    ).primary;
 
     final TextStyle? tipStyle = TooltipTheme.of(context).textStyle;
     final Widget dot = InkWell(
@@ -117,10 +121,10 @@ class _DualToneSwatchState extends State<DualToneSwatch> {
               // The values in mono, a step quieter than the name, on the
               // tooltip's fixed ink ground.
               style: (tipStyle ?? const TextStyle()).mono.copyWith(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,
-                    color: AppOverlay.onInk.withValues(alpha: 0.72),
-                  ),
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
+                color: AppOverlay.onInk.withValues(alpha: 0.72),
+              ),
             ),
         ],
       ),

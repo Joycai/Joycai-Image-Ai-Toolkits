@@ -26,12 +26,14 @@ void main() {
     server.listen((request) async {
       lastBody = jsonDecode(await utf8.decodeStream(request)) as Map<String, dynamic>;
       request.response.headers.contentType = ContentType.json;
-      request.response.write(jsonEncode({
-        'data': [
-          {'b64_json': base64Encode(_png)},
-        ],
-        'usage': ?usage,
-      }));
+      request.response.write(
+        jsonEncode({
+          'data': [
+            {'b64_json': base64Encode(_png)},
+          ],
+          'usage': ?usage,
+        }),
+      );
       await request.response.close();
     });
   });
@@ -39,27 +41,24 @@ void main() {
   tearDown(() => server.close(force: true));
 
   LLMModelConfig config(String modelId) => LLMModelConfig(
-        modelId: modelId,
-        channelType: Vendors.xaiApi,
-        endpoint: 'http://127.0.0.1:${server.port}/v1',
-        apiKey: 'k',
-      );
+    modelId: modelId,
+    channelType: Vendors.xaiApi,
+    endpoint: 'http://127.0.0.1:${server.port}/v1',
+    apiKey: 'k',
+  );
 
   Future<Map<String, dynamic>> send(String modelId, Map<String, dynamic> options) async {
-    await LLMDispatcher().generate(
-      config(modelId),
-      [LLMMessage(role: LLMRole.user, content: 'a red apple')],
-      options: options,
-    );
+    await LLMDispatcher().generate(config(modelId), [
+      LLMMessage(role: LLMRole.user, content: 'a red apple'),
+    ], options: options);
     return lastBody;
   }
 
   /// The options the workbench sends when nothing was chosen: every
   /// declared parameter at its default (`AppState.effectiveImageParams`).
   Map<String, dynamic> defaultsOf(String modelId) => {
-        for (final p in ModelCapabilities.forModel(modelId).imageParams)
-          p.key: p.defaultValue,
-      };
+    for (final p in ModelCapabilities.forModel(modelId).imageParams) p.key: p.defaultValue,
+  };
 
   test('2.0 defaults go out as resolution 1k and quality medium, spelled out', () async {
     // Medium is upstream's own default, but saying it lets the usage row
@@ -88,11 +87,9 @@ void main() {
 
   group('the reported cost', () {
     Future<Map<String, dynamic>> metadataOf() async {
-      final response = await LLMDispatcher().generate(
-        config('grok-imagine-image-2.0'),
-        [LLMMessage(role: LLMRole.user, content: 'a red apple')],
-        options: defaultsOf('grok-imagine-image-2.0'),
-      );
+      final response = await LLMDispatcher().generate(config('grok-imagine-image-2.0'), [
+        LLMMessage(role: LLMRole.user, content: 'a red apple'),
+      ], options: defaultsOf('grok-imagine-image-2.0'));
       return response.metadata;
     }
 
@@ -109,20 +106,19 @@ void main() {
       expect((await metadataOf()).containsKey(reportedCostKey), isFalse);
     });
 
-    test('streamed, the picture\'s own chunk carries the figure ahead of the closing one', () async {
-      // The task executor takes images through the stream; a consumer that
-      // stops after the picture still bills it — by the provider's figure.
-      final chunks = await LLMDispatcher()
-          .generateStream(
-            config('grok-imagine-image-2.0'),
-            [LLMMessage(role: LLMRole.user, content: 'a red apple')],
-            options: defaultsOf('grok-imagine-image-2.0'),
-          )
-          .toList();
-      final picture = chunks.firstWhere((c) => c.imagePart != null);
-      expect(picture.metadata?[reportedCostKey], closeTo(0.06, 1e-12));
-      expect(chunks.last.metadata?[reportedCostKey], closeTo(0.06, 1e-12));
-    });
+    test(
+      'streamed, the picture\'s own chunk carries the figure ahead of the closing one',
+      () async {
+        // The task executor takes images through the stream; a consumer that
+        // stops after the picture still bills it — by the provider's figure.
+        final chunks = await LLMDispatcher().generateStream(config('grok-imagine-image-2.0'), [
+          LLMMessage(role: LLMRole.user, content: 'a red apple'),
+        ], options: defaultsOf('grok-imagine-image-2.0')).toList();
+        final picture = chunks.firstWhere((c) => c.imagePart != null);
+        expect(picture.metadata?[reportedCostKey], closeTo(0.06, 1e-12));
+        expect(chunks.last.metadata?[reportedCostKey], closeTo(0.06, 1e-12));
+      },
+    );
 
     test('a usage block without ticks, or none at all, reports no cost', () async {
       usage = const {'total_tokens': 12};
@@ -143,4 +139,5 @@ void main() {
 }
 
 final Uint8List _png = base64Decode(
-    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==');
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+);

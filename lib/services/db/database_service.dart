@@ -157,12 +157,12 @@ class DatabaseService {
     final dataDir = await AppPaths.getDataDirectory();
     final newPath = join(dataDir, 'joycai_workbench.db');
 
-    // Legacy migration check (Only for non-portable mode or first transition)  
+    // Legacy migration check (Only for non-portable mode or first transition)
     if (!await AppPaths.isPortableMode()) {
       final docsDir = await getApplicationDocumentsDirectory();
       final oldPath = join(docsDir.path, 'joycai_workbench.db');
 
-      if (await File(oldPath).exists() && !await File(newPath).exists()) {      
+      if (await File(oldPath).exists() && !await File(newPath).exists()) {
         try {
           final dir = Directory(dataDir);
           if (!await dir.exists()) {
@@ -240,7 +240,7 @@ class DatabaseService {
     await DatabaseMigration.onCreate(db);
   }
 
-  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {  
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     await DatabaseMigration.migrate(db, oldVersion, newVersion);
   }
 
@@ -251,14 +251,16 @@ class DatabaseService {
 
     // 1. Sync System Prompts
     try {
-      final String systemJsonString = await rootBundle.loadString('assets/presets/prompts/system_prompts.json');
+      final String systemJsonString = await rootBundle.loadString(
+        'assets/presets/prompts/system_prompts.json',
+      );
       final List<dynamic> systemPresets = jsonDecode(systemJsonString);
 
-      for (var preset in systemPresets) {
+      for (final preset in systemPresets) {
         final existing = await db.query(
           'system_prompts',
           where: 'title = ? AND type = ?',
-          whereArgs: [preset['title'], preset['type']]
+          whereArgs: [preset['title'], preset['type']],
         );
         if (existing.isEmpty) {
           await db.insert('system_prompts', preset);
@@ -270,14 +272,16 @@ class DatabaseService {
 
     // 2. Sync User Prompts
     try {
-      final String userJsonString = await rootBundle.loadString('assets/presets/prompts/user_prompts.json');
+      final String userJsonString = await rootBundle.loadString(
+        'assets/presets/prompts/user_prompts.json',
+      );
       final List<dynamic> userPresets = jsonDecode(userJsonString);
 
-      for (var preset in userPresets) {
+      for (final preset in userPresets) {
         final existing = await db.query(
           'prompts',
           where: 'title = ?',
-          whereArgs: [preset['title']]
+          whereArgs: [preset['title']],
         );
         if (existing.isEmpty) {
           await db.insert('prompts', preset);
@@ -291,9 +295,10 @@ class DatabaseService {
   // Task History Methods
   Future<void> saveTask(TaskItem task) => _tasks.saveTask(task);
   Future<List<TaskItem>> getRecentTasks(int limit) => _tasks.getRecentTasks(limit);
-  Future<void> deleteTask(String id) => _tasks.deleteTask(id);        
-  Future<void> cleanupStuckTasks() => _tasks.cleanupStuckTasks();     
-  Future<List<double>> getTaskDurations(int modelDbId, int limit) => _tasks.getTaskDurations(modelDbId, limit);
+  Future<void> deleteTask(String id) => _tasks.deleteTask(id);
+  Future<void> cleanupStuckTasks() => _tasks.cleanupStuckTasks();
+  Future<List<double>> getTaskDurations(int modelDbId, int limit) =>
+      _tasks.getTaskDurations(modelDbId, limit);
 
   // Token Usage Methods
   Future<void> recordTokenUsage(TokenUsage usage) => _usage.recordTokenUsage(usage);
@@ -302,45 +307,67 @@ class DatabaseService {
   Future<int> updateReportedCost(String taskId, double cost) =>
       _usage.updateReportedCost(taskId, cost);
   Future<void> clearTokenUsage({String? modelId}) => _usage.clearTokenUsage(modelId: modelId);
-  Future<List<TokenUsage>> getTokenUsage({List<String>? modelIds, DateTime? start, DateTime? end, int? limit, int? offset})
-      => _usage.getTokenUsage(modelIds: modelIds, start: start, end: end, limit: limit, offset: offset);
+  Future<List<TokenUsage>> getTokenUsage({
+    List<String>? modelIds,
+    DateTime? start,
+    DateTime? end,
+    int? limit,
+    int? offset,
+  }) => _usage.getTokenUsage(
+    modelIds: modelIds,
+    start: start,
+    end: end,
+    limit: limit,
+    offset: offset,
+  );
 
-  Future<void> saveUsageCheckpoint(UsageCheckpoint checkpoint) => _usage.saveUsageCheckpoint(checkpoint);
+  Future<void> saveUsageCheckpoint(UsageCheckpoint checkpoint) =>
+      _usage.saveUsageCheckpoint(checkpoint);
   Future<UsageCheckpoint?> getLatestUsageCheckpoint() => _usage.getLatestUsageCheckpoint();
 
   // --- MODEL BASED METHODS ---
 
   // Prompts Methods
-  Future<int> addPrompt(Prompt prompt, {List<int>? tagIds}) => _prompts.addPrompt(prompt, tagIds: tagIds);
+  Future<int> addPrompt(Prompt prompt, {List<int>? tagIds}) =>
+      _prompts.addPrompt(prompt, tagIds: tagIds);
+
   /// Writes [prompt] over row [id] — except its place in the list, which
   /// belongs to [updatePromptOrder].
-  Future<void> updatePrompt(int id, Prompt prompt, {List<int>? tagIds}) => _prompts.updatePrompt(id, prompt, tagIds: tagIds);
-  Future<void> deletePrompt(int id) => _prompts.deletePrompt(id);     
+  Future<void> updatePrompt(int id, Prompt prompt, {List<int>? tagIds}) =>
+      _prompts.updatePrompt(id, prompt, tagIds: tagIds);
+  Future<void> deletePrompt(int id) => _prompts.deletePrompt(id);
   Future<void> deletePrompts(List<int> ids) => _prompts.deletePrompts(ids);
-  Future<void> updatePromptsTags(List<int> promptIds, List<int> tagIds) => _prompts.updatePromptsTags(promptIds, tagIds);
+  Future<void> updatePromptsTags(List<int> promptIds, List<int> tagIds) =>
+      _prompts.updatePromptsTags(promptIds, tagIds);
   Future<List<Prompt>> getPrompts() => _prompts.getPrompts();
   Future<void> updatePromptOrder(List<int> ids) => _prompts.updatePromptOrder(ids);
 
   // Prompt History Methods
-  Future<List<PromptHistoryEntry>> getPromptHistory(PromptHistoryType type) => _prompts.getPromptHistory(type);
-  Future<void> addPromptHistory(PromptHistoryType type, String content) => _prompts.addPromptHistory(type, content);
+  Future<List<PromptHistoryEntry>> getPromptHistory(PromptHistoryType type) =>
+      _prompts.getPromptHistory(type);
+  Future<void> addPromptHistory(PromptHistoryType type, String content) =>
+      _prompts.addPromptHistory(type, content);
   Future<void> clearPromptHistory(PromptHistoryType type) => _prompts.clearPromptHistory(type);
 
   // LLM Models Methods
   Future<int> addModel(LLMModel model) => _models.addModel(model);
+
   /// Writes [model] over row [id] — except its place in the list and its ETA
   /// estimate, which belong to [updateModelOrder] and [updateModelEstimation].
   Future<void> updateModel(int id, LLMModel model) => _models.updateModel(id, model);
   Future<void> updateModelOrder(List<int> ids) => _models.updateModelOrder(ids);
-  Future<void> deleteModel(int id) => _models.deleteModel(id);        
+  Future<void> deleteModel(int id) => _models.deleteModel(id);
   Future<List<LLMModel>> getModels() => _models.getModels();
-  Future<void> updateModelEstimation(int modelDbId, double mean, double sd, int tasksSinceUpdate)
-      => _models.updateModelEstimation(modelDbId, mean, sd, tasksSinceUpdate);
+  Future<void> updateModelEstimation(int modelDbId, double mean, double sd, int tasksSinceUpdate) =>
+      _models.updateModelEstimation(modelDbId, mean, sd, tasksSinceUpdate);
 
   // Settings Methods
   Future<void> saveSetting(String key, String value) async {
     final db = await database;
-    await db.insert('settings', {'key': key, 'value': value}, conflictAlgorithm: ConflictAlgorithm.replace);
+    await db.insert('settings', {
+      'key': key,
+      'value': value,
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   Future<String?> getSetting(String key) async {
@@ -363,7 +390,10 @@ class DatabaseService {
   // Source Directories Methods
   Future<void> addSourceDirectory(String path) async {
     final db = await database;
-    await db.insert('source_directories', {'path': path, 'is_selected': 1}, conflictAlgorithm: ConflictAlgorithm.ignore);
+    await db.insert('source_directories', {
+      'path': path,
+      'is_selected': 1,
+    }, conflictAlgorithm: ConflictAlgorithm.ignore);
   }
 
   Future<void> removeSourceDirectory(String path) async {
@@ -378,9 +408,14 @@ class DatabaseService {
     await db.update('source_directories', {'path': to}, where: 'path = ?', whereArgs: [from]);
   }
 
-  Future<void> updateDirectorySelection(String path, bool isSelected) async {   
+  Future<void> updateDirectorySelection(String path, bool isSelected) async {
     final db = await database;
-    await db.update('source_directories', {'is_selected': isSelected ? 1 : 0}, where: 'path = ?', whereArgs: [path]);
+    await db.update(
+      'source_directories',
+      {'is_selected': isSelected ? 1 : 0},
+      where: 'path = ?',
+      whereArgs: [path],
+    );
   }
 
   Future<List<Map<String, dynamic>>> getSourceDirectories() async {
@@ -390,21 +425,24 @@ class DatabaseService {
 
   // Pricing Groups Methods
   Future<int> addPricingGroup(PricingGroup group) => _models.addPricingGroup(group);
-  Future<void> updatePricingGroup(int id, PricingGroup group) => _models.updatePricingGroup(id, group);
+  Future<void> updatePricingGroup(int id, PricingGroup group) =>
+      _models.updatePricingGroup(id, group);
   Future<void> deletePricingGroup(int id) => _models.deletePricingGroup(id);
   Future<List<PricingGroup>> getPricingGroups() => _models.getPricingGroups();
-  Future<void> updatePricingGroupOrder(List<int> orderedIds) => _models.updatePricingGroupOrder(orderedIds);
+  Future<void> updatePricingGroupOrder(List<int> orderedIds) =>
+      _models.updatePricingGroupOrder(orderedIds);
 
   // LLM Channels Methods
   Future<int> addChannel(LLMChannel channel) => _models.addChannel(channel);
   Future<void> updateChannel(int id, LLMChannel channel) => _models.updateChannel(id, channel);
-  Future<void> deleteChannel(int id) => _models.deleteChannel(id);    
-  Future<List<LLMChannel>> getChannels() => _models.getChannels();    
-  Future<LLMChannel?> getChannel(int id) => _models.getChannel(id);   
+  Future<void> deleteChannel(int id) => _models.deleteChannel(id);
+  Future<List<LLMChannel>> getChannels() => _models.getChannels();
+  Future<LLMChannel?> getChannel(int id) => _models.getChannel(id);
   Future<void> updateChannelOrder(List<int> orderedIds) => _models.updateChannelOrder(orderedIds);
 
   // Prompt Tags Methods
   Future<int> addPromptTag(PromptTag tag) => _prompts.addPromptTag(tag);
+
   /// Writes [tag] over row [id] — except its place in the list, which
   /// belongs to [updateTagOrder].
   Future<void> updatePromptTag(int id, PromptTag tag) => _prompts.updatePromptTag(id, tag);
@@ -413,22 +451,27 @@ class DatabaseService {
   Future<void> updateTagOrder(List<int> ids) => _prompts.updateTagOrder(ids);
 
   // System Prompts Methods
-  Future<int> addSystemPrompt(SystemPrompt prompt, {List<int>? tagIds}) => _prompts.addSystemPrompt(prompt, tagIds: tagIds);
+  Future<int> addSystemPrompt(SystemPrompt prompt, {List<int>? tagIds}) =>
+      _prompts.addSystemPrompt(prompt, tagIds: tagIds);
+
   /// Writes [prompt] over row [id] — except its place in the list, which
   /// belongs to [updateSystemPromptOrder].
-  Future<void> updateSystemPrompt(int id, SystemPrompt prompt, {List<int>? tagIds}) => _prompts.updateSystemPrompt(id, prompt, tagIds: tagIds);
+  Future<void> updateSystemPrompt(int id, SystemPrompt prompt, {List<int>? tagIds}) =>
+      _prompts.updateSystemPrompt(id, prompt, tagIds: tagIds);
   Future<void> deleteSystemPrompt(int id) => _prompts.deleteSystemPrompt(id);
   Future<void> deleteSystemPrompts(List<int> ids) => _prompts.deleteSystemPrompts(ids);
-  Future<void> updateSystemPromptsTags(List<int> promptIds, List<int> tagIds) => _prompts.updateSystemPromptsTags(promptIds, tagIds);
-  Future<List<SystemPrompt>> getSystemPrompts({String? type}) => _prompts.getSystemPrompts(type: type);
+  Future<void> updateSystemPromptsTags(List<int> promptIds, List<int> tagIds) =>
+      _prompts.updateSystemPromptsTags(promptIds, tagIds);
+  Future<List<SystemPrompt>> getSystemPrompts({String? type}) =>
+      _prompts.getSystemPrompts(type: type);
   Future<void> updateSystemPromptOrder(List<int> ids) => _prompts.updateSystemPromptOrder(ids);
 
   // Standalone Prompt Data
   Future<Map<String, dynamic>> getPromptDataRaw() async => promptLibraryExport(
-        tags: await getPromptTags(),
-        userPrompts: await getPrompts(),
-        systemPrompts: await getSystemPrompts(),
-      );
+    tags: await getPromptTags(),
+    userPrompts: await getPrompts(),
+    systemPrompts: await getSystemPrompts(),
+  );
 
   // Backup & Restore (Now with optional prompt inclusion)
   Future<Map<String, dynamic>> getAllDataRaw({
@@ -447,7 +490,9 @@ class DatabaseService {
             : row,
     ];
     if (!includeDirectories) {
-      filteredSettings = filteredSettings.where((row) => !_directorySettingKeys.contains(row['key'])).toList();
+      filteredSettings = filteredSettings
+          .where((row) => !_directorySettingKeys.contains(row['key']))
+          .toList();
     }
 
     final channels = await db.query('llm_channels');
@@ -484,7 +529,7 @@ class DatabaseService {
     }
 
     if (includeDirectories) {
-      data['source_directories'] = await db.query('source_directories');        
+      data['source_directories'] = await db.query('source_directories');
     }
 
     if (includePrompts) {
@@ -494,7 +539,8 @@ class DatabaseService {
     return data;
   }
 
-  Future<void> clearAllData(DatabaseExecutor txn, {
+  Future<void> clearAllData(
+    DatabaseExecutor txn, {
     bool includePrompts = true,
     bool includeUsage = true,
     bool includeDirectories = true,
@@ -551,7 +597,8 @@ class DatabaseService {
   ///
   /// Throws [BackupFormatException] if [data] is not a full backup this build
   /// can read; the database is left untouched in that case.
-  Future<void> restoreBackup(Map<String, dynamic> data, {
+  Future<void> restoreBackup(
+    Map<String, dynamic> data, {
     bool includePrompts = true,
     bool includeUsage = true,
     bool includeDirectories = true,
@@ -561,7 +608,9 @@ class DatabaseService {
     final db = await database;
 
     await db.transaction((txn) async {
-      await restoreBackupInto(txn, data,
+      await restoreBackupInto(
+        txn,
+        data,
         includePrompts: includePrompts,
         includeUsage: includeUsage,
         includeDirectories: includeDirectories,
@@ -574,7 +623,9 @@ class DatabaseService {
   /// Callers are responsible for the surrounding transaction and for validating
   /// [data] first; [restoreBackup] does both.
   @visibleForTesting
-  Future<void> restoreBackupInto(DatabaseExecutor txn, Map<String, dynamic> data, {
+  Future<void> restoreBackupInto(
+    DatabaseExecutor txn,
+    Map<String, dynamic> data, {
     bool includePrompts = true,
     bool includeUsage = true,
     bool includeDirectories = true,
@@ -583,13 +634,17 @@ class DatabaseService {
     // rather than overwriting working keys with the blanks from the file.
     final preservedKeys = await _collectChannelKeys(txn);
     final preservedSecrets = {
-      for (final row in await txn.query('settings',
-          where: 'key IN (${List.filled(secretSettingKeys.length, '?').join(', ')})',
-          whereArgs: secretSettingKeys.toList()))
-        if ((row['value'] as String? ?? '').isNotEmpty) row['key'] as String: row['value'] as String,
+      for (final row in await txn.query(
+        'settings',
+        where: 'key IN (${List.filled(secretSettingKeys.length, '?').join(', ')})',
+        whereArgs: secretSettingKeys.toList(),
+      ))
+        if ((row['value'] as String? ?? '').isNotEmpty)
+          row['key'] as String: row['value'] as String,
     };
 
-    await clearAllData(txn,
+    await clearAllData(
+      txn,
       includePrompts: includePrompts,
       includeUsage: includeUsage,
       includeDirectories: includeDirectories,
@@ -598,8 +653,18 @@ class DatabaseService {
     // Fee groups before channels: a channel's default group is a group id,
     // renumbered on the way in like the models' own.
     final pricingGroupIdMap = await _importPricingGroups(txn, data['fee_groups']);
-    final channelIdMap = await _importChannels(txn, data['llm_channels'], preservedKeys, pricingGroupIdMap);
-    final modelIdMap = await _importModels(txn, data['llm_models'], channelIdMap, pricingGroupIdMap);
+    final channelIdMap = await _importChannels(
+      txn,
+      data['llm_channels'],
+      preservedKeys,
+      pricingGroupIdMap,
+    );
+    final modelIdMap = await _importModels(
+      txn,
+      data['llm_models'],
+      channelIdMap,
+      pricingGroupIdMap,
+    );
 
     if (data['downloader_cookies'] != null) {
       await _importCookies(txn, data['downloader_cookies']);
@@ -626,7 +691,9 @@ class DatabaseService {
       final List<dynamic> settingsRows = data['settings'];
       var filteredSettings = settingsRows;
       if (!includeDirectories) {
-        filteredSettings = settingsRows.where((row) => !_directorySettingKeys.contains(row['key'])).toList();
+        filteredSettings = settingsRows
+            .where((row) => !_directorySettingKeys.contains(row['key']))
+            .toList();
       }
       await _importSimpleTable(txn, 'settings', filteredSettings);
     }
@@ -635,8 +702,10 @@ class DatabaseService {
     for (final entry in preservedSecrets.entries) {
       final current = await txn.query('settings', where: 'key = ?', whereArgs: [entry.key]);
       if (current.isNotEmpty && (current.first['value'] as String? ?? '').isNotEmpty) continue;
-      await txn.insert('settings', {'key': entry.key, 'value': entry.value},
-          conflictAlgorithm: ConflictAlgorithm.replace);
+      await txn.insert('settings', {
+        'key': entry.key,
+        'value': entry.value,
+      }, conflictAlgorithm: ConflictAlgorithm.replace);
     }
 
     if (includeDirectories && data['source_directories'] != null) {
@@ -663,7 +732,11 @@ class DatabaseService {
   /// the rest of the library in. What the key said is lost, which is the honest
   /// outcome when there is nowhere here to put it.
   @visibleForTesting
-  Future<void> importPromptDataInto(DatabaseExecutor txn, Map<String, dynamic> data, {bool replace = false}) async {
+  Future<void> importPromptDataInto(
+    DatabaseExecutor txn,
+    Map<String, dynamic> data, {
+    bool replace = false,
+  }) async {
     final tagColumns = await _columnsOf(txn, 'prompt_tags');
     final promptColumns = await _columnsOf(txn, 'prompts');
     final systemPromptColumns = await _columnsOf(txn, 'system_prompts');
@@ -679,11 +752,15 @@ class DatabaseService {
     // Import Tags first to get new IDs
     final Map<int, int> tagIdMap = {};
     if (data['tags'] != null) {
-      for (var t in data['tags']) {
+      for (final t in data['tags']) {
         final oldId = t['id'] as int;
         final Map<String, dynamic> row = Map.from(t)..remove('id');
         // Check if tag exists by name
-        final existing = await txn.query('prompt_tags', where: 'name = ?', whereArgs: [row['name']]);
+        final existing = await txn.query(
+          'prompt_tags',
+          where: 'name = ?',
+          whereArgs: [row['name']],
+        );
         if (existing.isNotEmpty) {
           tagIdMap[oldId] = existing.first['id'] as int;
         } else {
@@ -695,7 +772,7 @@ class DatabaseService {
 
     // Import User Prompts
     if (data['user_prompts'] != null) {
-      for (var p in data['user_prompts']) {
+      for (final p in data['user_prompts']) {
         final Map<String, dynamic> row = Map.from(p)..remove('id');
         final List<dynamic>? tags = row['tags'];
         final originalTagId = row['tag_id'] as int?;
@@ -709,7 +786,7 @@ class DatabaseService {
 
         final newPromptId = await txn.insert('prompts', _knownColumnsOnly(row, promptColumns));
         if (tags != null) {
-          for (var t in tags) {
+          for (final t in tags) {
             final oldTagId = t['id'] as int;
             final newTagId = tagIdMap[oldTagId];
             if (newTagId != null) {
@@ -722,28 +799,41 @@ class DatabaseService {
 
     // Import System Prompts
     if (data['system_prompts'] != null) {
-      for (var p in data['system_prompts']) {
+      for (final p in data['system_prompts']) {
         final Map<String, dynamic> row = _systemPromptRow(p);
         final List<dynamic>? tags = row['tags'];
         row.remove('tags');
 
-        final existing = await txn.query('system_prompts', where: 'title = ? AND type = ?', whereArgs: [row['title'], row['type']]);
+        final existing = await txn.query(
+          'system_prompts',
+          where: 'title = ? AND type = ?',
+          whereArgs: [row['title'], row['type']],
+        );
         if (existing.isNotEmpty) {
           if (!replace) continue;
           // Delete existing prompt and its tag refs when replacing
           final existingId = existing.first['id'] as int;
-          await txn.delete('system_prompt_tag_refs', where: 'prompt_id = ?', whereArgs: [existingId]);
+          await txn.delete(
+            'system_prompt_tag_refs',
+            where: 'prompt_id = ?',
+            whereArgs: [existingId],
+          );
           await txn.delete('system_prompts', where: 'id = ?', whereArgs: [existingId]);
         }
 
-        final newPromptId =
-            await txn.insert('system_prompts', _knownColumnsOnly(row, systemPromptColumns));
+        final newPromptId = await txn.insert(
+          'system_prompts',
+          _knownColumnsOnly(row, systemPromptColumns),
+        );
         if (tags != null) {
-          for (var t in tags) {
+          for (final t in tags) {
             final oldTagId = t['id'] as int;
             final newTagId = tagIdMap[oldTagId];
             if (newTagId != null) {
-              await txn.insert('system_prompt_tag_refs', {'prompt_id': newPromptId, 'tag_id': newTagId});
+              await txn.insert('system_prompt_tag_refs', {
+                'prompt_id': newPromptId,
+                'tag_id': newTagId,
+              });
             }
           }
         }
@@ -751,10 +841,14 @@ class DatabaseService {
     }
   }
 
-  Future<void> _importTokenUsage(DatabaseExecutor txn, List<dynamic>? rows, Map<int, int> modelIdMap) async {
+  Future<void> _importTokenUsage(
+    DatabaseExecutor txn,
+    List<dynamic>? rows,
+    Map<int, int> modelIdMap,
+  ) async {
     if (rows == null || rows.isEmpty) return;
     final batch = txn.batch();
-    for (var row in rows) {
+    for (final row in rows) {
       final Map<String, dynamic> map = Map.from(row)..remove('id');
       if (map['model_pk'] != null) {
         map['model_pk'] = modelIdMap[map['model_pk']];
@@ -764,10 +858,15 @@ class DatabaseService {
     await batch.commit(noResult: true);
   }
 
-  Future<Map<int, int>> _importModels(DatabaseExecutor txn, List<dynamic>? rows, Map<int, int> channelIdMap, Map<int, int> pricingGroupIdMap) async {
+  Future<Map<int, int>> _importModels(
+    DatabaseExecutor txn,
+    List<dynamic>? rows,
+    Map<int, int> channelIdMap,
+    Map<int, int> pricingGroupIdMap,
+  ) async {
     final Map<int, int> idMap = {};
     if (rows == null) return idMap;
-    for (var m in rows) {
+    for (final m in rows) {
       final oldId = m['id'] as int;
       final Map<String, dynamic> row = Map.from(m)..remove('id');
       // Pre-v32 backups carry the dropped llm_models.type column.
@@ -783,14 +882,18 @@ class DatabaseService {
   Future<Map<int, int>> _importPromptTags(DatabaseExecutor txn, List<dynamic>? rows) async {
     final Map<int, int> idMap = {};
     if (rows == null) return idMap;
-    for (var t in rows) {
+    for (final t in rows) {
       final oldId = t['id'] as int;
       final Map<String, dynamic> row = Map.from(t)..remove('id');
       try {
         final newId = await txn.insert('prompt_tags', row);
         idMap[oldId] = newId;
       } catch (e) {
-        final existing = await txn.query('prompt_tags', where: 'name = ?', whereArgs: [row['name']]);
+        final existing = await txn.query(
+          'prompt_tags',
+          where: 'name = ?',
+          whereArgs: [row['name']],
+        );
         if (existing.isNotEmpty) {
           idMap[oldId] = existing.first['id'] as int;
         }
@@ -799,9 +902,13 @@ class DatabaseService {
     return idMap;
   }
 
-  Future<void> _importPrompts(DatabaseExecutor txn, List<dynamic>? rows, Map<int, int> tagIdMap) async {
+  Future<void> _importPrompts(
+    DatabaseExecutor txn,
+    List<dynamic>? rows,
+    Map<int, int> tagIdMap,
+  ) async {
     if (rows == null) return;
-    for (var p in rows) {
+    for (final p in rows) {
       final Map<String, dynamic> row = Map.from(p)..remove('id');
       final originalTagId = row['tag_id'] as int?;
 
@@ -821,7 +928,7 @@ class DatabaseService {
       final newPromptId = await txn.insert('prompts', row);
 
       if (tagsFromData != null) {
-        for (var t in tagsFromData) {
+        for (final t in tagsFromData) {
           final oldTagId = t['id'] as int;
           final newTagId = tagIdMap[oldTagId];
           if (newTagId != null) {
@@ -844,8 +951,7 @@ class DatabaseService {
   }
 
   /// [row] reduced to the keys [columns] names — see [importPromptDataInto].
-  static Map<String, dynamic> _knownColumnsOnly(
-      Map<String, dynamic> row, Set<String> columns) {
+  static Map<String, dynamic> _knownColumnsOnly(Map<String, dynamic> row, Set<String> columns) {
     return {
       for (final entry in row.entries)
         if (columns.contains(entry.key)) entry.key: entry.value,
@@ -861,9 +967,13 @@ class DatabaseService {
     return row;
   }
 
-  Future<void> _importSystemPrompts(DatabaseExecutor txn, List<dynamic>? rows, Map<int, int> tagIdMap) async {
+  Future<void> _importSystemPrompts(
+    DatabaseExecutor txn,
+    List<dynamic>? rows,
+    Map<int, int> tagIdMap,
+  ) async {
     if (rows == null) return;
-    for (var p in rows) {
+    for (final p in rows) {
       final Map<String, dynamic> row = _systemPromptRow(p);
       final List<dynamic>? tagsFromData = row['tags'];
       row.remove('tags');
@@ -871,11 +981,14 @@ class DatabaseService {
       final newPromptId = await txn.insert('system_prompts', row);
 
       if (tagsFromData != null) {
-        for (var t in tagsFromData) {
+        for (final t in tagsFromData) {
           final oldTagId = t['id'] as int;
           final newTagId = tagIdMap[oldTagId];
           if (newTagId != null) {
-            await txn.insert('system_prompt_tag_refs', {'prompt_id': newPromptId, 'tag_id': newTagId});
+            await txn.insert('system_prompt_tag_refs', {
+              'prompt_id': newPromptId,
+              'tag_id': newTagId,
+            });
           }
         }
       }
@@ -885,7 +998,7 @@ class DatabaseService {
   Future<void> _importSimpleTable(DatabaseExecutor txn, String table, List<dynamic>? rows) async {
     if (rows == null || rows.isEmpty) return;
     final batch = txn.batch();
-    for (var row in rows) {
+    for (final row in rows) {
       batch.insert(table, row as Map<String, dynamic>);
     }
     await batch.commit(noResult: true);
@@ -912,8 +1025,10 @@ class DatabaseService {
 
   /// Snapshot the API keys currently in the database, keyed by channel identity.
   Future<Map<String, String>> _collectChannelKeys(DatabaseExecutor txn) async {
-    final rows = await txn.query('llm_channels',
-        columns: ['display_name', 'endpoint', 'type', 'api_key', 'routes']);
+    final rows = await txn.query(
+      'llm_channels',
+      columns: ['display_name', 'endpoint', 'type', 'api_key', 'routes'],
+    );
     final Map<String, String> keys = {};
     for (final row in rows) {
       final apiKey = row['api_key'] as String? ?? '';
@@ -931,7 +1046,7 @@ class DatabaseService {
   ) async {
     final Map<int, int> idMap = {};
     if (rows == null) return idMap;
-    for (var c in rows) {
+    for (final c in rows) {
       final oldId = c['id'] as int;
       final Map<String, dynamic> row = Map.from(c)..remove('id');
       // Redacted export: fall back to the key this machine already had.
@@ -953,11 +1068,10 @@ class DatabaseService {
   Future<void> _importCookies(DatabaseExecutor txn, List<dynamic>? rows) async {
     if (rows == null || rows.isEmpty) return;
     final batch = txn.batch();
-    for (var r in rows) {
+    for (final r in rows) {
       final Map<String, dynamic> row = Map<String, dynamic>.from(r as Map);
       if ((row['cookies'] as String? ?? '').isEmpty) continue;
-      batch.insert('downloader_cookies', row,
-          conflictAlgorithm: ConflictAlgorithm.replace);
+      batch.insert('downloader_cookies', row, conflictAlgorithm: ConflictAlgorithm.replace);
     }
     await batch.commit(noResult: true);
   }
@@ -965,7 +1079,7 @@ class DatabaseService {
   Future<Map<int, int>> _importPricingGroups(DatabaseExecutor txn, List<dynamic>? rows) async {
     final Map<int, int> idMap = {};
     if (rows == null) return idMap;
-    for (var g in rows) {
+    for (final g in rows) {
       final oldId = g['id'] as int;
       final Map<String, dynamic> row = Map.from(g)..remove('id');
       final newId = await txn.insert('fee_groups', row);

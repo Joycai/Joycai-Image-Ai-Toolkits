@@ -45,32 +45,34 @@ void main() {
       return state;
     });
 
-    await tester.pumpWidget(ChangeNotifierProvider<AppState>.value(
-      value: appState!,
-      child: MaterialApp(
-        locale: locale,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: Scaffold(
-          body: OptimizerConfigPanel(
-            selectedModelDbId: null,
-            selectedSysPrompt: null,
-            sysPromptTemplateId: null,
-            mode: AssistantMode.knowledgeBase,
-            kbStatus: status,
-            kbPath: '/tmp/kb',
-            sysPrompts: const [],
-            running: running,
-            onModelChanged: (_) {},
-            onSysPromptChanged: (_) {},
-            onPresetLoaded: (_) {},
-            onSaveTemplate: (_, _) async {},
-            onModeChanged: onModeChanged ?? (_) {},
-            onScaffoldKb: onScaffold ?? () async {},
+    await tester.pumpWidget(
+      ChangeNotifierProvider<AppState>.value(
+        value: appState!,
+        child: MaterialApp(
+          locale: locale,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: OptimizerConfigPanel(
+              selectedModelDbId: null,
+              selectedSysPrompt: null,
+              sysPromptTemplateId: null,
+              mode: AssistantMode.knowledgeBase,
+              kbStatus: status,
+              kbPath: '/tmp/kb',
+              sysPrompts: const [],
+              running: running,
+              onModelChanged: (_) {},
+              onSysPromptChanged: (_) {},
+              onPresetLoaded: (_) {},
+              onSaveTemplate: (_, _) async {},
+              onModeChanged: onModeChanged ?? (_) {},
+              onScaffoldKb: onScaffold ?? () async {},
+            ),
           ),
         ),
       ),
-    ));
+    );
     // The running badge breathes forever; settling would never return.
     running ? await tester.pump(const Duration(milliseconds: 400)) : await tester.pumpAndSettle();
   }
@@ -81,9 +83,7 @@ void main() {
     await pumpPanel(tester, KbStatus.ok);
     final l10n = await en();
 
-    final button = tester.widget<AppButton>(
-      find.widgetWithText(AppButton, l10n.kbScaffoldCreate),
-    );
+    final button = tester.widget<AppButton>(find.widgetWithText(AppButton, l10n.kbScaffoldCreate));
     // A null callback is what actually makes it inert — not just greyed out.
     expect(button.onPressed, isNull);
   });
@@ -93,10 +93,7 @@ void main() {
     await pumpPanel(tester, KbStatus.ok, onScaffold: () async => calls++);
     final l10n = await en();
 
-    await tester.tap(
-      find.widgetWithText(AppButton, l10n.kbScaffoldCreate),
-      warnIfMissed: false,
-    );
+    await tester.tap(find.widgetWithText(AppButton, l10n.kbScaffoldCreate), warnIfMissed: false);
     await tester.pumpAndSettle();
     expect(calls, 0, reason: 'a disabled button must not reach the handler');
   });
@@ -109,15 +106,9 @@ void main() {
     // rescan and open-in-folder, and the folder action carries a tooltip of
     // its own.
     final tooltip = tester.widget<Tooltip>(
-      find.ancestor(
-        of: find.text(l10n.kbScaffoldCreate),
-        matching: find.byType(Tooltip),
-      ),
+      find.ancestor(of: find.text(l10n.kbScaffoldCreate), matching: find.byType(Tooltip)),
     );
-    expect(
-      tooltip.message,
-      l10n.kbScaffoldAlreadyInit(KnowledgeBaseService.entryFileName),
-    );
+    expect(tooltip.message, l10n.kbScaffoldAlreadyInit(KnowledgeBaseService.entryFileName));
     expect(tooltip.message, contains('README.md'));
   });
 
@@ -178,10 +169,7 @@ void main() {
     final use = tester.widget<AppSegmentedControl<AssistantMode>>(
       find.byType(AppSegmentedControl<AssistantMode>),
     );
-    expect(
-      use.segments.firstWhere((s) => s.value == AssistantMode.knowledgeEdit).enabled,
-      isFalse,
-    );
+    expect(use.segments.firstWhere((s) => s.value == AssistantMode.knowledgeEdit).enabled, isFalse);
     // The way back out stays open.
     await tester.tap(find.text(l10n.optModeSystemPrompt));
     await tester.pumpAndSettle();

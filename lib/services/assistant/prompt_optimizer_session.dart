@@ -10,8 +10,8 @@ class PromptOptimizerSession extends ChangeNotifier {
   static int _counter = 0;
 
   PromptOptimizerSession({AssistantMode mode = AssistantMode.systemPrompt, String? id})
-      : _mode = mode,
-        id = id ?? 'opt_${DateTime.now().millisecondsSinceEpoch}_${_counter++}';
+    : _mode = mode,
+      id = id ?? 'opt_${DateTime.now().millisecondsSinceEpoch}_${_counter++}';
 
   final String id;
 
@@ -175,8 +175,7 @@ class PromptOptimizerSession extends ChangeNotifier {
   /// only at the end of it — the tool list changes between requests of the same
   /// turn, and so does everything downstream of a tool result.
   void recordRequestBasis({required int systemPromptChars, required int toolSchemaChars}) {
-    if (this.systemPromptChars == systemPromptChars &&
-        this.toolSchemaChars == toolSchemaChars) {
+    if (this.systemPromptChars == systemPromptChars && this.toolSchemaChars == toolSchemaChars) {
       return;
     }
     this.systemPromptChars = systemPromptChars;
@@ -298,18 +297,22 @@ class PromptOptimizerSession extends ChangeNotifier {
       if (satisfied != null) 'rating': satisfied ? 'satisfied' : 'unsatisfied',
       if (reasons.isNotEmpty) 'reasons': [for (final r in reasons) r.wireId],
     });
-    history.add(LLMMessage(
-      role: LLMRole.user,
-      content: '${PromptOptimizerAgent.resultFeedbackMarker} $header\n${feedback.trim()}',
-    ));
-    _addEntry(OptimizerChatEntry(
-      kind: OptimizerEntryKind.resultFeedback,
-      text: feedback.trim(),
-      version: promptVersion,
-      note: imageName,
-      feedbackSatisfied: satisfied,
-      feedbackReasons: reasons,
-    ));
+    history.add(
+      LLMMessage(
+        role: LLMRole.user,
+        content: '${PromptOptimizerAgent.resultFeedbackMarker} $header\n${feedback.trim()}',
+      ),
+    );
+    _addEntry(
+      OptimizerChatEntry(
+        kind: OptimizerEntryKind.resultFeedback,
+        text: feedback.trim(),
+        version: promptVersion,
+        note: imageName,
+        feedbackSatisfied: satisfied,
+        feedbackReasons: reasons,
+      ),
+    );
   }
 
   /// Appends a distill-request turn. [content] must already carry
@@ -320,10 +323,12 @@ class PromptOptimizerSession extends ChangeNotifier {
     assert(content.startsWith(PromptOptimizerAgent.kbDistillMarker));
     assert(usesKnowledgeBase);
     history.add(LLMMessage(role: LLMRole.user, content: content));
-    _addEntry(OptimizerChatEntry(
-      kind: OptimizerEntryKind.kbDistill,
-      text: PromptOptimizerAgent.kbDistillNoticeToken,
-    ));
+    _addEntry(
+      OptimizerChatEntry(
+        kind: OptimizerEntryKind.kbDistill,
+        text: PromptOptimizerAgent.kbDistillNoticeToken,
+      ),
+    );
   }
 
   void _addEntry(OptimizerChatEntry entry) {
@@ -339,12 +344,14 @@ class PromptOptimizerSession extends ChangeNotifier {
   void _stagePrompt(String prompt, String? note) {
     refinedPrompt = prompt;
     promptVersions++;
-    _addEntry(OptimizerChatEntry(
-      kind: OptimizerEntryKind.prompt,
-      text: prompt,
-      version: promptVersions,
-      note: (note == null || note.trim().isEmpty) ? null : note.trim(),
-    ));
+    _addEntry(
+      OptimizerChatEntry(
+        kind: OptimizerEntryKind.prompt,
+        text: prompt,
+        version: promptVersions,
+        note: (note == null || note.trim().isEmpty) ? null : note.trim(),
+      ),
+    );
   }
 
   int _kbEditCounter = 0;
@@ -372,19 +379,21 @@ class PromptOptimizerSession extends ChangeNotifier {
     String? section,
   }) {
     final editId = 'kbedit_${id}_${_kbEditCounter++}';
-    _addEntry(OptimizerChatEntry(
-      kind: OptimizerEntryKind.kbEdit,
-      text: relPath,
-      editId: editId,
-      targetPath: relPath,
-      newContent: newContent,
-      oldContent: oldContent,
-      knowledgeRoot: knowledgeRoot,
-      editState: KbEditState.pending,
-      editScope: scope,
-      editSection: section,
-      note: (note == null || note.trim().isEmpty) ? null : note.trim(),
-    ));
+    _addEntry(
+      OptimizerChatEntry(
+        kind: OptimizerEntryKind.kbEdit,
+        text: relPath,
+        editId: editId,
+        targetPath: relPath,
+        newContent: newContent,
+        oldContent: oldContent,
+        knowledgeRoot: knowledgeRoot,
+        editState: KbEditState.pending,
+        editScope: scope,
+        editSection: section,
+        note: (note == null || note.trim().isEmpty) ? null : note.trim(),
+      ),
+    );
     return editId;
   }
 
@@ -413,8 +422,7 @@ class PromptOptimizerSession extends ChangeNotifier {
   /// [PromptOptimizerAgent.applyStagedKbEdit] writes through
   /// [KnowledgeBaseService], which a widget test has no folder for.
   @visibleForTesting
-  void resolveKbEditForTest(String editId, KbEditState state) =>
-      _resolveKbEdit(editId, state);
+  void resolveKbEditForTest(String editId, KbEditState state) => _resolveKbEdit(editId, state);
 
   @visibleForTesting
   String stageKbEditForTest({
@@ -425,16 +433,15 @@ class PromptOptimizerSession extends ChangeNotifier {
     String? note,
     KbEditScope scope = KbEditScope.file,
     String? section,
-  }) =>
-      _stageKbEdit(
-        relPath: relPath,
-        newContent: newContent,
-        oldContent: oldContent,
-        knowledgeRoot: knowledgeRoot,
-        note: note,
-        scope: scope,
-        section: section,
-      );
+  }) => _stageKbEdit(
+    relPath: relPath,
+    newContent: newContent,
+    oldContent: oldContent,
+    knowledgeRoot: knowledgeRoot,
+    note: note,
+    scope: scope,
+    section: section,
+  );
 
   /// The proposed content of the newest still-pending edit to [relPath], or
   /// null when none is waiting: what a further section edit to the same
@@ -460,13 +467,15 @@ class PromptOptimizerSession extends ChangeNotifier {
   /// answers (or the turn self-heals), which is what makes the pending state
   /// derivable and restorable.
   void _stageAskUser(String callId, List<AskUserQuestion> questions) {
-    _addEntry(OptimizerChatEntry(
-      kind: OptimizerEntryKind.askUser,
-      text: '',
-      askCallId: callId,
-      askQuestions: questions,
-      askState: AskUserState.pending,
-    ));
+    _addEntry(
+      OptimizerChatEntry(
+        kind: OptimizerEntryKind.askUser,
+        text: '',
+        askCallId: callId,
+        askQuestions: questions,
+        askState: AskUserState.pending,
+      ),
+    );
   }
 
   /// Flips a question card to its terminal state. Same rebuild-not-mutate and
@@ -497,7 +506,10 @@ class PromptOptimizerSession extends ChangeNotifier {
         continue;
       }
       if (m.role != LLMRole.assistant) continue;
-      final askCalls = [for (final c in m.toolCalls) if (c.name == 'ask_user') c];
+      final askCalls = [
+        for (final c in m.toolCalls)
+          if (c.name == 'ask_user') c,
+      ];
       if (askCalls.isEmpty) continue;
       // Only the LAST assistant message carrying ask_user calls can hold a
       // dangling one: a dangling call ends the turn, so no later assistant
@@ -526,9 +538,11 @@ class PromptOptimizerSession extends ChangeNotifier {
   /// Returns whether anything changed.
   bool _repairToolCallPairing() {
     final repaired = _repairPairingWithOrigins(history);
-    final unchanged = repaired.length == history.length &&
-        [for (int i = 0; i < repaired.length; i++) identical(repaired[i].message, history[i])]
-            .every((same) => same);
+    final unchanged =
+        repaired.length == history.length &&
+        [
+          for (int i = 0; i < repaired.length; i++) identical(repaired[i].message, history[i]),
+        ].every((same) => same);
     if (unchanged) return false;
 
     var rebased = repaired.length;
@@ -646,33 +660,39 @@ class PromptOptimizerSession extends ChangeNotifier {
             final parsed = PromptOptimizerAgent.tryParseResultFeedback(msg.content);
             // A header that fails to parse degrades to a plain user bubble —
             // the text is still the user's words, only the card dressing is lost.
-            entries.add(parsed == null
-                ? OptimizerChatEntry(kind: OptimizerEntryKind.user, text: msg.content)
-                : OptimizerChatEntry(
-                    kind: OptimizerEntryKind.resultFeedback,
-                    text: parsed.feedback,
-                    version: parsed.promptVersion,
-                    note: parsed.imageName,
-                    feedbackSatisfied: parsed.satisfied,
-                    feedbackReasons: parsed.reasons,
-                  ));
+            entries.add(
+              parsed == null
+                  ? OptimizerChatEntry(kind: OptimizerEntryKind.user, text: msg.content)
+                  : OptimizerChatEntry(
+                      kind: OptimizerEntryKind.resultFeedback,
+                      text: parsed.feedback,
+                      version: parsed.promptVersion,
+                      note: parsed.imageName,
+                      feedbackSatisfied: parsed.satisfied,
+                      feedbackReasons: parsed.reasons,
+                    ),
+            );
           } else if (msg.content.startsWith(PromptOptimizerAgent.kbDistillMarker)) {
-            entries.add(OptimizerChatEntry(
-              kind: OptimizerEntryKind.kbDistill,
-              text: PromptOptimizerAgent.kbDistillNoticeToken,
-            ));
+            entries.add(
+              OptimizerChatEntry(
+                kind: OptimizerEntryKind.kbDistill,
+                text: PromptOptimizerAgent.kbDistillNoticeToken,
+              ),
+            );
           } else {
             entries.add(OptimizerChatEntry(kind: OptimizerEntryKind.user, text: msg.content));
           }
         case LLMRole.assistant:
           if (msg.content.trim().isNotEmpty) {
-            entries.add(OptimizerChatEntry(
-              kind: OptimizerEntryKind.assistant,
-              text: msg.content.trim(),
-              truncated: msg.truncated,
-              deliverable: msg.deliverable,
-              modelDbId: msg.modelDbId,
-            ));
+            entries.add(
+              OptimizerChatEntry(
+                kind: OptimizerEntryKind.assistant,
+                text: msg.content.trim(),
+                truncated: msg.truncated,
+                deliverable: msg.deliverable,
+                modelDbId: msg.modelDbId,
+              ),
+            );
           }
           for (final call in msg.toolCalls) {
             switch (call.name) {
@@ -682,26 +702,32 @@ class PromptOptimizerSession extends ChangeNotifier {
                 session.refinedPrompt = prompt;
                 session.promptVersions++;
                 final note = call.arguments['note']?.toString();
-                entries.add(OptimizerChatEntry(
-                  kind: OptimizerEntryKind.prompt,
-                  text: prompt,
-                  version: session.promptVersions,
-                  note: (note == null || note.trim().isEmpty) ? null : note.trim(),
-                ));
+                entries.add(
+                  OptimizerChatEntry(
+                    kind: OptimizerEntryKind.prompt,
+                    text: prompt,
+                    version: session.promptVersions,
+                    note: (note == null || note.trim().isEmpty) ? null : note.trim(),
+                  ),
+                );
               case 'view_image':
-                entries.add(OptimizerChatEntry(
-                  kind: OptimizerEntryKind.tool,
-                  text: call.arguments['id']?.toString() ?? '',
-                  toolName: 'view_image',
-                ));
+                entries.add(
+                  OptimizerChatEntry(
+                    kind: OptimizerEntryKind.tool,
+                    text: call.arguments['id']?.toString() ?? '',
+                    toolName: 'view_image',
+                  ),
+                );
               case 'read_knowledge_file':
                 // No cache to rebuild: whether a read is still readable is
                 // derived from the restored history by _liveReadPages.
-                entries.add(OptimizerChatEntry(
-                  kind: OptimizerEntryKind.tool,
-                  text: call.arguments['path']?.toString() ?? '',
-                  toolName: 'read_knowledge_file',
-                ));
+                entries.add(
+                  OptimizerChatEntry(
+                    kind: OptimizerEntryKind.tool,
+                    text: call.arguments['path']?.toString() ?? '',
+                    toolName: 'read_knowledge_file',
+                  ),
+                );
               case 'write_knowledge_file':
                 // Restored as a plain chip, never as an actionable kbEdit card.
                 // The approval outcome is not persisted (the transcript is
@@ -718,41 +744,51 @@ class PromptOptimizerSession extends ChangeNotifier {
                 if (writtenPath.isNotEmpty) {
                   session.knowledgeStaleAt[writtenPath] = msg;
                 }
-                entries.add(OptimizerChatEntry(
-                  kind: OptimizerEntryKind.tool,
-                  text: writtenPath,
-                  toolName: 'write_knowledge_file',
-                ));
+                entries.add(
+                  OptimizerChatEntry(
+                    kind: OptimizerEntryKind.tool,
+                    text: writtenPath,
+                    toolName: 'write_knowledge_file',
+                  ),
+                );
               case 'list_knowledge_files':
-                entries.add(OptimizerChatEntry(
-                  kind: OptimizerEntryKind.tool,
-                  text: '',
-                  toolName: 'list_knowledge_files',
-                ));
+                entries.add(
+                  OptimizerChatEntry(
+                    kind: OptimizerEntryKind.tool,
+                    text: '',
+                    toolName: 'list_knowledge_files',
+                  ),
+                );
               case 'delegate':
                 // A plain chip: the note (if one was stored) lives in the DB
                 // keyed by session, so read_note keeps working after a
                 // restart — nothing else to rebuild.
                 final delegatedTask = call.arguments['task']?.toString() ?? '';
-                entries.add(OptimizerChatEntry(
-                  kind: OptimizerEntryKind.tool,
-                  text: delegatedTask.length > 120
-                      ? '${delegatedTask.substring(0, 120)}…'
-                      : delegatedTask,
-                  toolName: 'delegate',
-                ));
+                entries.add(
+                  OptimizerChatEntry(
+                    kind: OptimizerEntryKind.tool,
+                    text: delegatedTask.length > 120
+                        ? '${delegatedTask.substring(0, 120)}…'
+                        : delegatedTask,
+                    toolName: 'delegate',
+                  ),
+                );
               case 'read_note':
-                entries.add(OptimizerChatEntry(
-                  kind: OptimizerEntryKind.tool,
-                  text: '#${call.arguments['note_id'] ?? ''}',
-                  toolName: 'read_note',
-                ));
+                entries.add(
+                  OptimizerChatEntry(
+                    kind: OptimizerEntryKind.tool,
+                    text: '#${call.arguments['note_id'] ?? ''}',
+                    toolName: 'read_note',
+                  ),
+                );
               case 'list_reference_images':
-                entries.add(OptimizerChatEntry(
-                  kind: OptimizerEntryKind.tool,
-                  text: '',
-                  toolName: 'list_reference_images',
-                ));
+                entries.add(
+                  OptimizerChatEntry(
+                    kind: OptimizerEntryKind.tool,
+                    text: '',
+                    toolName: 'list_reference_images',
+                  ),
+                );
               case 'ask_user':
                 final questions = AskUserQuestion.tryParse(call.arguments['questions']);
                 if (questions == null) break; // Malformed call: was error-answered, no card.
@@ -769,13 +805,15 @@ class PromptOptimizerSession extends ChangeNotifier {
                   }
                 }
                 if (result == null) {
-                  entries.add(OptimizerChatEntry(
-                    kind: OptimizerEntryKind.askUser,
-                    text: '',
-                    askCallId: call.id,
-                    askQuestions: questions,
-                    askState: AskUserState.pending,
-                  ));
+                  entries.add(
+                    OptimizerChatEntry(
+                      kind: OptimizerEntryKind.askUser,
+                      text: '',
+                      askCallId: call.id,
+                      askQuestions: questions,
+                      askState: AskUserState.pending,
+                    ),
+                  );
                   break;
                 }
                 var state = AskUserState.dismissed;
@@ -804,14 +842,16 @@ class PromptOptimizerSession extends ChangeNotifier {
                 } catch (_) {
                   // Undecodable result degrades to a bare dismissed card.
                 }
-                entries.add(OptimizerChatEntry(
-                  kind: OptimizerEntryKind.askUser,
-                  text: '',
-                  askCallId: call.id,
-                  askQuestions: questions,
-                  askState: state,
-                  askAnswers: answers,
-                ));
+                entries.add(
+                  OptimizerChatEntry(
+                    kind: OptimizerEntryKind.askUser,
+                    text: '',
+                    askCallId: call.id,
+                    askQuestions: questions,
+                    askState: state,
+                    askAnswers: answers,
+                  ),
+                );
             }
           }
         case LLMRole.tool:
@@ -820,7 +860,9 @@ class PromptOptimizerSession extends ChangeNotifier {
       }
     }
     if (anyImageMissing && missingImageNoticeText != null) {
-      entries.add(OptimizerChatEntry(kind: OptimizerEntryKind.notice, text: missingImageNoticeText));
+      entries.add(
+        OptimizerChatEntry(kind: OptimizerEntryKind.notice, text: missingImageNoticeText),
+      );
     }
     session._transcript = entries;
     return session;
@@ -829,8 +871,9 @@ class PromptOptimizerSession extends ChangeNotifier {
 
 /// The request [PromptOptimizerAgent] makes, as tests replace it — see
 /// [PromptOptimizerAgent.debugRequestOverride].
-typedef AgentRequestFn = Future<LLMResponse> Function(
-  List<LLMMessage> messages,
-  List<LLMTool>? tools,
-  Map<String, dynamic> options,
-);
+typedef AgentRequestFn =
+    Future<LLMResponse> Function(
+      List<LLMMessage> messages,
+      List<LLMTool>? tools,
+      Map<String, dynamic> options,
+    );

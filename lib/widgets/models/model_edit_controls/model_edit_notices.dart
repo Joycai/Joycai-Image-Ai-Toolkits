@@ -35,10 +35,10 @@ class ModelEditNotice extends StatelessWidget {
     final (Color bg, Color ink, IconData glyph) = switch (tone) {
       ModelEditTone.info => (semantic.infoContainer, semantic.onInfoContainer, Icons.info_outline),
       ModelEditTone.warning => (
-          semantic.warningContainer,
-          semantic.onWarningContainer,
-          Icons.warning_amber_rounded
-        ),
+        semantic.warningContainer,
+        semantic.onWarningContainer,
+        Icons.warning_amber_rounded,
+      ),
       ModelEditTone.error => (scheme.errorContainer, scheme.onErrorContainer, Icons.error_outline),
     };
 
@@ -126,7 +126,9 @@ class ModelEditParamBlock extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsetsDirectional.only(start: 12, top: 2, bottom: 2),
           decoration: BoxDecoration(
-            border: BorderDirectional(start: BorderSide(color: rail!, width: railWidth)),
+            border: BorderDirectional(
+              start: BorderSide(color: rail!, width: railWidth),
+            ),
           ),
           child: child,
         ),

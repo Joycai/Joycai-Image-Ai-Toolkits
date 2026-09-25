@@ -37,23 +37,25 @@ void main() {
       final (appState, browser) = states!;
       browser.viewMode = BrowserViewMode.grid;
 
-      await tester.pumpWidget(MultiProvider(
-        providers: [
-          ChangeNotifierProvider<AppState>.value(value: appState),
-          ChangeNotifierProvider<FileBrowserState>.value(value: browser),
-        ],
-        child: MaterialApp(
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          locale: const Locale('zh'),
-          home: Scaffold(
-            body: Align(
-              alignment: Alignment.topLeft,
-              child: BrowserFilterBar(state: browser),
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<AppState>.value(value: appState),
+            ChangeNotifierProvider<FileBrowserState>.value(value: browser),
+          ],
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: const Locale('zh'),
+            home: Scaffold(
+              body: Align(
+                alignment: Alignment.topLeft,
+                child: BrowserFilterBar(state: browser),
+              ),
             ),
           ),
         ),
-      ));
+      );
       await tester.pump();
 
       final Rect bar = tester.getRect(find.byType(BrowserFilterBar));

@@ -62,18 +62,19 @@ void main() {
     LLMModelConfig config,
     List<LLMAttachment> attachments, {
     Map<String, dynamic>? options,
-  }) =>
-      LLMDispatcher().startLongRunning(
-        config,
-        [LLMMessage(role: LLMRole.user, content: 'a cat', attachments: attachments)],
-        options: options,
-      );
+  }) => LLMDispatcher().startLongRunning(config, [
+    LLMMessage(role: LLMRole.user, content: 'a cat', attachments: attachments),
+  ], options: options);
 
   test('xAI: the first frame alone, or the references, less one unreadable', () async {
     answer = (_) => {'request_id': 'req_1'};
     final xai = config(Vendors.xaiApi, 'grok-imagine-video-1.5');
 
-    final firstFrame = await submit(xai, [frame(LLMReferenceType.firstFrame), reference(), reference()]);
+    final firstFrame = await submit(xai, [
+      frame(LLMReferenceType.firstFrame),
+      reference(),
+      reference(),
+    ]);
     expect(firstFrame.name, 'req_1');
     expect(firstFrame.inputImages, 1, reason: 'references are dropped in favour of the frame');
 
@@ -88,14 +89,18 @@ void main() {
     answer = (_) => {'id': 'video_1'};
     final sora = config(Vendors.openAIRest, 'sora-2');
 
-    final ticket = await submit(sora, [frame(LLMReferenceType.firstFrame), reference(), unreadable()]);
+    final ticket = await submit(sora, [
+      frame(LLMReferenceType.firstFrame),
+      reference(),
+      unreadable(),
+    ]);
     expect(ticket.inputImages, 2);
   });
 
   test('DashScope: every media entry of input.media[]', () async {
     answer = (_) => {
-          'output': {'task_id': 'task_1'},
-        };
+      'output': {'task_id': 'task_1'},
+    };
     final wan = config(Vendors.dashscopeNative, 'wan3.0-video', path: '/api/v1');
 
     final ticket = await submit(wan, [
@@ -110,51 +115,63 @@ void main() {
     answer = (_) => {'task_id': 'mm_1'};
     final hailuo = config(Vendors.minimax, 'MiniMax-Hailuo-02');
 
-    final ticket = await submit(hailuo, [frame(LLMReferenceType.firstFrame), reference(), reference()]);
+    final ticket = await submit(hailuo, [
+      frame(LLMReferenceType.firstFrame),
+      reference(),
+      reference(),
+    ]);
     expect(ticket.inputImages, 1);
   });
 
-  test('MiniMax H3 local: the same exclusion, with byte attachments written out as files', () async {
-    answer = (_) => {'id': 'h3_1'};
-    final h3 = config(Vendors.minimaxH3Base, 'minimax-h3-base');
-    // The protocol writes each byte attachment to the system temp dir so it
-    // can travel as a file:// URI, and only the app's start-up sweep reclaims
-    // them (after hours). Take back what this test adds — and only that, so
-    // a running app's in-flight files are left alone.
-    Set<String> tempRefs() => Directory.systemTemp
-        .listSync()
-        .map((e) => e.path)
-        .where((p) => p.split(Platform.pathSeparator).last.startsWith(minimaxH3TempRefPrefix))
-        .toSet();
-    final before = tempRefs();
-    addTearDown(() {
-      for (final path in tempRefs().difference(before)) {
-        try {
-          File(path).deleteSync();
-        } catch (_) {}
-      }
-    });
+  test(
+    'MiniMax H3 local: the same exclusion, with byte attachments written out as files',
+    () async {
+      answer = (_) => {'id': 'h3_1'};
+      final h3 = config(Vendors.minimaxH3Base, 'minimax-h3-base');
+      // The protocol writes each byte attachment to the system temp dir so it
+      // can travel as a file:// URI, and only the app's start-up sweep reclaims
+      // them (after hours). Take back what this test adds — and only that, so
+      // a running app's in-flight files are left alone.
+      Set<String> tempRefs() => Directory.systemTemp
+          .listSync()
+          .map((e) => e.path)
+          .where((p) => p.split(Platform.pathSeparator).last.startsWith(minimaxH3TempRefPrefix))
+          .toSet();
+      final before = tempRefs();
+      addTearDown(() {
+        for (final path in tempRefs().difference(before)) {
+          try {
+            File(path).deleteSync();
+          } catch (_) {}
+        }
+      });
 
-    final frames = await submit(h3, [frame(LLMReferenceType.firstFrame), reference(), reference()]);
-    expect(frames.name, 'h3_1');
-    expect(frames.inputImages, 1, reason: 'references are dropped in favour of the keyframe');
+      final frames = await submit(h3, [
+        frame(LLMReferenceType.firstFrame),
+        reference(),
+        reference(),
+      ]);
+      expect(frames.name, 'h3_1');
+      expect(frames.inputImages, 1, reason: 'references are dropped in favour of the keyframe');
 
-    final references = await submit(h3, [reference(), unreadable(), reference()]);
-    expect(references.inputImages, 2);
-  });
+      final references = await submit(h3, [reference(), unreadable(), reference()]);
+      expect(references.inputImages, 2);
+    },
+  );
 
   test('Veo: first frame, last frame and references are all counted', () {
-    final payload = prepareVeoPayload(
-      [
-        LLMMessage(role: LLMRole.user, content: 'a cat', attachments: [
+    final payload = prepareVeoPayload([
+      LLMMessage(
+        role: LLMRole.user,
+        content: 'a cat',
+        attachments: [
           frame(LLMReferenceType.firstFrame),
           frame(LLMReferenceType.lastFrame),
           reference(),
           unreadable(),
-        ]),
-      ],
-      null,
-    );
+        ],
+      ),
+    ], null);
     expect(veoInputImages(payload), 3);
     expect(veoInputImages(const {}), 0);
   });
@@ -164,15 +181,15 @@ void main() {
     final rows = <TokenUsage>[];
     LLMService.usageSinkOverride = (row) async => rows.add(row);
     LLMService.configResolverOverride = (_) => LLMModelConfig(
-          modelId: 'grok-imagine-video-1.5',
-          channelType: Vendors.xaiApi,
-          endpoint: '${base()}/v1',
-          apiKey: 'k',
-          billingMode: 'spec',
-          outputUnit: OutputUnit.second,
-          outputRates: const [SpecRate(price: 0.08)],
-          inputUnitFee: 0.01,
-        );
+      modelId: 'grok-imagine-video-1.5',
+      channelType: Vendors.xaiApi,
+      endpoint: '${base()}/v1',
+      apiKey: 'k',
+      billingMode: 'spec',
+      outputUnit: OutputUnit.second,
+      outputRates: const [SpecRate(price: 0.08)],
+      inputUnitFee: 0.01,
+    );
 
     final ticket = await LLMService().startLongRunning(
       modelIdentifier: 'grok-imagine-video-1.5',
@@ -194,4 +211,5 @@ void main() {
 
 /// A 1×1 PNG.
 final Uint8List _png = base64Decode(
-    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==');
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+);

@@ -44,9 +44,9 @@ void main() {
   // (see `AppKeyLabel`).
   for (final Brightness brightness in Brightness.values) {
     for (final ShotSize size in <ShotSize>[kShotSizes.last, kShotSizes[1]]) {
-      testWidgets(
-          'fileBrowser · shortcutPanel @ ${size.label} ${brightness.name}',
-          (WidgetTester tester) async {
+      testWidgets('fileBrowser · shortcutPanel @ ${size.label} ${brightness.name}', (
+        WidgetTester tester,
+      ) async {
         await shoot(
           tester,
           env: env,
@@ -74,9 +74,7 @@ void main() {
   // so it gets its own shot with the panel populated, a destination named, a
   // selection live (floating bar) and a mark that has gone stale.
   for (final Brightness brightness in Brightness.values) {
-    testWidgets('fileBrowser · staging @ desktop ${brightness.name}', (
-      WidgetTester tester,
-    ) async {
+    testWidgets('fileBrowser · staging @ desktop ${brightness.name}', (WidgetTester tester) async {
       await shoot(
         tester,
         env: env,
@@ -159,8 +157,7 @@ void main() {
           final browser = appState.fileBrowserState;
           final staging = appState.fileStagingState;
 
-          final Directory dest =
-              Directory(p.join(env.browserDir.path, 'archive'));
+          final Directory dest = Directory(p.join(env.browserDir.path, 'archive'));
           // Real files: `before` runs in real async, where dart:io completes.
           if (!await dest.exists()) await dest.create();
           for (final BrowserFile f in browser.filteredFiles.take(3)) {
@@ -196,15 +193,11 @@ void main() {
 
   // The folder name also appears in the staging panel's group header when
   // an earlier shot left marks behind, so the row is found through the tree.
-  Finder treeRow(String name) => find.descendant(
-        of: find.byType(DirectoryTreeItem),
-        matching: find.text(name),
-      );
+  Finder treeRow(String name) =>
+      find.descendant(of: find.byType(DirectoryTreeItem), matching: find.text(name));
 
-  Finder menuItem(String label) => find.descendant(
-        of: find.byType(AppGlassMenu),
-        matching: find.text(label),
-      );
+  Finder menuItem(String label) =>
+      find.descendant(of: find.byType(AppGlassMenu), matching: find.text(label));
 
   testWidgets('fileBrowser · folderMenu @ desktop light', (WidgetTester tester) async {
     await shoot(
@@ -226,7 +219,9 @@ void main() {
   // from a file card's menu, which is how both the browser and the gallery
   // reach it.
   for (final Brightness brightness in Brightness.values) {
-    testWidgets('fileBrowser · fileRename @ desktop ${brightness.name}', (WidgetTester tester) async {
+    testWidgets('fileBrowser · fileRename @ desktop ${brightness.name}', (
+      WidgetTester tester,
+    ) async {
       await shoot(
         tester,
         env: env,
@@ -276,10 +271,12 @@ void main() {
       after: (WidgetTester tester) async {
         await actInRealAsync(
           tester,
-          () => tester.tap(find.descendant(
-            of: find.byType(DirectoryTreeItem),
-            matching: find.byIcon(Icons.chevron_right),
-          )),
+          () => tester.tap(
+            find.descendant(
+              of: find.byType(DirectoryTreeItem),
+              matching: find.byIcon(Icons.chevron_right),
+            ),
+          ),
           wait: const Duration(milliseconds: 400),
         );
         await tester.tap(treeRow('archive').first, buttons: kSecondaryButton);
@@ -300,9 +297,7 @@ void main() {
   // covers the shell, the config column, the result toolbar, the empty state
   // and the footer, which is where the redraw's shape lives.
   for (final Brightness brightness in Brightness.values) {
-    testWidgets('fileBrowser · aiRename @ desktop ${brightness.name}', (
-      WidgetTester tester,
-    ) async {
+    testWidgets('fileBrowser · aiRename @ desktop ${brightness.name}', (WidgetTester tester) async {
       await shoot(
         tester,
         env: env,
@@ -356,8 +351,9 @@ void main() {
   // platform's answer about the trash, so both are forced here: the machine
   // running the suite must not decide which frame gets photographed.
   for (final bool toTrash in <bool>[true, false]) {
-    testWidgets('fileBrowser · ${toTrash ? 'fileTrash' : 'fileDelete'} @ desktop light',
-        (WidgetTester tester) async {
+    testWidgets('fileBrowser · ${toTrash ? 'fileTrash' : 'fileDelete'} @ desktop light', (
+      WidgetTester tester,
+    ) async {
       TrashService.overrideSupport(toTrash);
       addTearDown(() => TrashService.overrideSupport(null));
       await shoot(

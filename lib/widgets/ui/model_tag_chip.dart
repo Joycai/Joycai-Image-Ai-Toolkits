@@ -14,13 +14,7 @@ import '../../l10n/app_localizations.dart';
 /// pickers and the channel rows is the same badge with the user's own colour
 /// and text ([color], [uppercase]).
 class ModelTagChip extends StatelessWidget {
-  const ModelTagChip(
-    this.tag, {
-    super.key,
-    this.color,
-    this.uppercase = true,
-    this.mono = false,
-  });
+  const ModelTagChip(this.tag, {super.key, this.color, this.uppercase = true, this.mono = false});
 
   /// A [ModelTag] string value. Unrecognised tags take the palette's fallback
   /// rather than being hidden — a model with an odd tag should still say so.
@@ -135,10 +129,9 @@ class ModelKindBadge extends StatelessWidget {
         modelKindLabel(l10n, tag),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: Theme.of(context)
-            .textTheme
-            .labelSmall
-            ?.copyWith(color: color, fontWeight: FontWeight.w600),
+        style: Theme.of(
+          context,
+        ).textTheme.labelSmall?.copyWith(color: color, fontWeight: FontWeight.w600),
       ),
     );
   }

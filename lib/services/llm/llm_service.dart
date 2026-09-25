@@ -8,9 +8,9 @@ import '../../models/token_usage.dart';
 import '../billing/spec_billing.dart';
 import '../db/database_service.dart';
 import 'context_budget.dart';
+import 'job_poll.dart' show cancellableSleep, cancellationProbeOf;
 import 'llm_config_resolver.dart';
 import 'llm_debug_logger.dart';
-import 'job_poll.dart' show cancellableSleep, cancellationProbeOf;
 import 'llm_dispatcher.dart';
 import 'llm_types.dart';
 import 'output_spec.dart';
@@ -47,8 +47,7 @@ class LLMService {
     return listener;
   }
 
-  void removeLogListener(LLMLogListener listener) =>
-      _logListeners.remove(listener);
+  void removeLogListener(LLMLogListener listener) => _logListeners.remove(listener);
 
   /// Delivers one log line to every listener. A listener that throws is
   /// skipped rather than allowed to break the request it is observing.
@@ -100,8 +99,7 @@ class LLMService {
   }) async {
     final config = await _resolveConfig(
       modelIdentifier,
-      logger: (msg, {level = 'INFO'}) =>
-          _emitLog(msg, level: level, contextId: contextId),
+      logger: (msg, {level = 'INFO'}) => _emitLog(msg, level: level, contextId: contextId),
       options: options,
     );
     // Tool calling reaches the streaming surface only where the protocol
@@ -200,27 +198,21 @@ class LLMService {
             'Connecting to ${config.channelType} (standard)... ${attempt > 0 ? "(Retry $attempt/$maxRetries)" : ""}',
             level: 'DEBUG',
           );
-          final deadline = _dispatcher.generateTimeout(
-            config,
-            options: options,
-          );
+          final deadline = _dispatcher.generateTimeout(config, options: options);
           response = await LLMDebugLogger.runCorrelated(
-              correlation,
-              () => _dispatcher.generate(
-                config,
-                turnHistory,
-                options: attemptOptions,
-                tools: tools,
-                logger: log,
-                // Its own type rather than the bare TimeoutException Future
-                // supplies, so the retry decision can tell "the generation ran
-                // long" apart from "the connection died" — see
-                // [LLMDeadlineExceeded].
-              ))
-              .timeout(
-                deadline,
-                onTimeout: () => throw LLMDeadlineExceeded(deadline),
-              );
+            correlation,
+            () => _dispatcher.generate(
+              config,
+              turnHistory,
+              options: attemptOptions,
+              tools: tools,
+              logger: log,
+              // Its own type rather than the bare TimeoutException Future
+              // supplies, so the retry decision can tell "the generation ran
+              // long" apart from "the connection died" — see
+              // [LLMDeadlineExceeded].
+            ),
+          ).timeout(deadline, onTimeout: () => throw LLMDeadlineExceeded(deadline));
           if (response.text.isNotEmpty) {
             log('[AI]: ${response.text}');
           }
@@ -237,8 +229,7 @@ class LLMService {
         // provider reported no usage at all — relays that draw through the
         // chat surface commonly report none.
         final specBilled = config.billingMode == specBillingMode;
-        if (response.metadata.isNotEmpty ||
-            (specBilled && response.generatedImages.isNotEmpty)) {
+        if (response.metadata.isNotEmpty || (specBilled && response.generatedImages.isNotEmpty)) {
           await _recordUsage(
             config.modelId,
             config,
@@ -303,8 +294,7 @@ class LLMService {
           rethrow;
         }
         attempt++;
-        if (attempt > maxRetries ||
-            !shouldRetry(e, billedOnSubmit: billedOnSubmit)) {
+        if (attempt > maxRetries || !shouldRetry(e, billedOnSubmit: billedOnSubmit)) {
           rethrow;
         }
         // Asked again here, not just at the top: the failure may well *be*
@@ -321,8 +311,7 @@ class LLMService {
           );
           rethrow;
         }
-        log('Request failed: $e. Retrying in ${_describeDelay(delay)}...',
-            level: 'WARN');
+        log('Request failed: $e. Retrying in ${_describeDelay(delay)}...', level: 'WARN');
         // Sliced, so pressing stop during a long Retry-After wait ends the
         // turn within half a second instead of after the whole wait.
         await cancellableSleep(delay, cancelProbe);
@@ -470,9 +459,7 @@ class LLMService {
     final response = LLMResponse(
       text: accumulatedText,
       generatedImages: accumulatedImages,
-      imageLayers: accumulatedLayers.any((l) => l != null)
-          ? accumulatedLayers
-          : const [],
+      imageLayers: accumulatedLayers.any((l) => l != null) ? accumulatedLayers : const [],
       metadata: finalMetadata ?? {},
       toolCalls: accumulatedToolCalls,
       // With a native reasoning field present, the response carries that
@@ -527,8 +514,7 @@ class LLMService {
     final blocked = previous['finish_reason'] == contentFilterFinishReason;
     next.forEach((key, value) {
       if (value == null) return;
-      if (blocked &&
-          (key == 'finish_reason' || key == 'finish_reason_raw')) {
+      if (blocked && (key == 'finish_reason' || key == 'finish_reason_raw')) {
         return;
       }
       merged[key] = value;
@@ -558,10 +544,7 @@ class LLMService {
   /// story one image at a time: its first chunk is a whole finished image,
   /// so it borrows that gap — and, like the single-shot routes, expiring is
   /// a deadline rather than a dead connection.
-  Duration _firstChunkGapFor(
-    LLMModelConfig config,
-    Map<String, dynamic>? options,
-  ) {
+  Duration _firstChunkGapFor(LLMModelConfig config, Map<String, dynamic>? options) {
     final imageGap = _dispatcher.imageStreamChunkGap(config);
     if (imageGap != null) {
       return imageGap > _firstChunkGap ? imageGap : _firstChunkGap;
@@ -574,8 +557,7 @@ class LLMService {
   /// Whether the first-chunk gap is a generation deadline ([LLMDeadlineExceeded],
   /// never retried) rather than a liveness check.
   bool _firstChunkIsDeadline(LLMModelConfig config) =>
-      _dispatcher.streamIsSingleShot(config) ||
-      _dispatcher.imageStreamChunkGap(config) != null;
+      _dispatcher.streamIsSingleShot(config) || _dispatcher.imageStreamChunkGap(config) != null;
 
   @visibleForTesting
   static Stream<T> idleGuardedForTest<T>(
@@ -583,8 +565,7 @@ class LLMService {
     required Duration first,
     required Duration subsequent,
     bool firstIsDeadline = false,
-  }) => _guard(stream,
-      first: first, subsequent: subsequent, firstIsDeadline: firstIsDeadline);
+  }) => _guard(stream, first: first, subsequent: subsequent, firstIsDeadline: firstIsDeadline);
 
   /// Whether a failed attempt is worth retrying: network-level failures and
   /// transient HTTP codes (5xx / 429), nothing else.
@@ -624,14 +605,11 @@ class LLMService {
     if (e is LLMApiException) return e.isTransient;
 
     final errorStr = e.toString();
-    if (errorStr.contains('SocketException') ||
-        errorStr.contains('Connection closed')) {
+    if (errorStr.contains('SocketException') || errorStr.contains('Connection closed')) {
       return true;
     }
 
-    final statusCodeMatch = RegExp(
-      r'failed:?\s+(\d{3})\b',
-    ).firstMatch(errorStr);
+    final statusCodeMatch = RegExp(r'failed:?\s+(\d{3})\b').firstMatch(errorStr);
     if (statusCodeMatch != null) {
       final code = int.tryParse(statusCodeMatch.group(1)!);
       if (code != null && (code == 429 || (code >= 500 && code < 600))) {
@@ -686,9 +664,7 @@ class LLMService {
     }
     var schemaChars = 0;
     for (final tool in tools ?? const <LLMTool>[]) {
-      schemaChars += tool.name.length +
-          tool.description.length +
-          _jsonLength(tool.parameters);
+      schemaChars += tool.name.length + tool.description.length + _jsonLength(tool.parameters);
     }
     final estimate = ContextBudget.estimateRequestTokens(
       chars: chars,
@@ -729,10 +705,7 @@ class LLMService {
 
   /// A watcher that completes [abort] once [probe] turns true, or null when
   /// there is no probe to watch. Cancelled by the attempt's `finally`.
-  static Timer? _abortWhenCancelled(
-    bool Function()? probe,
-    Completer<void> abort,
-  ) {
+  static Timer? _abortWhenCancelled(bool Function()? probe, Completer<void> abort) {
     if (probe == null) return null;
     return Timer.periodic(const Duration(milliseconds: 250), (timer) {
       if (probe()) {
@@ -803,22 +776,13 @@ class LLMService {
     String? contextId,
     Map<String, dynamic>? options,
   }) async* {
-    _emitLog(
-      'Preparing request for model: $modelIdentifier',
-      level: 'DEBUG',
-      contextId: contextId,
-    );
+    _emitLog('Preparing request for model: $modelIdentifier', level: 'DEBUG', contextId: contextId);
     final config = await _resolveConfig(
       modelIdentifier,
-      logger: (msg, {level = 'INFO'}) =>
-          _emitLog(msg, level: level, contextId: contextId),
+      logger: (msg, {level = 'INFO'}) => _emitLog(msg, level: level, contextId: contextId),
       options: options,
     );
-    _emitLog(
-      'Connecting to ${config.channelType}...',
-      level: 'DEBUG',
-      contextId: contextId,
-    );
+    _emitLog('Connecting to ${config.channelType}...', level: 'DEBUG', contextId: contextId);
 
     final int maxRetries = options?['retryCount'] ?? 0;
     // The workbench's Retry Count reaches image tasks through here — see
@@ -862,10 +826,7 @@ class LLMService {
         leg: leg,
         attempt: attempt,
       );
-      final attemptOptions = <String, dynamic>{
-        ...?options,
-        llmAbortTriggerKey: abort.future,
-      };
+      final attemptOptions = <String, dynamic>{...?options, llmAbortTriggerKey: abort.future};
       // Per attempt, outside the try: the finally below reads them.
       int imageCount = 0;
       Map<String, dynamic>? finalMetadata;
@@ -878,7 +839,6 @@ class LLMService {
       String? legSignature;
       var separatorOwed = legTextShown;
       try {
-
         // Opened and listened to inside the correlation's zone: this method
         // is itself a generator and cannot wrap its own `await for`.
         final stream = LLMDebugLogger.correlatedStream(
@@ -887,8 +847,7 @@ class LLMService {
             config,
             turnHistory,
             options: attemptOptions,
-            logger: (msg, {level = 'INFO'}) =>
-                _emitLog(msg, level: level, contextId: contextId),
+            logger: (msg, {level = 'INFO'}) => _emitLog(msg, level: level, contextId: contextId),
           ),
         );
 
@@ -899,26 +858,14 @@ class LLMService {
           firstIsDeadline: _firstChunkIsDeadline(config),
         )) {
           if (chunk.reasoningPart != null) {
-            _emitLog(
-              '[AI thinking]: ${chunk.reasoningPart}',
-              level: 'DEBUG',
-              contextId: contextId,
-            );
+            _emitLog('[AI thinking]: ${chunk.reasoningPart}', level: 'DEBUG', contextId: contextId);
           }
           if (chunk.textPart != null) {
-            _emitLog(
-              '[AI]: ${chunk.textPart}',
-              level: 'INFO',
-              contextId: contextId,
-            );
+            _emitLog('[AI]: ${chunk.textPart}', level: 'INFO', contextId: contextId);
           }
           if (chunk.imagePart != null) {
             imageCount++;
-            _emitLog(
-              'Received image part ($imageCount)',
-              level: 'DEBUG',
-              contextId: contextId,
-            );
+            _emitLog('Received image part ($imageCount)', level: 'DEBUG', contextId: contextId);
           }
           finalMetadata = mergeChunkMetadata(finalMetadata, chunk.metadata);
           if (chunk.textPart != null) legText.write(chunk.textPart);
@@ -947,11 +894,7 @@ class LLMService {
         // ended with a usage payload.
         final specBilled = config.billingMode == specBillingMode;
         if (finalMetadata != null || (specBilled && imageCount > 0)) {
-          _emitLog(
-            'Recording token usage...',
-            level: 'DEBUG',
-            contextId: contextId,
-          );
+          _emitLog('Recording token usage...', level: 'DEBUG', contextId: contextId);
           await _recordUsage(
             config.modelId,
             config,
@@ -967,8 +910,7 @@ class LLMService {
         await LLMDebugLogger.appendSummaries(correlation, finalMetadata);
 
         if (usageMissing(config, finalMetadata ?? const {})) {
-          _emitLog(_missingUsageWarning(config),
-              level: 'WARN', contextId: contextId);
+          _emitLog(_missingUsageWarning(config), level: 'WARN', contextId: contextId);
         }
 
         // After usage, same as request(): a stream that ran to its end was
@@ -985,8 +927,7 @@ class LLMService {
           LLMResponse(
             text: legText.toString(),
             metadata: finalMetadata ?? const {},
-            reasoningContent:
-                legReasoning.isEmpty ? null : legReasoning.toString(),
+            reasoningContent: legReasoning.isEmpty ? null : legReasoning.toString(),
             reasoningSignature: legSignature,
             rawThinkingBlocks: legRawThinking,
             rawThinkingModelId: legRawThinking == null ? null : config.modelId,
@@ -1092,10 +1033,7 @@ class LLMService {
   /// gap there. Warned, never thrown — and no schema change: the row stays
   /// as it is.
   @visibleForTesting
-  static bool usageMissing(
-    LLMModelConfig config,
-    Map<String, dynamic> metadata,
-  ) =>
+  static bool usageMissing(LLMModelConfig config, Map<String, dynamic> metadata) =>
       config.billingMode == 'token' &&
       promptTokensOf(metadata) == null &&
       outputTokensOf(metadata) == 0;
@@ -1108,8 +1046,7 @@ class LLMService {
   /// Test door in front of [LLMConfigResolver]: when set, every entry point
   /// takes its config from here instead of the model database.
   @visibleForTesting
-  static LLMModelConfig Function(dynamic modelIdentifier)?
-      configResolverOverride;
+  static LLMModelConfig Function(dynamic modelIdentifier)? configResolverOverride;
 
   Future<LLMModelConfig> _resolveConfig(
     dynamic modelIdentifier, {
@@ -1127,11 +1064,8 @@ class LLMService {
   /// stored settings ([llmNoServerToolsKey]) are applied here, once, so no
   /// protocol has to know about them.
   @visibleForTesting
-  static LLMModelConfig configForCall(
-          LLMModelConfig config, Map<String, dynamic>? options) =>
-      options?[llmNoServerToolsKey] == true
-          ? config.withoutServerTools()
-          : config;
+  static LLMModelConfig configForCall(LLMModelConfig config, Map<String, dynamic>? options) =>
+      options?[llmNoServerToolsKey] == true ? config.withoutServerTools() : config;
 
   /// Test door onto [_recordUsage].
   @visibleForTesting
@@ -1140,9 +1074,7 @@ class LLMService {
     Map<String, dynamic> metadata, {
     Map<String, dynamic>? options,
     int imageCount = 0,
-  }) =>
-      _recordUsage(config.modelId, config, metadata,
-          options: options, imageCount: imageCount);
+  }) => _recordUsage(config.modelId, config, metadata, options: options, imageCount: imageCount);
 
   /// The spec-billing snapshot for one request, or null when [config]'s fee
   /// group is not spec-billed. Pure, so the three recording paths (request,
@@ -1222,9 +1154,7 @@ class LLMService {
   /// overflow first, so this returns null and lets them fall back.
   static int? promptTokensOf(Map<String, dynamic> metadata) {
     final raw =
-        metadata['promptTokenCount'] ??
-        metadata['prompt_tokens'] ??
-        metadata['input_tokens'];
+        metadata['promptTokenCount'] ?? metadata['prompt_tokens'] ?? metadata['input_tokens'];
     if (raw == null) return null;
     final count = raw is num ? raw.toInt() : int.tryParse(raw.toString());
     return (count == null || count <= 0) ? null : count;
@@ -1238,8 +1168,7 @@ class LLMService {
   }) async {
     final config = await _resolveConfig(
       modelIdentifier,
-      logger: (msg, {level = 'INFO'}) =>
-          _emitLog(msg, level: level, contextId: contextId),
+      logger: (msg, {level = 'INFO'}) => _emitLog(msg, level: level, contextId: contextId),
     );
     final cancelProbe = cancellationProbeOf(options);
     if (cancelProbe?.call() ?? false) throw const LLMCancelled();
@@ -1268,8 +1197,7 @@ class LLMService {
         config,
         messages,
         options: submitOptions,
-        logger: (msg, {level = 'INFO'}) =>
-            _emitLog(msg, level: level, contextId: contextId),
+        logger: (msg, {level = 'INFO'}) => _emitLog(msg, level: level, contextId: contextId),
       );
     } on http.RequestAbortedException {
       if (cancelProbe?.call() ?? false) throw const LLMCancelled();
@@ -1294,10 +1222,7 @@ class LLMService {
     await _recordUsage(
       config.modelId,
       config,
-      {
-        'operation': 'submit',
-        if (ticket.inputImages > 0) inputImageCountKey: ticket.inputImages,
-      },
+      {'operation': 'submit', if (ticket.inputImages > 0) inputImageCountKey: ticket.inputImages},
       modelDbId: modelIdentifier is int ? modelIdentifier : null,
       options: options,
       // Durable, so [settleVideoUsage] can find the row again — also from a
@@ -1308,17 +1233,14 @@ class LLMService {
   }
 
   /// The usage row a video submit is recorded under.
-  static String videoUsageRowId(String operationName) =>
-      'video:$operationName';
+  static String videoUsageRowId(String operationName) => 'video:$operationName';
 
   /// Test doors in front of the two usage-row updates [settleVideoUsage]
   /// makes.
   @visibleForTesting
-  static Future<int> Function(String taskId, UsageSpecBilling billing)?
-      usageUpdateOverride;
+  static Future<int> Function(String taskId, UsageSpecBilling billing)? usageUpdateOverride;
   @visibleForTesting
-  static Future<int> Function(String taskId, double cost)?
-      reportedCostUpdateOverride;
+  static Future<int> Function(String taskId, double cost)? reportedCostUpdateOverride;
 
   /// Settles a finished video job's submit row by what the terminal poll
   /// reported: the seconds the provider rendered ([videoRenderedSecondsKey])
@@ -1352,37 +1274,42 @@ class LLMService {
       try {
         final config = await _resolveConfig(modelIdentifier, logger: log);
         if (config.billingMode == specBillingMode) {
-          final spec = specUsageFor(
-            config,
-            options,
-            {'output_seconds': renderedSeconds},
-            imageCount: 0,
-          )!;
-          final update =
-              usageUpdateOverride ?? DatabaseService().updateSpecBilling;
+          final spec = specUsageFor(config, options, {
+            'output_seconds': renderedSeconds,
+          }, imageCount: 0)!;
+          final update = usageUpdateOverride ?? DatabaseService().updateSpecBilling;
           final rows = await update(rowId, spec.toBilling());
           if (rows > 0) {
-            log('Video $operationName: billed by the ${spec.spec.seconds}s '
-                'the provider reports it rendered.');
+            log(
+              'Video $operationName: billed by the ${spec.spec.seconds}s '
+              'the provider reports it rendered.',
+            );
           }
         }
       } catch (e) {
-        log('Could not settle the usage of video $operationName by its '
-            'rendered length (the video is unaffected): $e', level: 'WARN');
+        log(
+          'Could not settle the usage of video $operationName by its '
+          'rendered length (the video is unaffected): $e',
+          level: 'WARN',
+        );
       }
     }
     if (reportedCost != null) {
       try {
-        final update =
-            reportedCostUpdateOverride ?? DatabaseService().updateReportedCost;
+        final update = reportedCostUpdateOverride ?? DatabaseService().updateReportedCost;
         final rows = await update(rowId, reportedCost);
         if (rows > 0) {
-          log('Video $operationName: the provider reports it cost '
-              '\$${reportedCost.toStringAsFixed(4)}.');
+          log(
+            'Video $operationName: the provider reports it cost '
+            '\$${reportedCost.toStringAsFixed(4)}.',
+          );
         }
       } catch (e) {
-        log('Could not record the cost the provider reported for video '
-            '$operationName (the video is unaffected): $e', level: 'WARN');
+        log(
+          'Could not record the cost the provider reported for video '
+          '$operationName (the video is unaffected): $e',
+          level: 'WARN',
+        );
       }
     }
   }
@@ -1396,8 +1323,7 @@ class LLMService {
   }) async {
     final config = await _resolveConfig(
       modelIdentifier,
-      logger: (msg, {level = 'INFO'}) =>
-          _emitLog(msg, level: level, contextId: contextId),
+      logger: (msg, {level = 'INFO'}) => _emitLog(msg, level: level, contextId: contextId),
     );
     if (isCancelled?.call() ?? false) throw const LLMCancelled();
     final abort = Completer<void>();
@@ -1408,8 +1334,7 @@ class LLMService {
         operationName,
         surfaceId: operationSurface,
         options: {llmAbortTriggerKey: abort.future},
-        logger: (msg, {level = 'INFO'}) =>
-            _emitLog(msg, level: level, contextId: contextId),
+        logger: (msg, {level = 'INFO'}) => _emitLog(msg, level: level, contextId: contextId),
       );
     } on http.RequestAbortedException {
       if (isCancelled?.call() ?? false) throw const LLMCancelled();
@@ -1429,8 +1354,7 @@ class LLMService {
   }) async {
     final config = await _resolveConfig(
       modelIdentifier,
-      logger: (msg, {level = 'INFO'}) =>
-          _emitLog(msg, level: level, contextId: contextId),
+      logger: (msg, {level = 'INFO'}) => _emitLog(msg, level: level, contextId: contextId),
     );
     return _dispatcher.downloadHeaders(config);
   }
@@ -1455,8 +1379,7 @@ class LLMService {
     try {
       final config = await _resolveConfig(
         modelIdentifier,
-        logger: (msg, {level = 'INFO'}) =>
-            _emitLog(msg, level: level, contextId: contextId),
+        logger: (msg, {level = 'INFO'}) => _emitLog(msg, level: level, contextId: contextId),
       );
       // Bounded, unlike the poll it replaces. This runs on a user pressing
       // cancel, and the caller cannot finalize the task until it returns —
@@ -1468,8 +1391,7 @@ class LLMService {
             config,
             operationName,
             surfaceId: operationSurface,
-            logger: (msg, {level = 'INFO'}) =>
-                _emitLog(msg, level: level, contextId: contextId),
+            logger: (msg, {level = 'INFO'}) => _emitLog(msg, level: level, contextId: contextId),
           )
           .timeout(_cancelTimeout);
     } catch (e) {

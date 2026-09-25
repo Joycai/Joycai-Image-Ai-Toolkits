@@ -14,7 +14,9 @@ import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
 void main() {
   /// How far a colour is from grey. Zero means R, G and B are equal.
   double chromaOf(Color color) {
-    final r = color.r, g = color.g, b = color.b;
+    final r = color.r;
+    final g = color.g;
+    final b = color.b;
     return [r, g, b].reduce((a, b) => a > b ? a : b) - [r, g, b].reduce((a, b) => a < b ? a : b);
   }
 
@@ -23,46 +25,62 @@ void main() {
   double hueOf(Color color) => HSVColor.fromColor(color).hue;
 
   for (final brightness in Brightness.values) {
-    test('every neutral role carries the design’s warm stone, never the seed’s hue in $brightness', () {
-      // The ramp is not grey — `00 设计系统 · 1b` draws a warm stone (canvas
-      // #EBEAE6, body ink #1C1B18, hue ~40–60°) — so "is it grey" is not the
-      // question. The question is *whose* tint it is. Seeded here with blue,
-      // the hue furthest from the ramp's own: every neutral must still come
-      // out warm. One drifting toward the seed is the regression.
-      final scheme = buildAppColorScheme(accent: ThemeAccent.fromSeed(Colors.blue), brightness: brightness);
+    test(
+      'every neutral role carries the design’s warm stone, never the seed’s hue in $brightness',
+      () {
+        // The ramp is not grey — `00 设计系统 · 1b` draws a warm stone (canvas
+        // #EBEAE6, body ink #1C1B18, hue ~40–60°) — so "is it grey" is not the
+        // question. The question is *whose* tint it is. Seeded here with blue,
+        // the hue furthest from the ramp's own: every neutral must still come
+        // out warm. One drifting toward the seed is the regression.
+        final scheme = buildAppColorScheme(
+          accent: ThemeAccent.fromSeed(Colors.blue),
+          brightness: brightness,
+        );
 
-      final neutrals = {
-        'surface': scheme.surface,
-        'surfaceDim': scheme.surfaceDim,
-        'surfaceBright': scheme.surfaceBright,
-        'surfaceContainerLowest': scheme.surfaceContainerLowest,
-        'surfaceContainerLow': scheme.surfaceContainerLow,
-        'surfaceContainer': scheme.surfaceContainer,
-        'surfaceContainerHigh': scheme.surfaceContainerHigh,
-        'surfaceContainerHighest': scheme.surfaceContainerHighest,
-        'onSurface': scheme.onSurface,
-        'onSurfaceVariant': scheme.onSurfaceVariant,
-        'outline': scheme.outline,
-        'outlineVariant': scheme.outlineVariant,
-        'inverseSurface': scheme.inverseSurface,
-        'onInverseSurface': scheme.onInverseSurface,
-        'surfaceTint': scheme.surfaceTint,
-      };
+        final neutrals = {
+          'surface': scheme.surface,
+          'surfaceDim': scheme.surfaceDim,
+          'surfaceBright': scheme.surfaceBright,
+          'surfaceContainerLowest': scheme.surfaceContainerLowest,
+          'surfaceContainerLow': scheme.surfaceContainerLow,
+          'surfaceContainer': scheme.surfaceContainer,
+          'surfaceContainerHigh': scheme.surfaceContainerHigh,
+          'surfaceContainerHighest': scheme.surfaceContainerHighest,
+          'onSurface': scheme.onSurface,
+          'onSurfaceVariant': scheme.onSurfaceVariant,
+          'outline': scheme.outline,
+          'outlineVariant': scheme.outlineVariant,
+          'inverseSurface': scheme.inverseSurface,
+          'onInverseSurface': scheme.onInverseSurface,
+          'surfaceTint': scheme.surfaceTint,
+        };
 
-      neutrals.forEach((name, color) {
-        // White and near-white have no meaningful hue; nothing to check.
-        if (chromaOf(color) < 0.01) return;
-        expect(hueOf(color), inInclusiveRange(35, 65),
-            reason: '$name is not the ramp’s warm stone in $brightness — '
-                'it has drifted toward the seed');
-      });
-    });
+        neutrals.forEach((name, color) {
+          // White and near-white have no meaningful hue; nothing to check.
+          if (chromaOf(color) < 0.01) return;
+          expect(
+            hueOf(color),
+            inInclusiveRange(35, 65),
+            reason:
+                '$name is not the ramp’s warm stone in $brightness — '
+                'it has drifted toward the seed',
+          );
+        });
+      },
+    );
 
     test('the greys do not move when the seed changes in $brightness', () {
       // The practical payoff: a panel tuned against one seed must not need
       // re-tuning at the next.
-      final teal = buildAppColorScheme(accent: ThemeAccent.fromSeed(Colors.teal), brightness: brightness);
-      final crimson = buildAppColorScheme(accent: ThemeAccent.fromSeed(Colors.red), brightness: brightness);
+      final teal = buildAppColorScheme(
+        accent: ThemeAccent.fromSeed(Colors.teal),
+        brightness: brightness,
+      );
+      final crimson = buildAppColorScheme(
+        accent: ThemeAccent.fromSeed(Colors.red),
+        brightness: brightness,
+      );
 
       expect(crimson.surface, teal.surface);
       expect(crimson.surfaceContainerHighest, teal.surfaceContainerHighest);
@@ -73,8 +91,14 @@ void main() {
     test('accent roles still follow the seed in $brightness', () {
       // The other half of the split — neutralising must not have flattened
       // the roles that carry the user's colour.
-      final teal = buildAppColorScheme(accent: ThemeAccent.fromSeed(Colors.teal), brightness: brightness);
-      final crimson = buildAppColorScheme(accent: ThemeAccent.fromSeed(Colors.red), brightness: brightness);
+      final teal = buildAppColorScheme(
+        accent: ThemeAccent.fromSeed(Colors.teal),
+        brightness: brightness,
+      );
+      final crimson = buildAppColorScheme(
+        accent: ThemeAccent.fromSeed(Colors.red),
+        brightness: brightness,
+      );
 
       expect(crimson.primary, isNot(teal.primary));
       expect(chromaOf(teal.primary), greaterThan(0.05));
@@ -86,7 +110,10 @@ void main() {
       // onSurface and surface now come from a different scheme than the one
       // that paired them. Material's own guarantee only covers a matched
       // pair, so the pairing this function assembles has to be checked.
-      final scheme = buildAppColorScheme(accent: ThemeAccent.fromSeed(Colors.teal), brightness: brightness);
+      final scheme = buildAppColorScheme(
+        accent: ThemeAccent.fromSeed(Colors.teal),
+        brightness: brightness,
+      );
       final surface = scheme.surface.computeLuminance();
       final onSurface = scheme.onSurface.computeLuminance();
       final ratio = surface > onSurface
@@ -157,7 +184,10 @@ void main() {
     // lighter of the two in *both* brightnesses. Material's dark scheme has
     // these the other way round, so nothing but this test holds it.
     for (final brightness in Brightness.values) {
-      final scheme = buildAppColorScheme(accent: ThemeAccent.fromSeed(Colors.teal), brightness: brightness);
+      final scheme = buildAppColorScheme(
+        accent: ThemeAccent.fromSeed(Colors.teal),
+        brightness: brightness,
+      );
       expect(
         scheme.surface.computeLuminance(),
         greaterThan(scheme.surfaceContainer.computeLuminance()),
@@ -170,8 +200,14 @@ void main() {
     // buildAppTheme could easily go on passing ColorScheme.fromSeed straight
     // through; then every widget reading Theme.of(context).colorScheme would
     // still get tinted greys and none of the above would matter.
-    final theme = buildAppTheme(accent: ThemeAccent.fromSeed(Colors.teal), brightness: Brightness.light);
-    final expected = buildAppColorScheme(accent: ThemeAccent.fromSeed(Colors.teal), brightness: Brightness.light);
+    final theme = buildAppTheme(
+      accent: ThemeAccent.fromSeed(Colors.teal),
+      brightness: Brightness.light,
+    );
+    final expected = buildAppColorScheme(
+      accent: ThemeAccent.fromSeed(Colors.teal),
+      brightness: Brightness.light,
+    );
 
     expect(theme.colorScheme.surfaceContainerHighest, expected.surfaceContainerHighest);
     expect(hueOf(theme.colorScheme.surface), inInclusiveRange(35, 65));

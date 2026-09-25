@@ -98,7 +98,9 @@ void main() {
     });
   }
 
-  testWidgets('a new assistant preset defaults to a prompt and says what that means', (tester) async {
+  testWidgets('a new assistant preset defaults to a prompt and says what that means', (
+    tester,
+  ) async {
     await openDialog(tester);
     expect(find.text(l10n.presetOutput), findsOneWidget);
     expect(find.text(l10n.presetOutputPromptHelp), findsOneWidget);
@@ -174,16 +176,18 @@ void main() {
   });
 
   testWidgets('only an analysis preset wears the marker in the list', (tester) async {
-    Future<void> pump(PresetOutputKind kind) => tester.pumpWidget(MaterialApp(
-          locale: const Locale('en'),
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          home: Scaffold(
-            body: Center(
-              child: PromptTemplateTypeBadge(type: SystemPrompt.typeRefiner, outputKind: kind),
-            ),
+    Future<void> pump(PresetOutputKind kind) => tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: Center(
+            child: PromptTemplateTypeBadge(type: SystemPrompt.typeRefiner, outputKind: kind),
           ),
-        ));
+        ),
+      ),
+    );
 
     await pump(PresetOutputKind.prompt);
     await tester.pump();

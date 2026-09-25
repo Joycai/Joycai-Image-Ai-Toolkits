@@ -60,21 +60,20 @@ class GroupUsage {
       inputCost + cacheCost + outputCost + requestCost + specCost + specInputCost + reportedCost;
 
   GroupUsage operator +(GroupUsage other) => GroupUsage(
-        inputCost: inputCost + other.inputCost,
-        cacheCost: cacheCost + other.cacheCost,
-        outputCost: outputCost + other.outputCost,
-        requestCost: requestCost + other.requestCost,
-        specCost: specCost + other.specCost,
-        specInputCost: specInputCost + other.specInputCost,
-        reportedCost: reportedCost + other.reportedCost,
-        specUnits: {
-          ...specUnits,
-          for (final e in other.specUnits.entries)
-            e.key: (specUnits[e.key] ?? 0) + e.value,
-        },
-        unmatchedCount: unmatchedCount + other.unmatchedCount,
-        requestCount: requestCount + other.requestCount,
-      );
+    inputCost: inputCost + other.inputCost,
+    cacheCost: cacheCost + other.cacheCost,
+    outputCost: outputCost + other.outputCost,
+    requestCost: requestCost + other.requestCost,
+    specCost: specCost + other.specCost,
+    specInputCost: specInputCost + other.specInputCost,
+    reportedCost: reportedCost + other.reportedCost,
+    specUnits: {
+      ...specUnits,
+      for (final e in other.specUnits.entries) e.key: (specUnits[e.key] ?? 0) + e.value,
+    },
+    unmatchedCount: unmatchedCount + other.unmatchedCount,
+    requestCount: requestCount + other.requestCount,
+  );
 }
 
 /// Aggregated token-usage totals for a date range, plus per-fee-group costs.
@@ -107,13 +106,13 @@ class UsageStats {
   });
 
   factory UsageStats.empty() => UsageStats(
-        totalInput: 0,
-        totalCache: 0,
-        totalOutput: 0,
-        totalRequestCount: 0,
-        totalCost: 0.0,
-        groupCosts: {},
-      );
+    totalInput: 0,
+    totalCache: 0,
+    totalOutput: 0,
+    totalRequestCount: 0,
+    totalCost: 0.0,
+    groupCosts: {},
+  );
 
   /// Share of prompt tokens that were served from the provider's cache, 0–1.
   ///
@@ -133,7 +132,11 @@ class UsageStats {
 /// Computes totals and per-group costs from usage records. Pure function so it
 /// can be reused by both the mobile and desktop usage views. Pass [base] to
 /// accumulate on top of an existing checkpoint.
-UsageStats calculateStats(List<TokenUsage> usageData, List<LLMModel> allModels, {UsageStats? base}) {
+UsageStats calculateStats(
+  List<TokenUsage> usageData,
+  List<LLMModel> allModels, {
+  UsageStats? base,
+}) {
   final Map<int, double> groupCosts = base != null ? Map.from(base.groupCosts) : {};
   final Map<int, GroupUsage> groupUsage = base != null ? Map.from(base.groupUsage) : {};
   int totalInput = base?.totalInput ?? 0;
@@ -142,9 +145,9 @@ UsageStats calculateStats(List<TokenUsage> usageData, List<LLMModel> allModels, 
   int totalRequestCount = base?.totalRequestCount ?? 0;
   double totalCost = base?.totalCost ?? 0.0;
 
-  final modelToGroup = {for (var m in allModels) m.id: m.feeGroupId};
+  final modelToGroup = {for (final m in allModels) m.id: m.feeGroupId};
 
-  for (var row in usageData) {
+  for (final row in usageData) {
     final cost = row.cost;
     final requests = row.requestCount;
 
@@ -163,7 +166,8 @@ UsageStats calculateStats(List<TokenUsage> usageData, List<LLMModel> allModels, 
       final parts = row.costParts;
       final spec = row.spec;
       final specUnit = spec?.unit;
-      groupUsage[groupId] = (groupUsage[groupId] ?? const GroupUsage()) +
+      groupUsage[groupId] =
+          (groupUsage[groupId] ?? const GroupUsage()) +
           GroupUsage(
             inputCost: parts.input,
             cacheCost: parts.cache,

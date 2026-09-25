@@ -30,8 +30,7 @@ enum ProtocolSectionForm {
 /// the id is not recognized — a recognized model with a single route has
 /// nothing to say. Ruling 2: a media kind the channel cannot serve at all is
 /// a notice, never an empty control.
-ProtocolSectionForm protocolSectionForm(ProtocolMenu? menu,
-    {required bool pinIsStale}) {
+ProtocolSectionForm protocolSectionForm(ProtocolMenu? menu, {required bool pinIsStale}) {
   if (menu == null) return ProtocolSectionForm.none;
   if (menu.fixed) {
     return pinIsStale ? ProtocolSectionForm.dropdown : ProtocolSectionForm.none;
@@ -42,4 +41,3 @@ ProtocolSectionForm protocolSectionForm(ProtocolMenu? menu,
   if (media && !menu.recognized) return ProtocolSectionForm.readOnly;
   return pinIsStale ? ProtocolSectionForm.dropdown : ProtocolSectionForm.none;
 }
-

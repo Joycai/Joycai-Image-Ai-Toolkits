@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/design_tokens.dart';
 import '../../../../core/safety_settings.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../state/app_state.dart';
-import '../../../../core/design_tokens.dart';
 
 /// Per-category Gemini safety-threshold sliders (strict → permissive), shared
 /// by the image and video workbench queue-settings dialogs. Reads and writes
@@ -50,8 +50,7 @@ class SafetySettingsSection extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
-    final thresholds = context
-        .select<AppState, Map<String, String>>((s) => s.safetyThresholds);
+    final thresholds = context.select<AppState, Map<String, String>>((s) => s.safetyThresholds);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -74,12 +73,9 @@ class SafetySettingsSection extends StatelessWidget {
           const SizedBox(height: AppSpace.s10),
           Row(
             children: [
-              Expanded(
-                child: Text(_categoryLabel(l10n, category), style: textTheme.bodySmall),
-              ),
+              Expanded(child: Text(_categoryLabel(l10n, category), style: textTheme.bodySmall)),
               Text(
-                _thresholdLabel(
-                    l10n, thresholds[category] ?? SafetySettings.defaultThreshold),
+                _thresholdLabel(l10n, thresholds[category] ?? SafetySettings.defaultThreshold),
                 style: textTheme.labelSmall?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: colorScheme.accentText,
@@ -91,16 +87,17 @@ class SafetySettingsSection extends StatelessWidget {
             height: AppSize.compact,
             child: Slider(
               value: SafetySettings.thresholds
-                  .indexOf(
-                      thresholds[category] ?? SafetySettings.defaultThreshold)
+                  .indexOf(thresholds[category] ?? SafetySettings.defaultThreshold)
                   .clamp(0, SafetySettings.thresholds.length - 1)
                   .toDouble(),
               min: 0,
               max: (SafetySettings.thresholds.length - 1).toDouble(),
               divisions: SafetySettings.thresholds.length - 1,
               onChanged: (v) {
-                Provider.of<AppState>(context, listen: false).setSafetyThreshold(
-                    category, SafetySettings.thresholds[v.round()]);
+                Provider.of<AppState>(
+                  context,
+                  listen: false,
+                ).setSafetyThreshold(category, SafetySettings.thresholds[v.round()]);
               },
             ),
           ),

@@ -46,7 +46,7 @@ class WebScraperService {
   /// 2. Standard header format (name=value; name2=value2)
   String parseCookies(String input) {
     if (input.isEmpty) return '';
-    
+
     final lines = input.split(RegExp(r'\r?\n'));
     final List<String> cookiePairs = [];
 
@@ -64,7 +64,7 @@ class WebScraperService {
         // Fallback to name=value or already formatted string
         // If it's a single line with semicolons, it might be already formatted
         if (!line.contains('\t') && line.contains(';')) {
-           return line; 
+          return line;
         }
         cookiePairs.add(line);
       }
@@ -82,20 +82,21 @@ class WebScraperService {
     return dir;
   }
 
-  Future<String> fetchRawHtml({
-    required String url,
-    String? cookies,
-  }) async {
+  Future<String> fetchRawHtml({required String url, String? cookies}) async {
     final formattedCookies = parseCookies(cookies ?? '');
     final client = HttpClient();
     // Add a realistic User-Agent
-    client.userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
-    
+    client.userAgent =
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+
     try {
       final request = await client.getUrl(Uri.parse(url));
-      request.headers.add('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8');
+      request.headers.add(
+        'Accept',
+        'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+      );
       request.headers.add('Accept-Language', 'en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7');
-      
+
       if (formattedCookies.isNotEmpty) {
         request.headers.add(HttpHeaders.cookieHeader, formattedCookies);
       }
@@ -156,7 +157,7 @@ class WebScraperService {
     final results = <DiscoveredImage>[];
     final cacheDir = await _cacheDir;
 
-    for (var metadata in imagesMetadata) {
+    for (final metadata in imagesMetadata) {
       final imageUrl = metadata['url']!;
       if (matchedUrlStrings.contains(imageUrl)) {
         // Pre-cache thumbnail if possible
@@ -167,12 +168,14 @@ class WebScraperService {
           onLog?.call('Failed to cache thumbnail for $imageUrl: $e');
         }
 
-        results.add(DiscoveredImage(
-          url: imageUrl,
-          alt: metadata['alt'],
-          context: metadata['context'],
-          localCachePath: localPath,
-        ));
+        results.add(
+          DiscoveredImage(
+            url: imageUrl,
+            alt: metadata['alt'],
+            context: metadata['context'],
+            localCachePath: localPath,
+          ),
+        );
       }
     }
 
@@ -213,10 +216,10 @@ class WebScraperService {
   /// The tri-state itself lives in [ContextBudget] — the Prompt Assistant reads
   /// the same column and the two must not drift on what null and 0 mean.
   int _batchSizeFor(int? contextWindow) => ContextBudget.imageBatchSize(
-        contextWindow,
-        defaultSize: _defaultBatchSize,
-        unlimitedSize: _unlimitedBatchSize,
-      );
+    contextWindow,
+    defaultSize: _defaultBatchSize,
+    unlimitedSize: _unlimitedBatchSize,
+  );
 
   Future<Set<String>> _selectImagesWithLLM({
     required dynamic modelIdentifier,
@@ -280,9 +283,7 @@ class WebScraperService {
     for (int i = 0; i < batch.length; i++) {
       final m = batch[i];
       final alt = (m['alt'] ?? '').trim();
-      final ctx = (m['context'] ?? '')
-          .replaceFirst('Element: img, Parent:', '')
-          .trim();
+      final ctx = (m['context'] ?? '').replaceFirst('Element: img, Parent:', '').trim();
       buffer.writeln('[$i] url: ${m['url'] ?? ''}');
       if (alt.isNotEmpty) buffer.writeln('    alt: $alt');
       if (ctx.isNotEmpty) buffer.writeln('    container: $ctx');
@@ -291,7 +292,8 @@ class WebScraperService {
     final tools = [
       LLMTool(
         name: 'select_images',
-        description: 'Submit the id numbers of the candidate images that match the '
+        description:
+            'Submit the id numbers of the candidate images that match the '
             'requirement. Submit an empty array if none match.',
         parameters: {
           'type': 'object',
@@ -310,13 +312,15 @@ class WebScraperService {
     final messages = <LLMMessage>[
       LLMMessage(
         role: LLMRole.system,
-        content: 'You are an image curation assistant. Review the candidate images and '
+        content:
+            'You are an image curation assistant. Review the candidate images and '
             'select the ones matching the user requirement by calling the select_images tool. '
             'Do not answer in plain text — always submit your selection via the tool.',
       ),
       LLMMessage(
         role: LLMRole.user,
-        content: '''
+        content:
+            '''
 Requirement: "$requirement"
 Page: $pageUrl
 
@@ -345,38 +349,45 @@ Call select_images with the id numbers of the images that match the requirement.
         // could emit a tool call — nudging again only makes the prompt longer
         // and repeats the failure, so fail fast with an actionable message.
         if (response.metadata['finish_reason'] == 'length') {
-          throw Exception('Model output was cut off before a tool call '
-              '(context/length limit reached). Increase the model context window '
-              '(e.g. Ollama num_ctx / OLLAMA_CONTEXT_LENGTH) or use a model that '
-              'reasons less verbosely.');
+          throw Exception(
+            'Model output was cut off before a tool call '
+            '(context/length limit reached). Increase the model context window '
+            '(e.g. Ollama num_ctx / OLLAMA_CONTEXT_LENGTH) or use a model that '
+            'reasons less verbosely.',
+          );
         }
         // The model answered in text instead of calling the tool — nudge once.
         onLog?.call('Model replied without calling select_images; asking again...');
         messages.add(LLMMessage(role: LLMRole.assistant, content: response.text));
-        messages.add(LLMMessage(
-          role: LLMRole.user,
-          content: 'Please submit your selection by calling the select_images tool with id numbers.',
-        ));
+        messages.add(
+          LLMMessage(
+            role: LLMRole.user,
+            content:
+                'Please submit your selection by calling the select_images tool with id numbers.',
+          ),
+        );
         continue;
       }
 
-      messages.add(LLMMessage(
-        role: LLMRole.assistant,
-        content: response.text,
-        // Echo obligations ride with tool-calling turns on every family:
-        // ①'s reasoning field by original name, ④'s thinking blocks verbatim.
-        reasoningContent: response.reasoningContent,
-        reasoningFieldName: response.reasoningFieldName,
-        reasoningSignature: response.reasoningSignature,
-        rawThinkingBlocks: response.rawThinkingBlocks,
-        rawThinkingModelId: response.rawThinkingModelId,
-        // ③'s verbatim parts (thought signatures included) ride the same
-        // tool-calling turn.
-        rawModelParts: response.rawModelParts,
-        // ②'s output items, the same obligation on the Responses face.
-        rawResponseItems: response.rawResponseItems,
-        toolCalls: response.toolCalls,
-      ));
+      messages.add(
+        LLMMessage(
+          role: LLMRole.assistant,
+          content: response.text,
+          // Echo obligations ride with tool-calling turns on every family:
+          // ①'s reasoning field by original name, ④'s thinking blocks verbatim.
+          reasoningContent: response.reasoningContent,
+          reasoningFieldName: response.reasoningFieldName,
+          reasoningSignature: response.reasoningSignature,
+          rawThinkingBlocks: response.rawThinkingBlocks,
+          rawThinkingModelId: response.rawThinkingModelId,
+          // ③'s verbatim parts (thought signatures included) ride the same
+          // tool-calling turn.
+          rawModelParts: response.rawModelParts,
+          // ②'s output items, the same obligation on the Responses face.
+          rawResponseItems: response.rawResponseItems,
+          toolCalls: response.toolCalls,
+        ),
+      );
 
       bool hadErrors = false;
       for (final call in response.toolCalls) {
@@ -406,19 +417,22 @@ Call select_images with the id numbers of the images that match the requirement.
               'status': 'partial',
               'accepted': valid.length,
               'rejected': invalid,
-              'message': 'Rejected ids are out of range. '
+              'message':
+                  'Rejected ids are out of range. '
                   'Valid ids are 0..${batch.length - 1}.',
             };
             onLog?.call('Rejected ${invalid.length} out-of-range id(s).');
           }
         }
 
-        messages.add(LLMMessage(
-          role: LLMRole.tool,
-          content: jsonEncode(result),
-          toolCallId: call.id,
-          toolName: call.name,
-        ));
+        messages.add(
+          LLMMessage(
+            role: LLMRole.tool,
+            content: jsonEncode(result),
+            toolCallId: call.id,
+            toolName: call.name,
+          ),
+        );
       }
 
       // Selection received cleanly — no need for another round-trip.
@@ -436,21 +450,24 @@ Call select_images with the id numbers of the images that match the requirement.
     final html = data['html']!;
     final baseUrl = data['url']!;
     final document = html_parser.parse(html);
-    
+
     // Clean document
-    document.querySelectorAll('script, style, head, iframe, noscript, svg').forEach((e) => e.remove());
+    document
+        .querySelectorAll('script, style, head, iframe, noscript, svg')
+        .forEach((e) => e.remove());
 
     final List<Map<String, String>> metadata = [];
     final baseUri = Uri.parse(baseUrl);
 
     document.querySelectorAll('img').forEach((img) {
       // Check multiple possible sources for lazy loaders
-      final src = img.attributes['src'] ?? 
-                  img.attributes['data-src'] ?? 
-                  img.attributes['data-original'] ??
-                  img.attributes['lazy-src'] ??
-                  img.attributes['data-lazy-src'];
-      
+      final src =
+          img.attributes['src'] ??
+          img.attributes['data-src'] ??
+          img.attributes['data-original'] ??
+          img.attributes['lazy-src'] ??
+          img.attributes['data-lazy-src'];
+
       if (src == null || src.isEmpty) {
         // Try to parse srcset if src is missing
         final srcset = img.attributes['srcset'];
@@ -488,7 +505,13 @@ Call select_images with the id numbers of the images that match the requirement.
     return metadata.take(50).toList(); // Limit to 50 for token sanity
   }
 
-  static void _addMetadataToList(List<Map<String, String>> list, Uri baseUri, String src, String alt, dom.Element el) {
+  static void _addMetadataToList(
+    List<Map<String, String>> list,
+    Uri baseUri,
+    String src,
+    String alt,
+    dom.Element el,
+  ) {
     try {
       final absoluteUrl = baseUri.resolve(src).toString();
       final parentClass = el.parent?.attributes['class'] ?? '';

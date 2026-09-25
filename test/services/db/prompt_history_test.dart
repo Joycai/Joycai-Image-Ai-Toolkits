@@ -83,8 +83,10 @@ void main() {
 
     // The trim is per-type; a shared cap would have dropped this.
     expect(await contentsOf(db, PromptHistoryType.image), ['keep me']);
-    expect((await contentsOf(db, PromptHistoryType.video)).length,
-        PromptRepository.promptHistoryLimit);
+    expect(
+      (await contentsOf(db, PromptHistoryType.video)).length,
+      PromptRepository.promptHistoryLimit,
+    );
   });
 
   test('blank prompts are not recorded', () async {
@@ -105,8 +107,7 @@ void main() {
     await record(db, PromptHistoryType.image, 'an image prompt');
     await record(db, PromptHistoryType.video, 'a video prompt');
 
-    await db.delete('prompt_history',
-        where: 'type = ?', whereArgs: [PromptHistoryType.image.name]);
+    await db.delete('prompt_history', where: 'type = ?', whereArgs: [PromptHistoryType.image.name]);
 
     expect(await contentsOf(db, PromptHistoryType.image), isEmpty);
     expect(await contentsOf(db, PromptHistoryType.video), ['a video prompt']);
@@ -125,10 +126,10 @@ void main() {
     await upgraded.execute('DROP TABLE IF EXISTS prompt_history');
     await DatabaseMigration.migrate(upgraded, 27, DatabaseService.dbVersion);
 
-    await upgraded.transaction((txn) =>
-        PromptRepository.addPromptHistoryInto(txn, PromptHistoryType.image, 'after upgrade'));
-    final entries =
-        await PromptRepository.getPromptHistoryFrom(upgraded, PromptHistoryType.image);
+    await upgraded.transaction(
+      (txn) => PromptRepository.addPromptHistoryInto(txn, PromptHistoryType.image, 'after upgrade'),
+    );
+    final entries = await PromptRepository.getPromptHistoryFrom(upgraded, PromptHistoryType.image);
 
     expect(entries.map((e) => e.content), ['after upgrade']);
     await upgraded.close();

@@ -39,8 +39,7 @@ class OutputCapScale {
   }
 
   /// The stop nearest [position], clamped to the scale.
-  static int tokensAt(double position) =>
-      stops[position.clamp(0.0, maxPosition).round()];
+  static int tokensAt(double position) => stops[position.clamp(0.0, maxPosition).round()];
 
   /// The index of the stop [tokens] is exactly, or null between stops.
   static int? stopIndexOf(int tokens) {

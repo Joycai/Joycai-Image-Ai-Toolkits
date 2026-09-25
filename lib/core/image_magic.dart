@@ -68,10 +68,7 @@ String? _shortPrefix(Uint8List bytes) {
       bytes[3] == 0x47) {
     return 'image/png';
   }
-  if (bytes.length >= 3 &&
-      bytes[0] == 0xFF &&
-      bytes[1] == 0xD8 &&
-      bytes[2] == 0xFF) {
+  if (bytes.length >= 3 && bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF) {
     return 'image/jpeg';
   }
   if (bytes.length >= 6 &&
@@ -126,5 +123,4 @@ String imageExtensionFromBytes(Uint8List bytes, {String fallback = '.png'}) =>
 /// against `media_type` and 400s the whole request on a mismatch — while ①
 /// and ③ accept the lie and decode by content anyway. Both are served by
 /// telling the truth.
-String resolveImageMime(Uint8List bytes, String declared) =>
-    imageMimeFromBytes(bytes) ?? declared;
+String resolveImageMime(Uint8List bytes, String declared) => imageMimeFromBytes(bytes) ?? declared;

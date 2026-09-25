@@ -12,11 +12,11 @@ import '../../../core/file_utils.dart';
 import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/llm_model.dart';
-import '../../../services/db/database_service.dart';
-import '../../../services/system/gpu_info_service.dart';
 import '../../../services/assistant/knowledge_base_service.dart';
-import '../../../services/llm/llm_debug_logger.dart';
 import '../../../services/assistant/prompt_optimizer_agent.dart';
+import '../../../services/db/database_service.dart';
+import '../../../services/llm/llm_debug_logger.dart';
+import '../../../services/system/gpu_info_service.dart';
 import '../../../state/app_state.dart';
 import '../../../widgets/ui/app_button.dart';
 import '../../../widgets/ui/app_dialog.dart';
@@ -77,19 +77,17 @@ class _ApplicationSectionState extends State<ApplicationSection> {
     _isPortable = await AppPaths.isPortableMode();
     _kbPath = await KnowledgeBaseService().getRoot();
     _kbStatus = await KnowledgeBaseService().validate(_kbPath);
-    _assistantRetention = int.tryParse(
-            await _db.getSetting(PromptOptimizerAgent.retentionSettingKey) ?? '') ??
+    _assistantRetention =
+        int.tryParse(await _db.getSetting(PromptOptimizerAgent.retentionSettingKey) ?? '') ??
         PromptOptimizerAgent.defaultRetention;
-    _assistantContextRatio = double.tryParse(
-            await _db.getSetting(PromptOptimizerAgent.contextRatioSettingKey) ?? '') ??
+    _assistantContextRatio =
+        double.tryParse(await _db.getSetting(PromptOptimizerAgent.contextRatioSettingKey) ?? '') ??
         PromptOptimizerAgent.defaultContextRatio;
     _kbSubAgentEnabled =
-        (await _db.getSetting(PromptOptimizerAgent.kbSubAgentSettingKey) ??
-                'false') ==
-            'true';
+        (await _db.getSetting(PromptOptimizerAgent.kbSubAgentSettingKey) ?? 'false') == 'true';
     _kbSubAgentModelId = int.tryParse(
-        await _db.getSetting(PromptOptimizerAgent.kbSubAgentModelSettingKey) ??
-            '');
+      await _db.getSetting(PromptOptimizerAgent.kbSubAgentModelSettingKey) ?? '',
+    );
     // Chat-capable models only: image/video generators cannot run the
     // research tool loop.
     _kbSubAgentModels = [
@@ -115,7 +113,7 @@ class _ApplicationSectionState extends State<ApplicationSection> {
       variant: AppButtonVariant.secondary,
       size: AppButtonSize.compact,
       accentLabel: true,
-      onPressed: appState.enableApiDebug ? () => LLMDebugLogger.openLogFolder() : null,
+      onPressed: appState.enableApiDebug ? LLMDebugLogger.openLogFolder : null,
     );
 
     return SettingsSections(
@@ -130,7 +128,7 @@ class _ApplicationSectionState extends State<ApplicationSection> {
                 description: l10n.notificationsDesc,
                 trailing: AppSwitch(
                   value: appState.notificationsEnabled,
-                  onChanged: (v) => appState.setNotificationsEnabled(v),
+                  onChanged: appState.setNotificationsEnabled,
                 ),
               ),
               AppSettingRow(
@@ -142,7 +140,7 @@ class _ApplicationSectionState extends State<ApplicationSection> {
                 trailing: phone
                     ? AppSwitch(
                         value: appState.enableApiDebug,
-                        onChanged: (v) => appState.setEnableApiDebug(v),
+                        onChanged: appState.setEnableApiDebug,
                       )
                     : Row(
                         mainAxisSize: MainAxisSize.min,
@@ -151,7 +149,7 @@ class _ApplicationSectionState extends State<ApplicationSection> {
                           const SizedBox(width: 12),
                           AppSwitch(
                             value: appState.enableApiDebug,
-                            onChanged: (v) => appState.setEnableApiDebug(v),
+                            onChanged: appState.setEnableApiDebug,
                           ),
                         ],
                       ),
@@ -183,14 +181,8 @@ class _ApplicationSectionState extends State<ApplicationSection> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 if (!Platform.isIOS) _buildOutputDirectoryTile(appState, l10n),
-                if (!Platform.isIOS) ...[
-                  const SizedBox(height: 8),
-                  _buildKnowledgeBaseTile(l10n),
-                ],
-                if (_gpuInfo.isSupported) ...[
-                  const SizedBox(height: 8),
-                  _buildGpuTile(l10n),
-                ],
+                if (!Platform.isIOS) ...[const SizedBox(height: 8), _buildKnowledgeBaseTile(l10n)],
+                if (_gpuInfo.isSupported) ...[const SizedBox(height: 8), _buildGpuTile(l10n)],
               ],
             ),
           ),
@@ -210,7 +202,10 @@ class _ApplicationSectionState extends State<ApplicationSection> {
                     trailing: AppSwitch(
                       value: _kbSubAgentEnabled,
                       onChanged: (v) async {
-                        await _db.saveSetting(PromptOptimizerAgent.kbSubAgentSettingKey, v.toString());
+                        await _db.saveSetting(
+                          PromptOptimizerAgent.kbSubAgentSettingKey,
+                          v.toString(),
+                        );
                         setState(() => _kbSubAgentEnabled = v);
                       },
                     ),
@@ -226,9 +221,12 @@ class _ApplicationSectionState extends State<ApplicationSection> {
                   width: 88,
                   child: AppDropdown<int>(
                     size: AppFieldSize.regular,
-                    value: const [10, 20, 50, 100].contains(_assistantRetention) ? _assistantRetention : 20,
+                    value: const [10, 20, 50, 100].contains(_assistantRetention)
+                        ? _assistantRetention
+                        : 20,
                     items: [
-                      for (final n in const [10, 20, 50, 100]) AppDropdownItem(value: n, label: '$n'),
+                      for (final n in const [10, 20, 50, 100])
+                        AppDropdownItem(value: n, label: '$n'),
                     ],
                     onChanged: (v) async {
                       if (v == null) return;
@@ -280,10 +278,8 @@ class _ApplicationSectionState extends State<ApplicationSection> {
             divisions: _contextRatios.length - 1,
             label: '${(value * 100).round()}%',
             onChanged: (v) => setState(() => _assistantContextRatio = _nearestRatio(v)),
-            onChangeEnd: (v) => _db.saveSetting(
-              PromptOptimizerAgent.contextRatioSettingKey,
-              '${_nearestRatio(v)}',
-            ),
+            onChangeEnd: (v) =>
+                _db.saveSetting(PromptOptimizerAgent.contextRatioSettingKey, '${_nearestRatio(v)}'),
           ),
           Text(
             l10n.assistantContextRatioDesc,
@@ -299,7 +295,8 @@ class _ApplicationSectionState extends State<ApplicationSection> {
 
   /// A slider value snapped onto the offered list, so what is stored is one
   /// of the exact values the dropdown this replaced offered.
-  static double _nearestRatio(double v) => _contextRatios.reduce((a, b) => (a - v).abs() <= (b - v).abs() ? a : b);
+  static double _nearestRatio(double v) =>
+      _contextRatios.reduce((a, b) => (a - v).abs() <= (b - v).abs() ? a : b);
 
   /// Which adapter the app is drawing on. No control: the choice is Windows'
   /// own, so the row states the outcome in mono — the way a path is stated —
@@ -370,7 +367,10 @@ class _ApplicationSectionState extends State<ApplicationSection> {
                   ),
               ],
               onChanged: (v) async {
-                await _db.saveSetting(PromptOptimizerAgent.kbSubAgentModelSettingKey, v?.toString() ?? '');
+                await _db.saveSetting(
+                  PromptOptimizerAgent.kbSubAgentModelSettingKey,
+                  v?.toString() ?? '',
+                );
                 if (mounted) setState(() => _kbSubAgentModelId = v);
               },
               hint: l10n.kbSubAgentModelFollow,
@@ -468,7 +468,10 @@ class _ApplicationSectionState extends State<ApplicationSection> {
       title: l10n.outputDirectory,
       description: _outputDirController.text.isEmpty ? l10n.notSet : _outputDirController.text,
       monoDescription: true,
-      trailing: _ChangeButton(label: l10n.actionChange, onPressed: () => _pickOutputDirectory(appState)),
+      trailing: _ChangeButton(
+        label: l10n.actionChange,
+        onPressed: () => _pickOutputDirectory(appState),
+      ),
       onTap: () => _pickOutputDirectory(appState),
     );
   }
@@ -480,12 +483,7 @@ class _ApplicationSectionState extends State<ApplicationSection> {
       icon: Icons.restart_alt,
       title: l10n.restartRequired,
       content: Text(l10n.restartMessage),
-      actions: [
-        AppButton(
-          label: l10n.exit,
-          onPressed: () => exit(0),
-        ),
-      ],
+      actions: [AppButton(label: l10n.exit, onPressed: () => exit(0))],
     );
   }
 }

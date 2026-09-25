@@ -37,27 +37,26 @@ List<PickerOption<int>> presetPickerOptions(
   AppLocalizations l10n,
   ColorScheme colorScheme,
   List<SystemPrompt> presets,
-) =>
-    [
+) => [
+  PickerOption<int>(
+    value: builtinPresetPickerId,
+    label: l10n.optPresetBuiltinName,
+    badge: l10n.optPresetBuiltinBadge,
+    badgeColor: colorScheme.outline,
+  ),
+  for (final p in presets)
+    if (p.id != null)
       PickerOption<int>(
-        value: builtinPresetPickerId,
-        label: l10n.optPresetBuiltinName,
-        badge: l10n.optPresetBuiltinBadge,
-        badgeColor: colorScheme.outline,
+        value: p.id!,
+        label: p.title,
+        badge: p.tags.isEmpty ? null : p.tags.first.name,
+        badgeColor: p.tags.isEmpty ? null : Color(p.tags.first.color),
+        // Only the minority says so (`A3e 5c`): a prompt preset — and the
+        // built-in, always one — carries nothing.
+        marker: p.outputKind == PresetOutputKind.analysis ? l10n.presetOutputAnalysisShort : null,
+        markerIcon: Icons.subject,
       ),
-      for (final p in presets)
-        if (p.id != null)
-          PickerOption<int>(
-            value: p.id!,
-            label: p.title,
-            badge: p.tags.isEmpty ? null : p.tags.first.name,
-            badgeColor: p.tags.isEmpty ? null : Color(p.tags.first.color),
-            // Only the minority says so (`A3e 5c`): a prompt preset — and the
-            // built-in, always one — carries nothing.
-            marker: p.outputKind == PresetOutputKind.analysis ? l10n.presetOutputAnalysisShort : null,
-            markerIcon: Icons.subject,
-          ),
-    ];
+];
 
 extension _SysPromptCard on _OptimizerConfigPanelState {
   /// `A3d 4b`'s task-preset card: which preset, a line saying what it is for,
@@ -68,7 +67,11 @@ extension _SysPromptCard on _OptimizerConfigPanelState {
   /// Task first, text second: the card used to open on eight lines of editor,
   /// which pushed the timeline and the context card off a 1440 screen to show
   /// text most sessions never touch.
-  Widget _buildSysPromptSection(AppLocalizations l10n, ColorScheme colorScheme, TextTheme textTheme) {
+  Widget _buildSysPromptSection(
+    AppLocalizations l10n,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+  ) {
     final semantic = context.semantic;
     final template = _template;
     final text = widget.selectedSysPrompt ?? '';
@@ -177,10 +180,10 @@ extension _SysPromptCard on _OptimizerConfigPanelState {
       selected: template != null
           ? options.firstWhere((o) => o.value == template.id)
           : _isBuiltinPreset
-              ? options.first
-              // Orphaned text: named for what it is, and not an option —
-              // there is nothing in the list to go back to it from.
-              : PickerOption<int>(value: 0, label: l10n.optPresetCustom),
+          ? options.first
+          // Orphaned text: named for what it is, and not an option —
+          // there is nothing in the list to go back to it from.
+          : PickerOption<int>(value: 0, label: l10n.optPresetCustom),
       optionsBuilder: () => options,
       onChanged: (id) async {
         if (id == (template?.id ?? (_isBuiltinPreset ? builtinPresetPickerId : 0))) return;
@@ -263,7 +266,11 @@ extension _SysPromptCard on _OptimizerConfigPanelState {
   }
 
   /// The built-in instructions, read-only, and the way to make them one's own.
-  Widget _buildBuiltinInstructions(AppLocalizations l10n, ColorScheme colorScheme, TextTheme textTheme) {
+  Widget _buildBuiltinInstructions(
+    AppLocalizations l10n,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
@@ -324,7 +331,11 @@ extension _SysPromptCard on _OptimizerConfigPanelState {
   /// scrolls — it has to, since the cards below cannot be pushed off — and a
   /// child that claims the leftover space cannot live in a viewport that has
   /// none to give.
-  Widget _buildSysPromptEditor(AppLocalizations l10n, ColorScheme colorScheme, TextTheme textTheme) {
+  Widget _buildSysPromptEditor(
+    AppLocalizations l10n,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+  ) {
     final style = textTheme.bodySmall?.copyWith(
       height: AppType.proseHeight,
       color: colorScheme.onSurface,
@@ -385,9 +396,7 @@ extension _SysPromptCard on _OptimizerConfigPanelState {
           label: l10n.optSysPromptReset,
           variant: AppButtonVariant.text,
           size: size,
-          onPressed: dirty
-              ? () => widget.onPresetLoaded(template)
-              : null,
+          onPressed: dirty ? () => widget.onPresetLoaded(template) : null,
         ),
         const SizedBox(width: AppSpace.s6),
         AppButton(

@@ -45,7 +45,11 @@ class _CountsLine extends StatelessWidget {
   static const double _gap = AppSpace.s10;
 
   /// The width of the gapped form at [style].
-  static double measure(BuildContext context, List<(String, Color, FontWeight)> items, TextStyle style) {
+  static double measure(
+    BuildContext context,
+    List<(String, Color, FontWeight)> items,
+    TextStyle style,
+  ) {
     var width = _gap * (items.length - 1);
     for (final (text, _, weight) in items) {
       width += measureGlassText(context, text, style.copyWith(fontWeight: weight));
@@ -64,7 +68,10 @@ class _CountsLine extends StatelessWidget {
             if (i > 0)
               sep == null
                   ? const WidgetSpan(child: SizedBox(width: _gap))
-                  : TextSpan(text: sep, style: TextStyle(color: scheme.outline)),
+                  : TextSpan(
+                      text: sep,
+                      style: TextStyle(color: scheme.outline),
+                    ),
             TextSpan(
               text: items[i].$1,
               style: TextStyle(color: items[i].$2, fontWeight: items[i].$3),
@@ -102,7 +109,8 @@ class _FilterChips extends StatelessWidget {
     final count = textTheme.bodySmall!.mono;
     var width = _gap * (entries.length - 1);
     for (final (_, text, n) in entries) {
-      width += _FilterChip.padX * 2 +
+      width +=
+          _FilterChip.padX * 2 +
           measureGlassText(context, text, label) +
           _FilterChip.countGap +
           measureGlassText(context, '$n', count);
@@ -163,8 +171,8 @@ class _FilterChip extends StatelessWidget {
     final (Color fill, Color ink) = !selected
         ? (Colors.transparent, scheme.onSurfaceVariant)
         : danger
-            ? (scheme.errorContainer, scheme.onErrorContainer)
-            : (scheme.accentTint, scheme.onAccentTint);
+        ? (scheme.errorContainer, scheme.onErrorContainer)
+        : (scheme.accentTint, scheme.onAccentTint);
 
     return Material(
       color: fill,
@@ -233,9 +241,9 @@ class _PinToggle extends StatelessWidget {
                 label,
                 maxLines: 1,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w500,
-                      color: scheme.onSurfaceVariant,
-                    ),
+                  fontWeight: FontWeight.w500,
+                  color: scheme.onSurfaceVariant,
+                ),
               ),
               const SizedBox(width: 8),
             ],
@@ -265,9 +273,9 @@ class _GroupDivider extends StatelessWidget {
           Text(
             label.toUpperCase(),
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  letterSpacing: AppType.trackedLabelSpacing,
-                  color: scheme.outline,
-                ),
+              letterSpacing: AppType.trackedLabelSpacing,
+              color: scheme.outline,
+            ),
           ),
           const SizedBox(width: AppSpace.s10),
           const Expanded(child: Divider(height: 1)),

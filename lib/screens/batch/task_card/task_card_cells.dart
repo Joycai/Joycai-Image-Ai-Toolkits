@@ -66,12 +66,7 @@ class TaskStatusPill extends StatelessWidget {
 /// restates the kind of task, and the place in the queue is the one thing
 /// about waiting that moves.
 class TaskLeadingPlate extends StatelessWidget {
-  const TaskLeadingPlate({
-    super.key,
-    required this.task,
-    required this.position,
-    this.size = 32,
-  });
+  const TaskLeadingPlate({super.key, required this.task, required this.position, this.size = 32});
 
   final TaskItem task;
   final int position;
@@ -95,10 +90,9 @@ class TaskLeadingPlate extends StatelessWidget {
           fit: BoxFit.scaleDown,
           child: Text(
             '#$position',
-            style: _mono12(context).copyWith(
-              fontWeight: FontWeight.w600,
-              color: scheme.onSurfaceVariant,
-            ),
+            style: _mono12(
+              context,
+            ).copyWith(fontWeight: FontWeight.w600, color: scheme.onSurfaceVariant),
           ),
         ),
       );
@@ -119,11 +113,7 @@ class TaskLeadingPlate extends StatelessWidget {
       height: size,
       alignment: Alignment.center,
       decoration: BoxDecoration(color: background, borderRadius: radius),
-      child: Icon(
-        task.type.glyph,
-        size: size >= 32 ? AppSize.iconMd : AppSize.iconSm,
-        color: ink,
-      ),
+      child: Icon(task.type.glyph, size: size >= 32 ? AppSize.iconMd : AppSize.iconSm, color: ink),
     );
   }
 }
@@ -139,13 +129,13 @@ class _ChannelDot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => DecoratedBox(
-        decoration: BoxDecoration(
-          // The channel's own tag colour — identity, never the accent.
-          color: Color(task.channelColor ?? AppConstants.defaultTagColor),
-          shape: BoxShape.circle,
-        ),
-        child: const SizedBox.square(dimension: 6),
-      );
+    decoration: BoxDecoration(
+      // The channel's own tag colour — identity, never the accent.
+      color: Color(task.channelColor ?? AppConstants.defaultTagColor),
+      shape: BoxShape.circle,
+    ),
+    child: const SizedBox.square(dimension: 6),
+  );
 }
 
 /// Mono 12/600 model id over a 6px channel dot and the channel's name.
@@ -186,9 +176,9 @@ class _ModelAndChannel extends StatelessWidget {
                   softWrap: false,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        fontWeight: FontWeight.w400,
-                        color: scheme.onSurfaceVariant,
-                      ),
+                    fontWeight: FontWeight.w400,
+                    color: scheme.onSurfaceVariant,
+                  ),
                 ),
               ),
             ],
@@ -235,7 +225,10 @@ class TaskOutputs extends StatelessWidget {
         children: [
           for (int i = 0; i < shown.length; i++) ...[
             if (i > 0) const SizedBox(width: _gap),
-            ClipRRect(borderRadius: radius, child: _Thumbnail(path: shown[i])),
+            ClipRRect(
+              borderRadius: radius,
+              child: _Thumbnail(path: shown[i]),
+            ),
           ],
           if (more > 0) ...[
             const SizedBox(width: _gap),
@@ -247,10 +240,9 @@ class TaskOutputs extends StatelessWidget {
                 widthFactor: 1,
                 child: Text(
                   '+$more',
-                  style: _mono11(context).copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: scheme.onSurfaceVariant,
-                  ),
+                  style: _mono11(
+                    context,
+                  ).copyWith(fontWeight: FontWeight.w600, color: scheme.onSurfaceVariant),
                 ),
               ),
             ),
@@ -300,7 +292,11 @@ class _Thumbnail extends StatelessWidget {
         width: size,
         height: size,
         color: scheme.surfaceContainerHighest,
-        child: Icon(Icons.broken_image_outlined, size: AppSize.iconSm, color: scheme.onSurfaceVariant),
+        child: Icon(
+          Icons.broken_image_outlined,
+          size: AppSize.iconSm,
+          color: scheme.onSurfaceVariant,
+        ),
       ),
     );
   }

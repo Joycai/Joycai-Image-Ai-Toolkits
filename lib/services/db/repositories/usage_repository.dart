@@ -20,8 +20,12 @@ class UsageRepository {
   /// how many rows matched (0 for a row written before ids were durable).
   Future<int> updateSpecBilling(String taskId, UsageSpecBilling billing) async {
     final db = await _db;
-    return db.update('token_usage', billing.toOutputMap(),
-        where: 'task_id = ?', whereArgs: [taskId]);
+    return db.update(
+      'token_usage',
+      billing.toOutputMap(),
+      where: 'task_id = ?',
+      whereArgs: [taskId],
+    );
   }
 
   /// Writes what the provider itself said the job recorded under [taskId]
@@ -30,8 +34,12 @@ class UsageRepository {
   /// (`TokenUsage.snapshotCost`). Returns how many rows matched.
   Future<int> updateReportedCost(String taskId, double cost) async {
     final db = await _db;
-    return db.update('token_usage', {'reported_cost': cost},
-        where: 'task_id = ?', whereArgs: [taskId]);
+    return db.update(
+      'token_usage',
+      {'reported_cost': cost},
+      where: 'task_id = ?',
+      whereArgs: [taskId],
+    );
   }
 
   /// Points every usage row and task row recorded against a key of [idMap]
@@ -43,8 +51,7 @@ class UsageRepository {
     await db.transaction((txn) async {
       for (final e in idMap.entries) {
         for (final table in const ['token_usage', 'tasks']) {
-          await txn.update(table, {'model_pk': e.value},
-              where: 'model_pk = ?', whereArgs: [e.key]);
+          await txn.update(table, {'model_pk': e.value}, where: 'model_pk = ?', whereArgs: [e.key]);
         }
       }
     });
@@ -59,7 +66,9 @@ class UsageRepository {
     var n = 0;
     for (final table in const ['token_usage', 'tasks']) {
       final rows = await db.rawQuery(
-          'SELECT COUNT(*) AS n FROM $table WHERE model_pk IN ($marks)', list);
+        'SELECT COUNT(*) AS n FROM $table WHERE model_pk IN ($marks)',
+        list,
+      );
       n += rows.first['n'] as int? ?? 0;
     }
     return n;

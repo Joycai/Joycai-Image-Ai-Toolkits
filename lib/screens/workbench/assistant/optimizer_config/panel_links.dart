@@ -88,7 +88,8 @@ class _ElidedPath extends StatelessWidget {
           // Never below the last segment: past that there is nothing left to
           // shorten, and a bare "…" is worse than an overflowing name.
           for (var keep = segments.length - 1; keep >= 1; keep--) {
-            final candidate = '…$separator${segments.sublist(segments.length - keep).join(separator)}';
+            final candidate =
+                '…$separator${segments.sublist(segments.length - keep).join(separator)}';
             shown = candidate;
             if (widthOf(candidate) <= constraints.maxWidth) break;
           }

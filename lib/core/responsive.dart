@@ -10,8 +10,7 @@ class Responsive {
   // inset moved — none of which can change the answer. `sizeOf` depends on
   // the size aspect alone.
 
-  static bool isMobile(BuildContext context) =>
-      MediaQuery.sizeOf(context).width < mobileBreakpoint;
+  static bool isMobile(BuildContext context) => MediaQuery.sizeOf(context).width < mobileBreakpoint;
 
   static bool isTablet(BuildContext context) =>
       MediaQuery.sizeOf(context).width >= mobileBreakpoint &&
@@ -20,16 +19,10 @@ class Responsive {
   static bool isDesktop(BuildContext context) =>
       MediaQuery.sizeOf(context).width >= tabletBreakpoint;
 
-  static bool isNarrow(BuildContext context) =>
-      MediaQuery.sizeOf(context).width < tabletBreakpoint;
+  static bool isNarrow(BuildContext context) => MediaQuery.sizeOf(context).width < tabletBreakpoint;
 
   /// Returns a value based on the current screen size.
-  static T value<T>(
-    BuildContext context, {
-    required T mobile,
-    T? tablet,
-    required T desktop,
-  }) {
+  static T value<T>(BuildContext context, {required T mobile, T? tablet, required T desktop}) {
     final width = MediaQuery.sizeOf(context).width;
     if (width < mobileBreakpoint) return mobile;
     if (width < tabletBreakpoint) return tablet ?? desktop;
@@ -42,12 +35,7 @@ class ResponsiveBuilder extends StatelessWidget {
   final Widget? tablet;
   final Widget desktop;
 
-  const ResponsiveBuilder({
-    super.key,
-    required this.mobile,
-    this.tablet,
-    required this.desktop,
-  });
+  const ResponsiveBuilder({super.key, required this.mobile, this.tablet, required this.desktop});
 
   @override
   Widget build(BuildContext context) {

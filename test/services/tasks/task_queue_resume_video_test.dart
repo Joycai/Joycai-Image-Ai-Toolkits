@@ -16,13 +16,13 @@ void main() {
 
   TaskItem video(String id, {String? operation, TaskStatus status = TaskStatus.failed}) =>
       TaskItem(
-        id: id,
-        imagePaths: const <String>[],
-        modelId: 'veo-test',
-        parameters: const <String, dynamic>{'prompt': 'p'},
-        type: TaskType.videoGenerate,
-        status: status,
-      )
+          id: id,
+          imagePaths: const <String>[],
+          modelId: 'veo-test',
+          parameters: const <String, dynamic>{'prompt': 'p'},
+          type: TaskType.videoGenerate,
+          status: status,
+        )
         ..operationName = operation
         ..operationSurface = operation == null ? null : 'test-surface';
 
@@ -30,17 +30,21 @@ void main() {
     test('a failed or cancelled video with a job id can', () {
       expect(TaskQueueService.canResumeVideoJob(video('a', operation: 'op/1')), isTrue);
       expect(
-          TaskQueueService.canResumeVideoJob(
-              video('b', operation: 'op/1', status: TaskStatus.cancelled)),
-          isTrue);
+        TaskQueueService.canResumeVideoJob(
+          video('b', operation: 'op/1', status: TaskStatus.cancelled),
+        ),
+        isTrue,
+      );
     });
 
     test('no job id, a running task or another task type cannot', () {
       expect(TaskQueueService.canResumeVideoJob(video('c')), isFalse);
       expect(
-          TaskQueueService.canResumeVideoJob(
-              video('d', operation: 'op/1', status: TaskStatus.processing)),
-          isFalse);
+        TaskQueueService.canResumeVideoJob(
+          video('d', operation: 'op/1', status: TaskStatus.processing),
+        ),
+        isFalse,
+      );
       final image = TaskItem(
         id: 'e',
         imagePaths: const <String>[],
@@ -53,8 +57,7 @@ void main() {
   });
 
   Future<(TaskQueueService, TaskItem)> queued(String id) async {
-    await DatabaseService()
-        .saveTask(video(id, operation: 'op/$id', status: TaskStatus.completed));
+    await DatabaseService().saveTask(video(id, operation: 'op/$id', status: TaskStatus.completed));
     final service = TaskQueueService()..updateConcurrency(0);
     for (var i = 0; i < 100 && !service.queue.any((t) => t.id == id); i++) {
       await Future<void>.delayed(const Duration(milliseconds: 10));

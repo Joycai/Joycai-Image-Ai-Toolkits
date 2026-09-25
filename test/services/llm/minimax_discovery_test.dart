@@ -3,9 +3,9 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_dispatcher.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
-import 'package:joycai_image_ai_toolkits/services/llm/protocols/protocol.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/model_family.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/minimax_payload.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/protocols/protocol.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 
 /// Pins model discovery on a MiniMax channel.
@@ -40,33 +40,38 @@ void main() {
   group('the native surfaces are declared as unlisted', () {
     test('both faces carry the same three models', () {
       for (final vendor in [minimax, minimaxAnthropic]) {
-        expect(vendor.unlistedModels.map((m) => m.id),
-            containsAll(['MiniMax-H3', 'image-01', 'image-01-live']),
-            reason: vendor.id);
+        expect(
+          vendor.unlistedModels.map((m) => m.id),
+          containsAll(['MiniMax-H3', 'image-01', 'image-01-live']),
+          reason: vendor.id,
+        );
       }
       // Which chat face a channel stores decides nothing about what the
       // image and video endpoints serve, so the two lists must not drift.
-      expect(minimax.unlistedModels.map((m) => m.id).toList(),
-          minimaxAnthropic.unlistedModels.map((m) => m.id).toList());
+      expect(
+        minimax.unlistedModels.map((m) => m.id).toList(),
+        minimaxAnthropic.unlistedModels.map((m) => m.id).toList(),
+      );
     });
 
     test('the ids are spelled the way the endpoints accept them', () {
       // `MiniMax-H3` is sent verbatim as the `model` field; a lower-cased
       // copy here would be a 404 the user cannot diagnose from the picker.
       expect(minimax.unlistedModels.map((m) => m.id), contains('MiniMax-H3'));
-      expect(minimax.unlistedModels.map((m) => m.id),
-          isNot(contains('minimax-h3')));
+      expect(minimax.unlistedModels.map((m) => m.id), isNot(contains('minimax-h3')));
     });
 
-    test('no chat model is in the catalog — the listing already has those',
-        () {
+    test('no chat model is in the catalog — the listing already has those', () {
       // The catalog exists for what `/v1/models` structurally cannot return.
       // Adding an M-series id here would produce a duplicate row on every
       // fetch, or a stale one after upstream retires the model.
       for (final vendor in [minimax, minimaxAnthropic]) {
         for (final m in vendor.unlistedModels) {
-          expect(ModelFamilyClassifier.classify(m.id), isNot(ModelFamily.openaiChat),
-              reason: '${vendor.id}: ${m.id}');
+          expect(
+            ModelFamilyClassifier.classify(m.id),
+            isNot(ModelFamily.openaiChat),
+            reason: '${vendor.id}: ${m.id}',
+          );
         }
       }
     });
@@ -111,17 +116,21 @@ void main() {
         await request.response.close();
       });
 
-      final models = await LLMDispatcher().discoverModels(LLMModelConfig(
-        modelId: 'MiniMaxAI/MiniMax-H3',
-        channelType: Vendors.minimaxH3Base,
-        endpoint: 'http://127.0.0.1:${server.port}/v1',
-        apiKey: 'k',
-      ));
+      final models = await LLMDispatcher().discoverModels(
+        LLMModelConfig(
+          modelId: 'MiniMaxAI/MiniMax-H3',
+          channelType: Vendors.minimaxH3Base,
+          endpoint: 'http://127.0.0.1:${server.port}/v1',
+          apiKey: 'k',
+        ),
+      );
 
       expect(models, isNotEmpty);
-      expect(models.map((m) => m.rawData['source']),
-          everyElement('vendor-catalog'),
-          reason: 'nothing was listed, so every row must be a catalog entry');
+      expect(
+        models.map((m) => m.rawData['source']),
+        everyElement('vendor-catalog'),
+        reason: 'nothing was listed, so every row must be a catalog entry',
+      );
     });
 
     test('still propagates the error for a vendor with no catalog', () async {
@@ -136,18 +145,19 @@ void main() {
       });
 
       expect(
-        () => LLMDispatcher().discoverModels(LLMModelConfig(
-          modelId: 'gpt-4o',
-          channelType: Vendors.openAIRest,
-          endpoint: 'http://127.0.0.1:${server.port}/v1',
-          apiKey: 'k',
-        )),
+        () => LLMDispatcher().discoverModels(
+          LLMModelConfig(
+            modelId: 'gpt-4o',
+            channelType: Vendors.openAIRest,
+            endpoint: 'http://127.0.0.1:${server.port}/v1',
+            apiKey: 'k',
+          ),
+        ),
         throwsA(isA<LLMApiException>()),
       );
     });
 
-    test('propagates an auth failure even for a vendor with a catalog',
-        () async {
+    test('propagates an auth failure even for a vendor with a catalog', () async {
       // Only a *missing* listing (404) falls back to the catalog. A bad key
       // (401) must still surface: swallowing it into the three catalog rows
       // would make a mistyped key read as a working channel.
@@ -159,12 +169,14 @@ void main() {
       });
 
       expect(
-        () => LLMDispatcher().discoverModels(LLMModelConfig(
-          modelId: 'MiniMaxAI/MiniMax-H3',
-          channelType: Vendors.minimaxH3Base,
-          endpoint: 'http://127.0.0.1:${server.port}/v1',
-          apiKey: 'wrong',
-        )),
+        () => LLMDispatcher().discoverModels(
+          LLMModelConfig(
+            modelId: 'MiniMaxAI/MiniMax-H3',
+            channelType: Vendors.minimaxH3Base,
+            endpoint: 'http://127.0.0.1:${server.port}/v1',
+            apiKey: 'wrong',
+          ),
+        ),
         throwsA(isA<LLMApiException>()),
       );
     });
@@ -172,10 +184,8 @@ void main() {
 
   group('unlistedBeyond', () {
     test('adds every catalog entry to a listing that has none of them', () {
-      final extra = minimax.unlistedBeyond(
-          ['MiniMax-M3', 'MiniMax-M2.7', 'MiniMax-M2.5']);
-      expect(extra.map((m) => m.id),
-          ['MiniMax-H3', 'image-01', 'image-01-live']);
+      final extra = minimax.unlistedBeyond(['MiniMax-M3', 'MiniMax-M2.7', 'MiniMax-M2.5']);
+      expect(extra.map((m) => m.id), ['MiniMax-H3', 'image-01', 'image-01-live']);
     });
 
     test('a relay that already lists one produces one row, not two', () {
@@ -194,16 +204,14 @@ void main() {
     });
 
     test('a listing covering everything adds nothing', () {
-      final extra = minimax
-          .unlistedBeyond(['MiniMax-H3', 'image-01', 'image-01-live']);
+      final extra = minimax.unlistedBeyond(['MiniMax-H3', 'image-01', 'image-01-live']);
       expect(extra, isEmpty);
     });
 
     test('a vendor with no catalog is untouched by an empty listing', () {
       // The merge runs on every family now, so the no-catalog path is the
       // one nearly every channel in the app takes.
-      expect(Vendors.byId(Vendors.openAIRest).unlistedBeyond(const []),
-          isEmpty);
+      expect(Vendors.byId(Vendors.openAIRest).unlistedBeyond(const []), isEmpty);
     });
   });
 
@@ -212,8 +220,7 @@ void main() {
         DiscoveredModel(modelId: id, displayName: id, rawData: {'id': id});
 
     test('appends the catalog after the live listing', () {
-      final merged = mergeUnlistedModels(
-          minimax, [listed('MiniMax-M3'), listed('MiniMax-M2.5')]);
+      final merged = mergeUnlistedModels(minimax, [listed('MiniMax-M3'), listed('MiniMax-M2.5')]);
       expect(merged.map((m) => m.modelId), [
         'MiniMax-M3',
         'MiniMax-M2.5',
@@ -236,13 +243,15 @@ void main() {
       final merged = mergeUnlistedModels(minimax, const []);
       final h3 = merged.firstWhere((m) => m.modelId == 'MiniMax-H3');
       expect(h3.rawData['source'], 'vendor-catalog');
-      expect(h3.description, isNotEmpty,
-          reason: 'the description is what tells the user which surface');
+      expect(
+        h3.description,
+        isNotEmpty,
+        reason: 'the description is what tells the user which surface',
+      );
     });
 
     test('an id the listing already returned is not added twice', () {
-      final merged =
-          mergeUnlistedModels(minimax, [listed('image-01'), listed('gpt-4o')]);
+      final merged = mergeUnlistedModels(minimax, [listed('image-01'), listed('gpt-4o')]);
       expect(merged.where((m) => m.modelId == 'image-01'), hasLength(1));
       expect(merged, hasLength(4));
     });
@@ -251,38 +260,34 @@ void main() {
       // Every channel in the app runs this path; it must not so much as
       // reallocate the list.
       final live = [listed('gpt-4o')];
-      expect(
-          mergeUnlistedModels(Vendors.byId(Vendors.openAIRest), live),
-          same(live));
+      expect(mergeUnlistedModels(Vendors.byId(Vendors.openAIRest), live), same(live));
     });
 
     test('an empty listing still yields the catalog', () {
       // A relay that serves no `/models` returns nothing rather than
       // throwing; the native models must survive that.
-      expect(mergeUnlistedModels(minimaxAnthropic, const []).map((m) => m.modelId),
-          ['MiniMax-H3', 'image-01', 'image-01-live']);
+      expect(mergeUnlistedModels(minimaxAnthropic, const []).map((m) => m.modelId), [
+        'MiniMax-H3',
+        'image-01',
+        'image-01-live',
+      ]);
     });
   });
 
   group('the chat face derives from whatever the channel stored', () {
     test('the OpenAI face resolves to /v1 from every stored face', () {
       final derive = minimax.protocolBases[WireProtocol.openaiChat];
-      expect(derive, isNotNull,
-          reason: 'without this, chat and discovery use the raw endpoint');
+      expect(derive, isNotNull, reason: 'without this, chat and discovery use the raw endpoint');
       for (final endpoint in storedFaces) {
-        expect(derive!(endpoint), 'https://api.minimaxi.com/v1',
-            reason: endpoint);
+        expect(derive!(endpoint), 'https://api.minimaxi.com/v1', reason: endpoint);
       }
     });
 
-    test('the Anthropic face resolves to /anthropic/v1 from every stored face',
-        () {
-      final derive =
-          minimaxAnthropic.protocolBases[WireProtocol.anthropicChat];
+    test('the Anthropic face resolves to /anthropic/v1 from every stored face', () {
+      final derive = minimaxAnthropic.protocolBases[WireProtocol.anthropicChat];
       expect(derive, isNotNull);
       for (final endpoint in storedFaces) {
-        expect(derive!(endpoint), 'https://api.minimaxi.com/anthropic/v1',
-            reason: endpoint);
+        expect(derive!(endpoint), 'https://api.minimaxi.com/anthropic/v1', reason: endpoint);
       }
     });
 
@@ -291,8 +296,10 @@ void main() {
       // they derive internally — so only the two generic protocols were
       // landing on `/v2/chat/completions` and `/v2/models`.
       const stored = 'https://api.minimaxi.com/v2';
-      expect(minimax.protocolBases[WireProtocol.openaiChat]!(stored),
-          'https://api.minimaxi.com/v1');
+      expect(
+        minimax.protocolBases[WireProtocol.openaiChat]!(stored),
+        'https://api.minimaxi.com/v1',
+      );
       expect(minimaxOpenAIBase(stored), 'https://api.minimaxi.com/v1');
       expect(minimaxV2Base(stored), 'https://api.minimaxi.com/v2');
     });
@@ -301,12 +308,16 @@ void main() {
       // Those own their path shape and derive it themselves; listing them
       // here would rewrite the endpoint twice.
       for (final vendor in [minimax, minimaxAnthropic]) {
-        expect(vendor.protocolBases.containsKey(WireProtocol.minimaxImages),
-            isFalse,
-            reason: vendor.id);
-        expect(vendor.protocolBases.containsKey(WireProtocol.minimaxVideo),
-            isFalse,
-            reason: vendor.id);
+        expect(
+          vendor.protocolBases.containsKey(WireProtocol.minimaxImages),
+          isFalse,
+          reason: vendor.id,
+        );
+        expect(
+          vendor.protocolBases.containsKey(WireProtocol.minimaxVideo),
+          isFalse,
+          reason: vendor.id,
+        );
       }
     });
   });

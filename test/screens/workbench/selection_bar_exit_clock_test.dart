@@ -29,23 +29,27 @@ void main() {
     final image = AppImage(path: '/nowhere/a.png', name: 'a.png');
     gallery.addDroppedFiles([image]);
 
-    await tester.pumpWidget(MultiProvider(
-      providers: [
-        ChangeNotifierProvider<AppState>.value(value: appState),
-        ChangeNotifierProvider<GalleryState>.value(value: gallery),
-        ChangeNotifierProvider.value(value: appState.workbenchUIState),
-      ],
-      child: const MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: Scaffold(body: Align(alignment: Alignment.bottomCenter, child: GallerySelectionBar())),
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<AppState>.value(value: appState),
+          ChangeNotifierProvider<GalleryState>.value(value: gallery),
+          ChangeNotifierProvider.value(value: appState.workbenchUIState),
+        ],
+        child: const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: Align(alignment: Alignment.bottomCenter, child: GallerySelectionBar()),
+          ),
+        ),
       ),
-    ));
+    );
 
     (Duration, Duration) clocks() => (
-          tester.widget<AnimatedSlide>(find.byType(AnimatedSlide)).duration,
-          tester.widget<AnimatedOpacity>(find.byType(AnimatedOpacity).first).duration,
-        );
+      tester.widget<AnimatedSlide>(find.byType(AnimatedSlide)).duration,
+      tester.widget<AnimatedOpacity>(find.byType(AnimatedOpacity).first).duration,
+    );
 
     gallery.toggleImageSelection(image);
     await tester.pumpAndSettle();
@@ -56,7 +60,10 @@ void main() {
     gallery.toggleImageSelection(image);
     await tester.pump();
     (slide, fade) = clocks();
-    expect(slide, Duration(milliseconds: (AppMotion.panel.inMilliseconds * AppMotion.exitFactor).round()));
+    expect(
+      slide,
+      Duration(milliseconds: (AppMotion.panel.inMilliseconds * AppMotion.exitFactor).round()),
+    );
     expect(fade, slide, reason: 'leaving together means leaving on one clock');
     await tester.pumpAndSettle();
     gallery.clearDroppedImages();

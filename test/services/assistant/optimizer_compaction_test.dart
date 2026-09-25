@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/assistant/prompt_optimizer_agent.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import '../../support/private_data_dir.dart';
@@ -17,8 +17,7 @@ void main() {
   tearDown(() => PromptOptimizerAgent.debugRequestOverride = null);
 
   bool isSummaryRequest(List<LLMMessage> messages) =>
-      messages.first.role == LLMRole.system &&
-      messages.first.content.startsWith('You compress');
+      messages.first.role == LLMRole.system && messages.first.content.startsWith('You compress');
 
   /// Eight finished turns of bulky assistant text, then a pending question —
   /// far past the budget of a tiny window.
@@ -57,7 +56,11 @@ void main() {
         expect(summaryRequests, 1, reason: 'the budget was exceeded, so compaction was attempted');
         expect(session.history.length, before.length + 1, reason: 'only the answer was appended');
         for (var i = 0; i < before.length; i++) {
-          expect(identical(session.history[i], before[i]), isTrue, reason: 'message $i was rewritten');
+          expect(
+            identical(session.history[i], before[i]),
+            isTrue,
+            reason: 'message $i was rewritten',
+          );
         }
         expect(
           session.history.any((m) => m.content.startsWith(PromptOptimizerAgent.summaryMarker)),
@@ -83,10 +86,18 @@ void main() {
       };
 
       await PromptOptimizerAgent.runTurn(
-          session: session, modelIdentifier: 'm', referenceImages: const [], contextWindow: 2000);
+        session: session,
+        modelIdentifier: 'm',
+        referenceImages: const [],
+        contextWindow: 2000,
+      );
       session.addUserTurn('another question');
       await PromptOptimizerAgent.runTurn(
-          session: session, modelIdentifier: 'm', referenceImages: const [], contextWindow: 2000);
+        session: session,
+        modelIdentifier: 'm',
+        referenceImages: const [],
+        contextWindow: 2000,
+      );
 
       expect(summaryRequests, 2);
       expect(session.history.first.content, startsWith(PromptOptimizerAgent.summaryMarker));
@@ -104,11 +115,27 @@ void main() {
       for (var i = 1; i <= 8; i++) {
         session.addUserTurn('turn $i');
         if (i == inTurn) {
-          session.history.add(LLMMessage(role: LLMRole.assistant, content: '', toolCalls: [
-            LLMToolCall(id: 'c$i', name: 'submit_prompt', arguments: {'prompt': promptText, 'note': 'first cut'}),
-          ]));
-          session.history.add(LLMMessage(
-              role: LLMRole.tool, content: '{"status":"ok"}', toolCallId: 'c$i', toolName: 'submit_prompt'));
+          session.history.add(
+            LLMMessage(
+              role: LLMRole.assistant,
+              content: '',
+              toolCalls: [
+                LLMToolCall(
+                  id: 'c$i',
+                  name: 'submit_prompt',
+                  arguments: {'prompt': promptText, 'note': 'first cut'},
+                ),
+              ],
+            ),
+          );
+          session.history.add(
+            LLMMessage(
+              role: LLMRole.tool,
+              content: '{"status":"ok"}',
+              toolCallId: 'c$i',
+              toolName: 'submit_prompt',
+            ),
+          );
           session.promptVersions = 1;
         }
         session.history.add(LLMMessage(role: LLMRole.assistant, content: 'reply $i ${'x' * 600}'));
@@ -117,35 +144,45 @@ void main() {
       return session;
     }
 
-    test('a folded delivery is appended to the summary verbatim, and its text never reaches the summarizer',
-        () async {
-      final session = sessionWithDelivery(inTurn: 2);
-      String? summaryInput;
-      String? summaryInstruction;
-      PromptOptimizerAgent.debugRequestOverride = (messages, tools, options) async {
-        if (isSummaryRequest(messages)) {
-          summaryInstruction = messages.first.content;
-          summaryInput = messages.last.content;
-          return LLMResponse(text: 'the gist');
-        }
-        return LLMResponse(text: 'answer');
-      };
+    test(
+      'a folded delivery is appended to the summary verbatim, and its text never reaches the summarizer',
+      () async {
+        final session = sessionWithDelivery(inTurn: 2);
+        String? summaryInput;
+        String? summaryInstruction;
+        PromptOptimizerAgent.debugRequestOverride = (messages, tools, options) async {
+          if (isSummaryRequest(messages)) {
+            summaryInstruction = messages.first.content;
+            summaryInput = messages.last.content;
+            return LLMResponse(text: 'the gist');
+          }
+          return LLMResponse(text: 'answer');
+        };
 
-      await PromptOptimizerAgent.runTurn(
-          session: session, modelIdentifier: 'm', referenceImages: const [], contextWindow: 2000);
+        await PromptOptimizerAgent.runTurn(
+          session: session,
+          modelIdentifier: 'm',
+          referenceImages: const [],
+          contextWindow: 2000,
+        );
 
-      expect(summaryInput, isNotNull);
-      expect(summaryInput, isNot(contains(promptText)));
-      expect(summaryInput, contains('text omitted'));
-      expect(summaryInput, contains('first cut'), reason: 'the note is what distinguished the version');
-      expect(summaryInstruction, isNot(contains('in full')));
+        expect(summaryInput, isNotNull);
+        expect(summaryInput, isNot(contains(promptText)));
+        expect(summaryInput, contains('text omitted'));
+        expect(
+          summaryInput,
+          contains('first cut'),
+          reason: 'the note is what distinguished the version',
+        );
+        expect(summaryInstruction, isNot(contains('in full')));
 
-      final summary = session.history.first.content;
-      expect(summary, startsWith(PromptOptimizerAgent.summaryMarker));
-      expect(summary, contains('the gist'));
-      expect(summary, contains('${PromptOptimizerAgent.latestPromptMarker} v1\n$promptText'));
-      expect(summary, endsWith(promptText));
-    });
+        final summary = session.history.first.content;
+        expect(summary, startsWith(PromptOptimizerAgent.summaryMarker));
+        expect(summary, contains('the gist'));
+        expect(summary, contains('${PromptOptimizerAgent.latestPromptMarker} v1\n$promptText'));
+        expect(summary, endsWith(promptText));
+      },
+    );
 
     test('a delivery still in the kept tail is not duplicated into the summary', () async {
       final session = sessionWithDelivery(inTurn: 8);
@@ -154,35 +191,56 @@ void main() {
           LLMResponse(text: isSummaryRequest(messages) ? 'the gist' : 'answer');
 
       await PromptOptimizerAgent.runTurn(
-          session: session, modelIdentifier: 'm', referenceImages: const [], contextWindow: 2000);
+        session: session,
+        modelIdentifier: 'm',
+        referenceImages: const [],
+        contextWindow: 2000,
+      );
 
       expect(session.history.first.content, startsWith(PromptOptimizerAgent.summaryMarker));
-      expect(session.history.first.content, isNot(contains(PromptOptimizerAgent.latestPromptMarker)));
+      expect(
+        session.history.first.content,
+        isNot(contains(PromptOptimizerAgent.latestPromptMarker)),
+      );
       expect(session.history.any((m) => identical(m, delivery)), isTrue);
     });
 
-    test('a cut submit_prompt (empty arguments, invariant 12) does not hide the accepted prompt', () async {
-      final session = sessionWithDelivery(inTurn: 2);
-      // The cut call the loop keeps in history, paired with its refusal,
-      // one turn after the accepted delivery.
-      session.history.insert(
-        6,
-        LLMMessage(role: LLMRole.assistant, content: '', toolCalls: [
-          LLMToolCall(id: 'cut', name: 'submit_prompt', arguments: const {}),
-        ]),
-      );
-      session.history.insert(
-        7,
-        LLMMessage(role: LLMRole.tool, content: '{"code":"output_truncated"}', toolCallId: 'cut', toolName: 'submit_prompt'),
-      );
-      PromptOptimizerAgent.debugRequestOverride = (messages, tools, options) async =>
-          LLMResponse(text: isSummaryRequest(messages) ? 'the gist' : 'answer');
+    test(
+      'a cut submit_prompt (empty arguments, invariant 12) does not hide the accepted prompt',
+      () async {
+        final session = sessionWithDelivery(inTurn: 2);
+        // The cut call the loop keeps in history, paired with its refusal,
+        // one turn after the accepted delivery.
+        session.history.insert(
+          6,
+          LLMMessage(
+            role: LLMRole.assistant,
+            content: '',
+            toolCalls: [LLMToolCall(id: 'cut', name: 'submit_prompt', arguments: const {})],
+          ),
+        );
+        session.history.insert(
+          7,
+          LLMMessage(
+            role: LLMRole.tool,
+            content: '{"code":"output_truncated"}',
+            toolCallId: 'cut',
+            toolName: 'submit_prompt',
+          ),
+        );
+        PromptOptimizerAgent.debugRequestOverride = (messages, tools, options) async =>
+            LLMResponse(text: isSummaryRequest(messages) ? 'the gist' : 'answer');
 
-      await PromptOptimizerAgent.runTurn(
-          session: session, modelIdentifier: 'm', referenceImages: const [], contextWindow: 2000);
+        await PromptOptimizerAgent.runTurn(
+          session: session,
+          modelIdentifier: 'm',
+          referenceImages: const [],
+          contextWindow: 2000,
+        );
 
-      expect(session.history.first.content, endsWith(promptText));
-    });
+        expect(session.history.first.content, endsWith(promptText));
+      },
+    );
 
     test('a restored session takes its latest prompt and version from the summary', () async {
       final session = sessionWithDelivery(inTurn: 2);
@@ -190,8 +248,15 @@ void main() {
       PromptOptimizerAgent.debugRequestOverride = (messages, tools, options) async =>
           LLMResponse(text: isSummaryRequest(messages) ? 'the gist' : 'answer');
       await PromptOptimizerAgent.runTurn(
-          session: session, modelIdentifier: 'm', referenceImages: const [], contextWindow: 2000);
-      expect(session.history.first.content, contains('${PromptOptimizerAgent.latestPromptMarker} v3'));
+        session: session,
+        modelIdentifier: 'm',
+        referenceImages: const [],
+        contextWindow: 2000,
+      );
+      expect(
+        session.history.first.content,
+        contains('${PromptOptimizerAgent.latestPromptMarker} v3'),
+      );
 
       final restored = PromptOptimizerSession.fromStored(
         id: 'restored',
@@ -214,11 +279,19 @@ void main() {
       };
 
       await PromptOptimizerAgent.runTurn(
-          session: session, modelIdentifier: 'm', referenceImages: const [], contextWindow: 2000);
+        session: session,
+        modelIdentifier: 'm',
+        referenceImages: const [],
+        contextWindow: 2000,
+      );
       for (var i = 0; i < 6; i++) {
         session.addUserTurn('more $i');
         await PromptOptimizerAgent.runTurn(
-            session: session, modelIdentifier: 'm', referenceImages: const [], contextWindow: 2000);
+          session: session,
+          modelIdentifier: 'm',
+          referenceImages: const [],
+          contextWindow: 2000,
+        );
       }
 
       expect(inputs.length, greaterThan(1));

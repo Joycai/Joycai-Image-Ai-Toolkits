@@ -19,16 +19,16 @@ enum AppDragTone {
 
 extension on AppDragTone {
   Color color(BuildContext context) => switch (this) {
-        AppDragTone.move => Theme.of(context).colorScheme.primary,
-        AppDragTone.copy => context.semantic.success,
-        AppDragTone.reject => Theme.of(context).colorScheme.error,
-      };
+    AppDragTone.move => Theme.of(context).colorScheme.primary,
+    AppDragTone.copy => context.semantic.success,
+    AppDragTone.reject => Theme.of(context).colorScheme.error,
+  };
 
   Color onColor(BuildContext context) => switch (this) {
-        AppDragTone.move => Theme.of(context).colorScheme.onPrimary,
-        AppDragTone.copy => context.semantic.onSuccess,
-        AppDragTone.reject => Theme.of(context).colorScheme.onError,
-      };
+    AppDragTone.move => Theme.of(context).colorScheme.onPrimary,
+    AppDragTone.copy => context.semantic.onSuccess,
+    AppDragTone.reject => Theme.of(context).colorScheme.onError,
+  };
 }
 
 /// The lift shadow of `00d`: `0 12 28`, heavier on the dark theme where the
@@ -146,13 +146,16 @@ class AppDragCountBadge extends StatelessWidget {
       height: 18,
       padding: const EdgeInsets.symmetric(horizontal: 5),
       alignment: Alignment.center,
-      decoration: BoxDecoration(color: tone.color(context), borderRadius: BorderRadius.circular(AppRadius.pill)),
+      decoration: BoxDecoration(
+        color: tone.color(context),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+      ),
       child: Text(
         '$count',
         style: Theme.of(context).textTheme.labelSmall!.mono.metricsOnly.copyWith(
-              fontWeight: FontWeight.w600,
-              color: tone.onColor(context),
-            ),
+          fontWeight: FontWeight.w600,
+          color: tone.onColor(context),
+        ),
       ),
     );
   }
@@ -174,7 +177,10 @@ class AppImageDragFollower extends StatelessWidget {
     final radius = BorderRadius.circular(AppRadius.control);
 
     return Padding(
-      padding: EdgeInsets.only(left: AppDragFollower.pointerOffset.dx, top: AppDragFollower.pointerOffset.dy),
+      padding: EdgeInsets.only(
+        left: AppDragFollower.pointerOffset.dx,
+        top: AppDragFollower.pointerOffset.dy,
+      ),
       child: SizedBox.square(
         dimension: size,
         child: DecoratedBox(
@@ -196,7 +202,11 @@ class AppImageDragFollower extends StatelessWidget {
                 ),
               ),
               if (count != null && count! > 1)
-                Positioned(top: AppSpace.s4, right: AppSpace.s4, child: AppDragCountBadge(count: count!)),
+                Positioned(
+                  top: AppSpace.s4,
+                  right: AppSpace.s4,
+                  child: AppDragCountBadge(count: count!),
+                ),
             ],
           ),
         ),

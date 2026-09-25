@@ -12,12 +12,12 @@ import '../../../models/browser_file.dart';
 import '../../../state/app_state.dart';
 import '../../../state/file_staging_state.dart';
 import '../../../state/workbench_ui_state.dart';
+import '../../../widgets/dialogs/file_rename_dialog.dart';
+import '../../../widgets/files/file_delete_dialog.dart';
+import '../../../widgets/glass/app_glass_menu.dart';
 import '../../../widgets/ui/app_key_label.dart';
 import '../../../widgets/ui/app_snackbar.dart';
-import '../../../widgets/dialogs/file_rename_dialog.dart';
 import '../../workbench/widgets/preview/media_preview_dialog.dart';
-import '../../../widgets/glass/app_glass_menu.dart';
-import '../../../widgets/files/file_delete_dialog.dart';
 
 /// The file context menu — `B1a · 1b`, `B1c · 1a`: G2 glass, 230 wide, five
 /// groups.
@@ -115,11 +115,7 @@ void showFileContextMenu({
         trailing: _keys(AppShortcutIds.rename),
         onSelected: () {
           if (!context.mounted) return;
-          showFileRenameDialog(
-            context: context,
-            filePath: file.path,
-            onSuccess: onRefresh,
-          );
+          showFileRenameDialog(context: context, filePath: file.path, onSuccess: onRefresh);
         },
       ),
       AppGlassMenuItem(
@@ -129,9 +125,8 @@ void showFileContextMenu({
         // The whole selection, like `⇧⌘C` — `targets` is the selection when
         // the right-clicked file is part of it and just that file otherwise,
         // so the row and the key cannot disagree about what "this" means.
-        onSelected: () => Clipboard.setData(
-          ClipboardData(text: targets.map((f) => f.name).join('\n')),
-        ),
+        onSelected: () =>
+            Clipboard.setData(ClipboardData(text: targets.map((f) => f.name).join('\n'))),
       ),
       const AppGlassMenuDivider(),
       AppGlassMenuItem(
@@ -146,11 +141,7 @@ void showFileContextMenu({
         onSelected: () async {
           try {
             final xFiles = targets
-                .map((f) => XFile(
-                      f.path,
-                      name: f.name,
-                      mimeType: AppConstants.getMimeType(f.path),
-                    ))
+                .map((f) => XFile(f.path, name: f.name, mimeType: AppConstants.getMimeType(f.path)))
                 .toList();
 
             // ignore: deprecated_member_use

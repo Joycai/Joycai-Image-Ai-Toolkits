@@ -50,12 +50,7 @@ void main() {
     });
 
     test('addLog should add formatted message', () {
-      final task = TaskItem(
-        id: 'test-id',
-        imagePaths: [],
-        modelId: 'test-model',
-        parameters: {},
-      );
+      final task = TaskItem(id: 'test-id', imagePaths: [], modelId: 'test-model', parameters: {});
 
       task.addLog('Test message');
       expect(task.logs.length, 1);
@@ -85,36 +80,33 @@ void main() {
       expect(decoded.createdAt, DateTime(2026, 9, 2, 13, 15, 30));
     });
 
-    test(
-      'a row without created_at falls back to start_time, then end_time',
-      () {
-        // Rows a pre-v39 backup restores into the current schema, which the
-        // migration never saw.
-        final base = TaskItem(
-          id: 'old',
-          imagePaths: const [],
-          modelId: 'm',
-          parameters: const {},
-        ).toMap()..remove('created_at');
+    test('a row without created_at falls back to start_time, then end_time', () {
+      // Rows a pre-v39 backup restores into the current schema, which the
+      // migration never saw.
+      final base = TaskItem(
+        id: 'old',
+        imagePaths: const [],
+        modelId: 'm',
+        parameters: const {},
+      ).toMap()..remove('created_at');
 
-        final started = TaskItem.fromMap({
-          ...base,
-          'start_time': DateTime(2026, 1, 1, 10).toIso8601String(),
-          'end_time': DateTime(2026, 1, 1, 11).toIso8601String(),
-        });
-        expect(started.createdAt, DateTime(2026, 1, 1, 10));
+      final started = TaskItem.fromMap({
+        ...base,
+        'start_time': DateTime(2026, 1, 1, 10).toIso8601String(),
+        'end_time': DateTime(2026, 1, 1, 11).toIso8601String(),
+      });
+      expect(started.createdAt, DateTime(2026, 1, 1, 10));
 
-        final endedOnly = TaskItem.fromMap({
-          ...base,
-          'end_time': DateTime(2026, 1, 1, 11).toIso8601String(),
-        });
-        expect(endedOnly.createdAt, DateTime(2026, 1, 1, 11));
+      final endedOnly = TaskItem.fromMap({
+        ...base,
+        'end_time': DateTime(2026, 1, 1, 11).toIso8601String(),
+      });
+      expect(endedOnly.createdAt, DateTime(2026, 1, 1, 11));
 
-        final before = DateTime.now();
-        final bare = TaskItem.fromMap(base);
-        expect(bare.createdAt.isBefore(before), isFalse);
-      },
-    );
+      final before = DateTime.now();
+      final bare = TaskItem.fromMap(base);
+      expect(bare.createdAt.isBefore(before), isFalse);
+    });
 
     test('fromMap tolerates a missing or unreadable logs column', () {
       // Rows written before schema v31 have no `logs` value at all.
@@ -152,10 +144,7 @@ void main() {
       // The marker is pinned at the head and not re-added on later trims, so a
       // truncated log always says so exactly once.
       expect(task.logs.first, TaskItem.logTruncationMarker);
-      expect(
-        task.logs.where((l) => l == TaskItem.logTruncationMarker).length,
-        1,
-      );
+      expect(task.logs.where((l) => l == TaskItem.logTruncationMarker).length, 1);
       // Newest lines are the ones kept.
       expect(task.logs.last, contains('line ${TaskItem.maxLogLines + 49}'));
       expect(task.logs.any((l) => l.contains('line 0')), isFalse);
@@ -163,9 +152,5 @@ void main() {
   });
 }
 
-TaskItem _bareTask() => TaskItem(
-  id: 'test-id',
-  imagePaths: [],
-  modelId: 'test-model',
-  parameters: {},
-);
+TaskItem _bareTask() =>
+    TaskItem(id: 'test-id', imagePaths: [], modelId: 'test-model', parameters: {});

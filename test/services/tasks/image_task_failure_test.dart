@@ -10,23 +10,26 @@ void main() {
 
     test('zero results fails and carries what the model said', () {
       final failure = imageTaskFailure(
-          received: 0, unrecognised: 0, reply: '  I cannot draw that.  ');
+        received: 0,
+        unrecognised: 0,
+        reply: '  I cannot draw that.  ',
+      );
       expect(failure, 'The model returned no image. Model said: I cannot draw that.');
     });
 
     test('zero results with no text still fails', () {
-      expect(imageTaskFailure(received: 0, unrecognised: 0, reply: ''),
-          'The model returned no image.');
+      expect(
+        imageTaskFailure(received: 0, unrecognised: 0, reply: ''),
+        'The model returned no image.',
+      );
     });
 
     test('only unrecognisable bytes fails', () {
-      expect(imageTaskFailure(received: 2, unrecognised: 2, reply: ''),
-          contains('None of the 2'));
+      expect(imageTaskFailure(received: 2, unrecognised: 2, reply: ''), contains('None of the 2'));
     });
 
     test('a long reply is cut', () {
-      final failure =
-          imageTaskFailure(received: 0, unrecognised: 0, reply: 'x' * 900)!;
+      final failure = imageTaskFailure(received: 0, unrecognised: 0, reply: 'x' * 900)!;
       expect(failure.length, lessThan(600));
       expect(failure, endsWith('…'));
     });

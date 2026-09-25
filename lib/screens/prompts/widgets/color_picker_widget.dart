@@ -4,8 +4,8 @@ import '../../../core/app_theme.dart';
 import '../../../core/constants.dart';
 import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../widgets/ui/color_hue_picker.dart';
 import '../../../widgets/ui/app_field_size.dart';
+import '../../../widgets/ui/color_hue_picker.dart';
 
 /// Picks a category's identity colour (`C1 · 1d`): a hue bar, the preset
 /// swatches, and a hex field.
@@ -54,7 +54,8 @@ class _ColorPickerWidgetState extends State<ColorPickerWidget> {
   @override
   void didUpdateWidget(ColorPickerWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.selectedColor != widget.selectedColor && _parse(_hexCtrl.text) != widget.selectedColor) {
+    if (oldWidget.selectedColor != widget.selectedColor &&
+        _parse(_hexCtrl.text) != widget.selectedColor) {
       _hexCtrl.text = _format(widget.selectedColor);
     }
   }
@@ -75,18 +76,15 @@ class _ColorPickerWidgetState extends State<ColorPickerWidget> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (widget.showColorWheel) ...[
-          ColorHueBar(
-            color: Color(widget.selectedColor),
-            onColorChanged: widget.onColorChanged,
-          ),
+          ColorHueBar(color: Color(widget.selectedColor), onColorChanged: widget.onColorChanged),
           const SizedBox(height: 12),
         ],
         Text(
           AppLocalizations.of(context)!.colorPresets,
           style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: scheme.onSurfaceVariant,
-              ),
+            fontWeight: FontWeight.w600,
+            color: scheme.onSurfaceVariant,
+          ),
         ),
         const SizedBox(height: AppSpace.s6),
         Wrap(

@@ -43,10 +43,10 @@ void main() {
       await tester.pumpWidget(
         ChangeNotifierProvider.value(
           value: state,
-          child: MaterialApp(
+          child: const MaterialApp(
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
-            home: const TokenUsageScreen(),
+            home: TokenUsageScreen(),
           ),
         ),
       );

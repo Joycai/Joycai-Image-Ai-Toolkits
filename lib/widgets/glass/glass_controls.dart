@@ -28,7 +28,11 @@ class GlassDivider extends StatelessWidget {
     final edge = GlassInk.maybeOf(context)?.edge ?? Theme.of(context).colorScheme.outlineVariant;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: SizedBox(width: 1, height: height, child: ColoredBox(color: edge)),
+      child: SizedBox(
+        width: 1,
+        height: height,
+        child: ColoredBox(color: edge),
+      ),
     );
   }
 }
@@ -93,10 +97,11 @@ class GlassSegmented<T> extends StatelessWidget {
   static double _labelPadding(bool dense) => dense ? 10 : 12;
   static double _iconPadding(bool dense) => dense ? 6 : 10;
 
-  static TextStyle labelStyle(BuildContext context, {required bool selected}) =>
-      Theme.of(context).textTheme.bodySmall!.metricsOnly.copyWith(
-            fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-          );
+  static TextStyle labelStyle(BuildContext context, {required bool selected}) => Theme.of(context)
+      .textTheme
+      .bodySmall!
+      .metricsOnly
+      .copyWith(fontWeight: selected ? FontWeight.w600 : FontWeight.w400);
 
   /// The width this control takes, measured at the selected weight so a
   /// selection change can never make it wider than planned.
@@ -113,7 +118,8 @@ class GlassSegmented<T> extends StatelessWidget {
         width += _iconPadding(dense) * 2 + AppSize.iconMd;
         continue;
       }
-      width += _labelPadding(dense) * 2 +
+      width +=
+          _labelPadding(dense) * 2 +
           (hasIcon ? AppSize.iconMd + 6 : 0) +
           measureGlassText(context, s.label, labelStyle(context, selected: true));
     }
@@ -208,7 +214,10 @@ class _GlassSegmentItemState<T> extends State<_GlassSegmentItem<T>> {
             Text(
               s.label,
               maxLines: 1,
-              style: GlassSegmented.labelStyle(context, selected: selected).copyWith(color: labelColor),
+              style: GlassSegmented.labelStyle(
+                context,
+                selected: selected,
+              ).copyWith(color: labelColor),
             ),
         ],
       ),
@@ -216,25 +225,28 @@ class _GlassSegmentItemState<T> extends State<_GlassSegmentItem<T>> {
 
     final radius = BorderRadius.circular(AppRadius.sm);
     final reduced = glass?.reduced ?? false;
-    final lensContent = SizedBox(height: widget.height, child: Center(widthFactor: 1, child: content));
+    final lensContent = SizedBox(
+      height: widget.height,
+      child: Center(widthFactor: 1, child: content),
+    );
     final Widget box = selected
         ? (reduced && !widget.accent
-            // `A1 · 1h`: a neutral switch's selection, opaque, is the raised
-            // panel segment — the wash belongs to the accent form alone.
-            ? DecoratedBox(
-                decoration: BoxDecoration(
-                  color: scheme.surface,
+              // `A1 · 1h`: a neutral switch's selection, opaque, is the raised
+              // panel segment — the wash belongs to the accent form alone.
+              ? DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: scheme.surface,
+                    borderRadius: radius,
+                    boxShadow: scheme.shadowRaised,
+                  ),
+                  child: lensContent,
+                )
+              : AppGlass(
+                  grade: GlassGrade.lens,
                   borderRadius: radius,
-                  boxShadow: scheme.shadowRaised,
-                ),
-                child: lensContent,
-              )
-            : AppGlass(
-                grade: GlassGrade.lens,
-                borderRadius: radius,
-                reducedColor: scheme.accentTint,
-                child: lensContent,
-              ))
+                  reducedColor: scheme.accentTint,
+                  child: lensContent,
+                ))
         : AnimatedContainer(
             duration: AppMotion.durationOf(context, AppMotion.hover),
             curve: AppMotion.quick,
@@ -250,11 +262,7 @@ class _GlassSegmentItemState<T> extends State<_GlassSegmentItem<T>> {
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hovering = true),
       onExit: (_) => setState(() => _hovering = false),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: widget.onTap,
-        child: box,
-      ),
+      child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: widget.onTap, child: box),
     );
     if (!widget.showLabel) {
       result = Tooltip(message: s.tooltip ?? s.label, child: result);
@@ -299,7 +307,11 @@ class GlassIconButton extends StatefulWidget {
     double size = AppSize.control,
   }) {
     if (label == null) return size;
-    final text = measureGlassText(context, label, labelStyle(context).copyWith(fontWeight: FontWeight.w500));
+    final text = measureGlassText(
+      context,
+      label,
+      labelStyle(context).copyWith(fontWeight: FontWeight.w500),
+    );
     return (10 + (hasIcon ? AppSize.iconLg + 6 : 0) + text + 10).ceilToDouble();
   }
 
@@ -321,10 +333,10 @@ class _GlassIconButtonState extends State<GlassIconButton> {
     final Color color = !enabled
         ? ink2.withValues(alpha: ink2.a * 0.6)
         : widget.danger
-            ? scheme.error
-            : widget.active
-                ? scheme.primary
-                : ink;
+        ? scheme.error
+        : widget.active
+        ? scheme.primary
+        : ink;
 
     final Widget content;
     if (widget.label == null) {
@@ -337,8 +349,8 @@ class _GlassIconButtonState extends State<GlassIconButton> {
       final Color labelColor = !enabled
           ? color
           : widget.danger
-              ? scheme.error
-              : (widget.active ? scheme.onAccentTint : ink);
+          ? scheme.error
+          : (widget.active ? scheme.onAccentTint : ink);
       content = SizedBox(
         height: widget.size,
         child: Padding(
@@ -386,11 +398,7 @@ class _GlassIconButtonState extends State<GlassIconButton> {
       cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
       onEnter: (_) => setState(() => _hovering = true),
       onExit: (_) => setState(() => _hovering = false),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: widget.onPressed,
-        child: box,
-      ),
+      child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: widget.onPressed, child: box),
     );
     if (widget.tooltip != null) {
       result = Tooltip(message: widget.tooltip!, child: result);

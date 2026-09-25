@@ -76,7 +76,10 @@ class _DialogNumberField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: textTheme.labelSmall!.copyWith(fontWeight: FontWeight.w400, color: scheme.onSurfaceVariant),
+          style: textTheme.labelSmall!.copyWith(
+            fontWeight: FontWeight.w400,
+            color: scheme.onSurfaceVariant,
+          ),
         ),
         const SizedBox(height: 3),
         Container(
@@ -120,8 +123,12 @@ class _GlassMenuButton extends StatefulWidget {
 
   static double widthFor(BuildContext context, String? label) => label == null
       ? 8 + AppSize.iconLg + 2 + AppSize.iconSm + 8
-      : (10 + measureGlassText(context, label, GlassIconButton.labelStyle(context)) + 4 + AppSize.iconSm + 10)
-          .ceilToDouble();
+      : (10 +
+                measureGlassText(context, label, GlassIconButton.labelStyle(context)) +
+                4 +
+                AppSize.iconSm +
+                10)
+            .ceilToDouble();
 
   @override
   State<_GlassMenuButton> createState() => _GlassMenuButtonState();
@@ -223,7 +230,12 @@ class _TintedButton extends StatelessWidget {
   final bool loading;
   final VoidCallback? onPressed;
 
-  static double widthFor(BuildContext context, {required String label, String? subtitle, bool icon = false}) {
+  static double widthFor(
+    BuildContext context, {
+    required String label,
+    String? subtitle,
+    bool icon = false,
+  }) {
     var text = measureGlassText(context, label, _saveLabelStyle(context));
     if (subtitle != null) {
       text = math.max(text, measureGlassText(context, subtitle, _saveSubtitleStyle(context)));
@@ -247,7 +259,12 @@ class _TintedButton extends StatelessWidget {
               Text(label, maxLines: 1, softWrap: false, style: _saveLabelStyle(context)),
               Opacity(
                 opacity: 0.85,
-                child: Text(subtitle!, maxLines: 1, softWrap: false, style: _saveSubtitleStyle(context)),
+                child: Text(
+                  subtitle!,
+                  maxLines: 1,
+                  softWrap: false,
+                  style: _saveSubtitleStyle(context),
+                ),
               ),
             ],
           );
@@ -262,10 +279,7 @@ class _TintedButton extends StatelessWidget {
       content = Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (icon != null) ...[
-            Icon(icon, size: AppSize.iconMd),
-            const SizedBox(width: 6),
-          ],
+          if (icon != null) ...[Icon(icon, size: AppSize.iconMd), const SizedBox(width: 6)],
           text,
         ],
       );

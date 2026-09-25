@@ -12,46 +12,39 @@ import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 /// know which routes those are and retry only failures provably before
 /// acceptance (standards 13 §4.3, 14 §3, 06 §3).
 void main() {
-  LLMModelConfig config(String modelId, String channelType, {String? tag}) =>
-      LLMModelConfig(
-        modelId: modelId,
-        channelType: channelType,
-        endpoint: 'https://example.invalid/v1',
-        apiKey: 'k',
-        tag: tag,
-      );
+  LLMModelConfig config(String modelId, String channelType, {String? tag}) => LLMModelConfig(
+    modelId: modelId,
+    channelType: channelType,
+    endpoint: 'https://example.invalid/v1',
+    apiKey: 'k',
+    tag: tag,
+  );
 
   group('LLMDispatcher.isBilledOnSubmit', () {
     final dispatcher = LLMDispatcher();
 
     test('native image surfaces and Midjourney are billed routes', () {
-      expect(dispatcher.isBilledOnSubmit(config('gpt-image-1', Vendors.openAIRest)),
-          isTrue);
-      expect(dispatcher.isBilledOnSubmit(config('qwen-image', Vendors.dashscope)),
-          isTrue);
-      expect(dispatcher.isBilledOnSubmit(config('image-01', Vendors.minimax)),
-          isTrue);
-      expect(
-          dispatcher.isBilledOnSubmit(config('midjourney', Vendors.midjourneyProxy)),
-          isTrue);
+      expect(dispatcher.isBilledOnSubmit(config('gpt-image-1', Vendors.openAIRest)), isTrue);
+      expect(dispatcher.isBilledOnSubmit(config('qwen-image', Vendors.dashscope)), isTrue);
+      expect(dispatcher.isBilledOnSubmit(config('image-01', Vendors.minimax)), isTrue);
+      expect(dispatcher.isBilledOnSubmit(config('midjourney', Vendors.midjourneyProxy)), isTrue);
     });
 
     test('an image model riding the chat face is billed too', () {
       // A relay model the user declared an image model: served through chat,
       // paid as a generation all the same.
       expect(
-          dispatcher.isBilledOnSubmit(
-              config('nano-banana-pro', Vendors.newApiOpenAI, tag: 'image')),
-          isTrue);
+        dispatcher.isBilledOnSubmit(config('nano-banana-pro', Vendors.newApiOpenAI, tag: 'image')),
+        isTrue,
+      );
     });
 
     test('chat models keep the ordinary retry policy', () {
-      expect(dispatcher.isBilledOnSubmit(config('gpt-4o', Vendors.openAIRest)),
-          isFalse);
+      expect(dispatcher.isBilledOnSubmit(config('gpt-4o', Vendors.openAIRest)), isFalse);
       expect(
-          dispatcher.isBilledOnSubmit(
-              config('claude-sonnet-4-5', Vendors.anthropicRest)),
-          isFalse);
+        dispatcher.isBilledOnSubmit(config('claude-sonnet-4-5', Vendors.anthropicRest)),
+        isFalse,
+      );
     });
   });
 
@@ -76,13 +69,10 @@ void main() {
     test('failures provably before acceptance still retry', () {
       expect(billed(LLMApiException('slow down', statusCode: 429)), isTrue);
       expect(
-          billed(http.ClientException(
-              'SocketException: Connection refused (OS Error: errno = 111)')),
-          isTrue);
-      expect(
-          billed(http.ClientException(
-              "Failed host lookup: 'relay.example.com'")),
-          isTrue);
+        billed(http.ClientException('SocketException: Connection refused (OS Error: errno = 111)')),
+        isTrue,
+      );
+      expect(billed(http.ClientException("Failed host lookup: 'relay.example.com'")), isTrue);
     });
 
     test('deadline, cancel and abandoned jobs never retry anywhere', () {
@@ -98,23 +88,26 @@ void main() {
   });
 
   group('single-shot first-chunk guard', () {
-    test('expiring on a single-shot route is a deadline, not a timeout',
-        () async {
+    test('expiring on a single-shot route is a deadline, not a timeout', () async {
       final never = StreamController<int>();
       addTearDown(never.close);
-      final guarded = LLMService.idleGuardedForTest(never.stream,
-          first: const Duration(milliseconds: 30),
-          subsequent: const Duration(milliseconds: 30),
-          firstIsDeadline: true);
+      final guarded = LLMService.idleGuardedForTest(
+        never.stream,
+        first: const Duration(milliseconds: 30),
+        subsequent: const Duration(milliseconds: 30),
+        firstIsDeadline: true,
+      );
       await expectLater(guarded.toList(), throwsA(isA<LLMDeadlineExceeded>()));
     });
 
     test('a live stream keeps the retryable TimeoutException', () async {
       final never = StreamController<int>();
       addTearDown(never.close);
-      final guarded = LLMService.idleGuardedForTest(never.stream,
-          first: const Duration(milliseconds: 30),
-          subsequent: const Duration(milliseconds: 30));
+      final guarded = LLMService.idleGuardedForTest(
+        never.stream,
+        first: const Duration(milliseconds: 30),
+        subsequent: const Duration(milliseconds: 30),
+      );
       await expectLater(guarded.toList(), throwsA(isA<TimeoutException>()));
     });
   });

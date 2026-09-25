@@ -27,7 +27,10 @@ void main() {
     expect(session.history[1].truncated, isTrue);
     expect(session.history[1].content, 'a');
     expect(
-      [for (final e in session.transcript) if (e.modelDbId != null) e.modelDbId],
+      [
+        for (final e in session.transcript)
+          if (e.modelDbId != null) e.modelDbId,
+      ],
       [10, 30],
     );
     expect(identical(session.transcript, before), isFalse);

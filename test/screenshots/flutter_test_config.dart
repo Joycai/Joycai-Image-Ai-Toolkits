@@ -133,8 +133,7 @@ Future<void> _loadFonts() async {
 
   // Icons: `uses-material-design: true` puts this in the asset bundle. Fall
   // back to the SDK cache if the bundle lookup fails.
-  final List<ByteData> icons =
-      await _loadFromBundle(<String>['fonts/MaterialIcons-Regular.otf']);
+  final List<ByteData> icons = await _loadFromBundle(<String>['fonts/MaterialIcons-Regular.otf']);
   await _register(
     'MaterialIcons',
     icons.isNotEmpty ? icons : _loadFromSdk(<String>['MaterialIcons-Regular.otf']),
@@ -155,8 +154,10 @@ Future<void> _loadFonts() async {
 
 Future<void> _register(String family, List<ByteData> data) async {
   if (data.isEmpty) {
-    debugPrint('[screenshots] font family "$family" unavailable — '
-        'text using it will render as boxes');
+    debugPrint(
+      '[screenshots] font family "$family" unavailable — '
+      'text using it will render as boxes',
+    );
     return;
   }
   final FontLoader loader = FontLoader(family);
@@ -214,8 +215,10 @@ String? _materialFontsDir() {
     final String dir = p.join(root, 'bin', 'cache', 'artifacts', 'material_fonts');
     if (Directory(dir).existsSync()) return dir;
   }
-  debugPrint('[screenshots] could not locate the Flutter SDK material_fonts '
-      'directory; falling back to bundled fonts only');
+  debugPrint(
+    '[screenshots] could not locate the Flutter SDK material_fonts '
+    'directory; falling back to bundled fonts only',
+  );
   return null;
 }
 

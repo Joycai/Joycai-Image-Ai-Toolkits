@@ -9,8 +9,7 @@ export 'llm_model_config.dart';
 
 /// One subscriber to `LLMService`'s execution log — see
 /// `LLMService.addLogListener`.
-typedef LLMLogListener = void Function(String message,
-    {String level, String? contextId});
+typedef LLMLogListener = void Function(String message, {String level, String? contextId});
 
 /// Option key for the caller's cancellation probe: a `bool Function()` that
 /// returns true once the surrounding task has been cancelled.
@@ -120,12 +119,7 @@ class GeneratedImageLayer {
   /// In the base image's pixels; null for the base.
   final LayerBox? box;
 
-  const GeneratedImageLayer({
-    required this.zIndex,
-    this.name,
-    this.description,
-    this.box,
-  });
+  const GeneratedImageLayer({required this.zIndex, this.name, this.description, this.box});
 }
 
 class LLMResponse {

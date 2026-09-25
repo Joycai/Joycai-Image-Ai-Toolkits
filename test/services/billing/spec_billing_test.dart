@@ -8,8 +8,7 @@ import 'package:joycai_image_ai_toolkits/services/billing/spec_billing.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/output_spec.dart';
-import 'package:joycai_image_ai_toolkits/services/llm/protocols/protocol.dart'
-    show upstreamUsage;
+import 'package:joycai_image_ai_toolkits/services/llm/protocols/protocol.dart' show upstreamUsage;
 
 /// Pins how a spec-billed fee group turns one generation into money: which
 /// rate row a request lands on, what it counts, and what the usage row
@@ -43,10 +42,7 @@ void main() {
     });
 
     test('among equally specific rows the earlier one wins', () {
-      const twice = [
-        SpecRate(size: '1K', price: 0.03),
-        SpecRate(quality: 'high', price: 0.09),
-      ];
+      const twice = [SpecRate(size: '1K', price: 0.03), SpecRate(quality: 'high', price: 0.09)];
       final m = matchSpecRate(twice, const OutputSpec(size: '1K', quality: 'high'));
       expect(m.price, 0.03);
     });
@@ -97,18 +93,18 @@ void main() {
       });
 
       test('an exact pixel row beats the tier at the same specificity', () {
-        const both = [
-          SpecRate(size: '1K', price: 0.20),
-          SpecRate(size: '1696x960', price: 0.25),
-        ];
+        const both = [SpecRate(size: '1K', price: 0.20), SpecRate(size: '1696x960', price: 0.25)];
         expect(priceOf(both, '1696x960'), 0.25);
         expect(priceOf(both, '1024x1024'), 0.20);
       });
 
       test('a tier never prices a non-pixel spec, and a table without tiers is exact', () {
         expect(priceOf(wan, '720p'), 0.0);
-        expect(matchSpecRate(veo, const OutputSpec(size: '1920x1080')).price, 0.10,
-            reason: 'no tier rows: the catch-all');
+        expect(
+          matchSpecRate(veo, const OutputSpec(size: '1920x1080')).price,
+          0.10,
+          reason: 'no tier rows: the catch-all',
+        );
       });
     });
   });
@@ -129,7 +125,10 @@ void main() {
     test('per image counts what the response carried, not what was asked', () {
       final u = SpecUsage.price(
         unit: OutputUnit.image,
-        rates: const [SpecRate(size: '2K', price: 0.06), SpecRate(price: 0.03)],
+        rates: const [
+          SpecRate(size: '2K', price: 0.06),
+          SpecRate(price: 0.03),
+        ],
         spec: const OutputSpec(size: '2K'),
         imageCount: 4,
       );
@@ -185,16 +184,15 @@ void main() {
       int imageCount = 1,
       OutputUnit unit = OutputUnit.image,
       OutputSpec spec = OutputSpec.none,
-    }) =>
-        SpecUsage.price(
-          unit: unit,
-          rates: const [SpecRate(price: 0.30)],
-          spec: spec,
-          imageCount: imageCount,
-          inputImageCount: sent,
-          inputUnitPrice: inputPrice,
-          inputFreeUnits: free,
-        );
+    }) => SpecUsage.price(
+      unit: unit,
+      rates: const [SpecRate(price: 0.30)],
+      spec: spec,
+      imageCount: imageCount,
+      inputImageCount: sent,
+      inputUnitPrice: inputPrice,
+      inputFreeUnits: free,
+    );
 
     test('every image sent is charged on top of the output', () {
       final u = price(sent: 3);
@@ -213,7 +211,11 @@ void main() {
       final b = price(sent: 1, free: 1).toBilling();
       expect(b.inputImages, 1);
       expect(b.inputUnits, 0);
-      expect(b.inputUnitPrice, 0.02, reason: 'the usage page tells "free" from "not charged" by it');
+      expect(
+        b.inputUnitPrice,
+        0.02,
+        reason: 'the usage page tells "free" from "not charged" by it',
+      );
       expect(b.inputCost, 0);
     });
 
@@ -276,8 +278,14 @@ void main() {
     });
 
     test('is null when the group charges no inputs or the request sent none', () {
-      expect(SpecUsage.inputsOnly(inputImageCount: 3, inputUnitPrice: 0, inputFreeUnits: 0), isNull);
-      expect(SpecUsage.inputsOnly(inputImageCount: 0, inputUnitPrice: 0.01, inputFreeUnits: 0), isNull);
+      expect(
+        SpecUsage.inputsOnly(inputImageCount: 3, inputUnitPrice: 0, inputFreeUnits: 0),
+        isNull,
+      );
+      expect(
+        SpecUsage.inputsOnly(inputImageCount: 0, inputUnitPrice: 0.01, inputFreeUnits: 0),
+        isNull,
+      );
     });
 
     test('a row written this way reads back as its input side', () {
@@ -308,24 +316,31 @@ void main() {
   });
 
   group('LLMService.specUsageFor', () {
-    LLMModelConfig config(String mode, {OutputUnit unit = OutputUnit.image}) =>
-        LLMModelConfig(
-          modelId: 'm',
-          channelType: 'openai-api-rest',
-          endpoint: 'https://x',
-          apiKey: 'k',
-          billingMode: mode,
-          outputUnit: unit,
-          outputRates: veo,
-        );
+    LLMModelConfig config(String mode, {OutputUnit unit = OutputUnit.image}) => LLMModelConfig(
+      modelId: 'm',
+      channelType: 'openai-api-rest',
+      endpoint: 'https://x',
+      apiKey: 'k',
+      billingMode: mode,
+      outputUnit: unit,
+      outputRates: veo,
+    );
 
     test('is null for token- and request-billed groups', () {
-      expect(LLMService.specUsageFor(config('token'), {'imageSize': '1K'}, const {}, imageCount: 1), isNull);
-      expect(LLMService.specUsageFor(config('request'), {'imageSize': '1K'}, const {}, imageCount: 1), isNull);
+      expect(
+        LLMService.specUsageFor(config('token'), {'imageSize': '1K'}, const {}, imageCount: 1),
+        isNull,
+      );
+      expect(
+        LLMService.specUsageFor(config('request'), {'imageSize': '1K'}, const {}, imageCount: 1),
+        isNull,
+      );
     });
 
     test('a chat model on a per-image group that drew nothing costs nothing', () {
-      final u = LLMService.specUsageFor(config('spec'), const {}, const {'prompt_tokens': 12}, imageCount: 0)!;
+      final u = LLMService.specUsageFor(config('spec'), const {}, const {
+        'prompt_tokens': 12,
+      }, imageCount: 0)!;
       expect(u.units, 0);
       expect(u.cost, 0);
     });
@@ -342,14 +357,18 @@ void main() {
         inputFreeUnits: 1,
       );
 
-      final u = LLMService.specUsageFor(seedream, const {}, const {inputImageCountKey: 3}, imageCount: 1)!;
+      final u = LLMService.specUsageFor(seedream, const {}, const {
+        inputImageCountKey: 3,
+      }, imageCount: 1)!;
       expect(u.inputImages, 3);
       expect(u.inputUnits, 2);
       expect(u.cost, closeTo(0.34, 1e-9));
 
       // A surface that does not publish the count — every chat route — sent
       // none as far as billing is concerned.
-      final chat = LLMService.specUsageFor(seedream, const {}, const {'prompt_tokens': 9}, imageCount: 1)!;
+      final chat = LLMService.specUsageFor(seedream, const {}, const {
+        'prompt_tokens': 9,
+      }, imageCount: 1)!;
       expect(chat.inputImages, 0);
       expect(chat.cost, closeTo(0.30, 1e-9));
     });
@@ -365,14 +384,16 @@ void main() {
       );
 
       // Ark drew and billed two; one link failed to download.
-      final lost = LLMService.specUsageFor(
-          seedream, const {}, const {billedImageCountKey: 2}, imageCount: 1)!;
+      final lost = LLMService.specUsageFor(seedream, const {}, const {
+        billedImageCountKey: 2,
+      }, imageCount: 1)!;
       expect(lost.units, 2);
       expect(lost.cost, closeTo(0.44, 1e-9));
 
       // Without the provider's count, what arrived is what is charged.
-      final plain = LLMService.specUsageFor(
-          seedream, const {}, const {'image_count': 1}, imageCount: 1)!;
+      final plain = LLMService.specUsageFor(seedream, const {}, const {
+        'image_count': 1,
+      }, imageCount: 1)!;
       expect(plain.units, 1);
     });
 

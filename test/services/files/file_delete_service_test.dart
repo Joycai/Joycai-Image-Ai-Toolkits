@@ -36,10 +36,7 @@ void main() {
     final a = await write('a.png');
     final b = await write('sub/b.png');
 
-    final outcome = await FileDeleteService.delete(
-      [a.path, b.path],
-      toTrash: false,
-    );
+    final outcome = await FileDeleteService.delete([a.path, b.path], toTrash: false);
 
     expect(outcome.isClean, isTrue);
     expect(outcome.deleted, [a.path, b.path]);
@@ -52,10 +49,7 @@ void main() {
     final missing = p.join(root.path, 'gone.png');
     final b = await write('b.png');
 
-    final outcome = await FileDeleteService.delete(
-      [a.path, missing, b.path],
-      toTrash: false,
-    );
+    final outcome = await FileDeleteService.delete([a.path, missing, b.path], toTrash: false);
 
     expect(outcome.deleted, [a.path, b.path]);
     expect(outcome.failed.single.path, missing);

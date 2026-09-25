@@ -61,10 +61,10 @@ import '../core/app_effects.dart';
 import '../core/app_theme.dart';
 import '../core/constants.dart';
 import '../services/system/gpu_info_service.dart';
-import '../widgets/shell/app_window_frame.dart';
 import '../widgets/glass/app_glass.dart';
-import '../widgets/shell/shell_cover.dart';
+import '../widgets/shell/app_window_frame.dart';
 import '../widgets/shell/baked_backdrop.dart';
+import '../widgets/shell/shell_cover.dart';
 
 bool get benchEnabled => Platform.environment['RBENCH'] == '1';
 
@@ -184,27 +184,28 @@ Widget? benchScene() {
 
     // The same bake sampled bilinearly instead of trilinearly.
     case 'aurora-baked-low':
-      return _scaffold(const BakedAuroraBackdrop(
-        filterQuality: FilterQuality.low,
-        child: SizedBox.expand(),
-      ));
+      return _scaffold(
+        const BakedAuroraBackdrop(filterQuality: FilterQuality.low, child: SizedBox.expand()),
+      );
 
     // Control for "three full-window translucent draws". If this is cheap and
     // `aurora` is not, the gradient shader is the cost, not the alpha blend.
     case 'aurora-solid':
-      return _scaffold(const ColoredBox(
-        color: Color(0xFFEBEAE6),
-        child: DecoratedBox(
-          decoration: BoxDecoration(color: Color(0x0F635BFF)),
+      return _scaffold(
+        const ColoredBox(
+          color: Color(0xFFEBEAE6),
           child: DecoratedBox(
-            decoration: BoxDecoration(color: Color(0x0A635BFF)),
+            decoration: BoxDecoration(color: Color(0x0F635BFF)),
             child: DecoratedBox(
-              decoration: BoxDecoration(color: Color(0x8CFFFFFF)),
-              child: SizedBox.expand(),
+              decoration: BoxDecoration(color: Color(0x0A635BFF)),
+              child: DecoratedBox(
+                decoration: BoxDecoration(color: Color(0x8CFFFFFF)),
+                child: SizedBox.expand(),
+              ),
             ),
           ),
         ),
-      ));
+      );
 
     // The aurora with no glass, so the glass ladder below has a floor that
     // already includes the ground it samples.
@@ -250,16 +251,13 @@ class _LiveAurora extends StatelessWidget {
 }
 
 Widget _scaffold(Widget body) => MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: buildAppTheme(
-        accent: AppConstants.presetThemes[AppConstants.defaultThemeAccentKey]!,
-        brightness: Brightness.light,
-      ),
-      home: AppEffects(
-        reduceVisualEffects: false,
-        child: Scaffold(body: body),
-      ),
-    );
+  debugShowCheckedModeBanner: false,
+  theme: buildAppTheme(
+    accent: AppConstants.presetThemes[AppConstants.defaultThemeAccentKey]!,
+    brightness: Brightness.light,
+  ),
+  home: AppEffects(reduceVisualEffects: false, child: Scaffold(body: body)),
+);
 
 /// [n] full-width G1 bars of real [AppGlass] over the real [AuroraBackdrop].
 ///
@@ -352,8 +350,7 @@ class _BenchDriverState extends State<_BenchDriver> with SingleTickerProviderSta
         if (await windowManager.isMaximized()) await windowManager.unmaximize();
         await windowManager.setSize(size);
         final actual = await windowManager.getSize();
-        if ((actual.width - size.width).abs() < 2 &&
-            (actual.height - size.height).abs() < 2) {
+        if ((actual.width - size.width).abs() < 2 && (actual.height - size.height).abs() < 2) {
           break;
         }
       }
@@ -405,7 +402,8 @@ class _BenchDriverState extends State<_BenchDriver> with SingleTickerProviderSta
       'raster': _stats(_timings.map((t) => ms(t.rasterDuration))),
       'totalSpan': _stats(_timings.map((t) => ms(t.totalSpan))),
       'devicePixelRatio': view.devicePixelRatio,
-      'renderTarget': '${view.physicalSize.width.toStringAsFixed(0)}x'
+      'renderTarget':
+          '${view.physicalSize.width.toStringAsFixed(0)}x'
           '${view.physicalSize.height.toStringAsFixed(0)}',
       'megapixels': (view.physicalSize.width * view.physicalSize.height) / 1e6,
       'gpu': _gpu,
@@ -467,7 +465,5 @@ Map<String, int> countLayers() {
     // ignore: invalid_use_of_protected_member
     walk(view.layer);
   }
-  return Map.fromEntries(
-    counts.entries.toList()..sort((a, b) => b.value.compareTo(a.value)),
-  );
+  return Map.fromEntries(counts.entries.toList()..sort((a, b) => b.value.compareTo(a.value)));
 }

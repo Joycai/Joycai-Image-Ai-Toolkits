@@ -39,10 +39,7 @@ void main() {
 
     Object? failure;
     try {
-      await OpenAIChatProtocol().generate(
-        target,
-        [LLMMessage(role: LLMRole.user, content: 'hi')],
-      );
+      await OpenAIChatProtocol().generate(target, [LLMMessage(role: LLMRole.user, content: 'hi')]);
     } catch (e) {
       failure = e;
     }

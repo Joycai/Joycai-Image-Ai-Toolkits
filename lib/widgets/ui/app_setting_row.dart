@@ -93,10 +93,7 @@ class AppSettingRow extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Row(
               children: [
-                if (leading != null) ...[
-                  leading!,
-                  const SizedBox(width: 12),
-                ],
+                if (leading != null) ...[leading!, const SizedBox(width: 12)],
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -121,12 +118,13 @@ class AppSettingRow extends StatelessWidget {
                         const SizedBox(height: 2),
                         Text(
                           description!,
-                          style: (monoDescription ? textTheme.bodySmall?.mono : textTheme.bodySmall)?.copyWith(
-                            color: !enabled
-                                ? colorScheme.outline
-                                : descriptionColor ?? colorScheme.onSurfaceVariant,
-                            height: monoDescription ? null : AppType.proseHeight,
-                          ),
+                          style: (monoDescription ? textTheme.bodySmall?.mono : textTheme.bodySmall)
+                              ?.copyWith(
+                                color: !enabled
+                                    ? colorScheme.outline
+                                    : descriptionColor ?? colorScheme.onSurfaceVariant,
+                                height: monoDescription ? null : AppType.proseHeight,
+                              ),
                           maxLines: monoDescription ? 1 : null,
                           overflow: monoDescription ? TextOverflow.ellipsis : null,
                         ),
@@ -134,10 +132,7 @@ class AppSettingRow extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (trailing != null) ...[
-                  const SizedBox(width: 12),
-                  trailing!,
-                ],
+                if (trailing != null) ...[const SizedBox(width: 12), trailing!],
               ],
             ),
           ),
@@ -257,10 +252,7 @@ class AppSettingValue extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  value,
-                  style: Theme.of(context).textTheme.bodySmall?.mono,
-                ),
+                Text(value, style: Theme.of(context).textTheme.bodySmall?.mono),
                 const SizedBox(width: 6),
                 Icon(Icons.expand_more, size: AppSize.iconSm, color: colorScheme.onSurfaceVariant),
               ],

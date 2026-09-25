@@ -1,30 +1,30 @@
 import 'package:flutter/material.dart';
 
-import '../../core/constants.dart';
-import '../../core/design_tokens.dart';
-import '../../core/responsive.dart';
-import '../../l10n/app_localizations.dart';
-import '../../models/llm_channel.dart';
-import '../../services/catalogue/route_switching.dart';
-import '../../services/llm/channel_probe_service.dart';
-import '../../services/llm/channel_routes.dart';
-import '../../services/llm/llm_types.dart';
-import '../../services/llm/model_routes.dart';
-import '../../services/llm/vendors/platforms.dart';
-import '../../services/llm/vendors/vendors.dart';
-import '../../state/app_state.dart';
-import '../ui/app_button.dart';
-import '../ui/app_dialog.dart';
-import '../ui/app_dropdown.dart';
-import '../ui/app_field_size.dart';
-import '../ui/app_snackbar.dart';
-import 'channel_form_sections.dart';
-import 'channel_preset_picker.dart';
+import '../../../core/constants.dart';
+import '../../../core/design_tokens.dart';
+import '../../../core/responsive.dart';
+import '../../../l10n/app_localizations.dart';
+import '../../../models/llm_channel.dart';
+import '../../../services/catalogue/route_switching.dart';
+import '../../../services/llm/channel_probe_service.dart';
+import '../../../services/llm/channel_routes.dart';
+import '../../../services/llm/llm_types.dart';
+import '../../../services/llm/model_routes.dart';
+import '../../../services/llm/vendors/platforms.dart';
+import '../../../services/llm/vendors/vendors.dart';
+import '../../../state/app_state.dart';
+import '../../../widgets/models/channel_form_sections.dart';
+import '../../../widgets/models/channel_preset_picker.dart';
+import '../../../widgets/models/channel_provider_presets.dart';
+import '../../../widgets/models/channel_provider_row.dart';
+import '../../../widgets/models/route_labels.dart';
+import '../../../widgets/ui/app_button.dart';
+import '../../../widgets/ui/app_dialog.dart';
+import '../../../widgets/ui/app_dropdown.dart';
+import '../../../widgets/ui/app_field_size.dart';
+import '../../../widgets/ui/app_snackbar.dart';
 import 'channel_probe_result_card.dart';
-import 'channel_provider_presets.dart';
-import 'channel_provider_row.dart';
 import 'channel_route_table.dart';
-import 'route_labels.dart';
 
 /// Edit-channel dialog (design `D1b 1e`): the wizard's fields laid flat in
 /// four sections — provider preset, basic info, configuration, tag and
@@ -42,12 +42,7 @@ class ChannelEditDialog extends StatefulWidget {
   final AppState appState;
   final LLMChannel? channel;
 
-  const ChannelEditDialog({
-    super.key,
-    required this.l10n,
-    required this.appState,
-    this.channel,
-  });
+  const ChannelEditDialog({super.key, required this.l10n, required this.appState, this.channel});
 
   @override
   State<ChannelEditDialog> createState() => _ChannelEditDialogState();
@@ -112,8 +107,9 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
     // A dropdown can only show a value it lists: a stored group that no
     // longer exists reads as no default.
     final storedGroup = channel?.defaultFeeGroupId;
-    defaultFeeGroupId =
-        widget.appState.allPricingGroups.any((g) => g.id == storedGroup) ? storedGroup : null;
+    defaultFeeGroupId = widget.appState.allPricingGroups.any((g) => g.id == storedGroup)
+        ? storedGroup
+        : null;
   }
 
   @override
@@ -130,17 +126,17 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
       ? null
       // Null, not a throw, for an id the catalogue no longer carries — which
       // is what the nullable type is for.
-      : kChannelProviderPresets
-          .cast<ChannelProviderPreset?>()
-          .firstWhere((p) => p?.id == _presetId, orElse: () => null);
+      : kChannelProviderPresets.cast<ChannelProviderPreset?>().firstWhere(
+          (p) => p?.id == _presetId,
+          orElse: () => null,
+        );
 
   /// The endpoint the current preset would supply, or null when it has none
   /// (a relay, whose host is the user's own).
   String? get _presetEndpoint {
     final preset = _preset;
     if (preset == null) return null;
-    return variantForChannelType(preset, type, endpoint: epCtrl.text)
-            ?.defaultEndpoint ??
+    return variantForChannelType(preset, type, endpoint: epCtrl.text)?.defaultEndpoint ??
         preset.defaultEndpoint;
   }
 
@@ -161,15 +157,13 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
   /// runtimes, which have no auth to give.
   bool get _keyOptional => Vendors.byId(type).keyOptional;
 
-  int get _modelCount =>
-      widget.appState.getModelsForChannel(widget.channel?.id).length;
+  int get _modelCount => widget.appState.getModelsForChannel(widget.channel?.id).length;
 
   /// Whether the configuration shows the route table: the channel has more
   /// than one route, or its platform offers another. A single-route channel
   /// on a single-route platform keeps the one address field it always had
   /// (`4c` 单线路渠道).
-  bool get _routeMode =>
-      _routes.entries.length > 1 || _routes.platform.routes.length > 1;
+  bool get _routeMode => _routes.entries.length > 1 || _routes.platform.routes.length > 1;
 
   void _setRoutes(ChannelRoutes routes) => setState(() {
     _routes = routes;
@@ -214,8 +208,7 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
     setState(() {
       _presetId = picked.preset.id;
       type = picked.variant?.channelType ?? picked.preset.channelType;
-      final endpoint =
-          picked.variant?.defaultEndpoint ?? picked.preset.defaultEndpoint;
+      final endpoint = picked.variant?.defaultEndpoint ?? picked.preset.defaultEndpoint;
       // Key, name and tag are the user's, not the preset's, and survive.
       if (endpoint != null) epCtrl.text = endpoint;
       _probe = null;
@@ -270,14 +263,14 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
   /// The routes channel [id] was saved with, as stored — which is what its
   /// models will be resolved against, route table or single-address form.
   ChannelRoutes? _savedRoutes(int id) {
-    final saved = widget.appState.allChannels
-        .cast<LLMChannel?>()
-        .firstWhere((c) => c?.id == id, orElse: () => null);
+    final saved = widget.appState.allChannels.cast<LLMChannel?>().firstWhere(
+      (c) => c?.id == id,
+      orElse: () => null,
+    );
     return saved == null ? null : RoutedChannel.routesOf(saved);
   }
 
-  RouteKind _savedPrimary(int id) =>
-      (_savedRoutes(id) ?? _routes).primary.kind;
+  RouteKind _savedPrimary(int id) => (_savedRoutes(id) ?? _routes).primary.kind;
 
   /// Once the routes are stored, the models they affect are written: the
   /// followers of a primary that changed pinned to it, so none quietly moves
@@ -370,13 +363,7 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
             tooltip: l10n.close,
             onPressed: () => Navigator.pop(context),
           ),
-          actions: [
-            AppButton(
-              label: l10n.save,
-              variant: AppButtonVariant.text,
-              onPressed: _save,
-            ),
-          ],
+          actions: [AppButton(label: l10n.save, variant: AppButtonVariant.text, onPressed: _save)],
         ),
         body: SingleChildScrollView(
           padding: const EdgeInsets.all(AppSpace.s16),
@@ -408,8 +395,7 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
       dividedHeading: true,
       contentPadding: EdgeInsets.zero,
       content: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(
-            AppSpace.s22, AppSpace.s16, AppSpace.s22, AppSpace.s22),
+        padding: const EdgeInsets.fromLTRB(AppSpace.s22, AppSpace.s16, AppSpace.s22, AppSpace.s22),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: _buildSections(l10n, stacked: false),
@@ -476,16 +462,15 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
   }
 
   /// Two blocks side by side on the dialog, one over the other on a phone.
-  Widget _pair(
-    Widget first,
-    Widget second, {
-    required bool stacked,
-    double gap = AppSpace.s10,
-  }) {
+  Widget _pair(Widget first, Widget second, {required bool stacked, double gap = AppSpace.s10}) {
     if (stacked) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [first, SizedBox(height: gap), second],
+        children: [
+          first,
+          SizedBox(height: gap),
+          second,
+        ],
       );
     }
     return Row(
@@ -514,9 +499,9 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
     final String title = preset == null
         ? l10n.presetUnmatched
         : variant == null
-            ? channelProviderTitle(l10n, preset.id)
-            : '${channelProviderTitle(l10n, preset.id)}'
-                ' · ${channelProviderVariantLabel(l10n, preset.id, variant.id)}';
+        ? channelProviderTitle(l10n, preset.id)
+        : '${channelProviderTitle(l10n, preset.id)}'
+              ' · ${channelProviderVariantLabel(l10n, preset.id, variant.id)}';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -539,8 +524,11 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
                     color: colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(AppRadius.sm),
                   ),
-                  child: Icon(Icons.hexagon_outlined,
-                      size: AppSize.iconMd, color: colorScheme.onSurfaceVariant),
+                  child: Icon(
+                    Icons.hexagon_outlined,
+                    size: AppSize.iconMd,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
                 )
               else
                 ChannelIdentityAvatar(
@@ -567,17 +555,12 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
                           ),
                         ),
                         if (_endpointDivergesFromPreset)
-                          ChannelBadge(
-                            l10n.presetEndpointModified,
-                            tone: ChannelBadgeTone.warning,
-                          ),
+                          ChannelBadge(l10n.presetEndpointModified, tone: ChannelBadgeTone.warning),
                       ],
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      preset == null
-                          ? l10n.presetUnmatchedHint
-                          : l10n.presetShortHint,
+                      preset == null ? l10n.presetUnmatchedHint : l10n.presetShortHint,
                       style: theme.textTheme.labelSmall?.copyWith(
                         fontWeight: FontWeight.w400,
                         color: colorScheme.onSurfaceVariant,
@@ -599,8 +582,7 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
           ),
         ),
         const SizedBox(height: AppSpace.s6),
-        ChannelNoteStrip(l10n.changePresetOverlayHint,
-            icon: Icons.warning_amber_rounded),
+        ChannelNoteStrip(l10n.changePresetOverlayHint, icon: Icons.warning_amber_rounded),
       ],
     );
   }
@@ -638,14 +620,13 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
 
   // --- Configuration ---------------------------------------------------------
 
-  String _familyDescription(AppLocalizations l10n, ProtocolFamily family) =>
-      switch (family) {
-        ProtocolFamily.openai => l10n.protocolOpenAIDesc,
-        ProtocolFamily.gemini => l10n.protocolGoogleDesc,
-        ProtocolFamily.anthropic => l10n.protocolAnthropicDesc,
-        ProtocolFamily.midjourney => l10n.protocolMidjourneyDesc,
-        ProtocolFamily.dashscope => l10n.protocolDashScopeNativeDesc,
-      };
+  String _familyDescription(AppLocalizations l10n, ProtocolFamily family) => switch (family) {
+    ProtocolFamily.openai => l10n.protocolOpenAIDesc,
+    ProtocolFamily.gemini => l10n.protocolGoogleDesc,
+    ProtocolFamily.anthropic => l10n.protocolAnthropicDesc,
+    ProtocolFamily.midjourney => l10n.protocolMidjourneyDesc,
+    ProtocolFamily.dashscope => l10n.protocolDashScopeNativeDesc,
+  };
 
   Widget _buildConfigSection(AppLocalizations l10n, {required bool stacked}) {
     if (_routeMode) return _buildRouteConfigSection(l10n, stacked: stacked);
@@ -744,9 +725,7 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
         const SizedBox(height: AppSpace.s10),
         _pair(
           ChannelLabelledField(
-            label: _keyOptional
-                ? '${l10n.apiKey} · ${l10n.apiKeyOptional}'
-                : l10n.apiKey,
+            label: _keyOptional ? '${l10n.apiKey} · ${l10n.apiKeyOptional}' : l10n.apiKey,
             // Where the key goes, said where it is typed (S1): the database
             // keeps it in plain text, private to the user's account.
             helper: _keyOptional ? null : l10n.apiKeyStorageNotice,
@@ -758,10 +737,7 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
               onChanged: (_) => setState(() => _probe = null),
             ),
           ),
-          ChannelLabelledField(
-            label: l10n.protocolField,
-            child: protocolField,
-          ),
+          ChannelLabelledField(label: l10n.protocolField, child: protocolField),
           stacked: stacked,
         ),
         const SizedBox(height: AppSpace.s10),
@@ -785,11 +761,7 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
         ),
         if (_probe != null) ...[
           const SizedBox(height: AppSpace.s10),
-          ChannelProbeResultCard(
-            l10n: l10n,
-            result: _probe!,
-            onRetry: _probing ? null : _runProbe,
-          ),
+          ChannelProbeResultCard(l10n: l10n, result: _probe!, onRetry: _probing ? null : _runProbe),
         ],
       ],
     );
@@ -815,9 +787,7 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
             ),
           ),
           ChannelLabelledField(
-            label: _keyOptional
-                ? '${l10n.apiKey} · ${l10n.apiKeyOptional}'
-                : l10n.apiKey,
+            label: _keyOptional ? '${l10n.apiKey} · ${l10n.apiKeyOptional}' : l10n.apiKey,
             helper: _keyOptional ? null : l10n.routeKeyShared,
             child: ChannelField(
               controller: keyCtrl,
@@ -837,8 +807,7 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
           stacked: stacked,
           // Counted against the routes the dialog opened with: a follower of
           // the primary is pinned to it on save, so it keeps riding that route.
-          modelsOnRoute: (kind) =>
-              RouteSwitching.modelsOnRoute(models, _openedRoutes, kind),
+          modelsOnRoute: (kind) => RouteSwitching.modelsOnRoute(models, _openedRoutes, kind),
           onProbe: _probeRoute,
           probing: _probingRoute,
           probes: _routeProbes,
@@ -899,7 +868,8 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
               prefixIcon: Icons.payments_outlined,
               items: [
                 AppDropdownItem(value: null, label: l10n.noFeeGroup, muted: true),
-                for (final g in widget.appState.allPricingGroups) AppDropdownItem(value: g.id!, label: g.name),
+                for (final g in widget.appState.allPricingGroups)
+                  AppDropdownItem(value: g.id!, label: g.name),
               ],
               onChanged: (v) => setState(() => defaultFeeGroupId = v),
             ),

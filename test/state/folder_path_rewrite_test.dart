@@ -49,12 +49,12 @@ void main() {
     });
 
     BrowserFile fileAt(String path) => BrowserFile(
-          path: path,
-          name: p.basename(path),
-          category: BrowserFile.categoryOf(path),
-          size: 1,
-          modified: DateTime(2026, 1, 1),
-        );
+      path: path,
+      name: p.basename(path),
+      category: BrowserFile.categoryOf(path),
+      size: 1,
+      modified: DateTime(2026, 1, 1),
+    );
 
     test('marks and the destination follow the folder; others stay', () async {
       final state = FileStagingState();
@@ -62,7 +62,11 @@ void main() {
       final old = p.join(root.path, 'old');
       final fresh = p.join(root.path, 'new');
       final elsewhere = p.join(root.path, 'elsewhere', 'z.png');
-      state.addAll([fileAt(p.join(old, 'a.png')), fileAt(p.join(old, 'sub', 'b.png')), fileAt(elsewhere)]);
+      state.addAll([
+        fileAt(p.join(old, 'a.png')),
+        fileAt(p.join(old, 'sub', 'b.png')),
+        fileAt(elsewhere),
+      ]);
       state.setDestination(p.join(old, 'sub'));
 
       state.rewritePathPrefix(old, fresh);
@@ -128,20 +132,25 @@ void main() {
 
       expect(state.sourceDirectories, [renamed, b.path]);
       expect(state.activeDirectories, [p.join(renamed, 'sub'), b.path]);
-      expect(await DatabaseService().getSetting('browser_source_directories'), '$renamed|${b.path}');
+      expect(
+        await DatabaseService().getSetting('browser_source_directories'),
+        '$renamed|${b.path}',
+      );
     });
 
-    test('pruneRemoved drops active paths under a deleted folder and falls back to the parent',
-        () async {
-      final a = await Directory(p.join(root.path, 'a')).create();
-      final gone = await Directory(p.join(a.path, 'gone')).create();
-      final deep = await Directory(p.join(gone.path, 'deep')).create();
-      final state = await stateWith([a.path], [deep.path]);
+    test(
+      'pruneRemoved drops active paths under a deleted folder and falls back to the parent',
+      () async {
+        final a = await Directory(p.join(root.path, 'a')).create();
+        final gone = await Directory(p.join(a.path, 'gone')).create();
+        final deep = await Directory(p.join(gone.path, 'deep')).create();
+        final state = await stateWith([a.path], [deep.path]);
 
-      await state.pruneRemoved(gone.path);
+        await state.pruneRemoved(gone.path);
 
-      expect(state.activeDirectories, [a.path]);
-    });
+        expect(state.activeDirectories, [a.path]);
+      },
+    );
 
     test('pruneRemoved leaves an unrelated active list alone', () async {
       final a = await Directory(p.join(root.path, 'a')).create();

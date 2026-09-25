@@ -8,12 +8,7 @@ import '../../core/design_tokens.dart';
 /// It stops under the platform's reduce-motion and under the app's own
 /// reduce-visual-effects ([AppMotion.breathes]); the dot stays, solid.
 class AppBreathingDot extends StatefulWidget {
-  const AppBreathingDot({
-    super.key,
-    required this.color,
-    this.size = 8,
-    this.breathing = true,
-  });
+  const AppBreathingDot({super.key, required this.color, this.size = 8, this.breathing = true});
 
   final Color color;
   final double size;
@@ -26,10 +21,11 @@ class AppBreathingDot extends StatefulWidget {
   State<AppBreathingDot> createState() => _AppBreathingDotState();
 }
 
-class _AppBreathingDotState extends State<AppBreathingDot>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller =
-      AnimationController(vsync: this, duration: AppMotion.breath);
+class _AppBreathingDotState extends State<AppBreathingDot> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: AppMotion.breath,
+  );
 
   /// 1 → .35 → 1 over one period, eased at both ends like CSS `pulse`.
   ///
@@ -39,13 +35,11 @@ class _AppBreathingDotState extends State<AppBreathingDot>
   late final Animation<double> _opacity = _controller.drive(
     TweenSequence<double>(<TweenSequenceItem<double>>[
       TweenSequenceItem<double>(
-        tween: Tween<double>(begin: 1, end: 0.35)
-            .chain(CurveTween(curve: Curves.easeInOut)),
+        tween: Tween<double>(begin: 1, end: 0.35).chain(CurveTween(curve: Curves.easeInOut)),
         weight: 1,
       ),
       TweenSequenceItem<double>(
-        tween: Tween<double>(begin: 0.35, end: 1)
-            .chain(CurveTween(curve: Curves.easeInOut)),
+        tween: Tween<double>(begin: 0.35, end: 1).chain(CurveTween(curve: Curves.easeInOut)),
         weight: 1,
       ),
     ]),

@@ -54,8 +54,9 @@ void main() {
     }
   }
 
-  testWidgets('opened at the bottom edge, the capsule stays inside the window',
-      (WidgetTester tester) async {
+  testWidgets('opened at the bottom edge, the capsule stays inside the window', (
+    WidgetTester tester,
+  ) async {
     const Size window = Size(1440, 900);
     await mountApp(
       tester,
@@ -70,8 +71,11 @@ void main() {
     expect(capsuleBody, findsOneWidget);
 
     final Rect collapsed = tester.getRect(capsuleBody);
-    expect(collapsed.bottom, lessThanOrEqualTo(window.height),
-        reason: 'collapsed capsule already overflows');
+    expect(
+      collapsed.bottom,
+      lessThanOrEqualTo(window.height),
+      reason: 'collapsed capsule already overflows',
+    );
 
     await tester.tap(capsuleBody);
     await settle(tester);
@@ -79,15 +83,22 @@ void main() {
     final Rect opened = tester.getRect(capsuleBody);
     // It really did open — otherwise the assertion below passes for the wrong
     // reason and this test protects nothing.
-    expect(opened.height, greaterThan(collapsed.height),
-        reason: 'the tap did not expand the capsule');
-    expect(opened.bottom, lessThanOrEqualTo(window.height),
-        reason: 'the opened capsule runs off the bottom of the window');
+    expect(
+      opened.height,
+      greaterThan(collapsed.height),
+      reason: 'the tap did not expand the capsule',
+    );
+    expect(
+      opened.bottom,
+      lessThanOrEqualTo(window.height),
+      reason: 'the opened capsule runs off the bottom of the window',
+    );
     expect(opened.top, greaterThanOrEqualTo(0));
   });
 
-  testWidgets('closing it again returns it to where the user parked it',
-      (WidgetTester tester) async {
+  testWidgets('closing it again returns it to where the user parked it', (
+    WidgetTester tester,
+  ) async {
     // Bottom-anchored, so its bottom edge must not move at all while its top
     // edge does — a capsule that crept across an open/close cycle would walk
     // itself up the screen.
@@ -113,8 +124,9 @@ void main() {
     expect(tester.getRect(capsuleBody).top, closeTo(parked.top, 1));
   });
 
-  testWidgets('the content height follows a tap at M3 and anything else at M2',
-      (WidgetTester tester) async {
+  testWidgets('the content height follows a tap at M3 and anything else at M2', (
+    WidgetTester tester,
+  ) async {
     // `plans/README.md`: the running count crossing zero resized the capsule
     // at panel weight once per task in a batch run.
     await mountApp(
@@ -125,10 +137,11 @@ void main() {
       label: 'capsule-size-timing',
     );
     Duration sizeDuration() => tester
-        .widget<AnimatedSize>(find.descendant(
-          of: find.byType(TaskCapsuleMonitor),
-          matching: find.byType(AnimatedSize),
-        ).first)
+        .widget<AnimatedSize>(
+          find
+              .descendant(of: find.byType(TaskCapsuleMonitor), matching: find.byType(AnimatedSize))
+              .first,
+        )
         .duration;
 
     expect(sizeDuration(), AppMotion.state);

@@ -25,19 +25,19 @@ import 'screens/prompts/prompts_screen.dart';
 import 'screens/settings/settings_screen.dart';
 import 'screens/wizard/setup_wizard.dart';
 import 'screens/workbench/workbench_screen.dart';
-import 'services/llm/protocols/minimax_h3_base_video_protocol.dart';
-import 'services/system/notification_service.dart';
-import 'services/tasks/task_queue_service.dart';
 import 'services/files/temp_storage_service.dart';
+import 'services/llm/protocols/minimax_h3_base_video_protocol.dart';
 import 'services/media/video_thumbnail_service.dart';
+import 'services/system/notification_service.dart';
 import 'services/system/window_chrome_service.dart';
+import 'services/tasks/task_queue_service.dart';
 import 'state/app_state.dart';
-import 'widgets/shell/app_window_frame.dart';
-import 'widgets/shell/shortcut_panel.dart';
 import 'widgets/shell/app_destinations.dart';
 import 'widgets/shell/app_top_bar.dart';
+import 'widgets/shell/app_window_frame.dart';
 import 'widgets/shell/phone_dock.dart';
 import 'widgets/shell/shell_cover.dart';
+import 'widgets/shell/shortcut_panel.dart';
 import 'widgets/tasks/task_capsule_monitor.dart';
 
 void main() async {
@@ -68,9 +68,7 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: appState),
-        ChangeNotifierProvider<TaskQueueService>.value(
-          value: appState.taskQueue,
-        ),
+        ChangeNotifierProvider<TaskQueueService>.value(value: appState.taskQueue),
         ChangeNotifierProvider.value(value: appState.workbenchUIState),
         ChangeNotifierProvider.value(value: appState.taskListState),
         ChangeNotifierProvider.value(value: appState.modelListState),
@@ -96,10 +94,7 @@ Future<void> _hideNativeTitleBar() async {
 
   await windowManager.ensureInitialized();
   await windowManager.waitUntilReadyToShow(
-    const WindowOptions(
-      titleBarStyle: TitleBarStyle.hidden,
-      windowButtonVisibility: true,
-    ),
+    const WindowOptions(titleBarStyle: TitleBarStyle.hidden, windowButtonVisibility: true),
     () async {
       await windowManager.show();
       await windowManager.focus();
@@ -129,19 +124,12 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     final themeMode = context.select<AppState, ThemeMode>((s) => s.themeMode);
     final locale = context.select<AppState, Locale?>((s) => s.locale);
-    final themeAccent = context.select<AppState, ThemeAccent>(
-      (s) => s.themeAccent,
-    );
-    final fontFamily = context.select<AppState, String?>(
-      (s) => s.themeFontFamily,
-    );
-    final reduceEffects = context.select<AppState, bool>(
-      (s) => s.reduceVisualEffects,
-    );
+    final themeAccent = context.select<AppState, ThemeAccent>((s) => s.themeAccent);
+    final fontFamily = context.select<AppState, String?>((s) => s.themeFontFamily);
+    final reduceEffects = context.select<AppState, bool>((s) => s.reduceVisualEffects);
 
     final app = MaterialApp(
-      onGenerateTitle: (context) =>
-          '${AppLocalizations.of(context)!.appTitle} v${widget.version}',
+      onGenerateTitle: (context) => '${AppLocalizations.of(context)!.appTitle} v${widget.version}',
       themeMode: themeMode,
       locale: locale,
       scrollBehavior: const _AppScrollBehavior(),
@@ -218,9 +206,7 @@ class _WindowChromeSyncState extends State<_WindowChromeSync> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     final appState = context.read<AppState>();
-    WindowChromeService.applyTheme(Theme.of(context).colorScheme).then((
-      report,
-    ) {
+    WindowChromeService.applyTheme(Theme.of(context).colorScheme).then((report) {
       if (report != null) appState.addLog(report);
     });
   }
@@ -321,9 +307,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     if (appState.settingsLoaded && !appState.setupCompleted && !_wizardShown) {
       _wizardShown = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (_) => const SetupWizard()));
+        Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SetupWizard()));
       });
     }
   }
@@ -341,9 +325,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final activeIndex = context.select<AppState, int>(
-      (s) => s.activeScreenIndex,
-    );
+    final activeIndex = context.select<AppState, int>((s) => s.activeScreenIndex);
     var current = AppDestination.values[activeIndex];
     if (!AppDestination.isAvailable(current)) {
       // A destination this OS does not offer (restored from a desktop backup).
@@ -391,16 +373,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                     ),
                   ],
                 )
-              : SafeArea(
-                  top: isTouchOs,
-                  bottom: false,
-                  left: false,
-                  right: false,
-                  child: screen,
-                ),
+              : SafeArea(top: isTouchOs, bottom: false, left: false, right: false, child: screen),
         ),
-        if (isPhone)
-          const Positioned(left: 0, right: 0, bottom: 0, child: PhoneDock()),
+        if (isPhone) const Positioned(left: 0, right: 0, bottom: 0, child: PhoneDock()),
         // Unconditional: the capsule governs its own visibility so it can
         // fade out instead of unmounting between two frames.
         const TaskCapsuleMonitor(),

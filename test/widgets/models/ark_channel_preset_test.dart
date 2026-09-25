@@ -14,30 +14,28 @@ void main() {
     expect(preset?.id, 'volcengine-ark');
     expect(preset!.group, ChannelProviderGroup.vendor);
     expect([for (final v in preset.variants) v.id], ['payg', 'plan']);
-    expect(
-        preset.variants.every((v) => v.channelType == Vendors.volcengineArk),
-        isTrue);
+    expect(preset.variants.every((v) => v.channelType == Vendors.volcengineArk), isTrue);
     expect([for (final v in preset.variants) v.defaultEndpoint], [payg, plan]);
   });
 
   test('a stored channel reads back onto the variant its address is', () {
     final preset = presetForChannelType(Vendors.volcengineArk)!;
-    expect(variantForChannelType(preset, Vendors.volcengineArk, endpoint: plan)
-        ?.id, 'plan');
+    expect(variantForChannelType(preset, Vendors.volcengineArk, endpoint: plan)?.id, 'plan');
     expect(
-        variantForChannelType(preset, Vendors.volcengineArk,
-                endpoint: '$plan/')
-            ?.id,
-        'plan',
-        reason: 'a trailing slash is the same address');
-    expect(variantForChannelType(preset, Vendors.volcengineArk, endpoint: payg)
-        ?.id, 'payg');
+      variantForChannelType(preset, Vendors.volcengineArk, endpoint: '$plan/')?.id,
+      'plan',
+      reason: 'a trailing slash is the same address',
+    );
+    expect(variantForChannelType(preset, Vendors.volcengineArk, endpoint: payg)?.id, 'payg');
     // An address of the user's own falls back to the first variant.
     expect(
-        variantForChannelType(preset, Vendors.volcengineArk,
-                endpoint: 'https://gateway.example/ark')
-            ?.id,
-        'payg');
+      variantForChannelType(
+        preset,
+        Vendors.volcengineArk,
+        endpoint: 'https://gateway.example/ark',
+      )?.id,
+      'payg',
+    );
   });
 
   test('appended last, so no existing row changed colour', () {
@@ -45,13 +43,14 @@ void main() {
     // The row before it kept its index, and with it its identity colour.
     final before = kChannelProviderPresets[kChannelProviderPresets.length - 2];
     expect(before.id, 'minimax-h3-base');
-    expect(channelPresetIdentityColor(before),
-        isNot(channelPresetIdentityColor(kChannelProviderPresets.last)));
+    expect(
+      channelPresetIdentityColor(before),
+      isNot(channelPresetIdentityColor(kChannelProviderPresets.last)),
+    );
   });
 
   test('searchable by the names people know it by', () {
     final preset = kChannelProviderPresets.last;
-    expect(preset.searchAliases,
-        containsAll(['火山', '方舟', 'volcengine', 'doubao', 'seedream']));
+    expect(preset.searchAliases, containsAll(['火山', '方舟', 'volcengine', 'doubao', 'seedream']));
   });
 }

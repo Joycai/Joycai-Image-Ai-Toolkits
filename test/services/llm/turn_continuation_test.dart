@@ -12,12 +12,22 @@ import 'package:joycai_image_ai_toolkits/services/llm/turn_continuation.dart';
 void main() {
   final searchBlocks = <Map<String, dynamic>>[
     {'type': 'text', 'text': 'Let me look.'},
-    {'type': 'server_tool_use', 'id': 'srv_1', 'name': 'web_search', 'input': {'query': 'q'}},
+    {
+      'type': 'server_tool_use',
+      'id': 'srv_1',
+      'name': 'web_search',
+      'input': {'query': 'q'},
+    },
     {
       'type': 'web_search_tool_result',
       'tool_use_id': 'srv_1',
       'content': [
-        {'type': 'web_search_result', 'title': 'T', 'url': 'https://e.com/a', 'encrypted_content': 'Eqgf…'}
+        {
+          'type': 'web_search_result',
+          'title': 'T',
+          'url': 'https://e.com/a',
+          'encrypted_content': 'Eqgf…',
+        },
       ],
     },
   ];
@@ -26,9 +36,9 @@ void main() {
       'name': 'web_search',
       'query': 'q',
       'sources': [
-        {'title': 'T', 'url': 'https://e.com/a'}
+        {'title': 'T', 'url': 'https://e.com/a'},
       ],
-    }
+    },
   ];
 
   group('continuationFor', () {
@@ -57,11 +67,7 @@ void main() {
       // found`, so the results are rendered as a user turn instead.
       final r = LLMResponse(
         text: 'Let me look.',
-        metadata: {
-          'finish_reason': 'stop',
-          'turn_incomplete': true,
-          'server_tool_runs': runs,
-        },
+        metadata: {'finish_reason': 'stop', 'turn_incomplete': true, 'server_tool_runs': runs},
         rawContentBlocks: searchBlocks,
       );
       final next = continuationFor(r, 'MiniMax-M3')!;
@@ -94,8 +100,12 @@ void main() {
     });
 
     test('zero results is its own line', () {
-      expect(renderServerToolRuns([{'name': 'web_search', 'query': 'q', 'sources': []}]),
-          contains('(no results)'));
+      expect(
+        renderServerToolRuns([
+          {'name': 'web_search', 'query': 'q', 'sources': []},
+        ]),
+        contains('(no results)'),
+      );
     });
 
     test('no runs at all still produces an instruction to continue', () {
@@ -129,21 +139,27 @@ void main() {
       // figure feeds ContextBudget.calibrate. Each continuation re-sends the
       // whole history, so a summed input counted the context once per leg.
       final merged = mergeTurnParts([
-        LLMResponse(text: 'a', metadata: {
-          'input_tokens': 100,
-          'output_tokens': 10,
-          'prompt_tokens': 120,
-          'completion_tokens': 10,
-          'cache_read_input_tokens': 20,
-          'total_tokens': 130,
-        }),
-        LLMResponse(text: 'b', metadata: {
-          'input_tokens': 200,
-          'output_tokens': 30,
-          'prompt_tokens': 200,
-          'completion_tokens': 30,
-          'total_tokens': 230,
-        }),
+        LLMResponse(
+          text: 'a',
+          metadata: {
+            'input_tokens': 100,
+            'output_tokens': 10,
+            'prompt_tokens': 120,
+            'completion_tokens': 10,
+            'cache_read_input_tokens': 20,
+            'total_tokens': 130,
+          },
+        ),
+        LLMResponse(
+          text: 'b',
+          metadata: {
+            'input_tokens': 200,
+            'output_tokens': 30,
+            'prompt_tokens': 200,
+            'completion_tokens': 30,
+            'total_tokens': 230,
+          },
+        ),
       ]);
       expect(merged.metadata['output_tokens'], 40);
       expect(merged.metadata['completion_tokens'], 40);
@@ -157,11 +173,14 @@ void main() {
 
     test('the content arrays concatenate so the whole turn replays as one message', () {
       final second = <Map<String, dynamic>>[
-        {'type': 'text', 'text': 'Here it is.'}
+        {'type': 'text', 'text': 'Here it is.'},
       ];
       final merged = mergeTurnParts([
-        LLMResponse(text: 'Let me look.', rawContentBlocks: searchBlocks,
-            metadata: {'server_tool_runs': runs}),
+        LLMResponse(
+          text: 'Let me look.',
+          rawContentBlocks: searchBlocks,
+          metadata: {'server_tool_runs': runs},
+        ),
         LLMResponse(text: 'Here it is.', rawContentBlocks: second, metadata: {}),
       ]);
       expect(merged.rawContentBlocks, [...searchBlocks, ...second]);

@@ -27,10 +27,7 @@ class DashScopeVideoProtocol implements VideoJobProtocol {
     LLMLogger? logger,
   }) async {
     final config = target.config;
-    final userMsg = history.lastWhere(
-      (m) => m.role == LLMRole.user,
-      orElse: () => history.last,
-    );
+    final userMsg = history.lastWhere((m) => m.role == LLMRole.user, orElse: () => history.last);
 
     final media = <Map<String, String>>[];
     for (final att in userMsg.attachments) {
@@ -45,10 +42,7 @@ class DashScopeVideoProtocol implements VideoJobProtocol {
         default:
           role = 'reference_image';
       }
-      media.add({
-        'type': role,
-        'url': imageDataUrl(bytes, att.mimeType),
-      });
+      media.add({'type': role, 'url': imageDataUrl(bytes, att.mimeType)});
     }
 
     final parameters = <String, dynamic>{
@@ -66,8 +60,8 @@ class DashScopeVideoProtocol implements VideoJobProtocol {
       parameters['resolution'] = tier.contains('480')
           ? '480P'
           : tier.contains('720')
-              ? '720P'
-              : '1080P';
+          ? '720P'
+          : '1080P';
     }
 
     final aspect = readStringOption(options, 'aspectRatio');
@@ -83,59 +77,47 @@ class DashScopeVideoProtocol implements VideoJobProtocol {
 
     final payload = <String, dynamic>{
       'model': config.modelId,
-      'input': {
-        'prompt': userMsg.content,
-        if (media.isNotEmpty) 'media': media,
-      },
+      'input': {'prompt': userMsg.content, if (media.isNotEmpty) 'media': media},
       'parameters': parameters,
     };
 
     final base = dashscopeNativeBase(config.endpoint);
     final url = Uri.parse('$base/services/aigc/video-generation/video-synthesis');
-    logger?.call('Submitting DashScope video task to: ${url.host}',
-        level: 'DEBUG');
+    logger?.call('Submitting DashScope video task to: ${url.host}', level: 'DEBUG');
 
     LLMDebugLog? debugFile;
     if (LLMDebugLogger.enabled) {
-      debugFile = await LLMDebugLogger.startLog(
-        config.modelId,
-        'DashScope (Video Submit)',
-        {
-          'url': redactUrl(url),
-          'payload': {
-            ...payload,
-            if (media.isNotEmpty)
-              'input': '[prompt + ${media.length} base64 media item(s)]',
-          },
+      debugFile = await LLMDebugLogger.startLog(config.modelId, 'DashScope (Video Submit)', {
+        'url': redactUrl(url),
+        'payload': {
+          ...payload,
+          if (media.isNotEmpty) 'input': '[prompt + ${media.length} base64 media item(s)]',
         },
-      );
+      });
     }
 
     final client = config.createClient();
     try {
-      final response = await sendJsonRequest(client, url,
-        headers: {
-          ...target.headers(),
-          'X-DashScope-Async': 'enable',
-        },
+      final response = await sendJsonRequest(
+        client,
+        url,
+        headers: {...target.headers(), 'X-DashScope-Async': 'enable'},
         body: jsonEncode(payload),
-        options: options);
+        options: options,
+      );
 
       if (debugFile != null) {
-        await LLMDebugLogger.appendLine(
-            debugFile, 'Status: ${response.statusCode}');
+        await LLMDebugLogger.appendLine(debugFile, 'Status: ${response.statusCode}');
         await LLMDebugLogger.appendLine(debugFile, 'Body: ${response.body}');
       }
 
-      final data =
-          decodeJsonBody(response, apiName: 'DashScope video submit');
+      final data = decodeJsonBody(response, apiName: 'DashScope video submit');
       throwIfDashScopeError(data);
 
       final output = data['output'];
       final taskId = output is Map ? output['task_id']?.toString() : null;
       if (taskId == null || taskId.isEmpty) {
-        throw LLMApiException(
-            'DashScope video submit returned no task_id: ${response.body}');
+        throw LLMApiException('DashScope video submit returned no task_id: ${response.body}');
       }
       // Into the log the moment it exists — the only handle left if polling
       // ever dies.
@@ -166,56 +148,58 @@ class DashScopeVideoProtocol implements VideoJobProtocol {
 
     final client = config.createClient();
     try {
-      final response = await sendJsonRequest(client, url,
-          headers: target.headers(),
-          body: '',
-          options: options,
-          method: 'GET');
+      final response = await sendJsonRequest(
+        client,
+        url,
+        headers: target.headers(),
+        body: '',
+        options: options,
+        method: 'GET',
+      );
       // checkEnvelope: false — a failed task arrives inside a 200 and this
       // status machine owns reporting it, with the task id in the message.
-      final data = decodeJsonBody(response,
-          apiName: 'DashScope video poll', checkEnvelope: false);
+      final data = decodeJsonBody(response, apiName: 'DashScope video poll', checkEnvelope: false);
 
       final output = data['output'];
       final status = requireJobStatus(
-              output is Map ? output['task_status'] : null,
-              job: 'DashScope video task',
-              jobId: operationName)
-          .toUpperCase();
+        output is Map ? output['task_status'] : null,
+        job: 'DashScope video task',
+        jobId: operationName,
+      ).toUpperCase();
 
       switch (status) {
         case 'SUCCEEDED':
-          final videoUrl =
-              output is Map ? output['video_url']?.toString() : null;
+          final videoUrl = output is Map ? output['video_url']?.toString() : null;
           if (videoUrl == null || videoUrl.isEmpty) {
             throw LLMApiException(
-                'DashScope video task $operationName succeeded but returned '
-                'no video_url: ${response.body}',
-                isJobEnded: true);
+              'DashScope video task $operationName succeeded but returned '
+              'no video_url: ${response.body}',
+              isJobEnded: true,
+            );
           }
           // A signed OSS link: the API key must not travel to it.
           final usage = data['usage'];
-          return videoDoneEnvelope(operationName, videoUrl,
-              requiresAuth: videoUriNeedsAuth(videoUrl, config.endpoint),
-              renderedSeconds: usage is Map ? usage['duration'] : null);
+          return videoDoneEnvelope(
+            operationName,
+            videoUrl,
+            requiresAuth: videoUriNeedsAuth(videoUrl, config.endpoint),
+            renderedSeconds: usage is Map ? usage['duration'] : null,
+          );
         case 'FAILED':
         case 'CANCELED':
         case 'UNKNOWN':
           final code = output is Map ? output['code'] : null;
           final message = output is Map ? output['message'] : null;
           throw LLMApiException(
-              'DashScope video task $operationName $status'
-              '${code != null ? ' ($code)' : ''}'
-              '${message != null ? ': $message' : ''}'
-              '${status == 'UNKNOWN' ? ' (task ids expire after 24h — an expired task also reports UNKNOWN)' : ''}',
-              isJobEnded: true);
+            'DashScope video task $operationName $status'
+            '${code != null ? ' ($code)' : ''}'
+            '${message != null ? ': $message' : ''}'
+            '${status == 'UNKNOWN' ? ' (task ids expire after 24h — an expired task also reports UNKNOWN)' : ''}',
+            isJobEnded: true,
+          );
         default:
           // PENDING / RUNNING / anything newer.
-          return {
-            'name': operationName,
-            'done': false,
-            'status': status,
-          };
+          return {'name': operationName, 'done': false, 'status': status};
       }
     } finally {
       client.close();

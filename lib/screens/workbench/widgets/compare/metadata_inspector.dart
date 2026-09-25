@@ -135,7 +135,9 @@ class _MetadataInspectorState extends State<MetadataInspector> {
         child: Text(
           l10n.metadataSelectedNone,
           textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
         ),
       );
     } else {
@@ -168,11 +170,11 @@ class _MetadataInspectorState extends State<MetadataInspector> {
   }
 
   List<(String, String)> _rows(ImageMetadata meta, AppLocalizations l10n) => [
-        if (meta.width > 0) (l10n.width, '${meta.width} px'),
-        if (meta.height > 0) (l10n.height, '${meta.height} px'),
-        if (meta.aspectRatio.isNotEmpty) (l10n.aspectRatio, meta.aspectRatio),
-        (l10n.fileSize, meta.sizeString),
-      ];
+    if (meta.width > 0) (l10n.width, '${meta.width} px'),
+    if (meta.height > 0) (l10n.height, '${meta.height} px'),
+    if (meta.aspectRatio.isNotEmpty) (l10n.aspectRatio, meta.aspectRatio),
+    (l10n.fileSize, meta.sizeString),
+  ];
 }
 
 /// A card laid in the column: panel ground, hairline, r16, 10 inside.
@@ -209,10 +211,10 @@ class _Caption extends StatelessWidget {
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            fontWeight: FontWeight.w500,
-            letterSpacing: AppType.trackedLabelSpacing,
-            color: Theme.of(context).colorScheme.onAccentTint,
-          ),
+        fontWeight: FontWeight.w500,
+        letterSpacing: AppType.trackedLabelSpacing,
+        color: Theme.of(context).colorScheme.onAccentTint,
+      ),
     );
   }
 }
@@ -300,16 +302,24 @@ class _SizeDeltaCard extends StatelessWidget {
     final delta = (after.fileSize - raw.fileSize) / raw.fileSize * 100;
     final shrank = delta <= 0;
     final percent = '${delta.abs().toStringAsFixed(1)}%';
-    final sentence = shrank ? l10n.comparatorSizeReduction(percent) : l10n.comparatorSizeIncrease(percent);
+    final sentence = shrank
+        ? l10n.comparatorSizeReduction(percent)
+        : l10n.comparatorSizeIncrease(percent);
     final statusInk = shrank ? semantic.onSuccessContainer : semantic.onWarningContainer;
 
     // The figure is set apart in mono at 600 (`A5 · 1c`); the sentence around
     // it is whatever the locale wraps the placeholder in.
     final base = textTheme.bodySmall?.copyWith(color: colorScheme.onSurface);
-    final figure = textTheme.bodySmall?.mono.copyWith(color: statusInk, fontWeight: FontWeight.w600);
+    final figure = textTheme.bodySmall?.mono.copyWith(
+      color: statusInk,
+      fontWeight: FontWeight.w600,
+    );
     final at = sentence.indexOf(percent);
     final InlineSpan span = at < 0
-        ? TextSpan(text: sentence, style: base?.copyWith(color: statusInk))
+        ? TextSpan(
+            text: sentence,
+            style: base?.copyWith(color: statusInk),
+          )
         : TextSpan(
             style: base,
             children: [
@@ -353,9 +363,13 @@ class _PickCard extends StatelessWidget {
           const SizedBox(height: AppSpace.s6),
           Row(
             children: [
-              Expanded(child: _OutlineAction(label: l10n.comparatorPickRaw, onPressed: onPick)),
+              Expanded(
+                child: _OutlineAction(label: l10n.comparatorPickRaw, onPressed: onPick),
+              ),
               const SizedBox(width: AppSpace.s6),
-              Expanded(child: _OutlineAction(label: l10n.comparatorPickAfter, onPressed: onPick)),
+              Expanded(
+                child: _OutlineAction(label: l10n.comparatorPickAfter, onPressed: onPick),
+              ),
             ],
           ),
         ],
@@ -393,9 +407,9 @@ class _OutlineAction extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w500,
-                      color: colorScheme.onAccentTint,
-                    ),
+                  fontWeight: FontWeight.w500,
+                  color: colorScheme.onAccentTint,
+                ),
               ),
             ),
           ),

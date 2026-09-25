@@ -8,14 +8,14 @@ import 'package:joycai_image_ai_toolkits/widgets/models/fee_group_draft.dart';
 /// switches like the rate table, and validated only while their row shows.
 void main() {
   PricingGroup seedream({OutputUnit unit = OutputUnit.image}) => PricingGroup(
-        id: 1,
-        name: 'Seedream pro',
-        billingMode: 'spec',
-        outputUnit: unit,
-        outputRates: const [SpecRate(price: 0.30)],
-        inputUnitPrice: 0.02,
-        inputFreeUnits: 1,
-      );
+    id: 1,
+    name: 'Seedream pro',
+    billingMode: 'spec',
+    outputUnit: unit,
+    outputRates: const [SpecRate(price: 0.30)],
+    inputUnitPrice: 0.02,
+    inputFreeUnits: 1,
+  );
 
   FeeGroupDraft draftOf(PricingGroup? group) {
     final draft = FeeGroupDraft(group);
@@ -71,7 +71,11 @@ void main() {
     final draft = draftOf(seedream());
     draft.setUnit(OutputUnit.second);
     expect(draft.showsInputImages, isTrue);
-    expect(draft.toGroup().chargesInputImages, isTrue, reason: 'a per-second group bills its frames');
+    expect(
+      draft.toGroup().chargesInputImages,
+      isTrue,
+      reason: 'a per-second group bills its frames',
+    );
 
     draft.setMode('request');
     expect(draft.showsInputImages, isTrue);

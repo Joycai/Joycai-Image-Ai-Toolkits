@@ -52,8 +52,7 @@ void main() {
   // Wide enough that the right panel is inline rather than in a drawer.
   const Size desktop = Size(1600, 900);
 
-  testWidgets('an unrelated notification does not re-hand the panel a new widget',
-      (tester) async {
+  testWidgets('an unrelated notification does not re-hand the panel a new widget', (tester) async {
     await mountApp(
       tester,
       env: env,
@@ -103,10 +102,7 @@ void main() {
     await settle(tester);
 
     expect(
-      find.descendant(
-        of: find.byType(WorkbenchConfigPanel),
-        matching: find.text(typed),
-      ),
+      find.descendant(of: find.byType(WorkbenchConfigPanel), matching: find.text(typed)),
       findsWidgets,
       reason: 'a change the panel selects must still reach it',
     );

@@ -55,10 +55,7 @@ Map<String, dynamic>? geminiThinkingConfig(
         'includeThoughts': true,
       };
     case GeminiThinkingGeneration.budget:
-      return {
-        'thinkingBudget': geminiThinkingBudgets[effort],
-        'includeThoughts': true,
-      };
+      return {'thinkingBudget': geminiThinkingBudgets[effort], 'includeThoughts': true};
   }
 }
 
@@ -85,15 +82,9 @@ Map<String, dynamic> getSafePayload(Map<String, dynamic> payload) {
 
 /// Imagen `:predict` request body (text-to-image only).
 Map<String, dynamic> prepareImagenPayload(List<LLMMessage> history, Map<String, dynamic>? options) {
-  final userMsg = history.lastWhere(
-    (m) => m.role == LLMRole.user,
-    orElse: () => history.last,
-  );
+  final userMsg = history.lastWhere((m) => m.role == LLMRole.user, orElse: () => history.last);
 
-  final parameters = <String, dynamic>{
-    'sampleCount': 1,
-    'personGeneration': 'allow_all',
-  };
+  final parameters = <String, dynamic>{'sampleCount': 1, 'personGeneration': 'allow_all'};
   if (options != null) {
     if (options.containsKey('aspectRatio') && options['aspectRatio'] != 'not_set') {
       parameters['aspectRatio'] = options['aspectRatio'];
@@ -106,7 +97,7 @@ Map<String, dynamic> prepareImagenPayload(List<LLMMessage> history, Map<String, 
 
   return {
     'instances': [
-      {'prompt': userMsg.content}
+      {'prompt': userMsg.content},
     ],
     'parameters': parameters,
   };
@@ -131,13 +122,11 @@ int veoInputImages(Map<String, dynamic> payload) {
 Map<String, dynamic> prepareVeoPayload(List<LLMMessage> history, Map<String, dynamic>? options) {
   final userMsg = history.lastWhere((m) => m.role == LLMRole.user);
 
-  final instance = <String, dynamic>{
-    'prompt': userMsg.content,
-  };
+  final instance = <String, dynamic>{'prompt': userMsg.content};
 
   final referenceImages = <Map<String, dynamic>>[];
 
-  for (var attachment in userMsg.attachments) {
+  for (final attachment in userMsg.attachments) {
     String? b64Data;
     if (attachment.path != null) {
       b64Data = base64Encode(File(attachment.path!).readAsBytesSync());
@@ -157,10 +146,7 @@ Map<String, dynamic> prepareVeoPayload(List<LLMMessage> history, Map<String, dyn
       // };
 
       // Google Gen API doc is wrong, this code is get from ai studio, fuck google
-      final mediaDataLegacy = {
-          'mimeType': attachment.mimeType,
-          'bytesBase64Encoded': b64Data
-      };
+      final mediaDataLegacy = {'mimeType': attachment.mimeType, 'bytesBase64Encoded': b64Data};
 
       switch (attachment.referenceType) {
         case LLMReferenceType.firstFrame:
@@ -168,15 +154,9 @@ Map<String, dynamic> prepareVeoPayload(List<LLMMessage> history, Map<String, dyn
         case LLMReferenceType.lastFrame:
           instance['lastFrame'] = mediaDataLegacy;
         case LLMReferenceType.asset:
-          referenceImages.add({
-            'image': mediaDataLegacy,
-            'referenceType': 'asset'
-          });
+          referenceImages.add({'image': mediaDataLegacy, 'referenceType': 'asset'});
         default:
-          referenceImages.add({
-            'image': mediaDataLegacy,
-            'referenceType': 'asset'
-          });
+          referenceImages.add({'image': mediaDataLegacy, 'referenceType': 'asset'});
       }
     }
   }
@@ -277,10 +257,7 @@ String? geminiFinishReason(String? finishReason) {
 /// image, a refine that returned nothing. Typed and non-retryable (no status
 /// code): the same request meets the same end, and every attempt is billed.
 /// A content-filter end is left to LLMService's single check.
-LLMApiException? geminiEmptyEndFailure(
-  Map<String, dynamic>? metadata, {
-  required bool sawOutput,
-}) {
+LLMApiException? geminiEmptyEndFailure(Map<String, dynamic>? metadata, {required bool sawOutput}) {
   if (sawOutput || metadata == null) return null;
   final raw = metadata['finish_reason_raw'];
   if (raw is! String || raw == 'STOP' || raw == 'MAX_TOKENS') return null;
@@ -316,8 +293,9 @@ class GeminiToolCallIds {
   int _next = 0;
 
   GeminiToolCallIds()
-      : _nonce = '${DateTime.now().microsecondsSinceEpoch.toRadixString(36)}'
-            '${(_instances++).toRadixString(36)}';
+    : _nonce =
+          '${DateTime.now().microsecondsSinceEpoch.toRadixString(36)}'
+          '${(_instances++).toRadixString(36)}';
 
   /// The next unused id of this response.
   String next() => 'gtc_${_nonce}_${_next++}';
@@ -352,8 +330,7 @@ class GeminiModelPartsCollector {
     for (final part in parts) {
       if (part is! Map) continue;
       final copy = Map<String, dynamic>.from(part);
-      if (copy.containsKey('functionCall') ||
-          copy.containsKey('function_call')) {
+      if (copy.containsKey('functionCall') || copy.containsKey('function_call')) {
         _sawCall = true;
       }
       _parts.add(copy);
@@ -411,7 +388,7 @@ Iterable<LLMResponseChunk> parseGoogleChunks(
     return;
   }
 
-  for (var candidate in candidates) {
+  for (final candidate in candidates) {
     final finishReason = candidate['finishReason'] as String?;
     final parts = candidate['content']?['parts'] as List?;
 
@@ -447,7 +424,7 @@ Iterable<LLMResponseChunk> parseGoogleChunks(
         logger?.call('Content was flagged by safety filters.', level: 'WARN');
         if (candidate['safetyRatings'] != null) {
           final ratings = candidate['safetyRatings'] as List;
-          for (var r in ratings) {
+          for (final r in ratings) {
             if (r['probability'] != 'NEGLIGIBLE') {
               logger?.call('Safety: ${r['category']} is ${r['probability']}', level: 'DEBUG');
             }
@@ -476,7 +453,7 @@ Iterable<LLMResponseChunk> parseGoogleChunks(
     }
 
     {
-      for (var part in parts) {
+      for (final part in parts) {
         final rawText = part['text'] as String?;
         // A `thought: true` part is the model's reasoning summary
         // (`includeThoughts`), not its answer. Its own channel, like ①'s
@@ -501,8 +478,7 @@ Iterable<LLMResponseChunk> parseGoogleChunks(
             id: ids.next(),
             name: functionCall['name']?.toString() ?? '',
             arguments: args is Map<String, dynamic> ? args : {},
-            thoughtSignature:
-                (part['thoughtSignature'] ?? part['thought_signature'])?.toString(),
+            thoughtSignature: (part['thoughtSignature'] ?? part['thought_signature'])?.toString(),
           );
           logger?.call('Model requested tool call: ${toolCall.name}', level: 'DEBUG');
         }
@@ -561,7 +537,7 @@ Map<String, dynamic> prepareGooglePayload(
   Map<String, dynamic>? systemInstruction;
   if (systemMessages.isNotEmpty) {
     systemInstruction = {
-      'parts': systemMessages.map((m) => {'text': m.content}).toList()
+      'parts': systemMessages.map((m) => {'text': m.content}).toList(),
     };
   }
 
@@ -601,7 +577,7 @@ Map<String, dynamic> prepareGooglePayload(
               ? toolName
               : (callNames[msg.toolCallId] ?? ''),
           'response': responsePayload,
-        }
+        },
       };
       if (lastIsResults) {
         (contents.last['parts'] as List).add(part);
@@ -624,7 +600,8 @@ Map<String, dynamic> prepareGooglePayload(
     // parts, and ③ answers the gap with MISSING_THOUGHT_SIGNATURE. A copy, so
     // nothing downstream of the payload can write into stored history.
     final raw = msg.rawModelParts;
-    final replayRaw = msg.role == LLMRole.assistant &&
+    final replayRaw =
+        msg.role == LLMRole.assistant &&
         msg.toolCalls.isNotEmpty &&
         raw != null &&
         raw.isNotEmpty &&
@@ -643,10 +620,7 @@ Map<String, dynamic> prepareGooglePayload(
       // replayed verbatim on the same part.
       for (final tc in msg.toolCalls) {
         parts.add({
-          'functionCall': {
-            'name': tc.name,
-            'args': tc.arguments,
-          },
+          'functionCall': {'name': tc.name, 'args': tc.arguments},
           // Only to the model that produced it: another model has no use
           // for the signature and it still travels as input.
           if (tc.thoughtSignature != null &&
@@ -658,7 +632,7 @@ Map<String, dynamic> prepareGooglePayload(
       }
     }
 
-    for (var attachment in msg.attachments) {
+    for (final attachment in msg.attachments) {
       if (attachment.path == null && attachment.bytes == null) continue;
       final resolved = ImageCompressor.readForApi(attachment);
       // camelCase, never snake_case. Google's own host accepts both (proto3
@@ -667,20 +641,14 @@ Map<String, dynamic> prepareGooglePayload(
       // rather than rejecting them — so `inline_data` used to mean the model
       // never saw the picture, with a 200 and a perfectly normal answer.
       parts.add({
-        'inlineData': {
-          'mimeType': resolved.mimeType,
-          'data': base64Encode(resolved.bytes)
-        }
+        'inlineData': {'mimeType': resolved.mimeType, 'data': base64Encode(resolved.bytes)},
       });
     }
 
     // An empty `parts` array is rejected. A turn that produced nothing — an
     // assistant message with neither text nor calls — is simply not sent.
     if (parts.isEmpty) continue;
-    contents.add({
-      'role': msg.role == LLMRole.user ? 'user' : 'model',
-      'parts': parts
-    });
+    contents.add({'role': msg.role == LLMRole.user ? 'user' : 'model', 'parts': parts});
     lastIsResults = false;
   }
 
@@ -729,15 +697,14 @@ Map<String, dynamic> prepareGooglePayload(
     if (tools != null && tools.isNotEmpty)
       'tools': [
         {
-          'functionDeclarations': tools.map((t) => {
-            'name': t.name,
-            'description': t.description,
-            'parameters': t.parameters,
-          }).toList(),
-        }
+          'functionDeclarations': tools
+              .map(
+                (t) => {'name': t.name, 'description': t.description, 'parameters': t.parameters},
+              )
+              .toList(),
+        },
       ],
     'generationConfig': generationConfig,
-    'safetySettings':
-        SafetySettings.toApiList(options?[SafetySettings.paramKey]),
+    'safetySettings': SafetySettings.toApiList(options?[SafetySettings.paramKey]),
   };
 }

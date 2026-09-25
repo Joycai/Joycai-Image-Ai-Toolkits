@@ -25,6 +25,5 @@ enum ThumbnailFit {
   /// Parses the persisted setting. Anything unrecognised — including the null
   /// of an install that predates the setting — reads as [fit]: showing the
   /// whole picture is the answer that never hides anything.
-  static ThumbnailFit fromString(String? value) =>
-      value == fill.name ? fill : fit;
+  static ThumbnailFit fromString(String? value) => value == fill.name ? fill : fit;
 }

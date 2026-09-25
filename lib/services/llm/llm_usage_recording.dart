@@ -25,12 +25,16 @@ extension _UsageRecording on LLMService {
     String? rowId,
   }) async {
     try {
-      await _writeUsageRow(modelId, config, metadata,
-          modelDbId: modelDbId,
-          taskTag: taskTag,
-          options: options,
-          imageCount: imageCount,
-          rowId: rowId);
+      await _writeUsageRow(
+        modelId,
+        config,
+        metadata,
+        modelDbId: modelDbId,
+        taskTag: taskTag,
+        options: options,
+        imageCount: imageCount,
+        rowId: rowId,
+      );
     } catch (e) {
       _emitLog(
         'Usage for $modelId could not be recorded (the response itself is '
@@ -58,43 +62,42 @@ extension _UsageRecording on LLMService {
     // reading the first two alone recorded every image generation as zero
     // tokens and only request-billed channels came out right.
     final promptTokens = _asTokenCount(
-      metadata['promptTokenCount'] ??
-          metadata['prompt_tokens'] ??
-          metadata['input_tokens'],
+      metadata['promptTokenCount'] ?? metadata['prompt_tokens'] ?? metadata['input_tokens'],
     );
     final outputTokens = LLMService.outputTokensOf(metadata);
     final cacheTokens = _extractCacheTokens(metadata, promptTokens);
 
     final sink = LLMService.usageSinkOverride ?? DatabaseService().recordTokenUsage;
-    await sink(TokenUsage(
-      // The tag makes delegated work distinguishable in the usage table
-      // (e.g. `task_id LIKE 'subagent:%'`) — a sub-agent's spend should be
-      // attributable to delegation, not blended into ordinary requests.
-      taskId: rowId ??
-          '${taskTag ?? 'req'}_${DateTime.now().millisecondsSinceEpoch}',
-      modelId: modelId,
-      modelDbId: modelDbId,
-      timestamp: DateTime.now(),
-      // Both providers count cached tokens inside their prompt total, so the
-      // cached part is subtracted out here — input_tokens and cache_tokens are
-      // stored disjoint and sum back to the full input.
-      inputTokens: promptTokens - cacheTokens,
-      cacheTokens: cacheTokens,
-      outputTokens: outputTokens,
-      inputPrice: config.inputFee,
-      cachePrice: config.effectiveCacheInputFee,
-      outputPrice: config.outputFee,
-      requestPrice: config.requestFee,
-      billingMode: config.billingMode,
-      // Null on token mode: the row then prices exactly as it did before
-      // spec billing existed. A request-billed group writes the input three
-      // alone when it charges for the images the request sent (`D2e`).
-      spec: spec?.toBilling() ?? LLMService.requestInputBilling(config, metadata),
-      // What the provider itself said the request cost, where its protocol
-      // published one ([reportedCostKey]); it outranks every price above,
-      // whatever the group's mode — see [TokenUsage.reportedCost].
-      reportedCost: reportedCostOf(metadata),
-    ));
+    await sink(
+      TokenUsage(
+        // The tag makes delegated work distinguishable in the usage table
+        // (e.g. `task_id LIKE 'subagent:%'`) — a sub-agent's spend should be
+        // attributable to delegation, not blended into ordinary requests.
+        taskId: rowId ?? '${taskTag ?? 'req'}_${DateTime.now().millisecondsSinceEpoch}',
+        modelId: modelId,
+        modelDbId: modelDbId,
+        timestamp: DateTime.now(),
+        // Both providers count cached tokens inside their prompt total, so the
+        // cached part is subtracted out here — input_tokens and cache_tokens are
+        // stored disjoint and sum back to the full input.
+        inputTokens: promptTokens - cacheTokens,
+        cacheTokens: cacheTokens,
+        outputTokens: outputTokens,
+        inputPrice: config.inputFee,
+        cachePrice: config.effectiveCacheInputFee,
+        outputPrice: config.outputFee,
+        requestPrice: config.requestFee,
+        billingMode: config.billingMode,
+        // Null on token mode: the row then prices exactly as it did before
+        // spec billing existed. A request-billed group writes the input three
+        // alone when it charges for the images the request sent (`D2e`).
+        spec: spec?.toBilling() ?? LLMService.requestInputBilling(config, metadata),
+        // What the provider itself said the request cost, where its protocol
+        // published one ([reportedCostKey]); it outranks every price above,
+        // whatever the group's mode — see [TokenUsage.reportedCost].
+        reportedCost: reportedCostOf(metadata),
+      ),
+    );
   }
 
   /// Cache-hit tokens from a usage payload: `cachedContentTokenCount` (Google),
@@ -118,9 +121,7 @@ extension _UsageRecording on LLMService {
   /// Token counts arrive as int, double or String depending on provider and
   /// transport; anything unparseable counts as zero.
   int _asTokenCount(dynamic value) {
-    final count = value is num
-        ? value.toInt()
-        : (value is String ? int.tryParse(value) : null);
+    final count = value is num ? value.toInt() : (value is String ? int.tryParse(value) : null);
     return (count == null || count < 0) ? 0 : count;
   }
 }
@@ -131,8 +132,6 @@ String _missingUsageWarning(LLMModelConfig config) =>
     'it was probably billed.';
 
 int _asTokenCountStatic(dynamic value) {
-  final count = value is num
-      ? value.toInt()
-      : (value is String ? int.tryParse(value) : null);
+  final count = value is num ? value.toInt() : (value is String ? int.tryParse(value) : null);
   return (count == null || count < 0) ? 0 : count;
 }

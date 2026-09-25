@@ -16,23 +16,20 @@ void main() {
       '+ 腰部：宽幅红色樱花图案束腰腰封\n+ 下装：红色百褶微蓬短裙\n+ 鞋子与袜子：白色皮质系带短靴';
 
   Future<void> pumpRow(WidgetTester tester, String value) async {
-    await tester.pumpWidget(MaterialApp(
-      home: Scaffold(
-        body: SizedBox(
-          width: 400,
-          child: TaskInfoRow(
-            icon: Icons.description_outlined,
-            label: '提示词',
-            value: value,
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 400,
+            child: TaskInfoRow(icon: Icons.description_outlined, label: '提示词', value: value),
           ),
         ),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
   }
 
-  Text valueTextOf(WidgetTester tester) =>
-      tester.widget<Text>(find.byType(Text).last);
+  Text valueTextOf(WidgetTester tester) => tester.widget<Text>(find.byType(Text).last);
 
   testWidgets('the label stays level with the first line of a long value', (tester) async {
     await pumpRow(tester, longPrompt);
@@ -44,10 +41,16 @@ void main() {
     // label to the vertical middle of a tall value. Everything rendered above
     // it then read as belonging to the row above — a prompt looked like it was
     // part of the config line.
-    expect(valueBox.height, greaterThan(20),
-        reason: 'the value must actually be multi-line for this to mean anything');
-    expect(label.dy, lessThan(valueBox.top + 8),
-        reason: 'the label must sit at the top of its value, not its middle');
+    expect(
+      valueBox.height,
+      greaterThan(20),
+      reason: 'the value must actually be multi-line for this to mean anything',
+    );
+    expect(
+      label.dy,
+      lessThan(valueBox.top + 8),
+      reason: 'the label must sit at the top of its value, not its middle',
+    );
   });
 
   testWidgets('a long value is bounded and ellipsized', (tester) async {
@@ -61,8 +64,11 @@ void main() {
     expect(text.overflow, TextOverflow.ellipsis);
 
     final valueBox = tester.getRect(find.text(longPrompt));
-    expect(valueBox.height, lessThan(90),
-        reason: 'a prompt must not sprawl down the panel unbounded');
+    expect(
+      valueBox.height,
+      lessThan(90),
+      reason: 'a prompt must not sprawl down the panel unbounded',
+    );
   });
 
   testWidgets('a short value still renders on one line, untouched', (tester) async {
@@ -80,7 +86,10 @@ void main() {
 
     final label = tester.getRect(find.text('提示词: '));
     final valueBox = tester.getRect(find.text(longPrompt));
-    expect(valueBox.left, greaterThan(label.right - 1),
-        reason: 'the value sits beside its own label, not under another one');
+    expect(
+      valueBox.left,
+      greaterThan(label.right - 1),
+      reason: 'the value sits beside its own label, not under another one',
+    );
   });
 }

@@ -35,19 +35,23 @@ extension _ProviderSteps on _ChannelWizardDialogState {
     for (final group in ChannelProviderGroup.values) {
       final inGroup = matches.where((p) => p.group == group).toList();
       if (inGroup.isEmpty) continue;
-      rows.add(ChannelProviderGroupCaption(
-        l10n: l10n,
-        group: group,
-        count: inGroup.length,
-        first: rows.isEmpty,
-      ));
-      for (final preset in inGroup) {
-        rows.add(ChannelProviderRow(
+      rows.add(
+        ChannelProviderGroupCaption(
           l10n: l10n,
-          preset: preset,
-          selected: preset.id == _selectedProviderId,
-          onTap: () => _selectProvider(preset.id),
-        ));
+          group: group,
+          count: inGroup.length,
+          first: rows.isEmpty,
+        ),
+      );
+      for (final preset in inGroup) {
+        rows.add(
+          ChannelProviderRow(
+            l10n: l10n,
+            preset: preset,
+            selected: preset.id == _selectedProviderId,
+            onTap: () => _selectProvider(preset.id),
+          ),
+        );
       }
     }
 
@@ -75,10 +79,7 @@ extension _ProviderSteps on _ChannelWizardDialogState {
               // missing from anything that looks for it without scrolling.
               : SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: rows,
-                  ),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: rows),
                 ),
         ),
       ],
@@ -105,11 +106,7 @@ extension _ProviderSteps on _ChannelWizardDialogState {
               for (final (i, variant) in preset.variants.indexed) ...[
                 if (i > 0) const SizedBox(width: AppSpace.s6 + 2),
                 Expanded(
-                  child: _buildVariantCard(
-                    l10n,
-                    variant,
-                    selected: variant.id == selected.id,
-                  ),
+                  child: _buildVariantCard(l10n, variant, selected: variant.id == selected.id),
                 ),
               ],
             ],
@@ -130,8 +127,7 @@ extension _ProviderSteps on _ChannelWizardDialogState {
             children: [
               Text(
                 l10n.variantResultLabel,
-                style: theme.textTheme.labelSmall?.mono
-                    .copyWith(color: colorScheme.outline),
+                style: theme.textTheme.labelSmall?.mono.copyWith(color: colorScheme.outline),
               ),
               const SizedBox(width: AppSpace.s10),
               Expanded(
@@ -140,14 +136,16 @@ extension _ProviderSteps on _ChannelWizardDialogState {
                   children: [
                     Text(
                       channelTypeLabel(l10n, _resolvedChannelType()),
-                      style: theme.textTheme.labelSmall?.mono
-                          .copyWith(color: colorScheme.onSurface),
+                      style: theme.textTheme.labelSmall?.mono.copyWith(
+                        color: colorScheme.onSurface,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       _endpointPreview(),
-                      style: theme.textTheme.labelSmall?.mono
-                          .copyWith(color: colorScheme.onSurfaceVariant),
+                      style: theme.textTheme.labelSmall?.mono.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
@@ -180,16 +178,13 @@ extension _ProviderSteps on _ChannelWizardDialogState {
       color: selected ? colorScheme.accentTint : colorScheme.surfaceContainerLow,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.control),
-        side: BorderSide(
-          color: selected ? colorScheme.primary : colorScheme.outlineVariant,
-        ),
+        side: BorderSide(color: selected ? colorScheme.primary : colorScheme.outlineVariant),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () => _selectVariant(variant.id),
         child: Padding(
-          padding: const EdgeInsets.symmetric(
-              horizontal: AppSpace.s10, vertical: AppSpace.s6 + 2),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpace.s10, vertical: AppSpace.s6 + 2),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
@@ -198,9 +193,7 @@ extension _ProviderSteps on _ChannelWizardDialogState {
                 channelProviderVariantLabel(l10n, preset.id, variant.id),
                 style: theme.textTheme.bodySmall?.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: selected
-                      ? colorScheme.onAccentTint
-                      : colorScheme.onSurface,
+                  color: selected ? colorScheme.onAccentTint : colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 2),

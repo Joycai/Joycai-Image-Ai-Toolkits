@@ -8,30 +8,34 @@ import 'package:joycai_image_ai_toolkits/services/llm/protocols/protocol.dart';
 /// image response returned `text: ''`. Pinned against the documented shapes.
 void main() {
   test('OpenAI Images: data[].revised_prompt (dall-e-3)', () {
-    final body = jsonDecode('''
+    final body =
+        jsonDecode('''
       {"created": 1, "data": [
         {"b64_json": "AAAA", "revised_prompt": "A watercolor fox at dusk, soft light."}
-      ]}''') as Map<String, dynamic>;
-    expect(revisedPromptFrom(body['data']),
-        'A watercolor fox at dusk, soft light.');
+      ]}''')
+            as Map<String, dynamic>;
+    expect(revisedPromptFrom(body['data']), 'A watercolor fox at dusk, soft light.');
   });
 
   test('gpt-image-1 reports none: empty, so the text stays empty', () {
-    final body = jsonDecode('{"data": [{"b64_json": "AAAA"}]}')
-        as Map<String, dynamic>;
+    final body = jsonDecode('{"data": [{"b64_json": "AAAA"}]}') as Map<String, dynamic>;
     expect(revisedPromptFrom(body['data']), '');
   });
 
   test('DashScope async result: output.results[].actual_prompt', () {
-    final body = jsonDecode('''
+    final body =
+        jsonDecode('''
       {"output": {"task_status": "SUCCEEDED", "results": [
         {"orig_prompt": "hand-drawn poster",
          "actual_prompt": "Childhood-inspired hand-drawn poster design",
          "url": "https://example.invalid/x.png"}
-      ]}}''') as Map<String, dynamic>;
+      ]}}''')
+            as Map<String, dynamic>;
     final output = body['output'] as Map;
-    expect(revisedPromptFrom(output['results'], key: 'actual_prompt'),
-        'Childhood-inspired hand-drawn poster design');
+    expect(
+      revisedPromptFrom(output['results'], key: 'actual_prompt'),
+      'Childhood-inspired hand-drawn poster design',
+    );
     // orig_prompt is what we sent, not a rewrite.
     expect(revisedPromptFrom(output['results']), '');
   });

@@ -1,4 +1,3 @@
-
 import 'package:http/http.dart' as http;
 
 import '../llm_debug_logger.dart';
@@ -30,10 +29,7 @@ class OpenAIVideosProtocol implements VideoJobProtocol {
     LLMLogger? logger,
   }) async {
     final config = target.config;
-    final userMsg = history.lastWhere(
-      (m) => m.role == LLMRole.user,
-      orElse: () => history.last,
-    );
+    final userMsg = history.lastWhere((m) => m.role == LLMRole.user, orElse: () => history.last);
     final prompt = userMsg.content;
 
     final baseUrl = trimBaseUrl(config.endpoint);
@@ -43,16 +39,18 @@ class OpenAIVideosProtocol implements VideoJobProtocol {
     final seconds = resolveVideoSeconds(options);
     final quality = readStringOption(options, 'videoQuality');
 
-    final request = http.AbortableMultipartRequest('POST', url,
-        abortTrigger: abortTriggerOf(options));
+    final request = http.AbortableMultipartRequest(
+      'POST',
+      url,
+      abortTrigger: abortTriggerOf(options),
+    );
     // Auth comes from the vendor profile (layer 2) like every other surface —
     // this was the last protocol with a hardcoded bearer header, which worked
     // only because today's OpenAI-family vendors all happen to use one.
     // Content-Type is dropped: the multipart body sets its own with a
     // boundary. Same fix openai_images_protocol.dart documents.
     request.headers.addAll(
-      Map.of(target.headers())
-        ..removeWhere((k, _) => k.toLowerCase() == 'content-type'),
+      Map.of(target.headers())..removeWhere((k, _) => k.toLowerCase() == 'content-type'),
     );
     request.fields['model'] = config.modelId;
     request.fields['prompt'] = prompt;
@@ -82,24 +80,28 @@ class OpenAIVideosProtocol implements VideoJobProtocol {
     if (firstFrame != null) {
       final bytes = await readAttachmentBytes(firstFrame);
       if (bytes != null) {
-        request.files.add(imageMultipartFile(
-          'input_reference',
-          bytes,
-          declaredMime: firstFrame.mimeType,
-          baseName: 'first_frame',
-        ));
+        request.files.add(
+          imageMultipartFile(
+            'input_reference',
+            bytes,
+            declaredMime: firstFrame.mimeType,
+            baseName: 'first_frame',
+          ),
+        );
       }
     }
     for (int i = 0; i < extras.length; i++) {
       final att = extras[i];
       final bytes = await readAttachmentBytes(att);
       if (bytes != null) {
-        request.files.add(imageMultipartFile(
-          'images[]',
-          bytes,
-          declaredMime: att.mimeType,
-          baseName: 'reference_$i',
-        ));
+        request.files.add(
+          imageMultipartFile(
+            'images[]',
+            bytes,
+            declaredMime: att.mimeType,
+            baseName: 'reference_$i',
+          ),
+        );
       }
     }
 
@@ -126,8 +128,7 @@ class OpenAIVideosProtocol implements VideoJobProtocol {
       final data = decodeJsonBody(response, apiName: 'OpenAI video submit');
       final id = data['id']?.toString();
       if (id == null || id.isEmpty) {
-        throw LLMApiException(
-            'OpenAI video submit returned no id: ${response.body}');
+        throw LLMApiException('OpenAI video submit returned no id: ${response.body}');
       }
       logger?.call('OpenAI video task id: $id', level: 'DEBUG');
       // Every multipart file is an image: `input_reference` and `images[]`.
@@ -155,13 +156,18 @@ class OpenAIVideosProtocol implements VideoJobProtocol {
 
     final client = config.createClient();
     try {
-      final response = await sendJsonRequest(client, url,
-          headers: headers, body: '', options: options, method: 'GET');
+      final response = await sendJsonRequest(
+        client,
+        url,
+        headers: headers,
+        body: '',
+        options: options,
+        method: 'GET',
+      );
       // checkEnvelope: false — a failed job arrives as a 200 with an `error`
       // field beside `status`; the status machine below owns that case and
       // names the operation in its message.
-      final data = decodeJsonBody(response,
-          apiName: 'OpenAI video fetch', checkEnvelope: false);
+      final data = decodeJsonBody(response, apiName: 'OpenAI video fetch', checkEnvelope: false);
       return openaiVideoPollEnvelope(data, operationName, baseUrl);
     } finally {
       client.close();
@@ -191,42 +197,52 @@ Map<String, dynamic> openaiVideoPollEnvelope(
   String operationName,
   String baseUrl,
 ) {
-  final status = requireJobStatus(data['status'],
-          job: 'OpenAI video task', jobId: operationName)
-      .toLowerCase();
+  final status = requireJobStatus(
+    data['status'],
+    job: 'OpenAI video task',
+    jobId: operationName,
+  ).toLowerCase();
 
   if (status == 'succeeded' || status == 'completed') {
     final explicit = data['url']?.toString();
     if (explicit != null && explicit.isNotEmpty) {
-      return videoDoneEnvelope(operationName, explicit,
-          requiresAuth: videoUriNeedsAuth(explicit, baseUrl));
+      return videoDoneEnvelope(
+        operationName,
+        explicit,
+        requiresAuth: videoUriNeedsAuth(explicit, baseUrl),
+      );
     }
     return videoDoneEnvelope(
-        operationName, '$baseUrl/videos/$operationName/content',
-        requiresAuth: true);
+      operationName,
+      '$baseUrl/videos/$operationName/content',
+      requiresAuth: true,
+    );
   }
 
   if (status == 'failed') {
     final err = data['error'];
     final code = err is Map ? err['code'] : null;
-    final msg = err is Map
-        ? (err['message'] ?? err.toString())
-        : (err?.toString() ?? 'unknown');
-    throw LLMApiException('OpenAI video task $operationName failed'
-        '${code != null ? ' ($code)' : ''}: $msg', isJobEnded: true);
+    final msg = err is Map ? (err['message'] ?? err.toString()) : (err?.toString() ?? 'unknown');
+    throw LLMApiException(
+      'OpenAI video task $operationName failed'
+      '${code != null ? ' ($code)' : ''}: $msg',
+      isJobEnded: true,
+    );
   }
 
   if (status == 'cancelled' || status == 'canceled') {
     throw LLMApiException(
-        'OpenAI video task $operationName was cancelled upstream.',
-        isJobEnded: true);
+      'OpenAI video task $operationName was cancelled upstream.',
+      isJobEnded: true,
+    );
   }
 
   if (status == 'expired') {
     throw LLMApiException(
-        'OpenAI video task $operationName expired upstream before it could be '
-        'fetched; the job record is gone.',
-        isJobEnded: true);
+      'OpenAI video task $operationName expired upstream before it could be '
+      'fetched; the job record is gone.',
+      isJobEnded: true,
+    );
   }
 
   // queued / in_progress / processing — relay progress without marking done.

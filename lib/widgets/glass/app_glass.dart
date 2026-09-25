@@ -78,10 +78,10 @@ class GlassRecipe {
   static const lens = GlassRecipe(blur: 12, saturation: 1.3, fill: 0.42);
 
   static GlassRecipe of(GlassGrade grade) => switch (grade) {
-        GlassGrade.bar => bar,
-        GlassGrade.float => float,
-        GlassGrade.lens => lens,
-      };
+    GlassGrade.bar => bar,
+    GlassGrade.float => float,
+    GlassGrade.lens => lens,
+  };
 }
 
 /// The colours of glass in one tone (`joycai-ui.css` `--gfill … --gshadow`).
@@ -197,7 +197,9 @@ class GlassInk extends InheritedWidget {
 /// A saturation matrix in the shape [ui.ColorFilter.matrix] wants — CSS
 /// `saturate(s)`, a blend between a colour and its Rec. 709 luminance.
 List<double> glassSaturationMatrix(double s) {
-  const lr = 0.2126, lg = 0.7152, lb = 0.0722;
+  const lr = 0.2126;
+  const lg = 0.7152;
+  const lb = 0.0722;
   final d = 1 - s;
   return [
     lr * d + s, lg * d, lb * d, 0, 0, //
@@ -270,8 +272,8 @@ class AppGlass extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final resolvedTone = tone ??
-        (theme.brightness == Brightness.dark ? GlassTone.dark : GlassTone.light);
+    final resolvedTone =
+        tone ?? (theme.brightness == Brightness.dark ? GlassTone.dark : GlassTone.light);
     final reduced = AppEffects.reduced(context);
 
     Widget content = padding == null ? child : Padding(padding: padding!, child: child);
@@ -334,8 +336,7 @@ class AppGlass extends StatelessWidget {
     // ceiling of three: the nav lens on the title bar, and the segmented
     // control's indicator and hover lens on the floating toolbar.
     final GlassInk? onGlass = GlassInk.maybeOf(context);
-    final bool nestedLens =
-        grade == GlassGrade.lens && onGlass != null && !onGlass.reduced;
+    final bool nestedLens = grade == GlassGrade.lens && onGlass != null && !onGlass.reduced;
 
     surface = ClipRRect(
       borderRadius: borderRadius,
@@ -376,19 +377,19 @@ class AppGlass extends StatelessWidget {
     GlassTone resolvedTone,
     Widget content,
   ) {
-    final themeTone =
-        scheme.brightness == Brightness.dark ? GlassTone.dark : GlassTone.light;
+    final themeTone = scheme.brightness == Brightness.dark ? GlassTone.dark : GlassTone.light;
     // A layer toned against the theme (a dark snackbar in a light app) cannot
     // borrow the scheme's surfaces — they are the wrong brightness — so it
     // takes the fixed overlay ink, as `01 · 1k` draws.
     final bool offTone = resolvedTone != themeTone && resolvedTone == GlassTone.dark;
 
-    final Color background = reducedColor ??
+    final Color background =
+        reducedColor ??
         (offTone
             ? AppOverlay.ink
             : grade == GlassGrade.bar
-                ? scheme.surfaceContainerLow
-                : scheme.surface);
+            ? scheme.surfaceContainerLow
+            : scheme.surface);
     final Color ink = offTone ? const Color(0xFFECEAE4) : scheme.onSurface;
     final Color ink2 = offTone ? const Color(0xFFA9A69E) : scheme.onSurfaceVariant;
     final Color hair = offTone ? Colors.transparent : scheme.outlineVariant;
@@ -509,11 +510,7 @@ class AppTintedGlass extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: borderRadius,
         boxShadow: [
-          BoxShadow(
-            color: scheme.accentGlow,
-            blurRadius: 18,
-            offset: const Offset(0, 6),
-          ),
+          BoxShadow(color: scheme.accentGlow, blurRadius: 18, offset: const Offset(0, 6)),
         ],
       ),
       child: ClipRRect(
@@ -523,10 +520,7 @@ class AppTintedGlass extends StatelessWidget {
           child: CustomPaint(
             foregroundPainter: _TintedEdgePainter(borderRadius: borderRadius),
             child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: scheme.accentGlassFill,
-                borderRadius: borderRadius,
-              ),
+              decoration: BoxDecoration(color: scheme.accentGlassFill, borderRadius: borderRadius),
               child: content,
             ),
           ),
@@ -536,12 +530,7 @@ class AppTintedGlass extends StatelessWidget {
   }
 
   static Widget _maybeBlur({required bool nested, required Widget child}) =>
-      nested
-          ? child
-          : BackdropFilter(
-              filter: glassFilter(blur: 16, saturation: 1.4),
-              child: child,
-            );
+      nested ? child : BackdropFilter(filter: glassFilter(blur: 16, saturation: 1.4), child: child);
 }
 
 /// The refraction edge: a 1px stroke that is bright where light would enter

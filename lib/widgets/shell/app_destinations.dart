@@ -45,15 +45,15 @@ enum AppDestination {
   final bool showsQueueBadge;
 
   String label(AppLocalizations l10n) => switch (this) {
-        AppDestination.workbench => l10n.workbench,
-        AppDestination.fileBrowser => l10n.fileBrowser,
-        AppDestination.tasks => l10n.tasks,
-        AppDestination.downloader => l10n.downloader,
-        AppDestination.prompts => l10n.prompts,
-        AppDestination.models => l10n.models,
-        AppDestination.usage => l10n.usage,
-        AppDestination.settings => l10n.settings,
-      };
+    AppDestination.workbench => l10n.workbench,
+    AppDestination.fileBrowser => l10n.fileBrowser,
+    AppDestination.tasks => l10n.tasks,
+    AppDestination.downloader => l10n.downloader,
+    AppDestination.prompts => l10n.prompts,
+    AppDestination.models => l10n.models,
+    AppDestination.usage => l10n.usage,
+    AppDestination.settings => l10n.settings,
+  };
 
   /// `Ctrl+3` / `⌘+3` — surfaced in the tooltip, the one place that says the
   /// shortcut exists. The modifier comes from [AppShortcuts] so this label
@@ -65,8 +65,7 @@ enum AppDestination {
       !(d.desktopOnly && (Platform.isAndroid || Platform.isIOS));
 
   /// Every destination this platform offers, in shortcut order.
-  static List<AppDestination> get available =>
-      AppDestination.values.where(isAvailable).toList();
+  static List<AppDestination> get available => AppDestination.values.where(isAvailable).toList();
 
   /// The four the phone dock holds before its "more" cell (`01 · 1g`).
   static const List<AppDestination> dockPrimary = [

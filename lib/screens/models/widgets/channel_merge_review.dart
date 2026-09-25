@@ -113,11 +113,7 @@ Future<void> reviewChannelMerges(BuildContext context, AppState appState) async 
       subtitle: _progress(context, candidate, done + 1, done + pending.length),
       maxWidth: 560,
       scrollable: true,
-      content: _MergePreview(
-        appState: appState,
-        candidate: candidate,
-        references: references,
-      ),
+      content: _MergePreview(appState: appState, candidate: candidate, references: references),
       actionsOverride: Builder(
         builder: (dialog) {
           final l10n = AppLocalizations.of(dialog)!;
@@ -177,11 +173,7 @@ String _progress(BuildContext context, MergeCandidate c, int index, int total) {
 }
 
 class _MergePreview extends StatelessWidget {
-  const _MergePreview({
-    required this.appState,
-    required this.candidate,
-    required this.references,
-  });
+  const _MergePreview({required this.appState, required this.candidate, required this.references});
 
   final AppState appState;
   final MergeCandidate candidate;
@@ -217,11 +209,7 @@ class _MergePreview extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: _ChannelSide(
-                caption: l10n.mergeKeep,
-                channel: candidate.keep,
-                kept: true,
-              ),
+              child: _ChannelSide(caption: l10n.mergeKeep, channel: candidate.keep, kept: true),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: AppSpace.s6, vertical: 22),
@@ -403,6 +391,6 @@ String mergeReferencesText(AppLocalizations l10n, MergeReferences refs, String c
   final what = parts.length == 1
       ? parts.single
       : '${parts.sublist(0, parts.length - 1).join(l10n.mergeRefSeparator)}'
-          '${l10n.mergeRefLast}${parts.last}';
+            '${l10n.mergeRefLast}${parts.last}';
   return l10n.mergeReferencesNote(what, channel);
 }

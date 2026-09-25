@@ -105,13 +105,12 @@ class SpecKnownValues {
       return num.tryParse(s.replaceAll(RegExp(r'[^\d.]'), '')) ?? 0;
     }
 
-    return raw.toList()
-      ..sort((a, b) {
-        final byRank = rank(a).compareTo(rank(b));
-        if (byRank != 0) return byRank;
-        final byMagnitude = magnitude(a).compareTo(magnitude(b));
-        return byMagnitude != 0 ? byMagnitude : a.compareTo(b);
-      });
+    return raw.toList()..sort((a, b) {
+      final byRank = rank(a).compareTo(rank(b));
+      if (byRank != 0) return byRank;
+      final byMagnitude = magnitude(a).compareTo(magnitude(b));
+      return byMagnitude != 0 ? byMagnitude : a.compareTo(b);
+    });
   }
 
   static const _qualityOrder = ['low', 'medium', 'high', 'xhigh', 'max', 'standard'];

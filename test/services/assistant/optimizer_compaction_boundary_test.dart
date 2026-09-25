@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/assistant/prompt_optimizer_agent.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import '../../support/private_data_dir.dart';
@@ -21,13 +21,13 @@ void main() {
   /// [turns] finished turns: a short user message and an assistant reply of
   /// [chars] characters each.
   List<LLMMessage> history(int turns, int chars, {bool summaryFirst = false}) => [
-        if (summaryFirst)
-          LLMMessage(role: LLMRole.user, content: '${PromptOptimizerAgent.summaryMarker}\nearlier'),
-        for (var i = 1; i <= turns; i++) ...[
-          LLMMessage(role: LLMRole.user, content: 'turn $i'),
-          LLMMessage(role: LLMRole.assistant, content: 'x' * chars),
-        ],
-      ];
+    if (summaryFirst)
+      LLMMessage(role: LLMRole.user, content: '${PromptOptimizerAgent.summaryMarker}\nearlier'),
+    for (var i = 1; i <= turns; i++) ...[
+      LLMMessage(role: LLMRole.user, content: 'turn $i'),
+      LLMMessage(role: LLMRole.assistant, content: 'x' * chars),
+    ],
+  ];
 
   /// Index of the [n]th (1-based) real user turn in [h].
   int turnStart(List<LLMMessage> h, int n) {
@@ -41,14 +41,21 @@ void main() {
   }
 
   int? boundary(List<LLMMessage> h, {required int budget, bool sizeTriggered = true}) =>
-      PromptOptimizerAgent.compactionBoundary(h,
-          systemPrompt: '', budgetChars: budget, sizeTriggered: sizeTriggered);
+      PromptOptimizerAgent.compactionBoundary(
+        h,
+        systemPrompt: '',
+        budgetChars: budget,
+        sizeTriggered: sizeTriggered,
+      );
 
   group('compactionBoundary', () {
     test('a message-count trigger folds to the recent window, as before', () {
       final h = history(10, 50);
-      expect(boundary(h, budget: 1 << 30, sizeTriggered: false), turnStart(h, 5),
-          reason: 'the last six turns are kept');
+      expect(
+        boundary(h, budget: 1 << 30, sizeTriggered: false),
+        turnStart(h, 5),
+        reason: 'the last six turns are kept',
+      );
     });
 
     test('small recent turns: the six-turn window already reaches the target', () {
@@ -107,13 +114,21 @@ void main() {
 
     // contextWindow 10000 tokens × 0.6 × 1.5 chars/token = a 9000-char budget.
     await PromptOptimizerAgent.runTurn(
-        session: session, modelIdentifier: 'm', referenceImages: const [], contextWindow: 10000);
+      session: session,
+      modelIdentifier: 'm',
+      referenceImages: const [],
+      contextWindow: 10000,
+    );
     expect(summaries, 1);
     expect(tags, ['compaction'], reason: 'compaction spend is attributable in the usage table');
 
     session.addUserTurn('follow-up');
     await PromptOptimizerAgent.runTurn(
-        session: session, modelIdentifier: 'm', referenceImages: const [], contextWindow: 10000);
+      session: session,
+      modelIdentifier: 'm',
+      referenceImages: const [],
+      contextWindow: 10000,
+    );
     expect(summaries, 1, reason: 'folding to the target left headroom below the trigger');
   });
 }

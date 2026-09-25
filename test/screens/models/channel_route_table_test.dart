@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/screens/models/widgets/channel_route_table.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/channel_routes.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_dispatcher.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/platforms.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
-import 'package:joycai_image_ai_toolkits/widgets/models/channel_route_table.dart';
 
 /// `D1f · 4c`: the channel editor's route table.
 void main() {
@@ -20,44 +20,39 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     current = routes;
-    await tester.pumpWidget(MaterialApp(
-      locale: const Locale('en'),
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: Scaffold(
-        body: SingleChildScrollView(
-          child: StatefulBuilder(
-            builder: (context, setState) => ChannelRouteTable(
-              routes: current,
-              onChanged: (r) => setState(() => current = r),
-              modelsOnRoute: (k) => inUse[k] ?? 0,
-              onProbe: (_) {},
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: StatefulBuilder(
+              builder: (context, setState) => ChannelRouteTable(
+                routes: current,
+                onChanged: (r) => setState(() => current = r),
+                modelsOnRoute: (k) => inUse[k] ?? 0,
+                onProbe: (_) {},
+              ),
             ),
           ),
         ),
       ),
-    ));
+    );
   }
 
-  final relay = ChannelRoutes.resolve(
-    Vendors.newApiOpenAI,
-    'https://relay.example.com/v1',
-    null,
-  );
+  final relay = ChannelRoutes.resolve(Vendors.newApiOpenAI, 'https://relay.example.com/v1', null);
 
-  testWidgets('each route shows the address a request goes to',
-      (tester) async {
+  testWidgets('each route shows the address a request goes to', (tester) async {
     await pump(tester, relay);
     expect(find.text('Chat Completions · Primary'), findsOneWidget);
     expect(
-      find.text('POST ${LLMDispatcher.chatRequestUrl(
-        RouteKind.chat.face,
-        'https://relay.example.com/v1',
-      )}'),
+      find.text(
+        'POST ${LLMDispatcher.chatRequestUrl(RouteKind.chat.face, 'https://relay.example.com/v1')}',
+      ),
       findsOneWidget,
     );
-    expect(find.text('POST https://relay.example.com/v1/chat/completions'),
-        findsOneWidget);
+    expect(find.text('POST https://relay.example.com/v1/chat/completions'), findsOneWidget);
   });
 
   testWidgets('a route the platform offers can be enabled', (tester) async {
@@ -69,14 +64,10 @@ void main() {
     expect(current.kinds.length, relay.kinds.length + 1);
   });
 
-  testWidgets('an edited path says so and restores to the default',
-      (tester) async {
+  testWidgets('an edited path says so and restores to the default', (tester) async {
     await pump(tester, relay.withPath(RouteKind.chat, '/openai/v1'));
     expect(find.text('Edited · default /v1'), findsOneWidget);
-    expect(
-      find.text('POST https://relay.example.com/openai/v1/chat/completions'),
-      findsOneWidget,
-    );
+    expect(find.text('POST https://relay.example.com/openai/v1/chat/completions'), findsOneWidget);
     await tester.tap(find.text('Restore default'));
     await tester.pump();
     expect(current.entry(RouteKind.chat)!.path, isNull);
@@ -87,20 +78,19 @@ void main() {
     await pump(tester, relay.withPath(RouteKind.chat, ''));
     expect(find.text('Host itself · default /v1'), findsOneWidget);
     expect(find.text('(the host itself)'), findsOneWidget);
-    expect(find.text('POST https://relay.example.com/chat/completions'),
-        findsOneWidget);
+    expect(find.text('POST https://relay.example.com/chat/completions'), findsOneWidget);
     await tester.tap(find.text('Restore default'));
     await tester.pump();
     expect(current.primary.path, isNull);
   });
 
-  testWidgets("a custom host can put a route at its root; a relay's layout is known",
-      (tester) async {
+  testWidgets("a custom host can put a route at its root; a relay's layout is known", (
+    tester,
+  ) async {
     await pump(tester, relay);
     expect(find.text('Use host itself'), findsNothing);
 
-    final custom = ChannelRoutes.resolve(
-        Vendors.openAIRest, 'https://my.example.com/v1', null);
+    final custom = ChannelRoutes.resolve(Vendors.openAIRest, 'https://my.example.com/v1', null);
     expect(custom.platform.id, Platforms.custom);
     await pump(tester, custom);
     final offered = find.text('Use host itself').evaluate().length;
@@ -114,10 +104,7 @@ void main() {
   });
 
   testWidgets('a whole address is a host of its own', (tester) async {
-    await pump(
-      tester,
-      relay.withPath(RouteKind.chat, 'https://chat.relay.example.com/v1'),
-    );
+    await pump(tester, relay.withPath(RouteKind.chat, 'https://chat.relay.example.com/v1'));
     expect(find.text('Own host'), findsOneWidget);
   });
 
@@ -134,15 +121,10 @@ void main() {
     await pump(tester, two, inUse: {RouteKind.anthropic: 2});
     // Blocked, and saying why: the one in use, and the primary.
     expect(
-      find.byTooltip(
-        "The primary route can't be turned off — make another route primary first",
-      ),
+      find.byTooltip("The primary route can't be turned off — make another route primary first"),
       findsOneWidget,
     );
-    expect(
-      find.byTooltip("2 models use this route, so it can't be turned off"),
-      findsOneWidget,
-    );
+    expect(find.byTooltip("2 models use this route, so it can't be turned off"), findsOneWidget);
   });
 
   testWidgets('making a route primary moves it first', (tester) async {

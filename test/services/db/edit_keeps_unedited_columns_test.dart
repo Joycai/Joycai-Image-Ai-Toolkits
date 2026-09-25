@@ -32,9 +32,8 @@ void main() {
     databaseFactory = databaseFactoryFfi;
   });
 
-  Finder fieldHolding(String text) => find.byWidgetPredicate(
-    (w) => w is EditableText && w.controller.text == text,
-  );
+  Finder fieldHolding(String text) =>
+      find.byWidgetPredicate((w) => w is EditableText && w.controller.text == text);
 
   group('an update leaves alone what has a writer of its own', () {
     late DatabaseService db;
@@ -48,10 +47,7 @@ void main() {
       await db.updateModelEstimation(id, 4200.0, 650.0, 3);
 
       // What an editor that opened before the estimate landed would send.
-      await db.updateModel(
-        id,
-        LLMModel(modelId: 'm', modelName: 'After', tag: 'image'),
-      );
+      await db.updateModel(id, LLMModel(modelId: 'm', modelName: 'After', tag: 'image'));
 
       final saved = (await db.getModels()).single;
       expect(saved.modelName, 'After');
@@ -69,9 +65,7 @@ void main() {
         SystemPrompt(title: 'S', content: 'c', type: SystemPrompt.typeRefiner),
       );
       final tag = await db.addPromptTag(PromptTag(name: 'T'));
-      final heldPreset = (await db.getSystemPrompts()).firstWhere(
-        (r) => r.id == preset,
-      );
+      final heldPreset = (await db.getSystemPrompts()).firstWhere((r) => r.id == preset);
 
       // Two rows each, so that a reorder moves the one under test to 1.
       final prompt0 = await db.addPrompt(Prompt(title: 'P0', content: 'c'));
@@ -96,76 +90,73 @@ void main() {
     });
   });
 
-  testWidgets(
-    'saving a model keeps its place in the list and its ETA estimate',
-    (tester) async {
-      tester.view.physicalSize = const Size(1400, 1100);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
+  testWidgets('saving a model keeps its place in the list and its ETA estimate', (tester) async {
+    tester.view.physicalSize = const Size(1400, 1100);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
 
-      final (state, model) = await runAsyncRethrowing(tester, () async {
-        final state = AppState();
-        final channelId = await state.addChannel(
-          LLMChannel(
-            displayName: 'Relay',
-            type: 'openai-api-rest',
-            endpoint: 'https://relay.example.com/v1',
-            apiKey: 'k',
-          ),
-        );
-        final id = await state.addModel(
-          LLMModel(
-            modelId: 'gpt-image-1',
-            modelName: 'GPT Image',
-            tag: 'image',
-            channelId: channelId,
-            sortOrder: 7,
-          ),
-        );
-        await DatabaseService().updateModelEstimation(id, 4200.0, 650.0, 3);
-        await state.refreshDataCache();
-        return (state, state.allModels.firstWhere((m) => m.id == id));
-      });
-      expect(model.estMeanMs, 4200.0);
+    final (state, model) = await runAsyncRethrowing(tester, () async {
+      final state = AppState();
+      final channelId = await state.addChannel(
+        LLMChannel(
+          displayName: 'Relay',
+          type: 'openai-api-rest',
+          endpoint: 'https://relay.example.com/v1',
+          apiKey: 'k',
+        ),
+      );
+      final id = await state.addModel(
+        LLMModel(
+          modelId: 'gpt-image-1',
+          modelName: 'GPT Image',
+          tag: 'image',
+          channelId: channelId,
+          sortOrder: 7,
+        ),
+      );
+      await DatabaseService().updateModelEstimation(id, 4200.0, 650.0, 3);
+      await state.refreshDataCache();
+      return (state, state.allModels.firstWhere((m) => m.id == id));
+    });
+    expect(model.estMeanMs, 4200.0);
 
-      await tester.pumpWidget(
-        MaterialApp(
-          locale: const Locale('en'),
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          home: Builder(
-            builder: (context) => Scaffold(
-              body: ModelEditDialog(
-                l10n: AppLocalizations.of(context)!,
-                appState: state,
-                model: model,
-              ),
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: ModelEditDialog(
+              l10n: AppLocalizations.of(context)!,
+              appState: state,
+              model: model,
             ),
           ),
         ),
-      );
-      await tester.pump();
-      await tester.enterText(fieldHolding('GPT Image'), 'Renamed');
-      // The save is a database write: made in real async, and waited for by
-      // the cache it refreshes rather than by a number of frames.
-      await inRealAsyncUntil(
-        tester,
-        () => tester.tap(find.text('Save').last),
-        until: () => state.allModels.any((m) => m.id == model.id && m.modelName == 'Renamed'),
-      );
-      await tester.pumpAndSettle();
+      ),
+    );
+    await tester.pump();
+    await tester.enterText(fieldHolding('GPT Image'), 'Renamed');
+    // The save is a database write: made in real async, and waited for by
+    // the cache it refreshes rather than by a number of frames.
+    await inRealAsyncUntil(
+      tester,
+      () => tester.tap(find.text('Save').last),
+      until: () => state.allModels.any((m) => m.id == model.id && m.modelName == 'Renamed'),
+    );
+    await tester.pumpAndSettle();
 
-      final saved = await runAsyncRethrowing(tester, () async {
-        await state.refreshDataCache();
-        return state.allModels.firstWhere((m) => m.id == model.id);
-      });
-      expect(saved.modelName, 'Renamed');
-      expect(saved.sortOrder, 7);
-      expect(saved.estMeanMs, 4200.0);
-      expect(saved.estSdMs, 650.0);
-      expect(saved.tasksSinceUpdate, 3);
-    },
-  );
+    final saved = await runAsyncRethrowing(tester, () async {
+      await state.refreshDataCache();
+      return state.allModels.firstWhere((m) => m.id == model.id);
+    });
+    expect(saved.modelName, 'Renamed');
+    expect(saved.sortOrder, 7);
+    expect(saved.estMeanMs, 4200.0);
+    expect(saved.estSdMs, 650.0);
+    expect(saved.tasksSinceUpdate, 3);
+  });
 
   testWidgets('renaming a built-in tag leaves it built-in', (tester) async {
     final (state, tag) = await runAsyncRethrowing(tester, () async {
@@ -196,12 +187,7 @@ void main() {
       ),
     );
     final tags = await runAsyncRethrowing(tester, state.getPromptTags);
-    showTagEditDialog(
-      host,
-      AppLocalizations.of(host)!,
-      tag: tag,
-      tags: tags,
-    ).ignore();
+    showTagEditDialog(host, AppLocalizations.of(host)!, tag: tag, tags: tags).ignore();
     await tester.pumpAndSettle();
     await tester.enterText(fieldHolding('Built in'), 'Renamed');
     // The write is real I/O: start it in real async, and wait until it has
@@ -212,9 +198,7 @@ void main() {
       await tester.tap(find.text('Save').last);
       final giveUp = DateTime.now().add(realAsyncGiveUp);
       while (true) {
-        final now = (await state.getPromptTags()).firstWhere(
-          (t) => t.id == tag.id,
-        );
+        final now = (await state.getPromptTags()).firstWhere((t) => t.id == tag.id);
         if (now.name == 'Renamed') return now;
         if (DateTime.now().isAfter(giveUp)) fail('the save never reached the database');
         await Future<void>.delayed(const Duration(milliseconds: 5));

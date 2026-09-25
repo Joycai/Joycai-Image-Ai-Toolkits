@@ -13,16 +13,16 @@ import '../output_spec.dart'
     show billedImageCountKey, inputImageCountKey, parseWxH, reportedCostKey;
 import '../vendors/vendor_profile.dart';
 
+// The shared async-job poll loop (cancel probe, sliced sleep, consecutive
+// failure tolerance, non-retryable abandon) — see job_poll.dart.
+export '../job_poll.dart';
+export '../output_spec.dart' show parseWxH;
 // Every debug-log line that prints a request URL must redact it first —
 // Google-keyed vendors carry `?key=<API_KEY>` in the URL (VendorProfile
 // .decorateUrl), and relying on the log sink's regex to catch it made one
 // mechanism's bug a credential leak. Re-exported here so protocols need no
 // extra import.
 export '../vendors/vendor_profile.dart' show redactUrl;
-export '../output_spec.dart' show parseWxH;
-// The shared async-job poll loop (cancel probe, sliced sleep, consecutive
-// failure tolerance, non-retryable abandon) — see job_poll.dart.
-export '../job_poll.dart';
 
 /// **Layer 1 — the protocol.**
 ///
@@ -45,14 +45,9 @@ class LLMTarget {
   final VendorProfile vendor;
   final ModelDescriptor model;
 
-  const LLMTarget({
-    required this.config,
-    required this.vendor,
-    required this.model,
-  });
+  const LLMTarget({required this.config, required this.vendor, required this.model});
 
-  Map<String, String> headers() =>
-      vendor.headers(config.apiKey, config.endpoint);
+  Map<String, String> headers() => vendor.headers(config.apiKey, config.endpoint);
 
   Uri decorateUrl(Uri url) => vendor.decorateUrl(url, config.apiKey);
 }
@@ -188,11 +183,7 @@ abstract class CancellableJobProtocol {
   /// Returns what upstream reports it did, or null when it declined (or when
   /// the task was past the point where cancelling is safe). Implementations
   /// must not throw for an ordinary refusal.
-  Future<String?> cancel(
-    LLMTarget target,
-    String operationName, {
-    LLMLogger? logger,
-  });
+  Future<String?> cancel(LLMTarget target, String operationName, {LLMLogger? logger});
 }
 
 /// A model surfaced by a [DiscoveryProtocol] listing.
@@ -233,16 +224,16 @@ void throwIfEnvelopeError(Map<String, dynamic> data) {
   final err = data['error'];
   if (err != null) {
     final msg = err is Map ? (err['message'] ?? err.toString()) : err.toString();
-    throw LLMApiException('API error in response body: $msg',
-        isEnvelope: true);
+    throw LLMApiException('API error in response body: $msg', isEnvelope: true);
   }
   final baseResp = data['base_resp'];
   if (baseResp is Map) {
     final code = baseResp['status_code'];
     if (code is num && code != 0) {
       throw LLMApiException(
-          'API error (base_resp $code): ${baseResp['status_msg'] ?? 'unknown'}',
-          isEnvelope: true);
+        'API error (base_resp $code): ${baseResp['status_msg'] ?? 'unknown'}',
+        isEnvelope: true,
+      );
     }
   }
 }
@@ -268,8 +259,11 @@ void throwIfEnvelopeError(Map<String, dynamic> data) {
 /// {...}}` and the poller's own status machine turns that into an error that
 /// names the operation — the generic envelope check would fire first and
 /// discard that context. Every request/submit surface keeps the default.
-Map<String, dynamic> decodeJsonBody(http.Response response,
-    {String apiName = 'API', bool checkEnvelope = true}) {
+Map<String, dynamic> decodeJsonBody(
+  http.Response response, {
+  String apiName = 'API',
+  bool checkEnvelope = true,
+}) {
   final status = response.statusCode;
   if (status < 200 || status >= 300) {
     String detail = _bodyExcerpt(response.body);
@@ -277,30 +271,34 @@ Map<String, dynamic> decodeJsonBody(http.Response response,
     if (decoded is Map) {
       final err = decoded['error'];
       if (err is Map && err['message'] != null) {
-        detail = '${err['message']}'
+        detail =
+            '${err['message']}'
             '${err['status'] != null ? ' (${err['status']})' : ''}';
       }
     }
     throw LLMApiException(
-        '$apiName request failed: $status${_requestUrlNote(response)} - '
-        '$detail',
-        statusCode: status,
-        retryAfter: parseRetryAfter(response.headers));
+      '$apiName request failed: $status${_requestUrlNote(response)} - '
+      '$detail',
+      statusCode: status,
+      retryAfter: parseRetryAfter(response.headers),
+    );
   }
 
   final decoded = _tryJsonDecode(response.body);
   if (decoded == null) {
     throw LLMApiException(
-        '$apiName returned a non-JSON body (HTML error page?)'
-        '${_requestUrlNote(response)} — the base URL may point at something '
-        'that is not this API. Body: ${_bodyExcerpt(response.body)}',
-        isNonJsonBody: true);
+      '$apiName returned a non-JSON body (HTML error page?)'
+      '${_requestUrlNote(response)} — the base URL may point at something '
+      'that is not this API. Body: ${_bodyExcerpt(response.body)}',
+      isNonJsonBody: true,
+    );
   }
   if (decoded is! Map) {
     throw LLMApiException(
-        '$apiName returned an unexpected body shape '
-        '(${decoded.runtimeType})${_requestUrlNote(response)}: '
-        '${_bodyExcerpt(response.body)}');
+      '$apiName returned an unexpected body shape '
+      '(${decoded.runtimeType})${_requestUrlNote(response)}: '
+      '${_bodyExcerpt(response.body)}',
+    );
   }
 
   final data = decoded.cast<String, dynamic>();
@@ -313,11 +311,7 @@ Map<String, dynamic> decodeJsonBody(http.Response response,
 /// An empty status is a malformed poll response, not a future in-progress
 /// state. Treating it as the latter makes callers poll the wrong endpoint or
 /// envelope until the multi-minute job deadline.
-String requireJobStatus(
-  Object? value, {
-  required String job,
-  required String jobId,
-}) {
+String requireJobStatus(Object? value, {required String job, required String jobId}) {
   final status = value?.toString().trim() ?? '';
   if (status.isEmpty) {
     throw LLMApiException(
@@ -483,21 +477,23 @@ Future<Uint8List?> resolveImageRef(
     const attempts = 2;
     for (var attempt = 1; attempt <= attempts; attempt++) {
       try {
-        final request = http.AbortableRequest('GET', Uri.parse(trimmed),
-            abortTrigger: abortTrigger);
-        final resp =
-            await http.Response.fromStream(await client.send(request));
+        final request = http.AbortableRequest(
+          'GET',
+          Uri.parse(trimmed),
+          abortTrigger: abortTrigger,
+        );
+        final resp = await http.Response.fromStream(await client.send(request));
         if (resp.statusCode == 200) {
           final bytes = resp.bodyBytes;
           if (imageMimeFromBytes(bytes) != null) return bytes;
           logger?.call(
-              'Image URL answered 200 but the body is not an image '
-              '(${resp.headers['content-type'] ?? 'no content-type'}, '
-              '${bytes.length} bytes): $trimmed',
-              level: 'WARN');
+            'Image URL answered 200 but the body is not an image '
+            '(${resp.headers['content-type'] ?? 'no content-type'}, '
+            '${bytes.length} bytes): $trimmed',
+            level: 'WARN',
+          );
         } else {
-          logger?.call('Image URL returned ${resp.statusCode}: $trimmed',
-              level: 'WARN');
+          logger?.call('Image URL returned ${resp.statusCode}: $trimmed', level: 'WARN');
         }
       } on http.RequestAbortedException {
         rethrow;
@@ -519,8 +515,7 @@ Future<Uint8List?> resolveImageRef(
       // Length-guarded: a truncated ref can be shorter than the excerpt, and
       // a RangeError out of the *log line* would abort the generation this
       // path exists to skip past.
-      final excerpt =
-          trimmed.length > 32 ? '${trimmed.substring(0, 32)}…' : trimmed;
+      final excerpt = trimmed.length > 32 ? '${trimmed.substring(0, 32)}…' : trimmed;
       logger?.call('Malformed data URI (no comma): $excerpt', level: 'WARN');
       return null;
     }
@@ -536,9 +531,10 @@ Future<Uint8List?> resolveImageRef(
   }
   if (imageMimeFromBytes(bytes) == null) {
     logger?.call(
-        'Inline image data is not a recognisable image (${bytes.length} '
-        'bytes); skipped.',
-        level: 'WARN');
+      'Inline image data is not a recognisable image (${bytes.length} '
+      'bytes); skipped.',
+      level: 'WARN',
+    );
     return null;
   }
   return bytes;
@@ -561,15 +557,21 @@ Future<List<Uint8List>> resolveImageRefs(
   final all = refs.toList();
   final images = <Uint8List>[];
   for (final ref in all) {
-    final bytes = await resolveImageRef(ref, client, logger,
-        retryDelay: retryDelay, abortTrigger: abortTrigger);
+    final bytes = await resolveImageRef(
+      ref,
+      client,
+      logger,
+      retryDelay: retryDelay,
+      abortTrigger: abortTrigger,
+    );
     if (bytes != null) images.add(bytes);
   }
   if (images.isNotEmpty && images.length < all.length) {
     logger?.call(
-        '$source: only ${images.length} of ${all.length} generated image(s) '
-        'could be retrieved; the rest were billed but are not saved.',
-        level: 'WARN');
+      '$source: only ${images.length} of ${all.length} generated image(s) '
+      'could be retrieved; the rest were billed but are not saved.',
+      level: 'WARN',
+    );
   }
   return images;
 }
@@ -602,15 +604,8 @@ Future<http.Response> sendJsonRequest(
   Map<String, dynamic>? options,
   String method = 'POST',
 }) async {
-  final request = buildJsonRequest(
-    method,
-    url,
-    headers: headers,
-    body: body,
-    options: options,
-  );
-  return http.Response.fromStream(
-      await client.send(trackBodySent(request, options)));
+  final request = buildJsonRequest(method, url, headers: headers, body: body, options: options);
+  return http.Response.fromStream(await client.send(trackBodySent(request, options)));
 }
 
 /// Builds an abortable JSON request for one-shot and streaming paths alike.
@@ -626,8 +621,7 @@ http.AbortableRequest buildJsonRequest(
   required String body,
   Map<String, dynamic>? options,
 }) {
-  final request = http.AbortableRequest(method, url,
-      abortTrigger: abortTriggerOf(options));
+  final request = http.AbortableRequest(method, url, abortTrigger: abortTriggerOf(options));
   request.headers.addAll(headers);
   request.body = body;
   return request;
@@ -644,10 +638,7 @@ void Function()? bodySentHookOf(Map<String, dynamic>? options) {
 /// `options` carry [llmBodySentKey] — reporting the moment its body has been
 /// handed to the connection in full. Apply it to a fully built request, at
 /// the send call.
-http.BaseRequest trackBodySent(
-  http.BaseRequest request,
-  Map<String, dynamic>? options,
-) {
+http.BaseRequest trackBodySent(http.BaseRequest request, Map<String, dynamic>? options) {
   final hook = bodySentHookOf(options);
   return hook == null ? request : _BodySentRequest(request, hook);
 }
@@ -660,8 +651,7 @@ class _BodySentRequest extends http.BaseRequest with http.Abortable {
   final http.BaseRequest _inner;
   final void Function() _onBodySent;
 
-  _BodySentRequest(this._inner, this._onBodySent)
-      : super(_inner.method, _inner.url) {
+  _BodySentRequest(this._inner, this._onBodySent) : super(_inner.method, _inner.url) {
     followRedirects = _inner.followRedirects;
     maxRedirects = _inner.maxRedirects;
     persistentConnection = _inner.persistentConnection;
@@ -681,12 +671,16 @@ class _BodySentRequest extends http.BaseRequest with http.Abortable {
     headers.addAll(_inner.headers);
     contentLength = _inner.contentLength;
     super.finalize();
-    return http.ByteStream(body.transform(
+    return http.ByteStream(
+      body.transform(
         StreamTransformer<List<int>, List<int>>.fromHandlers(
-            handleDone: (sink) {
-      _onBodySent();
-      sink.close();
-    })));
+          handleDone: (sink) {
+            _onBodySent();
+            sink.close();
+          },
+        ),
+      ),
+    );
   }
 }
 
@@ -816,11 +810,7 @@ Map<String, dynamic> upstreamUsage(Object? raw) {
   };
 }
 
-const _reservedMetadataKeys = {
-  reportedCostKey,
-  inputImageCountKey,
-  billedImageCountKey,
-};
+const _reservedMetadataKeys = {reportedCostKey, inputImageCountKey, billedImageCountKey};
 
 Future<Uint8List?> readAttachmentBytes(LLMAttachment att) async {
   if (att.path != null) return File(att.path!).readAsBytes();
@@ -860,8 +850,8 @@ String? resolveVideoSize(Map<String, dynamic>? options) {
   final tier = resolution.contains('1080')
       ? '1080'
       : resolution.contains('480')
-          ? '480'
-          : '720';
+      ? '480'
+      : '720';
 
   const sizes = {
     '16:9': {'480': '854x480', '720': '1280x720', '1080': '1920x1080'},
@@ -930,9 +920,7 @@ Map<String, dynamic>? optionsWithCheckedSize(
 }) {
   final raw = options?['imageSize'];
   if (raw is! String || raw.isEmpty) return options;
-  final spec = target.model.capabilities.imageParams
-      .where((p) => p.key == 'imageSize')
-      .firstOrNull;
+  final spec = target.model.capabilities.imageParams.where((p) => p.key == 'imageSize').firstOrNull;
   if (spec == null || spec.isValid(raw)) return options;
   final fallback = spec.defaultValue;
   logger?.call(
@@ -960,20 +948,19 @@ Map<String, dynamic> videoDoneEnvelope(
   required bool requiresAuth,
   Object? renderedSeconds,
   double? reportedCost,
-}) =>
-    {
-      'name': operationName,
-      'done': true,
-      videoRenderedSecondsKey: ?_positiveSeconds(renderedSeconds),
-      if (reportedCost != null && reportedCost.isFinite && reportedCost >= 0)
-        reportedCostKey: reportedCost,
-      'response': {
-        'generateVideoResponse': {
-          'generatedSamples': [
-            {
-              'video': {'uri': uri, videoRequiresAuthKey: requiresAuth},
-            }
-          ],
+}) => {
+  'name': operationName,
+  'done': true,
+  videoRenderedSecondsKey: ?_positiveSeconds(renderedSeconds),
+  if (reportedCost != null && reportedCost.isFinite && reportedCost >= 0)
+    reportedCostKey: reportedCost,
+  'response': {
+    'generateVideoResponse': {
+      'generatedSamples': [
+        {
+          'video': {'uri': uri, videoRequiresAuthKey: requiresAuth},
         },
-      },
-    };
+      ],
+    },
+  },
+};

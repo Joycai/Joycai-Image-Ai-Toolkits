@@ -106,7 +106,7 @@ class _UsageViewDesktopState extends State<UsageViewDesktop> {
                     onRefresh: () => c.load(reset: true),
                     hasMore: c.hasMore,
                     isLoadingMore: c.isLoadingMore,
-                    onLoadMore: () => c.load(),
+                    onLoadMore: c.load,
                     modelTags: modelTags,
                     totalCount: c.totalRecords,
                     pageSize: c.pageSize,

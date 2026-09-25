@@ -4,8 +4,8 @@ import 'package:provider/provider.dart';
 import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../state/app_state.dart';
 import '../../../services/db/repositories/cookie_repository.dart';
+import '../../../state/app_state.dart';
 import '../../../state/downloader_state.dart';
 import '../../../widgets/ui/app_button.dart';
 import '../../../widgets/ui/app_dialog.dart';
@@ -38,12 +38,7 @@ Future<void> showDownloaderAdvancedDialog(
       cookieController: cookieController,
       onImportCookie: onImportCookie,
     ),
-    actions: [
-      AppButton(
-        label: l10n.finish,
-        onPressed: () => Navigator.pop(context),
-      ),
-    ],
+    actions: [AppButton(label: l10n.finish, onPressed: () => Navigator.pop(context))],
   );
 }
 
@@ -174,7 +169,8 @@ class _AdvancedOptionsBodyState extends State<_AdvancedOptionsBody> {
                             _CookieHistoryList(
                               entries: history,
                               onUse: _useCookies,
-                              onForget: (entry) => widget.state.forgetCookie('${entry['host'] ?? ''}'),
+                              onForget: (entry) =>
+                                  widget.state.forgetCookie('${entry['host'] ?? ''}'),
                             ),
                             Align(
                               alignment: AlignmentDirectional.centerEnd,
@@ -232,9 +228,9 @@ class _CookieRetentionRow extends StatelessWidget {
         Text(
           l10n.cookieRetentionNote,
           style: Theme.of(context).textTheme.labelSmall!.copyWith(
-                fontWeight: FontWeight.w400,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
+            fontWeight: FontWeight.w400,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
       ],
     );
@@ -303,7 +299,10 @@ class _CookieHistoryRow extends StatelessWidget {
     // The row already holds the raw cookie string, so the pair count is
     // derived from it rather than stored.
     final lastUsed = _lastUsed(entry['last_used'], l10n);
-    final pairs = '${entry['cookies'] ?? ''}'.split(';').where((pair) => pair.trim().isNotEmpty).length;
+    final pairs = '${entry['cookies'] ?? ''}'
+        .split(';')
+        .where((pair) => pair.trim().isNotEmpty)
+        .length;
     final details = [?lastUsed, if (pairs > 0) l10n.cookieHistoryPairs(pairs)];
     final String? used = details.isEmpty ? null : details.join(' · ');
 
@@ -350,7 +349,10 @@ class _CookieHistoryRow extends StatelessWidget {
               tooltip: l10n.cookieHistoryForget,
               color: scheme.onSurfaceVariant,
               padding: EdgeInsets.zero,
-              constraints: const BoxConstraints.tightFor(width: AppSize.compact, height: AppSize.compact),
+              constraints: const BoxConstraints.tightFor(
+                width: AppSize.compact,
+                height: AppSize.compact,
+              ),
               onPressed: onForget,
             ),
           ],
@@ -390,7 +392,9 @@ class _EmptyCookieHistory extends StatelessWidget {
             child: Text(
               l10n.cookieHistoryEmptyDesc,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodySmall!.copyWith(color: scheme.onSurfaceVariant),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall!.copyWith(color: scheme.onSurfaceVariant),
             ),
           ),
         ],

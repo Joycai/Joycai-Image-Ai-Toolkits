@@ -47,8 +47,7 @@ class _AskUserCardState extends State<_AskUserCard> {
   }
 
   bool _isAnswered(int qIndex) =>
-      (_selections[qIndex]?.isNotEmpty ?? false) ||
-      _otherCtrls[qIndex].text.trim().isNotEmpty;
+      (_selections[qIndex]?.isNotEmpty ?? false) || _otherCtrls[qIndex].text.trim().isNotEmpty;
 
   bool get _allAnswered {
     for (int i = 0; i < _questions.length; i++) {
@@ -58,16 +57,16 @@ class _AskUserCardState extends State<_AskUserCard> {
   }
 
   List<AskUserAnswer> _collectAnswers() => [
-        for (int i = 0; i < _questions.length; i++)
-          AskUserAnswer(
-            header: _questions[i].header,
-            selected: [
-              for (final o in (_selections[i] ?? const <int>{}).toList()..sort())
-                _questions[i].options[o].label,
-            ],
-            otherText: _otherCtrls[i].text.trim().isEmpty ? null : _otherCtrls[i].text.trim(),
-          ),
-      ];
+    for (int i = 0; i < _questions.length; i++)
+      AskUserAnswer(
+        header: _questions[i].header,
+        selected: [
+          for (final o in (_selections[i] ?? const <int>{}).toList()..sort())
+            _questions[i].options[o].label,
+        ],
+        otherText: _otherCtrls[i].text.trim().isEmpty ? null : _otherCtrls[i].text.trim(),
+      ),
+  ];
 
   void _toggleOption(int qIndex, int oIndex, bool multiSelect) {
     setState(() {
@@ -123,7 +122,8 @@ class _AskUserCardState extends State<_AskUserCard> {
                 ),
               ],
             ),
-            for (int i = 0; i < _questions.length; i++) _buildQuestion(i, l10n, colorScheme, textTheme),
+            for (int i = 0; i < _questions.length; i++)
+              _buildQuestion(i, l10n, colorScheme, textTheme),
             const SizedBox(height: 12),
             if (phone)
               SizedBox(
@@ -149,7 +149,12 @@ class _AskUserCardState extends State<_AskUserCard> {
     );
   }
 
-  Widget _buildQuestion(int qIndex, AppLocalizations l10n, ColorScheme colorScheme, TextTheme textTheme) {
+  Widget _buildQuestion(
+    int qIndex,
+    AppLocalizations l10n,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+  ) {
     final question = _questions[qIndex];
     final selected = _selections[qIndex] ?? const <int>{};
     return Padding(
@@ -199,7 +204,14 @@ class _AskUserCardState extends State<_AskUserCard> {
           for (int o = 0; o < question.options.length; o++)
             Padding(
               padding: const EdgeInsets.only(bottom: 6),
-              child: _buildOption(qIndex, o, question, selected.contains(o), colorScheme, textTheme),
+              child: _buildOption(
+                qIndex,
+                o,
+                question,
+                selected.contains(o),
+                colorScheme,
+                textTheme,
+              ),
             ),
           _buildOtherField(qIndex, l10n, colorScheme, textTheme),
         ],
@@ -233,7 +245,11 @@ class _AskUserCardState extends State<_AskUserCard> {
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             child: Row(
               children: [
-                _choiceMark(selected: isSelected, multi: question.multiSelect, colorScheme: colorScheme),
+                _choiceMark(
+                  selected: isSelected,
+                  multi: question.multiSelect,
+                  colorScheme: colorScheme,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -275,18 +291,23 @@ class _AskUserCardState extends State<_AskUserCard> {
       child: !selected
           ? null
           : multi
-              ? Icon(Icons.check_rounded, size: 12, color: colorScheme.onPrimary)
-              : Container(
-                  width: 6,
-                  height: 6,
-                  decoration: BoxDecoration(color: colorScheme.onPrimary, shape: BoxShape.circle),
-                ),
+          ? Icon(Icons.check_rounded, size: 12, color: colorScheme.onPrimary)
+          : Container(
+              width: 6,
+              height: 6,
+              decoration: BoxDecoration(color: colorScheme.onPrimary, shape: BoxShape.circle),
+            ),
     );
   }
 
   /// "Other / add details..." — a free-text row behind a dashed hairline, so
   /// it reads as an optional slot rather than one more option.
-  Widget _buildOtherField(int qIndex, AppLocalizations l10n, ColorScheme colorScheme, TextTheme textTheme) {
+  Widget _buildOtherField(
+    int qIndex,
+    AppLocalizations l10n,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+  ) {
     return CustomPaint(
       foregroundPainter: _DashedOutlinePainter(
         color: colorScheme.outlineVariant,

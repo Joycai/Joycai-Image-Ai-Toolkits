@@ -17,15 +17,14 @@ void main() {
     String apiKey = 'k',
     bool proxyEnabled = false,
     String? proxyUrl,
-  }) =>
-      LLMModelConfig(
-        modelId: 'm',
-        channelType: 'openai-api-rest',
-        endpoint: endpoint,
-        apiKey: apiKey,
-        proxyEnabled: proxyEnabled,
-        proxyUrl: proxyUrl,
-      );
+  }) => LLMModelConfig(
+    modelId: 'm',
+    channelType: 'openai-api-rest',
+    endpoint: endpoint,
+    apiKey: apiKey,
+    proxyEnabled: proxyEnabled,
+    proxyUrl: proxyUrl,
+  );
 
   setUp(LLMClientPool.disposeAll);
   tearDown(LLMClientPool.disposeAll);
@@ -111,8 +110,7 @@ void main() {
     });
 
     final client = config(endpoint: endpoint).createClient();
-    final response =
-        await client.send(http.Request('GET', Uri.parse(endpoint)));
+    final response = await client.send(http.Request('GET', Uri.parse(endpoint)));
     final body = response.stream.bytesToString();
 
     // Eight more endpoints: enough to push the in-flight one out of the cap.
@@ -188,14 +186,16 @@ void main() {
 
     final key = config(endpoint: endpoint).connectionKey;
     final client = config(endpoint: endpoint).createClient();
-    final response =
-        await client.send(http.Request('GET', Uri.parse(endpoint)));
+    final response = await client.send(http.Request('GET', Uri.parse(endpoint)));
     expect(response.statusCode, 429);
 
     // Throw-path shape: the body stream is abandoned, the handle closed.
     client.close();
-    expect(LLMClientPool.inFlightFor(key), 0,
-        reason: 'the unlistened transfer must not outlive the handle');
+    expect(
+      LLMClientPool.inFlightFor(key),
+      0,
+      reason: 'the unlistened transfer must not outlive the handle',
+    );
   });
 
   test('a hit refreshes recency, so a busy channel is not evicted', () {
@@ -212,7 +212,6 @@ void main() {
 
     final before = LLMClientPool.liveClients;
     config(endpoint: busy).createClient();
-    expect(LLMClientPool.liveClients, before,
-        reason: 'busy must still be pooled, not re-created');
+    expect(LLMClientPool.liveClients, before, reason: 'busy must still be pooled, not re-created');
   });
 }

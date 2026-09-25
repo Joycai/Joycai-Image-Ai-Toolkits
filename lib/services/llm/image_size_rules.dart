@@ -215,8 +215,10 @@ AspectRatioSpec? parseAspectRatio(String raw) {
   final text = raw.trim();
   if (text.isEmpty) return null;
 
-  final pair = RegExp(r'^(\d+(?:\.\d+)?)\s*[:x×/]\s*(\d+(?:\.\d+)?)$', caseSensitive: false)
-      .firstMatch(text);
+  final pair = RegExp(
+    r'^(\d+(?:\.\d+)?)\s*[:x×/]\s*(\d+(?:\.\d+)?)$',
+    caseSensitive: false,
+  ).firstMatch(text);
   if (pair != null) {
     final a = double.parse(pair.group(1)!);
     final b = double.parse(pair.group(2)!);
@@ -234,7 +236,8 @@ AspectRatioSpec? parseAspectRatio(String raw) {
 /// too big to be worth reading (`1000×1234` → `0.81`).
 String formatAspectRatio(int w, int h) {
   if (w <= 0 || h <= 0) return '';
-  int a = w, b = h;
+  int a = w;
+  int b = h;
   while (b != 0) {
     final t = a % b;
     a = b;
@@ -250,8 +253,7 @@ String formatAspectRatio(int w, int h) {
 List<int> _shortEdgeCandidates(int long, double longOverShort, int step) {
   final exact = long / longOverShort;
   final lower = (exact / step).floor() * step;
-  final candidates =
-      <int>[lower, lower + step].where((s) => s >= step && s <= long).toList();
+  final candidates = <int>[lower, lower + step].where((s) => s >= step && s <= long).toList();
   double error(int s) => ((long / s) - longOverShort).abs();
   candidates.sort((a, b) => error(a).compareTo(error(b)));
   return candidates;

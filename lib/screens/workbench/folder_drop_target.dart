@@ -55,7 +55,8 @@ class _CopyModifierListenerState extends State<_CopyModifierListener> {
   }
 
   @override
-  Widget build(BuildContext context) => widget.builder(context, _listening && AppCopyModifier.instance.value);
+  Widget build(BuildContext context) =>
+      widget.builder(context, _listening && AppCopyModifier.instance.value);
 }
 
 /// A folder row that takes a dragged selection or a dragged folder, when the
@@ -140,11 +141,13 @@ class _MaybeDropTargetState extends State<_MaybeDropTarget> {
       if (refused != null) {
         return switch (refused) {
           FolderMoveRejection.isRoot => FolderDropRejection.root,
-          FolderMoveRejection.intoSelf || FolderMoveRejection.intoDescendant => FolderDropRejection.intoItself,
+          FolderMoveRejection.intoSelf ||
+          FolderMoveRejection.intoDescendant => FolderDropRejection.intoItself,
           FolderMoveRejection.sameParent => FolderDropRejection.sameFolder,
-          FolderMoveRejection.targetExists => p.equals(p.dirname(data.path), widget.path)
-              ? FolderDropRejection.sameFolder
-              : FolderDropRejection.nameTaken,
+          FolderMoveRejection.targetExists =>
+            p.equals(p.dirname(data.path), widget.path)
+                ? FolderDropRejection.sameFolder
+                : FolderDropRejection.nameTaken,
         };
       }
     }
@@ -218,7 +221,9 @@ class _MaybeDropTargetState extends State<_MaybeDropTarget> {
   String _note(AppLocalizations l10n, Object? data, bool copying) {
     final name = p.basename(widget.path);
     if (!copying) return l10n.dropMoveTo(name);
-    return data is List<BrowserFile> ? l10n.dropCopyItemsTo(data.length, name) : l10n.dropCopyTo(name);
+    return data is List<BrowserFile>
+        ? l10n.dropCopyItemsTo(data.length, name)
+        : l10n.dropCopyTo(name);
   }
 
   @override
@@ -247,11 +252,11 @@ class _MaybeDropTargetState extends State<_MaybeDropTarget> {
               final _RowDrop? drop = why != null
                   ? (tone: FolderDropTone.reject, note: why.label(l10n))
                   : accepted
-                      ? (
-                          tone: copying ? FolderDropTone.copy : FolderDropTone.move,
-                          note: _note(l10n, candidate.first, copying),
-                        )
-                      : null;
+                  ? (
+                      tone: copying ? FolderDropTone.copy : FolderDropTone.move,
+                      note: _note(l10n, candidate.first, copying),
+                    )
+                  : null;
               return widget.builder(context, drop);
             },
           ),

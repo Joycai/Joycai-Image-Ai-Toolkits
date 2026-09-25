@@ -42,10 +42,10 @@ extension _ConfigColumn on _AiRenameDialogState {
           onChanged: _templates.isEmpty
               ? null
               : (id) => _update(() {
-                    for (final template in _templates) {
-                      if (template.id == id) _selectedTemplate = template;
-                    }
-                  }),
+                  for (final template in _templates) {
+                    if (template.id == id) _selectedTemplate = template;
+                  }
+                }),
           hint: _templates.isEmpty ? l10n.noPromptsSaved : l10n.noTemplateSelected,
           size: AppFieldSize.regular,
           enabled: _templates.isNotEmpty,
@@ -87,7 +87,10 @@ extension _ConfigColumn on _AiRenameDialogState {
                 const SizedBox(height: AppSpace.s4),
                 Text(
                   l10n.renameBatchProgress(_batchIndex, _batchTotal, _rows.length, fileCount),
-                  style: mono11.copyWith(color: colorScheme.onAccentTint, fontWeight: FontWeight.w600),
+                  style: mono11.copyWith(
+                    color: colorScheme.onAccentTint,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ],
@@ -115,7 +118,7 @@ extension _ConfigColumn on _AiRenameDialogState {
                 icon: Icons.auto_awesome,
                 size: AppButtonSize.large,
                 fullWidth: true,
-                onPressed: hasModels ? () => _generate() : null,
+                onPressed: hasModels ? _generate : null,
               ),
         if (_isGenerating) ...[
           const SizedBox(height: AppSpace.s6),
@@ -170,9 +173,7 @@ extension _ConfigColumn on _AiRenameDialogState {
           },
         ),
       ),
-      actions: [
-        AppButton(label: l10n.close, onPressed: () => Navigator.pop(context)),
-      ],
+      actions: [AppButton(label: l10n.close, onPressed: () => Navigator.pop(context))],
     );
     _sheetSetState = null;
     if (mounted) _rebuild(() {});
@@ -234,7 +235,8 @@ class _NarrowConfigSummary extends StatelessWidget {
           // Edit config folds to its glyph when both labelled buttons would
           // leave the summary less room than a model name needs.
           final label = textTheme.labelMedium!;
-          double buttonWidth(String text) => measureGlassText(context, text, label) + 20 + AppSize.iconSm + 8;
+          double buttonWidth(String text) =>
+              measureGlassText(context, text, label) + 20 + AppSize.iconSm + 8;
           final actionWidth = buttonWidth(generating ? l10n.renameStop : l10n.generateSuggestions);
           final editWidth = measureGlassText(context, l10n.renameEditConfig, label) + 20;
           final foldEdit = constraints.maxWidth - actionWidth - editWidth - 20 < 96;
@@ -268,7 +270,10 @@ class _NarrowConfigSummary extends StatelessWidget {
                   tooltip: l10n.renameEditConfig,
                   onPressed: onEdit,
                   padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints.tightFor(width: AppSize.compact, height: AppSize.compact),
+                  constraints: const BoxConstraints.tightFor(
+                    width: AppSize.compact,
+                    height: AppSize.compact,
+                  ),
                   style: IconButton.styleFrom(foregroundColor: colorScheme.onAccentTint),
                 )
               else

@@ -30,26 +30,28 @@ void main() {
     final ui = WorkbenchUIState()..optimizerSession = PromptOptimizerSession(mode: mode);
     final input = TextEditingController();
     final sends = <int>[];
-    await tester.pumpWidget(ChangeNotifierProvider<WorkbenchUIState>.value(
-      value: ui,
-      child: MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: Scaffold(
-          body: PromptOptimizerChatView(
-            inputCtrl: input,
-            onSend: () => sends.add(1),
-            onRetry: () {},
-            onApplyPrompt: (_) {},
-            onApplyKbEdit: (_) {},
-            onRejectKbEdit: (_) {},
-            onAnswerAskUser: (_, _) {},
-            isBusy: false,
-            presetChoices: choices,
+    await tester.pumpWidget(
+      ChangeNotifierProvider<WorkbenchUIState>.value(
+        value: ui,
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: PromptOptimizerChatView(
+              inputCtrl: input,
+              onSend: () => sends.add(1),
+              onRetry: () {},
+              onApplyPrompt: (_) {},
+              onApplyKbEdit: (_) {},
+              onRejectKbEdit: (_) {},
+              onAnswerAskUser: (_, _) {},
+              isBusy: false,
+              presetChoices: choices,
+            ),
           ),
         ),
       ),
-    ));
+    );
     await tester.pump();
     return (input: input, sends: sends);
   }
@@ -66,8 +68,9 @@ void main() {
     }
   });
 
-  testWidgets('four tiles, the loaded one marked, and picking selects without sending',
-      (tester) async {
+  testWidgets('four tiles, the loaded one marked, and picking selects without sending', (
+    tester,
+  ) async {
     final picked = <SystemPrompt?>[];
     final host = await pump(
       tester,
@@ -94,8 +97,9 @@ void main() {
     expect(host.sends, isEmpty);
   });
 
-  testWidgets('with no presets the built-in is the tile, and the library is one tap away',
-      (tester) async {
+  testWidgets('with no presets the built-in is the tile, and the library is one tap away', (
+    tester,
+  ) async {
     var managed = 0;
     await pump(
       tester,

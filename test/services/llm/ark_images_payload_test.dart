@@ -20,15 +20,14 @@ void main() {
     ModelCapabilities? caps,
     List<String>? warnings,
     String prompt = 'a red apple',
-  }) =>
-      buildArkImagePayload(
-        modelId: 'doubao-seedream-5.0-lite',
-        prompt: prompt,
-        imageRefs: refs,
-        tierPixelSizes: (caps ?? lite).tierPixelSizes,
-        options: options,
-        warn: warnings?.add,
-      );
+  }) => buildArkImagePayload(
+    modelId: 'doubao-seedream-5.0-lite',
+    prompt: prompt,
+    imageRefs: refs,
+    tierPixelSizes: (caps ?? lite).tierPixelSizes,
+    options: options,
+    warn: warnings?.add,
+  );
 
   group('request body', () {
     test('text-to-image with no options: tier-free, watermark off, url', () {
@@ -57,37 +56,35 @@ void main() {
     });
 
     test('tier × ratio sends the version\'s own documented pixels', () {
-      expect(build(options: {'imageSize': '2K', 'aspectRatio': '16:9'})['size'],
-          '2848x1600');
+      expect(build(options: {'imageSize': '2K', 'aspectRatio': '16:9'})['size'], '2848x1600');
       // 5.0 pro's 2K 16:9 differs from lite's.
       expect(
-          build(caps: pro, options: {'imageSize': '2K', 'aspectRatio': '16:9'})[
-              'size'],
-          '2816x1584');
+        build(caps: pro, options: {'imageSize': '2K', 'aspectRatio': '16:9'})['size'],
+        '2816x1584',
+      );
       expect(
-          build(caps: pro, options: {'imageSize': '1.5K', 'aspectRatio': '1:1'})[
-              'size'],
-          '1536x1536');
+        build(caps: pro, options: {'imageSize': '1.5K', 'aspectRatio': '1:1'})['size'],
+        '1536x1536',
+      );
     });
 
     test('a ratio with no tier uses the first mapped tier', () {
       final v30 = ModelCapabilities.forModel('doubao-seedream-3-0-t2i-250415');
-      expect(build(caps: v30, options: {'aspectRatio': '16:9'})['size'],
-          '1280x720');
+      expect(build(caps: v30, options: {'aspectRatio': '16:9'})['size'], '1280x720');
     });
 
     test('an unmapped ratio falls back to the tier and says so', () {
       final warnings = <String>[];
-      final body = build(
-          warnings: warnings,
-          options: {'imageSize': '2K', 'aspectRatio': '5:4'});
+      final body = build(warnings: warnings, options: {'imageSize': '2K', 'aspectRatio': '5:4'});
       expect(body['size'], '2K');
       expect(warnings, hasLength(1));
     });
 
     test('group generation: 1 sends nothing, more turns it on', () {
-      expect(build(options: {'maxImages': '1'})
-          .containsKey('sequential_image_generation'), isFalse);
+      expect(
+        build(options: {'maxImages': '1'}).containsKey('sequential_image_generation'),
+        isFalse,
+      );
       final body = build(options: {'maxImages': '4'});
       expect(body['sequential_image_generation'], 'auto');
       expect(body['sequential_image_generation_options'], {'max_images': 4});
@@ -96,9 +93,10 @@ void main() {
     test('references + group ceiling stay within 15, with a warning', () {
       final warnings = <String>[];
       final body = build(
-          refs: List.filled(12, ref),
-          warnings: warnings,
-          options: {'maxImages': '6'});
+        refs: List.filled(12, ref),
+        warnings: warnings,
+        options: {'maxImages': '6'},
+      );
       expect(body['sequential_image_generation_options'], {'max_images': 3});
       expect(warnings, hasLength(1));
 
@@ -108,11 +106,9 @@ void main() {
     });
 
     test('format, prompt optimization and web search map one to one', () {
-      final body = build(options: {
-        'outputFormat': 'png',
-        'optimizeMode': 'fast',
-        'webSearch': 'on',
-      });
+      final body = build(
+        options: {'outputFormat': 'png', 'optimizeMode': 'fast', 'webSearch': 'on'},
+      );
       expect(body['output_format'], 'png');
       expect(body['optimize_prompt_options'], {'mode': 'fast'});
       expect(body['tools'], [
@@ -125,64 +121,56 @@ void main() {
   group('5.0 pro task modes', () {
     test('layers: exactly one reference, tier only, prompt optional', () {
       final body = build(
-          caps: pro,
-          prompt: '  ',
-          refs: [ref],
-          options: {
-            'imageTask': 'layers',
-            'imageSize': '2K',
-            'aspectRatio': '16:9',
-            'maxImages': '4',
-          });
+        caps: pro,
+        prompt: '  ',
+        refs: [ref],
+        options: {
+          'imageTask': 'layers',
+          'imageSize': '2K',
+          'aspectRatio': '16:9',
+          'maxImages': '4',
+        },
+      );
       expect(body['layer_decomposition'], isTrue);
       expect(body['size'], '2K', reason: 'the ratio has nothing to act on');
       expect(body.containsKey('prompt'), isFalse);
       expect(body.containsKey('sequential_image_generation'), isFalse);
     });
 
-    test('layers with the tier unset send no size: upstream keeps the source',
-        () {
+    test('layers with the tier unset send no size: upstream keeps the source', () {
       // `auto` is layer decomposition's default (§6) — the source's own size
       // inside [1280x720, 2K×1.1025]. Any tier sent forces a resample, and a
       // forced 2K (4.19 MP) is billed 0.6 元 where the source might have
       // stayed at 0.3.
       for (final unset in ['not_set', 'auto']) {
         final body = build(
-            caps: pro,
-            refs: [ref],
-            options: {
-              'imageTask': 'layers',
-              'imageSize': unset,
-              'aspectRatio': '16:9',
-            });
+          caps: pro,
+          refs: [ref],
+          options: {'imageTask': 'layers', 'imageSize': unset, 'aspectRatio': '16:9'},
+        );
         expect(body['layer_decomposition'], isTrue);
         expect(body.containsKey('size'), isFalse, reason: unset);
       }
     });
 
-    test('generation with the tier unset is upstream\'s 2K, ratio included',
-        () {
-      expect(
-          build(caps: pro, options: {'imageSize': 'not_set'})
-              .containsKey('size'),
-          isFalse);
+    test('generation with the tier unset is upstream\'s 2K, ratio included', () {
+      expect(build(caps: pro, options: {'imageSize': 'not_set'}).containsKey('size'), isFalse);
       // A ratio with no tier takes upstream's default tier's pixels — 2K —
       // not the smallest tier the table lists.
       expect(
-          build(caps: pro, options: {
-            'imageSize': 'not_set',
-            'aspectRatio': '16:9',
-          })['size'],
-          '2816x1584');
+        build(caps: pro, options: {'imageSize': 'not_set', 'aspectRatio': '16:9'})['size'],
+        '2816x1584',
+      );
     });
 
     test('transparent: background set, PNG forced over a JPEG choice', () {
       final warnings = <String>[];
       final body = build(
-          caps: pro,
-          refs: [ref],
-          warnings: warnings,
-          options: {'imageTask': 'transparent', 'outputFormat': 'jpeg'});
+        caps: pro,
+        refs: [ref],
+        warnings: warnings,
+        options: {'imageTask': 'transparent', 'outputFormat': 'jpeg'},
+      );
       expect(body['background'], 'transparent');
       expect(body['output_format'], 'png');
       expect(warnings, hasLength(1));
@@ -190,12 +178,15 @@ void main() {
 
     test('both modes refuse anything but one reference, before sending', () {
       for (final task in ['layers', 'transparent']) {
-        for (final refs in [<String>[], [ref, ref]]) {
+        for (final refs in [
+          <String>[],
+          [ref, ref],
+        ]) {
           expect(
-              () => build(caps: pro, refs: refs, options: {'imageTask': task}),
-              throwsA(isA<LLMApiException>()
-                  .having((e) => e.statusCode, 'statusCode', isNull)),
-              reason: '$task with ${refs.length}');
+            () => build(caps: pro, refs: refs, options: {'imageTask': task}),
+            throwsA(isA<LLMApiException>().having((e) => e.statusCode, 'statusCode', isNull)),
+            reason: '$task with ${refs.length}',
+          );
         }
       }
     });
@@ -207,10 +198,7 @@ void main() {
         'data': [
           {'url': 'https://x/1.jpeg', 'size': '2048x2048'},
           {
-            'error': {
-              'code': 'OutputImageSensitiveContentDetected',
-              'message': 'blocked',
-            },
+            'error': {'code': 'OutputImageSensitiveContentDetected', 'message': 'blocked'},
           },
           {'b64_json': 'QUJD'},
           {'size': '1x1'},
@@ -269,8 +257,20 @@ void main() {
       final r = parseArkImageResponse({
         'data': [
           {'url': 'plain'},
-          {'url': 'odd', 'z_index': 1, 'bounding_box': {'absolute': [5, 5, 5, 9]}},
-          {'url': 'short', 'z_index': 2, 'bounding_box': {'absolute': [1, 2]}},
+          {
+            'url': 'odd',
+            'z_index': 1,
+            'bounding_box': {
+              'absolute': [5, 5, 5, 9],
+            },
+          },
+          {
+            'url': 'short',
+            'z_index': 2,
+            'bounding_box': {
+              'absolute': [1, 2],
+            },
+          },
         ],
       });
       expect(r.images.map((i) => i.ref), ['odd', 'short', 'plain']);
@@ -327,10 +327,8 @@ void main() {
         const {'generated_images': 'two'},
         const {'generated_images': double.nan},
       ]) {
-        final meta = arkResultMetadata(
-            delivered: 2, failed: 0, usage: usage, refCount: 0);
-        expect(meta.containsKey(billedImageCountKey), isFalse,
-            reason: '$usage');
+        final meta = arkResultMetadata(delivered: 2, failed: 0, usage: usage, refCount: 0);
+        expect(meta.containsKey(billedImageCountKey), isFalse, reason: '$usage');
         expect(meta['image_count'], 2);
       }
     });
@@ -346,23 +344,26 @@ void main() {
       expect(meta[billedImageCountKey], 1);
       expect(meta[inputImageCountKey], 2, reason: 'Ark\'s count outranks ours');
       expect(
-          arkResultMetadata(delivered: 1, failed: 0, usage: const {}, refCount: 3)[
-              inputImageCountKey],
-          3);
+        arkResultMetadata(
+          delivered: 1,
+          failed: 0,
+          usage: const {},
+          refCount: 3,
+        )[inputImageCountKey],
+        3,
+      );
     });
   });
 
   group('streaming', () {
-    test('which versions declare it: lite, 4.5, 4.0 — not pro, 3.0, generic',
-        () {
+    test('which versions declare it: lite, 4.5, 4.0 — not pro, 3.0, generic', () {
       for (final id in [
         'doubao-seedream-5.0-lite',
         'doubao-seedream-5-0-lite-260128',
         'doubao-seedream-4-5-251128',
         'doubao-seedream-4-0-250828',
       ]) {
-        expect(ModelCapabilities.forModel(id).streamsImages, isTrue,
-            reason: id);
+        expect(ModelCapabilities.forModel(id).streamsImages, isTrue, reason: id);
       }
       for (final id in [
         'doubao-seedream-5-0-pro-260628',
@@ -378,7 +379,11 @@ void main() {
     test('`stream` is sent only when asked for', () {
       expect(build().containsKey('stream'), isFalse);
       final body = buildArkImagePayload(
-          modelId: 'm', prompt: 'p', imageRefs: const [], stream: true);
+        modelId: 'm',
+        prompt: 'p',
+        imageRefs: const [],
+        stream: true,
+      );
       expect(body['stream'], isTrue);
     });
 
@@ -410,8 +415,7 @@ void main() {
         'image_index': 0,
         'error': {'code': 'OutputImageSensitiveContentDetected', 'message': 'x'},
       });
-      expect((nested as ArkStreamFailure).failure.code,
-          'OutputImageSensitiveContentDetected');
+      expect((nested as ArkStreamFailure).failure.code, 'OutputImageSensitiveContentDetected');
       final flat = parseArkStreamEvent({
         'type': 'image_generation.partial_failed',
         'code': 'C',
@@ -424,11 +428,13 @@ void main() {
       expect(parseArkStreamEvent({'type': 'image_generation.progress'}), isNull);
       expect(parseArkStreamEvent({}), isNull);
       expect(
-          parseArkStreamEvent(
-              {'type': 'image_generation.partial_succeeded', 'url': ''}),
-          isNull);
-      final b64 = parseArkStreamEvent(
-          {'type': 'image_generation.partial_succeeded', 'b64_json': 'AAAA'});
+        parseArkStreamEvent({'type': 'image_generation.partial_succeeded', 'url': ''}),
+        isNull,
+      );
+      final b64 = parseArkStreamEvent({
+        'type': 'image_generation.partial_succeeded',
+        'b64_json': 'AAAA',
+      });
       expect((b64 as ArkStreamImage).item.ref, 'AAAA');
       expect(b64.index, isNull);
     });

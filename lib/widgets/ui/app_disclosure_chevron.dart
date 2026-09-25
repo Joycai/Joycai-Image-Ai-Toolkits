@@ -9,12 +9,7 @@ import '../../core/design_tokens.dart';
 /// which reads as a flicker rather than as the row opening. One glyph turning
 /// says the same thing and says where the content went.
 class AppDisclosureChevron extends StatelessWidget {
-  const AppDisclosureChevron({
-    super.key,
-    required this.open,
-    required this.size,
-    this.color,
-  });
+  const AppDisclosureChevron({super.key, required this.open, required this.size, this.color});
 
   final bool open;
   final double size;

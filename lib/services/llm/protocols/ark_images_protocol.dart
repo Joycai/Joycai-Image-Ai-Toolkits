@@ -79,16 +79,24 @@ class ArkImagesProtocol implements ImageGenProtocol {
     LLMDebugLog? debugFile;
     try {
       debugFile = await _startDebugLog(target, req);
-      final request = buildJsonRequest('POST', req.url,
-          headers: target.headers(),
-          body: jsonEncode(req.payload),
-          options: options);
+      final request = buildJsonRequest(
+        'POST',
+        req.url,
+        headers: target.headers(),
+        body: jsonEncode(req.payload),
+        options: options,
+      );
       final response = await client.send(trackBodySent(request, options));
 
       if (response.statusCode != 200) {
         yield* _wholeBodyAsChunks(
-            await http.Response.fromStream(response), client, options, logger,
-            debugFile, req.refCount);
+          await http.Response.fromStream(response),
+          client,
+          options,
+          logger,
+          debugFile,
+          req.refCount,
+        );
         return;
       }
 
@@ -102,14 +110,11 @@ class ArkImagesProtocol implements ImageGenProtocol {
       // drawn and billed. Null until the first non-empty line decides.
       bool? isSse;
       final jsonLines = <String>[];
-      await for (final line in response.stream
-          .transform(utf8.decoder)
-          .transform(const LineSplitter())) {
+      await for (final line
+          in response.stream.transform(utf8.decoder).transform(const LineSplitter())) {
         if (isSse == null && line.trim().isNotEmpty) {
           final head = line.trimLeft();
-          isSse = head.startsWith('data:') ||
-              head.startsWith('event:') ||
-              head.startsWith(':');
+          isSse = head.startsWith('data:') || head.startsWith('event:') || head.startsWith(':');
           if (isSse) {
             await LLMDebugLogger.appendLine(debugFile, 'Status: 200 (stream)');
           }
@@ -140,29 +145,33 @@ class ArkImagesProtocol implements ImageGenProtocol {
 
         switch (parsed) {
           case ArkStreamImage(:final item, :final index):
-            final bytes = await resolveImageRef(item.ref, client, logger,
-                abortTrigger: abortTriggerOf(options));
+            final bytes = await resolveImageRef(
+              item.ref,
+              client,
+              logger,
+              abortTrigger: abortTriggerOf(options),
+            );
             if (bytes == null) {
               undownloadable++;
               logger?.call(
-                  'Ark: image ${index ?? delivered + undownloadable} arrived '
-                  'but could not be downloaded.',
-                  level: 'WARN');
+                'Ark: image ${index ?? delivered + undownloadable} arrived '
+                'but could not be downloaded.',
+                level: 'WARN',
+              );
               continue;
             }
             delivered++;
-            logger?.call('Ark stream: image $delivered received.',
-                level: 'DEBUG');
+            logger?.call('Ark stream: image $delivered received.', level: 'DEBUG');
             // With what the body carried: the closing chunk — and Ark's own
             // count, which outranks this one — may never arrive.
             yield LLMResponseChunk(
-                imagePart: bytes,
-                imageLayer: item.layer,
-                metadata: inputImageCountEntry(sentInputImages(req.refCount)));
+              imagePart: bytes,
+              imageLayer: item.layer,
+              metadata: inputImageCountEntry(sentInputImages(req.refCount)),
+            );
           case ArkStreamFailure(:final failure):
             failures.add(failure);
-            logger?.call('Ark: one image of the group failed — $failure',
-                level: 'WARN');
+            logger?.call('Ark: one image of the group failed — $failure', level: 'WARN');
           case ArkStreamCompleted(usage: final u):
             usage = u;
           case null:
@@ -172,29 +181,37 @@ class ArkImagesProtocol implements ImageGenProtocol {
 
       if (isSse != true) {
         yield* _wholeBodyAsChunks(
-            http.Response(jsonLines.join('\n'), 200,
-                headers: response.headers),
-            client, options, logger, debugFile, req.refCount);
+          http.Response(jsonLines.join('\n'), 200, headers: response.headers),
+          client,
+          options,
+          logger,
+          debugFile,
+          req.refCount,
+        );
         return;
       }
 
       if (delivered == 0) {
-        throw LLMApiException(undownloadable > 0
-            ? 'Ark Images API streamed $undownloadable image link(s), none '
-                'of which could be downloaded.'
-            : 'Ark Images API returned no image: '
-                '${failures.isNotEmpty ? failures.first : 'the stream ended without one'}');
+        throw LLMApiException(
+          undownloadable > 0
+              ? 'Ark Images API streamed $undownloadable image link(s), none '
+                    'of which could be downloaded.'
+              : 'Ark Images API returned no image: '
+                    '${failures.isNotEmpty ? failures.first : 'the stream ended without one'}',
+        );
       }
       logger?.call(
-          'Ark stream complete. Images: $delivered '
-          '(downloaded inline; upstream URLs expire in 24h)',
-          level: 'DEBUG');
+        'Ark stream complete. Images: $delivered '
+        '(downloaded inline; upstream URLs expire in 24h)',
+        level: 'DEBUG',
+      );
       yield LLMResponseChunk(
         metadata: arkResultMetadata(
-            delivered: delivered,
-            failed: failures.length,
-            usage: usage,
-            refCount: req.refCount),
+          delivered: delivered,
+          failed: failures.length,
+          usage: usage,
+          refCount: req.refCount,
+        ),
         isDone: true,
       );
     } finally {
@@ -218,11 +235,10 @@ class ArkImagesProtocol implements ImageGenProtocol {
     final inputs = inputImageCountEntry(result.metadata);
     for (final (i, image) in result.generatedImages.indexed) {
       yield LLMResponseChunk(
-          imagePart: image,
-          metadata: inputs,
-          imageLayer: i < result.imageLayers.length
-              ? result.imageLayers[i]
-              : null);
+        imagePart: image,
+        metadata: inputs,
+        imageLayer: i < result.imageLayers.length ? result.imageLayers[i] : null,
+      );
     }
     yield LLMResponseChunk(metadata: result.metadata, isDone: true);
   }
@@ -237,10 +253,7 @@ class ArkImagesProtocol implements ImageGenProtocol {
     required bool stream,
   }) async {
     final config = target.config;
-    final userMsg = history.lastWhere(
-      (m) => m.role == LLMRole.user,
-      orElse: () => history.last,
-    );
+    final userMsg = history.lastWhere((m) => m.role == LLMRole.user, orElse: () => history.last);
 
     final inputImages = capReferenceImages(
       userMsg.attachments,
@@ -271,35 +284,28 @@ class ArkImagesProtocol implements ImageGenProtocol {
     final mode = payload['layer_decomposition'] == true
         ? 'layers'
         : payload['background'] == 'transparent'
-            ? 'transparent'
-            : refs.isEmpty
-                ? 'text-to-image'
-                : '${refs.length} reference(s)';
+        ? 'transparent'
+        : refs.isEmpty
+        ? 'text-to-image'
+        : '${refs.length} reference(s)';
     logger?.call(
-        'Preparing Ark image request ($mode${stream ? ', streamed' : ''}) '
-        'to: ${url.host}',
-        level: 'DEBUG');
+      'Preparing Ark image request ($mode${stream ? ', streamed' : ''}) '
+      'to: ${url.host}',
+      level: 'DEBUG',
+    );
     return _ArkRequest(url, payload, refs.length, mode);
   }
 
   Future<LLMDebugLog?> _startDebugLog(LLMTarget target, _ArkRequest req) async {
     if (!LLMDebugLogger.enabled) return null;
-    return LLMDebugLogger.startLog(
-      target.config.modelId,
-      'Ark (Image ${req.mode})',
-      {
-        'url': redactUrl(req.url),
-        'headers': target.headers(),
-        'body': {
-          ...req.payload,
-          if (req.refCount > 0) 'image': '[${req.refCount} base64 image(s)]',
-        },
-      },
-    );
+    return LLMDebugLogger.startLog(target.config.modelId, 'Ark (Image ${req.mode})', {
+      'url': redactUrl(req.url),
+      'headers': target.headers(),
+      'body': {...req.payload, if (req.refCount > 0) 'image': '[${req.refCount} base64 image(s)]'},
+    });
   }
 
-  static Future<void> _logWholeBody(
-      LLMDebugLog? debugFile, http.Response response) async {
+  static Future<void> _logWholeBody(LLMDebugLog? debugFile, http.Response response) async {
     if (debugFile == null) return;
     await LLMDebugLogger.appendLine(debugFile, 'Status: ${response.statusCode}');
     await LLMDebugLogger.appendLine(debugFile, 'Body: ${response.body}');
@@ -320,8 +326,7 @@ class ArkImagesProtocol implements ImageGenProtocol {
     final result = parseArkImageResponse(data);
 
     for (final failure in result.failures) {
-      logger?.call('Ark: one image of the group failed — $failure',
-          level: 'WARN');
+      logger?.call('Ark: one image of the group failed — $failure', level: 'WARN');
     }
     if (result.images.isEmpty) {
       final why = result.failures.isNotEmpty
@@ -336,23 +341,29 @@ class ArkImagesProtocol implements ImageGenProtocol {
     final images = <Uint8List>[];
     final layers = <GeneratedImageLayer?>[];
     for (final item in result.images) {
-      final bytes = await resolveImageRef(item.ref, client, logger,
-          abortTrigger: abortTriggerOf(options));
+      final bytes = await resolveImageRef(
+        item.ref,
+        client,
+        logger,
+        abortTrigger: abortTriggerOf(options),
+      );
       if (bytes == null) continue;
       images.add(bytes);
       layers.add(item.layer);
     }
     if (images.isNotEmpty && images.length < result.images.length) {
       logger?.call(
-          'Ark Images API: only ${images.length} of ${result.images.length} '
-          'generated image(s) could be retrieved; the rest were billed but '
-          'are not saved.',
-          level: 'WARN');
+        'Ark Images API: only ${images.length} of ${result.images.length} '
+        'generated image(s) could be retrieved; the rest were billed but '
+        'are not saved.',
+        level: 'WARN',
+      );
     }
     if (images.isEmpty) {
       throw LLMApiException(
-          'Ark Images API returned ${result.images.length} image link(s), '
-          'none of which could be downloaded.');
+        'Ark Images API returned ${result.images.length} image link(s), '
+        'none of which could be downloaded.',
+      );
     }
 
     final named = [
@@ -361,29 +372,31 @@ class ArkImagesProtocol implements ImageGenProtocol {
     ];
     if (named.isNotEmpty) {
       logger?.call(
-          'Ark layer decomposition: base + ${named.length} layer(s) — '
-          '${named.join(', ')}',
-          level: 'INFO');
+        'Ark layer decomposition: base + ${named.length} layer(s) — '
+        '${named.join(', ')}',
+        level: 'INFO',
+      );
     }
     logger?.call(
-        'Ark parse complete. Images: ${images.length} '
-        '(downloaded inline; upstream URLs expire in 24h)',
-        level: 'DEBUG');
+      'Ark parse complete. Images: ${images.length} '
+      '(downloaded inline; upstream URLs expire in 24h)',
+      level: 'DEBUG',
+    );
 
     return LLMResponse(
       text: '',
       generatedImages: images,
       imageLayers: layers.any((l) => l != null) ? layers : const [],
       metadata: arkResultMetadata(
-          delivered: images.length,
-          failed: result.failures.length,
-          usage: result.usage,
-          refCount: refCount),
+        delivered: images.length,
+        failed: result.failures.length,
+        usage: result.usage,
+        refCount: refCount,
+      ),
     );
   }
 
-  static String _excerpt(String body) =>
-      body.length > 500 ? '${body.substring(0, 500)}…' : body;
+  static String _excerpt(String body) => body.length > 500 ? '${body.substring(0, 500)}…' : body;
 }
 
 /// One prepared request: where it goes, what it carries, and how the log

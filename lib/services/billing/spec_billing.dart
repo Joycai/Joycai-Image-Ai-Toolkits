@@ -45,7 +45,8 @@ SpecRateMatch matchSpecRate(List<SpecRate> rates, OutputSpec spec) {
     }
     if (rate.quality != null && rate.quality != spec.quality) continue;
     if (rate.seconds != null && rate.seconds != spec.seconds) continue;
-    final better = best == null ||
+    final better =
+        best == null ||
         rate.specificity > best.specificity ||
         (rate.specificity == best.specificity && exact && !bestExact);
     if (better) {
@@ -123,19 +124,19 @@ class SpecUsage {
   /// whether a row priced it, so the usage page can count the requests a rate
   /// table failed to cover.
   UsageSpecBilling toBilling() => UsageSpecBilling(
-        unit: unit,
-        units: units,
-        unitPrice: unitPrice,
-        snapshot: UsageSpecSnapshot(
-          size: spec.size,
-          quality: spec.quality,
-          seconds: spec.seconds,
-          matched: matched,
-        ),
-        inputImages: inputImages,
-        inputUnits: inputUnits,
-        inputUnitPrice: inputUnitPrice,
-      );
+    unit: unit,
+    units: units,
+    unitPrice: unitPrice,
+    snapshot: UsageSpecSnapshot(
+      size: spec.size,
+      quality: spec.quality,
+      seconds: spec.seconds,
+      matched: matched,
+    ),
+    inputImages: inputImages,
+    inputUnits: inputUnits,
+    inputUnitPrice: inputUnitPrice,
+  );
 
   /// Prices one request against a group's table. [imageCount] is what the
   /// response actually carried; seconds come from the spec (the request),
@@ -221,8 +222,7 @@ class SpecUsage {
   }) {
     final images = math.max(0, sent);
     final charges = unitPrice > 0;
-    final charged =
-        charges && delivered ? math.max(0, images - math.max(0, freeUnits)) : 0;
+    final charged = charges && delivered ? math.max(0, images - math.max(0, freeUnits)) : 0;
     return UsageSpecBilling(
       units: 0.0,
       unitPrice: 0.0,

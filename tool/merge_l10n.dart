@@ -11,7 +11,7 @@ void main() async {
     if (!await langDir.exists()) continue;
 
     final Map<String, dynamic> merged = {};
-    
+
     // Sort files to ensure stable output (common first is good practice)
     final files = await langDir.list().toList();
     files.sort((a, b) => a.path.compareTo(b.path));
@@ -24,7 +24,7 @@ void main() async {
     }
 
     final outputFile = File(p.join(l10nDir, 'app_$lang.arb'));
-    final encoder = const JsonEncoder.withIndent('  ');
+    const encoder = JsonEncoder.withIndent('  ');
     await outputFile.writeAsString(encoder.convert(merged));
     // ignore: avoid_print
     print('Generated ${outputFile.path}');

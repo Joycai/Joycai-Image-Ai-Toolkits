@@ -1,8 +1,7 @@
 import 'dart:typed_data';
 
 import 'llm_types.dart';
-import 'protocols/anthropic_wire.dart'
-    show anthropicPauseFinishReason, anthropicTurnIncompleteKey;
+import 'protocols/anthropic_wire.dart' show anthropicPauseFinishReason, anthropicTurnIncompleteKey;
 
 /// Continuing a turn the host stopped in the middle.
 ///
@@ -72,10 +71,7 @@ List<LLMMessage>? continuationFor(LLMResponse response, String modelId) {
         rawThinkingBlocks: response.rawThinkingBlocks,
         rawThinkingModelId: response.rawThinkingModelId,
       ),
-    LLMMessage(
-      role: LLMRole.user,
-      content: renderServerToolRuns(metadata['server_tool_runs']),
-    ),
+    LLMMessage(role: LLMRole.user, content: renderServerToolRuns(metadata['server_tool_runs'])),
   ];
 }
 
@@ -124,10 +120,7 @@ LLMResponse mergeTurnParts(List<LLMResponse> parts) {
   if (parts.length == 1) return parts.single;
   final last = parts.last;
 
-  final text = parts
-      .map((p) => p.text.trim())
-      .where((t) => t.isNotEmpty)
-      .join('\n\n');
+  final text = parts.map((p) => p.text.trim()).where((t) => t.isNotEmpty).join('\n\n');
   final reasoning = parts
       .map((p) => p.reasoningContent?.trim() ?? '')
       .where((t) => t.isNotEmpty)

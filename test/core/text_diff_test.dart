@@ -7,12 +7,15 @@ import 'package:joycai_image_ai_toolkits/core/text_diff.dart';
 
 void main() {
   String render(List<DiffHunk> hunks) => hunks
-      .map((h) => '@@ -${h.oldStart} +${h.newStart}\n'
-          '${h.lines.map((l) => '${switch (l.kind) {
-                DiffLineKind.added => '+',
-                DiffLineKind.removed => '-',
-                DiffLineKind.context => ' ',
-              }}${l.text}').join('\n')}')
+      .map(
+        (h) =>
+            '@@ -${h.oldStart} +${h.newStart}\n'
+            '${h.lines.map((l) => '${switch (l.kind) {
+              DiffLineKind.added => '+',
+              DiffLineKind.removed => '-',
+              DiffLineKind.context => ' ',
+            }}${l.text}').join('\n')}',
+      )
       .join('\n');
 
   test('identical text produces no hunks at all', () {

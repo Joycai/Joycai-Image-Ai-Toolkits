@@ -25,17 +25,19 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
 
-    await tester.pumpWidget(MaterialApp(
-      theme: buildAppTheme(accent: blue, brightness: brightness),
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      locale: const Locale('en'),
-      home: Scaffold(
-        body: SingleChildScrollView(
-          child: ThemeAccentPicker(selected: blue, onSelect: picked.add),
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildAppTheme(accent: blue, brightness: brightness),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: ThemeAccentPicker(selected: blue, onSelect: picked.add),
+          ),
         ),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
     return picked;
   }
@@ -60,7 +62,10 @@ void main() {
     // One tick on the whole grid, and it sits inside the Blue card.
     expect(find.byIcon(Icons.check), findsOneWidget);
     expect(
-      find.descendant(of: find.widgetWithText(ThemeAccentPreviewCard, 'Blue'), matching: find.byIcon(Icons.check)),
+      find.descendant(
+        of: find.widgetWithText(ThemeAccentPreviewCard, 'Blue'),
+        matching: find.byIcon(Icons.check),
+      ),
       findsOneWidget,
     );
   });
@@ -95,7 +100,11 @@ void main() {
     );
     final String text = tip.richMessage!.toPlainText();
     expect(text, startsWith('Blue'));
-    expect(text, contains('#3560D5'), reason: 'the rendered light primary — the spec\'s #4A72E8 at tone 44');
+    expect(
+      text,
+      contains('#3560D5'),
+      reason: 'the rendered light primary — the spec\'s #4A72E8 at tone 44',
+    );
     expect(text, contains('#5B8DFF'));
     expect(text, isNot(contains('#4A72E8')));
   });
@@ -119,8 +128,11 @@ void main() {
 
     expect(tops.toSet().length, 2, reason: 'two rows');
     expect(lefts.toSet().length, 4, reason: 'four columns — pinned, not whatever the width allows');
-    expect(lefts.reduce((a, b) => a > b ? a : b) + DualToneSwatch.hitSize, lessThanOrEqualTo(390),
-        reason: 'every dot is inside the viewport');
+    expect(
+      lefts.reduce((a, b) => a > b ? a : b) + DualToneSwatch.hitSize,
+      lessThanOrEqualTo(390),
+      reason: 'every dot is inside the viewport',
+    );
   });
 
   group('the preview matches the theme', _previewMatchesTheThemeTests);
@@ -144,19 +156,21 @@ void _previewMatchesTheThemeTests() {
       final Map<Brightness, ThemeData> themes = {
         for (final b in Brightness.values) b: buildAppTheme(accent: preset.value, brightness: b),
       };
-      await tester.pumpWidget(MaterialApp(
-        theme: themes[Brightness.dark],
-        home: Scaffold(
-          body: Center(
-            child: ThemeAccentPreviewCard(
-              accent: preset.value,
-              name: preset.key,
-              selected: false,
-              onTap: () {},
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: themes[Brightness.dark],
+          home: Scaffold(
+            body: Center(
+              child: ThemeAccentPreviewCard(
+                accent: preset.value,
+                name: preset.key,
+                selected: false,
+                onTap: () {},
+              ),
             ),
           ),
         ),
-      ));
+      );
       await tester.pumpAndSettle();
 
       // Split by side, not pooled: the left half is light, the right dark,
@@ -165,9 +179,10 @@ void _previewMatchesTheThemeTests() {
       final Rect card = tester.getRect(find.byType(ThemeAccentPreviewCard));
       final Set<Color> leftPainted = <Color>{};
       final Set<Color> rightPainted = <Color>{};
-      for (final Element e in find
-          .descendant(of: find.byType(ThemeAccentPreviewCard), matching: find.byType(Container))
-          .evaluate()) {
+      for (final Element e
+          in find
+              .descendant(of: find.byType(ThemeAccentPreviewCard), matching: find.byType(Container))
+              .evaluate()) {
         final Color? color = ((e.widget as Container).decoration as BoxDecoration?)?.color;
         if (color == null) continue;
         final RenderBox box = e.renderObject! as RenderBox;
@@ -180,10 +195,18 @@ void _previewMatchesTheThemeTests() {
         final Color fill = cta.backgroundColor!.resolve({})!;
         final Color label = cta.foregroundColor!.resolve({})!;
         final Set<Color> painted = brightness == Brightness.light ? leftPainted : rightPainted;
-        expect(painted, contains(fill),
-            reason: '${preset.key} ${brightness.name}: that half draws no button in the CTA fill $fill');
-        expect(painted, contains(label),
-            reason: '${preset.key} ${brightness.name}: that half draws no label in the CTA ink $label');
+        expect(
+          painted,
+          contains(fill),
+          reason:
+              '${preset.key} ${brightness.name}: that half draws no button in the CTA fill $fill',
+        );
+        expect(
+          painted,
+          contains(label),
+          reason:
+              '${preset.key} ${brightness.name}: that half draws no label in the CTA ink $label',
+        );
       }
     });
   }

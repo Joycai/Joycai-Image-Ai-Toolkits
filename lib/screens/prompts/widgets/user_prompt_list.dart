@@ -5,11 +5,11 @@ import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/prompt.dart';
 import '../../../services/db/database_service.dart';
-import '../../../widgets/ui/app_snackbar.dart';
 import '../../../widgets/drag/app_drag_lift.dart';
 import '../../../widgets/drag/app_reorder_gap.dart';
-import 'prompt_card.dart';
+import '../../../widgets/ui/app_snackbar.dart';
 import '../prompt_reorder.dart';
+import 'prompt_card.dart';
 import 'prompt_library_parts.dart';
 import 'prompt_selection_capsule.dart';
 
@@ -114,7 +114,12 @@ class _UserPromptListState extends State<UserPromptList> {
   /// Writes [nextIds], the whole stored order, showing [shown] in it at once.
   Future<void> _writeOrder(List<Prompt> shown, List<int> nextIds) async {
     final byId = {for (final p in shown) p.id!: p};
-    setState(() => _optimistic = [for (final i in nextIds) if (byId.containsKey(i)) byId[i]!]);
+    setState(
+      () => _optimistic = [
+        for (final i in nextIds)
+          if (byId.containsKey(i)) byId[i]!,
+      ],
+    );
     await _db.updatePromptOrder(nextIds);
     widget.onRefresh();
   }
@@ -126,16 +131,18 @@ class _UserPromptListState extends State<UserPromptList> {
   /// next to it, under a filter too — `00d` sends a filtered list's reordering
   /// here — trading places with it in the full order.
   Future<void> _moveStep(List<Prompt> shown, int id, {required bool down}) => _writeOrder(
-        shown,
-        moveIdPastVisibleNeighbour(_fullIds(shown), [for (final p in shown) p.id!], id, down: down),
-      );
+    shown,
+    moveIdPastVisibleNeighbour(_fullIds(shown), [for (final p in shown) p.id!], id, down: down),
+  );
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final phone = Responsive.isMobile(context);
     final pending = _optimistic;
-    final prompts = pending != null && _sameIdSet(pending, widget.prompts) ? pending : widget.prompts;
+    final prompts = pending != null && _sameIdSet(pending, widget.prompts)
+        ? pending
+        : widget.prompts;
 
     if (prompts.isEmpty) {
       return PromptLibraryEmptyState(
@@ -149,7 +156,8 @@ class _UserPromptListState extends State<UserPromptList> {
     final fullIds = (widget.allPrompts ?? prompts).map((p) => p.id).toList();
     final canDrag = !_filtered && !widget.isSelectionMode;
     final horizontal = phone ? 12.0 : 20.0;
-    final bottom = 12 +
+    final bottom =
+        12 +
         MediaQuery.paddingOf(context).bottom +
         (phone && widget.isSelectionMode ? PromptSelectionCapsule.height + 28 : 0);
 
@@ -159,7 +167,9 @@ class _UserPromptListState extends State<UserPromptList> {
       touch: phone,
       slotPadding: const EdgeInsets.only(bottom: _kCardGap),
       builder: (context, gap) {
-        final reorder = gap.onReorderItem((oldIndex, newIndex) => _reorder(prompts, oldIndex, newIndex));
+        final reorder = gap.onReorderItem(
+          (oldIndex, newIndex) => _reorder(prompts, oldIndex, newIndex),
+        );
         // A move from a card's menu or keys, confirmed and announced as a drop
         // at [target] would be.
         void moveTo(int index, int target, Future<void> Function() move) =>
@@ -213,13 +223,17 @@ class _UserPromptListState extends State<UserPromptList> {
                     onToggle: widget.isSelectionMode
                         ? () => widget.onToggleSelection(id)
                         : () => setState(() {
-                              if (isExpanded) {
-                                _expandedPromptIds.remove(id);
-                              } else {
-                                _expandedPromptIds.add(id);
-                              }
-                            }),
-                    dragHandle: PromptDragHandle(index: index, enabled: canDrag, onBlockedTap: _showBlocked),
+                            if (isExpanded) {
+                              _expandedPromptIds.remove(id);
+                            } else {
+                              _expandedPromptIds.add(id);
+                            }
+                          }),
+                    dragHandle: PromptDragHandle(
+                      index: index,
+                      enabled: canDrag,
+                      onBlockedTap: _showBlocked,
+                    ),
                     onMoveUp: (selecting || index == 0)
                         ? null
                         : () => moveTo(index, index - 1, () => _moveStep(prompts, id, down: false)),

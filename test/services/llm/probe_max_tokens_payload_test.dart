@@ -26,8 +26,12 @@ void main() {
         vendor: Vendors.byId(config.channelType),
         model: ModelDescriptor.of(config.modelId),
       );
-      return OpenAIChatProtocol().buildChatPayloadForTest(target, history,
-          options: options, isStreaming: false);
+      return OpenAIChatProtocol().buildChatPayloadForTest(
+        target,
+        history,
+        options: options,
+        isStreaming: false,
+      );
     }
 
     // The generic ① profile on a relay host keeps the old spelling; OpenAI's
@@ -41,7 +45,10 @@ void main() {
     });
 
     test('no cap asked for sends neither spelling', () {
-      for (final body in [payload(null), payload(const {'retryCount': 2})]) {
+      for (final body in [
+        payload(null),
+        payload(const {'retryCount': 2}),
+      ]) {
         expect(body.containsKey('max_tokens'), isFalse);
         expect(body.containsKey('max_completion_tokens'), isFalse);
       }
@@ -50,8 +57,7 @@ void main() {
 
   group('③ generateContent', () {
     Map<String, dynamic> generationConfig(Map<String, dynamic>? options) =>
-        (prepareGooglePayload(history, options, null)['generationConfig']
-                as Map)
+        (prepareGooglePayload(history, options, null)['generationConfig'] as Map)
             .cast<String, dynamic>();
 
     test('the probe cap reaches generationConfig.maxOutputTokens', () {
@@ -60,8 +66,10 @@ void main() {
 
     test('no cap asked for sends no maxOutputTokens', () {
       expect(generationConfig(null).containsKey('maxOutputTokens'), isFalse);
-      expect(generationConfig(const {'aspectRatio': '1:1'})
-          .containsKey('maxOutputTokens'), isFalse);
+      expect(
+        generationConfig(const {'aspectRatio': '1:1'}).containsKey('maxOutputTokens'),
+        isFalse,
+      );
     });
   });
 }

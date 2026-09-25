@@ -15,10 +15,10 @@ import '../../services/files/file_transfer_service.dart';
 import '../../services/files/folder_operations_service.dart';
 import '../../state/app_state.dart';
 import '../../state/file_staging_state.dart';
+import '../../widgets/files/transfer_dialog_parts.dart';
 import '../../widgets/ui/app_button.dart';
 import '../../widgets/ui/app_dialog.dart';
 import '../../widgets/ui/app_snackbar.dart';
-import '../../widgets/files/transfer_dialog_parts.dart';
 
 /// Brings every list that named a folder at [from] into step with its new
 /// address [to] — the browser's roots and active directories, the staging
@@ -95,20 +95,22 @@ Future<void> runFolderTransfer(
   void showProgress() {
     dialogShown = true;
     // Not awaited: the transfer owns its own lifetime and pops this itself.
-    unawaited(showDialog<void>(
-      context: host,
-      animationStyle: appDialogAnimation(host),
-      barrierDismissible: false,
-      builder: (_) => _FolderProgressDialog(
-        name: name,
-        source: source,
-        target: p.join(destination, name),
-        mode: mode,
-        crossVolume: crossVolume,
-        progress: progress,
-        onCancel: () => cancelled = true,
+    unawaited(
+      showDialog<void>(
+        context: host,
+        animationStyle: appDialogAnimation(host),
+        barrierDismissible: false,
+        builder: (_) => _FolderProgressDialog(
+          name: name,
+          source: source,
+          target: p.join(destination, name),
+          mode: mode,
+          crossVolume: crossVolume,
+          progress: progress,
+          onCancel: () => cancelled = true,
+        ),
       ),
-    ));
+    );
   }
 
   FolderTransferOutcome outcome;
@@ -155,15 +157,18 @@ Future<void> runFolderTransfer(
 
   appState.fileBrowserState.flash(outcome.targetPath);
   final target = p.basename(destination);
-  AppSnackBar.success(host, isMove ? l10n.folderMoved(name, target) : l10n.folderCopied(name, target));
+  AppSnackBar.success(
+    host,
+    isMove ? l10n.folderMoved(name, target) : l10n.folderCopied(name, target),
+  );
 }
 
 String _rejectionText(AppLocalizations l10n, FolderMoveRejection rejection) => switch (rejection) {
-      FolderMoveRejection.isRoot => l10n.rootCannotMove,
-      FolderMoveRejection.intoSelf || FolderMoveRejection.intoDescendant => l10n.moveFolderIntoSelf,
-      FolderMoveRejection.sameParent => l10n.moveFolderSameParent,
-      FolderMoveRejection.targetExists => l10n.moveFolderTargetExists,
-    };
+  FolderMoveRejection.isRoot => l10n.rootCannotMove,
+  FolderMoveRejection.intoSelf || FolderMoveRejection.intoDescendant => l10n.moveFolderIntoSelf,
+  FolderMoveRejection.sameParent => l10n.moveFolderSameParent,
+  FolderMoveRejection.targetExists => l10n.moveFolderTargetExists,
+};
 
 // ---------------------------------------------------------------- 1c dialogs
 
@@ -209,7 +214,9 @@ class _FolderProgressDialog extends StatelessWidget {
           final bytesTotal = value?.bytesTotal ?? 0;
           // By bytes, not by count: a folder of one video and a hundred
           // thumbnails would otherwise sit at 1% for most of the wait.
-          final fraction = bytesTotal == 0 ? (total == 0 ? 0.0 : done / total) : bytesDone / bytesTotal;
+          final fraction = bytesTotal == 0
+              ? (total == 0 ? 0.0 : done / total)
+              : bytesDone / bytesTotal;
 
           return AppDialog(
             titleWidget: TransferDialogHeading(
@@ -303,7 +310,9 @@ Future<void> _showCancelled(
     titleWidget: TransferDialogHeading(
       icon: Icons.cancel_outlined,
       tone: TransferTone.neutral,
-      title: mode == FolderTransferMode.move ? l10n.folderMoveCancelledTitle : l10n.folderCopyCancelledTitle,
+      title: mode == FolderTransferMode.move
+          ? l10n.folderMoveCancelledTitle
+          : l10n.folderCopyCancelledTitle,
       subtitle: l10n.folderTransferStoppedAt(outcome.filesDone, outcome.filesTotal),
       subtitleTooltip: l10n.pasteRoute(source, outcome.targetPath),
     ),
@@ -363,10 +372,7 @@ Future<void> _showCancelled(
           ),
         ),
         const Spacer(),
-        AppButton(
-          label: l10n.gotIt,
-          onPressed: () => Navigator.pop(context),
-        ),
+        AppButton(label: l10n.gotIt, onPressed: () => Navigator.pop(context)),
       ],
     ),
   );
@@ -378,7 +384,12 @@ class _StatusRow extends StatelessWidget {
   final String label;
   final int value;
 
-  const _StatusRow({required this.icon, required this.color, required this.label, required this.value});
+  const _StatusRow({
+    required this.icon,
+    required this.color,
+    required this.label,
+    required this.value,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -392,7 +403,12 @@ class _StatusRow extends StatelessWidget {
           Icon(icon, size: AppSize.iconMd, color: color),
           const SizedBox(width: AppSpace.s10),
           Expanded(
-            child: Text(label, style: textTheme.bodyMedium, maxLines: 1, overflow: TextOverflow.ellipsis),
+            child: Text(
+              label,
+              style: textTheme.bodyMedium,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
           const SizedBox(width: AppSpace.s10),
           Text(

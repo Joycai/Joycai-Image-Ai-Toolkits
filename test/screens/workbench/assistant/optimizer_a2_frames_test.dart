@@ -10,15 +10,16 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/models/prompt.dart';
-import 'package:joycai_image_ai_toolkits/services/assistant/knowledge_base_service.dart';
-import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
-import 'package:joycai_image_ai_toolkits/services/assistant/prompt_optimizer_agent.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/assistant/optimizer_config_panel.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/assistant/prompt_optimizer_view.dart';
+import 'package:joycai_image_ai_toolkits/services/assistant/knowledge_base_service.dart';
+import 'package:joycai_image_ai_toolkits/services/assistant/prompt_optimizer_agent.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/state/workbench_ui_state.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_button.dart';
 import 'package:provider/provider.dart';
+
 import '../../../support/private_data_dir.dart';
 import '../../../support/real_async.dart';
 
@@ -38,23 +39,35 @@ void main() {
         mode: AssistantMode.knowledgeBase,
         history: <LLMMessage>[
           LLMMessage(role: LLMRole.user, content: 'first'),
-          LLMMessage(role: LLMRole.assistant, content: '', toolCalls: <LLMToolCall>[
-            LLMToolCall(id: 'a', name: 'view_image', arguments: <String, dynamic>{'id': '1'}),
-            LLMToolCall(id: 'b', name: 'view_image', arguments: <String, dynamic>{'id': '2'}),
-          ]),
+          LLMMessage(
+            role: LLMRole.assistant,
+            content: '',
+            toolCalls: <LLMToolCall>[
+              LLMToolCall(id: 'a', name: 'view_image', arguments: <String, dynamic>{'id': '1'}),
+              LLMToolCall(id: 'b', name: 'view_image', arguments: <String, dynamic>{'id': '2'}),
+            ],
+          ),
           for (final id in <String>['a', 'b'])
             LLMMessage(role: LLMRole.tool, content: 'ok', toolCallId: id, toolName: 'view_image'),
           LLMMessage(role: LLMRole.assistant, content: 'done'),
           LLMMessage(role: LLMRole.user, content: 'second'),
-          LLMMessage(role: LLMRole.assistant, content: '', toolCalls: <LLMToolCall>[
-            LLMToolCall(
-              id: 'c',
-              name: 'read_knowledge_file',
-              arguments: <String, dynamic>{'path': 'a.md'},
-            ),
-          ]),
           LLMMessage(
-              role: LLMRole.tool, content: 'ok', toolCallId: 'c', toolName: 'read_knowledge_file'),
+            role: LLMRole.assistant,
+            content: '',
+            toolCalls: <LLMToolCall>[
+              LLMToolCall(
+                id: 'c',
+                name: 'read_knowledge_file',
+                arguments: <String, dynamic>{'path': 'a.md'},
+              ),
+            ],
+          ),
+          LLMMessage(
+            role: LLMRole.tool,
+            content: 'ok',
+            toolCallId: 'c',
+            toolName: 'read_knowledge_file',
+          ),
         ],
       );
 
@@ -67,9 +80,13 @@ void main() {
         mode: AssistantMode.knowledgeBase,
         history: <LLMMessage>[
           LLMMessage(role: LLMRole.user, content: 'first'),
-          LLMMessage(role: LLMRole.assistant, content: '', toolCalls: <LLMToolCall>[
-            LLMToolCall(id: 'a', name: 'view_image', arguments: <String, dynamic>{'id': '1'}),
-          ]),
+          LLMMessage(
+            role: LLMRole.assistant,
+            content: '',
+            toolCalls: <LLMToolCall>[
+              LLMToolCall(id: 'a', name: 'view_image', arguments: <String, dynamic>{'id': '1'}),
+            ],
+          ),
           LLMMessage(role: LLMRole.tool, content: 'ok', toolCallId: 'a', toolName: 'view_image'),
           LLMMessage(role: LLMRole.assistant, content: 'done'),
           LLMMessage(role: LLMRole.user, content: 'second'),
@@ -144,11 +161,7 @@ void main() {
   });
 
   group('the composer while a turn runs', () {
-    Future<void> pumpChat(
-      WidgetTester tester, {
-      required bool busy,
-      VoidCallback? onAbort,
-    }) async {
+    Future<void> pumpChat(WidgetTester tester, {required bool busy, VoidCallback? onAbort}) async {
       tester.view.physicalSize = const Size(1000, 800);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
@@ -156,26 +169,28 @@ void main() {
       final ui = WorkbenchUIState();
       ui.optimizerSession = PromptOptimizerSession(mode: AssistantMode.knowledgeBase);
 
-      await tester.pumpWidget(ChangeNotifierProvider<WorkbenchUIState>.value(
-        value: ui,
-        child: MaterialApp(
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          home: Scaffold(
-            body: PromptOptimizerChatView(
-              inputCtrl: TextEditingController(),
-              onSend: () {},
-              onRetry: () {},
-              onApplyPrompt: (_) {},
-              onApplyKbEdit: (_) {},
-              onRejectKbEdit: (_) {},
-              onAnswerAskUser: (_, _) {},
-              isBusy: busy,
-              onAbort: onAbort,
+      await tester.pumpWidget(
+        ChangeNotifierProvider<WorkbenchUIState>.value(
+          value: ui,
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(
+              body: PromptOptimizerChatView(
+                inputCtrl: TextEditingController(),
+                onSend: () {},
+                onRetry: () {},
+                onApplyPrompt: (_) {},
+                onApplyKbEdit: (_) {},
+                onRejectKbEdit: (_) {},
+                onAnswerAskUser: (_, _) {},
+                isBusy: busy,
+                onAbort: onAbort,
+              ),
             ),
           ),
         ),
-      ));
+      );
       await tester.pump();
     }
 
@@ -244,35 +259,37 @@ void main() {
         SystemPrompt(id: 2, title: 'Product', content: 'OTHER', type: 'refiner'),
       ];
 
-      await tester.pumpWidget(ChangeNotifierProvider<AppState>.value(
-        value: appState,
-        child: MaterialApp(
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          home: Scaffold(
-            // The width the assistant's right panel narrows to, which is where
-            // a picker, a counter row and two buttons have to fit.
-            body: SizedBox(
-              width: width,
-              child: OptimizerConfigPanel(
-                selectedModelDbId: null,
-                selectedSysPrompt: text,
-                sysPromptTemplateId: templateId,
-                mode: AssistantMode.systemPrompt,
-                kbStatus: KbStatus.notSet,
-                sysPrompts: templates,
-                presetOutputKind: kind,
-                onModelChanged: (_) {},
-                onSysPromptChanged: (_) {},
-                onPresetLoaded: onTemplateChanged ?? (_) {},
-                onSaveTemplate: (_, _) async {},
-                onModeChanged: (_) {},
-                onScaffoldKb: () async {},
+      await tester.pumpWidget(
+        ChangeNotifierProvider<AppState>.value(
+          value: appState,
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(
+              // The width the assistant's right panel narrows to, which is where
+              // a picker, a counter row and two buttons have to fit.
+              body: SizedBox(
+                width: width,
+                child: OptimizerConfigPanel(
+                  selectedModelDbId: null,
+                  selectedSysPrompt: text,
+                  sysPromptTemplateId: templateId,
+                  mode: AssistantMode.systemPrompt,
+                  kbStatus: KbStatus.notSet,
+                  sysPrompts: templates,
+                  presetOutputKind: kind,
+                  onModelChanged: (_) {},
+                  onSysPromptChanged: (_) {},
+                  onPresetLoaded: onTemplateChanged ?? (_) {},
+                  onSaveTemplate: (_, _) async {},
+                  onModeChanged: (_) {},
+                  onScaffoldKb: () async {},
+                ),
               ),
             ),
           ),
         ),
-      ));
+      );
       await tester.pump();
       if (expand) {
         final l10n = await en();
@@ -287,17 +304,28 @@ void main() {
     // `A3d 4b`: task first, text second.
     testWidgets('says what the preset hands back, for either kind (A3e 5c)', (tester) async {
       final l10n = await en();
-      await pumpPanel(tester, text: 'BASE', templateId: 1, expand: false, kind: PresetOutputKind.analysis);
+      await pumpPanel(
+        tester,
+        text: 'BASE',
+        templateId: 1,
+        expand: false,
+        kind: PresetOutputKind.analysis,
+      );
       expect(find.text(l10n.optPresetOutputAnalysisValue), findsOneWidget);
-      expect(tester.takeException(), isNull, reason: 'one line, ellipsised, at the narrowest panel');
+      expect(
+        tester.takeException(),
+        isNull,
+        reason: 'one line, ellipsised, at the narrowest panel',
+      );
 
       await pumpPanel(tester, text: 'BASE', templateId: 1, expand: false);
       expect(find.text(l10n.optPresetOutputPromptValue), findsOneWidget);
       expect(find.text(l10n.optPresetOutputAnalysisValue), findsNothing);
     });
 
-    testWidgets('the instructions start folded, and the unsaved badge outlives the fold',
-        (tester) async {
+    testWidgets('the instructions start folded, and the unsaved badge outlives the fold', (
+      tester,
+    ) async {
       await pumpPanel(tester, text: 'BASE and then some', templateId: 1, expand: false);
       final l10n = await en();
 
@@ -308,8 +336,9 @@ void main() {
       expect(find.text('BASE and then some'), findsOneWidget);
     });
 
-    testWidgets('no preset and no text is the built-in: named, shown, not editable',
-        (tester) async {
+    testWidgets('no preset and no text is the built-in: named, shown, not editable', (
+      tester,
+    ) async {
       await pumpPanel(tester, text: '', templateId: null, expand: false);
       final l10n = await en();
 

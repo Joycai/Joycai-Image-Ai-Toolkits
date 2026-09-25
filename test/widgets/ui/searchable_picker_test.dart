@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
+import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/model_tag_chip.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/searchable_picker.dart';
-import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
 
 /// Covers [SearchablePickerField]'s load-bearing behaviours, each of which
 /// went wrong in a way that only shows up under a state a single mount does not
@@ -24,15 +24,15 @@ void main() {
   /// [count] models, every third one tagged, ids distinct from names so the
   /// secondary line (and so the two-line row extent) is exercised.
   List<PickerOption<int>> options(int count) => [
-        for (var i = 0; i < count; i++)
-          PickerOption<int>(
-            value: i,
-            label: 'Model $i',
-            secondary: 'vendor/model-id-$i',
-            badge: i % 3 == 0 ? 'prod' : null,
-            badgeColor: const Color(0xFF2196F3),
-          ),
-      ];
+    for (var i = 0; i < count; i++)
+      PickerOption<int>(
+        value: i,
+        label: 'Model $i',
+        secondary: 'vendor/model-id-$i',
+        badge: i % 3 == 0 ? 'prod' : null,
+        badgeColor: const Color(0xFF2196F3),
+      ),
+  ];
 
   Widget host(
     List<PickerOption<int>> opts, {
@@ -59,9 +59,7 @@ void main() {
           child: SizedBox(
             width: width,
             child: SearchablePickerField<int>(
-              selected: selected == null
-                  ? null
-                  : opts.firstWhere((o) => o.value == selected),
+              selected: selected == null ? null : opts.firstWhere((o) => o.value == selected),
               optionsBuilder: () => opts,
               onChanged: onChanged,
               hint: 'Select a model',
@@ -136,12 +134,9 @@ void main() {
   group('accessibility text scales', () {
     for (final scale in <double>[1.0, 1.3, 1.5, 2.0, 2.25]) {
       testWidgets('rows do not overflow at ${scale}x', (tester) async {
-        await tester.pumpWidget(host(
-          options(40),
-          onChanged: (_) {},
-          selected: 5,
-          textScaler: TextScaler.linear(scale),
-        ));
+        await tester.pumpWidget(
+          host(options(40), onChanged: (_) {}, selected: 5, textScaler: TextScaler.linear(scale)),
+        );
         await openPicker(tester);
 
         // `itemExtent` hands each row a tight box, so a constant measured at
@@ -177,23 +172,20 @@ void main() {
     /// leaves it short, and a fixed-extent list squeezes the chip rather than
     /// growing the row.
     List<PickerOption<int>> channels(int count) => [
-          for (var i = 0; i < count; i++)
-            PickerOption<int>(
-              value: i,
-              label: 'Channel $i',
-              badge: 'prod',
-              badgeColor: const Color(0xFF2196F3),
-            ),
-        ];
+      for (var i = 0; i < count; i++)
+        PickerOption<int>(
+          value: i,
+          label: 'Channel $i',
+          badge: 'prod',
+          badgeColor: const Color(0xFF2196F3),
+        ),
+    ];
 
     for (final scale in <double>[1.0, 1.5, 2.0]) {
       testWidgets('the chip keeps its full height at ${scale}x', (tester) async {
-        await tester.pumpWidget(host(
-          channels(20),
-          onChanged: (_) {},
-          selected: 3,
-          textScaler: TextScaler.linear(scale),
-        ));
+        await tester.pumpWidget(
+          host(channels(20), onChanged: (_) {}, selected: 3, textScaler: TextScaler.linear(scale)),
+        );
         await openPicker(tester);
 
         final chips = find.descendant(
@@ -204,9 +196,11 @@ void main() {
 
         // Every chip in the list must render at the same height as the one in
         // the collapsed field above, which has no height pressure on it.
-        final free = tester.getSize(find
-            .descendant(of: find.byType(InputDecorator), matching: find.byType(ModelTagChip))
-            .first);
+        final free = tester.getSize(
+          find
+              .descendant(of: find.byType(InputDecorator), matching: find.byType(ModelTagChip))
+              .first,
+        );
         for (final element in chips.evaluate()) {
           expect((element.renderObject! as RenderBox).size.height, free.height);
         }

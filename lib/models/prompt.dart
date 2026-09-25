@@ -96,15 +96,15 @@ class SystemPrompt {
   /// Copied here rather than field by field at the call site: a field listed
   /// by hand there is a field the next one added to this class is lost from.
   SystemPrompt withContent(String content) => SystemPrompt(
-        id: id,
-        title: title,
-        content: content,
-        type: type,
-        outputKind: outputKind,
-        isMarkdown: isMarkdown,
-        sortOrder: sortOrder,
-        tags: tags,
-      );
+    id: id,
+    title: title,
+    content: content,
+    type: type,
+    outputKind: outputKind,
+    isMarkdown: isMarkdown,
+    sortOrder: sortOrder,
+    tags: tags,
+  );
 
   factory SystemPrompt.fromMap(Map<String, dynamic> map) {
     return SystemPrompt(
@@ -183,10 +183,7 @@ Map<String, dynamic> promptLibraryExport({
   return {
     'tags': tags.map((t) => t.toMap()).toList(),
     'user_prompts': userPrompts
-        .map((p) => {
-              ...p.toMap(),
-              'tags': p.tags.map((t) => t.toMap()).toList(),
-            })
+        .map((p) => {...p.toMap(), 'tags': p.tags.map((t) => t.toMap()).toList()})
         .toList(),
     'system_prompts': systemPrompts.map((p) => p.toExportMap()).toList(),
   };

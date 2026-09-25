@@ -14,31 +14,31 @@ import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 /// ignored, `result_format` left at its default answers with no `choices` at
 /// all, and an image sent to the text endpoint is dropped without a word.
 void main() {
-  LLMTarget target(String modelId,
-          {String channelType = Vendors.dashscopeNative,
-          String endpoint = 'https://dashscope.aliyuncs.com/api/v1',
-          ReasoningEffort? effort}) =>
-      LLMTarget(
-        config: LLMModelConfig(
-          modelId: modelId,
-          channelType: channelType,
-          endpoint: endpoint,
-          apiKey: 'k',
-          reasoningEffort: effort,
-        ),
-        vendor: Vendors.byId(channelType),
-        model: ModelDescriptor.of(modelId),
-      );
+  LLMTarget target(
+    String modelId, {
+    String channelType = Vendors.dashscopeNative,
+    String endpoint = 'https://dashscope.aliyuncs.com/api/v1',
+    ReasoningEffort? effort,
+  }) => LLMTarget(
+    config: LLMModelConfig(
+      modelId: modelId,
+      channelType: channelType,
+      endpoint: endpoint,
+      apiKey: 'k',
+      reasoningEffort: effort,
+    ),
+    vendor: Vendors.byId(channelType),
+    model: ModelDescriptor.of(modelId),
+  );
 
-  LLMMessage user(String text) =>
-      LLMMessage(role: LLMRole.user, content: text);
+  LLMMessage user(String text) => LLMMessage(role: LLMRole.user, content: text);
 
   group('endpoint selection', () {
     test('text models take the text-generation path', () {
       expect(
         dashscopeChatUrl('https://dashscope.aliyuncs.com/api/v1', false),
         'https://dashscope.aliyuncs.com/api/v1'
-            '/services/aigc/text-generation/generation',
+        '/services/aigc/text-generation/generation',
       );
     });
 
@@ -46,23 +46,20 @@ void main() {
       expect(
         dashscopeChatUrl('https://dashscope.aliyuncs.com/api/v1', true),
         'https://dashscope.aliyuncs.com/api/v1'
-            '/services/aigc/multimodal-generation/generation',
+        '/services/aigc/multimodal-generation/generation',
       );
     });
 
-    test('the base is derived, so a compatible-mode channel reaches it too',
-        () {
+    test('the base is derived, so a compatible-mode channel reaches it too', () {
       expect(
-        dashscopeChatUrl(
-            'https://dashscope.aliyuncs.com/compatible-mode/v1', false),
+        dashscopeChatUrl('https://dashscope.aliyuncs.com/compatible-mode/v1', false),
         'https://dashscope.aliyuncs.com/api/v1'
-            '/services/aigc/text-generation/generation',
+        '/services/aigc/text-generation/generation',
       );
     });
 
     test('VL / omni / audio ids declare themselves multimodal', () {
-      for (final id in ['qwen3-vl-plus', 'qwen-vl', 'qwen-omni-turbo',
-                        'qwen-audio-turbo']) {
+      for (final id in ['qwen3-vl-plus', 'qwen-vl', 'qwen-omni-turbo', 'qwen-audio-turbo']) {
         expect(dashscopeChatIsMultimodal(target(id)), isTrue, reason: id);
       }
       expect(dashscopeChatIsMultimodal(target('qwen-max')), isFalse);
@@ -90,8 +87,8 @@ void main() {
       expect(payload['model'], 'qwen-max');
       expect(payload['input'], {
         'messages': [
-          {'role': 'user', 'content': 'hello'}
-        ]
+          {'role': 'user', 'content': 'hello'},
+        ],
       });
       // Never omitted: the default ("text") answers with a bare string and
       // no choices, which reads as an empty reply rather than a wrong request.
@@ -99,12 +96,14 @@ void main() {
     });
 
     test('streaming asks for deltas; non-streaming does not', () {
-      Map params(bool streaming) => buildDashScopeChatPayload(
-            target('qwen-max'),
-            [user('hi')],
-            multimodal: false,
-            isStreaming: streaming,
-          )['parameters'] as Map<String, dynamic>;
+      Map params(bool streaming) =>
+          buildDashScopeChatPayload(
+                target('qwen-max'),
+                [user('hi')],
+                multimodal: false,
+                isStreaming: streaming,
+              )['parameters']
+              as Map<String, dynamic>;
 
       expect(params(true)['incremental_output'], isTrue);
       expect(params(false).containsKey('incremental_output'), isFalse);
@@ -119,7 +118,7 @@ void main() {
             name: 'read_file',
             description: 'read one file',
             parameters: {'type': 'object', 'properties': {}},
-          )
+          ),
         ],
         multimodal: false,
         isStreaming: false,
@@ -133,7 +132,7 @@ void main() {
             'description': 'read one file',
             'parameters': {'type': 'object', 'properties': {}},
           },
-        }
+        },
       ]);
       expect(params['tool_choice'], 'auto');
       // The conversation stays where it belongs — a `tools` key placed
@@ -150,18 +149,13 @@ void main() {
             content: '42',
             toolCallId: 'call_1',
             toolName: 'read_file',
-          )
+          ),
         ],
         multimodal: false,
         isStreaming: false,
       );
       expect((payload['input'] as Map)['messages'], [
-        {
-          'role': 'tool',
-          'content': '42',
-          'tool_call_id': 'call_1',
-          'name': 'read_file',
-        }
+        {'role': 'tool', 'content': '42', 'tool_call_id': 'call_1', 'name': 'read_file'},
       ]);
     });
 
@@ -175,54 +169,49 @@ void main() {
             reasoningContent: 'thought',
             reasoningFieldName: 'reasoning_content',
             toolCalls: [
-              LLMToolCall(
-                  id: 'call_1', name: 'read_file', arguments: {'path': 'a'})
+              LLMToolCall(id: 'call_1', name: 'read_file', arguments: {'path': 'a'}),
             ],
-          )
+          ),
         ],
         multimodal: false,
         isStreaming: false,
       );
-      final message = ((payload['input'] as Map)['messages'] as List).first
-          as Map<String, dynamic>;
+      final message = ((payload['input'] as Map)['messages'] as List).first as Map<String, dynamic>;
       expect(message['reasoning_content'], 'thought');
       expect(message['content'], '');
       expect(message['tool_calls'], [
         {
           'id': 'call_1',
           'type': 'function',
-          'function': {
-            'name': 'read_file',
-            'arguments': '{"path":"a"}',
-          },
-        }
+          'function': {'name': 'read_file', 'arguments': '{"path":"a"}'},
+        },
       ]);
     });
 
     test('the reasoning field goes back only to the model that wrote it', () {
       Map<String, dynamic> replayTo(String modelId, String? producer) =>
           ((buildDashScopeChatPayload(
-                    target(modelId),
-                    [
-                      LLMMessage(
-                        role: LLMRole.assistant,
-                        content: '',
-                        reasoningContent: 'thought',
-                        reasoningFieldName: 'reasoning_content',
-                        rawThinkingModelId: producer,
-                        toolCalls: [
-                          LLMToolCall(id: 'c1', name: 'f', arguments: {})
-                        ],
-                      )
-                    ],
-                    multimodal: false,
-                    isStreaming: false,
-                  )['input'] as Map)['messages'] as List)
-              .first as Map<String, dynamic>;
+                            target(modelId),
+                            [
+                              LLMMessage(
+                                role: LLMRole.assistant,
+                                content: '',
+                                reasoningContent: 'thought',
+                                reasoningFieldName: 'reasoning_content',
+                                rawThinkingModelId: producer,
+                                toolCalls: [LLMToolCall(id: 'c1', name: 'f', arguments: {})],
+                              ),
+                            ],
+                            multimodal: false,
+                            isStreaming: false,
+                          )['input']
+                          as Map)['messages']
+                      as List)
+                  .first
+              as Map<String, dynamic>;
 
       expect(replayTo('qwen3-max', 'qwen3-max')['reasoning_content'], 'thought');
-      expect(replayTo('qwen-plus', 'qwen3-max').containsKey('reasoning_content'),
-          isFalse);
+      expect(replayTo('qwen-plus', 'qwen3-max').containsKey('reasoning_content'), isFalse);
       // A history persisted before the producer was recorded keeps working.
       expect(replayTo('qwen-plus', null)['reasoning_content'], 'thought');
     });
@@ -235,8 +224,7 @@ void main() {
             role: LLMRole.user,
             content: 'describe',
             attachments: [
-              LLMAttachment.fromBytes(
-                  Uint8List.fromList([1, 2, 3]), 'image/png'),
+              LLMAttachment.fromBytes(Uint8List.fromList([1, 2, 3]), 'image/png'),
             ],
           ),
           user('and again'),
@@ -246,13 +234,15 @@ void main() {
       );
       final messages = (payload['input'] as Map)['messages'] as List;
       expect(messages.first['content'], [
-        {'image': 'data:image/png;base64,${base64Encode([1, 2, 3])}'},
+        {
+          'image': 'data:image/png;base64,${base64Encode([1, 2, 3])}',
+        },
         {'text': 'describe'},
       ]);
       // A text-only turn on this endpoint is still a list — a bare string is
       // rejected there.
       expect(messages.last['content'], [
-        {'text': 'and again'}
+        {'text': 'and again'},
       ]);
     });
 
@@ -269,7 +259,7 @@ void main() {
             content: '42',
             toolCallId: 'call_1',
             toolName: 'read_file',
-          )
+          ),
         ],
         multimodal: true,
         isStreaming: false,
@@ -278,11 +268,11 @@ void main() {
         {
           'role': 'tool',
           'content': [
-            {'text': '42'}
+            {'text': '42'},
           ],
           'tool_call_id': 'call_1',
           'name': 'read_file',
-        }
+        },
       ]);
     });
 
@@ -294,18 +284,16 @@ void main() {
             role: LLMRole.assistant,
             content: '',
             toolCalls: [
-              LLMToolCall(
-                  id: 'call_1', name: 'read_file', arguments: {'path': 'a'})
+              LLMToolCall(id: 'call_1', name: 'read_file', arguments: {'path': 'a'}),
             ],
-          )
+          ),
         ],
         multimodal: true,
         isStreaming: false,
       );
-      final message = ((payload['input'] as Map)['messages'] as List).first
-          as Map<String, dynamic>;
+      final message = ((payload['input'] as Map)['messages'] as List).first as Map<String, dynamic>;
       expect(message['content'], [
-        {'text': ''}
+        {'text': ''},
       ]);
     });
   });
@@ -313,12 +301,14 @@ void main() {
   group('thinking', () {
     test('nothing is sent until the user picks a level', () {
       expect(dashscopeThinkingRequest(null), isNull);
-      final params = buildDashScopeChatPayload(
-        target('qwen-max'),
-        [user('hi')],
-        multimodal: false,
-        isStreaming: false,
-      )['parameters'] as Map<String, dynamic>;
+      final params =
+          buildDashScopeChatPayload(
+                target('qwen-max'),
+                [user('hi')],
+                multimodal: false,
+                isStreaming: false,
+              )['parameters']
+              as Map<String, dynamic>;
       expect(params.containsKey('enable_thinking'), isFalse);
     });
 
@@ -335,12 +325,14 @@ void main() {
     });
 
     test('the level reaches the body', () {
-      final params = buildDashScopeChatPayload(
-        target('qwen-max', effort: ReasoningEffort.high),
-        [user('hi')],
-        multimodal: false,
-        isStreaming: false,
-      )['parameters'] as Map<String, dynamic>;
+      final params =
+          buildDashScopeChatPayload(
+                target('qwen-max', effort: ReasoningEffort.high),
+                [user('hi')],
+                multimodal: false,
+                isStreaming: false,
+              )['parameters']
+              as Map<String, dynamic>;
       expect(params['enable_thinking'], isTrue);
     });
   });
@@ -363,8 +355,7 @@ void main() {
       expect(channel.feed('Hello world!'), '!');
     });
 
-    test('the ambiguity closes as soon as the answer is longer than a frame',
-        () {
+    test('the ambiguity closes as soon as the answer is longer than a frame', () {
       // Two frames cannot be told apart when the accumulation *is* the
       // previous frame: "a" then "ab" reads as cumulative either way, and
       // costs one character if it was really a delta. That window is one
@@ -390,9 +381,13 @@ void main() {
       final channel = DashScopeStreamChannel();
       expect(channel.feed('a'), 'a');
       expect(channel.feed('b'), 'b');
-      expect(channel.feed('abc'), 'abc',
-          reason: 'the dialect was settled one frame earlier — this is a '
-              'delta, not a cumulative restatement');
+      expect(
+        channel.feed('abc'),
+        'abc',
+        reason:
+            'the dialect was settled one frame earlier — this is a '
+            'delta, not a cumulative restatement',
+      );
     });
 
     test('markdown rules survive a delta stream', () {
@@ -416,48 +411,49 @@ void main() {
   });
 
   group('response parsing', () {
-    Map<String, dynamic> reply(Map<String, dynamic> message,
-            {String finish = 'stop'}) =>
-        {
-          'output': {
-            'choices': [
-              {'finish_reason': finish, 'message': message}
-            ]
-          },
-          'usage': {
-            'input_tokens': 11,
-            'output_tokens': 22,
-            'total_tokens': 33
-          },
-          'request_id': 'req-1',
-        };
+    Map<String, dynamic> reply(Map<String, dynamic> message, {String finish = 'stop'}) => {
+      'output': {
+        'choices': [
+          {'finish_reason': finish, 'message': message},
+        ],
+      },
+      'usage': {'input_tokens': 11, 'output_tokens': 22, 'total_tokens': 33},
+      'request_id': 'req-1',
+    };
 
     test('reads the message out from under output', () {
-      final message = dashscopeChatMessage(reply({
-        'role': 'assistant',
-        'content': 'hi',
-        'reasoning_content': 'thought',
-      }));
+      final message = dashscopeChatMessage(
+        reply({'role': 'assistant', 'content': 'hi', 'reasoning_content': 'thought'}),
+      );
       expect(message?['content'], 'hi');
       expect(message?['reasoning_content'], 'thought');
     });
 
     test('a body with no choices answers null rather than an empty reply', () {
       expect(dashscopeChatMessage({'output': {}}), isNull);
-      expect(dashscopeChatMessage({'output': {'choices': []}}), isNull);
-      expect(dashscopeChatMessage({'output': {'text': 'bare'}}), isNull);
+      expect(
+        dashscopeChatMessage({
+          'output': {'choices': []},
+        }),
+        isNull,
+      );
+      expect(
+        dashscopeChatMessage({
+          'output': {'text': 'bare'},
+        }),
+        isNull,
+      );
     });
 
     test('"null" as a string means "still going", not a finish reason', () {
-      expect(dashscopeFinishReason(reply({'content': ''}, finish: 'null')),
-          isNull);
+      expect(dashscopeFinishReason(reply({'content': ''}, finish: 'null')), isNull);
       expect(dashscopeFinishReason(reply({'content': ''})), 'stop');
     });
 
     test('the text-shaped finish reason on output itself is read too', () {
       expect(
         dashscopeFinishReason({
-          'output': {'text': 'hi', 'finish_reason': 'length'}
+          'output': {'text': 'hi', 'finish_reason': 'length'},
         }),
         'length',
       );
@@ -485,12 +481,12 @@ void main() {
             // No id: two calls in one batch must not share an empty one.
             'function': {'name': 'read_file', 'arguments': '{"path":"b"}'},
           },
-        ]
+        ],
       }, null);
       expect(calls.map((c) => c.id), ['call_a', 'call_1']);
       expect(calls.map((c) => c.arguments), [
         {'path': 'a'},
-        {'path': 'b'}
+        {'path': 'b'},
       ]);
     });
 
@@ -498,9 +494,9 @@ void main() {
       final calls = dashscopeToolCalls({
         'tool_calls': [
           {
-            'function': {'name': 'x', 'arguments': 'not json'}
-          }
-        ]
+            'function': {'name': 'x', 'arguments': 'not json'},
+          },
+        ],
       }, null);
       expect(calls.single.arguments, isEmpty);
     });

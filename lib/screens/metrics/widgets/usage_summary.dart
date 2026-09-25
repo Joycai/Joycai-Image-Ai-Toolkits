@@ -89,10 +89,7 @@ class UsageSummary extends StatelessWidget {
               ),
             ),
             const SizedBox(width: _groupGap),
-            SizedBox(
-              width: _hitRateWidth,
-              child: _hitRateTile(context, l10n, showBar: true),
-            ),
+            SizedBox(width: _hitRateWidth, child: _hitRateTile(context, l10n, showBar: true)),
           ],
         ),
       ),
@@ -226,19 +223,19 @@ class UsageSummary extends StatelessWidget {
         '\$${stats.totalCost.toStringAsFixed(4)}',
         // Ink, never green: a cost is not a success, only a number.
         style: Theme.of(context).textTheme.headlineLarge?.mono.copyWith(
-              color: Theme.of(context).colorScheme.onSurface,
-              height: AppType.displayHeight,
-            ),
+          color: Theme.of(context).colorScheme.onSurface,
+          height: AppType.displayHeight,
+        ),
       ),
     );
   }
 
-  TextStyle? _metaStyle(BuildContext context) =>
-      Theme.of(context).textTheme.labelSmall?.mono.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          );
+  TextStyle? _metaStyle(BuildContext context) => Theme.of(
+    context,
+  ).textTheme.labelSmall?.mono.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant);
 
-  String _requestsText(AppLocalizations l10n) => '${_fmt(stats.totalRequestCount)} ${l10n.requests}';
+  String _requestsText(AppLocalizations l10n) =>
+      '${_fmt(stats.totalRequestCount)} ${l10n.requests}';
 
   /// The period and the request count on one line. Two texts rather than one
   /// joined string: each is a fact of its own, and gives way on its own.
@@ -251,7 +248,12 @@ class UsageSummary extends StatelessWidget {
         ),
         Text(' · ', style: style),
         Flexible(
-          child: Text(_requestsText(l10n), style: style, maxLines: 1, overflow: TextOverflow.ellipsis),
+          child: Text(
+            _requestsText(l10n),
+            style: style,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
       ],
     );
@@ -313,9 +315,9 @@ class UsageSummary extends StatelessWidget {
       label,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
+      style: Theme.of(
+        context,
+      ).textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
     );
   }
 
@@ -326,16 +328,21 @@ class UsageSummary extends StatelessWidget {
       child: Text(
         text,
         style: Theme.of(context).textTheme.headlineMedium?.mono.copyWith(
-              color: color ?? Theme.of(context).colorScheme.onSurface,
-              height: AppType.displayHeight,
-            ),
+          color: color ?? Theme.of(context).colorScheme.onSurface,
+          height: AppType.displayHeight,
+        ),
       ),
     );
   }
 
   /// A token count, keyed by its dot. On desktop a mini bar under it shows the
   /// count's share of all three.
-  Widget _tokenTile(BuildContext context, AppLocalizations l10n, UsageToken token, {bool showBar = false}) {
+  Widget _tokenTile(
+    BuildContext context,
+    AppLocalizations l10n,
+    UsageToken token, {
+    bool showBar = false,
+  }) {
     final color = token.colorOf(context);
     final all = stats.totalInput + stats.totalCache + stats.totalOutput;
     final value = _tokenValue(token);
@@ -395,10 +402,10 @@ class UsageSummary extends StatelessWidget {
   }
 
   int _tokenValue(UsageToken token) => switch (token) {
-        UsageToken.input => stats.totalInput,
-        UsageToken.cache => stats.totalCache,
-        UsageToken.output => stats.totalOutput,
-      };
+    UsageToken.input => stats.totalInput,
+    UsageToken.cache => stats.totalCache,
+    UsageToken.output => stats.totalOutput,
+  };
 
   /// An em dash, not "0.0%": with no prompt tokens in range the cache was
   /// never asked, which is not the same as never hit.

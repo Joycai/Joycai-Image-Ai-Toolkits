@@ -4,19 +4,22 @@ import '../../../core/app_semantic_colors.dart';
 import '../../../core/app_theme.dart';
 import '../../../core/constants.dart';
 import '../../../core/design_tokens.dart';
-import '../../../widgets/files/file_visuals.dart';
-import '../../../widgets/ui/focus_pane.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/browser_file.dart';
 import '../../../services/media/image_metadata_service.dart';
 import '../../../widgets/drag/app_drag_session.dart';
+import '../../../widgets/files/file_visuals.dart';
+import '../../../widgets/ui/focus_pane.dart';
 import 'browser_drag_chip.dart';
 
 /// The ground and glyph colour of a file type's icon plate (`B1a · 1b`):
 /// image info · video error · audio warning · text success · other track.
 ///
 /// These are the type's identity and do not follow the accent.
-({Color background, Color foreground}) browserFileTypeColors(BuildContext context, FileCategory category) {
+({Color background, Color foreground}) browserFileTypeColors(
+  BuildContext context,
+  FileCategory category,
+) {
   final scheme = Theme.of(context).colorScheme;
   final semantic = context.semantic;
   return switch (category) {
@@ -25,9 +28,9 @@ import 'browser_drag_chip.dart';
     FileCategory.audio => (background: semantic.warningContainer, foreground: semantic.warning),
     FileCategory.text => (background: semantic.successContainer, foreground: semantic.success),
     FileCategory.all || FileCategory.other => (
-        background: scheme.surfaceContainerHighest,
-        foreground: scheme.onSurfaceVariant,
-      ),
+      background: scheme.surfaceContainerHighest,
+      foreground: scheme.onSurfaceVariant,
+    ),
   };
 }
 
@@ -98,13 +101,12 @@ class _BrowserFileListRowState extends State<BrowserFileListRow> {
 
     final Color ground = selected
         ? Color.alphaBlend(
-            paneActive
-                ? scheme.accentTint
-                : scheme.onSurface.withValues(alpha: 0.07),
-            scheme.surfaceContainerLow)
+            paneActive ? scheme.accentTint : scheme.onSurface.withValues(alpha: 0.07),
+            scheme.surfaceContainerLow,
+          )
         : _hovered
-            ? Color.alphaBlend(scheme.onSurface.withValues(alpha: 0.04), scheme.surfaceContainerLow)
-            : scheme.surfaceContainerLow;
+        ? Color.alphaBlend(scheme.onSurface.withValues(alpha: 0.04), scheme.surfaceContainerLow)
+        : scheme.surfaceContainerLow;
 
     final row = GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -156,10 +158,7 @@ class _BrowserFileListRowState extends State<BrowserFileListRow> {
                   ],
                 ),
               ),
-              if (widget.isStaged) ...[
-                const SizedBox(width: 12),
-                const _StagedBadge(),
-              ],
+              if (widget.isStaged) ...[const SizedBox(width: 12), const _StagedBadge()],
               const SizedBox(width: 12),
               _SelectionCircle(selected: selected, active: paneActive),
             ],
@@ -237,9 +236,9 @@ class _ListRowSubtitleState extends State<_ListRowSubtitle> {
       softWrap: false,
       overflow: TextOverflow.ellipsis,
       style: Theme.of(context).textTheme.labelSmall!.mono.copyWith(
-            color: scheme.onSurfaceVariant,
-            fontWeight: FontWeight.w400,
-          ),
+        color: scheme.onSurfaceVariant,
+        fontWeight: FontWeight.w400,
+      ),
     );
   }
 }
@@ -268,9 +267,9 @@ class _StagedBadge extends StatelessWidget {
             l10n.stagedBadge,
             maxLines: 1,
             style: Theme.of(context).textTheme.labelSmall!.mono.copyWith(
-                  color: scheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w400,
-                ),
+              color: scheme.onSurfaceVariant,
+              fontWeight: FontWeight.w400,
+            ),
           ),
         ],
       ),
@@ -298,20 +297,18 @@ class _SelectionCircle extends StatelessWidget {
       height: 20,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: selected
-            ? (active ? scheme.primary : scheme.outline)
-            : Colors.transparent,
+        color: selected ? (active ? scheme.primary : scheme.outline) : Colors.transparent,
         border: Border.all(
-          color: selected
-              ? (active ? scheme.primary : scheme.outline)
-              : scheme.outlineVariant,
+          color: selected ? (active ? scheme.primary : scheme.outline) : scheme.outlineVariant,
           width: 1.5,
         ),
       ),
       child: selected
-          ? Icon(Icons.check,
+          ? Icon(
+              Icons.check,
               size: AppSize.iconSm,
-              color: active ? scheme.onPrimary : scheme.surface)
+              color: active ? scheme.onPrimary : scheme.surface,
+            )
           : null,
     );
   }

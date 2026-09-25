@@ -123,10 +123,10 @@ class _DownloaderLogPanelState extends State<DownloaderLogPanel> {
     final scheme = Theme.of(context).colorScheme;
     final semantic = context.semantic;
     final base = Theme.of(context).textTheme.labelSmall!.mono.copyWith(
-          fontWeight: FontWeight.w400,
-          height: 1.75,
-          color: scheme.onSurfaceVariant,
-        );
+      fontWeight: FontWeight.w400,
+      height: 1.75,
+      color: scheme.onSurfaceVariant,
+    );
 
     return Material(
       color: scheme.surface,
@@ -158,7 +158,8 @@ class _DownloaderLogPanelState extends State<DownloaderLogPanel> {
                       outlined: false,
                       height: AppSize.compact,
                       iconSize: AppSize.iconSm,
-                      onPressed: () => Clipboard.setData(ClipboardData(text: widget.logs.join('\n'))),
+                      onPressed: () =>
+                          Clipboard.setData(ClipboardData(text: widget.logs.join('\n'))),
                     ),
                     const SizedBox(width: AppSpace.s4),
                     DownloaderActionButton(
@@ -190,7 +191,10 @@ class _DownloaderLogPanelState extends State<DownloaderLogPanel> {
                   onNotification: _onScroll,
                   child: ListView.builder(
                     controller: _scroll,
-                    padding: const EdgeInsets.symmetric(horizontal: kDownloaderGutter, vertical: AppSpace.s10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: kDownloaderGutter,
+                      vertical: AppSpace.s10,
+                    ),
                     itemCount: widget.logs.length,
                     itemBuilder: (context, i) {
                       final line = widget.logs[i];
@@ -208,8 +212,14 @@ class _DownloaderLogPanelState extends State<DownloaderLogPanel> {
                           style: base,
                           children: [
                             if (time != null)
-                              TextSpan(text: '$time  ', style: TextStyle(color: scheme.outline)),
-                            TextSpan(text: message, style: TextStyle(color: ink)),
+                              TextSpan(
+                                text: '$time  ',
+                                style: TextStyle(color: scheme.outline),
+                              ),
+                            TextSpan(
+                              text: message,
+                              style: TextStyle(color: ink),
+                            ),
                           ],
                         ),
                       );

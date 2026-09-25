@@ -63,10 +63,6 @@ class TaskListState extends ChangeNotifier {
   }
 
   /// [queue] as the list should draw it under the current settings.
-  ArrangedTasks arrange(List<TaskItem> queue) => arrangeTasks(
-        queue,
-        filter: filter,
-        order: sortOrder,
-        pinActive: pinActive,
-      );
+  ArrangedTasks arrange(List<TaskItem> queue) =>
+      arrangeTasks(queue, filter: filter, order: sortOrder, pinActive: pinActive);
 }

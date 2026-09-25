@@ -7,8 +7,8 @@ import '../../../models/llm_channel.dart';
 import '../../../services/llm/model_routes.dart';
 import '../../../widgets/drag/app_drag_lift.dart';
 import '../../../widgets/models/app_route_badge.dart';
-import '../../../widgets/models/channel_avatar.dart';
 import '../../../widgets/models/route_labels.dart';
+import 'channel_avatar.dart';
 
 /// What a channel row shows at its right edge while hovered.
 enum ChannelHandle {
@@ -123,17 +123,17 @@ class _ChannelRowState extends State<ChannelRow> {
     final Color background = lifted
         ? scheme.surface
         : selected
-            ? scheme.accentTint
-            : _hovering
-                ? scheme.surfaceContainer
-                : (widget.filled ? scheme.surface : Colors.transparent);
+        ? scheme.accentTint
+        : _hovering
+        ? scheme.surfaceContainer
+        : (widget.filled ? scheme.surface : Colors.transparent);
     // `00d` 抬起: the edge turns from the hairline to the accent as the row
     // lifts.
     final BorderSide side = lifted
         ? BorderSide(color: Color.lerp(scheme.outlineVariant, scheme.primary, lift)!)
         : selected
-            ? BorderSide(color: scheme.primary)
-            : (widget.filled ? BorderSide(color: scheme.outlineVariant) : BorderSide.none);
+        ? BorderSide(color: scheme.primary)
+        : (widget.filled ? BorderSide(color: scheme.outlineVariant) : BorderSide.none);
     final radius = BorderRadius.circular(AppRadius.control);
 
     final bool showHandle = widget.handle != ChannelHandle.none && (_hovering || lifted);
@@ -178,7 +178,9 @@ class _ChannelRowState extends State<ChannelRow> {
                   onEnter: (_) => setState(() => _handleHovering = true),
                   onExit: (_) => setState(() => _handleHovering = false),
                   child: Tooltip(
-                    message: locked ? l10n.reorderDisabledWhileFiltered : l10n.channelReorderHandleTooltip,
+                    message: locked
+                        ? l10n.reorderDisabledWhileFiltered
+                        : l10n.channelReorderHandleTooltip,
                     child: Icon(
                       locked ? Icons.lock_outline : Icons.drag_indicator,
                       size: AppSize.iconMd,
@@ -246,7 +248,9 @@ class _ChannelRowState extends State<ChannelRow> {
           if (hovering != _hovering) setState(() => _hovering = hovering);
         },
         hoverColor: Colors.transparent,
-        mouseCursor: widget.handle == ChannelHandle.drag ? SystemMouseCursors.grab : SystemMouseCursors.click,
+        mouseCursor: widget.handle == ChannelHandle.drag
+            ? SystemMouseCursors.grab
+            : SystemMouseCursors.click,
         child: SizedBox(height: widget.dense ? 52 : 56, child: content),
       ),
     );
@@ -317,7 +321,9 @@ class FeeManagementEntry extends StatelessWidget {
     }
 
     return DecoratedBox(
-      decoration: BoxDecoration(border: Border(top: BorderSide(color: scheme.outlineVariant))),
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: scheme.outlineVariant)),
+      ),
       child: InkWell(onTap: onTap, child: row),
     );
   }

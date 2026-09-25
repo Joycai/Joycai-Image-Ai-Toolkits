@@ -4,22 +4,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/app_shortcuts.dart';
 import '../../../../core/constants.dart';
 import '../../../../core/file_utils.dart';
-import '../../../../core/app_shortcuts.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../models/app_image.dart';
 import '../../../../services/db/repositories/image_layer_repository.dart';
 import '../../../../state/app_state.dart';
 import '../../../../state/gallery_state.dart';
 import '../../../../state/workbench_ui_state.dart';
-import '../../../../widgets/ui/app_key_label.dart';
-import '../../../../widgets/ui/app_snackbar.dart';
 import '../../../../widgets/dialogs/file_rename_dialog.dart';
 import '../../../../widgets/glass/app_glass_menu.dart';
-import 'gallery_file_actions.dart';
+import '../../../../widgets/ui/app_key_label.dart';
+import '../../../../widgets/ui/app_snackbar.dart';
 import '../layers/layer_canvas_page.dart';
 import '../preview/media_preview_dialog.dart';
+import 'gallery_file_actions.dart';
 
 /// The width of the gallery card's menu (`A1 · 2a`: 「240 宽」).
 const double kImageCardMenuWidth = 240;
@@ -78,25 +78,28 @@ Future<void> showImageCardContextMenu(
   // Asked only of a file the layer index knows, so an ordinary picture's
   // menu opens without touching the database; null when nothing is left to
   // stack, and then the row is not offered (`A7 · 7b`).
-  final layerSet = !multi &&
-          ImageLayerRepository.layeredPaths.value.containsKey(imageFile.path)
+  final layerSet = !multi && ImageLayerRepository.layeredPaths.value.containsKey(imageFile.path)
       ? await ImageLayerRepository().setFor(imageFile.path)
       : null;
   if (!context.mounted) return;
 
-  final bool inTempWorkspace =
-      appState.galleryState.viewMode == GalleryViewMode.temp;
+  final bool inTempWorkspace = appState.galleryState.viewMode == GalleryViewMode.temp;
 
   final entries = <AppGlassMenuEntry>[
     if (isVideo)
       AppGlassMenuItem(
-          icon: Icons.visibility_outlined,
-          label: l10n.openInPreview,
-          trailing: _keys(AppShortcutIds.preview),
-          onSelected: openPreview)
+        icon: Icons.visibility_outlined,
+        label: l10n.openInPreview,
+        trailing: _keys(AppShortcutIds.preview),
+        onSelected: openPreview,
+      )
     else
       AppGlassMenuQuickBlock([
-        AppGlassMenuQuickCell(icon: Icons.visibility_outlined, label: l10n.preview, onSelected: openPreview),
+        AppGlassMenuQuickCell(
+          icon: Icons.visibility_outlined,
+          label: l10n.preview,
+          onSelected: openPreview,
+        ),
         AppGlassMenuQuickCell(
           icon: Icons.brush_outlined,
           label: l10n.menuQuickMask,
@@ -207,7 +210,7 @@ Future<void> showImageCardContextMenu(
             showFileRenameDialog(
               context: context,
               filePath: imageFile.path,
-              onSuccess: () => appState.galleryState.refreshImages(),
+              onSuccess: appState.galleryState.refreshImages,
             );
           },
         ),
@@ -219,15 +222,11 @@ Future<void> showImageCardContextMenu(
           // that carries a key's badge and then acts on one file while the
           // key acts on five is the drift this round exists to remove.
           onSelected: () {
-            Clipboard.setData(
-              ClipboardData(text: targets.map((i) => i.name).join('\n')),
-            );
+            Clipboard.setData(ClipboardData(text: targets.map((i) => i.name).join('\n')));
             if (!context.mounted) return;
             AppSnackBar.success(
               context,
-              multi
-                  ? l10n.copiedFilenames(targets.length)
-                  : l10n.copiedToClipboard(imageFile.name),
+              multi ? l10n.copiedFilenames(targets.length) : l10n.copiedToClipboard(imageFile.name),
             );
           },
         ),
@@ -278,8 +277,8 @@ Future<void> showImageCardContextMenu(
         icon: Icons.remove_circle_outline,
         label: l10n.removeFromWorkspace,
         trailing: _keys(AppShortcutIds.delete),
-        onSelected: () => appState.galleryState
-            .removeDroppedImages(targets.map((i) => i.path).toList()),
+        onSelected: () =>
+            appState.galleryState.removeDroppedImages(targets.map((i) => i.path).toList()),
       ),
     AppGlassMenuItem(
       icon: Icons.delete_outline,
@@ -304,7 +303,12 @@ Future<void> showImageCardContextMenu(
 
   workbenchUIState.setGalleryMenuOpen(true);
   try {
-    await showAppGlassMenu(context, position: position, entries: entries, width: kImageCardMenuWidth);
+    await showAppGlassMenu(
+      context,
+      position: position,
+      entries: entries,
+      width: kImageCardMenuWidth,
+    );
   } finally {
     workbenchUIState.setGalleryMenuOpen(false);
   }

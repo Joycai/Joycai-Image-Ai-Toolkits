@@ -23,13 +23,8 @@ class GeminiChatProtocol implements ChatProtocol {
     LLMLogger? logger,
   }) async {
     final config = target.config;
-    final url = target.decorateUrl(
-      Uri.parse(geminiGenerateUrl(config.endpoint, config.modelId)),
-    );
-    logger?.call(
-      'Preparing Google GenAI request to: ${url.host}',
-      level: 'DEBUG',
-    );
+    final url = target.decorateUrl(Uri.parse(geminiGenerateUrl(config.endpoint, config.modelId)));
+    logger?.call('Preparing Google GenAI request to: ${url.host}', level: 'DEBUG');
     final headers = target.headers();
     final payload = prepareGooglePayload(
       history,
@@ -53,11 +48,11 @@ class GeminiChatProtocol implements ChatProtocol {
     try {
       LLMDebugLog? debugFile;
       if (LLMDebugLogger.enabled) {
-        debugFile = await LLMDebugLogger.startLog(
-          config.modelId,
-          'GoogleGenAI (Standard)',
-          {'url': redactUrl(url), 'headers': headers, 'body': payload},
-        );
+        debugFile = await LLMDebugLogger.startLog(config.modelId, 'GoogleGenAI (Standard)', {
+          'url': redactUrl(url),
+          'headers': headers,
+          'body': payload,
+        });
       }
 
       // Abortable: LLMService cancels or times out a non-streaming request
@@ -71,10 +66,7 @@ class GeminiChatProtocol implements ChatProtocol {
       );
 
       if (debugFile != null) {
-        await LLMDebugLogger.appendLine(
-          debugFile,
-          'Status: ${response.statusCode}',
-        );
+        await LLMDebugLogger.appendLine(debugFile, 'Status: ${response.statusCode}');
         await LLMDebugLogger.appendLine(debugFile, 'Body: ${response.body}');
         await LLMDebugLogger.finish(debugFile);
       }
@@ -123,10 +115,8 @@ class GeminiChatProtocol implements ChatProtocol {
 
       final emptyEnd = geminiEmptyEndFailure(
         metadata,
-        sawOutput: text.isNotEmpty ||
-            reasoning.isNotEmpty ||
-            images.isNotEmpty ||
-            toolCalls.isNotEmpty,
+        sawOutput:
+            text.isNotEmpty || reasoning.isNotEmpty || images.isNotEmpty || toolCalls.isNotEmpty,
       );
       if (emptyEnd != null) throw emptyEnd;
 
@@ -144,8 +134,7 @@ class GeminiChatProtocol implements ChatProtocol {
         rawModelParts: rawParts,
         // The producer of the raw parts and the calls' thought signatures,
         // which are replayed only to the same model (prepareGooglePayload).
-        rawThinkingModelId: rawParts != null ||
-                toolCalls.any((c) => c.thoughtSignature != null)
+        rawThinkingModelId: rawParts != null || toolCalls.any((c) => c.thoughtSignature != null)
             ? config.modelId
             : null,
         toolCalls: toolCalls,
@@ -178,9 +167,7 @@ class GeminiChatProtocol implements ChatProtocol {
   }) async* {
     final config = target.config;
     final url = target.decorateUrl(
-      Uri.parse(
-        '${config.endpoint}/models/${config.modelId}:streamGenerateContent?alt=sse',
-      ),
+      Uri.parse('${config.endpoint}/models/${config.modelId}:streamGenerateContent?alt=sse'),
     );
     logger?.call('Starting Google GenAI stream: ${url.host}', level: 'DEBUG');
     final headers = target.headers();
@@ -201,17 +188,22 @@ class GeminiChatProtocol implements ChatProtocol {
       level: 'DEBUG',
     );
 
-    final request = buildJsonRequest('POST', url,
-        headers: headers, body: jsonEncode(payload), options: options);
+    final request = buildJsonRequest(
+      'POST',
+      url,
+      headers: headers,
+      body: jsonEncode(payload),
+      options: options,
+    );
 
     final client = config.createClient();
     LLMDebugLog? debugFile;
     if (LLMDebugLogger.enabled) {
-      debugFile = await LLMDebugLogger.startLog(
-        config.modelId,
-        'GoogleGenAI (Stream)',
-        {'url': redactUrl(url), 'headers': headers, 'body': payload},
-      );
+      debugFile = await LLMDebugLogger.startLog(config.modelId, 'GoogleGenAI (Stream)', {
+        'url': redactUrl(url),
+        'headers': headers,
+        'body': payload,
+      });
     }
 
     final http.StreamedResponse response;
@@ -225,25 +217,23 @@ class GeminiChatProtocol implements ChatProtocol {
     if (response.statusCode != 200) {
       final body = await response.stream.bytesToString();
       if (debugFile != null) {
-        await LLMDebugLogger.appendLine(
-          debugFile,
-          'Error Status: ${response.statusCode}',
-        );
+        await LLMDebugLogger.appendLine(debugFile, 'Error Status: ${response.statusCode}');
         await LLMDebugLogger.appendLine(debugFile, 'Error Body: $body');
         await LLMDebugLogger.finish(debugFile);
       }
       client.close();
-      logger?.call(
-        'Stream request failed with status: ${response.statusCode}',
-        level: 'ERROR',
-      );
+      logger?.call('Stream request failed with status: ${response.statusCode}', level: 'ERROR');
       // The shared decoder owns the message shape (provider error text when
       // the body is JSON, excerpt otherwise) and always throws on non-2xx.
       decodeJsonBody(
         // The request rides along so the message names the URL it failed on.
         // Headers too, so a 429's Retry-After reaches the retry loop.
-        http.Response(body, response.statusCode,
-            request: response.request, headers: response.headers),
+        http.Response(
+          body,
+          response.statusCode,
+          request: response.request,
+          headers: response.headers,
+        ),
         apiName: 'Google GenAI stream',
       );
       throw LLMApiException(
@@ -252,10 +242,7 @@ class GeminiChatProtocol implements ChatProtocol {
       );
     }
 
-    logger?.call(
-      'Stream connection established, waiting for chunks...',
-      level: 'DEBUG',
-    );
+    logger?.call('Stream connection established, waiting for chunks...', level: 'DEBUG');
 
     // Whether a single protocol-shaped chunk arrived — see the guard after
     // the loop.
@@ -272,15 +259,10 @@ class GeminiChatProtocol implements ChatProtocol {
 
     try {
       if (debugFile != null) {
-        await LLMDebugLogger.appendLine(
-          debugFile,
-          'Status: ${response.statusCode}',
-        );
+        await LLMDebugLogger.appendLine(debugFile, 'Status: ${response.statusCode}');
       }
       await for (final line
-          in response.stream
-              .transform(utf8.decoder)
-              .transform(const LineSplitter())) {
+          in response.stream.transform(utf8.decoder).transform(const LineSplitter())) {
         if (line.isEmpty) continue;
 
         if (debugFile != null) {
@@ -407,17 +389,20 @@ class GeminiDiscoveryProtocol implements DiscoveryProtocol {
       final rawModels = data['models'];
       final List<dynamic> modelsJson = rawModels is List ? rawModels : const [];
 
-      return modelsJson.whereType<Map>().map((m) {
-        final id =
-            m['name']?.toString().replaceFirst('models/', '').trim() ?? '';
-        if (id.isEmpty) return null;
-        return DiscoveredModel(
-          modelId: id,
-          displayName: m['displayName']?.toString() ?? id,
-          description: m['description']?.toString() ?? '',
-          rawData: m.cast<String, dynamic>(),
-        );
-      }).whereType<DiscoveredModel>().toList();
+      return modelsJson
+          .whereType<Map>()
+          .map((m) {
+            final id = m['name']?.toString().replaceFirst('models/', '').trim() ?? '';
+            if (id.isEmpty) return null;
+            return DiscoveredModel(
+              modelId: id,
+              displayName: m['displayName']?.toString() ?? id,
+              description: m['description']?.toString() ?? '',
+              rawData: m.cast<String, dynamic>(),
+            );
+          })
+          .whereType<DiscoveredModel>()
+          .toList();
     } finally {
       client.close();
     }
@@ -426,5 +411,4 @@ class GeminiDiscoveryProtocol implements DiscoveryProtocol {
 
 /// The non-streaming generateContent address for [modelId] at base [base] —
 /// shared with the channel editor's address preview.
-String geminiGenerateUrl(String base, String modelId) =>
-    '$base/models/$modelId:generateContent';
+String geminiGenerateUrl(String base, String modelId) => '$base/models/$modelId:generateContent';

@@ -8,9 +8,9 @@ import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/tasks/task_queue_service.dart';
 import '../../state/app_state.dart';
-import 'app_window_frame.dart';
 import '../glass/app_glass.dart';
 import 'app_destinations.dart';
+import 'app_window_frame.dart';
 
 /// The phone's floating dock (`01 · 1g`).
 ///
@@ -21,20 +21,26 @@ import 'app_destinations.dart';
 class PhoneDock extends StatelessWidget {
   const PhoneDock({super.key});
 
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final current = AppDestination.values[
-        context.select<AppState, int>((s) => s.activeScreenIndex)];
-    final queueCount = context.select<TaskQueueService, int>((q) => q.queue
-        .where((t) => t.status == TaskStatus.pending || t.status == TaskStatus.processing)
-        .length);
+    final current =
+        AppDestination.values[context.select<AppState, int>((s) => s.activeScreenIndex)];
+    final queueCount = context.select<TaskQueueService, int>(
+      (q) => q.queue
+          .where((t) => t.status == TaskStatus.pending || t.status == TaskStatus.processing)
+          .length,
+    );
     final primary = AppDestination.dockPrimary.where(AppDestination.isAvailable).toList();
     final bottom = MediaQuery.viewPaddingOf(context).bottom;
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(AppDock.sideInset, 0, AppDock.sideInset, AppDock.bottomInset + bottom),
+      padding: EdgeInsets.fromLTRB(
+        AppDock.sideInset,
+        0,
+        AppDock.sideInset,
+        AppDock.bottomInset + bottom,
+      ),
       child: SizedBox(
         height: AppDock.height,
         child: AppGlass(
@@ -148,14 +154,14 @@ class _DockCell extends StatelessWidget {
                     widthFactor: 1,
                     heightFactor: 1,
                     child: Text(
-                    '$badge',
-                    style: textTheme.labelSmall!.mono.copyWith(
-                      color: scheme.onPrimary,
-                      fontWeight: FontWeight.w600,
-                      height: 1,
-                      letterSpacing: 0,
+                      '$badge',
+                      style: textTheme.labelSmall!.mono.copyWith(
+                        color: scheme.onPrimary,
+                        fontWeight: FontWeight.w600,
+                        height: 1,
+                        letterSpacing: 0,
+                      ),
                     ),
-                  ),
                   ),
                 ),
               ),
@@ -169,11 +175,7 @@ class _DockCell extends StatelessWidget {
       button: true,
       selected: selected,
       label: label,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: cell,
-      ),
+      child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: onTap, child: cell),
     );
   }
 }
@@ -201,8 +203,8 @@ class _MoreSheet extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final bottom = MediaQuery.viewPaddingOf(context).bottom;
-    final current = AppDestination.values[
-        context.select<AppState, int>((s) => s.activeScreenIndex)];
+    final current =
+        AppDestination.values[context.select<AppState, int>((s) => s.activeScreenIndex)];
     final rest = AppDestination.available
         .where((d) => !AppDestination.dockPrimary.contains(d))
         .toList();
@@ -214,70 +216,87 @@ class _MoreSheet extends StatelessWidget {
       edges: GlassEdges.top,
       shadow: false,
       borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
-      child: Builder(builder: (context) {
-        final glassInk = GlassInk.maybeOf(context);
-        final ink2 = glassInk?.ink2 ?? scheme.onSurfaceVariant;
-        final edge = glassInk?.edge ?? scheme.outlineVariant;
-        return Padding(
-          padding: EdgeInsets.fromLTRB(AppSpace.s16, 8, AppSpace.s16, 34 + bottom),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Center(
-                child: Container(
-                  width: 36,
-                  height: 5,
-                  decoration: BoxDecoration(
-                    color: ink2,
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
+      child: Builder(
+        builder: (context) {
+          final glassInk = GlassInk.maybeOf(context);
+          final ink2 = glassInk?.ink2 ?? scheme.onSurfaceVariant;
+          final edge = glassInk?.edge ?? scheme.outlineVariant;
+          return Padding(
+            padding: EdgeInsets.fromLTRB(AppSpace.s16, 8, AppSpace.s16, 34 + bottom),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: ink2,
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(4, 6, 4, 14),
-                child: Row(
-                  children: [
-                    const AppMark(size: 40),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(title, style: textTheme.titleMedium!.metricsOnly.copyWith(fontWeight: FontWeight.w600)),
-                          if (version != null)
-                            Text('v$version', style: textTheme.bodySmall!.mono.copyWith(color: ink2)),
-                        ],
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(4, 6, 4, 14),
+                  child: Row(
+                    children: [
+                      const AppMark(size: 40),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              title,
+                              style: textTheme.titleMedium!.metricsOnly.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            if (version != null)
+                              Text(
+                                'v$version',
+                                style: textTheme.bodySmall!.mono.copyWith(color: ink2),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                for (final d in rest)
+                  _MoreRow(
+                    icon: current == d ? d.selectedIcon : d.icon,
+                    label: d.label(l10n),
+                    selected: current == d,
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      context.read<AppState>().navigateToScreen(d.index);
+                    },
+                  ),
+                if (isPhoneOs) ...[
+                  Container(
+                    height: 1,
+                    margin: const EdgeInsets.symmetric(vertical: 6),
+                    color: edge,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Text(
+                      l10n.moreSheetDesktopOnlyNote,
+                      style: textTheme.bodySmall!.metricsOnly.copyWith(
+                        color: ink2,
+                        height: AppType.proseHeight,
                       ),
                     ),
-                  ],
-                ),
-              ),
-              for (final d in rest)
-                _MoreRow(
-                  icon: current == d ? d.selectedIcon : d.icon,
-                  label: d.label(l10n),
-                  selected: current == d,
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    context.read<AppState>().navigateToScreen(d.index);
-                  },
-                ),
-              if (isPhoneOs) ...[
-                Container(height: 1, margin: const EdgeInsets.symmetric(vertical: 6), color: edge),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Text(
-                    l10n.moreSheetDesktopOnlyNote,
-                    style: textTheme.bodySmall!.metricsOnly.copyWith(color: ink2, height: AppType.proseHeight),
                   ),
-                ),
+                ],
               ],
-            ],
-          ),
-        );
-      }),
+            ),
+          );
+        },
+      ),
     );
   }
 }
@@ -319,8 +338,8 @@ class _MoreRow extends StatelessWidget {
               child: Text(
                 label,
                 style: Theme.of(context).textTheme.bodyLarge!.metricsOnly.copyWith(
-                      color: selected ? scheme.onAccentTint : ink,
-                    ),
+                  color: selected ? scheme.onAccentTint : ink,
+                ),
               ),
             ),
             Icon(Icons.chevron_right, size: AppSize.iconMd, color: ink2),

@@ -55,8 +55,7 @@ abstract class MergeStore {
 class ChannelMergeExecutor {
   final MergeStore store;
 
-  ChannelMergeExecutor([MergeStore? store])
-    : store = store ?? DatabaseMergeStore();
+  ChannelMergeExecutor([MergeStore? store]) : store = store ?? DatabaseMergeStore();
 
   Future<void> run(MergePlan plan) async {
     await store.write(plan);
@@ -67,13 +66,11 @@ class ChannelMergeExecutor {
   }
 
   /// References [plan] will rewrite, for the preview.
-  Future<MergeReferences> referenceCount(MergePlan plan) =>
-      store.countReferences(plan.idMap.keys);
+  Future<MergeReferences> referenceCount(MergePlan plan) => store.countReferences(plan.idMap.keys);
 }
 
 class DatabaseMergeStore implements MergeStore {
-  DatabaseMergeStore({DatabaseService? database})
-    : _db = database ?? DatabaseService();
+  DatabaseMergeStore({DatabaseService? database}) : _db = database ?? DatabaseService();
 
   /// Settings that hold a model row id, as a stringified int.
   static const List<String> selectionKeys = [
@@ -84,8 +81,7 @@ class DatabaseMergeStore implements MergeStore {
 
   final DatabaseService _db;
 
-  late final AssistantSessionRepository _sessions =
-      AssistantSessionRepository(db: _db);
+  late final AssistantSessionRepository _sessions = AssistantSessionRepository(db: _db);
 
   @override
   Future<void> write(MergePlan plan) => ModelRepository(db: _db).mergeChannels(
@@ -104,8 +100,7 @@ class DatabaseMergeStore implements MergeStore {
   }
 
   @override
-  Future<void> remapHistory(Map<int, int> idMap) =>
-      UsageRepository(db: _db).remapModels(idMap);
+  Future<void> remapHistory(Map<int, int> idMap) => UsageRepository(db: _db).remapModels(idMap);
 
   @override
   Future<void> remapConversations(Map<int, int> idMap) async {

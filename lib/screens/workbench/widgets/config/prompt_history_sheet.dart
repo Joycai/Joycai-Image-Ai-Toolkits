@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../l10n/app_localizations.dart';
-import '../../models/prompt_history_entry.dart';
-import '../../state/app_state.dart';
-import '../ui/app_button.dart';
-import '../ui/app_dialog.dart';
-import '../ui/app_side_panel.dart';
-import '../ui/scroll_edge_fade.dart';
+import '../../../../l10n/app_localizations.dart';
+import '../../../../models/prompt_history_entry.dart';
+import '../../../../state/app_state.dart';
+import '../../../../widgets/ui/app_button.dart';
+import '../../../../widgets/ui/app_dialog.dart';
+import '../../../../widgets/ui/app_side_panel.dart';
+import '../../../../widgets/ui/scroll_edge_fade.dart';
 
 /// Prompt-header action that opens the recent-prompt picker for [type].
 ///
@@ -37,12 +37,11 @@ class PromptHistoryButton extends StatelessWidget {
       onPressed: entries.isEmpty
           ? null
           : () => PromptHistorySheet.show(
-                context: context,
-                entries: entries,
-                onApply: onApply,
-                onClear: () =>
-                    Provider.of<AppState>(context, listen: false).clearPromptHistory(type),
-              ),
+              context: context,
+              entries: entries,
+              onApply: onApply,
+              onClear: () => Provider.of<AppState>(context, listen: false).clearPromptHistory(type),
+            ),
       icon: const Icon(Icons.history, size: 18),
       tooltip: l10n.promptHistory,
       visualDensity: VisualDensity.compact,
@@ -79,11 +78,8 @@ class PromptHistorySheet extends StatefulWidget {
   }) async {
     await AppSidePanel.show<void>(
       context,
-      builder: (context) => PromptHistorySheet(
-        entries: entries,
-        onApply: onApply,
-        onClear: onClear,
-      ),
+      builder: (context) =>
+          PromptHistorySheet(entries: entries, onApply: onApply, onClear: onClear),
     );
   }
 
@@ -104,9 +100,7 @@ class _PromptHistorySheetState extends State<PromptHistorySheet> {
         _buildHeader(l10n, colorScheme),
         // A fade, not a divider: the boundary below is a list and the space
         // it scrolls through, and the 1px rule sliced the top card square.
-        Expanded(
-          child: ScrollEdgeFade(child: _buildList(l10n, colorScheme)),
-        ),
+        Expanded(child: ScrollEdgeFade(child: _buildList(l10n, colorScheme))),
       ],
     );
   }
@@ -118,12 +112,7 @@ class _PromptHistorySheetState extends State<PromptHistorySheet> {
         children: [
           Icon(Icons.history, color: colorScheme.primary),
           const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              l10n.promptHistory,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-          ),
+          Expanded(child: Text(l10n.promptHistory, style: Theme.of(context).textTheme.titleLarge)),
           if (widget.entries.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.delete_sweep_outlined, size: 20),
@@ -168,10 +157,7 @@ class _PromptHistorySheetState extends State<PromptHistorySheet> {
       separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final entry = widget.entries[index];
-        return _HistoryCard(
-          entry: entry,
-          onTap: () => _openPreview(entry),
-        );
+        return _HistoryCard(entry: entry, onTap: () => _openPreview(entry));
       },
     );
   }
@@ -200,10 +186,7 @@ class _PromptHistorySheetState extends State<PromptHistorySheet> {
           variant: AppButtonVariant.text,
           onPressed: () => Navigator.pop(context, false),
         ),
-        AppButton(
-          label: l10n.clear,
-          onPressed: () => Navigator.pop(context, true),
-        ),
+        AppButton(label: l10n.clear, onPressed: () => Navigator.pop(context, true)),
       ],
     );
     if (confirmed != true || !mounted) return;
@@ -245,10 +228,9 @@ class _HistoryCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       formatRelativeTime(l10n, entry.usedAt),
-                      style: Theme.of(context)
-                          .textTheme
-                          .labelMedium
-                          ?.copyWith(color: colorScheme.outline),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.labelMedium?.copyWith(color: colorScheme.outline),
                     ),
                   ),
                   Icon(Icons.chevron_right, size: 16, color: colorScheme.outline),
@@ -257,7 +239,9 @@ class _HistoryCard extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 entry.content,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -303,10 +287,7 @@ class _PromptPreviewDialog extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
               ),
               child: SingleChildScrollView(
-                child: SelectableText(
-                  entry.content,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
+                child: SelectableText(entry.content, style: Theme.of(context).textTheme.bodyMedium),
               ),
             ),
           ),

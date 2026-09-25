@@ -16,7 +16,9 @@ extension _Layouts on _ModelEditDialogState {
         metrics: ModelEditMetrics.desktop,
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final twoColumns = constraints.maxWidth >= _ModelEditDialogState._minColumnWidth * 2 + _ModelEditDialogState._columnGap;
+            final twoColumns =
+                constraints.maxWidth >=
+                _ModelEditDialogState._minColumnWidth * 2 + _ModelEditDialogState._columnGap;
             return twoColumns ? _twoColumns(context) : _singleColumn(context, pairFields: true);
           },
         ),
@@ -42,7 +44,9 @@ extension _Layouts on _ModelEditDialogState {
                 child: SingleChildScrollView(
                   padding: EdgeInsets.fromLTRB(
                     12,
-                    insets.top + _ModelEditDialogState._phoneBarHeight + _ModelEditDialogState._sectionGap,
+                    insets.top +
+                        _ModelEditDialogState._phoneBarHeight +
+                        _ModelEditDialogState._sectionGap,
                     12,
                     insets.bottom + _ModelEditDialogState._sectionGap,
                   ),
@@ -83,39 +87,41 @@ extension _Layouts on _ModelEditDialogState {
       subtitle: l10n.addModelSubtitle,
       content: ModelEditFieldScope(
         metrics: phone ? ModelEditMetrics.phoneDialog : ModelEditMetrics.desktop,
-        child: Builder(builder: (context) {
-          final size = _fieldSize(context);
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _idField(size, autofocus: true, helper: l10n.addModelIdHelper),
-              const SizedBox(height: _ModelEditDialogState._fieldGap),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(child: _nameField(size)),
-                  const SizedBox(width: _ModelEditDialogState._fieldGap),
-                  Expanded(
-                    child: AppLabelledField(
-                      label: l10n.type,
-                      size: size,
-                      child: _kindMenuField(context),
-                    ),
-                  ),
-                ],
-              ),
-              if (widget.preChannelId == null) ...[
+        child: Builder(
+          builder: (context) {
+            final size = _fieldSize(context);
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _idField(size, autofocus: true, helper: l10n.addModelIdHelper),
                 const SizedBox(height: _ModelEditDialogState._fieldGap),
-                _channelField(size),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: _nameField(size)),
+                    const SizedBox(width: _ModelEditDialogState._fieldGap),
+                    Expanded(
+                      child: AppLabelledField(
+                        label: l10n.type,
+                        size: size,
+                        child: _kindMenuField(context),
+                      ),
+                    ),
+                  ],
+                ),
+                if (widget.preChannelId == null) ...[
+                  const SizedBox(height: _ModelEditDialogState._fieldGap),
+                  _channelField(size),
+                ],
+                const SizedBox(height: _ModelEditDialogState._sectionGap),
+                // Everything else starts on Auto or its default; say so, so the
+                // missing controls read as deferred rather than absent.
+                ModelEditNotice(tone: ModelEditTone.info, text: l10n.addModelDefaultsNote),
               ],
-              const SizedBox(height: _ModelEditDialogState._sectionGap),
-              // Everything else starts on Auto or its default; say so, so the
-              // missing controls read as deferred rather than absent.
-              ModelEditNotice(tone: ModelEditTone.info, text: l10n.addModelDefaultsNote),
-            ],
-          );
-        }),
+            );
+          },
+        ),
       ),
       actions: [
         AppButton(
@@ -134,9 +140,7 @@ extension _Layouts on _ModelEditDialogState {
   /// line.
   String get _headingSubtitle {
     final channel = _selectedChannel;
-    return [idCtrl.text.trim(), channel?.displayName ?? '']
-        .where((s) => s.isNotEmpty)
-        .join(' · ');
+    return [idCtrl.text.trim(), channel?.displayName ?? ''].where((s) => s.isNotEmpty).join(' · ');
   }
 
   /// `1a`: the kind's plate, the title, the mono subtitle, close.
@@ -251,62 +255,64 @@ extension _Layouts on _ModelEditDialogState {
         padding: EdgeInsets.only(top: top),
         child: SizedBox(
           height: _ModelEditDialogState._phoneBarHeight,
-          child: Builder(builder: (context) {
-            final ink = GlassInk.maybeOf(context)?.ink ?? scheme.onSurface;
-            return Padding(
-              padding: const EdgeInsetsDirectional.only(start: AppSpace.s6, end: 12),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back),
-                    color: ink,
-                    tooltip: l10n.back,
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  const SizedBox(width: AppSpace.s4),
-                  Expanded(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          l10n.editModel,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: textTheme.titleLarge?.copyWith(color: ink),
-                        ),
-                        Text(
-                          idCtrl.text.trim(),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: textTheme.labelSmall?.mono.copyWith(
-                            fontWeight: FontWeight.w400,
-                            color: scheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
+          child: Builder(
+            builder: (context) {
+              final ink = GlassInk.maybeOf(context)?.ink ?? scheme.onSurface;
+              return Padding(
+                padding: const EdgeInsetsDirectional.only(start: AppSpace.s6, end: 12),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back),
+                      color: ink,
+                      tooltip: l10n.back,
+                      onPressed: () => Navigator.pop(context),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Semantics(
-                    button: true,
-                    enabled: enabled,
-                    label: l10n.save,
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: enabled ? _save : null,
-                      child: AppTintedGlass(
-                        enabled: enabled,
-                        child: SizedBox(
-                          height: AppSize.control,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 14),
-                            child: Center(
-                              child: Text(
-                                l10n.save,
-                                style: textTheme.labelLarge?.metricsOnly.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: enabled ? scheme.onPrimary : scheme.onSurfaceVariant,
+                    const SizedBox(width: AppSpace.s4),
+                    Expanded(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.editModel,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: textTheme.titleLarge?.copyWith(color: ink),
+                          ),
+                          Text(
+                            idCtrl.text.trim(),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: textTheme.labelSmall?.mono.copyWith(
+                              fontWeight: FontWeight.w400,
+                              color: scheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Semantics(
+                      button: true,
+                      enabled: enabled,
+                      label: l10n.save,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: enabled ? _save : null,
+                        child: AppTintedGlass(
+                          enabled: enabled,
+                          child: SizedBox(
+                            height: AppSize.control,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 14),
+                              child: Center(
+                                child: Text(
+                                  l10n.save,
+                                  style: textTheme.labelLarge?.metricsOnly.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: enabled ? scheme.onPrimary : scheme.onSurfaceVariant,
+                                  ),
                                 ),
                               ),
                             ),
@@ -314,11 +320,11 @@ extension _Layouts on _ModelEditDialogState {
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            );
-          }),
+                  ],
+                ),
+              );
+            },
+          ),
         ),
       ),
     );
@@ -338,9 +344,7 @@ extension _Layouts on _ModelEditDialogState {
           ]),
         ),
         const SizedBox(width: _ModelEditDialogState._columnGap),
-        Expanded(
-          child: _stack(_requestSections(context)),
-        ),
+        Expanded(child: _stack(_requestSections(context))),
       ],
     );
   }
@@ -390,25 +394,21 @@ extension _Layouts on _ModelEditDialogState {
   }
 
   Widget _stack(List<Widget> sections) => Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          for (int i = 0; i < sections.length; i++) ...[
-            if (i > 0) const SizedBox(height: _ModelEditDialogState._sectionGap),
-            sections[i],
-          ],
-        ],
-      );
+    mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      for (int i = 0; i < sections.length; i++) ...[
+        if (i > 0) const SizedBox(height: _ModelEditDialogState._sectionGap),
+        sections[i],
+      ],
+    ],
+  );
 
   AppFieldSize _fieldSize(BuildContext context) =>
       ModelEditMetrics.of(context).phone ? AppFieldSize.large : AppFieldSize.regular;
 
   /// A section's caption; [scope] is its `D1f` scope, when there is one.
-  Widget _caption(
-    String text, {
-    AppSectionTone tone = AppSectionTone.accent,
-    InlineSpan? scope,
-  }) =>
+  Widget _caption(String text, {AppSectionTone tone = AppSectionTone.accent, InlineSpan? scope}) =>
       AppSectionLabel(text, padding: EdgeInsets.zero, tone: tone, suffix: scope);
 
   // --- Identity -----------------------------------------------------------

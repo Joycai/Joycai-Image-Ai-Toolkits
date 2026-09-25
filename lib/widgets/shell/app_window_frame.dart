@@ -10,9 +10,9 @@ import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../state/app_state.dart';
-import 'baked_backdrop.dart';
 import '../glass/app_glass.dart';
 import 'app_destinations.dart';
+import 'baked_backdrop.dart';
 import 'nav_lens_group.dart';
 import 'shell_cover.dart';
 
@@ -20,8 +20,7 @@ import 'shell_cover.dart';
 ///
 /// Desktop only. On Android and iOS there is no window to frame, and
 /// `window_manager` has no implementation there to call into.
-bool get usesCustomWindowChrome =>
-    Platform.isWindows || Platform.isMacOS || Platform.isLinux;
+bool get usesCustomWindowChrome => Platform.isWindows || Platform.isMacOS || Platform.isLinux;
 
 /// Height of the title bar the app draws for itself (`01 · 1b`).
 const double kTitleBarHeight = 36;
@@ -238,8 +237,8 @@ class AppTitleBar extends StatelessWidget {
     final theme = Theme.of(context);
     final isMacOs = Platform.isMacOS;
     final showNav = !Responsive.isMobile(context);
-    final current = AppDestination.values[
-        context.select<AppState, int>((s) => s.activeScreenIndex)];
+    final current =
+        AppDestination.values[context.select<AppState, int>((s) => s.activeScreenIndex)];
     final (title, _) = windowTitleParts(context);
     // `01b · 1b`: the current destination is named here, beside the app's
     // name, rather than inside the navigation, whose width must not follow it.
@@ -258,19 +257,20 @@ class AppTitleBar extends StatelessWidget {
             final leftInset = isMacOs ? macOsButtonInset : AppSpace.s10;
             final rightReserve = isMacOs ? AppSpace.s10 : _captionButtonsWidth;
 
-            final titleStyle = theme.textTheme.bodySmall!.metricsOnly.copyWith(fontWeight: FontWeight.w500);
+            final titleStyle = theme.textTheme.bodySmall!.metricsOnly.copyWith(
+              fontWeight: FontWeight.w500,
+            );
             final separatorStyle = titleStyle.copyWith(color: ink2);
             final destinationStyle = titleStyle.copyWith(
               fontWeight: FontWeight.w600,
               color: theme.colorScheme.onAccentTint,
             );
             double measure(String text, TextStyle style) => (TextPainter(
-                  text: TextSpan(text: text, style: style),
-                  textDirection: TextDirection.ltr,
-                  textScaler: MediaQuery.textScalerOf(context),
-                  maxLines: 1,
-                )..layout())
-                    .width;
+              text: TextSpan(text: text, style: style),
+              textDirection: TextDirection.ltr,
+              textScaler: MediaQuery.textScalerOf(context),
+              maxLines: 1,
+            )..layout()).width;
 
             final markWidth = isMacOs ? 0.0 : 16 + AppSpace.s10;
             final titleWidth = measure(title, titleStyle);
@@ -316,10 +316,7 @@ class AppTitleBar extends StatelessWidget {
                       padding: EdgeInsets.only(left: leftInset),
                       child: Row(
                         children: [
-                          if (!isMacOs) ...[
-                            const AppMark(),
-                            const SizedBox(width: AppSpace.s10),
-                          ],
+                          if (!isMacOs) ...[const AppMark(), const SizedBox(width: AppSpace.s10)],
                           if (showTitle)
                             Flexible(
                               child: Text(
@@ -468,8 +465,7 @@ class _MaximiseButtonState extends State<_MaximiseButton> with WindowListener {
     return _WindowButton(
       icon: _maximized ? Icons.filter_none : Icons.crop_square,
       label: _maximized ? l10n.restoreWindow : l10n.maximizeWindow,
-      onPressed: () =>
-          _maximized ? windowManager.unmaximize() : windowManager.maximize(),
+      onPressed: () => _maximized ? windowManager.unmaximize() : windowManager.maximize(),
     );
   }
 }
@@ -502,8 +498,8 @@ class _WindowButtonState extends State<_WindowButton> {
     final background = !_hovering
         ? Colors.transparent
         : widget.danger
-            ? const Color(0xFFC42B1C)
-            : ink.withValues(alpha: 0.08);
+        ? const Color(0xFFC42B1C)
+        : ink.withValues(alpha: 0.08);
     final foreground = _hovering && widget.danger ? Colors.white : ink;
 
     return Semantics(

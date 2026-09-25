@@ -3,10 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/design_tokens.dart';
-import 'package:joycai_image_ai_toolkits/widgets/ui/app_segmented_control.dart';
-import 'package:joycai_image_ai_toolkits/widgets/ui/app_text_field.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_dialog.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_segmented_control.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_side_panel.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_text_field.dart';
 
 /// Pins the app's answer to the platform's reduce-motion flag.
 ///
@@ -47,45 +47,42 @@ void main() {
   }
 
   group('AppMotion.durationOf', () {
-    testWidgets('hands back the token when the platform is happy with motion',
-        (tester) async {
+    testWidgets('hands back the token when the platform is happy with motion', (tester) async {
       late BuildContext ctx;
-      await tester.pumpWidget(harness(
-        disableAnimations: false,
-        child: Builder(builder: (context) {
-          ctx = context;
-          return const SizedBox();
-        }),
-      ));
+      await tester.pumpWidget(
+        harness(
+          disableAnimations: false,
+          child: Builder(
+            builder: (context) {
+              ctx = context;
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
 
       expect(AppMotion.prefersReduced(ctx), isFalse);
-      for (final token in [
-        AppMotion.hover,
-        AppMotion.state,
-        AppMotion.reveal,
-        AppMotion.panel,
-      ]) {
+      for (final token in [AppMotion.hover, AppMotion.state, AppMotion.reveal, AppMotion.panel]) {
         expect(AppMotion.durationOf(ctx, token), token);
       }
     });
 
     testWidgets('collapses every token to zero when it is not', (tester) async {
       late BuildContext ctx;
-      await tester.pumpWidget(harness(
-        disableAnimations: true,
-        child: Builder(builder: (context) {
-          ctx = context;
-          return const SizedBox();
-        }),
-      ));
+      await tester.pumpWidget(
+        harness(
+          disableAnimations: true,
+          child: Builder(
+            builder: (context) {
+              ctx = context;
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
 
       expect(AppMotion.prefersReduced(ctx), isTrue);
-      for (final token in [
-        AppMotion.hover,
-        AppMotion.state,
-        AppMotion.reveal,
-        AppMotion.panel,
-      ]) {
+      for (final token in [AppMotion.hover, AppMotion.state, AppMotion.reveal, AppMotion.panel]) {
         expect(AppMotion.durationOf(ctx, token), Duration.zero);
       }
     });
@@ -94,45 +91,37 @@ void main() {
       // AppTextField's focus ring stands in for the AnimatedContainers that
       // took the same edit across ~20 files. If the pass missed a file, it
       // missed it this way.
-      await tester.pumpWidget(harness(
-        disableAnimations: true,
-        child: const AppTextField(label: 'Key'),
-      ));
+      await tester.pumpWidget(
+        harness(disableAnimations: true, child: const AppTextField(label: 'Key')),
+      );
       expect(
-        tester.widgetList<AnimatedContainer>(find.byType(AnimatedContainer))
-            .map((w) => w.duration),
+        tester.widgetList<AnimatedContainer>(find.byType(AnimatedContainer)).map((w) => w.duration),
         everyElement(Duration.zero),
       );
 
-      await tester.pumpWidget(harness(
-        disableAnimations: false,
-        child: const AppTextField(label: 'Key'),
-      ));
+      await tester.pumpWidget(
+        harness(disableAnimations: false, child: const AppTextField(label: 'Key')),
+      );
       expect(
-        tester.widgetList<AnimatedContainer>(find.byType(AnimatedContainer))
-            .map((w) => w.duration),
+        tester.widgetList<AnimatedContainer>(find.byType(AnimatedContainer)).map((w) => w.duration),
         everyElement(AppMotion.hover),
       );
     });
 
-    testWidgets('reaches the segmented control indicator too',
-        (tester) async {
+    testWidgets('reaches the segmented control indicator too', (tester) async {
       // A different animated primitive, deliberately: the indicator is an
       // AnimatedPositioned, so it would not have been caught by the sweep
       // above even if it had been missed.
       Widget control() => AppSegmentedControl<int>(
-            segments: const [
-              AppSegment(value: 0, label: 'A'),
-              AppSegment(value: 1, label: 'B'),
-            ],
-            value: 0,
-            onChanged: (_) {},
-          );
+        segments: const [
+          AppSegment(value: 0, label: 'A'),
+          AppSegment(value: 1, label: 'B'),
+        ],
+        value: 0,
+        onChanged: (_) {},
+      );
 
-      for (final (disabled, expected) in [
-        (true, Duration.zero),
-        (false, AppMotion.state),
-      ]) {
+      for (final (disabled, expected) in [(true, Duration.zero), (false, AppMotion.state)]) {
         await tester.pumpWidget(harness(disableAnimations: disabled, child: control()));
         // The indicator is positioned from a measurement taken after layout,
         // so it does not exist on the first frame.
@@ -152,22 +141,21 @@ void main() {
     /// because the shorter exit needs a route subclass to exist at all —
     /// `showGeneralDialog` takes no reverse duration, and falling back to the
     /// entrance is silent when it happens.
-    testWidgets('leaves faster than it arrives, in both motion settings',
-        (tester) async {
+    testWidgets('leaves faster than it arrives, in both motion settings', (tester) async {
       for (final bool disabled in [false, true]) {
         useDesktopSurface(tester);
-        await tester.pumpWidget(harness(
-          disableAnimations: disabled,
-          child: Builder(
-            builder: (context) => TextButton(
-              onPressed: () => AppSidePanel.show(
-                context,
-                builder: (_) => const Text('panel body'),
+        await tester.pumpWidget(
+          harness(
+            disableAnimations: disabled,
+            child: Builder(
+              builder: (context) => TextButton(
+                onPressed: () =>
+                    AppSidePanel.show(context, builder: (_) => const Text('panel body')),
+                child: const Text('open'),
               ),
-              child: const Text('open'),
             ),
           ),
-        ));
+        );
 
         await tester.tap(find.text('open'));
         await tester.pump();
@@ -191,18 +179,17 @@ void main() {
 
     testWidgets('slides in when motion is allowed', (tester) async {
       useDesktopSurface(tester);
-      await tester.pumpWidget(harness(
-        disableAnimations: false,
-        child: Builder(
-          builder: (context) => TextButton(
-            onPressed: () => AppSidePanel.show(
-              context,
-              builder: (_) => const Text('panel body'),
+      await tester.pumpWidget(
+        harness(
+          disableAnimations: false,
+          child: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => AppSidePanel.show(context, builder: (_) => const Text('panel body')),
+              child: const Text('open'),
             ),
-            child: const Text('open'),
           ),
         ),
-      ));
+      );
 
       await tester.tap(find.text('open'));
       await tester.pump();
@@ -213,60 +200,47 @@ void main() {
       // use, and `find.descendant` would match nothing in either case — the
       // transition wraps AppSidePanel, it is not inside it.
       expect(
-        find.ancestor(
-          of: find.byType(AppSidePanel),
-          matching: find.byType(SlideTransition),
-        ),
+        find.ancestor(of: find.byType(AppSidePanel), matching: find.byType(SlideTransition)),
         findsWidgets,
       );
       await tester.pumpAndSettle();
       expect(find.text('panel body'), findsOneWidget);
     });
 
-    testWidgets('cross-fades instead of cutting, so arrival is still visible',
-        (tester) async {
+    testWidgets('cross-fades instead of cutting, so arrival is still visible', (tester) async {
       useDesktopSurface(tester);
       // The point of the exception: 450px of panel appearing between two
       // frames reads as the screen having changed. A zero duration here would
       // be the bug, not the fix — so this asserts the transition is a fade
       // *and* that it still takes time.
-      await tester.pumpWidget(harness(
-        disableAnimations: true,
-        child: Builder(
-          builder: (context) => TextButton(
-            onPressed: () => AppSidePanel.show(
-              context,
-              builder: (_) => const Text('panel body'),
+      await tester.pumpWidget(
+        harness(
+          disableAnimations: true,
+          child: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => AppSidePanel.show(context, builder: (_) => const Text('panel body')),
+              child: const Text('open'),
             ),
-            child: const Text('open'),
           ),
         ),
-      ));
+      );
 
       await tester.tap(find.text('open'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));
 
-      final route = ModalRoute.of(
-        tester.element(find.text('panel body')),
-      )!;
+      final route = ModalRoute.of(tester.element(find.text('panel body')))!;
       expect(route.transitionDuration, AppMotion.reveal);
 
       // A fade, and no travel: the panel must never be off-centre from where
       // it lands. Both finders are ancestor-scoped to the panel, which is
       // where its own transition lives — the mirror of the test above.
       expect(
-        find.ancestor(
-          of: find.byType(AppSidePanel),
-          matching: find.byType(FadeTransition),
-        ),
+        find.ancestor(of: find.byType(AppSidePanel), matching: find.byType(FadeTransition)),
         findsWidgets,
       );
       expect(
-        find.ancestor(
-          of: find.byType(AppSidePanel),
-          matching: find.byType(SlideTransition),
-        ),
+        find.ancestor(of: find.byType(AppSidePanel), matching: find.byType(SlideTransition)),
         findsNothing,
       );
 
@@ -287,28 +261,30 @@ void main() {
       required bool disableAnimations,
     }) async {
       late BuildContext ctx;
-      await tester.pumpWidget(harness(
-        disableAnimations: disableAnimations,
-        child: Builder(builder: (context) {
-          ctx = context;
-          return const SizedBox();
-        }),
-      ));
+      await tester.pumpWidget(
+        harness(
+          disableAnimations: disableAnimations,
+          child: Builder(
+            builder: (context) {
+              ctx = context;
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
 
       unawaited(AppDialog.show<void>(ctx, title: 'Title', content: const Text('dialog body')));
       await tester.pump();
       return ModalRoute.of(tester.element(find.text('dialog body')))!;
     }
 
-    testWidgets('runs on the M ladder, not on the 150ms showDialog assumes',
-        (tester) async {
+    testWidgets('runs on the M ladder, not on the 150ms showDialog assumes', (tester) async {
       final route = await openDialog(tester, disableAnimations: false);
       expect(route.transitionDuration, AppMotion.panel);
       await tester.pumpAndSettle();
     });
 
-    testWidgets('collapses to nothing when the platform asks for less motion',
-        (tester) async {
+    testWidgets('collapses to nothing when the platform asks for less motion', (tester) async {
       final route = await openDialog(tester, disableAnimations: true);
       expect(route.transitionDuration, Duration.zero);
       await tester.pumpAndSettle();

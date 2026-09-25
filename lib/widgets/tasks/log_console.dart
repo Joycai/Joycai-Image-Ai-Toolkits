@@ -51,7 +51,8 @@ class _LogConsoleWidgetState extends State<LogConsoleWidget> {
 
   void _onScroll() {
     if (!_scrollController.hasClients) return;
-    final isAtBottom = _scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 10;
+    final isAtBottom =
+        _scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 10;
     if (_autoScroll != isAtBottom) {
       setState(() => _autoScroll = isAtBottom);
     }
@@ -78,7 +79,8 @@ class _LogConsoleWidgetState extends State<LogConsoleWidget> {
       final query = _searchQuery.toLowerCase();
       filteredLogs = logState.logs.where((log) {
         final matchesLevel = _filterLevel == null || log.level == _filterLevel;
-        final matchesSearch = query.isEmpty ||
+        final matchesSearch =
+            query.isEmpty ||
             log.message.toLowerCase().contains(query) ||
             (log.taskId?.toLowerCase().contains(query) ?? false);
         return matchesLevel && matchesSearch;
@@ -283,11 +285,7 @@ class _LogConsoleWidgetState extends State<LogConsoleWidget> {
 
 /// A bare 28px glyph action for the log toolbar: no box at rest, r10 ink.
 class _ToolbarIconButton extends StatelessWidget {
-  const _ToolbarIconButton({
-    required this.icon,
-    required this.tooltip,
-    required this.onPressed,
-  });
+  const _ToolbarIconButton({required this.icon, required this.tooltip, required this.onPressed});
 
   final IconData icon;
   final String tooltip;
@@ -328,11 +326,7 @@ class _LogLine extends StatelessWidget {
         text: TextSpan(
           // Mono 12/400 — `bodySmall`, not a label slot: a log line is read,
           // and the 500 weight of the label slots thickens a wall of it.
-          style: Theme.of(context)
-              .textTheme
-              .bodySmall
-              ?.mono
-              .copyWith(height: AppType.proseHeight),
+          style: Theme.of(context).textTheme.bodySmall?.mono.copyWith(height: AppType.proseHeight),
           children: [
             TextSpan(
               text: '[${logClockOf(log.timestamp)}] ',
@@ -352,7 +346,9 @@ class _LogLine extends StatelessWidget {
             ),
             TextSpan(
               text: log.message,
-              style: TextStyle(color: log.level == 'ERROR' ? colorScheme.error : colorScheme.onSurface),
+              style: TextStyle(
+                color: log.level == 'ERROR' ? colorScheme.error : colorScheme.onSurface,
+              ),
             ),
           ],
         ),

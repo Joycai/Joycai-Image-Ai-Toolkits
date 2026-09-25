@@ -94,9 +94,7 @@ class AskUserQuestion {
       final rawMulti = raw['multi_select'];
       final multiSelect = rawMulti == true || rawMulti?.toString() == 'true';
       final rawOptions = raw['options'];
-      if (rawOptions is! List ||
-          rawOptions.length < minOptions ||
-          rawOptions.length > maxOptions) {
+      if (rawOptions is! List || rawOptions.length < minOptions || rawOptions.length > maxOptions) {
         return null;
       }
       final options = <AskUserOption>[];
@@ -105,17 +103,21 @@ class AskUserQuestion {
         final label = o['label']?.toString().trim() ?? '';
         if (label.isEmpty) return null;
         final description = o['description']?.toString().trim();
-        options.add(AskUserOption(
-          label: label,
-          description: (description == null || description.isEmpty) ? null : description,
-        ));
+        options.add(
+          AskUserOption(
+            label: label,
+            description: (description == null || description.isEmpty) ? null : description,
+          ),
+        );
       }
-      questions.add(AskUserQuestion(
-        header: header,
-        question: question,
-        multiSelect: multiSelect,
-        options: options,
-      ));
+      questions.add(
+        AskUserQuestion(
+          header: header,
+          question: question,
+          multiSelect: multiSelect,
+          options: options,
+        ),
+      );
     }
     return questions;
   }
@@ -134,10 +136,10 @@ class AskUserAnswer {
   const AskUserAnswer({required this.header, required this.selected, this.otherText});
 
   Map<String, dynamic> toJson() => {
-        'header': header,
-        'selected': selected,
-        if (otherText != null && otherText!.trim().isNotEmpty) 'other': otherText!.trim(),
-      };
+    'header': header,
+    'selected': selected,
+    if (otherText != null && otherText!.trim().isNotEmpty) 'other': otherText!.trim(),
+  };
 }
 
 /// Kinds of entries shown in the optimizer chat transcript.
@@ -279,30 +281,29 @@ class OptimizerChatEntry {
     AskUserState? askState,
     List<AskUserAnswer>? askAnswers,
     int? modelDbId,
-  }) =>
-      OptimizerChatEntry(
-        kind: kind,
-        text: text,
-        truncated: truncated,
-        deliverable: deliverable,
-        modelDbId: modelDbId ?? this.modelDbId,
-        version: version,
-        note: note,
-        feedbackSatisfied: feedbackSatisfied,
-        feedbackReasons: feedbackReasons,
-        toolName: toolName,
-        editId: editId,
-        targetPath: targetPath,
-        newContent: newContent,
-        oldContent: oldContent,
-        editState: editState ?? this.editState,
-        editScope: editScope,
-        editSection: editSection,
-        knowledgeRoot: knowledgeRoot,
-        editError: editError ?? this.editError,
-        askCallId: askCallId,
-        askQuestions: askQuestions,
-        askState: askState ?? this.askState,
-        askAnswers: askAnswers ?? this.askAnswers,
-      );
+  }) => OptimizerChatEntry(
+    kind: kind,
+    text: text,
+    truncated: truncated,
+    deliverable: deliverable,
+    modelDbId: modelDbId ?? this.modelDbId,
+    version: version,
+    note: note,
+    feedbackSatisfied: feedbackSatisfied,
+    feedbackReasons: feedbackReasons,
+    toolName: toolName,
+    editId: editId,
+    targetPath: targetPath,
+    newContent: newContent,
+    oldContent: oldContent,
+    editState: editState ?? this.editState,
+    editScope: editScope,
+    editSection: editSection,
+    knowledgeRoot: knowledgeRoot,
+    editError: editError ?? this.editError,
+    askCallId: askCallId,
+    askQuestions: askQuestions,
+    askState: askState ?? this.askState,
+    askAnswers: askAnswers ?? this.askAnswers,
+  );
 }

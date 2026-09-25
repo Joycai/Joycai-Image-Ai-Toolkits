@@ -22,14 +22,16 @@ class LLMAttachment {
   final String mimeType;
   final LLMReferenceType referenceType;
 
-  LLMAttachment.fromFile(File file, this.mimeType, {this.referenceType = LLMReferenceType.media}) : path = file.path, bytes = null;
-  LLMAttachment.fromBytes(this.bytes, this.mimeType, {this.referenceType = LLMReferenceType.media}) : path = null;
+  LLMAttachment.fromFile(File file, this.mimeType, {this.referenceType = LLMReferenceType.media})
+    : path = file.path,
+      bytes = null;
+  LLMAttachment.fromBytes(this.bytes, this.mimeType, {this.referenceType = LLMReferenceType.media})
+    : path = null;
 
   /// Persistence: only file-backed attachments are serialized (bytes are
   /// intentionally not stored — the file is re-read on demand at replay time).
-  Map<String, dynamic>? toJson() => path == null
-      ? null
-      : {'path': path, 'mime': mimeType, 'ref': referenceType.name};
+  Map<String, dynamic>? toJson() =>
+      path == null ? null : {'path': path, 'mime': mimeType, 'ref': referenceType.name};
 
   static LLMAttachment? fromJson(Map<String, dynamic> json) {
     final path = json['path'] as String?;
@@ -51,11 +53,7 @@ class LLMTool {
   final String description;
   final Map<String, dynamic> parameters;
 
-  LLMTool({
-    required this.name,
-    required this.description,
-    required this.parameters,
-  });
+  LLMTool({required this.name, required this.description, required this.parameters});
 }
 
 /// A tool invocation emitted by the model.
@@ -79,20 +77,20 @@ class LLMToolCall {
   });
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'arguments': arguments,
-        // Gemini rejects replayed histories whose thought signatures are
-        // missing, so it must round-trip through persistence.
-        if (thoughtSignature != null) 'thoughtSignature': thoughtSignature,
-      };
+    'id': id,
+    'name': name,
+    'arguments': arguments,
+    // Gemini rejects replayed histories whose thought signatures are
+    // missing, so it must round-trip through persistence.
+    if (thoughtSignature != null) 'thoughtSignature': thoughtSignature,
+  };
 
   factory LLMToolCall.fromJson(Map<String, dynamic> json) => LLMToolCall(
-        id: json['id'] as String? ?? '',
-        name: json['name'] as String? ?? '',
-        arguments: (json['arguments'] as Map?)?.cast<String, dynamic>() ?? {},
-        thoughtSignature: json['thoughtSignature'] as String?,
-      );
+    id: json['id'] as String? ?? '',
+    name: json['name'] as String? ?? '',
+    arguments: (json['arguments'] as Map?)?.cast<String, dynamic>() ?? {},
+    thoughtSignature: json['thoughtSignature'] as String?,
+  );
 }
 
 class LLMMessage {
@@ -245,101 +243,101 @@ class LLMMessage {
   /// This message naming [id] as the model row it came from — a channel
   /// merge moving a reply's link onto the model it merged into.
   LLMMessage withModelDbId(int? id) => LLMMessage(
-        role: role,
-        content: content,
-        attachments: attachments,
-        reasoningContent: reasoningContent,
-        reasoningFieldName: reasoningFieldName,
-        reasoningSignature: reasoningSignature,
-        rawThinkingBlocks: rawThinkingBlocks,
-        rawThinkingModelId: rawThinkingModelId,
-        rawContentBlocks: rawContentBlocks,
-        rawModelParts: rawModelParts,
-        rawResponseItems: rawResponseItems,
-        toolCalls: toolCalls,
-        toolCallId: toolCallId,
-        toolName: toolName,
-        truncated: truncated,
-        deliverable: deliverable,
-        modelDbId: id,
-      );
+    role: role,
+    content: content,
+    attachments: attachments,
+    reasoningContent: reasoningContent,
+    reasoningFieldName: reasoningFieldName,
+    reasoningSignature: reasoningSignature,
+    rawThinkingBlocks: rawThinkingBlocks,
+    rawThinkingModelId: rawThinkingModelId,
+    rawContentBlocks: rawContentBlocks,
+    rawModelParts: rawModelParts,
+    rawResponseItems: rawResponseItems,
+    toolCalls: toolCalls,
+    toolCallId: toolCallId,
+    toolName: toolName,
+    truncated: truncated,
+    deliverable: deliverable,
+    modelDbId: id,
+  );
 
   Map<String, dynamic> toJson() => {
-        'role': role.name,
-        'content': content,
-        // The reasoning of a tool-calling turn must survive restarts — the
-        // echo-back obligation does not expire with the session.
-        if (reasoningContent != null) 'reasoningContent': reasoningContent,
-        if (reasoningFieldName != null) 'reasoningFieldName': reasoningFieldName,
-        if (reasoningSignature != null) 'reasoningSignature': reasoningSignature,
-        if (rawThinkingBlocks != null && rawThinkingBlocks!.isNotEmpty)
-          'rawThinkingBlocks': rawThinkingBlocks,
-        if (rawThinkingModelId != null) 'rawThinkingModelId': rawThinkingModelId,
-        if (rawContentBlocks != null && rawContentBlocks!.isNotEmpty)
-          'rawContentBlocks': rawContentBlocks,
-        // ③'s signatures must survive restarts like ④'s blocks do.
-        if (rawModelParts != null && rawModelParts!.isNotEmpty)
-          'rawModelParts': rawModelParts,
-        // ②'s items carry the encrypted reasoning a restart must not lose.
-        if (rawResponseItems != null && rawResponseItems!.isNotEmpty)
-          'rawResponseItems': rawResponseItems,
-        if (attachments.isNotEmpty)
-          'attachments': attachments.map((a) => a.toJson()).whereType<Map<String, dynamic>>().toList(),
-        if (toolCalls.isNotEmpty) 'toolCalls': toolCalls.map((c) => c.toJson()).toList(),
-        if (toolCallId != null) 'toolCallId': toolCallId,
-        if (toolName != null) 'toolName': toolName,
-        if (truncated) 'truncated': true,
-        if (deliverable) 'deliverable': true,
-        if (modelDbId != null) 'modelDbId': modelDbId,
-      };
+    'role': role.name,
+    'content': content,
+    // The reasoning of a tool-calling turn must survive restarts — the
+    // echo-back obligation does not expire with the session.
+    if (reasoningContent != null) 'reasoningContent': reasoningContent,
+    if (reasoningFieldName != null) 'reasoningFieldName': reasoningFieldName,
+    if (reasoningSignature != null) 'reasoningSignature': reasoningSignature,
+    if (rawThinkingBlocks != null && rawThinkingBlocks!.isNotEmpty)
+      'rawThinkingBlocks': rawThinkingBlocks,
+    if (rawThinkingModelId != null) 'rawThinkingModelId': rawThinkingModelId,
+    if (rawContentBlocks != null && rawContentBlocks!.isNotEmpty)
+      'rawContentBlocks': rawContentBlocks,
+    // ③'s signatures must survive restarts like ④'s blocks do.
+    if (rawModelParts != null && rawModelParts!.isNotEmpty) 'rawModelParts': rawModelParts,
+    // ②'s items carry the encrypted reasoning a restart must not lose.
+    if (rawResponseItems != null && rawResponseItems!.isNotEmpty)
+      'rawResponseItems': rawResponseItems,
+    if (attachments.isNotEmpty)
+      'attachments': attachments.map((a) => a.toJson()).whereType<Map<String, dynamic>>().toList(),
+    if (toolCalls.isNotEmpty) 'toolCalls': toolCalls.map((c) => c.toJson()).toList(),
+    if (toolCallId != null) 'toolCallId': toolCallId,
+    if (toolName != null) 'toolName': toolName,
+    if (truncated) 'truncated': true,
+    if (deliverable) 'deliverable': true,
+    if (modelDbId != null) 'modelDbId': modelDbId,
+  };
 
   /// Throws [FormatException] for a role this app does not know: guessing
   /// one would replay a damaged row as something the user said.
   factory LLMMessage.fromJson(Map<String, dynamic> json) => LLMMessage(
-        role: LLMRole.values.asNameMap()[json['role']] ??
-            (throw FormatException('Unknown message role', json['role'])),
-        content: json['content'] as String? ?? '',
-        reasoningContent: json['reasoningContent'] as String?,
-        reasoningFieldName: json['reasoningFieldName'] as String?,
-        reasoningSignature: json['reasoningSignature'] as String?,
-        rawThinkingBlocks: json['rawThinkingBlocks'] is List
-            ? [
-                for (final b in json['rawThinkingBlocks'] as List)
-                  if (b is Map) b.cast<String, dynamic>(),
-              ]
-            : null,
-        rawThinkingModelId: json['rawThinkingModelId'] as String?,
-        rawContentBlocks: json['rawContentBlocks'] is List
-            ? [
-                for (final b in json['rawContentBlocks'] as List)
-                  if (b is Map) b.cast<String, dynamic>(),
-              ]
-            : null,
-        rawModelParts: json['rawModelParts'] is List
-            ? [
-                for (final p in json['rawModelParts'] as List)
-                  if (p is Map) p.cast<String, dynamic>(),
-              ]
-            : null,
-        rawResponseItems: json['rawResponseItems'] is List
-            ? [
-                for (final item in json['rawResponseItems'] as List)
-                  if (item is Map) item.cast<String, dynamic>(),
-              ]
-            : null,
-        attachments: [
-          for (final a in (json['attachments'] as List? ?? []))
-            if (a is Map && LLMAttachment.fromJson(a.cast<String, dynamic>()) != null)
-              LLMAttachment.fromJson(a.cast<String, dynamic>())!,
-        ],
-        toolCalls: [
-          for (final c in (json['toolCalls'] as List? ?? []))
-            if (c is Map) LLMToolCall.fromJson(c.cast<String, dynamic>()),
-        ],
-        toolCallId: json['toolCallId'] as String?,
-        toolName: json['toolName'] as String?,
-        truncated: json['truncated'] == true,
-        deliverable: json['deliverable'] == true,
-        modelDbId: json['modelDbId'] is int ? json['modelDbId'] as int : null,
-      );
+    role:
+        LLMRole.values.asNameMap()[json['role']] ??
+        (throw FormatException('Unknown message role', json['role'])),
+    content: json['content'] as String? ?? '',
+    reasoningContent: json['reasoningContent'] as String?,
+    reasoningFieldName: json['reasoningFieldName'] as String?,
+    reasoningSignature: json['reasoningSignature'] as String?,
+    rawThinkingBlocks: json['rawThinkingBlocks'] is List
+        ? [
+            for (final b in json['rawThinkingBlocks'] as List)
+              if (b is Map) b.cast<String, dynamic>(),
+          ]
+        : null,
+    rawThinkingModelId: json['rawThinkingModelId'] as String?,
+    rawContentBlocks: json['rawContentBlocks'] is List
+        ? [
+            for (final b in json['rawContentBlocks'] as List)
+              if (b is Map) b.cast<String, dynamic>(),
+          ]
+        : null,
+    rawModelParts: json['rawModelParts'] is List
+        ? [
+            for (final p in json['rawModelParts'] as List)
+              if (p is Map) p.cast<String, dynamic>(),
+          ]
+        : null,
+    rawResponseItems: json['rawResponseItems'] is List
+        ? [
+            for (final item in json['rawResponseItems'] as List)
+              if (item is Map) item.cast<String, dynamic>(),
+          ]
+        : null,
+    attachments: [
+      for (final a in (json['attachments'] as List? ?? []))
+        if (a is Map && LLMAttachment.fromJson(a.cast<String, dynamic>()) != null)
+          LLMAttachment.fromJson(a.cast<String, dynamic>())!,
+    ],
+    toolCalls: [
+      for (final c in (json['toolCalls'] as List? ?? []))
+        if (c is Map) LLMToolCall.fromJson(c.cast<String, dynamic>()),
+    ],
+    toolCallId: json['toolCallId'] as String?,
+    toolName: json['toolName'] as String?,
+    truncated: json['truncated'] == true,
+    deliverable: json['deliverable'] == true,
+    modelDbId: json['modelDbId'] is int ? json['modelDbId'] as int : null,
+  );
 }

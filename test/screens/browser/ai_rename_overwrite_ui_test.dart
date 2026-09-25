@@ -47,11 +47,8 @@ void main() {
     }
   });
 
-  RenameReviewRow row(String from, String to) => RenameReviewRow(RenameProposal(
-        path: p.join(dir.path, from),
-        oldName: from,
-        newName: to,
-      ));
+  RenameReviewRow row(String from, String to) =>
+      RenameReviewRow(RenameProposal(path: p.join(dir.path, from), oldName: from, newName: to));
 
   Future<void> pumpDialog(WidgetTester tester, List<RenameReviewRow> rows) async {
     tester.view.physicalSize = const Size(1280, 900);
@@ -78,19 +75,22 @@ void main() {
   }
 
   // Labelled or folded to a glyph, depending on how much room the row has.
-  Finder overwrite() => find.byWidgetPredicate((w) =>
-      (w is IconButton && (w.tooltip ?? '').startsWith('Overwrite')) ||
-      (w is ButtonStyleButton &&
-          find
-              .descendant(of: find.byWidget(w), matching: find.text('Overwrite'))
-              .evaluate()
-              .isNotEmpty));
+  Finder overwrite() => find.byWidgetPredicate(
+    (w) =>
+        (w is IconButton && (w.tooltip ?? '').startsWith('Overwrite')) ||
+        (w is ButtonStyleButton &&
+            find
+                .descendant(of: find.byWidget(w), matching: find.text('Overwrite'))
+                .evaluate()
+                .isNotEmpty),
+  );
 
   VoidCallback? onPressedOf(Widget w) =>
       w is IconButton ? w.onPressed : (w as ButtonStyleButton).onPressed;
 
-  testWidgets('a clash between two rows offers Overwrite disabled, with the reason',
-      (tester) async {
+  testWidgets('a clash between two rows offers Overwrite disabled, with the reason', (
+    tester,
+  ) async {
     final rows = [row('a.png', 'same.png'), row('b.png', 'same.png')];
     await tester.runAsync(() => recomputeRenameConflicts(rows));
     expect(rows.map((r) => r.conflict), everyElement(RenameConflict.duplicate));
@@ -100,14 +100,19 @@ void main() {
     final buttons = overwrite();
     expect(buttons, findsNWidgets(2));
     for (final element in buttons.evaluate()) {
-      expect(onPressedOf(element.widget), isNull,
-          reason: 'Overwrite must not be tappable on a row-vs-row clash');
+      expect(
+        onPressedOf(element.widget),
+        isNull,
+        reason: 'Overwrite must not be tappable on a row-vs-row clash',
+      );
     }
     final l10n = await AppLocalizations.delegate.load(const Locale('en'));
     expect(
-      find.byWidgetPredicate((w) =>
-          (w is Tooltip && (w.message ?? '').contains(l10n.renameOverwriteDuplicateHint)) ||
-          (w is IconButton && (w.tooltip ?? '').contains(l10n.renameOverwriteDuplicateHint))),
+      find.byWidgetPredicate(
+        (w) =>
+            (w is Tooltip && (w.message ?? '').contains(l10n.renameOverwriteDuplicateHint)) ||
+            (w is IconButton && (w.tooltip ?? '').contains(l10n.renameOverwriteDuplicateHint)),
+      ),
       findsWidgets,
       reason: 'a disabled Overwrite has to say why',
     );

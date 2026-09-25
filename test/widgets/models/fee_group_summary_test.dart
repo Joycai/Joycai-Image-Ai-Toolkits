@@ -19,7 +19,12 @@ void main() {
   ];
 
   test('a spec group: unit, priced-row count and the price range', () {
-    final g = PricingGroup(name: 'Veo', billingMode: 'spec', outputUnit: OutputUnit.second, outputRates: veo);
+    final g = PricingGroup(
+      name: 'Veo',
+      billingMode: 'spec',
+      outputUnit: OutputUnit.second,
+      outputRates: veo,
+    );
     expect(feeGroupSummary(l10n, g), 'Per second · 4 rates · \$0.10–0.50');
     expect(feeGroupOtherSpecsAtZero(g), isFalse);
   });
@@ -28,36 +33,50 @@ void main() {
     final g = PricingGroup(
       name: 'Nano',
       billingMode: 'spec',
-      outputRates: const [SpecRate(size: '1K', price: 0.03), SpecRate(size: '4K', price: 0.12)],
+      outputRates: const [
+        SpecRate(size: '1K', price: 0.03),
+        SpecRate(size: '4K', price: 0.12),
+      ],
     );
     expect(feeGroupSummary(l10n, g), 'Per image · 2 rates · \$0.03–0.12');
     expect(feeGroupOtherSpecsAtZero(g), isTrue);
   });
 
   group('a group that charges for reference images (D2c)', () {
-    PricingGroup seedream({int free = 1, double price = 0.02, OutputUnit unit = OutputUnit.image}) => PricingGroup(
-          name: 'Seedream pro',
-          billingMode: 'spec',
-          outputUnit: unit,
-          outputRates: const [SpecRate(price: 0.30)],
-          inputUnitPrice: price,
-          inputFreeUnits: free,
-        );
+    PricingGroup seedream({
+      int free = 1,
+      double price = 0.02,
+      OutputUnit unit = OutputUnit.image,
+    }) => PricingGroup(
+      name: 'Seedream pro',
+      billingMode: 'spec',
+      outputUnit: unit,
+      outputRates: const [SpecRate(price: 0.30)],
+      inputUnitPrice: price,
+      inputFreeUnits: free,
+    );
 
     test('says so at the summary\'s tail, the free ones after the price', () {
-      expect(feeGroupSummary(l10n, seedream()),
-          'Per image · 1 rates · \$0.30–0.30 · input \$0.02/image · first 1 free');
+      expect(
+        feeGroupSummary(l10n, seedream()),
+        'Per image · 1 rates · \$0.30–0.30 · input \$0.02/image · first 1 free',
+      );
       expect(feeGroupSummary(l10n, seedream(free: 0)), endsWith(' · input \$0.02/image'));
     });
 
     test('the row leaves it out of the summary and tags it instead', () {
-      expect(feeGroupSummary(l10n, seedream(), withInput: false), 'Per image · 1 rates · \$0.30–0.30');
+      expect(
+        feeGroupSummary(l10n, seedream(), withInput: false),
+        'Per image · 1 rates · \$0.30–0.30',
+      );
       expect(feeGroupInputRate(l10n, seedream()), '\$0.02/image · first 1 free');
     });
 
     test('the tooltip table gains one last line, four places like the rest', () {
-      expect(feeGroupRateTable(l10n, seedream()).split('\n').last,
-          'Input images  \$0.0200/image · first 1 free');
+      expect(
+        feeGroupRateTable(l10n, seedream()).split('\n').last,
+        'Input images  \$0.0200/image · first 1 free',
+      );
     });
 
     test('no price or token mode: the input fee appears nowhere', () {
@@ -80,7 +99,12 @@ void main() {
   });
 
   test('a request group that charges inputs carries the same tail (D2e)', () {
-    final g = PricingGroup(name: 'xAI video', billingMode: 'request', requestPrice: 0.08, inputUnitPrice: 0.01);
+    final g = PricingGroup(
+      name: 'xAI video',
+      billingMode: 'request',
+      requestPrice: 0.08,
+      inputUnitPrice: 0.01,
+    );
     expect(feeGroupSummary(l10n, g), 'Per request · \$0.0800/req · input \$0.01/image');
     expect(feeGroupSummary(l10n, g, withInput: false), 'Per request · \$0.0800/req');
     expect(feeGroupInputRate(l10n, g), '\$0.01/image');
@@ -91,13 +115,19 @@ void main() {
       outputRates: const [SpecRate(price: 0.08)],
       inputUnitPrice: 0.01,
     );
-    expect(feeGroupSummary(l10n, perSecond), 'Per second · 1 rates · \$0.08–0.08 · input \$0.01/image');
+    expect(
+      feeGroupSummary(l10n, perSecond),
+      'Per second · 1 rates · \$0.08–0.08 · input \$0.01/image',
+    );
     expect(feeGroupRateTable(l10n, perSecond), contains('Input images  \$0.0100/image'));
   });
 
   test('token and request groups summarise in the same shape', () {
     expect(
-      feeGroupSummary(l10n, PricingGroup(name: 'T', inputPrice: 0.3, cacheInputPrice: 0.03, outputPrice: 2.5)),
+      feeGroupSummary(
+        l10n,
+        PricingGroup(name: 'T', inputPrice: 0.3, cacheInputPrice: 0.03, outputPrice: 2.5),
+      ),
       'Per token · 0.30 / 0.03 / 2.50',
     );
     expect(
@@ -114,7 +144,12 @@ void main() {
   });
 
   test('the tooltip lists every row and says what unlisted specs cost', () {
-    final g = PricingGroup(name: 'Veo', billingMode: 'spec', outputUnit: OutputUnit.second, outputRates: veo);
+    final g = PricingGroup(
+      name: 'Veo',
+      billingMode: 'spec',
+      outputUnit: OutputUnit.second,
+      outputRates: veo,
+    );
     expect(feeGroupRateTable(l10n, g).split('\n'), [
       '1080p · high  \$0.5000/s',
       '1080p  \$0.3000/s',

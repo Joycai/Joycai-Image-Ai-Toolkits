@@ -63,7 +63,9 @@ class AppIconButton extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.control),
             side: BorderSide(
-              color: selected ? accent.withValues(alpha: AppAlpha.ring) : colorScheme.outlineVariant,
+              color: selected
+                  ? accent.withValues(alpha: AppAlpha.ring)
+                  : colorScheme.outlineVariant,
             ),
           ),
         ),

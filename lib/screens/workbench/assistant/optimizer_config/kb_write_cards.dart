@@ -52,7 +52,11 @@ extension _KbWriteCards on _OptimizerConfigPanelState {
               children: [
                 Padding(
                   padding: const EdgeInsets.only(top: 1),
-                  child: Icon(Icons.warning_amber_rounded, size: AppSize.iconSm, color: semantic.warning),
+                  child: Icon(
+                    Icons.warning_amber_rounded,
+                    size: AppSize.iconSm,
+                    color: semantic.warning,
+                  ),
                 ),
                 const SizedBox(width: AppSpace.s6),
                 Expanded(
@@ -174,7 +178,10 @@ extension _KbWriteCards on _OptimizerConfigPanelState {
       children: [
         OptimizerPanelCaption(
           l10n.kbEditPendingTitle,
-          trailing: Text('${edits.length}', style: _monoStyle(textTheme, colorScheme.onSurfaceVariant)),
+          trailing: Text(
+            '${edits.length}',
+            style: _monoStyle(textTheme, colorScheme.onSurfaceVariant),
+          ),
         ),
         for (final edit in edits) _buildPendingRow(edit, l10n, colorScheme, textTheme),
         _hairlined(colorScheme, actions),
@@ -208,8 +215,10 @@ extension _KbWriteCards on _OptimizerConfigPanelState {
           Expanded(
             child: _ElidedPath(
               path: edit.targetPath ?? '',
-              style: (_touch ? textTheme.bodySmall?.mono : textTheme.labelSmall?.mono)
-                  ?.copyWith(fontWeight: FontWeight.w400, color: colorScheme.onSurface),
+              style: (_touch ? textTheme.bodySmall?.mono : textTheme.labelSmall?.mono)?.copyWith(
+                fontWeight: FontWeight.w400,
+                color: colorScheme.onSurface,
+              ),
             ),
           ),
           const SizedBox(width: OptimizerPanelCard.gap),

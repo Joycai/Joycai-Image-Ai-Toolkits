@@ -22,11 +22,7 @@ class SubAgentResult {
 
   final int turnsUsed;
 
-  const SubAgentResult({
-    required this.output,
-    required this.cancelled,
-    required this.turnsUsed,
-  });
+  const SubAgentResult({required this.output, required this.cancelled, required this.turnsUsed});
 }
 
 /// The request a sub-agent turn makes — injectable so the loop's invariants
@@ -50,30 +46,26 @@ const int maxTruncatedRounds = 2;
 /// [emittedTokens] is what the host reported generating, when it did; the
 /// cap itself is resolved inside the request layer and is not known here.
 Map<String, dynamic> truncatedToolResult({int? emittedTokens}) => {
-      'status': 'error',
-      'code': 'output_truncated',
-      'message': 'Your reply hit the model\'s output-token limit'
-          '${emittedTokens != null && emittedTokens > 0 ? ' after $emittedTokens tokens' : ''}'
-          ' before this call was complete, so it did NOT run and nothing was '
-          'delivered. Reply with ONLY the tool call — no text before it. If '
-          'the content itself cannot fit, tighten it; do not restart the '
-          'analysis.',
-    };
+  'status': 'error',
+  'code': 'output_truncated',
+  'message':
+      'Your reply hit the model\'s output-token limit'
+      '${emittedTokens != null && emittedTokens > 0 ? ' after $emittedTokens tokens' : ''}'
+      ' before this call was complete, so it did NOT run and nothing was '
+      'delivered. Reply with ONLY the tool call — no text before it. If '
+      'the content itself cannot fit, tighten it; do not restart the '
+      'analysis.',
+};
 
-typedef SubAgentRequestFn = Future<LLMResponse> Function(
-  List<LLMMessage> messages,
-  List<LLMTool>? tools,
-);
+typedef SubAgentRequestFn =
+    Future<LLMResponse> Function(List<LLMMessage> messages, List<LLMTool>? tools);
 
 /// A tool executor for one sub-agent run. [occupiedChars] is the run's
 /// current context occupancy (every message so far, including results already
 /// paired in this batch) — recomputed **per call**, not per turn, so a batch
 /// of reads converges on the remaining window instead of each claiming all
 /// of it. The same rule the main loop's read cap follows.
-typedef SubAgentToolFn = Map<String, dynamic> Function(
-  LLMToolCall call,
-  int occupiedChars,
-);
+typedef SubAgentToolFn = Map<String, dynamic> Function(LLMToolCall call, int occupiedChars);
 
 /// A bounded, reusable tool loop for delegated work — the sub-agent runtime.
 ///
@@ -157,29 +149,30 @@ class SubAgentRunner {
     int Function(List<LLMMessage> messages)? measureOccupancy,
     @visibleForTesting SubAgentRequestFn? request,
   }) async {
-    final requestFn = request ??
+    final requestFn =
+        request ??
         (messages, tools) => LLMService().request(
-              modelIdentifier: modelIdentifier,
-              messages: messages,
-              options: {
-                'retryCount': 2,
-                'usageTag': ?usageTag,
-                // A delegate returns a research note, which is long for the
-                // same reason the parent's prompt is. See
-                // [expectedOutputTokensKey].
-                expectedOutputTokensKey: 8192,
-              },
-              tools: tools,
-              contextId: contextId,
-              // Keeps a long delegate answer alive on routes that stream
-              // tool calls; downgraded automatically on the ones that do
-              // not. See [ChatProtocol.streamingDeclaresTools].
-              useStream: true,
-              // A delegate turn is the parent's turn from the user's side of
-              // the stop button: without this the request outlives the press
-              // by however long the generation takes, retries included.
-              isCancelled: isCancelled,
-            );
+          modelIdentifier: modelIdentifier,
+          messages: messages,
+          options: {
+            'retryCount': 2,
+            'usageTag': ?usageTag,
+            // A delegate returns a research note, which is long for the
+            // same reason the parent's prompt is. See
+            // [expectedOutputTokensKey].
+            expectedOutputTokensKey: 8192,
+          },
+          tools: tools,
+          contextId: contextId,
+          // Keeps a long delegate answer alive on routes that stream
+          // tool calls; downgraded automatically on the ones that do
+          // not. See [ChatProtocol.streamingDeclaresTools].
+          useStream: true,
+          // A delegate turn is the parent's turn from the user's side of
+          // the stop button: without this the request outlives the press
+          // by however long the generation takes, retries included.
+          isCancelled: isCancelled,
+        );
     final measure = measureOccupancy ?? defaultOccupiedChars;
 
     final messages = <LLMMessage>[
@@ -211,26 +204,29 @@ class SubAgentRunner {
         // The only place output is ever taken from: a reply with no tool
         // calls is the deliverable. Text beside a tool call is narration.
         if (truncated) {
-          onLog?.call('The sub-agent\'s answer hit the output-token limit and '
-              'was cut off; delivering what arrived.');
+          onLog?.call(
+            'The sub-agent\'s answer hit the output-token limit and '
+            'was cut off; delivering what arrived.',
+          );
         }
-        return SubAgentResult(
-            output: response.text.trim(), cancelled: false, turnsUsed: turn + 1);
+        return SubAgentResult(output: response.text.trim(), cancelled: false, turnsUsed: turn + 1);
       }
 
-      messages.add(LLMMessage(
-        role: LLMRole.assistant,
-        content: response.text,
-        reasoningContent: response.reasoningContent,
-        reasoningFieldName: response.reasoningFieldName,
-        reasoningSignature: response.reasoningSignature,
-        rawThinkingBlocks: response.rawThinkingBlocks,
-        rawThinkingModelId: response.rawThinkingModelId,
-        rawContentBlocks: response.rawContentBlocks,
-        rawModelParts: response.rawModelParts,
-        rawResponseItems: response.rawResponseItems,
-        toolCalls: response.toolCalls,
-      ));
+      messages.add(
+        LLMMessage(
+          role: LLMRole.assistant,
+          content: response.text,
+          reasoningContent: response.reasoningContent,
+          reasoningFieldName: response.reasoningFieldName,
+          reasoningSignature: response.reasoningSignature,
+          rawThinkingBlocks: response.rawThinkingBlocks,
+          rawThinkingModelId: response.rawThinkingModelId,
+          rawContentBlocks: response.rawContentBlocks,
+          rawModelParts: response.rawModelParts,
+          rawResponseItems: response.rawResponseItems,
+          toolCalls: response.toolCalls,
+        ),
+      );
 
       // Same rule as the parent loop: a reply cut mid-call runs none of its
       // calls, gets one directed retry, and a second cut in a row ends the
@@ -238,20 +234,26 @@ class SubAgentRunner {
       if (truncated) {
         truncatedRounds++;
         final emitted = LLMService.outputTokensOf(response.metadata);
-        onLog?.call('The sub-agent\'s reply hit the output-token limit'
-            '${emitted > 0 ? ' after $emitted tokens' : ''}; its tool calls '
-            'will not run.');
+        onLog?.call(
+          'The sub-agent\'s reply hit the output-token limit'
+          '${emitted > 0 ? ' after $emitted tokens' : ''}; its tool calls '
+          'will not run.',
+        );
         for (final call in response.toolCalls) {
-          messages.add(LLMMessage(
-            role: LLMRole.tool,
-            content: jsonEncode(truncatedToolResult(emittedTokens: emitted > 0 ? emitted : null)),
-            toolCallId: call.id,
-            toolName: call.name,
-          ));
+          messages.add(
+            LLMMessage(
+              role: LLMRole.tool,
+              content: jsonEncode(truncatedToolResult(emittedTokens: emitted > 0 ? emitted : null)),
+              toolCallId: call.id,
+              toolName: call.name,
+            ),
+          );
         }
         if (truncatedRounds >= maxTruncatedRounds) {
-          onLog?.call('Two consecutive sub-agent replies were cut at the '
-              'output limit — stopping the run.');
+          onLog?.call(
+            'Two consecutive sub-agent replies were cut at the '
+            'output limit — stopping the run.',
+          );
           return SubAgentResult(output: '', cancelled: false, turnsUsed: turn + 1);
         }
         continue;
@@ -275,18 +277,17 @@ class SubAgentRunner {
             result = executeTool(call, measure(messages));
           } catch (e) {
             onLog?.call('Tool ${call.name} failed: $e');
-            result = {
-              'status': 'error',
-              'message': 'Tool ${call.name} failed: $e',
-            };
+            result = {'status': 'error', 'message': 'Tool ${call.name} failed: $e'};
           }
         }
-        messages.add(LLMMessage(
-          role: LLMRole.tool,
-          content: jsonEncode(result),
-          toolCallId: call.id,
-          toolName: call.name,
-        ));
+        messages.add(
+          LLMMessage(
+            role: LLMRole.tool,
+            content: jsonEncode(result),
+            toolCallId: call.id,
+            toolName: call.name,
+          ),
+        );
       }
       if (cancelledMidBatch) {
         return SubAgentResult(output: '', cancelled: true, turnsUsed: turn + 1);
@@ -297,8 +298,10 @@ class SubAgentRunner {
     // (a misbehaving endpoint that invents calls with no tools declared).
     // The calls above were paired, so the history stayed valid — but there is
     // no deliverable, and the caller reports that rather than narration.
-    onLog?.call('Sub-agent hit the $maxTurns-turn limit without a text '
-        'deliverable.');
+    onLog?.call(
+      'Sub-agent hit the $maxTurns-turn limit without a text '
+      'deliverable.',
+    );
     return SubAgentResult(output: '', cancelled: false, turnsUsed: maxTurns);
   }
 }

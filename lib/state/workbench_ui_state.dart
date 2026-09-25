@@ -48,7 +48,7 @@ class WorkbenchUIState extends ChangeNotifier {
   int activePreviewIndex = 0;
 
   // Comparator State
-  bool isComparatorOpen = false; 
+  bool isComparatorOpen = false;
   String? comparatorRawPath;
   String? comparatorAfterPath;
   ComparatorLayout comparatorLayout = ComparatorLayout.sideBySide;
@@ -128,7 +128,10 @@ class WorkbenchUIState extends ChangeNotifier {
   // Preview Methods
   void setPreviewList(List<AppImage> images, int initialIndex) {
     previewImages = List.from(images);
-    activePreviewIndex = initialIndex.clamp(0, previewImages.isEmpty ? 0 : previewImages.length - 1);
+    activePreviewIndex = initialIndex.clamp(
+      0,
+      previewImages.isEmpty ? 0 : previewImages.length - 1,
+    );
     notifyListeners();
   }
 
@@ -156,11 +159,9 @@ class WorkbenchUIState extends ChangeNotifier {
 
   // --- Persisted assistant sessions -------------------------------------
 
-  late final AssistantSessionRepository _assistantRepo =
-      AssistantSessionRepository(db: _db);
+  late final AssistantSessionRepository _assistantRepo = AssistantSessionRepository(db: _db);
 
-  Future<List<AssistantSessionMeta>> listAssistantSessions() =>
-      _assistantRepo.listSessions();
+  Future<List<AssistantSessionMeta>> listAssistantSessions() => _assistantRepo.listSessions();
 
   Future<void> deleteAssistantSession(String id) async {
     await _assistantRepo.deleteSession(id);
@@ -190,7 +191,9 @@ class WorkbenchUIState extends ChangeNotifier {
       final path = img['path'];
       if (path == null) continue;
       if (File(path).existsSync()) {
-        existing.add(AppImage(path: path, name: img['name'] ?? path.split(Platform.pathSeparator).last));
+        existing.add(
+          AppImage(path: path, name: img['name'] ?? path.split(Platform.pathSeparator).last),
+        );
       } else {
         anyMissing = true;
       }
@@ -203,8 +206,7 @@ class WorkbenchUIState extends ChangeNotifier {
       history: [for (final m in stored) m.message],
       hasCompactedHistory: stored.any((m) => m.isSummary),
       compactedNoticeText: PromptOptimizerAgent.compactedNoticeToken,
-      missingImageNoticeText:
-          anyMissing ? PromptOptimizerAgent.imageMissingNoticeToken : null,
+      missingImageNoticeText: anyMissing ? PromptOptimizerAgent.imageMissingNoticeToken : null,
     );
 
     adoptOptimizerSession(session, existing);
@@ -217,10 +219,7 @@ class WorkbenchUIState extends ChangeNotifier {
   /// sessions up by id, so dropping the outgoing one and registering the
   /// incoming one has to happen together with the field assignment or a turn
   /// started afterwards writes into a session nothing is rendering.
-  void adoptOptimizerSession(
-    PromptOptimizerSession session,
-    List<AppImage> references,
-  ) {
+  void adoptOptimizerSession(PromptOptimizerSession session, List<AppImage> references) {
     PromptOptimizerAgent.sessions.remove(optimizerSession.id);
     optimizerSession = session;
     PromptOptimizerAgent.sessions[session.id] = session;
@@ -252,8 +251,15 @@ class WorkbenchUIState extends ChangeNotifier {
     newOptimizerSession(mode: mode);
   }
 
-  void setOptimizerModel(int? id) { optSelectedModelDbId = id; notifyListeners(); }
-  void setOptimizerSysPrompt(String? prompt) { optSelectedSysPrompt = prompt; notifyListeners(); }
+  void setOptimizerModel(int? id) {
+    optSelectedModelDbId = id;
+    notifyListeners();
+  }
+
+  void setOptimizerSysPrompt(String? prompt) {
+    optSelectedSysPrompt = prompt;
+    notifyListeners();
+  }
 
   /// Loads a preset — null for the built-in: its identity, the text it
   /// starts from and what it hands back. Set together, because a template id
@@ -272,13 +278,13 @@ class WorkbenchUIState extends ChangeNotifier {
   /// it hands back — goes only with a task-preset session: a knowledge
   /// session's system prompt is built in.
   Map<String, dynamic> optimizerTurnParameters(PromptOptimizerSession session) => {
-        'sessionId': session.id,
-        'mode': session.mode.name,
-        if (session.mode == AssistantMode.systemPrompt) ...{
-          'systemPrompt': optSelectedSysPrompt,
-          'outputKind': effectivePresetOutputKind.name,
-        },
-      };
+    'sessionId': session.id,
+    'mode': session.mode.name,
+    if (session.mode == AssistantMode.systemPrompt) ...{
+      'systemPrompt': optSelectedSysPrompt,
+      'outputKind': effectivePresetOutputKind.name,
+    },
+  };
 
   /// Follows the loaded preset's row when the library is re-read: its kind
   /// can only be changed there, and unlike its text there is no edit in this
@@ -310,8 +316,7 @@ class WorkbenchUIState extends ChangeNotifier {
   }
 
   void removeAssistantImage(AppImage image) {
-    final next =
-        optimizerReferenceImages.where((i) => i.path != image.path).toList();
+    final next = optimizerReferenceImages.where((i) => i.path != image.path).toList();
     if (next.length == optimizerReferenceImages.length) return;
     optimizerReferenceImages = next;
     notifyListeners();
@@ -355,11 +360,7 @@ class WorkbenchUIState extends ChangeNotifier {
   ///
   /// Returns false when there is no prompt version to give feedback on. The
   /// caller still enqueues the agent turn, exactly as after a typed message.
-  bool sendResultFeedback(
-    AppImage image, {
-    required ResultFeedback feedback,
-    int? promptVersion,
-  }) {
+  bool sendResultFeedback(AppImage image, {required ResultFeedback feedback, int? promptVersion}) {
     final session = optimizerSession;
     // Never inject into a live turn: it would wedge a user message between an
     // assistant tool-call message and its results (the shape both endpoints
@@ -505,9 +506,7 @@ class WorkbenchUIState extends ChangeNotifier {
 
   void removeVideoReferenceImage(AppImage image) {
     if (!videoReferenceImages.any((i) => i.path == image.path)) return;
-    videoReferenceImages = videoReferenceImages
-        .where((i) => i.path != image.path)
-        .toList();
+    videoReferenceImages = videoReferenceImages.where((i) => i.path != image.path).toList();
     notifyListeners();
   }
 
@@ -571,7 +570,7 @@ class WorkbenchUIState extends ChangeNotifier {
 
   // Crop & Resize State
   AppImage? cropResizeSourceImage;
-  double? cropAspectRatio; 
+  double? cropAspectRatio;
   int? targetWidth;
   int? targetHeight;
   bool maintainAspectRatio = true;

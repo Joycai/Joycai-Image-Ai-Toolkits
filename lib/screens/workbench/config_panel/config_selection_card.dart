@@ -4,7 +4,11 @@ part of '../workbench_config_panel.dart';
 /// strip, and the reference-image notice under it.
 extension _SelectionCard on _WorkbenchConfigPanelState {
   Widget _buildSelectionCard(
-      BuildContext context, LLMModel? model, List<AppImage> selectedImages, AppLocalizations l10n) {
+    BuildContext context,
+    LLMModel? model,
+    List<AppImage> selectedImages,
+    AppLocalizations l10n,
+  ) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
@@ -64,7 +68,8 @@ extension _SelectionCard on _WorkbenchConfigPanelState {
                 label: l10n.clear,
                 variant: AppButtonVariant.text,
                 size: AppButtonSize.compact,
-                onPressed: () => Provider.of<AppState>(context, listen: false).clearImageSelection(),
+                onPressed: () =>
+                    Provider.of<AppState>(context, listen: false).clearImageSelection(),
               ),
             ],
           ),
@@ -92,7 +97,10 @@ extension _SelectionCard on _WorkbenchConfigPanelState {
                   if (touchDrag) HapticFeedback.mediumImpact();
                 }),
                 onReorderItem: gap.onReorderItem((oldIndex, newIndex) {
-                  Provider.of<AppState>(context, listen: false).galleryState.reorderSelectedImages(oldIndex, newIndex);
+                  Provider.of<AppState>(
+                    context,
+                    listen: false,
+                  ).galleryState.reorderSelectedImages(oldIndex, newIndex);
                 }),
                 // `1b` 抬起: the picked-up thumbnail rises 3px inside a 2px
                 // accent ring — no 1px edge, which a picture's own edge would
@@ -109,7 +117,9 @@ extension _SelectionCard on _WorkbenchConfigPanelState {
                         child: _SelectionThumb(
                           image: selectedImages[index],
                           index: index,
-                          lift: AppMotion.prefersReduced(context) ? 1 : AppMotion.enter.transform(animation.value),
+                          lift: AppMotion.prefersReduced(context)
+                              ? 1
+                              : AppMotion.enter.transform(animation.value),
                         ),
                       ),
                     ),
@@ -120,7 +130,8 @@ extension _SelectionCard on _WorkbenchConfigPanelState {
                   final thumb = _SelectionThumb(
                     image: image,
                     index: index,
-                    onRemove: () => Provider.of<AppState>(context, listen: false).toggleImageSelection(image),
+                    onRemove: () =>
+                        Provider.of<AppState>(context, listen: false).toggleImageSelection(image),
                   );
                   return gap.item(
                     key: ValueKey(image.path),
@@ -141,7 +152,11 @@ extension _SelectionCard on _WorkbenchConfigPanelState {
             // `1a`: the strip's order is the order the model receives.
             Row(
               children: [
-                Icon(Icons.drag_indicator, size: AppSize.iconSm, color: theme.colorScheme.onSurfaceVariant),
+                Icon(
+                  Icons.drag_indicator,
+                  size: AppSize.iconSm,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
                 const SizedBox(width: AppSpace.s4),
                 Expanded(
                   child: Text(
@@ -155,10 +170,7 @@ extension _SelectionCard on _WorkbenchConfigPanelState {
               ],
             ),
           ],
-          if (notice != null) ...[
-            const SizedBox(height: _kCardInnerGap),
-            notice,
-          ],
+          if (notice != null) ...[const SizedBox(height: _kCardInnerGap), notice],
         ],
       ),
     );
@@ -170,12 +182,19 @@ extension _SelectionCard on _WorkbenchConfigPanelState {
   /// `A1 · 1c` 「琥珀提示条」: 11px warning ink on the warning container, r6.
   /// Null when there is nothing to say.
   Widget? _buildReferenceImageNotice(
-      BuildContext context, LLMModel? model, int selectedCount, AppLocalizations l10n) {
+    BuildContext context,
+    LLMModel? model,
+    int selectedCount,
+    AppLocalizations l10n,
+  ) {
     if (model == null || selectedCount == 0) return null;
 
     // As the channel serves it: a relay model pinned to the Images API has
     // that surface's reference-image ceiling, which its id cannot report.
-    final caps = Provider.of<AppState>(context, listen: false).descriptorForModel(model).capabilities;
+    final caps = Provider.of<AppState>(
+      context,
+      listen: false,
+    ).descriptorForModel(model).capabilities;
     String? message;
     if (!caps.supportsReferenceImages) {
       message = l10n.referenceImagesNotSupported;
@@ -202,7 +221,9 @@ extension _SelectionCard on _WorkbenchConfigPanelState {
           Expanded(
             child: Text(
               message,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(color: semantic.onWarningContainer),
+              style: Theme.of(
+                context,
+              ).textTheme.labelSmall?.copyWith(color: semantic.onWarningContainer),
             ),
           ),
         ],
@@ -214,12 +235,7 @@ extension _SelectionCard on _WorkbenchConfigPanelState {
 /// One picked image in the selection strip: the picture at r10, its send
 /// order in an accent disc, and a remove button on the image plate.
 class _SelectionThumb extends StatelessWidget {
-  const _SelectionThumb({
-    required this.image,
-    required this.index,
-    this.onRemove,
-    this.lift = 0,
-  });
+  const _SelectionThumb({required this.image, required this.index, this.onRemove, this.lift = 0});
 
   final AppImage image;
   final int index;
@@ -278,8 +294,15 @@ class _SelectionThumb extends StatelessWidget {
                 width: _kThumbBadge,
                 height: _kThumbBadge,
                 alignment: Alignment.center,
-                decoration: const BoxDecoration(color: AppOverlay.imagePlate, shape: BoxShape.circle),
-                child: const Icon(Icons.close, size: AppSize.iconSm, color: AppOverlay.onImagePlate),
+                decoration: const BoxDecoration(
+                  color: AppOverlay.imagePlate,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.close,
+                  size: AppSize.iconSm,
+                  color: AppOverlay.onImagePlate,
+                ),
               ),
             ),
           ),

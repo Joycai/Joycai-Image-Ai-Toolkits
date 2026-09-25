@@ -98,9 +98,28 @@ class FolderOperationsService {
   static const String _posixIllegal = r'/\';
 
   static const Set<String> _windowsReserved = {
-    'CON', 'PRN', 'AUX', 'NUL',
-    'COM1', 'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 'COM7', 'COM8', 'COM9',
-    'LPT1', 'LPT2', 'LPT3', 'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9',
+    'CON',
+    'PRN',
+    'AUX',
+    'NUL',
+    'COM1',
+    'COM2',
+    'COM3',
+    'COM4',
+    'COM5',
+    'COM6',
+    'COM7',
+    'COM8',
+    'COM9',
+    'LPT1',
+    'LPT2',
+    'LPT3',
+    'LPT4',
+    'LPT5',
+    'LPT6',
+    'LPT7',
+    'LPT8',
+    'LPT9',
   };
 
   /// The characters a name may not contain on this platform, for the error
@@ -172,9 +191,9 @@ class FolderOperationsService {
     if (!_caseInsensitiveFs) return false;
     try {
       final lower = name.toLowerCase();
-      return Directory(parent)
-          .listSync(followLinks: false)
-          .any((e) => p.basename(e.path).toLowerCase() == lower);
+      return Directory(
+        parent,
+      ).listSync(followLinks: false).any((e) => p.basename(e.path).toLowerCase() == lower);
     } on FileSystemException {
       return false;
     }
@@ -184,8 +203,7 @@ class FolderOperationsService {
 
   static bool _pathExists(String path) {
     try {
-      return FileSystemEntity.typeSync(path, followLinks: false) !=
-          FileSystemEntityType.notFound;
+      return FileSystemEntity.typeSync(path, followLinks: false) != FileSystemEntityType.notFound;
     } on FileSystemException {
       // An unreadable target is not safe to replace.
       return true;
@@ -194,7 +212,8 @@ class FolderOperationsService {
 
   static bool _sameName(String a, String b) {
     if (p.equals(a, b)) return true;
-    return _caseInsensitiveFs && p.basename(a).toLowerCase() == p.basename(b).toLowerCase() &&
+    return _caseInsensitiveFs &&
+        p.basename(a).toLowerCase() == p.basename(b).toLowerCase() &&
         p.equals(p.dirname(a), p.dirname(b));
   }
 
@@ -388,13 +407,15 @@ class FolderOperationsService {
     var done = 0;
     for (final entity in entries) {
       if (isCancelled?.call() ?? false) {
-        onProgress?.call(FileTransferProgress(
-          index: done,
-          total: entries.length,
-          name: '',
-          bytesDone: bytesDone,
-          bytesTotal: bytesTotal,
-        ));
+        onProgress?.call(
+          FileTransferProgress(
+            index: done,
+            total: entries.length,
+            name: '',
+            bytesDone: bytesDone,
+            bytesTotal: bytesTotal,
+          ),
+        );
         return FolderTransferOutcome(
           targetPath: target,
           copied: true,
@@ -405,13 +426,15 @@ class FolderOperationsService {
       }
 
       final relative = p.relative(entity.path, from: source);
-      onProgress?.call(FileTransferProgress(
-        index: done,
-        total: entries.length,
-        name: relative,
-        bytesDone: bytesDone,
-        bytesTotal: bytesTotal,
-      ));
+      onProgress?.call(
+        FileTransferProgress(
+          index: done,
+          total: entries.length,
+          name: relative,
+          bytesDone: bytesDone,
+          bytesTotal: bytesTotal,
+        ),
+      );
 
       final targetPath = p.join(target, relative);
       if (entity is Link) {
@@ -429,13 +452,15 @@ class FolderOperationsService {
       }
     }
 
-    onProgress?.call(FileTransferProgress(
-      index: done,
-      total: entries.length,
-      name: '',
-      bytesDone: bytesDone,
-      bytesTotal: bytesTotal,
-    ));
+    onProgress?.call(
+      FileTransferProgress(
+        index: done,
+        total: entries.length,
+        name: '',
+        bytesDone: bytesDone,
+        bytesTotal: bytesTotal,
+      ),
+    );
 
     String? failure;
     if (mode == FolderTransferMode.move) {

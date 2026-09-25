@@ -18,8 +18,7 @@ class RouteEntry {
   const RouteEntry(this.kind, [this.path]);
 
   @override
-  bool operator ==(Object other) =>
-      other is RouteEntry && other.kind == kind && other.path == path;
+  bool operator ==(Object other) => other is RouteEntry && other.kind == kind && other.path == path;
 
   @override
   int get hashCode => Object.hash(kind, path);
@@ -99,8 +98,7 @@ class ChannelRoutes {
     if (vendorId == null) return (webSearch: false, promptCaching: false);
     final vendor = Vendors.byId(vendorId);
     return (
-      webSearch: vendor.sendsWebSearchOn(kind.face) &&
-          !platform.untestedWebSearch.contains(kind),
+      webSearch: vendor.sendsWebSearchOn(kind.face) && !platform.untestedWebSearch.contains(kind),
       promptCaching: vendor.promptCaching && kind.face == WireProtocol.anthropicChat,
     );
   }
@@ -133,8 +131,7 @@ class ChannelRoutes {
   static bool isAbsolute(String path) => _absolute.hasMatch(path);
 
   /// [host] + [path], or [path] alone when it is absolute.
-  static String joinAddress(String host, String path) =>
-      isAbsolute(path) ? path : '$host$path';
+  static String joinAddress(String host, String path) => isAbsolute(path) ? path : '$host$path';
 
   /// Splits [address] into `scheme://authority` and the rest, on the raw
   /// string. Never through a URL parser: it lower-cases the host and adds a
@@ -185,8 +182,7 @@ class ChannelRoutes {
       final markEndpoint = parsed.markEndpoint;
       if (markType != null &&
           markEndpoint != null &&
-          Platforms.inferPlatform(markType, markEndpoint).id !=
-              legacyRoutes.platform.id) {
+          Platforms.inferPlatform(markType, markEndpoint).id != legacyRoutes.platform.id) {
         return legacyRoutes;
       }
       // Primary from the flat columns; the document's other routes after it,
@@ -227,8 +223,7 @@ class ChannelRoutes {
     for (final e in entries) {
       if (!seen.add(e.kind)) continue;
       final servable =
-          kept.isEmpty ||
-          Platforms.routeVendor(platform, primaryVendorId, e.kind) != null;
+          kept.isEmpty || Platforms.routeVendor(platform, primaryVendorId, e.kind) != null;
       // A route with no path of its own needs the platform's default.
       final addressable = e.path != null || platform.offers(e.kind);
       if (servable && addressable) kept.add(e);
@@ -254,22 +249,12 @@ class ChannelRoutes {
       final address = derive == null ? endpoint : derive(endpoint);
       entries.add(RouteEntry(kind, _pathFor(platform, host, kind, address)));
     }
-    return ChannelRoutes._(
-      platform: platform,
-      host: host,
-      entries: entries,
-      primaryVendorId: type,
-    );
+    return ChannelRoutes._(platform: platform, host: host, entries: entries, primaryVendorId: type);
   }
 
   /// The path to store so that `host + path` (or the default) rebuilds
   /// [address] exactly.
-  static String? _pathFor(
-    PlatformProfile platform,
-    String host,
-    RouteKind kind,
-    String address,
-  ) {
+  static String? _pathFor(PlatformProfile platform, String host, RouteKind kind, String address) {
     if (host.isEmpty || !address.startsWith(host)) return address;
     final rest = address.substring(host.length);
     return rest == platform.route(kind)?.defaultPath ? null : rest;
@@ -292,30 +277,19 @@ class ChannelRoutes {
     return _narrowed(
       platform: platform,
       host: host,
-      entries: [
-        for (final k in kinds)
-          RouteEntry(k, _normalizedPath(platform, k, paths[k])),
-      ],
+      entries: [for (final k in kinds) RouteEntry(k, _normalizedPath(platform, k, paths[k]))],
       primaryVendorId: vendor,
     )!;
   }
 
-  static String? _normalizedPath(
-    PlatformProfile platform,
-    RouteKind kind,
-    String? path,
-  ) {
+  static String? _normalizedPath(PlatformProfile platform, RouteKind kind, String? path) {
     if (path == null) return null;
     final trimmed = path.trim();
     if (trimmed == platform.route(kind)?.defaultPath) return null;
     return trimmed;
   }
 
-  ChannelRoutes _copy({
-    String? host,
-    List<RouteEntry>? entries,
-    String? primaryVendorId,
-  }) =>
+  ChannelRoutes _copy({String? host, List<RouteEntry>? entries, String? primaryVendorId}) =>
       _narrowed(
         platform: platform,
         host: host ?? this.host,
@@ -330,9 +304,7 @@ class ChannelRoutes {
   ChannelRoutes withPath(RouteKind kind, String? path) => _copy(
     entries: [
       for (final e in entries)
-        e.kind == kind
-            ? RouteEntry(kind, _normalizedPath(platform, kind, path))
-            : e,
+        e.kind == kind ? RouteEntry(kind, _normalizedPath(platform, kind, path)) : e,
     ],
   );
 
@@ -378,8 +350,7 @@ class ChannelRoutes {
     'v': docVersion,
     'host': host,
     'routes': [
-      for (final e in entries)
-        {'kind': e.kind.id, if (e.path != null) 'path': e.path},
+      for (final e in entries) {'kind': e.kind.id, if (e.path != null) 'path': e.path},
     ],
     'mark': {'type': primaryVendorId, 'endpoint': primaryAddress},
   });
@@ -421,9 +392,7 @@ class _Doc {
       host,
       entries,
       mark is Map && mark['type'] is String ? mark['type'] as String : null,
-      mark is Map && mark['endpoint'] is String
-          ? mark['endpoint'] as String
-          : null,
+      mark is Map && mark['endpoint'] is String ? mark['endpoint'] as String : null,
     );
   }
 }

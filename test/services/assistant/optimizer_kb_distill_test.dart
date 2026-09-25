@@ -1,49 +1,48 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:joycai_image_ai_toolkits/models/result_feedback.dart';
 import 'package:joycai_image_ai_toolkits/services/assistant/assistant_kb_distill.dart';
 import 'package:joycai_image_ai_toolkits/services/assistant/knowledge_base_service.dart';
-import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/assistant/prompt_optimizer_agent.dart';
-import 'package:joycai_image_ai_toolkits/models/result_feedback.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 
 /// The knowledge-base optimization loop, model-free: the feedback-message
 /// wire format, the derived pending-distill / write-escalation state, and the
 /// iteration ledger the distill request embeds.
 void main() {
-  PromptOptimizerSession kbSession() =>
-      PromptOptimizerSession(mode: AssistantMode.knowledgeBase);
+  PromptOptimizerSession kbSession() => PromptOptimizerSession(mode: AssistantMode.knowledgeBase);
 
   /// Appends the assistant message + paired tool result of one submit_prompt,
   /// matching production's shape.
   void recordSubmit(PromptOptimizerSession session, String prompt, {String? note}) {
     final callId = 'call_${session.history.length}';
-    session.history.add(LLMMessage(
-      role: LLMRole.assistant,
-      content: '',
-      toolCalls: [
-        LLMToolCall(
-          id: callId,
-          name: 'submit_prompt',
-          arguments: {'prompt': prompt, 'note': ?note},
-        ),
-      ],
-    ));
-    session.history.add(LLMMessage(
-      role: LLMRole.tool,
-      content: '{"status":"ok"}',
-      toolCallId: callId,
-      toolName: 'submit_prompt',
-    ));
+    session.history.add(
+      LLMMessage(
+        role: LLMRole.assistant,
+        content: '',
+        toolCalls: [
+          LLMToolCall(
+            id: callId,
+            name: 'submit_prompt',
+            arguments: {'prompt': prompt, 'note': ?note},
+          ),
+        ],
+      ),
+    );
+    session.history.add(
+      LLMMessage(
+        role: LLMRole.tool,
+        content: '{"status":"ok"}',
+        toolCallId: callId,
+        toolName: 'submit_prompt',
+      ),
+    );
   }
 
   group('result feedback wire format', () {
     test('addResultFeedback round-trips through tryParseResultFeedback', () {
       final session = kbSession();
       session.addUserTurn('画一个角色');
-      session.addResultFeedback(
-        imageName: 'gen_42.png',
-        promptVersion: 3,
-        feedback: '手部畸形，光线太平',
-      );
+      session.addResultFeedback(imageName: 'gen_42.png', promptVersion: 3, feedback: '手部畸形，光线太平');
 
       final msg = session.history.last;
       expect(msg.role, LLMRole.user);
@@ -82,26 +81,33 @@ void main() {
 
       final entry = session.transcript.last;
       expect(entry.feedbackSatisfied, isFalse);
-      expect(entry.feedbackReasons, [ResultFeedbackReason.composition, ResultFeedbackReason.detail]);
+      expect(entry.feedbackReasons, [
+        ResultFeedbackReason.composition,
+        ResultFeedbackReason.detail,
+      ]);
 
       final restored = PromptOptimizerSession.fromStored(
         id: session.id,
         mode: AssistantMode.knowledgeBase,
         history: List.of(session.history),
       );
-      final back = restored.transcript.firstWhere((e) => e.kind == OptimizerEntryKind.resultFeedback);
+      final back = restored.transcript.firstWhere(
+        (e) => e.kind == OptimizerEntryKind.resultFeedback,
+      );
       expect(back.feedbackSatisfied, isFalse);
       expect(back.feedbackReasons, [ResultFeedbackReason.composition, ResultFeedbackReason.detail]);
     });
 
     test('a report without a rating, or with an unknown tag, degrades to unrated', () {
       final legacy = PromptOptimizerAgent.tryParseResultFeedback(
-          '${PromptOptimizerAgent.resultFeedbackMarker} {"prompt_version":1,"image":"a.png"}\ntext');
+        '${PromptOptimizerAgent.resultFeedbackMarker} {"prompt_version":1,"image":"a.png"}\ntext',
+      );
       expect(legacy!.satisfied, isNull);
       expect(legacy.reasons, isEmpty);
 
       final odd = PromptOptimizerAgent.tryParseResultFeedback(
-          '${PromptOptimizerAgent.resultFeedbackMarker} {"prompt_version":1,"image":"a.png","rating":"meh","reasons":["composition","future_tag"]}\n');
+        '${PromptOptimizerAgent.resultFeedbackMarker} {"prompt_version":1,"image":"a.png","rating":"meh","reasons":["composition","future_tag"]}\n',
+      );
       expect(odd!.satisfied, isNull);
       expect(odd.reasons, [ResultFeedbackReason.composition]);
     });
@@ -110,12 +116,14 @@ void main() {
       expect(PromptOptimizerAgent.tryParseResultFeedback('plain text'), isNull);
       expect(
         PromptOptimizerAgent.tryParseResultFeedback(
-            '${PromptOptimizerAgent.resultFeedbackMarker} not json\nfeedback'),
+          '${PromptOptimizerAgent.resultFeedbackMarker} not json\nfeedback',
+        ),
         isNull,
       );
       expect(
         PromptOptimizerAgent.tryParseResultFeedback(
-            '${PromptOptimizerAgent.resultFeedbackMarker} {"prompt_version":1}\nno image key'),
+          '${PromptOptimizerAgent.resultFeedbackMarker} {"prompt_version":1}\nno image key',
+        ),
         isNull,
       );
     });
@@ -138,8 +146,7 @@ void main() {
       final live = kbSession();
       live.addUserTurn('优化');
       live.addResultFeedback(imageName: 'r.png', promptVersion: 1, feedback: '构图太空');
-      live.addKbDistillTurn(
-          '${PromptOptimizerAgent.kbDistillMarker} distill request body');
+      live.addKbDistillTurn('${PromptOptimizerAgent.kbDistillMarker} distill request body');
 
       final restored = PromptOptimizerSession.fromStored(
         id: live.id,
@@ -156,8 +163,9 @@ void main() {
           OptimizerEntryKind.kbDistill,
         ]),
       );
-      final feedback = restored.transcript
-          .firstWhere((e) => e.kind == OptimizerEntryKind.resultFeedback);
+      final feedback = restored.transcript.firstWhere(
+        (e) => e.kind == OptimizerEntryKind.resultFeedback,
+      );
       expect(feedback.version, 1);
       expect(feedback.note, 'r.png');
       expect(feedback.text, '构图太空');
@@ -177,10 +185,12 @@ void main() {
 
       // Synthetic user-role messages (view attachments, summaries) must not
       // clear it — the distill turn itself appends them.
-      session.history.add(LLMMessage(
-        role: LLMRole.user,
-        content: '${PromptOptimizerAgent.viewResultMarker} Reference image #1 (x) is attached.',
-      ));
+      session.history.add(
+        LLMMessage(
+          role: LLMRole.user,
+          content: '${PromptOptimizerAgent.viewResultMarker} Reference image #1 (x) is attached.',
+        ),
+      );
       expect(session.hasPendingKbDistill, isTrue);
 
       // The user's next ordinary message does clear it.
@@ -188,30 +198,31 @@ void main() {
       expect(session.hasPendingKbDistill, isFalse);
     });
 
-    test('a free-text answer to the distill turn\'s ask_user keeps it pending',
-        () {
+    test('a free-text answer to the distill turn\'s ask_user keeps it pending', () {
       final session = kbSession();
       session.addKbDistillTurn('${PromptOptimizerAgent.kbDistillMarker} go');
       expect(session.hasPendingKbDistill, isTrue);
 
       // The distill turn pauses on an ask_user (rule 4: contradictions); the
       // model's message carries the call and the turn returns with it dangling.
-      session.history.add(LLMMessage(
-        role: LLMRole.assistant,
-        content: '',
-        toolCalls: [
-          LLMToolCall(id: 'ask1', name: 'ask_user', arguments: const {}),
-        ],
-      ));
+      session.history.add(
+        LLMMessage(
+          role: LLMRole.assistant,
+          content: '',
+          toolCalls: [LLMToolCall(id: 'ask1', name: 'ask_user', arguments: const {})],
+        ),
+      );
       // The user answers in the composer, not the card: the call is paired
       // with a tool result, then the free text is appended as a user turn —
       // a real user turn, but one immediately preceded by that tool result.
-      session.history.add(LLMMessage(
-        role: LLMRole.tool,
-        content: '{"status":"ok"}',
-        toolCallId: 'ask1',
-        toolName: 'ask_user',
-      ));
+      session.history.add(
+        LLMMessage(
+          role: LLMRole.tool,
+          content: '{"status":"ok"}',
+          toolCallId: 'ask1',
+          toolName: 'ask_user',
+        ),
+      );
       session.addUserTurn('用新规则，把旧的降级为例外');
 
       // It continues the distill turn, so write access must survive it —
@@ -219,8 +230,7 @@ void main() {
       expect(session.hasPendingKbDistill, isTrue);
     });
 
-    test('a stopped distill turn does not lend its write access to the next message',
-        () {
+    test('a stopped distill turn does not lend its write access to the next message', () {
       // Standard 08 §3.5. A mid-batch stop (or the round limit, or a failed
       // request after a tool round) also leaves the history ending on a tool
       // result. Only the ask_user free-text reply continues the turn; an
@@ -228,7 +238,8 @@ void main() {
       for (final trailing in [
         LLMMessage(
           role: LLMRole.tool,
-          content: '{"status":"cancelled","message":"The user cancelled the task before this tool ran."}',
+          content:
+              '{"status":"cancelled","message":"The user cancelled the task before this tool ran."}',
           toolCallId: 'r1',
           toolName: 'read_knowledge_file',
         ),
@@ -241,13 +252,15 @@ void main() {
       ]) {
         final session = kbSession();
         session.addKbDistillTurn('${PromptOptimizerAgent.kbDistillMarker} go');
-        session.history.add(LLMMessage(
-          role: LLMRole.assistant,
-          content: '',
-          toolCalls: [
-            LLMToolCall(id: 'r1', name: 'read_knowledge_file', arguments: const {'path': 'a.md'}),
-          ],
-        ));
+        session.history.add(
+          LLMMessage(
+            role: LLMRole.assistant,
+            content: '',
+            toolCalls: [
+              LLMToolCall(id: 'r1', name: 'read_knowledge_file', arguments: const {'path': 'a.md'}),
+            ],
+          ),
+        );
         session.history.add(trailing);
         expect(session.hasPendingKbDistill, isTrue);
 
@@ -257,39 +270,48 @@ void main() {
       }
     });
 
-    test('a structured ask_user answer followed by a new message ends the distill turn',
-        () {
+    test('a structured ask_user answer followed by a new message ends the distill turn', () {
       // The card path appends a tool result carrying `answers`, and the turn
       // resumes without a user message. A message typed after that is new.
       final session = kbSession();
       session.addKbDistillTurn('${PromptOptimizerAgent.kbDistillMarker} go');
-      session.history.add(LLMMessage(
-        role: LLMRole.assistant,
-        content: '',
-        toolCalls: [LLMToolCall(id: 'ask1', name: 'ask_user', arguments: const {})],
-      ));
-      session.history.add(LLMMessage(
-        role: LLMRole.tool,
-        content: '{"status":"ok","answers":[{"header":"Rule","selected":["new"]}]}',
-        toolCallId: 'ask1',
-        toolName: 'ask_user',
-      ));
+      session.history.add(
+        LLMMessage(
+          role: LLMRole.assistant,
+          content: '',
+          toolCalls: [LLMToolCall(id: 'ask1', name: 'ask_user', arguments: const {})],
+        ),
+      );
+      session.history.add(
+        LLMMessage(
+          role: LLMRole.tool,
+          content: '{"status":"ok","answers":[{"header":"Rule","selected":["new"]}]}',
+          toolCallId: 'ask1',
+          toolName: 'ask_user',
+        ),
+      );
       session.addUserTurn('另一个问题');
       expect(session.hasPendingKbDistill, isFalse);
     });
 
-    test('a pending distill escalates canWriteKnowledge in knowledgeBase mode, policy permitting', () {
-      final session = kbSession();
-      session.addUserTurn('优化');
-      expect(session.canWriteKnowledge, isFalse);
+    test(
+      'a pending distill escalates canWriteKnowledge in knowledgeBase mode, policy permitting',
+      () {
+        final session = kbSession();
+        session.addUserTurn('优化');
+        expect(session.canWriteKnowledge, isFalse);
 
-      session.addKbDistillTurn('${PromptOptimizerAgent.kbDistillMarker} go');
-      expect(session.canWriteKnowledge, isTrue);
+        session.addKbDistillTurn('${PromptOptimizerAgent.kbDistillMarker} go');
+        expect(session.canWriteKnowledge, isTrue);
 
-      session.writePolicy = const KbWritePolicy(allowWrites: false);
-      expect(session.canWriteKnowledge, isFalse,
-          reason: 'the write switch still outranks the escalation');
-    });
+        session.writePolicy = const KbWritePolicy(allowWrites: false);
+        expect(
+          session.canWriteKnowledge,
+          isFalse,
+          reason: 'the write switch still outranks the escalation',
+        );
+      },
+    );
 
     test('knowledgeEdit mode keeps its unconditional write access', () {
       final session = PromptOptimizerSession(mode: AssistantMode.knowledgeEdit);
@@ -346,12 +368,16 @@ void main() {
       session.addResultFeedback(imageName: 'a.png', promptVersion: 2, feedback: '满意');
 
       final rendered = AssistantKbDistill.renderIterationLedger(
-          AssistantKbDistill.buildIterationLedger(session.history));
+        AssistantKbDistill.buildIterationLedger(session.history),
+      );
       expect(rendered, contains('v1'));
       expect(rendered, contains('v2 (final) — final tweak'));
       expect(rendered, contains('user feedback (image a.png): 满意'));
-      expect(rendered, isNot(contains('p' * 500)),
-          reason: 'earlier prompts are excerpted, not embedded whole');
+      expect(
+        rendered,
+        isNot(contains('p' * 500)),
+        reason: 'earlier prompts are excerpted, not embedded whole',
+      );
       expect(rendered, contains('…'));
     });
   });
@@ -363,12 +389,10 @@ void main() {
       recordSubmit(session, 'prompt one');
       session.addResultFeedback(imageName: 'a.png', promptVersion: 1, feedback: 'ok');
 
-      final result =
-          await AssistantKbDistill.stageKbDistillRequest(session: session);
+      final result = await AssistantKbDistill.stageKbDistillRequest(session: session);
       expect(result, KbDistillStageResult.staged);
       expect(session.history.last.role, LLMRole.user);
-      expect(session.history.last.content,
-          startsWith(PromptOptimizerAgent.kbDistillMarker));
+      expect(session.history.last.content, startsWith(PromptOptimizerAgent.kbDistillMarker));
       expect(session.history.last.content, contains('v1'));
       expect(session.hasPendingKbDistill, isTrue);
       expect(session.transcript.last.kind, OptimizerEntryKind.kbDistill);
@@ -377,8 +401,10 @@ void main() {
     test('refuses when nothing was ever submitted', () async {
       final session = kbSession();
       session.addUserTurn('优化');
-      expect(await AssistantKbDistill.stageKbDistillRequest(session: session),
-          KbDistillStageResult.nothingToDistill);
+      expect(
+        await AssistantKbDistill.stageKbDistillRequest(session: session),
+        KbDistillStageResult.nothingToDistill,
+      );
     });
 
     test('refuses a second click while the first request has not run', () async {
@@ -387,14 +413,18 @@ void main() {
       recordSubmit(session, 'prompt one');
       await AssistantKbDistill.stageKbDistillRequest(session: session);
 
-      expect(await AssistantKbDistill.stageKbDistillRequest(session: session),
-          KbDistillStageResult.alreadyPending);
+      expect(
+        await AssistantKbDistill.stageKbDistillRequest(session: session),
+        KbDistillStageResult.alreadyPending,
+      );
     });
 
     test('refuses outside knowledge sessions', () async {
       final session = PromptOptimizerSession(mode: AssistantMode.systemPrompt);
-      expect(await AssistantKbDistill.stageKbDistillRequest(session: session),
-          KbDistillStageResult.notKnowledgeSession);
+      expect(
+        await AssistantKbDistill.stageKbDistillRequest(session: session),
+        KbDistillStageResult.notKnowledgeSession,
+      );
     });
   });
 }

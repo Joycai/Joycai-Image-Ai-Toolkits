@@ -55,18 +55,20 @@ void main() {
   }
 
   Future<void> mount(WidgetTester tester) => mountApp(
-        tester,
-        env: env,
-        screen: AppScreen.tasks,
-        size: const Size(1440, 900),
-        label: 'unfinished-load',
-      );
+    tester,
+    env: env,
+    screen: AppScreen.tasks,
+    size: const Size(1440, 900),
+    label: 'unfinished-load',
+  );
 
   testWidgets('a test that never mounts leaves a load pending', (WidgetTester tester) async {
     startLoad(env.fixtureImagePaths.first);
   });
 
-  testWidgets('…and the next mount drops it on the way in', timeout: hangs, (WidgetTester tester) async {
+  testWidgets('…and the next mount drops it on the way in', timeout: hangs, (
+    WidgetTester tester,
+  ) async {
     await mount(tester);
   });
 
@@ -79,7 +81,9 @@ void main() {
     expect(imageCache.statusForKey(image).live, isTrue);
   });
 
-  testWidgets('…and the next mount drops the live entry too', timeout: hangs, (WidgetTester tester) async {
+  testWidgets('…and the next mount drops the live entry too', timeout: hangs, (
+    WidgetTester tester,
+  ) async {
     await mount(tester);
   });
 

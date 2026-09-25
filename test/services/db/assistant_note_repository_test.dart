@@ -1,11 +1,11 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:joycai_image_ai_toolkits/services/db/database_service.dart';
-import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/assistant/prompt_optimizer_agent.dart';
+import 'package:joycai_image_ai_toolkits/services/db/database_service.dart';
 import 'package:joycai_image_ai_toolkits/services/db/repositories/assistant_note_repository.dart';
 import 'package:joycai_image_ai_toolkits/services/db/repositories/assistant_session_repository.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import '../../support/in_memory_database.dart';
@@ -29,8 +29,7 @@ void main() {
   group('sanitizeSlug', () {
     test('keeps letters and digits of any script', () {
       // An ASCII whitelist would collapse every CJK title into ''.
-      expect(AssistantNoteRepository.sanitizeSlug('角色设定 规则 v2'),
-          '角色设定-规则-v2');
+      expect(AssistantNoteRepository.sanitizeSlug('角色设定 规则 v2'), '角色设定-规则-v2');
     });
 
     test('collapses runs and trims edge dashes', () {
@@ -45,8 +44,7 @@ void main() {
 
   group('insert / get', () {
     test('round-trips a note within its session', () async {
-      final note = await notes.insert(
-          sessionId: 's1', title: '查一下构图规则', content: 'findings text');
+      final note = await notes.insert(sessionId: 's1', title: '查一下构图规则', content: 'findings text');
       expect(note.id, greaterThan(0));
       final loaded = await notes.get(note.id, sessionId: 's1');
       expect(loaded!.content, 'findings text');
@@ -56,8 +54,7 @@ void main() {
     test('a note id from another session reads as not-found', () async {
       // Reading a note nobody in this conversation commissioned is worse
       // than not finding it.
-      final note = await notes.insert(
-          sessionId: 's1', title: 't', content: 'secret');
+      final note = await notes.insert(sessionId: 's1', title: 't', content: 'secret');
       expect(await notes.get(note.id, sessionId: 's2'), isNull);
     });
 
@@ -77,8 +74,7 @@ void main() {
         title: 'big',
         content: 'x' * (AssistantNoteRepository.maxContentChars + 100),
       );
-      expect(note.content.length,
-          lessThan(AssistantNoteRepository.maxContentChars + 100));
+      expect(note.content.length, lessThan(AssistantNoteRepository.maxContentChars + 100));
       expect(note.content, contains('[note truncated'));
     });
   });
@@ -87,11 +83,12 @@ void main() {
     test('deleteSession removes the session\'s notes with it', () async {
       final sessions = AssistantSessionRepository(db: db);
       await sessions.upsertSession(
-          id: 's1', mode: AssistantMode.knowledgeBase, refImages: const []);
-      final note =
-          await notes.insert(sessionId: 's1', title: 't', content: 'c');
-      final other =
-          await notes.insert(sessionId: 'other', title: 't', content: 'kept');
+        id: 's1',
+        mode: AssistantMode.knowledgeBase,
+        refImages: const [],
+      );
+      final note = await notes.insert(sessionId: 's1', title: 't', content: 'c');
+      final other = await notes.insert(sessionId: 'other', title: 't', content: 'kept');
 
       await sessions.deleteSession('s1');
 
@@ -102,12 +99,14 @@ void main() {
 
   group('read_note elision', () {
     test('bulky read_note results elide exactly like knowledge reads', () {
-      final elided = PromptOptimizerAgent.elideForTest(LLMMessage(
-        role: LLMRole.tool,
-        content: jsonEncode({'note_id': 1, 'content': 'x' * 500}),
-        toolCallId: 'c1',
-        toolName: 'read_note',
-      ));
+      final elided = PromptOptimizerAgent.elideForTest(
+        LLMMessage(
+          role: LLMRole.tool,
+          content: jsonEncode({'note_id': 1, 'content': 'x' * 500}),
+          toolCallId: 'c1',
+          toolName: 'read_note',
+        ),
+      );
       expect(elided.content, contains('Content elided'));
       // Pairing survives: only the content is swapped.
       expect(elided.toolCallId, 'c1');

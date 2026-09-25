@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 
 import '../../../core/app_semantic_colors.dart';
 import '../../../core/app_theme.dart';
-import 'context_usage_palette.dart';
 import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/assistant/assistant_context_usage.dart';
+import 'context_usage_palette.dart';
 
 /// A card in the Prompt Assistant's side columns (`A3a` / `A3b`): the panel
 /// ground laid on the column, a hairline, r16, a 10px inset and an 8px rhythm
@@ -79,15 +79,12 @@ class OptimizerPanelCaption extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  letterSpacing: AppType.trackedLabelSpacing,
-                  color: colorScheme.onAccentTint,
-                ),
+              letterSpacing: AppType.trackedLabelSpacing,
+              color: colorScheme.onAccentTint,
+            ),
           ),
         ),
-        if (trailing != null) ...[
-          const SizedBox(width: AppSpace.s6),
-          trailing!,
-        ],
+        if (trailing != null) ...[const SizedBox(width: AppSpace.s6), trailing!],
       ],
     );
   }
@@ -131,15 +128,15 @@ class OptimizerTagBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (leading != null) ...[
-            leading!,
-            const SizedBox(width: AppSpace.s4),
-          ],
+          if (leading != null) ...[leading!, const SizedBox(width: AppSpace.s4)],
           Text(
             label,
             maxLines: 1,
             style: mono
-                ? textTheme.labelSmall?.mono.copyWith(fontWeight: FontWeight.w600, color: foreground)
+                ? textTheme.labelSmall?.mono.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: foreground,
+                  )
                 : textTheme.labelSmall?.copyWith(color: foreground),
           ),
         ],
@@ -167,11 +164,7 @@ class OptimizerContextCard extends StatelessWidget {
   /// Null in the modes that have nothing to explain.
   final String? note;
 
-  const OptimizerContextCard({
-    super.key,
-    this.usage = ContextUsageSnapshot.placeholder,
-    this.note,
-  });
+  const OptimizerContextCard({super.key, this.usage = ContextUsageSnapshot.placeholder, this.note});
 
   /// The stacked bar's height, and the radius that caps its ends.
   static const double _barHeight = 8;
@@ -187,7 +180,10 @@ class OptimizerContextCard extends StatelessWidget {
 
     final colors = <ContextUsageSlice, Color>{
       ContextUsageSlice.systemPrompt: colorScheme.primary,
-      ContextUsageSlice.tools: ContextUsagePalette.of(ContextUsageSlice.tools, colorScheme.brightness),
+      ContextUsageSlice.tools: ContextUsagePalette.of(
+        ContextUsageSlice.tools,
+        colorScheme.brightness,
+      ),
       ContextUsageSlice.history: semantic.warning,
     };
     final remaining = colorScheme.surfaceContainerHighest;
@@ -237,7 +233,8 @@ class OptimizerContextCard extends StatelessWidget {
         ),
         // Said once, under the numbers it qualifies: the window being drawn is
         // the default the compaction budget assumes, not this model's.
-        if (usage.basis == ContextWindowBasis.assumed) Text(l10n.optCtxWindowAssumed, style: noteStyle),
+        if (usage.basis == ContextWindowBasis.assumed)
+          Text(l10n.optCtxWindowAssumed, style: noteStyle),
         if (note != null) Text(note!, style: noteStyle),
       ],
     );
@@ -245,11 +242,7 @@ class OptimizerContextCard extends StatelessWidget {
 
   /// `102.2K / 200K` in mono — the spent half in the body ink, the window in
   /// the secondary one, so the ratio reads before the digits do.
-  Widget _buildReadout(
-    AppLocalizations l10n,
-    ColorScheme colorScheme,
-    TextTheme textTheme,
-  ) {
+  Widget _buildReadout(AppLocalizations l10n, ColorScheme colorScheme, TextTheme textTheme) {
     final base = textTheme.labelSmall?.mono.copyWith(fontWeight: FontWeight.w400);
     if (usage.isUnknown) {
       return Text(

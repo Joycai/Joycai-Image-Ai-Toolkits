@@ -3,8 +3,8 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/core/design_tokens.dart';
-import 'package:joycai_image_ai_toolkits/widgets/ui/app_segmented_control.dart';
 import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_segmented_control.dart';
 
 /// Covers the selection indicator, which used to be each chip's own fill.
 ///
@@ -18,33 +18,28 @@ void main() {
   const seed = Colors.indigo;
 
   Widget host(Widget child) => MaterialApp(
-        theme: buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light),
-        home: Scaffold(body: Center(child: child)),
-      );
+    theme: buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light),
+    home: Scaffold(body: Center(child: child)),
+  );
 
   /// Segments with deliberately unequal label widths — the case an
   /// index-fraction indicator would get wrong and only this can catch.
   List<AppSegment<int>> segments() => const [
-        AppSegment(value: 0, label: 'A'),
-        AppSegment(value: 1, label: 'A much longer label'),
-        AppSegment(value: 2, label: 'Mid'),
-      ];
+    AppSegment(value: 0, label: 'A'),
+    AppSegment(value: 1, label: 'A much longer label'),
+    AppSegment(value: 2, label: 'Mid'),
+  ];
 
   Widget control(int value, {bool expand = false}) => AppSegmentedControl<int>(
-        segments: segments(),
-        value: value,
-        onChanged: (_) {},
-        expand: expand,
-      );
+    segments: segments(),
+    value: value,
+    onChanged: (_) {},
+    expand: expand,
+  );
 
   Rect indicatorRect(WidgetTester tester) {
     final positioned = tester.widget<AnimatedPositioned>(find.byType(AnimatedPositioned));
-    return Rect.fromLTWH(
-      positioned.left!,
-      positioned.top!,
-      positioned.width!,
-      positioned.height!,
-    );
+    return Rect.fromLTWH(positioned.left!, positioned.top!, positioned.width!, positioned.height!);
   }
 
   /// The chip's box in the same coordinate space the indicator is positioned in.
@@ -56,8 +51,9 @@ void main() {
     return chip.localToGlobal(Offset.zero, ancestor: stack) & chip.size;
   }
 
-  testWidgets('the indicator lands on the selected chip, not on a fraction of the track',
-      (tester) async {
+  testWidgets('the indicator lands on the selected chip, not on a fraction of the track', (
+    tester,
+  ) async {
     await tester.pumpWidget(host(control(1)));
     await tester.pump(); // the measurement is taken after layout
 
@@ -111,21 +107,29 @@ void main() {
     // full 10px inset the label had 43.5px, and the test font draws every
     // glyph fontSize wide, so a four-glyph label (48px) is the first that
     // does not fit — "Medium" in a real font, at 45.8px, was the case.
-    await tester.pumpWidget(host(SizedBox(
-      width: 137,
-      child: AppSegmentedControl<int>(
-        segments: const [AppSegment(value: 0, label: 'Low'), AppSegment(value: 1, label: 'Medi')],
-        value: 1,
-        onChanged: (_) {},
-        expand: true,
-        compact: true,
-        tightLabels: true,
+    await tester.pumpWidget(
+      host(
+        SizedBox(
+          width: 137,
+          child: AppSegmentedControl<int>(
+            segments: const [
+              AppSegment(value: 0, label: 'Low'),
+              AppSegment(value: 1, label: 'Medi'),
+            ],
+            value: 1,
+            onChanged: (_) {},
+            expand: true,
+            compact: true,
+            tightLabels: true,
+          ),
+        ),
       ),
-    )));
+    );
     await tester.pump();
 
     final label = tester.renderObject<RenderParagraph>(
-        find.descendant(of: find.text('Medi'), matching: find.byType(RichText)));
+      find.descendant(of: find.text('Medi'), matching: find.byType(RichText)),
+    );
     final need = (TextPainter(text: label.text, textDirection: TextDirection.ltr)..layout()).width;
     expect(label.size.width + 0.01, greaterThanOrEqualTo(need), reason: '"Medi" was elided');
     // Still centred in its slot: the inset is a floor, not a shift.
@@ -136,15 +140,22 @@ void main() {
   testWidgets('without tightLabels an expand track keeps the inset it is sized by', (tester) async {
     // The pop-out editor's view toggle sizes itself from its chips
     // (`IntrinsicWidth`), so there the inset is width: 10 a side, compact.
-    await tester.pumpWidget(host(IntrinsicWidth(
-      child: AppSegmentedControl<int>(
-        segments: const [AppSegment(value: 0, label: 'AB'), AppSegment(value: 1, label: 'CD')],
-        value: 0,
-        onChanged: (_) {},
-        expand: true,
-        compact: true,
+    await tester.pumpWidget(
+      host(
+        IntrinsicWidth(
+          child: AppSegmentedControl<int>(
+            segments: const [
+              AppSegment(value: 0, label: 'AB'),
+              AppSegment(value: 1, label: 'CD'),
+            ],
+            value: 0,
+            onChanged: (_) {},
+            expand: true,
+            compact: true,
+          ),
+        ),
       ),
-    )));
+    );
     await tester.pump();
     final chip = find.ancestor(of: find.text('CD'), matching: find.byType(InkWell)).first;
     final label = tester.getSize(find.text('CD')).width;
@@ -163,10 +174,7 @@ void main() {
     final selected = tester.widget<Container>(
       find
           .descendant(
-            of: find.ancestor(
-              of: find.text('A much longer label'),
-              matching: find.byType(InkWell),
-            ),
+            of: find.ancestor(of: find.text('A much longer label'), matching: find.byType(InkWell)),
             matching: find.byType(Container),
           )
           .first,

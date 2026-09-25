@@ -11,13 +11,13 @@
 // These are the browser's cases, run against the gallery — plus the one
 // deliberate exception, `Delete` in the temporary workspace (plan D2).
 
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/models/app_image.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/gallery/image_card.dart';
@@ -25,9 +25,9 @@ import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/workbench_gla
 import 'package:joycai_image_ai_toolkits/services/files/trash_service.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/state/gallery_state.dart';
-import 'package:joycai_image_ai_toolkits/widgets/glass/glass_controls.dart';
 import 'package:joycai_image_ai_toolkits/widgets/dialogs/file_rename_dialog.dart';
 import 'package:joycai_image_ai_toolkits/widgets/files/transfer_dialog_parts.dart';
+import 'package:joycai_image_ai_toolkits/widgets/glass/glass_controls.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_dialog.dart';
 
 import 'harness/fixture_env.dart';
@@ -52,8 +52,9 @@ void main() {
     env.dispose();
   });
 
-  final LogicalKeyboardKey primary =
-      Platform.isMacOS ? LogicalKeyboardKey.metaLeft : LogicalKeyboardKey.controlLeft;
+  final LogicalKeyboardKey primary = Platform.isMacOS
+      ? LogicalKeyboardKey.metaLeft
+      : LogicalKeyboardKey.controlLeft;
 
   /// Shift+click, with the modifier still down when the tap actually lands.
   ///
@@ -116,8 +117,9 @@ void main() {
     return gallery;
   }
 
-  testWidgets('the screen-level keys: refresh, the two columns, the tools',
-      (WidgetTester tester) async {
+  testWidgets('the screen-level keys: refresh, the two columns, the tools', (
+    WidgetTester tester,
+  ) async {
     final appState = AppState();
     await mountGallery(tester, 'workbench-screen-keys');
     addTearDown(() {
@@ -138,8 +140,7 @@ void main() {
     expect(appState.isConfigPanelExpanded, isTrue);
     await pressChord(tester, LogicalKeyboardKey.backslash, shift: true, real: true);
     expect(appState.isConfigPanelExpanded, isFalse);
-    expect(find.byIcon(Icons.tune), findsOneWidget,
-        reason: 'the toolbar offers the column back');
+    expect(find.byIcon(Icons.tune), findsOneWidget, reason: 'the toolbar offers the column back');
 
     await actInRealAsync(tester, () => tester.tap(find.byIcon(Icons.tune)));
     expect(appState.isConfigPanelExpanded, isTrue);
@@ -156,8 +157,7 @@ void main() {
       LogicalKeyboardKey.digit4,
     ].indexed) {
       await pressChord(tester, key, alt: true, real: true);
-      expect(appState.workbenchTabIndex, index,
-          reason: 'Cmd+Alt+${index + 1} is tool $index');
+      expect(appState.workbenchTabIndex, index, reason: 'Cmd+Alt+${index + 1} is tool $index');
     }
 
     await actInRealAsync(tester, () async => appState.setWorkbenchTab(0));
@@ -185,9 +185,13 @@ void main() {
     await pressChord(tester, LogicalKeyboardKey.digit3, alt: true, real: true);
     expect(appState.workbenchTabIndex, 2, reason: 'the mask editor');
     expect(appState.isConfigPanelExpanded, isFalse, reason: 'still collapsed');
-    expect(find.byIcon(Icons.tune), findsNothing,
-        reason: 'a button that would bring back a column this tab does not '
-            'have is a button that does nothing');
+    expect(
+      find.byIcon(Icons.tune),
+      findsNothing,
+      reason:
+          'a button that would bring back a column this tab does not '
+          'have is a button that does nothing',
+    );
 
     // Back on the gallery it is owed again.
     await pressChord(tester, LogicalKeyboardKey.digit1, alt: true, real: true);
@@ -213,8 +217,9 @@ void main() {
     expect(gallery.selectedImages, isEmpty);
   });
 
-  testWidgets('Shift+click extends the selection from the last plain click',
-      (WidgetTester tester) async {
+  testWidgets('Shift+click extends the selection from the last plain click', (
+    WidgetTester tester,
+  ) async {
     final gallery = await mountGallery(tester, 'workbench-shift-click');
 
     final cards = find.byType(ImageCard);
@@ -224,9 +229,13 @@ void main() {
 
     await shiftClick(tester, cards.at(2));
 
-    expect(gallery.selectedImages, hasLength(3),
-        reason: 'the span between the two clicks — all three — joins the '
-            'selection, not just the card that was clicked');
+    expect(
+      gallery.selectedImages,
+      hasLength(3),
+      reason:
+          'the span between the two clicks — all three — joins the '
+          'selection, not just the card that was clicked',
+    );
     final paths = gallery.selectedImages.map((i) => i.path).toList();
     expect(paths.toSet(), hasLength(paths.length), reason: 'no duplicates');
   });
@@ -243,8 +252,9 @@ void main() {
     expect(find.byType(FileRenameDialog), findsOneWidget);
   });
 
-  testWidgets('the menu row and the key it advertises act on the same files',
-      (WidgetTester tester) async {
+  testWidgets('the menu row and the key it advertises act on the same files', (
+    WidgetTester tester,
+  ) async {
     // A row that carries a key's badge and then acts on one file while the
     // key acts on five is the drift the round exists to remove — the browser's
     // menu was given `targets` for exactly this reason, and the gallery's was
@@ -267,19 +277,27 @@ void main() {
     await gesture.up();
     await settle(tester, 12);
 
-    expect(find.text(l10n.deleteFiles(3)), findsOneWidget,
-        reason: 'the row names the selection it would delete, like the key '
-            'that is badged beside it');
-    expect(find.text(l10n.delete), findsNothing,
-        reason: 'and never the bare singular while three are picked');
+    expect(
+      find.text(l10n.deleteFiles(3)),
+      findsOneWidget,
+      reason:
+          'the row names the selection it would delete, like the key '
+          'that is badged beside it',
+    );
+    expect(
+      find.text(l10n.delete),
+      findsNothing,
+      reason: 'and never the bare singular while three are picked',
+    );
 
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await settle(tester, 12);
     gallery.clearImageSelection();
   });
 
-  testWidgets('Delete opens the shared confirmation outside the temp workspace',
-      (WidgetTester tester) async {
+  testWidgets('Delete opens the shared confirmation outside the temp workspace', (
+    WidgetTester tester,
+  ) async {
     await mountGallery(tester, 'workbench-delete-key');
 
     await tester.tap(find.byType(ImageCard).first);
@@ -294,17 +312,15 @@ void main() {
 
     expect(find.byType(AppDialog), findsOneWidget);
     expect(
-      find.descendant(
-        of: find.byType(AppDialog),
-        matching: find.byType(TransferDialogHeading),
-      ),
+      find.descendant(of: find.byType(AppDialog), matching: find.byType(TransferDialogHeading)),
       findsOneWidget,
       reason: 'the same dialog the file browser opens — one key, one meaning',
     );
   });
 
-  testWidgets('the keys read the view the grid is showing, not the source list',
-      (WidgetTester tester) async {
+  testWidgets('the keys read the view the grid is showing, not the source list', (
+    WidgetTester tester,
+  ) async {
     // The regression this pins: the range and the preview used to look their
     // ends up in `galleryImages` — the aggregate behind the *all* view — so
     // in the temporary workspace neither end was found and Shift+click
@@ -318,7 +334,7 @@ void main() {
         .whereType<File>()
         .where((f) => f.path.endsWith('.png'))
         .take(3)
-        .map((f) => AppImage.fromFile(f))
+        .map(AppImage.fromFile)
         .toList();
     expect(sources, hasLength(3));
     gallery.addDroppedFiles(sources);
@@ -339,8 +355,11 @@ void main() {
     await settle(tester);
     await shiftClick(tester, cards.at(2));
 
-    expect(gallery.selectedImages, hasLength(3),
-        reason: 'the span is the three pictures in the basket');
+    expect(
+      gallery.selectedImages,
+      hasLength(3),
+      reason: 'the span is the three pictures in the basket',
+    );
 
     // …and select-all takes the basket, not the source aggregate behind it.
     gallery.clearImageSelection();
@@ -365,7 +384,7 @@ void main() {
         .whereType<File>()
         .where((f) => f.path.endsWith('.png'))
         .take(2)
-        .map((f) => AppImage.fromFile(f))
+        .map(AppImage.fromFile)
         .toList();
     expect(sources, hasLength(2), reason: 'the fixture must have two pictures');
     gallery.addDroppedFiles(sources);
@@ -389,19 +408,27 @@ void main() {
 
     // D2, the one key in this round that means two things: in the basket it
     // takes things out, which costs nothing and needs no confirmation.
-    expect(find.byType(AppDialog), findsNothing,
-        reason: 'removing from the workspace is lossless, so nothing to confirm');
+    expect(
+      find.byType(AppDialog),
+      findsNothing,
+      reason: 'removing from the workspace is lossless, so nothing to confirm',
+    );
     expect(gallery.droppedImages.map((i) => i.path), isNot(contains(picked.path)));
-    expect(File(picked.path).existsSync(), isTrue,
-        reason: 'and the file on disk is untouched — that is the whole '
-            'difference between the two meanings');
+    expect(
+      File(picked.path).existsSync(),
+      isTrue,
+      reason:
+          'and the file on disk is untouched — that is the whole '
+          'difference between the two meanings',
+    );
 
     gallery.clearDroppedImages();
     gallery.setViewMode(GalleryViewMode.all);
   });
 
-  testWidgets('a key with nothing to act on changes nothing, here or later',
-      (WidgetTester tester) async {
+  testWidgets('a key with nothing to act on changes nothing, here or later', (
+    WidgetTester tester,
+  ) async {
     final appState = AppState();
     await mountGallery(tester, 'workbench-config-key-scope');
     addTearDown(() {
@@ -419,18 +446,25 @@ void main() {
     expect(appState.isConfigPanelExpanded, isTrue);
 
     await pressChord(tester, LogicalKeyboardKey.backslash, shift: true, real: true);
-    expect(appState.isConfigPanelExpanded, isTrue,
-        reason: 'a tab with no column must not move the column preference');
+    expect(
+      appState.isConfigPanelExpanded,
+      isTrue,
+      reason: 'a tab with no column must not move the column preference',
+    );
 
     // And the proof that it did not move is on the tab that has one.
     await pressChord(tester, LogicalKeyboardKey.digit1, alt: true, real: true);
     expect(appState.workbenchTabIndex, 0);
-    expect(find.byIcon(Icons.tune), findsNothing,
-        reason: 'the column is still there, so nothing is offering it back');
+    expect(
+      find.byIcon(Icons.tune),
+      findsNothing,
+      reason: 'the column is still there, so nothing is offering it back',
+    );
   });
 
-  testWidgets('the way back opens the column where the column is a drawer',
-      (WidgetTester tester) async {
+  testWidgets('the way back opens the column where the column is a drawer', (
+    WidgetTester tester,
+  ) async {
     final appState = AppState();
     final gallery = AppState().galleryState;
     gallery.clearImageSelection();
@@ -448,7 +482,7 @@ void main() {
       appState.setWorkbenchTab(0);
     });
     await tester.runAsync(() async {
-      appState.setConfigPanelExpanded(false);
+      unawaited(appState.setConfigPanelExpanded(false));
       await Future<void>.delayed(const Duration(milliseconds: 300));
     });
 
@@ -460,20 +494,25 @@ void main() {
       label: 'workbench-tune-drawer',
     );
 
-    expect(find.byIcon(Icons.tune), findsOneWidget,
-        reason: 'a drawer always owes the user a button that opens it');
-    expect(find.byType(Drawer), findsNothing,
-        reason: 'a dismissed drawer builds no content');
+    expect(
+      find.byIcon(Icons.tune),
+      findsOneWidget,
+      reason: 'a drawer always owes the user a button that opens it',
+    );
+    expect(find.byType(Drawer), findsNothing, reason: 'a dismissed drawer builds no content');
 
     await actInRealAsync(tester, () => tester.tap(find.byIcon(Icons.tune)));
 
-    expect(find.byType(Drawer), findsOneWidget,
-        reason: 'one press, one panel — not a silent preference and a second '
-            'press to actually see it');
+    expect(
+      find.byType(Drawer),
+      findsOneWidget,
+      reason:
+          'one press, one panel — not a silent preference and a second '
+          'press to actually see it',
+    );
   });
 
-  testWidgets('Cmd+Alt+1 goes to the gallery you were last in',
-      (WidgetTester tester) async {
+  testWidgets('Cmd+Alt+1 goes to the gallery you were last in', (WidgetTester tester) async {
     final appState = AppState();
     await mountGallery(tester, 'workbench-gallery-key-target');
     addTearDown(() {
@@ -492,12 +531,14 @@ void main() {
     expect(appState.workbenchTabIndex, WorkbenchTab.comparator);
 
     await pressChord(tester, LogicalKeyboardKey.digit1, alt: true, real: true);
-    expect(appState.workbenchTabIndex, WorkbenchTab.video,
-        reason: 'back to the gallery means back to the one you left');
+    expect(
+      appState.workbenchTabIndex,
+      WorkbenchTab.video,
+      reason: 'back to the gallery means back to the one you left',
+    );
   });
 
-  testWidgets('the selection bar empties the basket in one pass',
-      (WidgetTester tester) async {
+  testWidgets('the selection bar empties the basket in one pass', (WidgetTester tester) async {
     final gallery = AppState().galleryState;
     gallery.clearImageSelection();
     gallery.clearDroppedImages();
@@ -511,7 +552,7 @@ void main() {
         .whereType<File>()
         .where((f) => f.path.endsWith('.png'))
         .take(3)
-        .map((f) => AppImage.fromFile(f))
+        .map(AppImage.fromFile)
         .toList();
     expect(sources, hasLength(3), reason: 'the fixture must have three pictures');
     gallery.addDroppedFiles(sources);
@@ -542,14 +583,16 @@ void main() {
     final l10n = await AppLocalizations.delegate.load(const Locale('zh'));
     // The bar labels its buttons when it fits and falls back to tooltips
     // when it does not, and which one it is is not this test's subject.
-    await tester.tap(find.byWidgetPredicate((w) =>
-        w is GlassIconButton &&
-        (w.label == l10n.removeFromWorkspace ||
-            w.tooltip == l10n.removeFromWorkspace)));
+    await tester.tap(
+      find.byWidgetPredicate(
+        (w) =>
+            w is GlassIconButton &&
+            (w.label == l10n.removeFromWorkspace || w.tooltip == l10n.removeFromWorkspace),
+      ),
+    );
     await settle(tester);
 
     expect(gallery.droppedImages, isEmpty);
-    expect(notifications, 1,
-        reason: 'three pictures, one notification — not one rebuild each');
+    expect(notifications, 1, reason: 'three pictures, one notification — not one rebuild each');
   });
 }

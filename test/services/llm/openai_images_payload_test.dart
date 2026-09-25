@@ -14,16 +14,24 @@ void main() {
       // A relay translating the multipart edit into its own JSON request
       // copied the part's type into a data URL and rejected
       // 'application/octet-stream' — the default when no type is given.
-      final part = imageMultipartFile('image', jpeg,
-          declaredMime: 'image/jpeg', baseName: 'image_0');
+      final part = imageMultipartFile(
+        'image',
+        jpeg,
+        declaredMime: 'image/jpeg',
+        baseName: 'image_0',
+      );
       expect(part.contentType.mimeType, 'image/jpeg');
       expect(part.filename, 'image_0.jpg');
       expect(part.field, 'image');
     });
 
     test('the bytes decide the type when the declaration disagrees', () {
-      final part = imageMultipartFile('image[]', jpeg,
-          declaredMime: 'image/png', baseName: 'image_1');
+      final part = imageMultipartFile(
+        'image[]',
+        jpeg,
+        declaredMime: 'image/png',
+        baseName: 'image_1',
+      );
       expect(part.contentType.mimeType, 'image/jpeg');
       expect(part.filename, 'image_1.jpg');
     });

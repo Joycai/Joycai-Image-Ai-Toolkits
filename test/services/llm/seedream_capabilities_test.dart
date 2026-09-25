@@ -6,12 +6,12 @@ import 'package:joycai_image_ai_toolkits/services/llm/output_spec.dart';
 /// Layer 3 for Seedream (docs/api/volcengine-ark.md): which ids are Seedream,
 /// which generation each names, and what each generation's table offers.
 void main() {
-  List<String> keysOf(ModelCapabilities caps) =>
-      [for (final p in caps.imageParams) p.key];
+  List<String> keysOf(ModelCapabilities caps) => [for (final p in caps.imageParams) p.key];
   ParamSpec spec(ModelCapabilities caps, String key) =>
       caps.imageParams.firstWhere((p) => p.key == key);
-  List<String> optionsOf(ModelCapabilities caps, String key) =>
-      [for (final o in spec(caps, key).options) o.value];
+  List<String> optionsOf(ModelCapabilities caps, String key) => [
+    for (final o in spec(caps, key).options) o.value,
+  ];
 
   group('classification', () {
     const seedreamIds = [
@@ -28,60 +28,46 @@ void main() {
 
     test('every spelling is the Seedream image family, tagged image', () {
       for (final id in seedreamIds) {
-        expect(ModelFamilyClassifier.classify(id), ModelFamily.seedreamImage,
-            reason: id);
+        expect(ModelFamilyClassifier.classify(id), ModelFamily.seedreamImage, reason: id);
         expect(ModelFamilyClassifier.inferTag(id), 'image', reason: id);
       }
     });
 
     test('Seedance (the video line) and Doubao chat are not claimed', () {
-      expect(ModelFamilyClassifier.classify('doubao-seed-1-6-250615'),
-          ModelFamily.other);
+      expect(ModelFamilyClassifier.classify('doubao-seed-1-6-250615'), ModelFamily.other);
       expect(
-          ModelFamilyClassifier.classify('doubao-seedance-1-0-pro-250528'),
-          isNot(ModelFamily.seedreamImage));
+        ModelFamilyClassifier.classify('doubao-seedance-1-0-pro-250528'),
+        isNot(ModelFamily.seedreamImage),
+      );
     });
 
     test('the version reads the same through `-` and `.`, never the date', () {
-      expect(ModelFamilyClassifier.seedreamVersion(
-          'doubao-seedream-5-0-pro-260628'), (5, 0));
-      expect(ModelFamilyClassifier.seedreamVersion('doubao-seedream-5.0-lite'),
-          (5, 0));
-      expect(ModelFamilyClassifier.seedreamVersion(
-          'doubao-seedream-4-5-251128'), (4, 5));
-      expect(ModelFamilyClassifier.seedreamVersion(
-          'doubao-seedream-4-0-250828'), (4, 0));
-      expect(ModelFamilyClassifier.seedreamVersion(
-          'doubao-seedream-3-0-t2i-250415'), (3, 0));
+      expect(ModelFamilyClassifier.seedreamVersion('doubao-seedream-5-0-pro-260628'), (5, 0));
+      expect(ModelFamilyClassifier.seedreamVersion('doubao-seedream-5.0-lite'), (5, 0));
+      expect(ModelFamilyClassifier.seedreamVersion('doubao-seedream-4-5-251128'), (4, 5));
+      expect(ModelFamilyClassifier.seedreamVersion('doubao-seedream-4-0-250828'), (4, 0));
+      expect(ModelFamilyClassifier.seedreamVersion('doubao-seedream-3-0-t2i-250415'), (3, 0));
       // A date straight after the major is not a minor.
-      expect(ModelFamilyClassifier.seedreamVersion('doubao-seedream-4-250828'),
-          (4, 0));
+      expect(ModelFamilyClassifier.seedreamVersion('doubao-seedream-4-250828'), (4, 0));
       expect(ModelFamilyClassifier.seedreamVersion('my-seedream'), isNull);
     });
 
     test('pro is told apart from the three spellings of lite', () {
-      expect(ModelFamilyClassifier.isSeedreamPro(
-          'doubao-seedream-5-0-pro-260628'), isTrue);
-      expect(ModelFamilyClassifier.isSeedreamPro('doubao-seedream-5.0-pro'),
-          isTrue);
+      expect(ModelFamilyClassifier.isSeedreamPro('doubao-seedream-5-0-pro-260628'), isTrue);
+      expect(ModelFamilyClassifier.isSeedreamPro('doubao-seedream-5.0-pro'), isTrue);
       for (final lite in [
         'doubao-seedream-5-0-lite-260128',
         'doubao-seedream-5-0-260128',
         'doubao-seedream-5.0-lite',
       ]) {
-        expect(ModelFamilyClassifier.isSeedreamPro(lite), isFalse,
-            reason: lite);
+        expect(ModelFamilyClassifier.isSeedreamPro(lite), isFalse, reason: lite);
       }
     });
   });
 
   group('tables per generation', () {
-    test('5.0 pro: task modes, auto/1K/1.5K/2K, format, fast mode, no groups',
-        () {
-      for (final id in [
-        'doubao-seedream-5-0-pro-260628',
-        'doubao-seedream-5.0-pro',
-      ]) {
+    test('5.0 pro: task modes, auto/1K/1.5K/2K, format, fast mode, no groups', () {
+      for (final id in ['doubao-seedream-5-0-pro-260628', 'doubao-seedream-5.0-pro']) {
         final caps = ModelCapabilities.forModel(id);
         expect(keysOf(caps), [
           'imageTask',
@@ -91,8 +77,7 @@ void main() {
           'optimizeMode',
           'watermark',
         ], reason: id);
-        expect(optionsOf(caps, 'imageTask'),
-            ['generate', 'layers', 'transparent']);
+        expect(optionsOf(caps, 'imageTask'), ['generate', 'layers', 'transparent']);
         // `not_set` is the only way to layer decomposition's `auto` — the
         // source's own size — and it keeps the price under 2.61 MP where a
         // forced 2K would double it (docs/api/volcengine-ark.md §6).
@@ -129,13 +114,11 @@ void main() {
       expect(optionsOf(c45, 'imageSize'), ['2K', '4K']);
 
       final c40 = ModelCapabilities.forModel('doubao-seedream-4-0-250828');
-      expect(keysOf(c40),
-          ['imageSize', 'aspectRatio', 'maxImages', 'optimizeMode', 'watermark']);
+      expect(keysOf(c40), ['imageSize', 'aspectRatio', 'maxImages', 'optimizeMode', 'watermark']);
       expect(optionsOf(c40, 'imageSize'), ['1K', '2K', '4K']);
     });
 
-    test('3.0 takes no references; an unreadable id gets the generic table',
-        () {
+    test('3.0 takes no references; an unreadable id gets the generic table', () {
       final c30 = ModelCapabilities.forModel('doubao-seedream-3-0-t2i-250415');
       expect(c30.maxReferenceImages, 0);
       expect(keysOf(c30), ['aspectRatio', 'watermark']);
@@ -143,12 +126,10 @@ void main() {
       final generic = ModelCapabilities.forModel('relay-seedream-latest');
       expect(optionsOf(generic, 'imageSize'), ['not_set', '2K', '4K']);
       expect(spec(generic, 'imageSize').defaultValue, 'not_set');
-      expect(identical(generic, ModelCapabilities.forFamily(
-          ModelFamily.seedreamImage)), isTrue);
+      expect(identical(generic, ModelCapabilities.forFamily(ModelFamily.seedreamImage)), isTrue);
     });
 
-    test('every table: watermark off by default, image generator, long run',
-        () {
+    test('every table: watermark off by default, image generator, long run', () {
       for (final id in _allTableIds) {
         final caps = ModelCapabilities.forModel(id);
         expect(caps.isImageGenerator, isTrue, reason: id);
@@ -177,9 +158,7 @@ void main() {
     test('every tier the control offers maps every ratio it offers', () {
       for (final id in _allTableIds) {
         final caps = ModelCapabilities.forModel(id);
-        final ratios = optionsOf(caps, 'aspectRatio')
-            .where((r) => r != 'not_set')
-            .toList();
+        final ratios = optionsOf(caps, 'aspectRatio').where((r) => r != 'not_set').toList();
         final tiers = caps.imageParams.any((p) => p.key == 'imageSize')
             ? optionsOf(caps, 'imageSize').where((t) => t != 'not_set')
             : caps.tierPixelSizes.keys;
@@ -205,8 +184,7 @@ void main() {
       };
       expect(defaults.keys.toSet(), _allTableIds.toSet());
       defaults.forEach((id, tier) {
-        expect(ModelCapabilities.forModel(id).tierPixelSizes.keys.first, tier,
-            reason: id);
+        expect(ModelCapabilities.forModel(id).tierPixelSizes.keys.first, tier, reason: id);
       });
     });
 
@@ -217,13 +195,11 @@ void main() {
           table.forEach((ratio, size) {
             final wxh = parseWxH(size)!;
             final area = wxh.width * wxh.height;
-            expect(area, inInclusiveRange(window.$1, window.$2),
-                reason: '$id $tier $ratio $size');
+            expect(area, inInclusiveRange(window.$1, window.$2), reason: '$id $tier $ratio $size');
             final parts = ratio.split(':').map(int.parse).toList();
             final want = parts[0] / parts[1];
             final got = wxh.width / wxh.height;
-            expect((got - want).abs() / want, lessThan(0.05),
-                reason: '$id $tier $ratio $size');
+            expect((got - want).abs() / want, lessThan(0.05), reason: '$id $tier $ratio $size');
           });
         });
       });

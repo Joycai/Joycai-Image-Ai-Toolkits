@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
-import '../../core/responsive.dart';
-import '../../l10n/app_localizations.dart';
-import '../../models/prompt.dart';
-import '../../models/tag.dart';
-import '../ui/app_button.dart';
-import '../ui/app_empty_state.dart';
-import '../ui/app_search_field.dart';
-import '../ui/app_side_panel.dart';
-import '../ui/scroll_edge_fade.dart';
+import '../../../../core/responsive.dart';
+import '../../../../l10n/app_localizations.dart';
+import '../../../../models/prompt.dart';
+import '../../../../models/tag.dart';
+import '../../../../widgets/ui/app_button.dart';
+import '../../../../widgets/ui/app_empty_state.dart';
+import '../../../../widgets/ui/app_search_field.dart';
+import '../../../../widgets/ui/app_side_panel.dart';
+import '../../../../widgets/ui/scroll_edge_fade.dart';
 
 class PromptLibrarySheet extends StatefulWidget {
   final List<Prompt> allPrompts;
@@ -72,11 +72,12 @@ class _PromptLibrarySheetState extends State<PromptLibrarySheet> {
     final isNarrow = Responsive.isNarrow(context);
 
     final filteredPrompts = widget.allPrompts.where((p) {
-      final matchesSearch = p.title.toLowerCase().contains(_searchQuery) || 
-                            p.content.toLowerCase().contains(_searchQuery);
+      final matchesSearch =
+          p.title.toLowerCase().contains(_searchQuery) ||
+          p.content.toLowerCase().contains(_searchQuery);
       if (_selectedFilterTagIds.isEmpty) return matchesSearch;
       final promptTagIds = p.tags.map((t) => t.id!).toSet();
-      return matchesSearch && _selectedFilterTagIds.any((id) => promptTagIds.contains(id));
+      return matchesSearch && _selectedFilterTagIds.any(promptTagIds.contains);
     }).toList();
 
     // Surface, width and shadow belong to AppSidePanel, which is what
@@ -88,9 +89,7 @@ class _PromptLibrarySheetState extends State<PromptLibrarySheet> {
         // A fade, not a divider: the boundary below is a list and the space
         // it scrolls through, and the 1px rule sliced the top card square.
         Expanded(
-          child: ScrollEdgeFade(
-            child: _buildPromptList(filteredPrompts, l10n, colorScheme),
-          ),
+          child: ScrollEdgeFade(child: _buildPromptList(filteredPrompts, l10n, colorScheme)),
         ),
       ],
     );
@@ -103,12 +102,7 @@ class _PromptLibrarySheetState extends State<PromptLibrarySheet> {
         children: [
           Icon(Icons.library_books_outlined, color: colorScheme.primary),
           const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              l10n.promptLibrary,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-          ),
+          Expanded(child: Text(l10n.promptLibrary, style: Theme.of(context).textTheme.titleLarge)),
           SizedBox(
             width: isNarrow ? 120 : 180,
             child: AppSearchField(
@@ -129,7 +123,7 @@ class _PromptLibrarySheetState extends State<PromptLibrarySheet> {
 
   Widget _buildTagFilterBar(ColorScheme colorScheme) {
     if (widget.tags.isEmpty) return const SizedBox.shrink();
-    
+
     return Container(
       height: 48,
       padding: const EdgeInsets.only(bottom: 8),
@@ -145,10 +139,13 @@ class _PromptLibrarySheetState extends State<PromptLibrarySheet> {
           final color = Color(tag.color);
 
           return FilterChip(
-            label: Text(tag.name, style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: isSelected ? Colors.white : color,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400
-            )),
+            label: Text(
+              tag.name,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                color: isSelected ? Colors.white : color,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+              ),
+            ),
             selected: isSelected,
             onSelected: (val) {
               setState(() {
@@ -171,10 +168,7 @@ class _PromptLibrarySheetState extends State<PromptLibrarySheet> {
 
   Widget _buildPromptList(List<Prompt> prompts, AppLocalizations l10n, ColorScheme colorScheme) {
     if (prompts.isEmpty) {
-      return AppEmptyState(
-        icon: Icons.search_off_outlined,
-        label: l10n.noPromptsSaved,
-      );
+      return AppEmptyState(icon: Icons.search_off_outlined, label: l10n.noPromptsSaved);
     }
 
     return ListView.separated(
@@ -237,9 +231,9 @@ class _CompactPromptCard extends StatelessWidget {
                     child: Text(
                       prompt.tags.first.name,
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: Color(prompt.tags.first.color),
-                            fontWeight: FontWeight.w600,
-                          ),
+                        color: Color(prompt.tags.first.color),
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
               ],
@@ -247,7 +241,9 @@ class _CompactPromptCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               prompt.content,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
             ),

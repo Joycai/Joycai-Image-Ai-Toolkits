@@ -15,31 +15,33 @@ void main() {
   });
 
   test('Anthropic: max_input_tokens and max_tokens', () {
-    final limits = discoveredLimitsOf(listed({
-      'id': 'claude-opus-5',
-      'max_input_tokens': 1000000,
-      'max_tokens': 128000,
-    }));
+    final limits = discoveredLimitsOf(
+      listed({'id': 'claude-opus-5', 'max_input_tokens': 1000000, 'max_tokens': 128000}),
+    );
     expect(limits.contextWindow, 1000000);
     expect(limits.maxOutputTokens, 128000);
   });
 
   test('Gemini: inputTokenLimit and outputTokenLimit', () {
-    final limits = discoveredLimitsOf(listed({
-      'name': 'models/gemini-3.1-pro',
-      'inputTokenLimit': 1048576,
-      'outputTokenLimit': 65536,
-    }));
+    final limits = discoveredLimitsOf(
+      listed({
+        'name': 'models/gemini-3.1-pro',
+        'inputTokenLimit': 1048576,
+        'outputTokenLimit': 65536,
+      }),
+    );
     expect(limits.contextWindow, 1048576);
     expect(limits.maxOutputTokens, 65536);
   });
 
   test('OpenRouter: the smaller of the two windows, and top_provider.max_completion_tokens', () {
-    final limits = discoveredLimitsOf(listed({
-      'id': 'openai/gpt-5.6',
-      'context_length': 400000,
-      'top_provider': {'context_length': 128000, 'max_completion_tokens': 128000},
-    }));
+    final limits = discoveredLimitsOf(
+      listed({
+        'id': 'openai/gpt-5.6',
+        'context_length': 400000,
+        'top_provider': {'context_length': 128000, 'max_completion_tokens': 128000},
+      }),
+    );
     expect(limits.contextWindow, 128000);
     expect(limits.maxOutputTokens, 128000);
   });
@@ -55,10 +57,22 @@ void main() {
   });
 
   test('zero, negative and junk read as unknown; numeric strings count', () {
-    expect(discoveredLimitsOf(listed({'max_input_tokens': 1, 'max_tokens': 0})).maxOutputTokens, isNull);
-    expect(discoveredLimitsOf(listed({'max_input_tokens': 1, 'max_tokens': -1})).maxOutputTokens, isNull);
-    expect(discoveredLimitsOf(listed({'max_input_tokens': 1, 'max_tokens': 'lots'})).maxOutputTokens, isNull);
-    expect(discoveredLimitsOf(listed({'max_input_tokens': 1, 'max_tokens': '65536'})).maxOutputTokens, 65536);
+    expect(
+      discoveredLimitsOf(listed({'max_input_tokens': 1, 'max_tokens': 0})).maxOutputTokens,
+      isNull,
+    );
+    expect(
+      discoveredLimitsOf(listed({'max_input_tokens': 1, 'max_tokens': -1})).maxOutputTokens,
+      isNull,
+    );
+    expect(
+      discoveredLimitsOf(listed({'max_input_tokens': 1, 'max_tokens': 'lots'})).maxOutputTokens,
+      isNull,
+    );
+    expect(
+      discoveredLimitsOf(listed({'max_input_tokens': 1, 'max_tokens': '65536'})).maxOutputTokens,
+      65536,
+    );
     expect(discoveredLimitsOf(listed({'top_provider': 'n/a'})).maxOutputTokens, isNull);
   });
 }

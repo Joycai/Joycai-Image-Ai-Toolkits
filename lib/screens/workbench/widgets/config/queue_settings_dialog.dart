@@ -56,8 +56,7 @@ Future<void> showQueueSettingsDialog(BuildContext context) {
               ),
               const Divider(),
               const SizedBox(height: 8),
-              Text(l10n.filenamePrefix,
-                  style: Theme.of(context).textTheme.titleSmall),
+              Text(l10n.filenamePrefix, style: Theme.of(context).textTheme.titleSmall),
               const SizedBox(height: 8),
               TextField(
                 controller: prefixController,
@@ -76,7 +75,7 @@ Future<void> showQueueSettingsDialog(BuildContext context) {
                     ),
                   ),
                 ),
-                onChanged: (v) => appState.setImagePrefix(v),
+                onChanged: appState.setImagePrefix,
               ),
               const SizedBox(height: 8),
               const Divider(),

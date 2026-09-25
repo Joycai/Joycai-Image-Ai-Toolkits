@@ -106,11 +106,11 @@ class AnthropicChatProtocol implements ChatProtocol {
     try {
       LLMDebugLog? debugFile;
       if (LLMDebugLogger.enabled) {
-        debugFile = await LLMDebugLogger.startLog(
-          config.modelId,
-          'Anthropic (Standard)',
-          {'url': redactUrl(url), 'headers': headers, 'body': payload},
-        );
+        debugFile = await LLMDebugLogger.startLog(config.modelId, 'Anthropic (Standard)', {
+          'url': redactUrl(url),
+          'headers': headers,
+          'body': payload,
+        });
       }
 
       // Abortable: LLMService cancels or times out a non-streaming request
@@ -124,10 +124,7 @@ class AnthropicChatProtocol implements ChatProtocol {
       );
 
       if (debugFile != null) {
-        await LLMDebugLogger.appendLine(
-          debugFile,
-          'Status: ${response.statusCode}',
-        );
+        await LLMDebugLogger.appendLine(debugFile, 'Status: ${response.statusCode}');
         await LLMDebugLogger.appendLine(debugFile, 'Body: ${response.body}');
         await LLMDebugLogger.finish(debugFile);
       }
@@ -152,10 +149,7 @@ class AnthropicChatProtocol implements ChatProtocol {
 
       final content = parseAnthropicContent(rawContent);
       if (content.toolCalls.isNotEmpty) {
-        logger?.call(
-          'Model requested ${content.toolCalls.length} tool call(s).',
-          level: 'DEBUG',
-        );
+        logger?.call('Model requested ${content.toolCalls.length} tool call(s).', level: 'DEBUG');
       }
       for (final run in content.serverToolRuns) {
         logAnthropicServerToolRun(run, logger);
@@ -180,9 +174,7 @@ class AnthropicChatProtocol implements ChatProtocol {
           serverToolRuns: content.serverToolRuns,
           turnIncomplete: content.turnIncomplete,
         ),
-        rawContentBlocks: content.rawContentBlocks.isEmpty
-            ? null
-            : content.rawContentBlocks,
+        rawContentBlocks: content.rawContentBlocks.isEmpty ? null : content.rawContentBlocks,
         reasoningContent: content.thinking,
         // Deliberately no field *name*: ④'s echo-back obligation is not a
         // field on the message but the whole thinking block, verified by its
@@ -190,12 +182,8 @@ class AnthropicChatProtocol implements ChatProtocol {
         // null is what keeps the ① payload builder from inventing a key for
         // it if this history is ever replayed against an ① endpoint.
         reasoningSignature: content.thinkingSignature,
-        rawThinkingBlocks: content.rawThinkingBlocks.isEmpty
-            ? null
-            : content.rawThinkingBlocks,
-        rawThinkingModelId:
-            content.rawThinkingBlocks.isEmpty &&
-                content.rawContentBlocks.isEmpty
+        rawThinkingBlocks: content.rawThinkingBlocks.isEmpty ? null : content.rawThinkingBlocks,
+        rawThinkingModelId: content.rawThinkingBlocks.isEmpty && content.rawContentBlocks.isEmpty
             ? null
             : config.modelId,
         toolCalls: content.toolCalls,
@@ -270,17 +258,22 @@ class AnthropicChatProtocol implements ChatProtocol {
       dialect: dialect,
     );
 
-    final request = buildJsonRequest('POST', url,
-        headers: headers, body: jsonEncode(payload), options: options);
+    final request = buildJsonRequest(
+      'POST',
+      url,
+      headers: headers,
+      body: jsonEncode(payload),
+      options: options,
+    );
 
     final client = config.createClient();
     LLMDebugLog? debugFile;
     if (LLMDebugLogger.enabled) {
-      debugFile = await LLMDebugLogger.startLog(
-        config.modelId,
-        'Anthropic (Stream)',
-        {'url': redactUrl(url), 'headers': headers, 'body': payload},
-      );
+      debugFile = await LLMDebugLogger.startLog(config.modelId, 'Anthropic (Stream)', {
+        'url': redactUrl(url),
+        'headers': headers,
+        'body': payload,
+      });
     }
 
     final http.StreamedResponse response;
@@ -294,18 +287,12 @@ class AnthropicChatProtocol implements ChatProtocol {
     if (response.statusCode != 200) {
       final body = await response.stream.bytesToString();
       if (debugFile != null) {
-        await LLMDebugLogger.appendLine(
-          debugFile,
-          'Error Status: ${response.statusCode}',
-        );
+        await LLMDebugLogger.appendLine(debugFile, 'Error Status: ${response.statusCode}');
         await LLMDebugLogger.appendLine(debugFile, 'Error Body: $body');
         await LLMDebugLogger.finish(debugFile);
       }
       client.close();
-      logger?.call(
-        'Stream request failed with status: ${response.statusCode}',
-        level: 'ERROR',
-      );
+      logger?.call('Stream request failed with status: ${response.statusCode}', level: 'ERROR');
       throw LLMApiException(
         'Anthropic API Stream Request failed: ${response.statusCode} - $body',
         statusCode: response.statusCode,
@@ -313,24 +300,16 @@ class AnthropicChatProtocol implements ChatProtocol {
       );
     }
 
-    logger?.call(
-      'Stream connection established, waiting for chunks...',
-      level: 'DEBUG',
-    );
+    logger?.call('Stream connection established, waiting for chunks...', level: 'DEBUG');
     if (debugFile != null) {
-      await LLMDebugLogger.appendLine(
-        debugFile,
-        'Status: ${response.statusCode}',
-      );
+      await LLMDebugLogger.appendLine(debugFile, 'Status: ${response.statusCode}');
     }
 
     final assembler = AnthropicStreamAssembler(logger: logger);
 
     try {
       await for (final line
-          in response.stream
-              .transform(utf8.decoder)
-              .transform(const LineSplitter())) {
+          in response.stream.transform(utf8.decoder).transform(const LineSplitter())) {
         if (debugFile != null && line.isNotEmpty) {
           await LLMDebugLogger.appendStreamLine(debugFile, line);
         }
@@ -338,9 +317,7 @@ class AnthropicChatProtocol implements ChatProtocol {
         // `event:` line naming the same type the JSON repeats in its `type`
         // field. The name is redundant here — but it is not JSON, so it has
         // to be stepped over rather than handed to the decoder.
-        if (line.startsWith('event:') ||
-            line.startsWith('id:') ||
-            line.startsWith('retry:')) {
+        if (line.startsWith('event:') || line.startsWith('id:') || line.startsWith('retry:')) {
           continue;
         }
         final dataLine = sseDataPayload(line);
@@ -403,16 +380,20 @@ class AnthropicDiscoveryProtocol implements DiscoveryProtocol {
       final rawModels = data['data'];
       final List<dynamic> modelsJson = rawModels is List ? rawModels : const [];
 
-      return modelsJson.whereType<Map>().map((m) {
-        final id = m['id']?.toString().trim() ?? '';
-        if (id.isEmpty) return null;
-        return DiscoveredModel(
-          modelId: id,
-          displayName: m['display_name']?.toString() ?? id,
-          description: m['created_at']?.toString() ?? '',
-          rawData: m.cast<String, dynamic>(),
-        );
-      }).whereType<DiscoveredModel>().toList();
+      return modelsJson
+          .whereType<Map>()
+          .map((m) {
+            final id = m['id']?.toString().trim() ?? '';
+            if (id.isEmpty) return null;
+            return DiscoveredModel(
+              modelId: id,
+              displayName: m['display_name']?.toString() ?? id,
+              description: m['created_at']?.toString() ?? '',
+              rawData: m.cast<String, dynamic>(),
+            );
+          })
+          .whereType<DiscoveredModel>()
+          .toList();
     } finally {
       client.close();
     }
@@ -442,9 +423,7 @@ String anthropicApiBase(String base) {
     root = root.substring(0, root.length - '/messages'.length);
   }
   final uri = Uri.tryParse(root);
-  final last = uri == null || uri.pathSegments.isEmpty
-      ? ''
-      : uri.pathSegments.last;
+  final last = uri == null || uri.pathSegments.isEmpty ? '' : uri.pathSegments.last;
   if (!RegExp(r'^v\d+[a-z0-9]*$').hasMatch(last)) root = '$root/v1';
   return root;
 }

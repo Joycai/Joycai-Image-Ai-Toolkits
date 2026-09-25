@@ -35,19 +35,20 @@ Future<void> openLayerCanvas(BuildContext context, String path) async {
 }
 
 /// Pushes the layer canvas for an already loaded [set], opened from [path].
-Future<void> showLayerCanvas(
-    BuildContext context, ImageLayerSet set, String path) async {
+Future<void> showLayerCanvas(BuildContext context, ImageLayerSet set, String path) async {
   // Selected on entry when the user came from one of the layers, so the
   // canvas shows at once which one that was.
   final initial = set.overlays.any((l) => l.path == path) ? path : null;
-  await Navigator.of(context).push(FullScreenCoverRoute<void>(
-    fullscreenDialog: true,
-    transitionDuration: AppMotion.durationOf(context, AppMotion.reveal),
-    reverseTransitionDuration: AppMotion.durationOf(context, AppMotion.reveal),
-    pageBuilder: (_, _, _) => LayerCanvasPage(set: set, initialSelection: initial),
-    transitionsBuilder: (_, animation, _, child) =>
-        FadeTransition(opacity: animation, child: child),
-  ));
+  await Navigator.of(context).push(
+    FullScreenCoverRoute<void>(
+      fullscreenDialog: true,
+      transitionDuration: AppMotion.durationOf(context, AppMotion.reveal),
+      reverseTransitionDuration: AppMotion.durationOf(context, AppMotion.reveal),
+      pageBuilder: (_, _, _) => LayerCanvasPage(set: set, initialSelection: initial),
+      transitionsBuilder: (_, animation, _, child) =>
+          FadeTransition(opacity: animation, child: child),
+    ),
+  );
 }
 
 /// The layer canvas (`A7`): a decomposition stacked back as it came out —
@@ -106,7 +107,8 @@ class _LayerCanvasPageState extends State<LayerCanvasPage> {
   }
 
   Size _extentOfBoxes() {
-    var w = 1, h = 1;
+    var w = 1;
+    var h = 1;
     for (final l in _set.overlays) {
       final b = l.box;
       if (b == null) continue;
@@ -117,13 +119,10 @@ class _LayerCanvasPageState extends State<LayerCanvasPage> {
   }
 
   void _toggle(String path) => setState(() {
-        _hidden = _hidden.contains(path)
-            ? ({..._hidden}..remove(path))
-            : {..._hidden, path};
-      });
+    _hidden = _hidden.contains(path) ? ({..._hidden}..remove(path)) : {..._hidden, path};
+  });
 
-  void _select(String? path) =>
-      setState(() => _selected = path == _selected ? null : path);
+  void _select(String? path) => setState(() => _selected = path == _selected ? null : path);
 
   Future<void> _export() async {
     final l10n = AppLocalizations.of(context)!;
@@ -136,7 +135,10 @@ class _LayerCanvasPageState extends State<LayerCanvasPage> {
           if (!_hidden.contains(l.path)) l,
       ];
       final png = await LayerCompositeService.composite(
-          visible, size.width.round(), size.height.round());
+        visible,
+        size.width.round(),
+        size.height.round(),
+      );
       final anchor = (_set.base ?? _set.layers.first).path;
       await LayerCompositeService.save(anchor, png);
       if (mounted) AppSnackBar.success(context, l10n.layerExported);
@@ -148,13 +150,12 @@ class _LayerCanvasPageState extends State<LayerCanvasPage> {
   }
 
   void _openLayer(ImageLayer layer) {
-    final images = [
-      for (final l in _set.layers)
-        AppImage(path: l.path, name: p.basename(l.path)),
-    ];
-    showMediaPreview(context,
-        galleryImages: images,
-        initialIndex: _set.layers.indexWhere((l) => l.path == layer.path));
+    final images = [for (final l in _set.layers) AppImage(path: l.path, name: p.basename(l.path))];
+    showMediaPreview(
+      context,
+      galleryImages: images,
+      initialIndex: _set.layers.indexWhere((l) => l.path == layer.path),
+    );
   }
 
   @override
@@ -166,20 +167,22 @@ class _LayerCanvasPageState extends State<LayerCanvasPage> {
 
     final canvas = size == null
         ? const SizedBox.expand()
-        : LayoutBuilder(builder: (context, constraints) {
-            return LayerStackView(
-              set: _set,
-              baseSize: size,
-              hidden: _hidden,
-              selected: _selected,
-              showBounds: _showBounds,
-              onSelect: (path) => setState(() => _selected = path),
-              transformation: _transformation,
-              padding: isMobile
-                  ? EdgeInsets.only(bottom: constraints.maxHeight * 0.4)
-                  : EdgeInsets.zero,
-            );
-          });
+        : LayoutBuilder(
+            builder: (context, constraints) {
+              return LayerStackView(
+                set: _set,
+                baseSize: size,
+                hidden: _hidden,
+                selected: _selected,
+                showBounds: _showBounds,
+                onSelect: (path) => setState(() => _selected = path),
+                transformation: _transformation,
+                padding: isMobile
+                    ? EdgeInsets.only(bottom: constraints.maxHeight * 0.4)
+                    : EdgeInsets.zero,
+              );
+            },
+          );
 
     return Scaffold(
       backgroundColor: scheme.surfaceContainer,
@@ -190,10 +193,12 @@ class _LayerCanvasPageState extends State<LayerCanvasPage> {
             _topBar(context, isMobile: isMobile, isDesktop: isDesktop),
             Expanded(
               child: isMobile
-                  ? Stack(children: [
-                      Positioned.fill(child: canvas),
-                      _mobileSheet(context),
-                    ])
+                  ? Stack(
+                      children: [
+                        Positioned.fill(child: canvas),
+                        _mobileSheet(context),
+                      ],
+                    )
                   : Row(
                       children: [
                         Expanded(child: canvas),
@@ -201,8 +206,7 @@ class _LayerCanvasPageState extends State<LayerCanvasPage> {
                           width: isDesktop ? 300 : 260,
                           decoration: BoxDecoration(
                             color: scheme.surface,
-                            border: Border(
-                                left: BorderSide(color: scheme.outlineVariant)),
+                            border: Border(left: BorderSide(color: scheme.outlineVariant)),
                           ),
                           child: _sidePanel(context, withDetails: isDesktop),
                         ),
@@ -215,15 +219,15 @@ class _LayerCanvasPageState extends State<LayerCanvasPage> {
     );
   }
 
-  Widget _topBar(BuildContext context,
-      {required bool isMobile, required bool isDesktop}) {
+  Widget _topBar(BuildContext context, {required bool isMobile, required bool isDesktop}) {
     final l10n = AppLocalizations.of(context)!;
     final scheme = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
     final size = _baseSize;
     final anchor = _set.base ?? _set.layers.first;
     final count = _set.overlays.length;
-    final w = size?.width.round() ?? 0, h = size?.height.round() ?? 0;
+    final w = size?.width.round() ?? 0;
+    final h = size?.height.round() ?? 0;
     final buttonSize = isMobile ? AppSize.large : AppSize.iconButton;
     return Container(
       height: 52,
@@ -247,9 +251,7 @@ class _LayerCanvasPageState extends State<LayerCanvasPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isMobile
-                      ? l10n.layerListLabel
-                      : l10n.layerCanvasTitle(p.basename(anchor.path)),
+                  isMobile ? l10n.layerListLabel : l10n.layerCanvasTitle(p.basename(anchor.path)),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: text.titleSmall?.copyWith(fontWeight: FontWeight.w600),
@@ -261,8 +263,7 @@ class _LayerCanvasPageState extends State<LayerCanvasPage> {
                         : l10n.layerCanvasSubtitle(w, h, count),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: text.labelSmall?.mono
-                        .copyWith(color: scheme.onSurfaceVariant),
+                    style: text.labelSmall?.mono.copyWith(color: scheme.onSurfaceVariant),
                   ),
               ],
             ),
@@ -313,7 +314,8 @@ class _LayerCanvasPageState extends State<LayerCanvasPage> {
                   style: FilledButton.styleFrom(
                     padding: EdgeInsets.zero,
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.md)),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    ),
                   ),
                   onPressed: size == null || _exporting ? null : _export,
                   child: const Icon(Icons.download, size: AppSize.iconLg),
@@ -334,7 +336,11 @@ class _LayerCanvasPageState extends State<LayerCanvasPage> {
 
   /// The layer list, top of the stack first (`A7 · 7a` ②), the base last
   /// under a hairline.
-  List<Widget> _rows(BuildContext context, {required bool withSubtitle, required double rowHeight}) {
+  List<Widget> _rows(
+    BuildContext context, {
+    required bool withSubtitle,
+    required double rowHeight,
+  }) {
     final scheme = Theme.of(context).colorScheme;
     final overlays = _set.overlays.reversed.toList();
     return [
@@ -345,7 +351,7 @@ class _LayerCanvasPageState extends State<LayerCanvasPage> {
           title: l.name ?? AppLocalizations.of(context)!.layerUnnamed(l.zIndex),
           subtitle: withSubtitle && l.path == _selected && l.box != null
               ? '${AppLocalizations.of(context)!.layerPosition(l.box!.left, l.box!.top)} · '
-                  '${AppLocalizations.of(context)!.layerSize(l.box!.width, l.box!.height)}'
+                    '${AppLocalizations.of(context)!.layerSize(l.box!.width, l.box!.height)}'
               : l.description,
           selected: l.path == _selected,
           hidden: _hidden.contains(l.path),
@@ -354,7 +360,12 @@ class _LayerCanvasPageState extends State<LayerCanvasPage> {
           onToggle: () => _toggle(l.path),
         ),
       if (_set.base case final base?) ...[
-        Divider(height: 9, indent: AppSpace.s10, endIndent: AppSpace.s10, color: scheme.outlineVariant),
+        Divider(
+          height: 9,
+          indent: AppSpace.s10,
+          endIndent: AppSpace.s10,
+          color: scheme.outlineVariant,
+        ),
         _LayerRow(
           key: ValueKey(base.path),
           layer: base,
@@ -381,9 +392,10 @@ class _LayerCanvasPageState extends State<LayerCanvasPage> {
       suffix: TextSpan(
         text: '  ${l10n.layerListCount(_set.overlays.length)}',
         style: TextStyle(
-            color: scheme.onSurfaceVariant,
-            fontWeight: FontWeight.w400,
-            letterSpacing: 0),
+          color: scheme.onSurfaceVariant,
+          fontWeight: FontWeight.w400,
+          letterSpacing: 0,
+        ),
       ),
       trailing: AppIconButton(
         icon: Icons.visibility_outlined,
@@ -420,17 +432,15 @@ class _LayerCanvasPageState extends State<LayerCanvasPage> {
     final scheme = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
     Widget chip(String label) => DecoratedBox(
-          decoration: BoxDecoration(
-            color: scheme.surfaceContainerHigh,
-            borderRadius: BorderRadius.circular(AppRadius.xs),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            child: Text(label,
-                style: text.labelSmall?.mono
-                    .copyWith(color: scheme.onSurfaceVariant)),
-          ),
-        );
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(AppRadius.xs),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        child: Text(label, style: text.labelSmall?.mono.copyWith(color: scheme.onSurfaceVariant)),
+      ),
+    );
     final box = layer.box;
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
@@ -445,10 +455,13 @@ class _LayerCanvasPageState extends State<LayerCanvasPage> {
             padding: const EdgeInsets.only(bottom: AppSpace.s4),
           ),
           if (layer.description != null) ...[
-            Text(layer.description!,
-                style: text.bodySmall?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                    height: AppType.proseHeight)),
+            Text(
+              layer.description!,
+              style: text.bodySmall?.copyWith(
+                color: scheme.onSurfaceVariant,
+                height: AppType.proseHeight,
+              ),
+            ),
             const SizedBox(height: AppSpace.s6),
           ],
           Wrap(
@@ -496,8 +509,7 @@ class _LayerCanvasPageState extends State<LayerCanvasPage> {
       builder: (context, controller) => DecoratedBox(
         decoration: BoxDecoration(
           color: scheme.surface,
-          borderRadius:
-              const BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
           border: Border(top: BorderSide(color: scheme.outlineVariant)),
           boxShadow: [
             BoxShadow(
@@ -509,8 +521,12 @@ class _LayerCanvasPageState extends State<LayerCanvasPage> {
         ),
         child: ListView(
           controller: controller,
-          padding: EdgeInsets.fromLTRB(AppSpace.s6, AppSpace.s6, AppSpace.s6,
-              AppSpace.s22 + MediaQuery.paddingOf(context).bottom),
+          padding: EdgeInsets.fromLTRB(
+            AppSpace.s6,
+            AppSpace.s6,
+            AppSpace.s6,
+            AppSpace.s22 + MediaQuery.paddingOf(context).bottom,
+          ),
           children: [
             Center(
               child: Container(
@@ -615,16 +631,13 @@ class _LayerRow extends StatelessWidget {
                             subtitle!,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: text.labelSmall
-                                ?.copyWith(color: scheme.onSurfaceVariant),
+                            style: text.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
                           ),
                       ],
                     ),
                   ),
                   AppIconButton(
-                    icon: hidden
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility_outlined,
+                    icon: hidden ? Icons.visibility_off_outlined : Icons.visibility_outlined,
                     tooltip: hidden ? l10n.layerShow : l10n.layerHide,
                     color: selected ? scheme.primary : null,
                     size: eyeSize,

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/models/task_item.dart';
-import 'package:joycai_image_ai_toolkits/widgets/dialogs/task_log_dialog.dart';
+import 'package:joycai_image_ai_toolkits/screens/batch/task_log_dialog.dart';
 
 /// The log viewer is the only way to see why a task failed, so these pin down
 /// that it shows the whole log — not just the tail the card already showed —
@@ -23,11 +23,13 @@ void main() {
   }
 
   Future<void> pumpDialog(WidgetTester tester, TaskItem item) async {
-    await tester.pumpWidget(MaterialApp(
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: Scaffold(body: TaskLogDialog(task: item)),
-    ));
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: TaskLogDialog(task: item)),
+      ),
+    );
     await tester.pumpAndSettle();
   }
 
@@ -63,7 +65,10 @@ void main() {
   });
 
   testWidgets('the error line is called out against the ordinary ones', (tester) async {
-    await pumpDialog(tester, task(TaskStatus.failed, ['Start processing', 'Error: quota exceeded']));
+    await pumpDialog(
+      tester,
+      task(TaskStatus.failed, ['Start processing', 'Error: quota exceeded']),
+    );
 
     final errorLine = tester.widget<Text>(find.textContaining('Error: quota exceeded'));
     final plainLine = tester.widget<Text>(find.textContaining('Start processing'));

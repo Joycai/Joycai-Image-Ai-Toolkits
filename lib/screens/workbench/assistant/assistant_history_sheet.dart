@@ -27,14 +27,11 @@ extension _AssistantHistorySheet on _WorkbenchScreenState {
               return ListTile(
                 dense: true,
                 selected: isCurrent,
-                leading: Icon(
-                  switch (meta.mode) {
-                    AssistantMode.knowledgeBase => Icons.menu_book_outlined,
-                    AssistantMode.knowledgeEdit => Icons.edit_note_outlined,
-                    AssistantMode.systemPrompt => Icons.tune,
-                  },
-                  size: 18,
-                ),
+                leading: Icon(switch (meta.mode) {
+                  AssistantMode.knowledgeBase => Icons.menu_book_outlined,
+                  AssistantMode.knowledgeEdit => Icons.edit_note_outlined,
+                  AssistantMode.systemPrompt => Icons.tune,
+                }, size: 18),
                 title: Text(
                   (meta.title == null || meta.title!.isEmpty) ? meta.id : meta.title!,
                   maxLines: 1,
@@ -88,7 +85,9 @@ extension _AssistantHistorySheet on _WorkbenchScreenState {
                         if (newTitle != null && newTitle.isNotEmpty) {
                           await workbenchUIState.renameAssistantSession(meta.id, newTitle);
                           final refreshed = await workbenchUIState.listAssistantSessions();
-                          sessions..clear()..addAll(refreshed);
+                          sessions
+                            ..clear()
+                            ..addAll(refreshed);
                           setSheetState(() {});
                         }
                       },

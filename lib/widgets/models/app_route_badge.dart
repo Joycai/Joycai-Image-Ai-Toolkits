@@ -70,11 +70,7 @@ class AppRouteBadge extends StatelessWidget {
       RouteBadgeState.current => (scheme.primary, null, scheme.onPrimary),
       RouteBadgeState.configured => (null, scheme.primary, scheme.onAccentTint),
       RouteBadgeState.off => (null, null, scheme.outline),
-      RouteBadgeState.quiet => (
-        null,
-        scheme.outlineVariant,
-        scheme.onSurfaceVariant,
-      ),
+      RouteBadgeState.quiet => (null, scheme.outlineVariant, scheme.onSurfaceVariant),
     };
     final radius = BorderRadius.circular(size.radius);
     final text = Text(
@@ -85,9 +81,7 @@ class AppRouteBadge extends StatelessWidget {
         // The ambient UI font, so `.mono` falls back to it for CJK labels.
         fontFamily: DefaultTextStyle.of(context).style.fontFamily,
         fontSize: size.fontSize,
-        fontWeight: state == RouteBadgeState.current
-            ? FontWeight.w600
-            : FontWeight.w500,
+        fontWeight: state == RouteBadgeState.current ? FontWeight.w600 : FontWeight.w500,
         color: ink,
         height: 1,
       ).mono,
@@ -117,11 +111,7 @@ class AppRouteBadge extends StatelessWidget {
       ),
     );
     if (state == RouteBadgeState.off) {
-      body = DashedBorder(
-        color: scheme.outline,
-        radius: size.radius,
-        child: body,
-      );
+      body = DashedBorder(color: scheme.outline, radius: size.radius, child: body);
     }
     if (onTap != null) {
       body = Material(

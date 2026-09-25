@@ -21,7 +21,7 @@ class MaskPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    for (var drawingPath in paths) {
+    for (final drawingPath in paths) {
       final paint = Paint()
         ..color = drawingPath.color
         ..strokeWidth = drawingPath.strokeWidth
@@ -40,7 +40,11 @@ class MaskPainter extends CustomPainter {
         }
         canvas.drawPath(path, paint);
       } else if (drawingPath.points.isNotEmpty && !drawingPath.isPolygon) {
-        canvas.drawCircle(drawingPath.points.first, drawingPath.strokeWidth / 2, paint..style = PaintingStyle.fill);
+        canvas.drawCircle(
+          drawingPath.points.first,
+          drawingPath.strokeWidth / 2,
+          paint..style = PaintingStyle.fill,
+        );
       }
     }
   }
@@ -48,4 +52,3 @@ class MaskPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant MaskPainter oldDelegate) => true;
 }
-

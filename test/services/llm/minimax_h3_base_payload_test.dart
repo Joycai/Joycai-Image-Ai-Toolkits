@@ -24,11 +24,7 @@ void main() {
         'seconds': 5,
         'task': 't2va',
         'conditions': const <Object>[],
-        'target': {
-          'short_edge': 768,
-          'aspect_ratio': '16:9',
-          'duration_seconds': 5.0,
-        },
+        'target': {'short_edge': 768, 'aspect_ratio': '16:9', 'duration_seconds': 5.0},
         'num_outputs_per_prompt': 1,
         'num_inference_steps': 50,
         'flow_shift': 12.0,
@@ -36,15 +32,11 @@ void main() {
       });
     });
 
-    test('fl2va: a first frame is a keyframe condition with frame_index 0',
-        () {
+    test('fl2va: a first frame is a keyframe condition with frame_index 0', () {
       final payload = buildMiniMaxH3VideoPayload(
         modelId: 'MiniMaxAI/MiniMax-H3',
         prompt: 'continue with calm natural motion',
-        media: const [
-          MiniMaxH3Media(
-              MiniMaxH3Role.firstFrame, 'file:///data/first-frame.png'),
-        ],
+        media: const [MiniMaxH3Media(MiniMaxH3Role.firstFrame, 'file:///data/first-frame.png')],
       );
       expect(payload['task'], 'fl2va');
       expect(payload['conditions'], [
@@ -59,8 +51,7 @@ void main() {
       expect((payload['target'] as Map)['aspect_ratio'], 'auto');
     });
 
-    test('fl2va: first frame precedes last frame whatever the input order',
-        () {
+    test('fl2va: first frame precedes last frame whatever the input order', () {
       final payload = buildMiniMaxH3VideoPayload(
         modelId: 'MiniMaxAI/MiniMax-H3',
         prompt: 'p',
@@ -77,14 +68,11 @@ void main() {
       expect((conditions[1] as Map)['uri'], 'file:///b/last.png');
     });
 
-    test('ref2va: references carry role reference and no frame_index key',
-        () {
+    test('ref2va: references carry role reference and no frame_index key', () {
       final payload = buildMiniMaxH3VideoPayload(
         modelId: 'MiniMaxAI/MiniMax-H3',
         prompt: 'use the picture as the visual subject',
-        media: const [
-          MiniMaxH3Media(MiniMaxH3Role.reference, 'file:///r/reference.png'),
-        ],
+        media: const [MiniMaxH3Media(MiniMaxH3Role.reference, 'file:///r/reference.png')],
       );
       expect(payload['task'], 'ref2va');
       final condition = (payload['conditions'] as List).single as Map;
@@ -95,18 +83,16 @@ void main() {
     });
 
     test('aspect ratio: adaptive/auto/not_set normalize, explicit passes', () {
-      Map<String, dynamic> target(String? aspect,
-              {List<MiniMaxH3Media> media = const []}) =>
+      Map<String, dynamic> target(String? aspect, {List<MiniMaxH3Media> media = const []}) =>
           buildMiniMaxH3VideoPayload(
-            modelId: 'm',
-            prompt: 'p',
-            media: media,
-            options: aspect == null ? null : {'aspectRatio': aspect},
-          )['target'] as Map<String, dynamic>;
+                modelId: 'm',
+                prompt: 'p',
+                media: media,
+                options: aspect == null ? null : {'aspectRatio': aspect},
+              )['target']
+              as Map<String, dynamic>;
 
-      const frame = [
-        MiniMaxH3Media(MiniMaxH3Role.firstFrame, 'file:///f.png'),
-      ];
+      const frame = [MiniMaxH3Media(MiniMaxH3Role.firstFrame, 'file:///f.png')];
       // Text-only has nothing to adapt to → 16:9, same substitution the
       // cloud builder makes for its `adaptive` spelling.
       expect(target('adaptive')['aspect_ratio'], '16:9');
@@ -118,14 +104,13 @@ void main() {
       expect(target('9:16', media: frame)['aspect_ratio'], '9:16');
     });
 
-    test('duration clamps into the 4–15 s window and lands in both fields',
-        () {
+    test('duration clamps into the 4–15 s window and lands in both fields', () {
       Map<String, dynamic> body(String seconds) => buildMiniMaxH3VideoPayload(
-            modelId: 'm',
-            prompt: 'p',
-            media: const [],
-            options: {'seconds': seconds},
-          );
+        modelId: 'm',
+        prompt: 'p',
+        media: const [],
+        options: {'seconds': seconds},
+      );
       expect(body('2')['seconds'], 4);
       expect(body('30')['seconds'], 15);
       final b = body('12');
@@ -154,14 +139,17 @@ void main() {
 
   group('minimaxH3FileUri', () {
     test('Windows paths become drive-letter file URIs', () {
-      expect(minimaxH3FileUri(r'D:\refs\first frame.png', windows: true),
-          'file:///D:/refs/first%20frame.png');
+      expect(
+        minimaxH3FileUri(r'D:\refs\first frame.png', windows: true),
+        'file:///D:/refs/first%20frame.png',
+      );
     });
 
     test('POSIX paths keep the documented file:///path shape', () {
-      expect(minimaxH3FileUri('/data/minimax-h3/first-frame.png',
-              windows: false),
-          'file:///data/minimax-h3/first-frame.png');
+      expect(
+        minimaxH3FileUri('/data/minimax-h3/first-frame.png', windows: false),
+        'file:///data/minimax-h3/first-frame.png',
+      );
     });
   });
 
@@ -180,13 +168,12 @@ void main() {
             'generatedSamples': [
               {
                 'video': {
-                  'uri':
-                      'http://127.0.0.1:30010/v1/videos/video_abc/content',
+                  'uri': 'http://127.0.0.1:30010/v1/videos/video_abc/content',
                   // An API endpoint, not a signed link: credentials travel
                   // with the download.
                   'requiresAuth': true,
                 },
-              }
+              },
             ],
           },
         },
@@ -197,8 +184,7 @@ void main() {
       // The ① surface's terminal word. If H3-Base ever said it this test
       // should fail loudly and force the vocabulary question to be re-asked,
       // rather than the two pollers quietly diverging.
-      final envelope = minimaxH3PollEnvelope(
-          {'status': 'succeeded'}, 'op', 'http://h/content');
+      final envelope = minimaxH3PollEnvelope({'status': 'succeeded'}, 'op', 'http://h/content');
       expect(envelope['done'], isFalse);
     });
 
@@ -212,17 +198,22 @@ void main() {
           'video_abc',
           'http://h/content',
         ),
-        throwsA(isA<LLMApiException>().having(
-          (e) => e.toString(),
-          'message',
-          allOf(contains('video_abc'), contains('out of VRAM')),
-        )),
+        throwsA(
+          isA<LLMApiException>().having(
+            (e) => e.toString(),
+            'message',
+            allOf(contains('video_abc'), contains('out of VRAM')),
+          ),
+        ),
       );
     });
 
     test('pending relays progress without marking done', () {
       final envelope = minimaxH3PollEnvelope(
-          {'status': 'pending', 'progress': 40}, 'op', 'http://h/content');
+        {'status': 'pending', 'progress': 40},
+        'op',
+        'http://h/content',
+      );
       expect(envelope['done'], isFalse);
       expect(envelope['status'], 'pending');
       expect(envelope['progress'], 40);
@@ -235,7 +226,10 @@ void main() {
     test('an old reference temp file is stale', () {
       expect(
         minimaxH3TempRefIsStale(
-            '${minimaxH3TempRefPrefix}123.jpg', now.subtract(const Duration(hours: 7)), now),
+          '${minimaxH3TempRefPrefix}123.jpg',
+          now.subtract(const Duration(hours: 7)),
+          now,
+        ),
         isTrue,
       );
     });
@@ -245,15 +239,17 @@ void main() {
       // old could kill an in-flight job.
       expect(
         minimaxH3TempRefIsStale(
-            '${minimaxH3TempRefPrefix}123.jpg', now.subtract(const Duration(hours: 1)), now),
+          '${minimaxH3TempRefPrefix}123.jpg',
+          now.subtract(const Duration(hours: 1)),
+          now,
+        ),
         isFalse,
       );
     });
 
     test('an unrelated temp file is never touched, however old', () {
       expect(
-        minimaxH3TempRefIsStale(
-            'some_other_app.tmp', now.subtract(const Duration(days: 30)), now),
+        minimaxH3TempRefIsStale('some_other_app.tmp', now.subtract(const Duration(days: 30)), now),
         isFalse,
       );
     });

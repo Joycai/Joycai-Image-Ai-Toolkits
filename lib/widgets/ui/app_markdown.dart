@@ -25,9 +25,9 @@ enum AppMarkdownDensity {
   compact;
 
   AppMarkdownMetrics get metrics => switch (this) {
-        prose => AppMarkdownMetrics.prose,
-        compact => AppMarkdownMetrics.compact,
-      };
+    prose => AppMarkdownMetrics.prose,
+    compact => AppMarkdownMetrics.compact,
+  };
 }
 
 /// Markdown, rendered — the one place the app does it (`A1e`).
@@ -90,7 +90,9 @@ class _AppMarkdownState extends State<AppMarkdown> implements MarkdownBuilderDel
   @override
   void didUpdateWidget(AppMarkdown oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.data != oldWidget.data || widget.density != oldWidget.density || widget.style != oldWidget.style) {
+    if (widget.data != oldWidget.data ||
+        widget.density != oldWidget.density ||
+        widget.style != oldWidget.style) {
       _parse();
     }
   }
@@ -141,11 +143,11 @@ class _AppMarkdownState extends State<AppMarkdown> implements MarkdownBuilderDel
       'ul' || 'ol' => _list(el, body, depth),
       'blockquote' => _quote(el, body, depth),
       'pre' => _CodeBlock(
-          code: el.textContent.replaceFirst(RegExp(r'\n$'), ''),
-          language: _languageOf(el),
-          style: body,
-          metrics: _m,
-        ),
+        code: el.textContent.replaceFirst(RegExp(r'\n$'), ''),
+        language: _languageOf(el),
+        style: body,
+        metrics: _m,
+      ),
       'hr' => Container(height: 1, color: _scheme.outlineVariant),
       'table' => _table(el, body),
       _ => _inline(el, body),
@@ -166,7 +168,9 @@ class _AppMarkdownState extends State<AppMarkdown> implements MarkdownBuilderDel
     if (_m.headingMarks && level == 0) {
       child = Container(
         padding: const EdgeInsets.only(bottom: 8),
-        decoration: BoxDecoration(border: Border(bottom: BorderSide(color: _scheme.outlineVariant))),
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: _scheme.outlineVariant)),
+        ),
         child: child,
       );
     } else if (_m.headingMarks && level == 1) {
@@ -185,7 +189,10 @@ class _AppMarkdownState extends State<AppMarkdown> implements MarkdownBuilderDel
               top: (drawn * AppMarkdownMetrics.headingHeight - bar) / 2,
               right: AppMarkdownMetrics.headingBarGap,
             ),
-            decoration: BoxDecoration(color: _scheme.primary, borderRadius: BorderRadius.circular(2)),
+            decoration: BoxDecoration(
+              color: _scheme.primary,
+              borderRadius: BorderRadius.circular(2),
+            ),
           ),
           Expanded(child: child),
         ],
@@ -204,17 +211,28 @@ class _AppMarkdownState extends State<AppMarkdown> implements MarkdownBuilderDel
         border: Border(left: BorderSide(color: _scheme.outline, width: 2)),
         borderRadius: const BorderRadius.horizontal(right: Radius.circular(AppRadius.sm)),
       ),
-      child: _column(_blocks(el.children ?? const [], body.copyWith(color: _scheme.onSurfaceVariant), depth: depth)),
+      child: _column(
+        _blocks(
+          el.children ?? const [],
+          body.copyWith(color: _scheme.onSurfaceVariant),
+          depth: depth,
+        ),
+      ),
     );
   }
 
   // ----------------------------------------------------------------- lists
 
   Widget _list(md.Element el, TextStyle body, int depth) {
-    final items = (el.children ?? const <md.Node>[]).whereType<md.Element>().where((e) => e.tag == 'li').toList();
+    final items = (el.children ?? const <md.Node>[])
+        .whereType<md.Element>()
+        .where((e) => e.tag == 'li')
+        .toList();
     final ordered = el.tag == 'ol';
     final start = int.tryParse(el.attributes['start'] ?? '') ?? 1;
-    final loose = items.any((li) => (li.children ?? const []).any((c) => c is md.Element && c.tag == 'p'));
+    final loose = items.any(
+      (li) => (li.children ?? const []).any((c) => c is md.Element && c.tag == 'p'),
+    );
 
     final marker = body.copyWith(
       color: _scheme.onSurfaceVariant,
@@ -223,25 +241,42 @@ class _AppMarkdownState extends State<AppMarkdown> implements MarkdownBuilderDel
     // One slot for the whole list, sized by its longest number.
     final digits = '${start + items.length - 1}'.length;
     final slot = ordered
-        ? math.max(AppMarkdownMetrics.numberSlot, (digits + 1) * _scaler.scale(_sizeOf(body)) * 0.62 + 6)
+        ? math.max(
+            AppMarkdownMetrics.numberSlot,
+            (digits + 1) * _scaler.scale(_sizeOf(body)) * 0.62 + 6,
+          )
         : AppMarkdownMetrics.listIndent;
 
     final rows = <Widget>[];
     for (int i = 0; i < items.length; i++) {
       if (i > 0) rows.add(SizedBox(height: loose ? _m.blockGap : _m.itemGap));
-      rows.add(_item(items[i], body, depth, loose,
+      rows.add(
+        _item(
+          items[i],
+          body,
+          depth,
+          loose,
           slot: slot,
           marker: ordered
               ? Padding(
                   padding: const EdgeInsets.only(right: 6),
                   child: Text('${start + i}.', style: marker, textAlign: TextAlign.right),
                 )
-              : Text(const ['•', '◦', '▪'][math.min(depth, 2)], style: marker)));
+              : Text(const ['•', '◦', '▪'][math.min(depth, 2)], style: marker),
+        ),
+      );
     }
     return _column(rows);
   }
 
-  Widget _item(md.Element li, TextStyle body, int depth, bool loose, {required double slot, required Widget marker}) {
+  Widget _item(
+    md.Element li,
+    TextStyle body,
+    int depth,
+    bool loose, {
+    required double slot,
+    required Widget marker,
+  }) {
     final children = List<md.Node>.of(li.children ?? const []);
 
     // A task item: the parser leaves an `<input type=checkbox>` first, either
@@ -249,8 +284,8 @@ class _AppMarkdownState extends State<AppMarkdown> implements MarkdownBuilderDel
     bool? checked;
     md.Element? takeBox(List<md.Node> from) =>
         from.isNotEmpty && from.first is md.Element && (from.first as md.Element).tag == 'input'
-            ? from.removeAt(0) as md.Element
-            : null;
+        ? from.removeAt(0) as md.Element
+        : null;
     md.Element? box = takeBox(children);
     if (box == null && children.isNotEmpty && children.first is md.Element) {
       final first = children.first as md.Element;
@@ -292,7 +327,9 @@ class _AppMarkdownState extends State<AppMarkdown> implements MarkdownBuilderDel
           )
         else
           SizedBox(width: slot, child: marker),
-        Expanded(child: _column(_blocks(blocks, text, depth: depth + 1, gap: loose ? null : _m.itemGap))),
+        Expanded(
+          child: _column(_blocks(blocks, text, depth: depth + 1, gap: loose ? null : _m.itemGap)),
+        ),
       ],
     );
     // One stop for a screen reader: the box's state belongs to the item's text.
@@ -300,16 +337,20 @@ class _AppMarkdownState extends State<AppMarkdown> implements MarkdownBuilderDel
   }
 
   static bool _isBlock(String tag) =>
-      _headings.containsKey(tag) || const {'p', 'ul', 'ol', 'blockquote', 'pre', 'hr', 'table'}.contains(tag);
+      _headings.containsKey(tag) ||
+      const {'p', 'ul', 'ol', 'blockquote', 'pre', 'hr', 'table'}.contains(tag);
 
   // ---------------------------------------------------------------- tables
 
   Widget _table(md.Element el, TextStyle body) {
     final rows = <md.Element>[
       for (final section in (el.children ?? const <md.Node>[]).whereType<md.Element>())
-        ...(section.children ?? const <md.Node>[]).whereType<md.Element>().where((e) => e.tag == 'tr'),
+        ...(section.children ?? const <md.Node>[]).whereType<md.Element>().where(
+          (e) => e.tag == 'tr',
+        ),
     ];
-    List<md.Element> cellsOf(md.Element row) => (row.children ?? const <md.Node>[]).whereType<md.Element>().toList();
+    List<md.Element> cellsOf(md.Element row) =>
+        (row.children ?? const <md.Node>[]).whereType<md.Element>().toList();
     final columns = rows.fold<int>(0, (n, r) => math.max(n, cellsOf(r).length));
     if (columns == 0) return const SizedBox.shrink();
 
@@ -355,7 +396,10 @@ class _AppMarkdownState extends State<AppMarkdown> implements MarkdownBuilderDel
     // which a [LayoutBuilder] cannot answer.
     return Container(
       clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(border: Border.fromBorderSide(line), borderRadius: BorderRadius.circular(AppRadius.sm)),
+      decoration: BoxDecoration(
+        border: Border.fromBorderSide(line),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+      ),
       child: table,
     );
   }
@@ -374,10 +418,8 @@ class _AppMarkdownState extends State<AppMarkdown> implements MarkdownBuilderDel
       selectable: false,
       styleSheet: sheet,
       imageDirectory: null,
-      imageBuilder: (uri, title, alt) => _ImagePlaceholder(
-        label: alt ?? title ?? uri.pathSegments.lastOrNull ?? '',
-        style: style,
-      ),
+      imageBuilder: (uri, title, alt) =>
+          _ImagePlaceholder(label: alt ?? title ?? uri.pathSegments.lastOrNull ?? '', style: style),
       checkboxBuilder: null,
       bulletBuilder: null,
       builders: {'a': _InertLinkBuilder()},
@@ -390,45 +432,53 @@ class _AppMarkdownState extends State<AppMarkdown> implements MarkdownBuilderDel
 
   MarkdownStyleSheet _sheetFor(TextStyle style, WrapAlignment align) {
     final size = _sizeOf(style);
-    return _fallback.merge(MarkdownStyleSheet(
-
-      p: style,
-      h1: style,
-      h2: style,
-      h3: style,
-      h4: style,
-      h5: style,
-      h6: style,
-      pPadding: EdgeInsets.zero,
-      h1Padding: EdgeInsets.zero,
-      h2Padding: EdgeInsets.zero,
-      h3Padding: EdgeInsets.zero,
-      h4Padding: EdgeInsets.zero,
-      h5Padding: EdgeInsets.zero,
-      h6Padding: EdgeInsets.zero,
-      textAlign: align,
-      h1Align: align,
-      h2Align: align,
-      h3Align: align,
-      h4Align: align,
-      h5Align: align,
-      h6Align: align,
-      strong: const TextStyle(fontWeight: FontWeight.w700),
-      em: const TextStyle(fontStyle: FontStyle.italic),
-      del: const TextStyle(decoration: TextDecoration.lineThrough),
-      code: style.mono.copyWith(fontSize: size * 0.86, backgroundColor: _scheme.surfaceContainerHighest),
-      a: TextStyle(
-        color: _scheme.onAccentTint,
-        decoration: TextDecoration.underline,
-        decorationColor: _scheme.accentRing,
+    return _fallback.merge(
+      MarkdownStyleSheet(
+        p: style,
+        h1: style,
+        h2: style,
+        h3: style,
+        h4: style,
+        h5: style,
+        h6: style,
+        pPadding: EdgeInsets.zero,
+        h1Padding: EdgeInsets.zero,
+        h2Padding: EdgeInsets.zero,
+        h3Padding: EdgeInsets.zero,
+        h4Padding: EdgeInsets.zero,
+        h5Padding: EdgeInsets.zero,
+        h6Padding: EdgeInsets.zero,
+        textAlign: align,
+        h1Align: align,
+        h2Align: align,
+        h3Align: align,
+        h4Align: align,
+        h5Align: align,
+        h6Align: align,
+        strong: const TextStyle(fontWeight: FontWeight.w700),
+        em: const TextStyle(fontStyle: FontStyle.italic),
+        del: const TextStyle(decoration: TextDecoration.lineThrough),
+        code: style.mono.copyWith(
+          fontSize: size * 0.86,
+          backgroundColor: _scheme.surfaceContainerHighest,
+        ),
+        a: TextStyle(
+          color: _scheme.onAccentTint,
+          decoration: TextDecoration.underline,
+          decorationColor: _scheme.accentRing,
+        ),
+        blockSpacing: _m.itemGap,
       ),
-      blockSpacing: _m.itemGap,
-    ));
+    );
   }
 
   static Widget _column(List<Widget> children) => children.length == 1
       ? children.single
-      : Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: children);
+      : Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: children,
+        );
 
   static String? _languageOf(md.Element pre) {
     final code = (pre.children ?? const <md.Node>[]).whereType<md.Element>().firstOrNull;
@@ -444,7 +494,8 @@ class _AppMarkdownState extends State<AppMarkdown> implements MarkdownBuilderDel
 
   // Never reached: `pre` is drawn by [_CodeBlock].
   @override
-  TextSpan formatText(MarkdownStyleSheet styleSheet, String code) => TextSpan(text: code, style: styleSheet.code);
+  TextSpan formatText(MarkdownStyleSheet styleSheet, String code) =>
+      TextSpan(text: code, style: styleSheet.code);
 
   @override
   Widget build(BuildContext context) {
@@ -463,10 +514,12 @@ class _InertLinkBuilder extends MarkdownElementBuilder {
     TextStyle? preferredStyle,
     TextStyle? parentStyle,
   ) {
-    return Text.rich(TextSpan(
-      text: element.textContent,
-      style: (parentStyle ?? const TextStyle()).merge(preferredStyle),
-    ));
+    return Text.rich(
+      TextSpan(
+        text: element.textContent,
+        style: (parentStyle ?? const TextStyle()).merge(preferredStyle),
+      ),
+    );
   }
 }
 
@@ -496,7 +549,11 @@ class _ImagePlaceholder extends StatelessWidget {
                 child: Text(
                   label,
                   overflow: TextOverflow.ellipsis,
-                  style: style.copyWith(fontSize: size, color: scheme.onSurfaceVariant, height: 1.3),
+                  style: style.copyWith(
+                    fontSize: size,
+                    color: scheme.onSurfaceVariant,
+                    height: 1.3,
+                  ),
                 ),
               ),
             ],
@@ -535,7 +592,12 @@ class _TaskBox extends StatelessWidget {
 
 /// A fenced block: mono, never wrapped, scrolled sideways, copied whole.
 class _CodeBlock extends StatefulWidget {
-  const _CodeBlock({required this.code, required this.language, required this.style, required this.metrics});
+  const _CodeBlock({
+    required this.code,
+    required this.language,
+    required this.style,
+    required this.metrics,
+  });
 
   final String code;
   final String? language;
@@ -553,7 +615,8 @@ class _CodeBlockState extends State<_CodeBlock> {
 
   // No pointer to hover with: the button is simply there.
   bool get _touch =>
-      defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS;
+      defaultTargetPlatform == TargetPlatform.android ||
+      defaultTargetPlatform == TargetPlatform.iOS;
 
   @override
   void dispose() {
@@ -597,7 +660,11 @@ class _CodeBlockState extends State<_CodeBlock> {
               child: Text(
                 widget.code,
                 softWrap: false,
-                style: widget.style.mono.copyWith(fontSize: size, height: 1.6, color: scheme.onSurface),
+                style: widget.style.mono.copyWith(
+                  fontSize: size,
+                  height: 1.6,
+                  color: scheme.onSurface,
+                ),
               ),
             ),
             Positioned(
@@ -621,8 +688,11 @@ class _CodeBlockState extends State<_CodeBlock> {
                         child: SelectionContainer.disabled(
                           child: Text(
                             widget.language!,
-                            style:
-                                widget.style.mono.copyWith(fontSize: 10.5, height: 1.3, color: scheme.onSurfaceVariant),
+                            style: widget.style.mono.copyWith(
+                              fontSize: 10.5,
+                              height: 1.3,
+                              color: scheme.onSurfaceVariant,
+                            ),
                           ),
                         ),
                       ),

@@ -18,26 +18,28 @@ void main() {
   });
 
   Future<void> pump(WidgetTester tester, {String initial = 'cha'}) async {
-    await tester.pumpWidget(MaterialApp(
-      home: Scaffold(
-        body: SizedBox(
-          width: 240,
-          child: FolderNameEditor(
-            initialName: initial,
-            validate: (name) => switch (name.trim()) {
-              '' => 'Name cannot be empty',
-              'taken' => 'A folder with this name already exists',
-              _ => null,
-            },
-            onSubmit: (name) async {
-              submitted.add(name);
-              return nextFailure;
-            },
-            onCancel: () => cancelled++,
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 240,
+            child: FolderNameEditor(
+              initialName: initial,
+              validate: (name) => switch (name.trim()) {
+                '' => 'Name cannot be empty',
+                'taken' => 'A folder with this name already exists',
+                _ => null,
+              },
+              onSubmit: (name) async {
+                submitted.add(name);
+                return nextFailure;
+              },
+              onCancel: () => cancelled++,
+            ),
           ),
         ),
       ),
-    ));
+    );
     await tester.pump();
   }
 
@@ -73,8 +75,9 @@ void main() {
     expect(find.byType(TextField), findsOneWidget);
   });
 
-  testWidgets('Enter on an empty name shows the reason; clicking away from it cancels',
-      (tester) async {
+  testWidgets('Enter on an empty name shows the reason; clicking away from it cancels', (
+    tester,
+  ) async {
     await pump(tester);
     await tester.enterText(find.byType(TextField), '');
     await tester.testTextInput.receiveAction(TextInputAction.done);

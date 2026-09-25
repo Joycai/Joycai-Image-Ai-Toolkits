@@ -29,11 +29,7 @@ class TaskRepository {
 
   Future<void> _insertTask(Map<String, dynamic> row) async {
     final db = await _db;
-    await db.insert(
-      'tasks',
-      row,
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    await db.insert('tasks', row, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   /// Strips cookies from task rows written before [saveTask] stopped storing
@@ -41,8 +37,12 @@ class TaskRepository {
   /// decides. Runs once per launch and finds nothing after the first.
   Future<void> scrubStoredCookies() async {
     final db = await _db;
-    final rows = await db.query('tasks',
-        columns: ['id', 'parameters'], where: 'parameters LIKE ?', whereArgs: ['%"cookies"%']);
+    final rows = await db.query(
+      'tasks',
+      columns: ['id', 'parameters'],
+      where: 'parameters LIKE ?',
+      whereArgs: ['%"cookies"%'],
+    );
     for (final row in rows) {
       final params = row['parameters'];
       if (params is! String) continue;
@@ -81,8 +81,7 @@ class TaskRepository {
     final merged = byId.values.toList()
       ..sort((a, b) {
         String stamp(Map<String, dynamic> row) =>
-            (row['created_at'] ?? row['start_time'] ?? row['end_time'] ?? '')
-                as String;
+            (row['created_at'] ?? row['start_time'] ?? row['end_time'] ?? '') as String;
         return stamp(b).compareTo(stamp(a));
       });
     return merged.map(TaskItem.fromMap).toList();
@@ -101,10 +100,7 @@ class TaskRepository {
   /// long-lived session passed the cap. DESC keeps the newest within the cap;
   /// the reversal restores the ascending order the caller relies on, so later
   /// tasks still win map collisions in `resultVersionsFromTasks`.
-  Future<List<TaskItem>> getTasksForAssistantSession(
-    String sessionId, {
-    int limit = 500,
-  }) async {
+  Future<List<TaskItem>> getTasksForAssistantSession(String sessionId, {int limit = 500}) async {
     final db = await _db;
     final rows = await db.query(
       'tasks',
@@ -133,16 +129,12 @@ class TaskRepository {
     await db.update(
       'tasks',
       {'status': 'pending'},
-      where: 'status = ? AND type = ? AND operation_name IS NOT NULL '
+      where:
+          'status = ? AND type = ? AND operation_name IS NOT NULL '
           "AND operation_name != ''",
       whereArgs: ['processing', 'videoGenerate'],
     );
-    await db.update(
-      'tasks',
-      {'status': 'failed'},
-      where: 'status = ?',
-      whereArgs: ['processing'],
-    );
+    await db.update('tasks', {'status': 'failed'}, where: 'status = ?', whereArgs: ['processing']);
   }
 
   Future<List<double>> getTaskDurations(int modelDbId, int limit) async {

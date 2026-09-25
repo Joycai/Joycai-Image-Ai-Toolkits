@@ -4,8 +4,8 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/services/assistant/knowledge_base_service.dart';
 import 'package:joycai_image_ai_toolkits/services/assistant/knowledge_base_starter.dart';
-import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/assistant/prompt_optimizer_agent.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
@@ -13,31 +13,34 @@ import '../../support/private_data_dir.dart';
 
 /// Appends the call/result pair the agent writes for one `read_knowledge_file`,
 /// so liveness derives from the same shape production builds.
-void recordRead(PromptOptimizerSession session, String path, int page,
-    {String? content}) {
+void recordRead(PromptOptimizerSession session, String path, int page, {String? content}) {
   final callId = 'call_${session.history.length}';
-  session.history.add(LLMMessage(
-    role: LLMRole.assistant,
-    content: '',
-    toolCalls: [
-      LLMToolCall(
-        id: callId,
-        name: 'read_knowledge_file',
-        arguments: {'path': path, 'page': page},
-      ),
-    ],
-  ));
-  session.history.add(LLMMessage(
-    role: LLMRole.tool,
-    content: jsonEncode({
-      'path': path,
-      'page': page,
-      'total_pages': 1,
-      'content': content ?? 'body of $path page $page',
-    }),
-    toolCallId: callId,
-    toolName: 'read_knowledge_file',
-  ));
+  session.history.add(
+    LLMMessage(
+      role: LLMRole.assistant,
+      content: '',
+      toolCalls: [
+        LLMToolCall(
+          id: callId,
+          name: 'read_knowledge_file',
+          arguments: {'path': path, 'page': page},
+        ),
+      ],
+    ),
+  );
+  session.history.add(
+    LLMMessage(
+      role: LLMRole.tool,
+      content: jsonEncode({
+        'path': path,
+        'page': page,
+        'total_pages': 1,
+        'content': content ?? 'body of $path page $page',
+      }),
+      toolCallId: callId,
+      toolName: 'read_knowledge_file',
+    ),
+  );
 }
 
 void main() {
@@ -63,42 +66,24 @@ void main() {
 
   group('writeFile path safety', () {
     test('rejects paths escaping the root', () {
-      expect(
-        () => kb.writeFile(root.path, '../evil.md', 'x'),
-        throwsA(isA<KbPathException>()),
-      );
+      expect(() => kb.writeFile(root.path, '../evil.md', 'x'), throwsA(isA<KbPathException>()));
     });
 
     test('rejects absolute paths', () {
-      expect(
-        () => kb.writeFile(root.path, '/etc/passwd.md', 'x'),
-        throwsA(isA<KbPathException>()),
-      );
+      expect(() => kb.writeFile(root.path, '/etc/passwd.md', 'x'), throwsA(isA<KbPathException>()));
     });
 
     test('rejects the root itself', () {
-      expect(
-        () => kb.writeFile(root.path, '.', 'x'),
-        throwsA(isA<KbPathException>()),
-      );
+      expect(() => kb.writeFile(root.path, '.', 'x'), throwsA(isA<KbPathException>()));
     });
 
     test('rejects non-markdown files, which listFiles would hide', () {
-      expect(
-        () => kb.writeFile(root.path, 'notes.txt', 'x'),
-        throwsA(isA<KbPathException>()),
-      );
+      expect(() => kb.writeFile(root.path, 'notes.txt', 'x'), throwsA(isA<KbPathException>()));
     });
 
     test('rejects dot-prefixed paths, which listFiles would skip', () {
-      expect(
-        () => kb.writeFile(root.path, '.hidden.md', 'x'),
-        throwsA(isA<KbPathException>()),
-      );
-      expect(
-        () => kb.writeFile(root.path, '.git/config.md', 'x'),
-        throwsA(isA<KbPathException>()),
-      );
+      expect(() => kb.writeFile(root.path, '.hidden.md', 'x'), throwsA(isA<KbPathException>()));
+      expect(() => kb.writeFile(root.path, '.git/config.md', 'x'), throwsA(isA<KbPathException>()));
     });
 
     test('writes a nested file, creating parent directories', () async {
@@ -204,8 +189,11 @@ void main() {
       final readme = KnowledgeBaseStarter.files[KnowledgeBaseService.entryFileName]!;
       for (final path in KnowledgeBaseStarter.files.keys) {
         if (path == KnowledgeBaseService.entryFileName) continue;
-        expect(readme, contains(path),
-            reason: '$path is missing from the file map, so the agent cannot discover it');
+        expect(
+          readme,
+          contains(path),
+          reason: '$path is missing from the file map, so the agent cannot discover it',
+        );
       }
     });
 
@@ -273,10 +261,7 @@ void main() {
           f.path: f.readAsStringSync(),
       };
 
-      await expectLater(
-        KnowledgeBaseStarter.scaffold(root.path),
-        throwsA(isA<KbPathException>()),
-      );
+      await expectLater(KnowledgeBaseStarter.scaffold(root.path), throwsA(isA<KbPathException>()));
 
       final after = {
         for (final f in root.listSync(recursive: true).whereType<File>())
@@ -285,16 +270,13 @@ void main() {
       expect(after, before, reason: 'an initialized base must be left exactly as it was');
     });
 
-    test('an entry file alone is a working base — no other file is required',
-        () async {
-      File(p.join(root.path, 'README.md'))
-          .writeAsStringSync('# 我的库\n所有规则都写在这里。');
+    test('an entry file alone is a working base — no other file is required', () async {
+      File(p.join(root.path, 'README.md')).writeAsStringSync('# 我的库\n所有规则都写在这里。');
       expect(await kb.validate(root.path), KbStatus.ok);
       expect(kb.listFiles(root.path).map((e) => e.relPath), ['README.md']);
     });
 
-    test('the agent can grow a structure of its own from a bare entry file',
-        () async {
+    test('the agent can grow a structure of its own from a bare entry file', () async {
       File(p.join(root.path, 'README.md')).writeAsStringSync('# 我的库');
       await kb.setRoot(root.path);
       final session = PromptOptimizerSession(mode: AssistantMode.knowledgeEdit);
@@ -308,8 +290,10 @@ void main() {
       // Nesting is arbitrary: listFiles is non-recursive but returns
       // directories, so the agent descends on demand.
       expect(kb.listFiles(root.path).map((e) => e.relPath), ['README.md', 'my']);
-      expect(kb.listFiles(root.path, dir: 'my/deeply/nested').single.relPath,
-          'my/deeply/nested/rule.md');
+      expect(
+        kb.listFiles(root.path, dir: 'my/deeply/nested').single.relPath,
+        'my/deeply/nested/rule.md',
+      );
       expect(kb.readFile(root.path, 'my/deeply/nested/rule.md').content, '# 规则');
     });
   });
@@ -333,8 +317,7 @@ void main() {
       await PromptOptimizerAgent.applyStagedKbEdit(session: session, editId: id);
 
       expect(kb.readFullFile(root.path, 'a.md'), 'new body');
-      expect(session.transcript.firstWhere((e) => e.editId == id).editState,
-          KbEditState.applied);
+      expect(session.transcript.firstWhere((e) => e.editId == id).editState, KbEditState.applied);
       // A rewrite moves page boundaries, so no page of a.md may still count or
       // the agent would be told its own edit is "already in the conversation".
       expect(PromptOptimizerAgent.liveReadPagesForTest(session, 'a.md'), isEmpty);
@@ -348,7 +331,10 @@ void main() {
       final session = PromptOptimizerSession(mode: AssistantMode.knowledgeEdit);
       recordRead(session, 'a.md', 1);
       final id = session.stageKbEditForTest(
-        relPath: 'a.md', newContent: 'new body', oldContent: 'old body');
+        relPath: 'a.md',
+        newContent: 'new body',
+        oldContent: 'old body',
+      );
       await PromptOptimizerAgent.applyStagedKbEdit(session: session, editId: id);
       expect(PromptOptimizerAgent.liveReadPagesForTest(session, 'a.md'), isEmpty);
 
@@ -376,11 +362,7 @@ void main() {
     test('applying twice does not write again', () async {
       await kb.setRoot(root.path);
       final session = PromptOptimizerSession(mode: AssistantMode.knowledgeEdit);
-      final id = session.stageKbEditForTest(
-        relPath: 'a.md',
-        newContent: 'first',
-        oldContent: null,
-      );
+      final id = session.stageKbEditForTest(relPath: 'a.md', newContent: 'first', oldContent: null);
       await PromptOptimizerAgent.applyStagedKbEdit(session: session, editId: id);
       File(p.join(root.path, 'a.md')).writeAsStringSync('edited by hand');
 
@@ -391,11 +373,7 @@ void main() {
     test('a rejected edit can no longer be applied', () async {
       await kb.setRoot(root.path);
       final session = PromptOptimizerSession(mode: AssistantMode.knowledgeEdit);
-      final id = session.stageKbEditForTest(
-        relPath: 'a.md',
-        newContent: 'x',
-        oldContent: null,
-      );
+      final id = session.stageKbEditForTest(relPath: 'a.md', newContent: 'x', oldContent: null);
       PromptOptimizerAgent.rejectStagedKbEdit(session: session, editId: id);
 
       await PromptOptimizerAgent.applyStagedKbEdit(session: session, editId: id);
@@ -417,8 +395,7 @@ void main() {
         PromptOptimizerAgent.applyStagedKbEdit(session: session, editId: id),
         throwsA(isA<KbPathException>()),
       );
-      expect(session.transcript.firstWhere((e) => e.editId == id).editState,
-          KbEditState.failed);
+      expect(session.transcript.firstWhere((e) => e.editId == id).editState, KbEditState.failed);
     });
   });
 
@@ -430,8 +407,7 @@ void main() {
       await kb.setRoot(root.path);
       await kb.writeFile(root.path, 'a.md', 'old');
       final session = PromptOptimizerSession(mode: AssistantMode.knowledgeEdit);
-      final id = session.stageKbEditForTest(
-          relPath: 'a.md', newContent: 'new', oldContent: 'old');
+      final id = session.stageKbEditForTest(relPath: 'a.md', newContent: 'new', oldContent: 'old');
 
       // The user edits the file while the card is still pending.
       File(p.join(root.path, 'a.md')).writeAsStringSync('edited by hand');
@@ -449,9 +425,15 @@ void main() {
       await kb.writeFile(root.path, 'a.md', 'old');
       final session = PromptOptimizerSession(mode: AssistantMode.knowledgeEdit);
       final first = session.stageKbEditForTest(
-          relPath: 'a.md', newContent: 'first', oldContent: 'old');
+        relPath: 'a.md',
+        newContent: 'first',
+        oldContent: 'old',
+      );
       final second = session.stageKbEditForTest(
-          relPath: 'a.md', newContent: 'second', oldContent: 'old');
+        relPath: 'a.md',
+        newContent: 'second',
+        oldContent: 'old',
+      );
 
       await PromptOptimizerAgent.applyStagedKbEdit(session: session, editId: first);
       await expectLater(
@@ -466,7 +448,10 @@ void main() {
       await kb.setRoot(root.path);
       final session = PromptOptimizerSession(mode: AssistantMode.knowledgeEdit);
       final id = session.stageKbEditForTest(
-          relPath: 'fresh.md', newContent: 'agent', oldContent: null);
+        relPath: 'fresh.md',
+        newContent: 'agent',
+        oldContent: null,
+      );
       File(p.join(root.path, 'fresh.md')).writeAsStringSync('user made it first');
 
       await expectLater(
@@ -484,7 +469,11 @@ void main() {
       await kb.writeFile(root.path, 'a.md', 'old');
       final session = PromptOptimizerSession(mode: AssistantMode.knowledgeEdit);
       final id = session.stageKbEditForTest(
-          relPath: 'a.md', newContent: 'new', oldContent: 'old', knowledgeRoot: root.path);
+        relPath: 'a.md',
+        newContent: 'new',
+        oldContent: 'old',
+        knowledgeRoot: root.path,
+      );
       // The folder setting is switched while the card waits.
       await kb.setRoot(other.path);
 
@@ -504,14 +493,15 @@ void main() {
       await kb.setRoot(root.path);
       await kb.writeFile(root.path, 'a.md', 'old');
       final session = PromptOptimizerSession(mode: AssistantMode.knowledgeEdit)
-        ..writePolicy = const KbWritePolicy(
-            confirmEachWrite: false, backupBeforeOverwrite: false);
-      final id = session.stageKbEditForTest(
-          relPath: 'a.md', newContent: 'new', oldContent: 'old');
+        ..writePolicy = const KbWritePolicy(confirmEachWrite: false, backupBeforeOverwrite: false);
+      final id = session.stageKbEditForTest(relPath: 'a.md', newContent: 'new', oldContent: 'old');
 
       await PromptOptimizerAgent.applyStagedKbEdit(session: session, editId: id);
-      expect(backupOf('a.md'), 'old',
-          reason: 'nobody read this edit before it landed — the backup is the only way back');
+      expect(
+        backupOf('a.md'),
+        'old',
+        reason: 'nobody read this edit before it landed — the backup is the only way back',
+      );
     });
 
     test('the first backup of a session is kept, not overwritten by the next write', () async {
@@ -521,16 +511,22 @@ void main() {
         ..writePolicy = const KbWritePolicy(backupBeforeOverwrite: true);
 
       final v1 = session.stageKbEditForTest(
-          relPath: 'a.md', newContent: 'v1', oldContent: 'original');
+        relPath: 'a.md',
+        newContent: 'v1',
+        oldContent: 'original',
+      );
       await PromptOptimizerAgent.applyStagedKbEdit(session: session, editId: v1);
-      final v2 = session.stageKbEditForTest(
-          relPath: 'a.md', newContent: 'v2', oldContent: 'v1');
+      final v2 = session.stageKbEditForTest(relPath: 'a.md', newContent: 'v2', oldContent: 'v1');
       await PromptOptimizerAgent.applyStagedKbEdit(session: session, editId: v2);
 
       expect(kb.readFullFile(root.path, 'a.md'), 'v2');
-      expect(backupOf('a.md'), 'original',
-          reason: 'a single .bak rewritten on every write only ever holds the '
-              'agent\'s previous draft, never the user\'s own file');
+      expect(
+        backupOf('a.md'),
+        'original',
+        reason:
+            'a single .bak rewritten on every write only ever holds the '
+            'agent\'s previous draft, never the user\'s own file',
+      );
     });
   });
 
@@ -564,10 +560,12 @@ void main() {
       final tail = session.history.sublist(keepFrom);
       session.history
         ..clear()
-        ..add(LLMMessage(
-          role: LLMRole.user,
-          content: '${PromptOptimizerAgent.summaryMarker}\nEarlier work on a.md.',
-        ))
+        ..add(
+          LLMMessage(
+            role: LLMRole.user,
+            content: '${PromptOptimizerAgent.summaryMarker}\nEarlier work on a.md.',
+          ),
+        )
         ..addAll(tail);
     }
 
@@ -584,18 +582,21 @@ void main() {
         session.addUserTurn('turn $i');
         recordRead(session, 'b.md', i);
       }
-      final id = session.stageKbEditForTest(
-          relPath: 'a.md', newContent: 'new', oldContent: 'old');
+      final id = session.stageKbEditForTest(relPath: 'a.md', newContent: 'new', oldContent: 'old');
       await PromptOptimizerAgent.applyStagedKbEdit(session: session, editId: id);
 
       session.addUserTurn('turn 10');
       compactBefore(session, session.history.length - 1);
       recordRead(session, 'a.md', 1, content: 'new');
 
-      expect(PromptOptimizerAgent.liveReadPagesForTest(session, 'a.md'), {1},
-          reason: 'an index recorded before compaction points past the end of '
-              'the shorter history, so the re-read never counts and the '
-              'read-before-write rail refuses this file for the rest of the session');
+      expect(
+        PromptOptimizerAgent.liveReadPagesForTest(session, 'a.md'),
+        {1},
+        reason:
+            'an index recorded before compaction points past the end of '
+            'the shorter history, so the re-read never counts and the '
+            'read-before-write rail refuses this file for the rest of the session',
+      );
     });
 
     test('a read from before the write stays stale when compaction keeps it', () async {
@@ -611,16 +612,19 @@ void main() {
       session.addUserTurn('turn 7');
       // Page 2 read before the write: it describes content that no longer exists.
       recordRead(session, 'a.md', 2, content: 'old page 2');
-      final id = session.stageKbEditForTest(
-          relPath: 'a.md', newContent: 'new', oldContent: 'old');
+      final id = session.stageKbEditForTest(relPath: 'a.md', newContent: 'new', oldContent: 'old');
       await PromptOptimizerAgent.applyStagedKbEdit(session: session, editId: id);
 
       compactBefore(session, keepFrom);
       recordRead(session, 'a.md', 1, content: 'new');
 
-      expect(PromptOptimizerAgent.liveReadPagesForTest(session, 'a.md'), {1},
-          reason: 'the pre-write read of page 2 stays stale; the post-write '
-              're-read of page 1 counts');
+      expect(
+        PromptOptimizerAgent.liveReadPagesForTest(session, 'a.md'),
+        {1},
+        reason:
+            'the pre-write read of page 2 stays stale; the post-write '
+            're-read of page 1 counts',
+      );
     });
   });
 }

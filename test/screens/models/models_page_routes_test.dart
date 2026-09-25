@@ -28,16 +28,18 @@ void main() {
   );
 
   Future<void> pump(WidgetTester tester, Widget child) async {
-    await tester.pumpWidget(MaterialApp(
-      locale: const Locale('en'),
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      theme: buildAppTheme(
-        accent: AppConstants.presetThemes.values.first,
-        brightness: Brightness.light,
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: buildAppTheme(
+          accent: AppConstants.presetThemes.values.first,
+          brightness: Brightness.light,
+        ),
+        home: Scaffold(body: SizedBox(width: 420, child: child)),
       ),
-      home: Scaffold(body: SizedBox(width: 420, child: child)),
-    ));
+    );
   }
 
   LLMModel chat({String? activeRoute, int channelId = 1}) => LLMModel(
@@ -52,20 +54,19 @@ void main() {
   testWidgets('a rail row names the platform and its routes', (tester) async {
     await pump(tester, ChannelRow(channel: relay, modelCount: 3));
     expect(find.text('New API'), findsOneWidget);
-    final badges = tester
-        .widgetList<AppRouteBadge>(find.byType(AppRouteBadge))
-        .toList();
+    final badges = tester.widgetList<AppRouteBadge>(find.byType(AppRouteBadge)).toList();
     expect(badges.first.label, 'Chat');
     expect(badges.first.state, RouteBadgeState.current);
-    expect(badges.skip(1).every((b) => b.state == RouteBadgeState.configured),
-        isTrue);
+    expect(badges.skip(1).every((b) => b.state == RouteBadgeState.configured), isTrue);
   });
 
-  testWidgets('a card on a multi-route channel names its route',
-      (tester) async {
+  testWidgets('a card on a multi-route channel names its route', (tester) async {
     await pump(
       tester,
-      ModelCard(model: chat(activeRoute: 'responses'), channel: relay),
+      ModelCard(
+        model: chat(activeRoute: 'responses'),
+        channel: relay,
+      ),
     );
     expect(find.widgetWithText(AppRouteBadge, 'Responses'), findsOneWidget);
   });
@@ -75,11 +76,13 @@ void main() {
     expect(find.byType(AppRouteBadge), findsNothing);
   });
 
-  testWidgets('a route the channel no longer offers is flagged',
-      (tester) async {
+  testWidgets('a route the channel no longer offers is flagged', (tester) async {
     await pump(
       tester,
-      ModelCard(model: chat(activeRoute: 'dashscope'), channel: relay),
+      ModelCard(
+        model: chat(activeRoute: 'dashscope'),
+        channel: relay,
+      ),
     );
     expect(find.byIcon(Icons.link_off), findsOneWidget);
     expect(find.byType(AppRouteBadge), findsNothing);

@@ -1,21 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:joycai_image_ai_toolkits/core/design_tokens.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
-import 'package:joycai_image_ai_toolkits/widgets/ui/app_button.dart';
+import 'package:joycai_image_ai_toolkits/core/design_tokens.dart';
 import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_button.dart';
 
 /// Covers [AppButton]'s four variants and its loading state.
 void main() {
   const seed = Colors.indigo;
 
   Widget host(Widget child, {Brightness brightness = Brightness.light}) => MaterialApp(
-        theme: buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: brightness),
-        home: Scaffold(body: Center(child: child)),
-      );
+    theme: buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: brightness),
+    home: Scaffold(body: Center(child: child)),
+  );
 
-  testWidgets('primary takes the app-wide filled-button theme, not a style of its own', (tester) async {
+  testWidgets('primary takes the app-wide filled-button theme, not a style of its own', (
+    tester,
+  ) async {
     // No style is passed for primary — it must resolve through
     // FilledButtonThemeData (the vibrant fill), same as any other
     // FilledButton in the app.
@@ -41,8 +43,9 @@ void main() {
     expect(tester.widget<FilledButton>(find.byType(FilledButton)).onPressed, isNull);
   });
 
-  testWidgets('destructive fills from errorFillScheme, not the seed and not the role',
-      (tester) async {
+  testWidgets('destructive fills from errorFillScheme, not the seed and not the role', (
+    tester,
+  ) async {
     // Was `colorScheme.error`, which is right for a foreground and wrong for a
     // ground: the role is tone 40 in light but tone 80 in dark, so a filled
     // button wearing it came out a pale pink slab with dark text — the app's
@@ -50,16 +53,24 @@ void main() {
     // `errorFillScheme` stays one committed red under both brightnesses; the
     // primary CTA gets the same treatment from the theme pair's dark half.
     for (final brightness in Brightness.values) {
-      await tester.pumpWidget(host(
-        AppButton(label: 'Delete', onPressed: () {}, variant: AppButtonVariant.destructive),
-        brightness: brightness,
-      ));
+      await tester.pumpWidget(
+        host(
+          AppButton(label: 'Delete', onPressed: () {}, variant: AppButtonVariant.destructive),
+          brightness: brightness,
+        ),
+      );
 
       final style = tester.widget<FilledButton>(find.byType(FilledButton)).style!;
-      expect(style.backgroundColor?.resolve(const {}), errorFillScheme().primary,
-          reason: brightness.name);
-      expect(style.foregroundColor?.resolve(const {}), errorFillScheme().onPrimary,
-          reason: brightness.name);
+      expect(
+        style.backgroundColor?.resolve(const {}),
+        errorFillScheme().primary,
+        reason: brightness.name,
+      );
+      expect(
+        style.foregroundColor?.resolve(const {}),
+        errorFillScheme().onPrimary,
+        reason: brightness.name,
+      );
 
       // The seed must not reach it either — that was never the bug, and it
       // must not become one.
@@ -73,7 +84,9 @@ void main() {
     // design spec landed. The seed's colour belongs on the action the user is
     // meant to take; a filled secondary spent it on the one beside it. The
     // separation from `primary` is now weight, not hue.
-    await tester.pumpWidget(host(AppButton(label: 'Maybe', onPressed: () {}, variant: AppButtonVariant.secondary)));
+    await tester.pumpWidget(
+      host(AppButton(label: 'Maybe', onPressed: () {}, variant: AppButtonVariant.secondary)),
+    );
 
     final theme = buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light);
     expect(find.byType(OutlinedButton), findsOneWidget);
@@ -85,13 +98,17 @@ void main() {
   });
 
   testWidgets('text variant renders as a TextButton', (tester) async {
-    await tester.pumpWidget(host(AppButton(label: 'Cancel', onPressed: () {}, variant: AppButtonVariant.text)));
+    await tester.pumpWidget(
+      host(AppButton(label: 'Cancel', onPressed: () {}, variant: AppButtonVariant.text)),
+    );
 
     expect(find.byType(TextButton), findsOneWidget);
     expect(find.byType(FilledButton), findsNothing);
   });
 
-  testWidgets('an icon switches to the .icon constructor without dropping the label', (tester) async {
+  testWidgets('an icon switches to the .icon constructor without dropping the label', (
+    tester,
+  ) async {
     await tester.pumpWidget(host(AppButton(label: 'Save', icon: Icons.save, onPressed: () {})));
 
     expect(find.text('Save'), findsOneWidget);
@@ -102,8 +119,8 @@ void main() {
   /// tap target that is never drawn, so its own size says nothing about what
   /// the user sees.
   Size paintedSize(WidgetTester tester) => tester.getSize(
-        find.descendant(of: find.byType(AppButton), matching: find.byType(Material)).first,
-      );
+    find.descendant(of: find.byType(AppButton), matching: find.byType(Material)).first,
+  );
 
   group('sizes', () {
     // Every one of these existed as a hand-rolled `minimumSize` or
@@ -111,13 +128,17 @@ void main() {
     // The component owning them is the point.
 
     testWidgets('compact is shorter than normal, large is taller', (tester) async {
-      await tester.pumpWidget(host(AppButton(label: 'X', onPressed: () {}, size: AppButtonSize.compact)));
+      await tester.pumpWidget(
+        host(AppButton(label: 'X', onPressed: () {}, size: AppButtonSize.compact)),
+      );
       final compact = paintedSize(tester).height;
 
       await tester.pumpWidget(host(AppButton(label: 'X', onPressed: () {})));
       final normal = paintedSize(tester).height;
 
-      await tester.pumpWidget(host(AppButton(label: 'X', onPressed: () {}, size: AppButtonSize.large)));
+      await tester.pumpWidget(
+        host(AppButton(label: 'X', onPressed: () {}, size: AppButtonSize.large)),
+      );
       final large = paintedSize(tester).height;
 
       expect(compact, lessThan(normal));
@@ -127,9 +148,11 @@ void main() {
 
     testWidgets('a compact button carries a smaller icon', (tester) async {
       // 18px inside a 30px button is most of its height.
-      await tester.pumpWidget(host(
-        AppButton(label: 'X', icon: Icons.close, onPressed: () {}, size: AppButtonSize.compact),
-      ));
+      await tester.pumpWidget(
+        host(
+          AppButton(label: 'X', icon: Icons.close, onPressed: () {}, size: AppButtonSize.compact),
+        ),
+      );
       final compact = tester.widget<Icon>(find.byIcon(Icons.close)).size;
 
       await tester.pumpWidget(host(AppButton(label: 'X', icon: Icons.close, onPressed: () {})));
@@ -139,15 +162,17 @@ void main() {
     });
 
     testWidgets('fullWidth spans what it is offered', (tester) async {
-      await tester.pumpWidget(MaterialApp(
-        theme: buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light),
-        home: Scaffold(
-          body: SizedBox(
-            width: 400,
-            child: AppButton(label: 'Import now', onPressed: () {}, fullWidth: true),
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light),
+          home: Scaffold(
+            body: SizedBox(
+              width: 400,
+              child: AppButton(label: 'Import now', onPressed: () {}, fullWidth: true),
+            ),
           ),
         ),
-      ));
+      );
 
       expect(paintedSize(tester).width, 400);
     });
@@ -173,7 +198,9 @@ void main() {
           .style!
           .fontSize!;
 
-      await tester.pumpWidget(host(AppButton(label: 'X', onPressed: () {}, size: AppButtonSize.compact)));
+      await tester.pumpWidget(
+        host(AppButton(label: 'X', onPressed: () {}, size: AppButtonSize.compact)),
+      );
       await tester.pumpAndSettle();
       final compact = labelSize(tester);
 
@@ -181,7 +208,9 @@ void main() {
       await tester.pumpAndSettle();
       final normal = labelSize(tester);
 
-      await tester.pumpWidget(host(AppButton(label: 'X', onPressed: () {}, size: AppButtonSize.large)));
+      await tester.pumpWidget(
+        host(AppButton(label: 'X', onPressed: () {}, size: AppButtonSize.large)),
+      );
       await tester.pumpAndSettle();
       final large = labelSize(tester);
 
@@ -194,7 +223,9 @@ void main() {
       // reason the scale exists.
       final theme = buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light);
 
-      await tester.pumpWidget(host(AppButton(label: 'X', onPressed: () {}, size: AppButtonSize.compact)));
+      await tester.pumpWidget(
+        host(AppButton(label: 'X', onPressed: () {}, size: AppButtonSize.compact)),
+      );
       final style = tester.widget<FilledButton>(find.byType(FilledButton)).style!;
 
       expect(style.textStyle?.resolve(const {})?.fontSize, theme.textTheme.labelMedium?.fontSize);
@@ -212,12 +243,16 @@ void main() {
       // Size and colour are merged from two styles; if the geometry were
       // merged over the variant instead of under it, a large destructive
       // button would come out the default fill.
-      await tester.pumpWidget(host(AppButton(
-        label: 'Delete',
-        onPressed: () {},
-        variant: AppButtonVariant.destructive,
-        size: AppButtonSize.large,
-      )));
+      await tester.pumpWidget(
+        host(
+          AppButton(
+            label: 'Delete',
+            onPressed: () {},
+            variant: AppButtonVariant.destructive,
+            size: AppButtonSize.large,
+          ),
+        ),
+      );
 
       final style = tester.widget<FilledButton>(find.byType(FilledButton)).style!;
 
@@ -229,11 +264,9 @@ void main() {
   testWidgets('destructiveText is the error colour with no border', (tester) async {
     // For a toolbar of borderless controls, where destructiveOutline's edge
     // would be the only one in the row and destructive's fill would shout.
-    await tester.pumpWidget(host(AppButton(
-      label: 'Clear',
-      onPressed: () {},
-      variant: AppButtonVariant.destructiveText,
-    )));
+    await tester.pumpWidget(
+      host(AppButton(label: 'Clear', onPressed: () {}, variant: AppButtonVariant.destructiveText)),
+    );
 
     final theme = buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light);
     final style = tester.widget<TextButton>(find.byType(TextButton)).style!;
@@ -250,11 +283,9 @@ void main() {
     // contrast design_tokens_test asserts at every seed — and not Material's
     // tonal, which is a muted derivative of the seed that comes out
     // grey-with-a-tint at several of them.
-    await tester.pumpWidget(host(AppButton(
-      label: 'Apply',
-      onPressed: () {},
-      variant: AppButtonVariant.tonal,
-    )));
+    await tester.pumpWidget(
+      host(AppButton(label: 'Apply', onPressed: () {}, variant: AppButtonVariant.tonal)),
+    );
 
     final theme = buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light);
     final colorScheme = theme.colorScheme;
@@ -277,18 +308,14 @@ void main() {
     final theme = buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light);
     final colorScheme = theme.colorScheme;
 
-    await tester.pumpWidget(host(AppButton(
-      label: 'Apply',
-      onPressed: () {},
-      variant: AppButtonVariant.tonal,
-    )));
+    await tester.pumpWidget(
+      host(AppButton(label: 'Apply', onPressed: () {}, variant: AppButtonVariant.tonal)),
+    );
     final tonal = tester.widget<OutlinedButton>(find.byType(OutlinedButton)).style!;
 
-    await tester.pumpWidget(host(AppButton(
-      label: 'Apply',
-      onPressed: () {},
-      variant: AppButtonVariant.secondary,
-    )));
+    await tester.pumpWidget(
+      host(AppButton(label: 'Apply', onPressed: () {}, variant: AppButtonVariant.secondary)),
+    );
     final secondary = tester.widget<OutlinedButton>(find.byType(OutlinedButton)).style!;
 
     expect(

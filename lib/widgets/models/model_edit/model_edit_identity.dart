@@ -168,10 +168,10 @@ extension _IdentitySection on _ModelEditDialogState {
   Widget _kindMenuField(BuildContext context) {
     final l10n = widget.l10n;
     Widget dot(String kind) => Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(color: modelTagAccent(kind), shape: BoxShape.circle),
-        );
+      width: 8,
+      height: 8,
+      decoration: BoxDecoration(color: modelTagAccent(kind), shape: BoxShape.circle),
+    );
 
     return ModelEditMenuField<String>(
       leading: dot(tag),

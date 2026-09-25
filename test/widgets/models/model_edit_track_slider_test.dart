@@ -18,28 +18,30 @@ void main() {
     bool enabled = true,
   }) async {
     final changes = <double>[];
-    await tester.pumpWidget(MaterialApp(
-      theme: buildAppTheme(
-        accent: AppConstants.presetThemes.values.first,
-        brightness: Brightness.light,
-      ),
-      home: Scaffold(
-        body: Center(
-          child: SizedBox(
-            width: 248,
-            child: ModelEditTrackSlider(
-              stopCount: 5,
-              value: value,
-              snap: snap,
-              labels: const ['a', null, 'c', null, 'e'],
-              semanticLabel: 'probe',
-              semanticValueOf: (v) => '$v',
-              onChanged: enabled ? changes.add : null,
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildAppTheme(
+          accent: AppConstants.presetThemes.values.first,
+          brightness: Brightness.light,
+        ),
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 248,
+              child: ModelEditTrackSlider(
+                stopCount: 5,
+                value: value,
+                snap: snap,
+                labels: const ['a', null, 'c', null, 'e'],
+                semanticLabel: 'probe',
+                semanticValueOf: (v) => '$v',
+                onChanged: enabled ? changes.add : null,
+              ),
             ),
           ),
         ),
       ),
-    ));
+    );
     return changes;
   }
 

@@ -12,7 +12,11 @@ extension _KbEditCard on _PromptOptimizerChatViewState {
   /// actually rewrote is invisible in a wall of new text. A create has no diff
   /// to show and keeps the folded full content, which for a new file is the
   /// same thing.
-  Widget _buildKbEditCard(OptimizerChatEntry entry, AppLocalizations l10n, ColorScheme colorScheme) {
+  Widget _buildKbEditCard(
+    OptimizerChatEntry entry,
+    AppLocalizations l10n,
+    ColorScheme colorScheme,
+  ) {
     final textTheme = Theme.of(context).textTheme;
     final semantic = context.semantic;
     final state = entry.editState ?? KbEditState.pending;
@@ -24,7 +28,8 @@ extension _KbEditCard on _PromptOptimizerChatViewState {
     final phone = _phone;
     // A model that truncates its output would silently gut the file; the length
     // drop is the cheapest signal for the most destructive failure mode.
-    final suspiciousShrink = !isCreate &&
+    final suspiciousShrink =
+        !isCreate &&
         entry.oldContent!.length > 200 &&
         content.length < entry.oldContent!.length ~/ 2;
 
@@ -32,8 +37,8 @@ extension _KbEditCard on _PromptOptimizerChatViewState {
     final (added, removed) = diff == null ? (_lineCount(content), 0) : (diff.added, diff.removed);
 
     void toggleContent() => _rebuild(() {
-          if (!_expandedKbEdits.remove(editId)) _expandedKbEdits.add(editId);
-        });
+      if (!_expandedKbEdits.remove(editId)) _expandedKbEdits.add(editId);
+    });
 
     return _underAvatar(
       LayoutBuilder(
@@ -82,12 +87,16 @@ extension _KbEditCard on _PromptOptimizerChatViewState {
                   if (!isCreate && (added > 0 || removed > 0)) ...[
                     const SizedBox(width: 8),
                     if (added > 0)
-                      Text('+$added',
-                          style: textTheme.labelSmall?.mono.copyWith(color: semantic.success)),
+                      Text(
+                        '+$added',
+                        style: textTheme.labelSmall?.mono.copyWith(color: semantic.success),
+                      ),
                     if (added > 0 && removed > 0) const SizedBox(width: 6),
                     if (removed > 0)
-                      Text('−$removed',
-                          style: textTheme.labelSmall?.mono.copyWith(color: colorScheme.error)),
+                      Text(
+                        '−$removed',
+                        style: textTheme.labelSmall?.mono.copyWith(color: colorScheme.error),
+                      ),
                     const SizedBox(width: 4),
                   ],
                   if (isCreate && wide) ...[const SizedBox(width: 8), showToggle],
@@ -98,7 +107,9 @@ extension _KbEditCard on _PromptOptimizerChatViewState {
                   padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
                   child: Text(
                     switch (entry.editScope) {
-                      KbEditScope.replaceSection => l10n.kbEditScopeReplace(entry.editSection ?? ''),
+                      KbEditScope.replaceSection => l10n.kbEditScopeReplace(
+                        entry.editSection ?? '',
+                      ),
                       _ when entry.editSection == null => l10n.kbEditScopeAppendEnd,
                       _ => l10n.kbEditScopeAppend(entry.editSection!),
                     },
@@ -136,8 +147,11 @@ extension _KbEditCard on _PromptOptimizerChatViewState {
                       children: [
                         Padding(
                           padding: const EdgeInsets.only(top: 1),
-                          child: Icon(Icons.warning_amber_outlined,
-                              size: AppSize.iconSm, color: semantic.warning),
+                          child: Icon(
+                            Icons.warning_amber_outlined,
+                            size: AppSize.iconSm,
+                            color: semantic.warning,
+                          ),
                         ),
                         const SizedBox(width: 6),
                         Expanded(
@@ -232,23 +246,23 @@ extension _KbEditCard on _PromptOptimizerChatViewState {
   ) {
     final (IconData icon, Color glyph, Color ink, String label) = switch (state) {
       KbEditState.applied => (
-          Icons.check_circle_outline,
-          semantic.success,
-          semantic.onSuccessContainer,
-          l10n.kbEditApplied,
-        ),
+        Icons.check_circle_outline,
+        semantic.success,
+        semantic.onSuccessContainer,
+        l10n.kbEditApplied,
+      ),
       KbEditState.rejected => (
-          Icons.cancel_outlined,
-          colorScheme.outline,
-          colorScheme.onSurfaceVariant,
-          l10n.kbEditRejected,
-        ),
+        Icons.cancel_outlined,
+        colorScheme.outline,
+        colorScheme.onSurfaceVariant,
+        l10n.kbEditRejected,
+      ),
       _ => (
-          Icons.error_outline,
-          colorScheme.error,
-          colorScheme.onErrorContainer,
-          l10n.kbEditFailedShort,
-        ),
+        Icons.error_outline,
+        colorScheme.error,
+        colorScheme.onErrorContainer,
+        l10n.kbEditFailedShort,
+      ),
     };
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
@@ -322,8 +336,7 @@ extension _KbEditCard on _PromptOptimizerChatViewState {
                   style: mono?.copyWith(color: colorScheme.outline),
                 ),
               ),
-              for (final line in hunk.lines)
-                _buildDiffLine(line, colorScheme, semantic, mono),
+              for (final line in hunk.lines) _buildDiffLine(line, colorScheme, semantic, mono),
             ],
           ],
         ),
@@ -339,17 +352,17 @@ extension _KbEditCard on _PromptOptimizerChatViewState {
   ) {
     final (Color? fill, Color rule, Color ink, String sign) = switch (line.kind) {
       DiffLineKind.added => (
-          semantic.success.withValues(alpha: AppAlpha.tint),
-          semantic.success,
-          semantic.success,
-          '+',
-        ),
+        semantic.success.withValues(alpha: AppAlpha.tint),
+        semantic.success,
+        semantic.success,
+        '+',
+      ),
       DiffLineKind.removed => (
-          colorScheme.error.withValues(alpha: AppAlpha.tint),
-          colorScheme.error,
-          colorScheme.error,
-          '−',
-        ),
+        colorScheme.error.withValues(alpha: AppAlpha.tint),
+        colorScheme.error,
+        colorScheme.error,
+        '−',
+      ),
       DiffLineKind.context => (null, Colors.transparent, colorScheme.onSurfaceVariant, ' '),
     };
 

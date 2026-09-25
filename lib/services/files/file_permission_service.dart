@@ -15,8 +15,7 @@ bool _probePath(String path) {
 }
 
 class FilePermissionService {
-  static final FilePermissionService _instance =
-      FilePermissionService._internal();
+  static final FilePermissionService _instance = FilePermissionService._internal();
   factory FilePermissionService() => _instance;
   FilePermissionService._internal();
 
@@ -37,9 +36,7 @@ class FilePermissionService {
       initialDirectory: initialPath,
       dialogTitle:
           title ??
-          (Platform.isMacOS
-              ? 'Re-authorize access to folder'
-              : 'Re-select missing folder'),
+          (Platform.isMacOS ? 'Re-authorize access to folder' : 'Re-select missing folder'),
     );
   }
 

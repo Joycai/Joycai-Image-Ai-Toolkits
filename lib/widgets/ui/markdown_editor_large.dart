@@ -104,7 +104,9 @@ class _LargeEditorState extends State<_LargeEditor> {
     _lastText = widget.controller.text;
     widget.controller.addListener(_onControllerChanged);
     _markdown = widget.isMarkdown;
-    _view = (widget.readOnly || (widget.initiallyPreview && _markdown)) ? _LargeView.preview : _LargeView.edit;
+    _view = (widget.readOnly || (widget.initiallyPreview && _markdown))
+        ? _LargeView.preview
+        : _LargeView.edit;
   }
 
   @override
@@ -173,7 +175,8 @@ class _LargeEditorState extends State<_LargeEditor> {
       },
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final bool canSplit = !widget.compact && !widget.readOnly && constraints.maxWidth >= _splitMinWidth;
+          final bool canSplit =
+              !widget.compact && !widget.readOnly && constraints.maxWidth >= _splitMinWidth;
           // A window dragged narrower with the split open falls back to edit.
           final view = (_view == _LargeView.split && !canSplit) ? _LargeView.edit : _view;
           _previewShown = view != _LargeView.edit;
@@ -229,7 +232,10 @@ class _LargeEditorState extends State<_LargeEditor> {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final hairline = BorderSide(color: scheme.outlineVariant.withValues(alpha: AppAlpha.edge));
-    final rule = SizedBox(height: 18, child: VerticalDivider(width: 1, thickness: 1, color: scheme.outlineVariant));
+    final rule = SizedBox(
+      height: 18,
+      child: VerticalDivider(width: 1, thickness: 1, color: scheme.outlineVariant),
+    );
 
     // [Expanded], not a [Flexible] beside a [Spacer]: those two split the
     // slack between them and the title gives its half back unused, which
@@ -286,7 +292,11 @@ class _LargeEditorState extends State<_LargeEditor> {
                     checked: _markdown,
                     onSelected: () => _setMarkdown(!_markdown),
                   ),
-                AppGlassMenuItem(icon: Icons.content_copy, label: l10n.editorCopyAll, onSelected: _copyAll),
+                AppGlassMenuItem(
+                  icon: Icons.content_copy,
+                  label: l10n.editorCopyAll,
+                  onSelected: _copyAll,
+                ),
               ],
             ),
           ),
@@ -323,13 +333,19 @@ class _LargeEditorState extends State<_LargeEditor> {
         ),
         // The pair of the `open_in_full` that opened this: the same editor,
         // made small again. An ✕ would read as throwing something away.
-        AppIconButton(icon: Icons.close_fullscreen, tooltip: l10n.collapseEditor, onPressed: _close),
+        AppIconButton(
+          icon: Icons.close_fullscreen,
+          tooltip: l10n.collapseEditor,
+          onPressed: _close,
+        ),
       ];
     }
 
     return Container(
       height: 52,
-      padding: widget.compact ? const EdgeInsets.only(left: 4, right: 4) : const EdgeInsets.only(left: 20, right: 10),
+      padding: widget.compact
+          ? const EdgeInsets.only(left: 4, right: 4)
+          : const EdgeInsets.only(left: 20, right: 10),
       decoration: BoxDecoration(border: Border(bottom: hairline)),
       child: Row(children: children),
     );
@@ -350,12 +366,23 @@ class _LargeEditorState extends State<_LargeEditor> {
           // the keyboard here would take typing nobody can see.
           ExcludeFocus(
             child: Offstage(
-              child: SizedBox(width: _measure, height: 200, child: _buildSource(context, view, _measure)),
+              child: SizedBox(
+                width: _measure,
+                height: 200,
+                child: _buildSource(context, view, _measure),
+              ),
             ),
           )
         else
-          Expanded(child: _buildSource(context, view, measure, tag: split ? l10n.editorSourceText : null)),
-        if (split) VerticalDivider(width: 1, thickness: 1, color: scheme.outlineVariant.withValues(alpha: AppAlpha.edge)),
+          Expanded(
+            child: _buildSource(context, view, measure, tag: split ? l10n.editorSourceText : null),
+          ),
+        if (split)
+          VerticalDivider(
+            width: 1,
+            thickness: 1,
+            color: scheme.outlineVariant.withValues(alpha: AppAlpha.edge),
+          ),
         if (view != _LargeView.edit)
           Expanded(child: _buildPreview(context, view, measure, tag: split ? l10n.preview : null)),
       ],
@@ -366,11 +393,14 @@ class _LargeEditorState extends State<_LargeEditor> {
   /// for lack of width is laid out as edit.
   EdgeInsets _textPadding(_LargeView view) {
     if (widget.compact) return const EdgeInsets.all(16);
-    return view == _LargeView.split ? const EdgeInsets.all(28) : const EdgeInsets.symmetric(horizontal: 32, vertical: 28);
+    return view == _LargeView.split
+        ? const EdgeInsets.all(28)
+        : const EdgeInsets.symmetric(horizontal: 32, vertical: 28);
   }
 
-  TextStyle? _textStyle(BuildContext context) =>
-      Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: widget.compact ? 15 : 14, height: 1.7);
+  TextStyle? _textStyle(BuildContext context) => Theme.of(
+    context,
+  ).textTheme.bodyMedium?.copyWith(fontSize: widget.compact ? 15 : 14, height: 1.7);
 
   Widget _paneTag(BuildContext context, String text) {
     final theme = Theme.of(context);
@@ -380,7 +410,10 @@ class _LargeEditorState extends State<_LargeEditor> {
       child: IgnorePointer(
         child: Text(
           text,
-          style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.outline, letterSpacing: 0.6),
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: theme.colorScheme.outline,
+            letterSpacing: 0.6,
+          ),
         ),
       ),
     );
@@ -474,13 +507,19 @@ class _LargeEditorState extends State<_LargeEditor> {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final small = theme.textTheme.labelSmall?.copyWith(fontFeatures: const [FontFeature.tabularFigures()]);
+    final small = theme.textTheme.labelSmall?.copyWith(
+      fontFeatures: const [FontFeature.tabularFigures()],
+    );
 
     return Container(
       height: widget.compact ? 40 : 44,
-      padding: widget.compact ? const EdgeInsets.only(left: 16, right: 8) : const EdgeInsets.only(left: 20, right: 12),
+      padding: widget.compact
+          ? const EdgeInsets.only(left: 16, right: 8)
+          : const EdgeInsets.only(left: 20, right: 12),
       decoration: BoxDecoration(
-        border: Border(top: BorderSide(color: scheme.outlineVariant.withValues(alpha: AppAlpha.edge))),
+        border: Border(
+          top: BorderSide(color: scheme.outlineVariant.withValues(alpha: AppAlpha.edge)),
+        ),
       ),
       child: Row(
         children: [
@@ -488,7 +527,10 @@ class _LargeEditorState extends State<_LargeEditor> {
           ValueListenableBuilder<TextEditingValue>(
             valueListenable: widget.controller,
             builder: (context, value, _) => Text(
-              l10n.editorCount(value.text.characters.length, '\n'.allMatches(value.text).length + 1),
+              l10n.editorCount(
+                value.text.characters.length,
+                '\n'.allMatches(value.text).length + 1,
+              ),
               style: small?.copyWith(color: scheme.onSurfaceVariant),
             ),
           ),

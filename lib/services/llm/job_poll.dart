@@ -84,7 +84,7 @@ Future<T> pollJobUntilDone<T>({
   Future<void> Function(Duration, bool Function()?)? sleep,
   DateTime Function() now = DateTime.now,
 }) async {
-  final doSleep = sleep ?? (d, c) => cancellableSleep(d, c);
+  final doSleep = sleep ?? cancellableSleep;
   final start = now();
   var polls = 0;
   var failures = 0;
@@ -92,8 +92,9 @@ Future<T> pollJobUntilDone<T>({
   void checkCancelled() {
     if (isCancelled?.call() ?? false) {
       logger?.call(
-          '$job abandoned locally: cancelled by user (upstream job id: $jobId).',
-          level: 'INFO');
+        '$job abandoned locally: cancelled by user (upstream job id: $jobId).',
+        level: 'INFO',
+      );
       throw const LLMCancelled();
     }
   }
@@ -133,8 +134,9 @@ Future<T> pollJobUntilDone<T>({
         );
       }
       logger?.call(
-          '$job poll failed ($e); retrying ($failures/$maxConsecutiveFailures).',
-          level: 'WARN');
+        '$job poll failed ($e); retrying ($failures/$maxConsecutiveFailures).',
+        level: 'WARN',
+      );
       continue;
     }
 
