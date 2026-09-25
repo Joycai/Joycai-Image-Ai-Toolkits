@@ -22,6 +22,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:path/path.dart' as p;
 
 import '../support/fake_async_database_rule.dart';
@@ -87,16 +88,19 @@ Future<void> _loadFonts() async {
   await _register('NotoSansSC', noto);
 
   // Families the app names but that never resolve inside flutter_test: the
-  // nav rail task badge asks for 'monospace' (main.dart:637), the settings
-  // font picker previews each option in its own family, and
-  // FontService.systemFontFamily — what AppState's default 'system' choice
-  // feeds ThemeData, so nearly all app text — is whatever the OS provides.
+  // nav rail task badge asks for 'monospace' (main.dart:637), the mono role
+  // (`AppMonoText.mono` — key caps, sizes, ids, log lines) names the head of
+  // its stack as the family, the settings font picker previews each option in
+  // its own family, and FontService.systemFontFamily — what AppState's
+  // default 'system' choice feeds ThemeData, so nearly all app text — is
+  // whatever the OS provides.
   // Their labels would photograph as boxes and read as a broken harness.
   // Alias them all to NotoSansSC — the point is legibility, not typographic
   // accuracy.
   if (noto.isNotEmpty) {
     for (final String alias in <String>[
       'monospace',
+      kMonoFontFamilyFallback.first,
       'HarmonyOSSansSC',
       'MiSans',
       'PingFang SC',
