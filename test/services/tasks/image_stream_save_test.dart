@@ -184,7 +184,12 @@ void main() {
       'watermark': 'off',
     }, id: 'stream-fail');
     final task = queue.queue.firstWhere((t) => t.id == 'stream-fail');
-    for (var i = 0; i < 400 && task.status != TaskStatus.failed; i++) {
+    // Waits on the row it asserts as well as the status. The row is written
+    // in `requestStream`'s `finally`, which runs before the error reaches the
+    // executor, but that ordering is the service's to keep, not this wait's.
+    for (var i = 0;
+        i < 400 && (task.status != TaskStatus.failed || rows.isEmpty);
+        i++) {
       await Future<void>.delayed(const Duration(milliseconds: 50));
     }
 

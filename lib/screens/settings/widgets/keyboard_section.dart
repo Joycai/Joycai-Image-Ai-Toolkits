@@ -41,21 +41,25 @@ class KeyboardSection extends StatelessWidget {
             child: _Rows(
               rows: <AppShortcut>[
                 ...AppShortcuts.forScreen(screen),
-                for (final pane in ShortcutPane.values) ...AppShortcuts.forPane(screen, pane),
+                for (final pane in ShortcutPane.values)
+                  ...AppShortcuts.forPane(screen, pane),
               ],
               l10n: l10n,
               screen: screen,
             ),
           ),
-        SettingsBlock(child: _CustomisePlaceholder(l10n: l10n)),
+        SettingsBlock(
+          child: _CustomisePlaceholder(l10n: l10n),
+        ),
       ],
     );
   }
 
-  String _screenCaption(AppLocalizations l10n, ShortcutScreen screen) => switch (screen) {
-    ShortcutScreen.fileBrowser => l10n.fileBrowser,
-    ShortcutScreen.workbench => l10n.workbench,
-  };
+  String _screenCaption(AppLocalizations l10n, ShortcutScreen screen) =>
+      switch (screen) {
+        ShortcutScreen.fileBrowser => l10n.fileBrowser,
+        ShortcutScreen.workbench => l10n.workbench,
+      };
 }
 
 class _Rows extends StatelessWidget {
@@ -72,7 +76,8 @@ class _Rows extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         for (final (index, row) in rows.indexed) ...[
-          if (index > 0) Divider(height: 1, thickness: 1, color: scheme.outlineVariant),
+          if (index > 0)
+            Divider(height: 1, thickness: 1, color: scheme.outlineVariant),
           _Row(shortcut: row, l10n: l10n, screen: screen),
         ],
       ],
@@ -101,28 +106,30 @@ class _Row extends StatelessWidget {
     final region = _region;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpace.s16, vertical: AppSpace.s10),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(shortcutLabel(l10n, shortcut), style: Theme.of(context).textTheme.bodyMedium),
-                if (region != null)
-                  Text(
-                    region,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
-                  ),
-              ],
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpace.s16, vertical: AppSpace.s10),
+      child: AppShortcutRow(
+        gap: AppSpace.s16,
+        dense: true,
+        shortcut: shortcut,
+        label: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              shortcutLabel(l10n, shortcut),
+              style: Theme.of(context).textTheme.bodyMedium,
             ),
-          ),
-          const SizedBox(width: AppSpace.s16),
-          AppShortcutKeys(shortcut, dense: true),
-        ],
+            if (region != null)
+              Text(
+                region,
+                style: Theme.of(context)
+                    .textTheme
+                    .labelSmall
+                    ?.copyWith(color: scheme.onSurfaceVariant),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -137,7 +144,8 @@ class _CustomisePlaceholder extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpace.s16, vertical: AppSpace.s10),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpace.s16, vertical: AppSpace.s10),
       child: Row(
         children: [
           Icon(Icons.tune, size: AppSize.iconMd, color: scheme.outline),
@@ -145,14 +153,18 @@ class _CustomisePlaceholder extends StatelessWidget {
           Expanded(
             child: Text(
               l10n.shortcutsCustomise,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: scheme.onSurfaceVariant),
             ),
           ),
           Text(
             l10n.shortcutsCustomiseLater,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(color: scheme.outline),
+            style: Theme.of(context)
+                .textTheme
+                .labelSmall
+                ?.copyWith(color: scheme.outline),
           ),
         ],
       ),

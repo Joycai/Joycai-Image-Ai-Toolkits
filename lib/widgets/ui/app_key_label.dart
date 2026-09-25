@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -155,14 +156,83 @@ class AppShortcutKeys extends StatelessWidget {
     ];
     if (spellings.isEmpty) return const SizedBox.shrink();
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
+    // A Wrap, not a Row: given less room than the whole set needs, the later
+    // chords drop to a line of their own, flush right under the first. Given
+    // unbounded room it is one line, exactly as a Row was. The `/` rides on
+    // the chord before it, so a break falls after the separator, as it would
+    // in prose.
+    return Wrap(
+      alignment: WrapAlignment.end,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      runSpacing: AppSpace.s4,
       children: <Widget>[
-        for (var i = 0; i < spellings.length; i++) ...[
-          if (i > 0) _Separator(text: '/', dense: dense),
-          AppKeyBadges(pieces: spellings[i], dense: dense),
-        ],
+        for (var i = 0; i < spellings.length; i++)
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              AppKeyBadges(pieces: spellings[i], dense: dense),
+              if (i < spellings.length - 1) _Separator(text: '/', dense: dense),
+            ],
+          ),
       ],
+    );
+  }
+}
+
+/// A shortcut's name on the left and its keys on the right — the row the
+/// `⌘/` panel and the settings page's keyboard section are both made of.
+///
+/// The keys are the truth and are never cut: `Delete / Backspace / ⌘Backspace`
+/// is three chords on a Mac, and the panel is the one place that promises to
+/// show all of them. So the row does not let them push the name out, or past
+/// its own edge. They take at most [_keysMaxShare] of the row; past that they
+/// wrap onto a second line and the name keeps what is left, ellipsised there
+/// if it must be.
+///
+/// That was measured, not assumed: in the panel's 316-point column the Mac
+/// delete row is 239 points of key caps in Menlo, which left `Delete folder`
+/// 67 points, and the harness' box font made it 356 points, which is wider
+/// than the column.
+class AppShortcutRow extends StatelessWidget {
+  const AppShortcutRow({
+    super.key,
+    required this.label,
+    required this.shortcut,
+    required this.gap,
+    this.dense = false,
+  });
+
+  /// The shortcut's name — usually one [Text], ellipsised by the caller.
+  final Widget label;
+  final AppShortcut shortcut;
+
+  /// Between the name and the keys.
+  final double gap;
+
+  /// Passed through to [AppShortcutKeys].
+  final bool dense;
+
+  /// The most of the row, after [gap], the keys may take. The name keeps at
+  /// least the rest — about six CJK characters in the panel's column.
+  static const double _keysMaxShare = 0.75;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final keysMax =
+            math.max(0.0, (constraints.maxWidth - gap) * _keysMaxShare);
+        return Row(
+          children: <Widget>[
+            Expanded(child: label),
+            SizedBox(width: gap),
+            ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: keysMax),
+              child: AppShortcutKeys(shortcut, dense: dense),
+            ),
+          ],
+        );
+      },
     );
   }
 }
