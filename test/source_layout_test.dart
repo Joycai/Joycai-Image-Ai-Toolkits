@@ -253,6 +253,14 @@ void main() {
     return rel == '.' ? '<root>' : p.split(rel).join('/');
   }
 
+  /// Whether [file] belongs to the design system: in one of its folders or
+  /// any folder under them, so a primitive that grows a subfolder keeps its
+  /// exemption.
+  bool inDesignSystem(String file) {
+    final folder = folderOf(file);
+    return designSystem.any((d) => folder == d || folder.startsWith('$d/'));
+  }
+
   test('the grouped directories have nothing loose in their root', () {
     final loose = dartFiles
         .where((f) => grouped.contains(moduleOf(f)) && folderOf(f) == moduleOf(f))
@@ -271,11 +279,10 @@ void main() {
   test('the design system imports only core, l10n and itself', () {
     final violations = <String>[];
     for (final edge in edges) {
-      if (!designSystem.contains(folderOf(edge.from))) continue;
-      final toFolder = folderOf(edge.to);
-      if (designSystem.contains(toFolder)) continue;
+      if (!inDesignSystem(edge.from)) continue;
+      if (inDesignSystem(edge.to)) continue;
       if (const {'core', 'l10n'}.contains(moduleOf(edge.to))) continue;
-      violations.add("${edge.from}:${edge.line}  -> $toFolder   import '${edge.uri}'");
+      violations.add("${edge.from}:${edge.line}  -> ${folderOf(edge.to)}   import '${edge.uri}'");
     }
     expect(
       violations,
@@ -296,6 +303,10 @@ void main() {
     // design system is exempt — a primitive is generic by what it imports, not
     // by how many callers it has today — and `main.dart` counts as the shell,
     // not as one more screen, so the top bar and the dock stay where they are.
+    // The benchmark is not a feature either: a widget that only it and one
+    // screen reach is still that screen's. It stays a consumer of its own
+    // rather than being walked through, because the walk would then end at
+    // `main.dart` (which imports `bench`) and the shell would cover for it.
     final importers = <String, Set<String>>{};
     for (final edge in edges) {
       (importers[edge.to] ??= <String>{}).add(edge.from);
@@ -326,12 +337,13 @@ void main() {
 
     final stranded = <String>[];
     for (final file in dartFiles.where((f) => moduleOf(f) == 'widgets')) {
-      if (designSystem.contains(folderOf(file))) continue;
+      if (inDesignSystem(file)) continue;
       final consumers = consumersOf(file);
+      final screens = consumers.where((c) => c.startsWith('screens/')).toList();
       if (consumers.isEmpty) {
         stranded.add('$file  (reached by nothing in lib/)');
-      } else if (consumers.length == 1 && consumers.single.startsWith('screens/')) {
-        stranded.add('$file  (only ${consumers.single})');
+      } else if (screens.length == 1 && !consumers.contains('main.dart')) {
+        stranded.add('$file  (only ${screens.single})');
       }
     }
     expect(

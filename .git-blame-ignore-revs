@@ -3,6 +3,9 @@
 # is set (GitHub's blame view reads this file on its own).
 
 # style(format): 全仓 dart format，行宽 100 (2026-09 structure audit)
+# Also the commit that added `formatter: page_width: 100` to analysis_options.yaml,
+# so blame skips those lines too — `git log -S page_width -- analysis_options.yaml`
+# finds them.
 8fc956d0c2e60c487e7379d8feeed150a01f5c34
 
 # style(format): main 合入的四个文件按行宽 100 格式化
