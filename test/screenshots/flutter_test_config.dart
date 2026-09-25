@@ -88,19 +88,14 @@ Future<void> _loadFonts() async {
   await _register('NotoSansSC', noto);
 
   // Families the app names but that never resolve inside flutter_test: the
-  // nav rail task badge asks for 'monospace' (main.dart:637), the mono role
-  // (`AppMonoText.mono` — key caps, sizes, ids, log lines) names the head of
-  // its stack as the family, the settings font picker previews each option in
-  // its own family, and FontService.systemFontFamily — what AppState's
-  // default 'system' choice feeds ThemeData, so nearly all app text — is
-  // whatever the OS provides.
+  // settings font picker previews each option in its own family, and
+  // FontService.systemFontFamily — what AppState's default 'system' choice
+  // feeds ThemeData, so nearly all app text — is whatever the OS provides.
   // Their labels would photograph as boxes and read as a broken harness.
   // Alias them all to NotoSansSC — the point is legibility, not typographic
   // accuracy.
   if (noto.isNotEmpty) {
     for (final String alias in <String>[
-      'monospace',
-      kMonoFontFamilyFallback.first,
       'HarmonyOSSansSC',
       'MiSans',
       'PingFang SC',
@@ -108,6 +103,32 @@ Future<void> _loadFonts() async {
     ]) {
       await _register(alias, <ByteData>[noto.first]);
     }
+  }
+
+  // The mono role (`AppMonoText.mono`, core/app_theme.dart) names
+  // kMonoFontFamilyFallback.first as its family and falls back through the
+  // rest of that list, then the UI font. flutter_test does not treat an
+  // unregistered name as absent: the name resolves to the test box font,
+  // which then claims the glyphs, so nothing after it in the list is
+  // reached. With the mono names unregistered, every key cap, number, file
+  // name and model id photographed as boxes, and harness tests that measure
+  // layout saw mono text at 1em per glyph ('iiiiiiiiii' at 11px: 110px).
+  //
+  // So every name in the stack is registered, all as the same real face:
+  // Cascadia Mono, what Windows 11 draws (SIL OFL 1.1, CascadiaMono-OFL.txt
+  // beside it; the static TTFs from microsoft/cascadia-code v2407.24).
+  // Registering only the first is not enough: CJK in a file name misses
+  // Cascadia, and the next unregistered name ('Consolas') boxes it before
+  // the UI font at the end is tried. An alias to NotoSansSC would be legible
+  // but proportional, hiding the fixed widths the role exists for. Regular
+  // and SemiBold cover the weights mono is set in (w400–w600). `⌥` is in
+  // neither this nor NotoSansSC, so the Option key cap stays a box here.
+  final List<ByteData> mono = _loadFromFiles(<String>[
+    'test/screenshots/fonts/CascadiaMono-Regular.ttf',
+    'test/screenshots/fonts/CascadiaMono-SemiBold.ttf',
+  ]);
+  for (final String family in kMonoFontFamilyFallback) {
+    await _register(family, mono);
   }
 
   // Icons: `uses-material-design: true` puts this in the asset bundle. Fall
