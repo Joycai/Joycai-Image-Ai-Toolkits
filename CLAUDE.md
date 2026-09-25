@@ -11,6 +11,7 @@ around a multi-vendor LLM layer, for artists and designers working with AI media
 flutter pub get                                    # install dependencies
 dart tool/merge_l10n.dart && flutter gen-l10n      # regenerate l10n (after editing .arb files)
 flutter run                                        # run the app
+dart format lib test tool                          # gate 0 — page width 100, set in analysis_options.yaml
 flutter analyze                                    # gate 1 — must print "No issues found!"
 flutter test -x screenshots                        # gate 2 — everything but the screenshot harness
 flutter build macos                                # or windows / linux / apk / ipa
@@ -19,9 +20,10 @@ flutter test test/screenshots/component_gallery_test.dart  # every component, 8 
 flutter test test/screenshots/render_probe.dart    # UI-thread rebuild/repaint cost (not in CI)
 ```
 
-**Both gates must be green after every code change, before any commit.** CI
-(`.github/workflows/flutter-ci.yml`) runs them in parallel jobs, tests sharded by file
-across three runners. The `screenshots` tag (`dart_test.yaml`) marks harness files that
+**All three gates must be green after every code change, before any commit.** CI
+(`.github/workflows/flutter-ci.yml`) runs them in parallel jobs (format as
+`--set-exit-if-changed`, beside analyze), tests sharded by file across three runners.
+A commit that only reformats goes into `.git-blame-ignore-revs`. The `screenshots` tag (`dart_test.yaml`) marks harness files that
 write PNGs and assert nothing; `rebuild_scope_test.dart` sits beside them but asserts,
 so it stays in the gate.
 

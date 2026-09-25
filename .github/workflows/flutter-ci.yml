@@ -35,6 +35,11 @@ jobs:
       - name: 'Static Analysis'
         run: flutter analyze
 
+      # Line width comes from `formatter:` in analysis_options.yaml; gen-l10n
+      # reads the same setting, so the regenerated files pass too.
+      - name: 'Format'
+        run: dart format --output=none --set-exit-if-changed lib test tool
+
   test:
     name: Test (shard ${{ matrix.shard }}/3)
     runs-on: ubuntu-latest

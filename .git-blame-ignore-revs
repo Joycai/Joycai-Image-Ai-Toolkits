@@ -1,0 +1,6 @@
+# Commits that only reformat code. `git blame` skips them when
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+# is set (GitHub's blame view reads this file on its own).
+
+# style(format): 全仓 dart format，行宽 100 (2026-09 structure audit)
+8fc956d0c2e60c487e7379d8feeed150a01f5c34

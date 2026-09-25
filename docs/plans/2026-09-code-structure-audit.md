@@ -22,7 +22,9 @@
 判定不做的：
 
 - **行宽 80。** 80 / 100 / 120 三档实测改动量：+51744/−26913 · +25760/−22980 · +19654/−29130。取
-  100：改动最小之一，且与 Flutter 框架仓库自己的 `formatter: page_width: 100` 一致。
+  100：改动最小之一，且与 Flutter 框架仓库自己的 `formatter: page_width: 100` 一致（核对过
+  flutter/flutter 的 `analysis_options_common.yaml`；尾逗号用默认的 automate，框架也没写 `preserve`——
+  `preserve` 能少动 32 个文件，但那就不是框架的设置了）。
 - `public_member_api_docs`（2969）、`sort_constructors_first`（354）、`discarded_futures`（233）、
   `avoid_redundant_argument_values`（195，显式写出的默认值常是有意的说明）、`cascade_invocations`、
   `avoid_dynamic_calls`、`avoid_catches_without_on_clauses`：不是 Flutter 推荐集的一部分，收益不抵噪音。
@@ -36,7 +38,7 @@
 | 1 | 单屏 widget 归位：`widgets/dialogs/{library,prompt_history}_dialog` → `screens/workbench/widgets/config/`；`widgets/placeholders/permission_placeholder` → `screens/workbench/widgets/gallery/`；`widgets/dialogs/task_log_dialog` → `screens/batch/`；`widgets/models/{channel_avatar,channel_edit_dialog,channel_probe_result_card,channel_route_table,channel_wizard_dialog,channel_wizard/,discovery_dialog}` → `screens/models/widgets/`。测试跟着镜像；`source_layout_test` 新增断言（设计系统除外，`main.dart` 视为外壳而非 screen） | 双闸门绿；新断言在迁移前能失败 | 已做 |
 | 2 | 合并 `modelKindIcon`：编辑器改用 `widgets/ui/model_tag_chip.dart` 那份（卡片用的就是它；编辑器注释本就写着「卡片那一个」） | 双闸门绿 | 已做 |
 | 3 | lint：`directives_ordering` `prefer_relative_imports` ~~`omit_local_variable_types`~~ `unnecessary_lambdas` `prefer_final_in_for_each` `prefer_const_constructors` `prefer_const_declarations` `prefer_const_literals_to_create_immutables` `use_colored_box` `use_decorated_box` `avoid_multiple_declarations_per_line` `unawaited_futures`；`dart fix --apply` + 手工逐处（`unawaited_futures` 每处判断是漏了 `await` 还是有意不等） | `flutter analyze` 零问题；测试数不变 | 已做 |
-| 4 | `dart format`：`analysis_options.yaml` 加 `formatter: page_width: 100`，全仓格式化一次（单独一个提交，只有格式），`.git-blame-ignore-revs` 记下它；CI 加格式闸门；CLAUDE.md 的闸门一节同步 | `dart format --set-exit-if-changed lib test tool` 通过 | 待做 |
+| 4 | `dart format`：`analysis_options.yaml` 加 `formatter: page_width: 100`，全仓格式化一次（单独一个提交，只有格式），`.git-blame-ignore-revs` 记下它；CI 加格式闸门；CLAUDE.md 的闸门一节同步 | `dart format --set-exit-if-changed lib test tool` 通过 | 已做 |
 | 5 | 去掉 `cupertino_icons` | `flutter pub get` + 双闸门绿 | 待做 |
 | 6 | 收尾：review 循环、台账一行、删除本文件、bump version、开 PR | — | 待做 |
 
@@ -65,3 +67,7 @@
   全量测试第一次跑时 `test/services/tasks/image_stream_save_test.dart` 的「fails after an image」失败一次，
   单独连跑六次全过：它在任务状态变 `failed` 后立刻断言用量行，而用量是异步落库的，高负载下会晚到——测试自身的
   竞态，与本片无关（`unawaited` 是恒等函数），另开任务。
+- 片 4：格式化后 10 处单行 `if` 被折成多行，触发 `curly_braces_in_flow_control_structures`，`dart fix` 补括号
+  后并进同一个纯格式提交 `8fc956d`，记进 `.git-blame-ignore-revs`（本仓库用 merge commit 合 PR，SHA 会保留）。
+  `flutter gen-l10n` 读同一份 formatter 设置，重新生成后格式检查仍是 0 改动，CI 里放在 gen-l10n 之后没问题。
+  CLAUDE.md 的闸门从两道变三道（gate 0 = format）；两个写代码的项目 skill 的检查清单同步。
