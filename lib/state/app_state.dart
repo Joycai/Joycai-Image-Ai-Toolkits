@@ -480,6 +480,12 @@ class AppState extends ChangeNotifier {
 
   Future<String?> getSetting(String key) => _db.getSetting(key);
 
+  /// Writes one settings row. A pass-through like [getSetting] — no cache,
+  /// no notification — for the keys nothing in memory holds (proxy, the
+  /// assistant's defaults, "last used" choices). A key with a field here
+  /// keeps its own setter, which is what updates that field.
+  Future<void> saveSetting(String key, String value) => _db.saveSetting(key, value);
+
   Future<void> loadSettings() async {
     addLog('Loading settings from database...');
 
