@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/services/db/database_service.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import '../support/private_data_dir.dart';
+import '../support/real_async.dart';
 
 /// A restore or a reset replaces whole tables, and every state that cached
 /// one of them has to reload. The settings page used to do those reloads
@@ -14,17 +14,12 @@ import '../support/private_data_dir.dart';
 /// has to reach, and a test-only instance is not an option (its constructor
 /// registers a global log listener that is never removed).
 void main() {
-  sqfliteFfiInit();
-  databaseFactory = databaseFactoryFfi;
   usePrivateDataDir('joycai_app_state_restore_test');
+  useRealAsyncAppState();
 
   late AppState appState;
 
-  setUpAll(() async {
-    appState = AppState();
-    await appState.galleryState.settingsLoaded;
-    await appState.fileStagingState.ready;
-  });
+  setUp(() => appState = AppState());
 
   /// A backup naming an output directory, one source directory and a browser
   /// preference — one setting for each of the three states a restore reloads.
