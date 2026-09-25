@@ -108,31 +108,28 @@ class _Row extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(
           horizontal: AppSpace.s16, vertical: AppSpace.s10),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  shortcutLabel(l10n, shortcut),
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                if (region != null)
-                  Text(
-                    region,
-                    style: Theme.of(context)
-                        .textTheme
-                        .labelSmall
-                        ?.copyWith(color: scheme.onSurfaceVariant),
-                  ),
-              ],
+      child: AppShortcutRow(
+        gap: AppSpace.s16,
+        dense: true,
+        shortcut: shortcut,
+        label: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              shortcutLabel(l10n, shortcut),
+              style: Theme.of(context).textTheme.bodyMedium,
             ),
-          ),
-          const SizedBox(width: AppSpace.s16),
-          AppShortcutKeys(shortcut, dense: true),
-        ],
+            if (region != null)
+              Text(
+                region,
+                style: Theme.of(context)
+                    .textTheme
+                    .labelSmall
+                    ?.copyWith(color: scheme.onSurfaceVariant),
+              ),
+          ],
+        ),
       ),
     );
   }

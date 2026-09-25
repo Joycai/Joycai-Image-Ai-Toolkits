@@ -357,23 +357,22 @@ class _Row extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpace.s10),
-      child: SizedBox(
-        height: 28,
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ),
-            const SizedBox(width: AppSpace.s10),
-            AppShortcutKeys(shortcut),
-          ],
+    // 28 high is a floor, not a height: a row whose keys wrap onto a second
+    // line (see [AppShortcutRow]) grows, keeping the 5 above and below its
+    // key caps that a one-line row has.
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 28),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpace.s10, vertical: 5),
+        child: AppShortcutRow(
+          gap: AppSpace.s10,
+          shortcut: shortcut,
+          label: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
         ),
       ),
     );
