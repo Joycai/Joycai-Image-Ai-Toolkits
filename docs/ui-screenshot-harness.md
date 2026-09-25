@@ -59,6 +59,7 @@ against a real database with seeded data.
 | File | Responsibility |
 |---|---|
 | `test/screenshots/flutter_test_config.dart` | Loads real fonts; installs the always-overwrite golden comparator; disables the debug banner |
+| `test/screenshots/fonts/` | NotoSansSC (all UI text, aliased to the OS family names) and Cascadia Mono (every name in the mono stack, OFL text beside it) — why each is needed is in `_loadFonts` |
 | `test/screenshots/app_screens_*_test.dart` | The screen × size matrix and each area's state variants, one file per area |
 | `test/screenshots/harness/suite.dart` | Per-file fixture setup, `shootMatrix()` and `settle()` |
 | `test/screenshots/harness/fixture_env.dart` | Temp directory tree, sqflite ffi, path_provider and plugin channel mocks |
