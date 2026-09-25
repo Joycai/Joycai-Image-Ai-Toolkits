@@ -220,8 +220,7 @@ class AppShortcutRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final keysMax =
-            math.max(0.0, (constraints.maxWidth - gap) * _keysMaxShare);
+        final keysMax = math.max(0.0, (constraints.maxWidth - gap) * _keysMaxShare);
         return Row(
           children: <Widget>[
             Expanded(child: label),
