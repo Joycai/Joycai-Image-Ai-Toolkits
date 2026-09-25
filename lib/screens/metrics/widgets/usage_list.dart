@@ -338,9 +338,11 @@ class UsageList extends StatelessWidget {
         AppButton(
           label: l10n.clearModelData,
           variant: AppButtonVariant.destructive,
-          onPressed: () async {
-            await onClearModelUsage(modelId);
-            if (context.mounted) Navigator.pop(context);
+          onPressed: () {
+            // Close first: the reload behind this is a whole-range query,
+            // and the dialog has nothing to show while it runs.
+            Navigator.pop(context);
+            onClearModelUsage(modelId);
           },
         ),
       ],

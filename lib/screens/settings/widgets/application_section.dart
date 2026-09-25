@@ -72,6 +72,9 @@ class _ApplicationSectionState extends State<ApplicationSection> {
 
   Future<void> _loadSettings() async {
     final appState = Provider.of<AppState>(context, listen: false);
+    // The gallery reads the output directory as it is built; this section can
+    // mount before that lands, so wait for it rather than read a blank.
+    await appState.galleryState.settingsLoaded;
     _outputDirController.text = appState.outputDirectory ?? '';
     _isPortable = await AppPaths.isPortableMode();
     _kbPath = await KnowledgeBaseService().getRoot();
