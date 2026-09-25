@@ -22,8 +22,8 @@ flutter test test/screenshots/render_probe.dart    # UI-thread rebuild/repaint c
 
 **All three gates must be green after every code change, before any commit.** CI
 (`.github/workflows/flutter-ci.yml`) runs them in parallel jobs (format as
-`--set-exit-if-changed`, beside analyze), tests sharded by file across three runners.
-A commit that only reformats goes into `.git-blame-ignore-revs`. The `screenshots` tag (`dart_test.yaml`) marks harness files that
+`--set-exit-if-changed`, beside analyze), tests sharded by file across three
+runners. A commit that only reformats goes into `.git-blame-ignore-revs`. The `screenshots` tag (`dart_test.yaml`) marks harness files that
 write PNGs and assert nothing; `rebuild_scope_test.dart` sits beside them but asserts,
 so it stays in the gate.
 

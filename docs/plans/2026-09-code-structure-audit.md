@@ -81,3 +81,6 @@
   （`536,661` 对 `537,662`）、修后通过。其余三处替换没有边框，等价。之前「行为不变」的说法对这一处不成立。
   ③ `source_layout_test` 的提示语里 `channel_avatar` 的旧路径。
   ④ `prompts_screen.dart` 还有五个 `void … async`（全仓仅此五处），加 `avoid_void_async` 并改成 `Future<void>`。
+- **Review 第 2 轮（1 条）**：`use_decorated_box` 对带边框的 `Container` 照样报，照做就是第 1 轮那个 1px 问题，
+  而 `dart fix` 不修它、只能手改——在规则旁注明「带边框时不等价，用 Padding 保住内缩」。其余（合并无丢失、
+  `88767ce` 纯格式、位置用例去掉 Padding 会失败、升级日不会引入格式抖动）核过无问题。
