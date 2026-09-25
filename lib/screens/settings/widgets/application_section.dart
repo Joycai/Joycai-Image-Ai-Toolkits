@@ -73,8 +73,14 @@ class _ApplicationSectionState extends State<ApplicationSection> {
   Future<void> _loadSettings() async {
     final appState = Provider.of<AppState>(context, listen: false);
     // The gallery reads the output directory as it is built; this section can
-    // mount before that lands, so wait for it rather than read a blank.
-    await appState.galleryState.settingsLoaded;
+    // mount before that lands, so wait for it rather than read a blank. A
+    // failed gallery load is the gallery's problem, not a reason to leave
+    // every other field here at its default.
+    try {
+      await appState.galleryState.settingsLoaded;
+    } catch (_) {
+      // Fall through to whatever the gallery holds.
+    }
     _outputDirController.text = appState.outputDirectory ?? '';
     _isPortable = await AppPaths.isPortableMode();
     _kbPath = await KnowledgeBaseService().getRoot();

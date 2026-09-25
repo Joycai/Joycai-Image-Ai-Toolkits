@@ -14,14 +14,17 @@ import 'package:flutter_test/flutter_test.dart';
 /// `source_layout_test.dart` sees only imports and `screens/` may import
 /// `services/` freely; what it guards is the *expression*.
 ///
-/// The one allowed spelling is the injection default — `database ??
-/// DatabaseService()` on a controller's constructor, as `UsageController`
-/// has — which is what the `??` exemption below is for.
+/// The one allowed spelling is a constructor's injection default — the
+/// initializer `_db = database ?? DatabaseService()` (or `db ??` for a
+/// repository), as `UsageController` has — which is what the exemption
+/// below is for. `widget.db ?? DatabaseService()` in a `build` is the same
+/// fetch with extra steps, and is not let through.
 void main() {
   final constructs = RegExp(r'\b(DatabaseService(\.\w+)?|[A-Z]\w*Repository)\s*\(');
-  // `<parameter> ?? ` right before it: a named identifier, so `null ??` and
-  // an expression do not pass.
-  final injectionDefault = RegExp(r'\b(?!null\b)[a-z]\w*\s*\?\?\s*$');
+  // What precedes the construction on an initializer line: the start of the
+  // line or a `:`/`,` of the initializer list, a private field, `=`, and the
+  // constructor parameter named `database` or `db`.
+  final injectionDefault = RegExp(r'(^\s*|[:,]\s*)_\w+\s*=\s*(database|db)\s*\?\?\s*$');
 
   test('screens and widgets construct no DatabaseService or repository', () {
     final offenders = <String>[];

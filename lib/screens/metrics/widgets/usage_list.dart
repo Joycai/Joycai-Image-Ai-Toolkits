@@ -322,6 +322,9 @@ class UsageList extends StatelessWidget {
 
   void _confirmDeleteModelData(BuildContext context, String modelId) {
     final l10n = AppLocalizations.of(context)!;
+    // Taken now: the list rebuilds into another form when the width crosses
+    // a breakpoint, and the context this was opened from goes with it.
+    final navigator = Navigator.of(context);
     AppDialog.show<void>(
       context,
       icon: Icons.delete_outline,
@@ -330,18 +333,14 @@ class UsageList extends StatelessWidget {
       content: Text(l10n.clearModelDataWarning(modelId)),
       maxWidth: 460,
       actions: [
-        AppButton(
-          label: l10n.cancel,
-          variant: AppButtonVariant.text,
-          onPressed: () => Navigator.pop(context),
-        ),
+        AppButton(label: l10n.cancel, variant: AppButtonVariant.text, onPressed: navigator.pop),
         AppButton(
           label: l10n.clearModelData,
           variant: AppButtonVariant.destructive,
           onPressed: () {
             // Close first: the reload behind this is a whole-range query,
             // and the dialog has nothing to show while it runs.
-            Navigator.pop(context);
+            navigator.pop();
             onClearModelUsage(modelId);
           },
         ),

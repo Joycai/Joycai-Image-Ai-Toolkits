@@ -155,7 +155,7 @@ file name. `test/app/` takes whole-app/navigation tests with no single screen;
   refreshes what it cached), owns a screen controller that takes `database:`
   (`UsageController`), or calls a service (`FileRenameService`). No
   `DatabaseService()` / `XxxRepository()` in `screens/` or `widgets/` except as
-  the `database ?? DatabaseService()` injection default —
+  a constructor's `_db = database ?? DatabaseService()` initializer default —
   `test/architecture/ui_database_access_scan_test.dart` scans for it.
 - **No database call under `testWidgets`' fake clock** — `test/support/fake_async_database_rule.dart`
   fails any test that reads `DatabaseService.database` under it, with the call's stack

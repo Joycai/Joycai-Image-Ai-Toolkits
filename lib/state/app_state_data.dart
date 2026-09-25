@@ -144,9 +144,10 @@ extension AppStateData on AppState {
     await _reloadAfterBulkWrite();
   }
 
-  /// Clears what a backup carries — settings, channels, models, fee groups,
-  /// prompts, usage, source directories; tasks, cookies and layer rows stay —
-  /// then reloads the same states a restore does.
+  /// Empties the tables [DatabaseService.clearAllData] covers — settings,
+  /// channels, models, fee groups, usage, source directories, prompts and
+  /// tags. Everything else (tasks, cookies, layer rows, assistant sessions,
+  /// prompt history) stays. Then reloads the same states a restore does.
   Future<void> resetAllSettings() async {
     await _db.resetAllSettings();
     await _reloadAfterBulkWrite();
