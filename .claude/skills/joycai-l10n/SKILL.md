@@ -61,8 +61,9 @@ Work through these in order — every step is required:
 - [ ] 6. If the string uses `{placeholder}` values, add the `@keyName` metadata block in **all 4** language files (see ARB format below)
 - [ ] 7. Run: `dart tool/merge_l10n.dart`
 - [ ] 8. Run: `flutter gen-l10n`
-- [ ] 9. Run: `flutter analyze` — must report **"No issues found!"**
-- [ ] 10. Use the key in Dart via `l10n.myKey` or `AppLocalizations.of(context)!.myKey`
+- [ ] 9. Use the key in Dart via `l10n.myKey` or `AppLocalizations.of(context)!.myKey`
+- [ ] 10. Run: `dart format lib test tool` — gate 0 (page width 100, from `analysis_options.yaml`)
+- [ ] 11. Run: `flutter analyze` — must report **"No issues found!"**
 
 ## ARB Format
 

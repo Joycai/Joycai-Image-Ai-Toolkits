@@ -21,8 +21,8 @@ flutter test test/screenshots/render_probe.dart    # UI-thread rebuild/repaint c
 ```
 
 **All three gates must be green after every code change, before any commit.** CI
-(`.github/workflows/flutter-ci.yml`) runs them in parallel jobs (format as
-`--set-exit-if-changed`, beside analyze), tests sharded by file across three runners.
+(`.github/workflows/flutter-ci.yml`) runs format (`--set-exit-if-changed`) then analyze
+in one job, and the tests sharded by file across three runners beside it.
 A commit that only reformats goes into `.git-blame-ignore-revs`. The `screenshots` tag
 (`dart_test.yaml`) marks harness files that write PNGs and assert nothing;
 `rebuild_scope_test.dart` sits beside them but asserts, so it stays in the gate.
@@ -113,7 +113,8 @@ strictly **lower** rank — never sideways, never up:
 - **`widgets/` and `services/` keep nothing in their root.** Every file sits in a domain
   folder. And `lib/widgets/` means *more than one feature uses it*: a widget that only
   one screen reaches, directly or through other widgets, belongs under that screen
-  (the design system is exempt; `main.dart` counts as the shell, not a screen).
+  (the design system is exempt; `main.dart` counts as the shell, not a screen; `bench`
+  is not a feature, so a widget only it and one screen reach is still that screen's).
 - **The design system (`widgets/{ui,glass,drag}`) imports only `core`, `l10n` and
   itself.** When a primitive seems to need something higher, either it is not a
   primitive or the dependency belongs lower (the dock's size became `AppDock` in

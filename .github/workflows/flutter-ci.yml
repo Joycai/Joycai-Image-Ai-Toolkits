@@ -32,13 +32,14 @@ jobs:
       - name: 'Generate Localization'
         run: flutter gen-l10n
 
-      - name: 'Static Analysis'
-        run: flutter analyze
-
-      # Line width comes from `formatter:` in analysis_options.yaml; gen-l10n
-      # reads the same setting, so the regenerated files pass too.
+      # First, because it takes seconds and a later step's failure would skip
+      # it. Line width comes from `formatter:` in analysis_options.yaml;
+      # gen-l10n reads the same setting, so the regenerated files pass too.
       - name: 'Format'
         run: dart format --output=none --set-exit-if-changed lib test tool
+
+      - name: 'Static Analysis'
+        run: flutter analyze
 
   test:
     name: Test (shard ${{ matrix.shard }}/3)
