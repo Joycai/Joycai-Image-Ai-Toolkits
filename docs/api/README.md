@@ -58,17 +58,19 @@ Chat Completions 和 Responses 同属 OpenAI 却分成两族，是因为它们�
 | 文件 | 内容 | 状态 |
 | --- | --- | --- |
 | [`landscape.md`](landscape.md) | 四族总览、逐族骨架、部署变体、马甲层清单 | ✅ |
-| `messages.md` | 消息结构、system 的四种放法、多模态 part 形状 | 待写 |
+| ~~`messages.md`~~ | 消息容器与 system 的四种放法已在 [`landscape.md`](landscape.md) §1 总览与各族骨架里；多模态 part 形状随各族写在同处，**不再单独成篇** | 并入 |
 | [`tools.md`](tools.md) | 工具定义 / 调用 / 结果回传 / tool_choice 四族对照，含配对硬要求 | ✅ |
 | [`streaming.md`](streaming.md) | SSE 机制、结束原因、**失败怎么送达**（四种「看起来成功」的失败） | ✅ |
 | [`reasoning.md`](reasoning.md) | 思考强度、思维链取回、以及**回传义务**（唯一会让请求被拒的一件） | ✅ |
 | [`usage.md`](usage.md) | token 计数的两个口径陷阱、输出上限、上下文窗口为何只能靠探测 | ✅ |
 | [`structured.md`](structured.md) | JSON mode / schema / 强制 tool_choice 的四族做法，含 `json_object` 的隐藏前置条件 | ✅ |
+| [`responses.md`](responses.md) | ② OpenAI Responses 专篇：`instructions` / `input` 形状、类型化事件流、`store:false` 下的回放与 `encrypted_content`（SDK 类型 + xAI 文档 + 中转实测，2026-09-14） | ✅ |
 | [`qianwen-bailian.md`](qianwen-bailian.md) | 千问（阿里云百炼 / DashScope）一家六条 wire：3 种 chat + 图片同步/异步 + 视频异步，模型 × 协议矩阵 | ✅ |
 | [`veo.md`](veo.md) | Google Veo 视频：文生视频、参考图、首尾帧、分辨率的 cURL 骨架与 LRO 轮询 | ✅ |
 | [`gemini-api.md`](gemini-api.md) | `/v1beta/models` 的模型清单与 `supportedGenerationMethods` 探测 | ✅ |
 | [`google-api-standard.md`](google-api-standard.md) | Gemini 图像 REST：响应 schema、Base64 取图、安全拦截行为 | ✅ |
 | [`minimax.md`](minimax.md) | MiniMax 一家四条 wire：①/④ 兼容双面 + 私有同步图像面（主体参考，非编辑）+ 私有 v2 视频任务面（直链结果、取消/删除、7 天保留），错误信封三套并存，四面无公共路径前缀 | ✅ |
+| [`volcengine-ark.md`](volcengine-ark.md) | 火山方舟 Seedream 图片生成面：按量 / 套餐两个 base、档位与像素两种尺寸、流式逐张、5.0 pro 拆图层与透明编辑、`usage.input_images`；§7 套餐 key 实测（2026-09-18） | ✅ |
 
 ## 接一个新协议族时，先看这三条
 
@@ -117,8 +119,8 @@ Chat Completions 和 Responses 同属 OpenAI 却分成两族，是因为它们�
 - [`../architecture/assistant-context.md`](../architecture/assistant-context.md) —
   上下文窗口在本项目里怎么解释（`usage.md` 那条"只能靠探测"的落地）
 - [`../plans/README.md`](../plans/README.md) — 历轮接入方案的台账，含**还没用真实
-  key 验证过的五条**（`adaptive` 是否真开思考、`pause_turn` 续跑、wan2.7 收不收
-  `prompt_extend`……）。跑完一条就把日期与端点写回这里对应的文件
+  key 验证过的那些条**（`adaptive` 是否真开思考、`pause_turn` 续跑、wan2.7 收不收
+  `prompt_extend`……，清单在「还欠的」各节）。跑完一条就把日期与端点写回这里对应的文件
 
 ## 写作约定
 

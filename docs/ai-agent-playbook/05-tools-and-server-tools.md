@@ -8,13 +8,16 @@
 目录：
 - §1 工具定义的统一形状与三家转换
 - §2 toolChoice 翻译
-- §3 流式参数拼接：三家三样
+- §3 流式参数拼接：三家三样（含 ③ 的调用 id、并行签名、流末空 part 与回灌实测；④ `tool_use` 的 `caller`）
 - §4 配对是硬要求，且违约不自愈（维护见 agent-runtime-architecture 07 §3.2）
 - §5 Server tools：端点自己跑的工具
   - 三原则 · 同一个 id，两种拼法 · ② Responses 族：可见的内置工具
   - 代码解释器：按模型 id 放行、按请求丢弃（千问 DashScope）
-  - wire 形状与 max_uses 刹车（④ 族） · 响应流的防御读取
+  - wire 形状与 max_uses 刹车（④ 族，含无 beta 头的实测形状与 `usage.server_tool_use`） · 响应流的防御读取（含事件 id 跨请求唯一、内容会长的行固定 id 重发）
+  - ③ Gemini 的内置工具：`googleSearch` / `codeExecution` / `urlContext` 的请求形状（`tools[]` 独立项）、同发组合、回报位置、按条计费、代码 part 回灌、app id 映射、日志 id 前缀
   - 服务端工具归平台，不归模型；「应用执行」的联网端点（智谱）
+  - 中转站自己「做」服务端工具：劫持、真搜、丢弃三种情形，以及「假装执行」（New API · Kiro 渠道）；同台四个渠道四种答案
+  - 中转站上的 GPT 内置工具随上游：账号池真搜、网关静默丢；① `web_search_options` 处处被忽略；代码解释器 / 文件搜索 / 出图的报法
 - §6 pause_turn 与「一次调用 = 多次请求」的续跑循环
 - §7 工具按需加载（deferred loading / tool search）的各族协议事实
 
@@ -43,6 +46,10 @@
 
 限定规则：Anthropic 只在**自己声明了（本地）工具**时才发 tool_choice——请求里只有 server tools 时发 `{type:"auto"}` 等于对端点内部决策发表意见。已知砍档方言（枚举只有 `auto|none`）的 forced 降级见第 4 篇 §4。
 
+forced 被接受 ≠ forced 生效：中转站的翻译层可能只在**非流式**路径上实现强制（Kiro 渠道的 Claude，① `required` / 具名与 ④ `any` / `tool` 都一样，
+流式下 200 但被无视）【实测 2026-09-23】——数字与降级做法见第 4 篇 §4「第四种变体」。
+同一台中转站别的渠道各不相同：anti 渠道非流式也不生效，CC 渠道带思考时时好时坏，Bedrock 正向全生效（同节「复测与同台别的渠道」）。
+
 ② 族的 tool_choice 见第 2 篇 §7.1（规则 4：命名形态扁平、只随函数工具发、不做预判降级）。
 
 ## 3. 流式参数拼接：三家三样
@@ -50,10 +57,26 @@
 | 族 | 拼接方式 |
 | --- | --- |
 | ① | 按 `delta.tool_calls[].index` 分片拼 `arguments` 字符串——**分组键必须是 index 不是 id，id 自身也可能分片**（`entry.id += partial.id`） |
-| ③ | 整个 `functionCall` 一次到齐（对象、无 id、适配器自造 id） |
+| ③ | 整个 `functionCall` 一次到齐（对象；旧型号无 id、适配器自造 id；**Gemini 3.8 起带 `id`**，见下） |
 | ④ | 按块索引拼 `input_json_delta.partial_json`；空参数调用不会流任何 delta，`""` 必须转 `"{}"` |
 
 ② 族按 `output_index` 分组、参数以 `.done` 整串为准，见第 2 篇 §7.2。
+
+**③ 的调用与回灌**（Gemini 3.8 Flash，Vertex 后端经 OrcaRouter，【实测 2026-09-26】；网关回包原样、请求侧会重新序列化，第 1 篇 §9.5）：
+
+- **`functionCall` 带 `id`**（形如 `call_1626125`）。回灌时 `functionResponse` 带不带 `id` 都 200，两边都去掉 id 也 200，按顺序配对。
+  所以：有 id 就用 id 配对（同名函数的并行调用从此可表达），没有 id 仍按函数名（第 2 篇 §2.2）。
+- **并行调用时 `thoughtSignature` 只挂在第一个 `functionCall` part 上**；其余 part 没有签名是正常的，不要补、不要挪。
+- **流以一个光秃秃的 `{text: ""}` part 收尾。** 把它原样回灌 → 400 `required oneof field 'data' must have one initialized field`；
+  带签名的 `{text: "", thoughtSignature}`（流式时签名单独落在最后一块上）回灌 200。后者的形态提示可能是网关把空串当空值丢了、只剩 `{}`，
+  未必是 Vertex 本身——但这个 part 什么都不带，**回灌时剔除它在哪都不亏**。
+  规则：「整组原样回灌」（第 3 篇 §5）的唯一例外是**既无文本、也无签名 / 调用 / 其他数据的空 part**；带签名的空文本 part 保留。
+  **读已存的历史时也要过滤**——修复前存下的会话里已经带着它，只改写侧的话，旧会话照样第二轮 400。
+- 缺签名的回灌是 **HTTP 400** `Function call is missing a thought_signature in functionCall parts`（第 3 篇 §5）。
+- 上面「会不会 400」的结论都是经网关得到的，只对网关成立；回包形状（`id`、签名位置、空 part）可当官方记。
+
+**④ 的 `tool_use` 多了 `caller: {"type": "direct"}`**（程序化工具调用的来源标记，【实测 2026-09-26】，Sonnet 5 经 OrcaRouter，回包原样）：
+整块原样存；回灌时去掉它经网关也 200。thinking + 并行工具的回灌规则（改签名 400）见第 3 篇 §5 ④ 行。流式时工具参数的第一条 `input_json_delta` 是空串。
 
 **参数类型分歧**：① 给 JSON 字符串（要自己 parse，可能非法——`parseJsonArgs` 全员 try/catch 兜 `{}`），③④ 给已解析对象。内部统一存字符串形态时，回传给 Anthropic 要 `parseJsonArgs(tc.function.arguments)` 转回对象。
 
@@ -89,6 +112,7 @@ app 层的 id 只有一个（如 `"web_search"`），因为它表达的意思只
 - **④ 族**：`tools[]` 里的版本化条目（`anthropicServerTools`，下节）。
 - **① 族兼容层（千问 DashScope）**：请求体**顶层** `enable_search: true`
   （`openaiServerToolsBody`；SDK 文档写在 `extra_body`，落 wire 即顶层字段）。
+- **③ 族**：`tools[]` 里与 `functionDeclarations` 并列的独立项 `{googleSearch:{}}` / `{urlContext:{}}` / `{codeExecution:{}}`（`geminiServerTools`，下文「③ Gemini 的内置工具」）。
 
 **官方/兼容的收窄方向在两族相反，而推理相同。** ④ 族的设置**不**收窄到 compat 半边
 ——官方 api.anthropic.com 真有同形状的 server tools，声明给官方端点是合法的。
@@ -146,6 +170,12 @@ api.openai.com 对未知顶层参数直接 400——同一条「设置只出现�
 防御读取同 ④ 族：解析不了的 JSON 字符串 = 空对象 / 零结果，不炸已完成的回答；条目缺 `id` 用 `output_<index>` 兜底让两阶段配上。
 不按 `open_page` 解析的后果是静默的：执行日志显示一个空查询、空结果。
 
+OpenAI 官方 `web_search`（【实测 2026-09-26】，`gpt-6-luna` 经 OrcaRouter，两条线路，第 1 篇 §9.5）：事件 `web_search_call` 的 `in_progress` / `searching` / `completed` 齐全，
+正文带 `url_citation` 注解；`action.sources` 要发 `include:["web_search_call.action.sources"]` 才有；原样线路的 `usage.input_tokens_details` 多一个
+`cache_write_tokens`（一次 4,388，06 §1）。
+
+（自 11 篇坑 70 移入）DashScope ② 面单独声明 `web_extractor` 的报错原文：HTTP 200 后首个事件 `response.failed`，message `must be executed with web_search tool`。
+
 ### 代码解释器：按模型 id 放行、按请求丢弃（千问 DashScope）
 
 出处：`serverTools.ts` 的 `supportsCodeInterpreter` / `supportsServerToolFor` / `codeInterpreterEvent`；
@@ -187,7 +217,7 @@ traceback 在 `logs` 里——执行日志结果列取输出最后一行，正�
 指向带签名的 OSS 地址，约 12 小时过期，且最终回答正文里不带——只当文本记日志，不存链接（坑 78）。
 计费：限时免费，但多轮推理让 token 明显增加（qwen3.8-flash 一问约 1.1k，不开约 30）。
 
-**成本形态（写进设置抽屉说明）**：搜回/抓回的正文**按输入 token 计**（OpenAI 一次搜索回答实测 45.7K 输入、112 s；xAI 一次 6,851），
+**成本形态（写进设置抽屉说明）**：搜回/抓回的正文**按输入 token 计**（OpenAI 一次搜索回答实测 45.7K 输入、112 s；2026-09-24 经账号池上游 6–10 s、8.5–14K 输入，见下文「中转站上的 GPT」；xAI 一次 6,851），
 另按次计费（`tool_usage.web_search.num_requests` / xAI `server_side_tool_usage_details`）；首个事件可晚到 54 s。
 流看门狗的首块等待需高于此，且每个 `web_search_call` 的 added 事件都应算作存活信号。
 
@@ -199,6 +229,10 @@ traceback 在 `logs` 里——执行日志结果列取输出最后一行，正�
 
 - 与本地工具同处一个 `tools` 数组（两种条目形状并存）。
 - 类型按日期版本化。**id → wire type 的映射表集中一处**——版本升级 = 一处编辑，不是存进每行模型数据里永远冻着旧版本。
+- **实测形状**（【实测 2026-09-26】，Sonnet 5 经 OrcaRouter，回包 Anthropic 原样）：`web_search_20250305` **不需要 beta 头**；响应是 `server_tool_use` →
+  `web_search_tool_result`（10 条结果，各带 `encrypted_content`）→ 带 `citations`（`web_search_result_location`）的 text；`usage.server_tool_use` 是
+  `{web_search_requests: 1, web_fetch_requests: 0}`（按次计费的读数，06 §1）。**没发 `cache_control` 也记了 2,834 个 `cache_creation_input_tokens`**——
+  搜索结果被服务端自动写缓存。这一请求合计 $0.051。
 - **`max_uses` 是唯一的刹车**：服务端工具不问就跑、按次计费（官方 $10/1000）+ 结果按 input token 计；一个研究型问题实测一轮 8 次搜索。即使中继文档没列这个字段也照发——这是对"只发中继文档写了的字段"规则的**刻意例外**，因为省略它的下行风险是无上限花费。
 
 ### 响应流的防御读取
@@ -206,8 +240,67 @@ traceback 在 `logs` 里——执行日志结果列取输出最后一行，正�
 - `server_tool_use` 块：query 按 `input_json_delta` 分片到达，**也有端点在 start 块整个给全——两种形状都要收**。
 - `web_search_tool_result` 块：整块到达无 delta。`content` 正常是结果数组、出错时是单个 error 对象——**读取端对容器形状全防御：认不出 = 零结果，而不是抛异常炸掉已完成的响应**。
 - 对外表达为两阶段 `ServerToolEvent`（`phase: "call" | "result"`），靠 `server_tool_use` 的 id 与结果块的 `tool_use_id` 配对。call 在 `content_block_stop` 时上报（此刻 query 才完整）——让执行日志在结果到达前就能显示"正在搜什么"。
+- **事件 id 在整份日志里要唯一，不只在一个回包里唯一**（【实现】simple-ai-writer 2026-09-26，review 找出）。执行日志常按 id 原地替换一行，而且比较时不带轮次；
+  一份日志装着好几个请求（agent 多轮、同一上下文并发的多份草稿）。上游生成的 id（`srvtoolu_…`、`ws_…`）天然唯一；**由内容拼出的 id**
+  （网址、搜索词、每个请求都从 1 数起的序号，以及没核实跨请求唯一性的上游序号）就会跨请求撞上：后一轮的同一网址覆盖前一轮那一行，前一次读取从日志里消失，
+  按次计费的工具少记一次。对策：每个读取器创建时生成一个请求级前缀，发出去的 id = 前缀 + 内容键，本请求内的去重仍按内容键；测试钉住「两个读取器读同一块，id 不同」。
+- **内容会长的行，固定 id、变了就重发**：一个请求一个搜索行（前缀 + `search`），搜索词或结果有变化就用同一个 id 再发一次，靠日志的原地替换更新；
+  不用「这个阶段报过没有」来挡。否则结果分几块到达时，先到的空结果把后来的命中挡掉；搜索词逐块累加时 id 随之变化，多出一行、同一条搜索算两次。
+  （实测 grounding 只在末块出现，但读取端不该依赖这一点。）
+
+### ③ Gemini 的内置工具：`googleSearch` / `codeExecution` / `urlContext`
+
+【实测 2026-09-26】，Gemini 3.8 Flash，Vertex 后端经 OrcaRouter（回包原样，第 1 篇 §9.5）；第二轮「再补测」按适配器真实会发的形态测（流式、思考 LOW、
+每次都带一个函数工具），landscape.md §7 第十八个样本「再补测」D。
+
+**请求形状**：每个内置工具是 `tools[]` 里**独立的一项**，与 `functionDeclarations` 并列，不塞进它里面；没有函数工具时照样发。
+
+```json
+"tools": [
+  { "functionDeclarations": [ … ] },
+  { "googleSearch": {} }, { "urlContext": {} }, { "codeExecution": {} }
+]
+```
+
+**同发都 200**：三者都能与函数工具同发；再加 `toolConfig.functionCallingConfig.mode:"ANY"`（先搜两条，再按要求调函数）或
+`responseMimeType:"application/json"` + `responseJsonSchema`（得到合 schema 的 JSON）也 200。搜索与函数调用可以在**同一块**里一起出现
+（`functionCall` 带签名 + `groundingMetadata`）。所以在这条线上**不按请求丢**内置工具（与千问 DashScope 的 ① 面相反，本节「代码解释器」）。
+
+**回报的位置各不相同**：
+
+| 工具 | 流里的位置与形状 | 计费 |
+| --- | --- | --- |
+| `googleSearch` | **末块**（带 `finishReason` 的那块）candidate 上的 `groundingMetadata{webSearchQueries[], groundingChunks[{web:{uri, title, domain}}], searchEntryPoint, groundingSupports}`；`uri` 是 `vertexaisearch` 跳转链接，`title` 是网站域名，不是页面标题 | **按查询条数**，约 **$0.014 一条**；一次回答搜几条由模型定（一题 6 条、$0.084），**没有**像 ④ `max_uses` 那样的上限字段可发 |
+| `codeExecution` | 独立的块：`executableCode{language, code, id}`（带签名）→ `codeExecutionResult{outcome:"OUTCOME_OK", output, id}`（`id` 配对）→ 之后才是文本 | 回填的输出记在 `usageMetadata.toolUsePromptTokenCount` |
+| `urlContext` | **首块**就有 `urlContextMetadata.urlMetadata[{retrievedUrl, urlRetrievalStatus}]`；末块 `groundingMetadata.groundingChunks` 给出**真实** `uri` 与页面标题，但**没有** `webSearchQueries` | 读回的正文同样记在 `toolUsePromptTokenCount` |
+
+- **`toolUsePromptTokenCount` 在 `promptTokenCount` 之外**（20 + 65 + 77 = 162），计进输入 token（06 §1 第 2 条）；花费都进了带头的 `costUsd`。
+- 与 ④ 一样是「端点自己跑、本地无事可做」：`executableCode` / `codeExecutionResult` 不是欠结果的调用，不回 `functionResponse`（本节三原则）。
+- **「搜没搜」只看 `webSearchQueries`**，不看正文，也不看 `groundingChunks`——读网页的回答也带 `groundingChunks`。把后者当搜索，只开读网页的请求也会被记成一次（按次计费的）搜索。
+  搜索的引用链接是 Google 的跳转地址，不是原站（能用多久 ⚠ 未测）。
+- **改口留痕**：本表此前写搜索「一次 $0.028」，是按请求记的；同日再补测按查询条数核对，改为约 $0.014 一条（06 §1）。
+- **代码 part 的回灌**：`executableCode` / `codeExecutionResult` 随 model 轮原样放回 → 200，下一轮用得上上一轮算出的数；回灌时请求里**已经没有
+  `codeExecution`**（作者中途关掉开关），甚至**没有任何工具**（收尾轮），也都 200。所以不需要把历史里的代码 part 改写成文本。
+  代价：这些 part（以及可能带回的 `inlineData` 图表）会随整组 model parts 在之后每一轮回传——和思考签名同一套机制，若上下文估算与裁剪不计它们，
+  估算会偏低【实现 simple-ai-writer，写成已知限制】。
+- ① 面经 OrcaRouter 时这三个名字是**保留函数名**（发一个没有 parameters 的 function 工具，网关换成原生内置工具）【文档 2026-09】——这是网关的约定，不是 Gemini 的。
+
+**接进 app 层的一个 id 一种意思**（【实现】simple-ai-writer `serverTools.ts` `geminiServerTools`，2026-09-26）：沿用已有的三个 app id，不新造——
+`web_search` → `googleSearch`、`web_extractor` → `urlContext`、`code_interpreter` → `codeExecution`。`urlContext` 在 Gemini 上能单独用，但 app 里
+「抓取」在别的线路上是搜索的附加档，这里也照样依附搜索：**一个 id 在各线路只有一种意思**，能力路由与子代理资格才不必按线路分叉。
+能力格上只开测过的（OrcaRouter ③ 三项）；`googleSearch` 是协议自带，官方 google 与其他中转的 ③ 列按规则「未实测、照发」——
+Gemini 2.x 在 AI Studio 上与函数工具同发的问题（review 提过、未测）是有意接受的风险，写进了文档而不是按型号分支。
+
+**执行日志的 id 要带请求级前缀**：这三种事件没有上游生成的唯一 id（④ 的 `srvtoolu_…`、② 的 `ws_…` 有），只能由内容拼（网址、搜索、代码序号）；
+而一份日志装着好几个请求（agent 多轮、多稿并发），按 id 原地替换的日志会让第 3 轮的同一网址覆盖第 1 轮那一行。见上文「响应流的防御读取」与坑 192、193。
 
 ### 服务端工具归平台，不归模型；「应用执行」的联网端点（智谱）
+
+**火山方舟（套餐 key，【实测 2026-09-18】）**：厂商「联网搜索工具」页只列 Responses 与 Messages 两种接口，① 没有。
+② `{type:"web_search"}` 三款都跑出 `web_search_call`，计数在 `usage.tool_usage_details.web_search.doubao`——文档要求豆包搜索写
+`sources:["doubao"]`，套餐上**不写也记在 `doubao` 源下**；按量 key 上不写 `sources` 可能落到另开通、按次计费的「联网内容插件」【未验】。
+④ 的版本化 `web_search_20250305` + `max_uses` 真跑（`server_tool_use` + `web_search_tool_result`，结果带 `encrypted_content`、`url` 为空串；
+计数在 `usage.server_tool_use.web_search_requests`）。所以能力格子是 `(平台, 面)`：套餐 ②④ = 有，① = 无，按量 = 未知。
 
 **同一个模型，有没有服务端工具取决于谁在服务它。** GLM 在千问百炼、火山方舟上由平台替它执行搜索；在智谱自家端点上，
 没有可靠的服务端工具。所以「能不能联网」是 `(平台, 协议族)` 的属性，不能写在模型上，也不能从模型 id 推。【实测 2026-09-19】
@@ -231,6 +324,73 @@ traceback 在 `logs` 里——执行日志结果列取输出最后一行，正�
 
 对实现的推论：「应用执行的联网工具」是与服务端工具并列的另一类——要进 agent 的工具注册表（有调用、有结果、要配对），
 要有调用上限与日志，结果要应用侧截断；它的死链错误要翻译成「这个页面读不到」，不能让模型当平台故障去重试。
+
+### 中转站自己「做」服务端工具：劫持、真搜、丢弃三种情形（New API · Kiro 渠道）
+
+【实测 2026-09-23】，simple-ai-writer `docs/api/landscape.md` §7 第十五个样本、`live.relay-kiro.test.ts`；背景见第 1 篇 §9.2。
+后端（Kiro）不是 Anthropic API，④ 的 `web_search_20250305` / `_20260209` 由中转站的翻译层接到 Kiro 自己的联网搜索上——
+**结果取决于同发了什么工具、流式与否**，三种情形三种结果：
+
+| 情形 | 结果 |
+| --- | --- |
+| 1. 只挂 `web_search`、没有函数工具（流式与否一样） | **整条请求被劫持**：中转站把**第一条** user 消息原文当搜索词（多轮对话里搜的是开头的「Hi」），0.8–2 s 返回模板「I'll search for "…"」+ `server_tool_use` + `web_search_tool_result` +「Here are the search results for "…"」列表。**模型根本没跑**，请求里的写作指令没有任何回答 |
+| 2. 与函数工具同发、流式 | ✅ **真的在搜**：模型自己拟搜索词（「latest stable Rust version 2024」），结果带 `title` / `url` / `page_age`，搜完接着思考、作答 |
+| 3. 与函数工具同发、非流式 | `web_search` 被丢，模型说「我没有联网搜索工具，只有 get_weather」 |
+
+- ① 面的 `web_search_options` 被中转站转成 ④ 的 `web_search` 后**同样被劫持**（返回「Here are the search results for "…"」，模型没跑）。
+- **怎么认出劫持**：两款不同模型逐字相同的输出、`output_tokens` 固定（644 / 568 / 478）；结果块里 `encrypted_content` 其实是明文摘要、
+  `page_age` 为 null；文本以「I'll search for "<第一条 user 消息>"」开头。任何「跨模型一模一样」的回答都说明模型没参与。
+- **对实现的推论**：
+  - 服务端工具能力是 `(平台, 面, 模型 id)` 的——同一台中转站别的渠道没这个问题，所以按 id 点名（第 1 篇 §9.2），不写平台画像。
+  - 参考实现对**不带函数工具的请求也发服务端工具**（聊天的一问一答），恰好落进情形 1，所以对被点名的 id 把 ④ `web_search` 判「不发」。
+    代价：agent 场景（永远流式、永远带函数工具）本来能用的真搜索（情形 2）也关了——同一个模型开关分不出两种场景。
+    想留住情形 2 的做法是「只在本轮带函数工具时发」，按请求判定，与 §5「代码解释器」的按请求丢弃同形【未实现】。
+  - 验证服务端工具要把三种组合（单独挂 / 与函数工具同发 × 流式 / 非流式）都跑一遍；只测其中一种，结论可能正好相反（第 6 篇 §8）。
+
+**同一端点上，别的服务端工具被丢弃，模型「假装执行」**：`web_fetch_20250910`、`code_execution_20250825`、随便造的 `type` 全部 200、
+静默丢弃，模型照样答得像跑过——给出 `<h1>Example Domain</h1>`（像是抓了页面）、一段从没执行过的 Python 和「输出」。
+- 唯一的判据是**响应里有没有对应的 `server_tool_use` / `*_tool_result` 块**：没有块 = 没跑，不管正文怎么说。
+- 所以执行日志、引用、计费只能凭块上报（§5「响应流的防御读取」），**绝不凭正文推断「工具已执行」**；
+  服务端工具的 live 用例要断言块存在，不能只断言答案看起来合理。
+
+**同一台上别的渠道**（【实测 2026-09-23】，landscape.md §7 第十六个样本，④ 面）——服务端工具最能看出渠道差异：
+
+| | Kiro | CC | anti | AWSb（Bedrock 正向） |
+| --- | --- | --- | --- | --- |
+| `web_search` 单挂 | 劫持（上表情形 1） | ✅ 真搜：要求搜才搜（`server_tool_use` + 结果块，`usage.server_tool_use.web_search_requests: 1`）；改写句子的请求不触发、不劫持 | 丢：模型凭记忆答（「As of my latest information (July 2025)…」） | 400 `Input tag 'web_search_20250305' … does not match` |
+| `web_search` + 函数工具（流式） | 真搜 | 真搜 | 丢 | 400 |
+| `web_fetch_20250910` | 丢，假装抓了 | ✅ 有 `server_tool_use` 块 | 丢 | 400 |
+| `code_execution_20250825` | 丢，假装跑了 | 丢，没有块 | 丢 | 400 |
+| ① `web_search_options` | 劫持 | ✅ 答案引了搜索结果 | 无效 | 400 |
+
+- 四个渠道四种答案：劫持、真做、静默丢、400。「这台中转站支持搜索吗」没有答案，只有「这个渠道支持吗」——服务端工具能力是（平台, 面, 渠道, 模型）的（第 1 篇 §9.2）。
+- Bedrock 的 400 会响，但它让**整条请求**失败，不是只丢工具：一个对中转站默认发 `web_search` 的应用，在这个渠道上每个请求都挂。正向渠道也要点名。
+- 同一渠道内也要逐工具测：CC 上 `web_fetch` 是真的，`code_execution` 却被丢。
+
+### 中转站上的 GPT 内置工具：随上游（New API，2026-09-24）
+
+【实测 2026-09-24】，simple-ai-writer `docs/api/landscape.md` §7 第十七个样本：同一台 New API、同一个 `gpt-5.6-sol`，三个 ChatGPT 账号档与一个网关上游
+（网关用同档 terra 顶替；上游分类见第 1 篇 §9.2「同一个 GPT，两类上游」）。每项单挂与和函数工具同发都测过，默认流式。
+
+② `/v1/responses`：
+
+| 工具 | 特价Pro | Plus | Pro | 网关（`[Azure]`） |
+| --- | --- | --- | --- | --- |
+| `web_search` | ✅ **真搜**：1 次 `web_search_call` + `url_citation`，6–10 s，输入 8.5–14K（搜回的网页按输入计） | ✅ | ✅ | ❌ **静默丢弃**：没有 `web_search_call`，模型答「I can't perform a live web search」 |
+| `code_interpreter` | 流式 `response.failed` | 502 | 400 `Unsupported tool type` | 500 |
+| `file_search` | 流式 `response.failed` | 502 | 400 `Unsupported tool type` | 500 |
+| `image_generation` | 403 `Image generation is not enabled for this group` | 403 | 403 | ✅ 能出图：83 s，`image_generation_call` 带约 911K 字符的 base64 |
+
+① `/v1/chat/completions`：`web_search_options` **四个上游全部静默忽略**（模型答不出只有联网才知道的事），不报错。
+这台中转站把 GPT 的 ① 翻成 ② 再发，翻译层不转这个字段——**GPT 的联网只能走 ② `web_search`**。
+
+- 与第十个样本比（另一台、同类账号档，112 s）快了一个量级；搜索时延随上游与时间变，流看门狗仍按上文「成本形态」的 54 s 首事件留余量。
+- **同一个工具名，四种结果**：真搜、静默丢、400、403。「这台中转站支持联网吗」没有答案，只有「这个上游支持吗」——与同台 Claude 的结论一样（上一小节），
+  能力格按上游写：参考实现的 codex 画像 ② `web_search` ✓、azure ✗（第 1 篇 §9.2「上游画像扩到 GPT」）。
+- 网关的丢弃最危险：请求 200，模型老实说自己搜不了——作者多半以为是模型的问题。判据同上一小节：**看有没有 `web_search_call` 条目**，不看正文。
+- 不支持的工具报法各不相同（官方同文 400 / 502 / 流式 `response.failed` / 500），不能用一个正则把它们都学成「不支持」——502 与 500 看起来就是上游故障。
+  它们会响，但让**整条请求**失败：一个默认挂 `code_interpreter` 的 ② 请求在这四个上游上一个都跑不通。别对中转站默认发这类工具。
+- 网关能出图而账号池 403：出图能力也随上游；参考实现的 ② 对话路径本来不发 `image_generation`，只在说明里告知。
 
 ## 6. pause_turn 与「一次调用 = 多次请求」的续跑循环
 
@@ -291,6 +451,9 @@ traceback 在 `logs` 里——执行日志结果列取输出最后一行，正�
 - [ ] 工具定义内部统一 OpenAI 嵌套形状；Gemini 换容器、Anthropic 改 `input_schema`，转换各在适配器内一处。
 - [ ] toolChoice 各族翻译齐全（② 见 02 §7.1）；Anthropic 仅在声明了本地工具时发 tool_choice。
 - [ ] ① 族参数拼接按 index 分组、id 累积拼接；④ 族空参数 `""` → `"{}"`；`parseJsonArgs` 全员 try/catch。
+- [ ] ③ 回灌模型 parts 时剔除光秃秃的 `{text:""}`（带签名的保留），写侧与读已存历史两处都做；有 `functionCall.id` 时用它配对，没有才按函数名；并行调用只有第一个 part 带签名，不补不挪。
+- [ ] ③ 内置工具（`googleSearch` / `codeExecution` / `urlContext`）是 `tools[]` 里与 `functionDeclarations` 并列的独立项；结果不当欠结果的调用；检索按查询条数计费单列，不按 token 估；「搜过」只认 `webSearchQueries`；`toolUsePromptTokenCount` 计进输入。
+- [ ] 服务端工具事件的 id 在整份执行日志里唯一：由内容拼的 id 带请求级前缀；内容会长的行用固定 id 重发、靠原地替换更新。
 - [ ] agent 循环保证 tool_call/结果配对：中止/异常/超时路径下要么双双不入历史、要么补"未执行"结果。
 - [ ] server tools 走声明而非注册，不在 agent 工具注册表里；工具循环对 `server_tool_use` 不回 tool_result。
 - [ ] server tool 的 id→wire type 映射集中一处，type 按日期版本化；app 层 id 跨族唯一，拼法按族收口在 shaping 函数（④ `tools[]` 条目 / ① compat 顶层 `enable_search`）。
@@ -314,3 +477,5 @@ traceback 在 `logs` 里——执行日志结果列取输出最后一行，正�
 - [ ] 搜索子代理接管时主模型只让出 web 类 id（`"no-web"`），非 web 的服务端工具保留（agent 侧，见 agent-runtime-architecture）。
 - [ ] 用了原生工具按需加载：② 族回传名单含 `tool_search_*` / `additional_tools`；④ 族至少一个非延迟工具、`defer_loading` 不与 `cache_control` 同现；③ / ① 族不发 `defer_loading`。
 - [ ] app 自己发起的辅助请求（摘要、翻译、图片描述、结构化、压缩）显式不带服务端工具，并有测试守住。
+- [ ] 经中转站的服务端工具在「单独挂 / 与函数工具同发 × 流式 / 非流式」四种组合下都实测过：会不会被中转站劫持成一页模板搜索结果（模型没跑）、会不会被丢弃；执行日志只凭 `server_tool_use` / `*_tool_result` 块上报，不凭正文推断「已执行」。
+- [ ] 经中转站的 GPT：联网只走 ② `web_search`（① `web_search_options` 被翻译层忽略）；`web_search` 能力按上游声明（账号池真搜、网关静默丢）；不对中转站默认发 `code_interpreter` / `file_search` / `image_generation`（各上游报 400 / 403 / 500 / 502 / 流式失败，整条请求挂）。

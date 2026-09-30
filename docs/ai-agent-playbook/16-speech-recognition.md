@@ -89,7 +89,7 @@ prompt                     术语、专有名词      ← 可选，给模型做�
 | --- | --- | --- |
 | OpenAI `whisper-1` | 支持 `verbose_json` 与 `timestamp_granularities[]`；文件上限 25 MB | 【文档】 |
 | OpenAI `gpt-4o-transcribe` / `gpt-4o-mini-transcribe` | `response_format` 只支持 `json` / `text`，不给 segments；原 Python 版因此对它改走切片、只取 `text` | 【文档 + 实现】 |
-| Groq `whisper-large-v3(-turbo)` | OpenAI 兼容地址 `https://api.groq.com/openai/v1` | 【实现】 |
+| Groq `whisper-large-v3`／`whisper-large-v3-turbo` | OpenAI 兼容地址 `https://api.groq.com/openai/v1` | 【实现】 |
 | 硅基流动 `FunAudioLLM/SenseVoiceSmall` | 支持语种 zh / yue / en / ja / ko | 【实现】 |
 
 ## 4. ⓑ 百炼同步识别

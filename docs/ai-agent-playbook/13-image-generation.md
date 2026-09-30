@@ -19,7 +19,7 @@ Joycai Image AI Toolkits（Flutter）`lib/services/llm/protocols/*_images_protoc
 - §2 route：按端点分发，不按供应商（总表 + surface 由用户声明）
 - §3 能力声明而非探测
 - §4 DashScope 原生（千问 / 万相）：逐模型参数档、异步任务流
-- §4.1 火山方舟 Seedream：版本能力表、组图、5.0 pro 专属任务、流式出图、拆图层实测形状
+- §4.1 火山方舟 Seedream：版本能力表（含 5.0 flash）、组图、5.0 pro 专属任务、透明背景的语义与校验、不支持参数的 400、流式出图、拆图层实测形状
 - §4.2 其余几家：images-api（OpenAI）· imagen · xai-images · minimax · midjourney · 经 chat 出图的中继
 - §5 编辑降级的判定
 - §6 响应统一化：一切归一到字节（含中继回图形状、去重、空结果即失败）
@@ -164,8 +164,8 @@ qwen-image / wan / z-image **不走 compatible-mode**——出图只有原生 `/
 | 模型 | 约束 | 比例上限 | 关键字 |
 | --- | --- | --- | --- |
 | `qwen-image-3.0(-pro)`、`qwen-image-2.0(-pro)` | **总像素** 512²–2048² | 1:8–8:1 | 不收 |
-| `qwen-image-edit-max` / `-plus` | **单边** 512–2048（不是面积）；缺省约 1024² 且保持原图比例 | 由单边区间推出，最多 4:1 | 不收 |
-| `qwen-image` / `-plus` / `-max`（初代文生图） | **只收五个固定值**：`1664*928`（缺省）、`1472*1104`、`1328*1328`、`1104*1472`、`928*1664` ⚠ | — | 不收 |
+| `qwen-image-edit-max` / `qwen-image-edit-plus` | **单边** 512–2048（不是面积）；缺省约 1024² 且保持原图比例 | 由单边区间推出，最多 4:1 | 不收 |
+| `qwen-image` / `qwen-image-plus` / `qwen-image-max`（初代文生图） | **只收五个固定值**：`1664*928`（缺省）、`1472*1104`、`1328*1328`、`1104*1472`、`928*1664` ⚠ | — | 不收 |
 | `qwen-image-edit`（基础版） | 不支持 `size` | — | — |
 | `wan2.7-image` | 总像素 768²–2048² | 1:8–8:1 | `1K` `2K` |
 | `wan2.7-image-pro` | 总像素 768²–4096²（4K 文档只在文生图语境下出现，改图是否接受未写明 ⚠） | 1:8–8:1 | `1K` `2K` `4K` |
@@ -218,6 +218,8 @@ body 完全一致）→ 拿 `output.task_id` → 轮询 `GET /tasks/{id}`，
 ## 4.1 火山方舟 Seedream（字节跳动 · 豆包）
 
 > 2026-09-18，官方文档（Seedream 4.0–5.0、5.0 pro 教程与 API 参考）+ 订阅套餐 key 实测。
+> **2026-09-23 增补**（simple-ai-writer，对照 09-22 版文档：新增 5.0 flash、透明背景两款都收）：套餐 key
+> 31 次零成本探测 + 4 张计费；见下文「5.0 pro / flash 的透明背景」「不支持的参数都在出图前 400」。
 > 供应商行（按量/套餐两个 base、套餐挑拼写、`ep-…` 接入点）见第 1 篇 §9.3。
 > 控制台文档是 SPA：WebFetch 只拿到标题，要浏览器渲染后取正文。
 
@@ -244,20 +246,28 @@ body 是**超集且缺字段**——没有 `n`/`quality`，参考图走 JSON 的
 | 版本 | 档位 | 参考图 | 组图 | 输出格式 | 提示词优化 | 联网搜索 | 专属 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 5.0 pro | 1K·1.5K·2K | 10 | ✗ | png/jpeg | standard/fast | ✗ | 图层拆分、透明背景 |
+| 5.0 flash | 1K·1.5K·2K（与 pro 同表同区间） | 10 | ✗ | png/jpeg | standard | ✗ | 图层拆分、透明背景【文档 2026-09】；**套餐 key 不服务**（三种拼法 404，只在按量） |
 | 5.0 lite | 2K·3K·4K | 14 | ✓ | png/jpeg | standard | ✓（`tools:[{type:"web_search"}]`） | — |
 | 4.5 | 2K·4K | 14 | ✓ | 仅 jpeg | standard | ✗ | — |
 | 4.0 | 1K·2K·4K | 14 | ✓ | 仅 jpeg | standard/fast | ✗ | — |
 
-  发了不支持的字段就是 400——`output_format` 只能发给 5.0，`fast` 只能发给 5.0 pro / 4.0。
+  发了不支持的字段就是 400——`output_format` 只能发给 5.0，`fast` 只能发给 5.0 pro / 4.0
+  （lite 实测 400「optimize_prompt_options.mode must be 'standard'」【实测 2026-09-23】）。
+  flash 与 pro 参数表相同、只少 `fast`，客户端可复用 pro 的尺寸方言，但「能否 fast」要单独判。
 - **组图**：`sequential_image_generation:"auto"` + `sequential_image_generation_options.max_images`
   （1–15，**默认 15**）。`auto` 时模型**自行决定**画几张，`max_images` 只是上限；且**参考图数 +
   生成数 ≤ 15**——客户端发送前按参考图数收紧上限，不要让端点 400。
 - **参考图**：URL 或 `data:image/<fmt>;base64,…`，**`<fmt>` 必须小写**（`image/PNG` 被拒）。
+- **张数上限数的是全部输入图**：pro 11 张 → 400「number of reference images cannot exceed 10」，
+  lite 15 张 →「cannot exceed 14」【实测 2026-09-23】。改图时**被改的源图也占一张**（它和参考图走
+  同一个 `image` 字段）——只数「参考图」的校验会放过「源图 + 满额参考图」，在用户批准、以为要
+  画了之后才 400。
 - **5.0 pro 专属任务是互斥模式，不是开关组合**：`layer_decomposition:true`（底图 + 最多 16 个
   带透明通道的图层，`data[]` 按 `z_index` 排，图层带 `name` 与 `bounding_box`；任一层失败 = 整个
   请求失败；`size` 只收档位或 `auto`）与 `background:"transparent"`（只用于图生图，输出恒 png，
   同时发 `output_format:jpeg` 报错）。二者都要求**恰好 1 张参考图**（透明背景还要求它带 alpha）——
-  这是纯客户端能判定的前置条件，**发请求前检查**并抛不重试、不计费的错误，别花一次调用去换一个 400。
+  这是纯客户端能判定的前置条件，**发请求前检查**并抛不重试、不计费的错误，别花一次调用去换一个 400
+  （但「带 alpha」只能部分预判，见下「透明背景」）。
   UI 上收成一个「任务：生成 / 拆图层 / 透明编辑」的分段控件。编辑选区没有字段，写在 prompt 里：
   `<bbox>x1 y1 x2 y2</bbox>` / `<point>x y</point>`（0–1000 归一化）。
 - **响应**：`data[]` 每项 `url`（**24 小时过期**，当场下载，§6）或 `b64_json`，加 `size`。
@@ -275,6 +285,42 @@ body 是**超集且缺字段**——没有 `n`/`quality`，参考图走 JSON 的
 - **免费探测一个模型能不能用**：发一个非法 `size`（如 `"1x1"`）。支持的模型在生成前就回
   `400 InvalidParameter`（消息里写该模型的最小像素），不支持的回 `404 UnsupportedModel`——
   一次零成本的请求区分「套餐没开这个模型」与「参数错」，比真画一张便宜（第 6 篇 §8 的纪律）。
+
+### 5.0 pro / flash 的透明背景（`background:"transparent"`，2026-09-23 实测 pro）
+
+- **校验规则**（全部出图前 400、零成本；`param` 点名字段）【实测 2026-09-23】：
+  - 无图或两张以上 →`param:"background"`「transparent background requires exactly one input image」；
+  - 同时 `output_format:"jpeg"` → `param:"output_format"`「must be png when background is transparent」——
+    **要 png 就必须明发** `output_format:"png"`，两个字段成对出现；
+  - RGB PNG、**无 tRNS 的调色板 PNG**、或带 alpha 通道但每个像素都不透明的 PNG →
+    `param:"image"`「transparent background requires a PNG input with at least one transparent pixel」。
+    上游是**解码后**判定的：PNG 头部（color type 4/6、tRNS）只能说「可能透明」。客户端只读头部时，
+    这条 400 免费，正确做法是**去掉 `background` 与 `output_format` 重试一次**——没有透明像素就没有可保留
+    的东西，画出来与不带这两个字段一样；不要在客户端全量解码只为省一次免费 400。
+- **语义：保证的是「结果背景透明」，不是锁住原图轮廓**【实测 2026-09-23，各 1 张计费】：
+  - 透明底红圆「改成蓝色」→ png，圆外全透明 ✅；
+  - 透明底向右箭头「改成竖直向上」→ 按新形状重画，新箭尖处（源图透明）不透明、旧箭杆处变透明 ✅——
+    主体可以变形、换姿势；
+  - 透明底红圆「加上蓝天白云背景」→ 圆外**依旧全透明**，天空被画进了圆里、上半圆成了天空，200、计费 ❌。
+    「要一张填满的背景」与透明模式的承诺矛盾，模型不报错，折中成在主体里画背景——**静默**（坑 130）。
+  - 所以「输入是透明 PNG 就自动开」是错的，按提示词关键词判断是多语种猜测；要不要填满背景只有写指令的一方知道
+    （参考实现：改图工具加 `keep_transparency` 参数，默认保留，要背景时由 agent 设 `false`）。
+    只对**改图**开：只带参考图的新生成，参考图的透明背景不是结果要保留的。
+- 响应 `data[]` 多 `output_format:"png"`；`usage.input_images:1`。
+- 早先写法「透明模式锁死原图 alpha 遮罩」是本次初判、被箭头改向实测推翻（simple-ai-writer 同日更正）。
+
+### 不支持的参数都在出图前 400，报错点名字段（2026-09-23，套餐 key）
+
+| 请求 | 回应 |
+| --- | --- |
+| pro `sequential_image_generation:"auto"` / `stream:true` / `tools:[{type:"web_search"}]` | 各 400 `param` 为该字段，「is not supported by the current model」 |
+| lite `optimize_prompt_options.mode:"fast"` | 400「mode must be 'standard'」 |
+| pro/lite `output_format:"webp"` | 400「must be one of: jpeg, png」 |
+| 5.0 flash（`doubao-seedream-5.0-flash` / `-5-0-flash` / `-5-0-flash-260915`）、4.5、4.0 | 套餐 404 `UnsupportedModel` |
+
+对探测的意义：一个参数「收不收」可以配一个**别处必错**的字段（非法 `size`、`output_format:"gif"`）零成本问出来——
+但只有**先于必错字段校验**的那个才会点名；校验顺序不固定（lite 先报 `size`，pro 先报 `background`），报的
+是别的字段就等于没问到，不能当「收下」。
 
 ### 流式出图（`stream:true`，2026-09-18 实测 5.0 lite）
 
@@ -437,7 +483,7 @@ data: [DONE]
   （图像输入单价与文本不同：$8/M vs $5/M，`input_tokens_details.image_tokens` 有明细）。**张数要在组完请求体之后数**：
   按上限截断、再丢掉读不出的附件——截断后的长度会为没发出去的图收钱。**一张没交付就不该收输入费**（方舟明说失败免费）。
   失败 / 被审核拦下的请求上游是否仍收输入费：【未验】——失败的回包走不到记账，只能对账单。
-- **计费相关的请求默认值要明发**（与 14 §3.6 同一条）：xAI 不带 `quality` 按 Medium 计（$0.06），不是标价表第一格的
+- **计费相关的请求默认值要明发**（与 14 §3 第 6 条同一条）：xAI 不带 `quality` 按 Medium 计（$0.06），不是标价表第一格的
   Low（$0.04）；只发分辨率、本地按「表第一行」估价，会把每张图**低估三分之一**而不报错（坑 123）。默认值写死并发出去，
   用量记录才带得上规格。
 - **记账读的中性键是保留键。** 记账层对所有厂商一视同仁地读 `input_image_count` / `reported_cost_usd` 这类**应用自己**的键；
@@ -489,7 +535,9 @@ data: [DONE]
       `宽*高`；错误解析兼容顶层 `{code,message}` 与 `{error:{…}}` 两种形状。
 - [ ] ark route（火山方舟 Seedream）：`watermark` 恒明发（上游默认 true）；档位与 `WxH` 不混发，
       选了比例才查表发像素；按版本出参数表，不支持的字段不发；`max_images` 按参考图数收紧；
-      5.0 pro 的拆图层/透明背景在发请求前校验「恰好 1 张参考图」；组图单项 `error` 不判整次失败；
+      5.0 pro 的拆图层/透明背景在发请求前校验「恰好 1 张参考图」；参考图上限把改图的源图算进去；
+      透明背景成对发 `background` + `output_format:"png"`，「无透明像素」400 去字段重试一次，要填满背景的
+      改图不开透明（判定交给写指令的一方）；组图单项 `error` 不判整次失败；
       计费按 `generated_images`，`output_tokens` 不进 token 用量键；超时随张数放宽。
 - [ ] ark 流式：只对声明了流式的版本、只在官方渠道发 `stream:true`；首块与后续块按单图期限计；
       SSE/JSON 按 body 首行判断；已知事件不做信封检查；边到边存、按已送达记账。

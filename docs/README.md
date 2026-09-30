@@ -43,32 +43,40 @@ Required reading before touching the subsystem each one covers.
 three orthogonal axes (family / deployment / compatibility layer), and a file
 per topic — [tools](api/tools.md), [streaming](api/streaming.md),
 [reasoning](api/reasoning.md), [usage](api/usage.md),
-[structured output](api/structured.md) — plus one per vendor whose wire is its
-own ([Qianwen/DashScope](api/qianwen-bailian.md), [MiniMax](api/minimax.md),
+[structured output](api/structured.md), [Responses](api/responses.md) — plus
+one per vendor whose wire is its own ([Qianwen/DashScope](api/qianwen-bailian.md),
+[MiniMax](api/minimax.md), [Volcengine Ark / Seedream](api/volcengine-ark.md),
 [Veo](api/veo.md), [Gemini](api/gemini-api.md),
 [Gemini images](api/google-api-standard.md)).
 
 ## AI agent playbook
 
-[`ai-agent-playbook/README.md`](ai-agent-playbook/README.md) — an audit
-playbook and vendor index, the protocol layer (all four families, Responses
-included), the agent runtime, sub-agents and long sessions, image / video
-generation and speech recognition, with two
+[`ai-agent-playbook/README.md`](ai-agent-playbook/README.md) — five layers:
+process (an [audit playbook](ai-agent-playbook/00-audit-playbook.md), two staged
+roadmaps — [protocol](ai-agent-playbook/12-migration-roadmap.md) /
+[agent](ai-agent-playbook/12b-agent-roadmap.md) — and the
+[knowledge-ingestion protocol](ai-agent-playbook/30-knowledge-ingestion.md));
+conclusion matrices ([platforms](ai-agent-playbook/20-platform-matrix.md),
+[model × platform × face](ai-agent-playbook/22-model-capability-matrix.md),
+[image / video / ASR](ai-agent-playbook/23-media-matrix.md),
+[open questions](ai-agent-playbook/31-open-questions.md)); the prose itself
+(protocol layer, all four families with Responses included; agent runtime,
+sub-agents and long sessions; media generation and speech recognition); two
 [pitfall catalogues](ai-agent-playbook/11-pitfalls.md) (protocol /
-[agent](ai-agent-playbook/11b-agent-pitfalls.md)) and two staged roadmaps
-([protocol](ai-agent-playbook/12-migration-roadmap.md) /
-[agent](ai-agent-playbook/12b-agent-roadmap.md)). It is a snapshot of two
-skills' references — `ai-agent-architecture` and `agent-runtime-architecture`
-(synced 2026-09-22); re-sync it from there rather than editing it here.
-[`writeback-2026-09-22.md`](ai-agent-playbook/writeback-2026-09-22.md) holds
-facts this repo measured that are not yet in the skill; it goes when they are.
+[agent](ai-agent-playbook/11b-agent-pitfalls.md)); and a
+[changelog](ai-agent-playbook/CHANGELOG.md). It is a snapshot of two skills'
+references — `ai-agent-architecture` (v2.1.0) and `agent-runtime-architecture`
+(synced 2026-09-30); re-sync it from there rather than editing it here. Facts
+this repo measures go into the skill first (per its ingestion protocol), then
+come back with the next sync.
 
 ## Plans and the ledger
 
 [`plans/README.md`](plans/README.md) — which rounds landed, where their
-conclusions now live, and **what is still owed**: the six checks that need a
-real API key, three design gaps left out of the model-editor round, and two
-security findings that are still open.
+conclusions now live, and **what is still owed**, grouped by round: the
+checks that need a real API key (each with its pass/fail criterion), the
+deliberate departures from each design brief, and what the security round
+chose not to encrypt and why.
 
 ## Tooling
 
