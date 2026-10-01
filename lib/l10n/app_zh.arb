@@ -968,6 +968,8 @@
   "cookieHistoryClearAll": "全部清除",
   "cookieHistoryPairs": "{count} 对",
   "cookieHistoryEmptyDesc": "粘贴过的 Cookie 会记在这里，方便下次同一站点复用。",
+  "usageTokenBreakdown": "Token 构成",
+  "usageTotalTokens": "总 Token",
   "usage": "用量",
   "tokenUsageMetrics": "Token 使用统计",
   "clearAllUsage": "清除所有使用数据？",

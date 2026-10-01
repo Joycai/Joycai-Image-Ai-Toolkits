@@ -1375,6 +1375,12 @@ class AppLocalizationsEn extends AppLocalizations {
       'Cookies you paste are remembered here for the same site next time.';
 
   @override
+  String get usageTokenBreakdown => 'Token breakdown';
+
+  @override
+  String get usageTotalTokens => 'Total tokens';
+
+  @override
   String get usage => 'Usage';
 
   @override

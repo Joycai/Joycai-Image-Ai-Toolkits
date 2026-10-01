@@ -1332,6 +1332,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get cookieHistoryEmptyDesc => '貼り付けた Cookie はここに記録され、同じサイトで再利用できます。';
 
   @override
+  String get usageTokenBreakdown => 'トークン内訳';
+
+  @override
+  String get usageTotalTokens => '合計トークン';
+
+  @override
   String get usage => '使用状況';
 
   @override

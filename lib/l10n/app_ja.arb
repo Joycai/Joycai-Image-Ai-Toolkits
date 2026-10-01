@@ -905,6 +905,8 @@
   "cookieHistoryClearAll": "すべて消去",
   "cookieHistoryPairs": "{count} 組",
   "cookieHistoryEmptyDesc": "貼り付けた Cookie はここに記録され、同じサイトで再利用できます。",
+  "usageTokenBreakdown": "トークン内訳",
+  "usageTotalTokens": "合計トークン",
   "usage": "使用状況",
   "tokenUsageMetrics": "トークン使用状況メトリクス",
   "clearAllUsage": "すべての使用状況データをクリアしますか？",
