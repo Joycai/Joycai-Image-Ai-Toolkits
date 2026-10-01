@@ -64,6 +64,7 @@ Work through these in order — every step is required:
 - [ ] 9. Use the key in Dart via `l10n.myKey` or `AppLocalizations.of(context)!.myKey`
 - [ ] 10. Run: `dart format lib test tool` — gate 0 (page width 100, from `analysis_options.yaml`)
 - [ ] 11. Run: `flutter analyze` — must report **"No issues found!"**
+- [ ] 12. Run: `flutter test -x screenshots` — the test gate in `AGENTS.md`
 
 ## ARB Format
 

@@ -13,7 +13,7 @@ filing system:
 Anything that is a dated snapshot of the code (an audit with `file:line`
 references, a phase-completion note, a conformance table) does not get a home
 here. It goes stale within one refactor and is more misleading than absent —
-run `/code-review` or `/security-review` for a fresh one instead.
+request a fresh code review or security review instead.
 
 ---
 
@@ -77,6 +77,21 @@ conclusions now live, and **what is still owed**, grouped by round: the
 checks that need a real API key (each with its pass/fail criterion), the
 deliberate departures from each design brief, and what the security round
 chose not to encrypt and why.
+
+## Codex project setup
+
+[`../AGENTS.md`](../AGENTS.md) is the canonical project instruction file.
+Repository skills live in [`../.agents/skills/`](../.agents/skills/), including the
+five project workflows for localization, task types, providers, versions, and builds.
+Codex discovers these files; if migrated skills do not appear in an existing session,
+start a fresh chat in this repository.
+
+No project-specific Codex configuration is required by the current setup. Personal
+model, sandbox, approval, and MCP preferences stay in the user's Codex configuration.
+Claude's local command approvals are not portable Codex configuration; the ignored
+`.claude/settings.local.json` and existing `.claude/worktrees/` remain local.
+The external playbook source skills listed above are needed only for a requested
+re-sync; the checked-in playbook remains readable without installing them.
 
 ## Tooling
 

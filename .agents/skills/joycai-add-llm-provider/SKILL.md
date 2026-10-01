@@ -17,7 +17,7 @@ The LLM stack is three layers (required reading:
 
 1. **Protocol** (`lib/services/llm/protocols/`) — a wire format: endpoint
    shape, payload, response/stream parsing. Families: `openai`, `gemini`,
-   `midjourney`.
+   `anthropic`, `midjourney`, `dashscope` (see `vendors/vendor_profile.dart`).
 2. **Vendor** (`lib/services/llm/vendors/`) — a supplier of a protocol
    family: auth scheme, surface overrides. `VendorProfile.id` is stored in
    `llm_channels.type`.
@@ -49,7 +49,7 @@ a new vendor.
       than one entry automatically surfaces the per-model protocol selector
       (`llm_models.wire_protocol`). Never branch on `vendor.id` inside a
       protocol.
-- [ ] 3. UI preset: `widgets/models/channel_provider_presets.dart`
+- [ ] 3. UI preset: `lib/widgets/models/channel_provider_presets.dart`
       `kChannelProviderPresets` (+ provider title l10n via the `joycai-l10n`
       skill). Pick the `group` — `vendor` (official, endpoint prefilled) /
       `relay` (protocol known, host is the user's) / `custom` / `local` — and
@@ -67,7 +67,7 @@ a new vendor.
       `model_capabilities.dart` (ParamSpec tables) and, if a new family is
       needed, `model_family.dart` + the dispatcher routing.
 - [ ] 5. `dart format lib test tool`, then `flutter analyze` — must report **"No issues found!"**
-- [ ] 6. `flutter test` — the vendor auth tests live in
+- [ ] 6. `flutter test -x screenshots` — the vendor auth tests live in
       `test/services/llm/google_auth_headers_test.dart`; add cases for a new auth scheme.
 
 ## Checklist B — new protocol
@@ -82,7 +82,8 @@ a new vendor.
       `target.decorateUrl()` for auth, `target.model.capabilities` for
       limits, `target.config.createClient()` for proxy-aware HTTP (close it
       in `finally`). No vendor-id branches, no modelId sniffing.
-- [ ] 3. Add a `ProtocolFamily` value and extend every switch in
+- [ ] 3. Add a `WireProtocol` value in `vendors/vendor_profile.dart`; add a
+      `ProtocolFamily` only if the auth/discovery shape is genuinely new. Extend the relevant switches in
       `llm_dispatcher.dart` (generate / generateStream / startLongRunning /
       checkOperation / discoverModels).
 - [ ] 4. Add the vendor profile(s) serving the protocol (Checklist A).
@@ -90,7 +91,7 @@ a new vendor.
       payload — `LLMService._recordUsage` understands OpenAI
       (`prompt_tokens`/`completion_tokens`) and Google
       (`promptTokenCount`/`candidatesTokenCount`) keys.
-- [ ] 6. `dart format lib test tool`, `flutter analyze` + `flutter test`.
+- [ ] 6. `dart format lib test tool`, `flutter analyze`, then `flutter test -x screenshots`.
 
 ## Key types
 
@@ -117,5 +118,5 @@ LLMResponseChunk(textPart: ..., imagePart: ..., metadata: ..., isDone: ...)
 - `protocols/gemini_veo_protocol.dart` — async job (submit + poll).
 - `protocols/midjourney_protocol.dart` — fully custom wire format hidden
   behind the ChatProtocol shape (submit-poll loop inside generate()).
-- `vendors/vendors.dart` — the seven existing profiles, including xAI's
+- `vendors/vendors.dart` — the current vendor registry, including xAI's
   surface-override pattern.
