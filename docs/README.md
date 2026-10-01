@@ -32,6 +32,9 @@ Required reading before touching the subsystem each one covers.
   where the tokens live, why the greys never follow the accent, the three
   forms the accent may take, the glass grades and their budget, and the
   deliberate divergences from the design spec.
+* **[Codex UI design workflow](architecture/ui-design-workflow.md)** — how Codex
+  continues UX/UI design in the same visual system, writes implementable briefs,
+  and reviews real Flutter renders across sizes, themes and interaction states.
 * **[Keyboard shortcuts](architecture/keyboard-shortcuts.md)** — the three
   tiers a key can be claimed at, why anything acting on a selection belongs to
   a focus region rather than to a screen, the text-field gate that has no
@@ -82,7 +85,7 @@ chose not to encrypt and why.
 
 [`../AGENTS.md`](../AGENTS.md) is the canonical project instruction file.
 Repository skills live in [`../.agents/skills/`](../.agents/skills/), including the
-five project workflows for localization, task types, providers, versions, and builds.
+project workflows for UI design, localization, task types, providers, versions, and builds.
 Codex discovers these files; if migrated skills do not appear in an existing session,
 start a fresh chat in this repository.
 

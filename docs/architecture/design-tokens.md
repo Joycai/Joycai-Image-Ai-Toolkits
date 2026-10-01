@@ -1,6 +1,12 @@
 # 设计令牌、多主题色与液态玻璃
 
-设计源：Claude Design 项目 `925a4d48-684e-4733-bca2-1aa808b7e18f`，2026-09 界面翻新那一批文件——`00 设计系统`、`01 全局壳层`、`A1 工作台-图像` …。每个文件末尾有一段 mono 规格汇总，**以汇总为准**；帧号（`1c`、`1f` …）指向文件内的帧。旧的《Joycai 设计规范》（蓝色冷灰那一版）已废弃，不要再拿它的数字。
+**当前维护：Codex。** 新的 UX/UI 设计、实现与视觉复核按
+[Codex UI 设计流程](ui-design-workflow.md)执行，使用 `joycai-ui-design` skill。
+本文与现有令牌、组件、契约测试共同构成当前标准；下方 Claude Design 项目及帧号
+保留为历史设计来源，不是新工作必须连接的服务。未拿到原稿时，明确说明依据是仓库
+规格与实际渲染，不宣称已与原稿逐帧对照。已记录的偏离仍然有效。
+
+历史设计源：Claude Design 项目 `925a4d48-684e-4733-bca2-1aa808b7e18f`，2026-09 界面翻新那一批文件——`00 设计系统`、`01 全局壳层`、`A1 工作台-图像` …。原项目现已不可用；下文帧号（`1c`、`1f` …）只标识历史来源。**当前规格从仓库代码、契约测试和本文重建，实际外观以 Flutter 渲染复核。** 若三者冲突，先核对已记录的偏离与测试再明确裁定，不把实现中的偶然缺陷升格为设计规则。旧的《Joycai 设计规范》（蓝色冷灰那一版）已废弃，不要再拿它的数字。
 
 > 动本文件涉及的任何令牌前，先读这里。`test/core/design_tokens_test.dart`、`test/core/app_color_scheme_test.dart`、`test/core/app_theme_text_theme_test.dart` 把下面的规则钉住了；`test/screenshots/component_gallery_test.dart` 在 8 个预设 × 明暗下各出一张图，是唯一能看出一条颜色规则换了主题色是否还成立的办法。
 
@@ -17,6 +23,29 @@
 | `lib/widgets/glass/glass_controls.dart` | 玻璃条上的控件：`GlassSegmented`、`GlassIconButton`、`GlassDivider`、`GlassFab`、`measureGlassText` |
 
 分工：**编译期不变量写成 `const`；随明暗变化的颜色是 `ColorScheme` 角色、ThemeExtension 或 `AppAccent` 上的派生。** 界面代码里不出现十六进制色值，不出现阶梯之外的数。
+
+## 仓库内的组件与设计参考
+
+这一索引与代码一起维护，替代不可用设计项目的组件导航。数值仍由上表的令牌文件
+维护，不另复制一套配置。组件全景由 `test/screenshots/component_gallery_test.dart`
+渲染到 `build/ui-screenshots/`；真实页面与交互状态由同目录的 `app_screens_*_test.dart`
+渲染，使用方法见 [截图工具](../ui-screenshot-harness.md)。
+
+| 设计对象 | 复用入口（相对 `lib/widgets/`） |
+|---|---|
+| 按钮与图标动作 | `ui/app_button.dart`、`ui/app_icon_button.dart` |
+| 输入、搜索、选择、字段尺寸 | `ui/app_text_field.dart`、`ui/app_search_field.dart`、`ui/app_dropdown.dart`、`ui/app_labelled_field.dart`、`ui/app_field_size.dart` |
+| 分段、开关、设置行 | `ui/app_segmented_control.dart`、`ui/app_switch.dart`、`ui/app_setting_row.dart` |
+| 卡片、标题、空状态 | `ui/app_card.dart`、`ui/app_section_label.dart`、`ui/app_empty_state.dart` |
+| 对话框、侧面板、通知 | `ui/app_dialog.dart`、`ui/app_side_panel.dart`、`ui/app_snackbar.dart` |
+| Markdown 与编辑器 | `ui/app_markdown.dart`、`ui/markdown_editor.dart`、`ui/markdown_editor_large.dart` |
+| 焦点区、快捷键标识、中性标记 | `ui/focus_pane.dart`、`ui/app_key_label.dart`、`ui/app_neutral_marker.dart` |
+| 玻璃材质、控件、菜单 | `glass/app_glass.dart`、`glass/glass_controls.dart`、`glass/app_glass_menu.dart` |
+| 拖放、重排与跟随件 | `drag/app_drop_zone.dart`、`drag/app_reorder_gap.dart`、`drag/app_drag_follower.dart` |
+| 全局壳层、导航与背景 | `shell/app_window_frame.dart`、`shell/app_top_bar.dart`、`shell/phone_dock.dart`、`shell/nav_lens_group.dart`、`shell/baked_backdrop.dart` |
+
+组件图不能代替真实菜单、路由、焦点与平台交互检查；涉及这些行为时补对应页面状态。
+新界面先寻找已有的同义组件，跨功能复用的原语才进设计系统目录，业务专属控件留在所属屏幕。
 
 ## 0 · 灰阶：一张固定的暖石灰表，与主题色无关
 

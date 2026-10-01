@@ -8,7 +8,7 @@ around a multi-vendor LLM layer, for artists and designers working with AI media
 ## Codex workflow
 
 This file is the canonical repository guidance. Project skills are discovered from
-`.agents/skills/`; use `joycai-l10n`, `joycai-add-task-type`,
+`.agents/skills/`; use `joycai-ui-design`, `joycai-l10n`, `joycai-add-task-type`,
 `joycai-add-llm-provider`, `bump-version`, or `update-build-count` for their
 respective workflows. The Dart/Flutter skills in the same directory are reusable
 guidance; this repository's architecture rules and verification gates apply to them.
@@ -104,6 +104,7 @@ tried and rejected.
 
 | Touching… | Read first |
 |---|---|
+| designing, reviewing or improving UX/UI | [docs/architecture/ui-design-workflow.md](docs/architecture/ui-design-workflow.md) and the `joycai-ui-design` skill — Codex continues the existing visual system, from brief through rendered review |
 | anything under `lib/services/llm/` | [docs/architecture/llm-three-layer.md](docs/architecture/llm-three-layer.md) — layering, routing table, greppable red-flag list |
 | `services/assistant/` (esp. `assistant_context_window.dart`), `context_budget.dart`, `knowledge_base_service.dart` | [docs/architecture/assistant-context.md](docs/architecture/assistant-context.md) — elide/compact layers, `context_window` tri-state, knowledge paging |
 | `design_tokens.dart`, `app_semantic_colors.dart`, `app_theme.dart`, any accent/status colour in `widgets/` | [docs/architecture/design-tokens.md](docs/architecture/design-tokens.md) — one spec blue → 8 seeds, `onAccentTint`, alpha ladder, colours that must *not* follow the seed |
@@ -193,6 +194,10 @@ file name. `test/app/` takes whole-app/navigation tests with no single screen;
 
 ### UI
 
+- **Design continuity:** use `joycai-ui-design` for UX/UI work. Preserve the warm-stone
+  neutrals, paired accents, token scales and control-layer glass in the design-token
+  note. Codex owns new design briefs and implementation reviews; historical Claude
+  Design frame IDs remain provenance. Do not require the old design service for new work.
 - **Responsive:** every change must work on Mobile (<600px), Tablet (<1000px) and Desktop
   (≥1000px) via `Responsive`/`ResponsiveBuilder` (`lib/core/responsive.dart`). File Browser
   and Downloader are hidden on mobile *platforms* (`desktopOnly` in
