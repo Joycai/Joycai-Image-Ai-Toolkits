@@ -1,4 +1,6 @@
 {
+  "usageTokenBreakdown": "Token 构成",
+  "usageTotalTokens": "总 Token",
   "usage": "用量",
   "tokenUsageMetrics": "Token 使用统计",
   "clearAllUsage": "清除所有使用数据？",

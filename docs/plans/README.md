@@ -25,6 +25,14 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 |---|---|
 | [`2026-08-assistant-timeout.md`](2026-08-assistant-timeout.md) | 不是施工说明书，是**一次真实故障的取证记录**（`api_logs/` 里七条日志的耗时还原）。`architecture/assistant-context.md` 直接引它作为「为什么要早elide」的证据。 |
 
+## 2026-10-01 · 用量图表
+
+用量摘要改为 Token 构成圆环（输入 / 缓存输入 / 输出，保留精确计数及占比）与缓存命中率圆环。
+构成分母是全部 Token，命中率分母仅是输入 + 缓存输入；无输入时仍显示「—」。
+布局按卡片可用宽度降级：桌面横排、iPad 成本在上而图表并排、窄窗/手机堆叠，手机命中率卡采用较小圆环。
+实现位于 `screens/metrics/widgets/usage_summary.dart` 与 `usage_token_charts.dart`；截图补齐窄屏暗色和日语 Orange 主题。
+仅验证桌面宿主的各宽度渲染，未验证原生 iPad/iPhone 设备。
+
 ## 已执行（不要重复立项）
 
 | 方案 | 做了什么 | 结论现在住在哪 |

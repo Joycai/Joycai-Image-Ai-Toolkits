@@ -905,6 +905,8 @@
   "cookieHistoryClearAll": "全部清除",
   "cookieHistoryPairs": "{count} 組",
   "cookieHistoryEmptyDesc": "貼上過的 Cookie 會記在這裡，方便下次同一網站重複使用。",
+  "usageTokenBreakdown": "Token 組成",
+  "usageTotalTokens": "總 Token",
   "usage": "用量",
   "tokenUsageMetrics": "Token 用量指標",
   "clearAllUsage": "要清除所有用量資料嗎？",

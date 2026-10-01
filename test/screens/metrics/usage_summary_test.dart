@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/screens/metrics/widgets/usage_stats.dart';
 import 'package:joycai_image_ai_toolkits/screens/metrics/widgets/usage_summary.dart';
+import 'package:joycai_image_ai_toolkits/screens/metrics/widgets/usage_token_charts.dart';
 
 /// Renders the usage summary block.
 ///
@@ -54,6 +55,8 @@ void main() {
 
   for (final entry in {
     'Mobile': (const Size(390, 844), true),
+    'iPad landscape': (const Size(1024, 768), false),
+    'Split view': (const Size(600, 900), true),
     'Tablet': (const Size(820, 1180), true),
     'Desktop': (const Size(1280, 800), false),
     'Wide desktop': (const Size(1920, 1080), false),
@@ -80,8 +83,14 @@ void main() {
     await pumpSummary(tester, stats(input: 750, cache: 250), const Size(1920, 1080));
 
     expect(find.text('25.0%'), findsOneWidget);
-    final meter = tester.widget<LinearProgressIndicator>(find.byType(LinearProgressIndicator));
+    final meter = tester.widget<CircularProgressIndicator>(find.byType(CircularProgressIndicator));
     expect(meter.value, closeTo(0.25, 1e-9));
+    final chart = tester.widget<CustomPaint>(find.byKey(const ValueKey('usage-token-donut')));
+    final painter = chart.painter! as UsageTokenDonutPainter;
+    // The output participates in composition, but never in cache hit rate.
+    expect(painter.shares[0], closeTo(750 / (1000 + 55319), 1e-9));
+    expect(painter.shares[1], closeTo(250 / (1000 + 55319), 1e-9));
+    expect(painter.shares.fold<double>(0, (sum, share) => sum + share), closeTo(1, 1e-9));
   });
 
   testWidgets('shows a dash, not 0%, when nothing was billed by token', (tester) async {
@@ -95,7 +104,7 @@ void main() {
 
     expect(find.text('—'), findsOneWidget);
     expect(find.text('0.0%'), findsNothing);
-    final meter = tester.widget<LinearProgressIndicator>(find.byType(LinearProgressIndicator));
+    final meter = tester.widget<CircularProgressIndicator>(find.byType(CircularProgressIndicator));
     expect(meter.value, 0);
   });
 

@@ -13,6 +13,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:joycai_image_ai_toolkits/core/constants.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_segmented_control.dart';
 
 import 'harness/fixture_env.dart';
@@ -24,6 +25,28 @@ void main() {
   setUpScreenSuite((FixtureEnv e) => env = e);
 
   shootMatrix(() => env, const <AppScreen>[AppScreen.models, AppScreen.usage]);
+
+  for (final size in kShotSizes.take(3)) {
+    testWidgets('usage charts @ ${size.label} dark', (tester) async {
+      await shoot(
+        tester,
+        env: env,
+        screen: AppScreen.usage,
+        size: size,
+        brightness: Brightness.dark,
+      );
+    });
+  }
+  testWidgets('usage charts @ tablet orange Japanese', (tester) async {
+    await shoot(
+      tester,
+      env: env,
+      screen: AppScreen.usage,
+      size: kShotSizes[1],
+      locale: const Locale('ja'),
+      accent: AppConstants.presetThemes['Orange'],
+    );
+  });
 
   // The fee-group editor (spec 10j / 10k). Two taps deep behind a tab index
   // that lives in the usage screen's own State, so nothing in AppState can

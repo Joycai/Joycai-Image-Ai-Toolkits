@@ -1327,6 +1327,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cookieHistoryEmptyDesc => '粘贴过的 Cookie 会记在这里，方便下次同一站点复用。';
 
   @override
+  String get usageTokenBreakdown => 'Token 构成';
+
+  @override
+  String get usageTotalTokens => '总 Token';
+
+  @override
   String get usage => '用量';
 
   @override
@@ -7184,6 +7190,12 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get cookieHistoryEmptyDesc => '貼上過的 Cookie 會記在這裡，方便下次同一網站重複使用。';
+
+  @override
+  String get usageTokenBreakdown => 'Token 組成';
+
+  @override
+  String get usageTotalTokens => '總 Token';
 
   @override
   String get usage => '用量';

@@ -2367,6 +2367,18 @@ abstract class AppLocalizations {
   /// **'Cookies you paste are remembered here for the same site next time.'**
   String get cookieHistoryEmptyDesc;
 
+  /// No description provided for @usageTokenBreakdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Token breakdown'**
+  String get usageTokenBreakdown;
+
+  /// No description provided for @usageTotalTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'Total tokens'**
+  String get usageTotalTokens;
+
   /// No description provided for @usage.
   ///
   /// In en, this message translates to:

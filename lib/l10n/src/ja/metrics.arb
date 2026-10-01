@@ -1,4 +1,6 @@
 {
+  "usageTokenBreakdown": "トークン内訳",
+  "usageTotalTokens": "合計トークン",
   "usage": "使用状況",
   "tokenUsageMetrics": "トークン使用状況メトリクス",
   "clearAllUsage": "すべての使用状況データをクリアしますか？",

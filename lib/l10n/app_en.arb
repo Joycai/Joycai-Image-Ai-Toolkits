@@ -1096,6 +1096,8 @@
     }
   },
   "cookieHistoryEmptyDesc": "Cookies you paste are remembered here for the same site next time.",
+  "usageTokenBreakdown": "Token breakdown",
+  "usageTotalTokens": "Total tokens",
   "usage": "Usage",
   "tokenUsageMetrics": "Token Usage Metrics",
   "clearAllUsage": "Clear All Usage Data?",

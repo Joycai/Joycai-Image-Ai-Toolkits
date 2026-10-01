@@ -1,4 +1,6 @@
 {
+  "usageTokenBreakdown": "Token breakdown",
+  "usageTotalTokens": "Total tokens",
   "usage": "Usage",
   "tokenUsageMetrics": "Token Usage Metrics",
   "clearAllUsage": "Clear All Usage Data?",
