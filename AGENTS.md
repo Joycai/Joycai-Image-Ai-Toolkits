@@ -1,15 +1,30 @@
-# CLAUDE.md
+# AGENTS.md
 
 Cross-platform Flutter desktop/mobile app for AI image and video generation, built
 around a multi-vendor LLM layer, for artists and designers working with AI media.
 
 **Version:** 4.28.2 · **Dart SDK:** ^3.11.0 · **Tested on Flutter:** 3.47.2 (CI tracks `stable`)
 
+## Codex workflow
+
+This file is the canonical repository guidance. Project skills are discovered from
+`.agents/skills/`; use `joycai-l10n`, `joycai-add-task-type`,
+`joycai-add-llm-provider`, `bump-version`, or `update-build-count` for their
+respective workflows. The Dart/Flutter skills in the same directory are reusable
+guidance; this repository's architecture rules and verification gates apply to them.
+
+Use `codex/` for new branches. Preserve existing `.claude/worktrees/` checkouts and
+local settings: they can contain independent work and detached commits.
+Long-term decisions belong in the architecture notes and plan ledgers linked below.
+The external source skills for the AI-agent playbook are named in `docs/README.md`;
+report their absence if a re-sync is requested and they are unavailable.
+
 ## Key Commands
 
-```bash
+```text
 flutter pub get                                    # install dependencies
-dart tool/merge_l10n.dart && flutter gen-l10n      # regenerate l10n (after editing .arb files)
+dart tool/merge_l10n.dart                           # merge l10n sources (after editing .arb files)
+flutter gen-l10n                                   # generate l10n only after the merge succeeds
 flutter run                                        # run the app
 dart format lib test tool                          # gate 0 — page width 100, set in analysis_options.yaml
 flutter analyze                                    # gate 1 — must print "No issues found!"
@@ -200,7 +215,10 @@ file name. `test/app/` takes whole-app/navigation tests with no single screen;
 ### Shell
 
 Detect the host OS before running shell commands — no Unix commands on Windows, no
-PowerShell on macOS/Linux, no trial-and-error retries.
+PowerShell on macOS/Linux, no trial-and-error retries. On Windows PowerShell,
+run dependent commands separately and check `$LASTEXITCODE` before continuing;
+a semicolon does not stop after a failed command. Adapt Bash examples to the host
+shell, including `&&` chains and backslash line continuations.
 
 ## Localization
 
@@ -208,7 +226,7 @@ Languages: `en`, `zh`, `zh_Hant`, `ja` — **update all four together** (the `jo
 skill has the checklist).
 
 1. Edit `lib/l10n/src/<lang>/<module>.arb`. **Never** edit `lib/l10n/app_*.arb` — generated.
-2. `dart tool/merge_l10n.dart && flutter gen-l10n`
+2. Run `dart tool/merge_l10n.dart`; after it succeeds, run `flutter gen-l10n`.
 
 ## Extension Patterns
 

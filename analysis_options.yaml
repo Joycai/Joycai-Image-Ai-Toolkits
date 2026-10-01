@@ -2,7 +2,7 @@
 # check for errors, warnings, and lints.
 #
 # `flutter analyze` must report zero issues — info level included — before any
-# commit. See CLAUDE.md, "Development Rules".
+# commit. See AGENTS.md, "Development Rules".
 
 analyzer:
   exclude:

@@ -37,7 +37,7 @@ void main() {
     'l10n': 0,
     // Plain data.
     'models': 1,
-    // Business logic. CLAUDE.md: "Business logic belongs in lib/services/,
+    // Business logic. AGENTS.md: "Business logic belongs in lib/services/,
     // not in widgets or screens."
     'services': 2,
     // The ChangeNotifier singletons, which drive services.

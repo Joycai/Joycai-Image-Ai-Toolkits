@@ -25,7 +25,8 @@ This skill provides a streamlined workflow to increment the build number (the `+
         - Check `README.md` and `README_CN.md` for any specific version+build mentions and update them if they exist.
 4.  **Verification**:
     - Run `flutter pub get` to ensure the `pubspec.lock` is synchronized.
-    - Confirm the changes with the user.
+    - Report the old and new build numbers and the verification result. Follow the
+      gates in `AGENTS.md` if Dart code changed. Commit or push only when requested.
 
 ## Example
 

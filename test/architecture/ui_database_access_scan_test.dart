@@ -48,7 +48,7 @@ void main() {
       isEmpty,
       reason:
           'the UI layer takes its data from a state field, a state method, an injected '
-          'controller or a service (CLAUDE.md, "Take the database, don\'t fetch it"):\n'
+          'controller or a service (AGENTS.md, "Take the database, don\'t fetch it"):\n'
           '  ${offenders.join('\n  ')}',
     );
   });

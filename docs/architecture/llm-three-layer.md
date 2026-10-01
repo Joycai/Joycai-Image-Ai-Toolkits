@@ -355,7 +355,7 @@ LLMService.request(modelIdentifier, messages, ...)
 - **新增模型能力**：只动 Layer 3（`model_capability_tables.dart` 的参数表——`model_capabilities.dart`
   的 part，按 id 分流的 `forModel` / `forProtocol` / `forFamily` 仍在主文件——、
   必要时 `model_family.dart` 的分类规则）。
-- **新增任务类型**：与本层无关，见 CLAUDE.md 的 task type 扩展流程。
+- **新增任务类型**：与本层无关，见 AGENTS.md 的 task type 扩展流程。
 
 ## 硬编码红线（code review 时直接 grep）
 
