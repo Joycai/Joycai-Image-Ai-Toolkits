@@ -14,6 +14,7 @@ import '../models/image_layer.dart';
 import '../services/db/database_service.dart';
 import '../services/db/repositories/image_layer_repository.dart';
 import '../services/files/file_permission_service.dart';
+import '../services/media/image_metadata_service.dart';
 import 'file_browser_state.dart' show FolderFlash;
 
 /// Top-level function for background disk scanning to keep UI smooth.
@@ -463,13 +464,17 @@ class GalleryState extends ChangeNotifier {
     // Verify droppedImages (Temporary Workspace)
     final List<AppImage> existingDropped = [];
     for (final img in droppedImages) {
-      if (await File(img.path).exists()) {
-        existingDropped.add(img);
+      final stat = await File(img.path).stat();
+      if (stat.type == FileSystemEntityType.file) {
+        final version = '${stat.modified.millisecondsSinceEpoch}:${stat.size}';
+        if (version != img.version) {
+          PaintingBinding.instance.imageCache.evict(FileImage(File(img.path)));
+          ImageMetadataService().evict(img.path);
+        }
+        existingDropped.add(AppImage.fromFile(File(img.path), version: version));
       }
     }
-    if (existingDropped.length != droppedImages.length) {
-      droppedImages = existingDropped;
-    }
+    droppedImages = existingDropped;
 
     if (viewMode == GalleryViewMode.folder && viewSourcePath != null) {
       await _scanFolder(viewSourcePath!);
@@ -499,11 +504,12 @@ class GalleryState extends ChangeNotifier {
   /// `[modifiedMs, size]` per path, as of the last scan that covered it.
   final Map<String, List<int>> _fingerprints = {};
 
-  /// Drops the decoded bitmap of every file that actually changed on disk.
+  /// Invalidates full-size previews and metadata for files changed on disk.
   ///
   /// The crop and mask tools overwrite the original, which leaves the path — and
-  /// therefore the image cache key — untouched, so without this the cache keeps
-  /// serving the picture from before the edit. What it used to do was evict
+  /// therefore a plain FileImage cache key — untouched. Thumbnail providers
+  /// carry the scanned version separately so resized entries and mounted tiles
+  /// also reload. What this used to do was evict
   /// *every* scanned path on *every* scan, and the scans are driven by directory
   /// watchers: a batch writing its results made the output watcher fire twice a
   /// second, and each time the whole gallery's decoded bitmaps were thrown away
@@ -525,6 +531,7 @@ class GalleryState extends ChangeNotifier {
         _fingerprints[path] = current;
       } else if (previous[0] != current[0] || previous[1] != current[1]) {
         PaintingBinding.instance.imageCache.evict(FileImage(File(path)));
+        ImageMetadataService().evict(path);
         _fingerprints[path] = current;
       }
     });
@@ -537,7 +544,7 @@ class GalleryState extends ChangeNotifier {
     final scanned = await compute(_scanImagesIsolate, [path]);
     if (_disposed || generation != _folderScanGeneration) return;
     _evictChanged([path], scanned);
-    folderImages = scanned.keys.map((p) => AppImage.fromFile(File(p))).toList();
+    folderImages = scanned.keys.map((path) => _scannedImage(path, scanned[path]!)).toList();
     notifyListeners();
   }
 
@@ -555,7 +562,7 @@ class GalleryState extends ChangeNotifier {
     final scanned = await compute(_scanImagesIsolate, activeSourceDirectories);
     if (_disposed || generation != _sourceScanGeneration) return;
     _evictChanged(activeSourceDirectories, scanned);
-    galleryImages = scanned.keys.map((p) => AppImage.fromFile(File(p))).toList();
+    galleryImages = scanned.keys.map((path) => _scannedImage(path, scanned[path]!)).toList();
     notifyListeners();
   }
 
@@ -593,7 +600,7 @@ class GalleryState extends ChangeNotifier {
       // thread every time the output directory changed.
       final sorted = scanned.keys.toList()
         ..sort((a, b) => scanned[b]![0].compareTo(scanned[a]![0]));
-      processedImages = sorted.map((p) => AppImage.fromFile(File(p))).toList();
+      processedImages = sorted.map((path) => _scannedImage(path, scanned[path]!)).toList();
     } catch (e) {
       processedImages = [];
     }
@@ -606,6 +613,9 @@ class GalleryState extends ChangeNotifier {
     droppedImages = [...droppedImages, ...newFiles];
     notifyListeners();
   }
+
+  AppImage _scannedImage(String path, List<int> fingerprint) =>
+      AppImage.fromFile(File(path), version: '${fingerprint[0]}:${fingerprint[1]}');
 
   /// Drops several pictures out of the temporary workspace at once.
   ///

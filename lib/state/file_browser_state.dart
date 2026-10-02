@@ -11,6 +11,7 @@ import '../models/browser_file.dart';
 import '../services/db/database_service.dart';
 import '../services/files/browser_file_scanner.dart';
 import '../services/files/file_permission_service.dart';
+import '../services/media/image_metadata_service.dart';
 
 enum BrowserViewMode { grid, list }
 
@@ -348,12 +349,14 @@ class FileBrowserState extends ChangeNotifier {
     // Indexed rather than searched: this was a linear `firstWhere` over the
     // previous listing per file, so a directory of a thousand pictures cost
     // half a million comparisons on the UI thread every time the watcher fired.
-    final previousModified = {for (final f in allFiles) f.path: f.modified};
+    final previousFiles = {for (final f in allFiles) f.path: f};
     for (final file in newAllFiles) {
       if (file.category == FileCategory.image) {
-        final existing = previousModified[file.path];
-        if (existing != null && existing != file.modified) {
+        final existing = previousFiles[file.path];
+        if (existing != null &&
+            (existing.modified != file.modified || existing.size != file.size)) {
           PaintingBinding.instance.imageCache.evict(FileImage(File(file.path)));
+          ImageMetadataService().evict(file.path);
         }
       }
     }

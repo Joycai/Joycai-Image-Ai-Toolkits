@@ -115,7 +115,9 @@ class _FileCardState extends State<FileCard> {
   @override
   void didUpdateWidget(FileCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.file.path != oldWidget.file.path) {
+    if (widget.file.path != oldWidget.file.path ||
+        widget.file.modified != oldWidget.file.modified ||
+        widget.file.size != oldWidget.file.size) {
       _dimensions = '';
       if (widget.file.category == FileCategory.image) _getImageDimensions();
     }
@@ -123,8 +125,14 @@ class _FileCardState extends State<FileCard> {
 
   Future<void> _getImageDimensions() async {
     final path = widget.file.path;
+    final modified = widget.file.modified;
+    final size = widget.file.size;
     final metadata = await ImageMetadataService().getMetadata(path);
-    if (metadata != null && mounted && widget.file.path == path) {
+    if (metadata != null &&
+        mounted &&
+        widget.file.path == path &&
+        widget.file.modified == modified &&
+        widget.file.size == size) {
       setState(() => _dimensions = metadata.displayString);
     }
   }

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
+import '../../core/versioned_file_image.dart';
 import '../../models/app_image.dart';
 import '../../models/browser_file.dart';
 
@@ -28,9 +29,10 @@ extension FileCategoryGlyph on FileCategory {
 extension BrowserFileVisuals on BrowserFile {
   IconData get icon => category.icon;
 
-  ImageProvider get imageProvider => FileImage(File(path));
+  ImageProvider get imageProvider =>
+      VersionedFileImage(File(path), version: '${modified.millisecondsSinceEpoch}:$size');
 }
 
 extension AppImageVisuals on AppImage {
-  ImageProvider get imageProvider => FileImage(File(path));
+  ImageProvider get imageProvider => VersionedFileImage(File(path), version: version);
 }
