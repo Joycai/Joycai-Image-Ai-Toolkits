@@ -5,10 +5,18 @@ class AppImage {
   final String path;
   final String name;
 
-  AppImage({required this.path, required this.name});
+  /// Scanned modification time and size; empty before a file has been scanned.
+  /// Selection identity stays path-based across edits.
+  final String version;
 
-  factory AppImage.fromFile(File file) {
-    return AppImage(path: file.path, name: file.path.split(Platform.pathSeparator).last);
+  AppImage({required this.path, required this.name, this.version = ''});
+
+  factory AppImage.fromFile(File file, {String version = ''}) {
+    return AppImage(
+      path: file.path,
+      name: file.path.split(Platform.pathSeparator).last,
+      version: version,
+    );
   }
 
   @override

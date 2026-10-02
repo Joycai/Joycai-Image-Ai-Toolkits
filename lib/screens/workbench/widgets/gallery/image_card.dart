@@ -105,7 +105,8 @@ class _ImageCardState extends State<ImageCard> {
   @override
   void didUpdateWidget(covariant ImageCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.imageFile.path != widget.imageFile.path) {
+    if (oldWidget.imageFile.path != widget.imageFile.path ||
+        oldWidget.imageFile.version != widget.imageFile.version) {
       // Same cache-first rule as initState — a recycled tile usually lands on a
       // file the grid has already measured.
       final known = ImageMetadataService().peek(widget.imageFile.path);
@@ -119,8 +120,12 @@ class _ImageCardState extends State<ImageCard> {
   }
 
   Future<void> _getImageDimensions() async {
-    final metadata = await ImageMetadataService().getMetadata(widget.imageFile.path);
-    if (metadata != null && mounted) {
+    final image = widget.imageFile;
+    final metadata = await ImageMetadataService().getMetadata(image.path);
+    if (metadata != null &&
+        mounted &&
+        widget.imageFile.path == image.path &&
+        widget.imageFile.version == image.version) {
       setState(() {
         _dimensions = metadata.displayString;
       });
