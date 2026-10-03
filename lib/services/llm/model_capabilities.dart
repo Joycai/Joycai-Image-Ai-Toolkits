@@ -6,7 +6,14 @@ import 'vendors/vendor_profile.dart' show WireProtocol;
 
 export 'param_spec.dart';
 
-part 'model_capability_tables.dart';
+part 'generation/profiles/gemini_profiles.dart';
+part 'generation/profiles/openai_profiles.dart';
+part 'generation/profiles/video_profiles.dart';
+part 'generation/profiles/dashscope_profiles.dart';
+part 'generation/profiles/xai_profiles.dart';
+part 'generation/profiles/midjourney_profiles.dart';
+part 'generation/profiles/minimax_profiles.dart';
+part 'generation/profiles/seedream_profiles.dart';
 
 /// Which request body an image model's endpoint expects, when the family
 /// default (one shape per protocol) is not enough.
@@ -150,6 +157,51 @@ class ModelCapabilities {
     _seedream40,
     _seedream30,
   ];
+
+  /// Stable declaration identities, shared by schema snapshots and alias selection.
+  static const Map<String, ModelCapabilities> profiles = {
+    'geminiImage': _geminiImage,
+    'geminiImageLegacy': _geminiImageLegacy,
+    'geminiImagePro': _geminiImagePro,
+    'geminiImageV2': _geminiImageV2,
+    'imagen': _imagen,
+    'openaiImage': _openaiImage,
+    'veoVideo': _veoVideo,
+    'openaiVideo': _openaiVideo,
+    'grokImagineVideo': _grokImagineVideo,
+    'dashscopeWanVideo': _dashscopeWanVideo,
+    'xaiImage': _xaiImage,
+    'xaiImageLegacy': _xaiImageLegacy,
+    'dashscopeQwenImage': _dashscopeQwenImage,
+    'dashscopeQwenImageEditMaxPlus': _dashscopeQwenImageEditMaxPlus,
+    'dashscopeImageFallback': _dashscopeImageFallback,
+    'dashscopeQwenImageFixed': _dashscopeQwenImageFixed,
+    'dashscopeQwenImageEdit': _dashscopeQwenImageEdit,
+    'dashscopeWanImage': _dashscopeWanImage,
+    'dashscopeWanImagePro': _dashscopeWanImagePro,
+    'midjourney': _midjourney,
+    'openaiImage2': _openaiImage2,
+    'openaiImage25': _openaiImage25,
+    'minimaxImage': _minimaxImage,
+    'minimaxVideo': _minimaxVideo,
+    'minimaxH3Base': _minimaxH3Base,
+    'seedream50Pro': _seedream50Pro,
+    'seedream50Lite': _seedream50Lite,
+    'seedream45': _seedream45,
+    'seedream40': _seedream40,
+    'seedream30': _seedream30,
+    'seedreamGeneric': _seedreamGeneric,
+  };
+
+  String get profileId =>
+      profiles.entries
+          .where((entry) => identical(entry.value, this))
+          .map((entry) => entry.key)
+          .firstOrNull ??
+      'chatImage';
+
+  /// Several native video wires share one classification but not one contract.
+  bool supportsVideoProtocol(WireProtocol protocol) => identical(this, forProtocol(protocol));
 
   /// Whether the model accepts any reference images at all.
   bool get supportsReferenceImages => maxReferenceImages != 0;

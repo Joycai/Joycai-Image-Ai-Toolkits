@@ -14,6 +14,9 @@ import 'image_size_vocabulary.dart';
 /// grok-imagine-video's duration parameter (1–15s).
 enum ParamControl { dropdown, segmented, customSize, slider }
 
+/// Semantic representation independent of the UI control and wire string.
+enum ParamValueType { choice, boolean, integer, decimal, size }
+
 /// A single selectable option for a parameter.
 ///
 /// [value] is what gets sent to the provider; the human-readable label is
@@ -33,6 +36,7 @@ class ParamSpec {
   final String key;
   final String labelKey;
   final ParamControl control;
+  final ParamValueType? valueType;
   final List<ParamOption> options;
   final String defaultValue;
 
@@ -56,6 +60,7 @@ class ParamSpec {
     required this.key,
     required this.labelKey,
     required this.control,
+    this.valueType,
     required this.options,
     required this.defaultValue,
     this.sizeRules,

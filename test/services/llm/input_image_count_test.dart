@@ -14,9 +14,9 @@ import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 /// The reference images a request *carried*, as each images protocol
 /// publishes them ([inputImageCountKey]) for spec billing to charge.
 ///
-/// What is pinned per protocol is the number that went into the body — after
-/// the model's cap and after an attachment that cannot be read was dropped —
-/// because a count taken any earlier bills for images nobody received.
+/// Counts describe the bytes sent in valid requests. Excess or unreadable
+/// explicit input is rejected before submission; protocol counters still
+/// protect billing for actual sent and reported inputs.
 void main() {
   late HttpServer server;
   late Map<String, dynamic> Function(HttpRequest request) answer;
@@ -63,14 +63,17 @@ void main() {
     ],
   };
 
-  test('xAI: capped at the model\'s five, less the one that could not be read', () async {
+  test('xAI: valid references are counted; excess and unreadable input are rejected', () async {
     answer = (_) => inline;
     final xai = config(Vendors.xaiApi, 'grok-imagine-image');
 
-    final seven = await generate(xai, List.generate(7, (_) => readable()));
-    expect(seven.metadata[inputImageCountKey], 5);
+    await expectLater(
+      generate(xai, List.generate(7, (_) => readable())),
+      throwsA(isA<LLMApiException>()),
+    );
+    await expectLater(generate(xai, [readable(), unreadable()]), throwsA(isA<LLMApiException>()));
 
-    final oneLost = await generate(xai, [readable(), unreadable(), readable()]);
+    final oneLost = await generate(xai, [readable(), readable()]);
     expect(oneLost.metadata[inputImageCountKey], 2);
   });
 
@@ -84,7 +87,6 @@ void main() {
     answer = (_) => inline;
     final response = await generate(config(Vendors.openAIRest, 'gpt-image-1'), [
       readable(),
-      unreadable(),
       readable(),
     ]);
     expect(response.metadata[inputImageCountKey], 2);
@@ -100,12 +102,11 @@ void main() {
     final minimax = config(Vendors.minimax, 'image-01');
 
     // image-01 takes one reference: the second is cut before it is read.
-    final sent = await generate(minimax, [readable(), readable()]);
+    final sent = await generate(minimax, [readable()]);
     expect(sent.metadata[inputImageCountKey], 1);
 
-    // The cap keeps the first, and the first cannot be read: nothing went.
-    final lost = await generate(minimax, [unreadable(), readable()]);
-    expect(lost.metadata.containsKey(inputImageCountKey), isFalse);
+    await expectLater(generate(minimax, [readable(), readable()]), throwsA(isA<LLMApiException>()));
+    await expectLater(generate(minimax, [unreadable()]), throwsA(isA<LLMApiException>()));
   });
 
   group('an upstream block naming the app\'s own keys is not taken at its word', () {
@@ -152,11 +153,7 @@ void main() {
     final chunks = await LLMDispatcher().generateStream(
       config(Vendors.midjourneyProxy, 'midjourney'),
       [
-        LLMMessage(
-          role: LLMRole.user,
-          content: 'blend',
-          attachments: [readable(), unreadable(), readable()],
-        ),
+        LLMMessage(role: LLMRole.user, content: 'blend', attachments: [readable(), readable()]),
       ],
     ).toList();
     expect(chunks.firstWhere((c) => c.imagePart != null).metadata, {inputImageCountKey: 2});
@@ -180,7 +177,6 @@ void main() {
     };
     final response = await generate(config(Vendors.dashscope, 'qwen-image-edit'), [
       readable(),
-      unreadable(),
       readable(),
     ]);
     expect(response.metadata[inputImageCountKey], 2);
@@ -220,7 +216,7 @@ void main() {
       answer = (_) => ark({'generated_images': 1});
       final response = await generate(
         config(Vendors.volcengineArk, 'doubao-seedream-5-0-lite-260128'),
-        [readable(), unreadable(), readable()],
+        [readable(), readable()],
       );
       expect(response.metadata[inputImageCountKey], 2);
     });

@@ -21,6 +21,9 @@ import '../services/assistant/prompt_provenance.dart';
 import '../services/catalogue/channel_merge.dart';
 import '../services/catalogue/channel_merge_executor.dart';
 import '../services/db/database_service.dart';
+import '../services/llm/generation/generation_preferences.dart';
+import '../services/llm/generation/generation_profile_store.dart';
+import '../services/llm/generation/generation_schema.dart';
 import '../services/llm/llm_debug_logger.dart';
 import '../services/llm/llm_dispatcher.dart';
 import '../services/llm/llm_service.dart';
@@ -409,6 +412,34 @@ class AppState extends ChangeNotifier {
     );
   }
 
+  Map<int, String> _generationProfiles = {};
+  String? generationProfileFor(int? modelId) => _generationProfiles[modelId];
+
+  Future<void> setGenerationProfile(int modelId, String? profile) async {
+    _generationProfiles = {..._generationProfiles}..remove(modelId);
+    if (profile != null) _generationProfiles = {..._generationProfiles, modelId: profile};
+    imageParamsRevision++;
+    videoParamsRevision++;
+    notify();
+    await GenerationProfileStore.write(_db, modelId, profile);
+  }
+
+  GenerationSchema generationSchemaForModel(LLMModel m) {
+    final channel = _channels.where((c) => c.id == m.channelId).firstOrNull;
+    if (channel == null) {
+      final caps = descriptorForModel(m).capabilities;
+      return GenerationSchema(protocol: null, capabilities: caps, profileId: caps.profileId);
+    }
+    final routed = RoutedChannel.forModel(channel, m);
+    return LLMDispatcher.generationSchemaFor(
+      channelType: routed.channelType,
+      modelId: m.modelId,
+      tag: m.tag,
+      wireProtocol: routed.wireProtocol,
+      profile: generationProfileFor(m.id),
+    );
+  }
+
   bool isVideoCompatibleModel(int? modelDbId) {
     if (modelDbId == null) return false;
     final model = _models.cast<LLMModel?>().firstWhere(
@@ -581,6 +612,13 @@ class AppState extends ChangeNotifier {
     }
 
     lastSelectedModelId = await _db.getSetting('last_model_id');
+    final profileModels = await _db.getModels();
+    final profiles = <int, String>{};
+    for (final model in profileModels) {
+      final value = await GenerationProfileStore.read(_db, model.id);
+      if (value != null && model.id != null) profiles[model.id!] = value;
+    }
+    _generationProfiles = profiles;
     await loadImageParams();
     await loadVideoParams();
     lastVideoModelId = await _db.getSetting('last_video_model_id');

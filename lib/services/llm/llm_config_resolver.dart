@@ -4,6 +4,7 @@ import '../../models/llm_model.dart';
 import '../../models/pricing_group.dart';
 import '../../models/spec_rate.dart';
 import '../db/database_service.dart';
+import 'generation/generation_profile_store.dart';
 import 'llm_types.dart';
 import 'model_routes.dart';
 import 'vendors/vendors.dart';
@@ -183,6 +184,8 @@ class LLMConfigResolver {
     final proxyPassword = await _db.getSetting('proxy_password');
 
     return LLMModelConfig(
+      generationProfile: await GenerationProfileStore.read(_db, modelData.id),
+      channelId: channelData.id,
       id: modelData.id,
       modelId: modelId,
       channelType: channelType,

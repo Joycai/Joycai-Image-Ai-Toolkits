@@ -34,6 +34,8 @@ enum ReasoningEffort {
 }
 
 class LLMModelConfig {
+  final String? generationProfile;
+  final int? channelId;
   final int? id; // Database Primary Key
   final String modelId;
 
@@ -159,6 +161,8 @@ class LLMModelConfig {
   final String? proxyPassword;
 
   LLMModelConfig({
+    this.generationProfile,
+    this.channelId,
     this.id,
     required this.modelId,
     required this.channelType,
@@ -204,6 +208,8 @@ class LLMModelConfig {
 
   LLMModelConfig _copy({String? modelId, String? endpoint, bool? enableWebSearch}) =>
       LLMModelConfig(
+        generationProfile: generationProfile,
+        channelId: channelId,
         id: id,
         modelId: modelId ?? this.modelId,
         channelType: channelType,

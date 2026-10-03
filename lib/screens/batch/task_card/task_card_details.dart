@@ -73,9 +73,10 @@ class _FactsAndActions extends StatelessWidget {
     final queue = Provider.of<AppState>(context, listen: false).taskQueue;
     final failed = task.status == TaskStatus.failed;
 
-    final prompt = '${task.parameters['prompt'] ?? ''}';
+    final prompt = '${task.generationOptions['prompt'] ?? ''}';
     final config = task.type == TaskType.imageProcess
-        ? '${task.parameters['aspectRatio'] ?? ''} ${task.parameters['imageSize'] ?? ''}'.trim()
+        ? '${task.generationOptions['aspectRatio'] ?? ''} ${task.generationOptions['imageSize'] ?? ''}'
+              .trim()
         : '';
     final source = switch (task.imagePaths.length) {
       0 => '',
@@ -212,8 +213,8 @@ class _DetailPanes extends StatelessWidget {
 
     // The prompt is already in the fact table beside this card.
     final params = [
-      for (final entry in task.parameters.entries)
-        if (entry.key != 'prompt' && '${entry.value ?? ''}'.isNotEmpty)
+      for (final entry in task.generationOptions.entries)
+        if (entry.key != 'generation' && entry.key != 'prompt' && '${entry.value ?? ''}'.isNotEmpty)
           '${entry.key}: ${entry.value}',
     ];
 

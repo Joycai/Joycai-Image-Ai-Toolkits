@@ -1327,6 +1327,60 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cookieHistoryEmptyDesc => '粘贴过的 Cookie 会记在这里，方便下次同一站点复用。';
 
   @override
+  String get generationAudio => '音频';
+
+  @override
+  String get generationInvalidParameter => '此设置已不再有效，请选择支持的值。';
+
+  @override
+  String get generationUnsupportedLastFrame => '此请求不支持尾帧，请移除后继续。';
+
+  @override
+  String get generationMissingFirstFrame => '使用尾帧前请先添加首帧。';
+
+  @override
+  String get generationConflictingMedia => '此请求只能使用帧或参考图片，请移除冲突的输入。';
+
+  @override
+  String get generationSingleSource => '此模式需要且只能使用一张源图。';
+
+  @override
+  String get generationMediaLimit => '此请求的输入或输出图片数量超出上限。';
+
+  @override
+  String get generationDuplicateFrame => '每个帧位置只能使用一张图片。';
+
+  @override
+  String get generationFixedPng => '透明输出必须使用 PNG。';
+
+  @override
+  String get generationStoredReset => '此处无法使用已保存的值，将使用显示的默认值。';
+
+  @override
+  String get generationUnreadableMedia => '无法读取输入图片，请重新选择。';
+
+  @override
+  String get generationProfile => '生成能力配置';
+
+  @override
+  String get generationProfileAuto => '自动配置';
+
+  @override
+  String get generationOptionDefault => '默认';
+
+  @override
+  String get generationIncompatibleProfile => '生成配置不适用于当前接口。请在模型设置中选择自动或兼容的配置。';
+
+  @override
+  String get generationMissingEditor => '此参数没有可用的编辑控件。';
+
+  @override
+  String get generationLayersRatioInactive => '图层分解不使用宽高比。';
+
+  @override
+  String get generationTransparentSource => '透明编辑需要一张带透明通道的原图。';
+
+  @override
   String get usageTokenBreakdown => 'Token 构成';
 
   @override
@@ -7190,6 +7244,60 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get cookieHistoryEmptyDesc => '貼上過的 Cookie 會記在這裡，方便下次同一網站重複使用。';
+
+  @override
+  String get generationAudio => '音訊';
+
+  @override
+  String get generationInvalidParameter => '此設定已不再有效，請選擇支援的值。';
+
+  @override
+  String get generationUnsupportedLastFrame => '此請求不支援尾幀，請移除後繼續。';
+
+  @override
+  String get generationMissingFirstFrame => '使用尾幀前請先新增首幀。';
+
+  @override
+  String get generationConflictingMedia => '此請求只能使用影格或參考圖片，請移除衝突的輸入。';
+
+  @override
+  String get generationSingleSource => '此模式需要且只能使用一張來源圖片。';
+
+  @override
+  String get generationMediaLimit => '此請求的輸入或輸出圖片數量超出上限。';
+
+  @override
+  String get generationDuplicateFrame => '每個影格位置只能使用一張圖片。';
+
+  @override
+  String get generationFixedPng => '透明輸出必須使用 PNG。';
+
+  @override
+  String get generationStoredReset => '此處無法使用已儲存的值，將使用顯示的預設值。';
+
+  @override
+  String get generationUnreadableMedia => '無法讀取輸入圖片，請重新選擇。';
+
+  @override
+  String get generationProfile => '生成能力設定';
+
+  @override
+  String get generationProfileAuto => '自動設定';
+
+  @override
+  String get generationOptionDefault => '預設';
+
+  @override
+  String get generationIncompatibleProfile => '生成設定不適用於目前介面。請在模型設定中選擇自動或相容的設定。';
+
+  @override
+  String get generationMissingEditor => '此參數沒有可用的編輯控制項。';
+
+  @override
+  String get generationLayersRatioInactive => '圖層分解不使用長寬比。';
+
+  @override
+  String get generationTransparentSource => '透明編輯需要一張帶透明通道的原圖。';
 
   @override
   String get usageTokenBreakdown => 'Token 組成';

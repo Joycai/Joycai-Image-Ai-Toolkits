@@ -1,6 +1,6 @@
 import 'model_capabilities.dart';
 import 'model_family.dart';
-import 'vendors/vendor_profile.dart' show WireProtocol;
+import 'vendors/vendor_profile.dart' show WireProtocol, Surface;
 
 // The one layer-3 vocabulary type protocols consume: they read the value off
 // a resolved descriptor and never call the classifier that produced it.
@@ -23,6 +23,17 @@ class ModelDescriptor {
   final ModelCapabilities capabilities;
 
   ModelDescriptor._(this.modelId, this.family, this.capabilities);
+
+  /// A checked profile changes capabilities, never classification or routing.
+  ModelDescriptor withCapabilities(ModelCapabilities value) => identical(value, capabilities)
+      ? this
+      : _profileCache.putIfAbsent((
+          modelId,
+          family,
+          value,
+        ), () => ModelDescriptor._(modelId, family, value));
+
+  static final Map<(String, ModelFamily, ModelCapabilities), ModelDescriptor> _profileCache = {};
 
   static final Map<String, ModelDescriptor> _cache = {};
 
@@ -71,7 +82,16 @@ class ModelDescriptor {
     );
     if (servedBy == null) return byId;
     final served = _familyServedBy(byId.family, servedBy);
-    if (served == null) return byId;
+    if (served == null) {
+      if (servedBy.surface != Surface.videoJob ||
+          byId.capabilities.supportsVideoProtocol(servedBy)) {
+        return byId;
+      }
+      return _servedCache.putIfAbsent((
+        modelId,
+        servedBy,
+      ), () => ModelDescriptor._(modelId, byId.family, ModelCapabilities.forProtocol(servedBy)));
+    }
     return _servedCache.putIfAbsent((
       modelId,
       servedBy,

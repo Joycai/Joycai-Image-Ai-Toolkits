@@ -3,6 +3,39 @@ part of '../model_edit_dialog.dart';
 /// How the model is *requested*: provider features, and the per-surface
 /// protocol pin with its staleness.
 extension _ProtocolSections on _ModelEditDialogState {
+  List<String> get _generationProfileChoices {
+    final routed = _routed;
+    if (routed == null || idCtrl.text.trim().isEmpty) return const [];
+    final schema = LLMDispatcher.generationSchemaFor(
+      channelType: routed.channelType,
+      modelId: idCtrl.text.trim(),
+      tag: tag,
+      wireProtocol: _dispatchPin,
+    );
+    return GenerationProfiles.compatible(schema.protocol);
+  }
+
+  bool get _showGenerationProfile =>
+      generationProfile != null ||
+      (_menu?.recognized == false && _generationProfileChoices.isNotEmpty);
+
+  Widget _generationProfileSection(BuildContext context) {
+    final l10n = widget.l10n;
+    final choices = _generationProfileChoices;
+    return AppLabelledField(
+      label: l10n.generationProfile,
+      child: AppDropdown<String>(
+        size: _fieldSize(context),
+        value: choices.contains(generationProfile) ? generationProfile! : '',
+        items: [
+          AppDropdownItem(value: '', label: l10n.generationProfileAuto),
+          for (final profile in choices) AppDropdownItem(value: profile, label: profile),
+        ],
+        onChanged: (value) => _rebuild(() => generationProfile = value == '' ? null : value),
+      ),
+    );
+  }
+
   /// Whether the provider card shows: extended thinking on the ④ wire, or a
   /// web search some route can send — with routes the grant is the model's,
   /// so the switch stays while any route honours it (`D1f · 4d`).
@@ -187,11 +220,12 @@ extension _ProtocolSections on _ModelEditDialogState {
       pinIsStale: _pinIsStale,
       // As the model will be served once saved: with the choice on screen,
       // not the one in the database.
-      paramsCapabilities: LLMDispatcher.descriptorFor(
+      paramsCapabilities: LLMDispatcher.generationSchemaFor(
         channelType: routed.channelType,
         modelId: id,
         tag: tag,
         wireProtocol: _activePin?.id,
+        profile: generationProfile,
       ).capabilities,
       onChanged: (v) => _rebuild(() => wireProtocol = v),
     );

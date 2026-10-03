@@ -371,6 +371,7 @@ extension _Layouts on _ModelEditDialogState {
       // Absent entirely (no placeholder height) when there is nothing to
       // choose and nothing to explain.
       if (_showProtocolSection) _protocolSection(context),
+      if (_showGenerationProfile) _generationProfileSection(context),
       _contextSection(context),
       if (_hasOutputCap) _outputCapSection(context),
       _agentSection(context),

@@ -23,6 +23,7 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 
 | 文件 | 为什么留着 |
 |---|---|
+| [`2026-10-03-modular-generation-parameters.md`](2026-10-03-modular-generation-parameters.md) | 待执行：图像/视频生成参数 schema、验证、请求与偏好迁移，以及共享可扩展参数 UI；含压缩会话后的恢复说明。 |
 | [`2026-08-assistant-timeout.md`](2026-08-assistant-timeout.md) | 不是施工说明书，是**一次真实故障的取证记录**（`api_logs/` 里七条日志的耗时还原）。`architecture/assistant-context.md` 直接引它作为「为什么要早elide」的证据。 |
 
 ## 2026-10-01 · 用量图表

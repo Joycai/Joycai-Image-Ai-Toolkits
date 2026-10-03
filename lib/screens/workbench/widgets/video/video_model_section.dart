@@ -19,22 +19,6 @@ extension _ModelSection on _VideoConfigPanelState {
     final selectedChannelId = selectedChannel?.id;
     final collapsedModelName = _isModelSettingsExpanded ? null : selectedModel?.modelName;
 
-    // `A2 · 1a`: one two-column grid of whatever the model declares —
-    // resolution and ratio included (Veo's too, since they became data).
-    // `customSize` is not used by any video family and draws nothing.
-    final cells = <_ParamCell>[
-      if (modelInChannel != null)
-        for (final spec in caps.videoParams)
-          if (spec.control != ParamControl.customSize)
-            _ParamCell(
-              label: _videoParamLabel(l10n, spec.labelKey),
-              control: _buildVideoParamControl(spec, modelInChannel, appState, l10n),
-              spansRow:
-                  spec.control == ParamControl.slider ||
-                  (spec.control == ParamControl.segmented && spec.options.length > 2),
-            ),
-    ];
-
     // `A2 · 1a`: the 11/500 caption and the chevron that folds the card.
     // Collapsed, the header still names the model.
     final header = Semantics(
@@ -133,7 +117,18 @@ extension _ModelSection on _VideoConfigPanelState {
               ),
             ),
           ),
-          if (cells.isNotEmpty) ...[const SizedBox(height: _kCardInnerGap), _paramGrid(cells)],
+          if (modelInChannel != null && caps.videoParams.isNotEmpty) ...[
+            const SizedBox(height: _kCardInnerGap),
+            GenerationParamPanel(
+              specs: caps.videoParams,
+              video: true,
+              storedValueOf: (key) => appState.storedVideoParam(modelInChannel, key),
+              modelName: modelInChannel.modelName,
+              valueOf: (spec) => appState.getVideoParam(modelInChannel, spec),
+              onChanged: (key, value) => appState.setVideoParam(modelInChannel, key, value),
+              schema: appState.generationSchemaForModel(modelInChannel),
+            ),
+          ],
         ],
       ),
     );

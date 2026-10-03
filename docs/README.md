@@ -25,6 +25,9 @@ Required reading before touching the subsystem each one covers.
   protocol / vendor / model layering under `lib/services/llm/`, the single
   dispatcher routing table, the greppable hard-coding red-flag list, and the
   old→new path map for reading pre-refactor documents.
+* **[Generation parameters and forms](architecture/generation-parameters.md)** —
+  typed schemas, native alias profiles, request/task compatibility, isolated drafts,
+  validation and extensible image/video editors within the existing design system.
 * **[Prompt Assistant context management](architecture/assistant-context.md)** —
   the elide/compact layers, the `context_window` tri-state, and how
   knowledge-base reads are budgeted and paged.

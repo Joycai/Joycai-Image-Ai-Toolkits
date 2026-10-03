@@ -2367,6 +2367,114 @@ abstract class AppLocalizations {
   /// **'Cookies you paste are remembered here for the same site next time.'**
   String get cookieHistoryEmptyDesc;
 
+  /// No description provided for @generationAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio'**
+  String get generationAudio;
+
+  /// No description provided for @generationInvalidParameter.
+  ///
+  /// In en, this message translates to:
+  /// **'This setting is no longer valid. Choose a supported value.'**
+  String get generationInvalidParameter;
+
+  /// No description provided for @generationUnsupportedLastFrame.
+  ///
+  /// In en, this message translates to:
+  /// **'This request does not support a last frame. Remove it to continue.'**
+  String get generationUnsupportedLastFrame;
+
+  /// No description provided for @generationMissingFirstFrame.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a first frame before using a last frame.'**
+  String get generationMissingFirstFrame;
+
+  /// No description provided for @generationConflictingMedia.
+  ///
+  /// In en, this message translates to:
+  /// **'Use frames or reference images for this request. Remove the conflicting inputs.'**
+  String get generationConflictingMedia;
+
+  /// No description provided for @generationSingleSource.
+  ///
+  /// In en, this message translates to:
+  /// **'This mode needs exactly one source image.'**
+  String get generationSingleSource;
+
+  /// No description provided for @generationMediaLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many input or output images for this request.'**
+  String get generationMediaLimit;
+
+  /// No description provided for @generationDuplicateFrame.
+  ///
+  /// In en, this message translates to:
+  /// **'Use one image for each frame slot.'**
+  String get generationDuplicateFrame;
+
+  /// No description provided for @generationFixedPng.
+  ///
+  /// In en, this message translates to:
+  /// **'PNG is required for transparent output.'**
+  String get generationFixedPng;
+
+  /// No description provided for @generationStoredReset.
+  ///
+  /// In en, this message translates to:
+  /// **'The saved value is unavailable here; the displayed default will be used.'**
+  String get generationStoredReset;
+
+  /// No description provided for @generationUnreadableMedia.
+  ///
+  /// In en, this message translates to:
+  /// **'An input image cannot be read. Select it again.'**
+  String get generationUnreadableMedia;
+
+  /// No description provided for @generationProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Generation profile'**
+  String get generationProfile;
+
+  /// No description provided for @generationProfileAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic profile'**
+  String get generationProfileAuto;
+
+  /// No description provided for @generationOptionDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Default'**
+  String get generationOptionDefault;
+
+  /// No description provided for @generationIncompatibleProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'The generation profile does not match this route. Choose Automatic or a compatible profile in model settings.'**
+  String get generationIncompatibleProfile;
+
+  /// No description provided for @generationMissingEditor.
+  ///
+  /// In en, this message translates to:
+  /// **'No editor is available for this setting.'**
+  String get generationMissingEditor;
+
+  /// No description provided for @generationLayersRatioInactive.
+  ///
+  /// In en, this message translates to:
+  /// **'Aspect ratio is unused in layer decomposition.'**
+  String get generationLayersRatioInactive;
+
+  /// No description provided for @generationTransparentSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Select one source image with an alpha channel for transparent editing.'**
+  String get generationTransparentSource;
+
   /// No description provided for @usageTokenBreakdown.
   ///
   /// In en, this message translates to:

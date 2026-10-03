@@ -100,7 +100,7 @@ void main() {
       }
     });
 
-    test('and with no selection the descriptor is the id\'s own', () {
+    test('no selection preserves the id descriptor except precise serving video contracts', () {
       for (final vendor in Vendors.all) {
         for (final id in ids) {
           // The one deliberate exception: a Veo id on a non-Gemini channel
@@ -108,6 +108,16 @@ void main() {
           // Every other pair must be the very object the id resolves to.
           if (ModelDescriptor.of(id).family == ModelFamily.geminiVideo &&
               vendor.family != ProtocolFamily.gemini) {
+            continue;
+          }
+          final wire = LLMDispatcher.autoProtocolFor(vendor.id, id);
+          if (wire?.surface == Surface.videoJob &&
+              !ModelDescriptor.of(id).capabilities.supportsVideoProtocol(wire!)) {
+            expect(
+              served(id, vendor.id).capabilities,
+              same(ModelCapabilities.forProtocol(wire)),
+              reason: '$id on ${vendor.id} uses ${wire.id} vocabulary',
+            );
             continue;
           }
           expect(

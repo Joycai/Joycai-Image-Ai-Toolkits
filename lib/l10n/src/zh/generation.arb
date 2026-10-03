@@ -1,0 +1,20 @@
+{
+  "generationAudio": "音频",
+  "generationInvalidParameter": "此设置已不再有效，请选择支持的值。",
+  "generationUnsupportedLastFrame": "此请求不支持尾帧，请移除后继续。",
+  "generationMissingFirstFrame": "使用尾帧前请先添加首帧。",
+  "generationConflictingMedia": "此请求只能使用帧或参考图片，请移除冲突的输入。",
+  "generationSingleSource": "此模式需要且只能使用一张源图。",
+  "generationMediaLimit": "此请求的输入或输出图片数量超出上限。",
+  "generationDuplicateFrame": "每个帧位置只能使用一张图片。",
+  "generationFixedPng": "透明输出必须使用 PNG。",
+  "generationStoredReset": "此处无法使用已保存的值，将使用显示的默认值。",
+  "generationUnreadableMedia": "无法读取输入图片，请重新选择。",
+  "generationProfile": "生成能力配置",
+  "generationProfileAuto": "自动配置",
+  "generationOptionDefault": "默认",
+  "generationIncompatibleProfile": "生成配置不适用于当前接口。请在模型设置中选择自动或兼容的配置。",
+  "generationMissingEditor": "此参数没有可用的编辑控件。",
+  "generationLayersRatioInactive": "图层分解不使用宽高比。",
+  "generationTransparentSource": "透明编辑需要一张带透明通道的原图。"
+}

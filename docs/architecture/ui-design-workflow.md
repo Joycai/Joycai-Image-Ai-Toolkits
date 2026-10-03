@@ -79,6 +79,13 @@ cost using the documented probes when a change affects blur, painting or rebuild
 
 ## Handoff and durable decisions
 
+Image and video parameter forms share the workbench's `generation_params` panel,
+presentation hints, editor registry and localized text mapping. Replace an editor
+through that registry; do not copy a control switch into either form. Model/wire
+constraints arrive from the dispatcher-resolved schema. Preserve existing App
+controls, themes, glass and font inheritance; see [generation parameters](generation-parameters.md)
+for ownership, compatibility and extension rules.
+
 Report the resulting UX behavior, visual evidence inspected, automated checks and
 any unverified states or platform behavior. Link representative local renders for
 review. Record durable design decisions and accepted departures in the relevant
