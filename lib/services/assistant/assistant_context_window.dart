@@ -557,11 +557,12 @@ Future<void> _maybeCompact(
 /// prompt counts as the latest, at the summary's own index, unless a newer
 /// call exists. The caller decides whether the index falls inside the fold.
 ({int index, String prompt})? _latestSubmittedPrompt(List<LLMMessage> history) {
+  final deferredCalls = _deferredToolCallIds(history);
   for (var i = history.length - 1; i >= 0; i--) {
     final m = history[i];
     if (m.role == LLMRole.assistant) {
       for (final call in m.toolCalls.reversed) {
-        if (call.name != 'submit_prompt') continue;
+        if (call.name != 'submit_prompt' || deferredCalls.contains(call.id)) continue;
         final prompt = call.arguments['prompt']?.toString() ?? '';
         if (prompt.trim().isEmpty) continue;
         return (index: i, prompt: prompt);
@@ -592,6 +593,7 @@ Future<void> _maybeCompact(
 
 String _serializeForSummary(List<LLMMessage> messages) {
   final buffer = StringBuffer();
+  final deferredCalls = _deferredToolCallIds(messages);
   for (final m in messages) {
     switch (m.role) {
       case LLMRole.user:
@@ -606,6 +608,7 @@ String _serializeForSummary(List<LLMMessage> messages) {
       case LLMRole.assistant:
         if (m.content.trim().isNotEmpty) buffer.writeln('ASSISTANT: ${m.content.trim()}');
         for (final call in m.toolCalls) {
+          if (deferredCalls.contains(call.id)) continue;
           if (call.name == 'submit_prompt') {
             // Body omitted: the app appends the latest version to the
             // summary itself, and no version's text is for the model to

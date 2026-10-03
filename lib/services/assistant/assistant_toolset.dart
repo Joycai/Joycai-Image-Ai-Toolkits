@@ -49,17 +49,21 @@ final List<LLMTool> _tools = [
     description:
         'Ask the user 1-4 structured clarifying questions and STOP. '
         'The turn pauses until the user answers; their choices arrive as '
-        'this tool\'s result. Use it only when ambiguity genuinely blocks '
-        'the work — prefer it over guessing, but never ask what you can '
-        'infer. Offer concrete options. It must be the ONLY tool call in the '
-        'message: a question batched with any other call is rejected and '
-        'never reaches the user.',
+        'this tool\'s result. Use it when required knowledge-base inputs are '
+        'missing or ambiguity blocks the work. Prefer it over guessing user '
+        'preferences; never ask what the conversation, rules, or references '
+        'already settle. Offer concrete options. It must be the ONLY tool call in the '
+        'message. If batched, the first valid question pauses the turn and '
+        'all other calls are deferred without running; reissue them after '
+        'the user answers if still needed.',
     parameters: {
       'type': 'object',
       'properties': {
         'questions': {
           'type': 'array',
           'description': '1 to 4 questions.',
+          'minItems': 1,
+          'maxItems': AskUserQuestion.maxQuestions,
           'items': {
             'type': 'object',
             'properties': {
@@ -74,6 +78,8 @@ final List<LLMTool> _tools = [
               },
               'options': {
                 'type': 'array',
+                'minItems': AskUserQuestion.minOptions,
+                'maxItems': AskUserQuestion.maxOptions,
                 'description':
                     '2 to 4 concrete choices. The user can always add free text instead.',
                 'items': {

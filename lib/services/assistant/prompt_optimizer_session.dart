@@ -620,6 +620,7 @@ class PromptOptimizerSession extends ChangeNotifier {
     // every restore derives the same repaired list — which is why all of it
     // counts as persisted.
     final restored = PromptOptimizerAgent.repairToolCallPairing(history);
+    final deferredCalls = _deferredToolCallIds(restored);
     session.history.addAll(restored);
     session.persistedCount = restored.length;
 
@@ -695,6 +696,7 @@ class PromptOptimizerSession extends ChangeNotifier {
             );
           }
           for (final call in msg.toolCalls) {
+            if (deferredCalls.contains(call.id)) continue;
             switch (call.name) {
               case 'submit_prompt':
                 final prompt = call.arguments['prompt']?.toString() ?? '';
