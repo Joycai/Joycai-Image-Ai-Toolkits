@@ -1,7 +1,5 @@
 import '../llm/model_capabilities.dart';
-import '../llm/model_family.dart';
 import '../llm/output_spec.dart';
-import '../llm/vendors/vendor_profile.dart' show WireProtocol;
 
 /// The values a rate row's conditions can be picked from: the union of every
 /// family's parameter tables (`D2b · 21c`), normalised the way the request
@@ -41,11 +39,7 @@ class SpecKnownValues {
     // protocol reaches, and the ones `forModel` reaches by id alone (a
     // version whose table differs from its family's — Seedream 5.0 pro's
     // `1.5K` tier exists nowhere else).
-    final tables = [
-      for (final family in ModelFamily.values) ModelCapabilities.forFamily(family),
-      for (final protocol in WireProtocol.values) ModelCapabilities.forProtocol(protocol),
-      ...ModelCapabilities.idRoutedTables,
-    ];
+    final tables = ModelCapabilities.profiles.values;
 
     for (final caps in tables) {
       for (final param in caps.imageParams) {

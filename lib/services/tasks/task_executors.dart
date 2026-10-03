@@ -76,7 +76,7 @@ extension TaskExecutors on TaskQueueService {
     LLMReferenceType referenceType = LLMReferenceType.media,
   }) async {
     final mimeType = _getMimeType(path);
-    if (task.parameters['compressReferenceImages'] != true) {
+    if (task.parameters['compressReferenceImages'] != true || task.generationSourceNeedsAlpha) {
       return LLMAttachment.fromFile(File(path), mimeType, referenceType: referenceType);
     }
     final raw = await File(path).readAsBytes();
@@ -100,13 +100,13 @@ extension TaskExecutors on TaskQueueService {
     final outputDir = await _getEffectiveOutputDir(task);
 
     final attachments = await Future.wait(
-      task.imagePaths.map((path) => _buildReferenceAttachment(task, path)),
+      task.generationImagePaths.map((path) => _buildReferenceAttachment(task, path)),
     );
 
     final messages = [
       LLMMessage(
         role: LLMRole.user,
-        content: task.parameters['prompt'] ?? '',
+        content: task.generationOptions['prompt'] ?? '',
         attachments: attachments,
       ),
     ];
@@ -118,8 +118,10 @@ extension TaskExecutors on TaskQueueService {
     // task loop reads it — a cancelled task stops polling within ~1 s instead
     // of riding the job out.
     final requestOptions = <String, dynamic>{
-      ...task.parameters,
-      llmCancellationProbeKey: () => task.status == TaskStatus.cancelled,
+      ...task.generationOptions,
+      ...GenerationExecutionContext(
+        isCancelled: () => task.status == TaskStatus.cancelled,
+      ).legacyOptions,
     };
 
     var received = 0;
@@ -420,8 +422,10 @@ extension TaskExecutors on TaskQueueService {
     String resultText = '';
     final actualUseStream = await _shouldUseStream(task);
     final requestOptions = <String, dynamic>{
-      ...task.parameters,
-      llmCancellationProbeKey: () => task.status == TaskStatus.cancelled,
+      ...task.generationOptions,
+      ...GenerationExecutionContext(
+        isCancelled: () => task.status == TaskStatus.cancelled,
+      ).legacyOptions,
     };
 
     if (actualUseStream) {
@@ -609,7 +613,7 @@ extension TaskExecutors on TaskQueueService {
         operationName: operationName,
         renderedSeconds: settle.renderedSeconds,
         reportedCost: settle.reportedCost,
-        options: task.parameters,
+        options: task.generationOptions,
         contextId: task.id,
       );
     }
@@ -681,7 +685,7 @@ extension TaskExecutors on TaskQueueService {
     final attachments = <LLMAttachment>[];
 
     // First frame
-    final firstFramePath = task.parameters['firstFramePath'] as String?;
+    final firstFramePath = task.generationOptions['firstFramePath'] as String?;
     if (firstFramePath != null && firstFramePath.isNotEmpty) {
       attachments.add(
         await _buildReferenceAttachment(
@@ -694,7 +698,7 @@ extension TaskExecutors on TaskQueueService {
     }
 
     // Last frame
-    final lastFramePath = task.parameters['lastFramePath'] as String?;
+    final lastFramePath = task.generationOptions['lastFramePath'] as String?;
     if (lastFramePath != null && lastFramePath.isNotEmpty) {
       attachments.add(
         await _buildReferenceAttachment(
@@ -707,7 +711,7 @@ extension TaskExecutors on TaskQueueService {
     }
 
     // Reference images
-    final referenceImagePaths = task.parameters['referenceImagePaths'] as List<dynamic>?;
+    final referenceImagePaths = task.generationOptions['referenceImagePaths'] as List<dynamic>?;
     if (referenceImagePaths != null) {
       for (final path in referenceImagePaths) {
         final pathStr = path as String;
@@ -721,7 +725,7 @@ extension TaskExecutors on TaskQueueService {
     final messages = [
       LLMMessage(
         role: LLMRole.user,
-        content: task.parameters['prompt'] ?? '',
+        content: task.generationOptions['prompt'] ?? '',
         attachments: attachments,
       ),
     ];
@@ -735,8 +739,10 @@ extension TaskExecutors on TaskQueueService {
       // live cancellation probe only to this request copy. LLMService turns
       // it into an AbortableRequest trigger while the job is being submitted.
       options: {
-        ...task.parameters,
-        llmCancellationProbeKey: () => task.status == TaskStatus.cancelled,
+        ...task.generationOptions,
+        ...GenerationExecutionContext(
+          isCancelled: () => task.status == TaskStatus.cancelled,
+        ).legacyOptions,
       },
     );
 

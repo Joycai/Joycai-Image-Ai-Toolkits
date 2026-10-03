@@ -1,6 +1,6 @@
 part of 'app_state.dart';
 
-/// Workbench, video and per-family image-parameter configuration, plus task
+/// Workbench, video and scoped generation-parameter configuration, plus task
 /// submission. Split out of [AppState] as a `part of` extension; notifications
 /// route through [AppState.notify] since `notifyListeners` is protected.
 extension AppStateWorkbench on AppState {
@@ -97,7 +97,7 @@ extension AppStateWorkbench on AppState {
     });
   }
 
-  // --- Per-family image generation parameters ------------------------------
+  // --- Scoped image generation parameters ------------------------------
 
   Future<void> loadImageParams() async {
     final raw = await _db.getSetting('workbench_image_params');
@@ -118,25 +118,59 @@ extension AppStateWorkbench on AppState {
     if (legacyRes != null) _imageParamStore['$ns.imageSize'] = legacyRes;
   }
 
-  /// The parameter-memory namespace for [model]: its family *as its channel
-  /// serves it*, so a relay model pinned to the Images API remembers its size
-  /// alongside `gpt-image`'s rather than under the `other` its id classifies
-  /// as. A model routed by its id keeps exactly the key it always had.
+  /// The legacy seed namespace: the family as its channel served it. New
+  /// writes use the stored model, effective wire and operation instead.
   String _familyKey(LLMModel model) => descriptorForModel(model).family.name;
+
+  String _paramBase(LLMModel model) => GenerationPreferences.base(
+    model: model.id ?? model.modelId,
+    channel: model.channelId,
+    protocol: generationSchemaForModel(model).protocol?.id,
+  );
+
+  String _paramKey(LLMModel model, String key, {bool video = false}) {
+    final base = _paramBase(model);
+    // The mode selector belongs to the model/route, while settings within a
+    // mode stay parked when the user switches to another one.
+    if (key == 'imageTask') return '$base.mode';
+    final schema = generationSchemaForModel(model);
+    final modeSpec = schema.capabilities.imageParams.where((s) => s.key == 'imageTask').firstOrNull;
+    final mode = modeSpec?.normalize(
+      _imageParamStore['$base.mode'] ?? _imageParamStore['${_familyKey(model)}.imageTask'],
+    );
+    final media = video
+        ? <GenerationMedia>[
+            if (workbenchUIState.videoFirstFrame case final image?)
+              GenerationMedia(GenerationMediaRole.firstFrame, image.path),
+            if (workbenchUIState.videoLastFrame case final image?)
+              GenerationMedia(GenerationMediaRole.lastFrame, image.path),
+            for (final image in workbenchUIState.videoReferenceImages)
+              GenerationMedia(GenerationMediaRole.reference, image.path),
+          ]
+        : [
+            for (final image in galleryState.selectedImages)
+              GenerationMedia(GenerationMediaRole.reference, image.path),
+          ];
+    final operation = schema.operation(schema.readLegacy({'imageTask': ?mode}), media);
+    return GenerationPreferences.key(base, operation, key);
+  }
 
   /// Current value for [spec] under [model], validated against the spec's
   /// options (falls back to the spec default).
   String getImageParam(LLMModel model, ParamSpec spec) {
-    final stored = _imageParamStore['${_familyKey(model)}.${spec.key}'];
+    final stored = storedImageParam(model, spec.key);
     return spec.normalize(stored);
   }
 
   /// What is stored for [paramKey] under [model], unvalidated — null when
   /// nothing is. The size field compares it with [getImageParam] to say when a
-  /// value chosen for a sibling model (the family shares one store) has just
-  /// been dropped for this one (`A1c · 30a` 「刚被回落」).
-  String? storedImageParam(LLMModel model, String paramKey) =>
-      _imageParamStore['${_familyKey(model)}.$paramKey'];
+  /// stale value (including a legacy family seed) needs a visible default
+  /// fallback. The raw draft stays stored for a compatible schema.
+  String? storedImageParam(LLMModel model, String paramKey) => GenerationPreferences.read(
+    _imageParamStore,
+    _paramKey(model, paramKey),
+    '${_familyKey(model)}.$paramKey',
+  );
 
   /// The rate table [model]'s fee group prices output by, or null when the
   /// model has no group or its group is not billed by output spec. The size
@@ -152,7 +186,7 @@ extension AppStateWorkbench on AppState {
   }
 
   Future<void> setImageParam(LLMModel model, String paramKey, String value) async {
-    _imageParamStore = {..._imageParamStore, '${_familyKey(model)}.$paramKey': value};
+    _imageParamStore = {..._imageParamStore, _paramKey(model, paramKey): value};
     imageParamsRevision++;
     await _db.saveSetting('workbench_image_params', jsonEncode(_imageParamStore));
     notify();
@@ -160,15 +194,17 @@ extension AppStateWorkbench on AppState {
 
   /// Validated parameter map to send with a generation task for [model].
   Map<String, dynamic> effectiveImageParams(LLMModel model) {
-    final caps = descriptorForModel(model).capabilities;
+    final schema = generationSchemaForModel(model);
+    final caps = schema.capabilities;
     final result = <String, dynamic>{};
     for (final spec in caps.imageParams) {
       result[spec.key] = getImageParam(model, spec);
     }
-    return result;
+    final draft = schema.readLegacy(result);
+    return schema.legacyOptions(schema.effective(draft, schema.operation(draft, const [])));
   }
 
-  // --- Per-family video generation parameters ------------------------------
+  // --- Scoped video generation parameters ------------------------------
 
   Future<void> loadVideoParams() async {
     final raw = await _db.getSetting('workbench_video_params');
@@ -187,22 +223,27 @@ extension AppStateWorkbench on AppState {
   }
 
   String getVideoParam(LLMModel model, ParamSpec spec) {
-    final stored = _videoParamStore['${_familyKey(model)}.${spec.key}'];
-    return spec.normalize(stored);
+    return spec.normalize(storedVideoParam(model, spec.key));
   }
 
+  String? storedVideoParam(LLMModel model, String key) => GenerationPreferences.read(
+    _videoParamStore,
+    _paramKey(model, key, video: true),
+    '${_familyKey(model)}.$key',
+  );
+
   Future<void> setVideoParam(LLMModel model, String paramKey, String value) async {
-    _videoParamStore = {..._videoParamStore, '${_familyKey(model)}.$paramKey': value};
+    _videoParamStore = {..._videoParamStore, _paramKey(model, paramKey, video: true): value};
     videoParamsRevision++;
     await _db.saveSetting('workbench_video_params', jsonEncode(_videoParamStore));
     notify();
   }
 
   /// Validated parameter map of video-only extras (seconds, quality, …) for
-  /// the model. Empty for families without [ModelCapabilities.videoParams]
-  /// (e.g. Veo, which still uses its fixed enums).
+  /// the model. Resolution and ratio use the same declarations as extras;
+  /// there are no panel-owned video parameter defaults.
   Map<String, dynamic> effectiveVideoParams(LLMModel model) {
-    final caps = descriptorForModel(model).capabilities;
+    final caps = generationSchemaForModel(model).capabilities;
     final result = <String, dynamic>{};
     for (final spec in caps.videoParams) {
       result[spec.key] = getVideoParam(model, spec);
@@ -220,6 +261,16 @@ extension AppStateWorkbench on AppState {
       await _db.saveSetting('last_video_prompt', prompt);
     }
     notify();
+  }
+
+  List<GenerationDiagnostic> generationInputDiagnostics(
+    LLMModel model,
+    Map<String, dynamic> options,
+    List<GenerationMedia> media,
+  ) {
+    final schema = generationSchemaForModel(model);
+    final draft = schema.readLegacy(options);
+    return schema.validate(schema.effective(draft, schema.operation(draft, media)), media);
   }
 
   Future<void> submitTask(

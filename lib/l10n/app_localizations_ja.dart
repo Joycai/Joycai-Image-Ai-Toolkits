@@ -1332,6 +1332,61 @@ class AppLocalizationsJa extends AppLocalizations {
   String get cookieHistoryEmptyDesc => '貼り付けた Cookie はここに記録され、同じサイトで再利用できます。';
 
   @override
+  String get generationAudio => '音声';
+
+  @override
+  String get generationInvalidParameter => 'この設定は無効です。対応する値を選択してください。';
+
+  @override
+  String get generationUnsupportedLastFrame => 'このリクエストは最終フレームに対応していません。削除してください。';
+
+  @override
+  String get generationMissingFirstFrame => '最終フレームを使う前に開始フレームを追加してください。';
+
+  @override
+  String get generationConflictingMedia => 'フレームか参照画像のどちらかを使用し、競合する入力を削除してください。';
+
+  @override
+  String get generationSingleSource => 'このモードには元画像が1枚必要です。';
+
+  @override
+  String get generationMediaLimit => '入力または出力画像の数が上限を超えています。';
+
+  @override
+  String get generationDuplicateFrame => '各フレームには画像を1枚だけ使用してください。';
+
+  @override
+  String get generationFixedPng => '透明な出力には PNG が必要です。';
+
+  @override
+  String get generationStoredReset => '保存した値は使用できません。表示中の既定値を使用します。';
+
+  @override
+  String get generationUnreadableMedia => '入力画像を読み込めません。選択し直してください。';
+
+  @override
+  String get generationProfile => '生成プロファイル';
+
+  @override
+  String get generationProfileAuto => '自動プロファイル';
+
+  @override
+  String get generationOptionDefault => '既定';
+
+  @override
+  String get generationIncompatibleProfile =>
+      '生成プロファイルがこの接続方式に対応していません。モデル設定で自動または互換性のあるプロファイルを選択してください。';
+
+  @override
+  String get generationMissingEditor => 'この設定に使用できるエディターがありません。';
+
+  @override
+  String get generationLayersRatioInactive => 'レイヤー分解ではアスペクト比を使用しません。';
+
+  @override
+  String get generationTransparentSource => '透明編集にはアルファチャンネルを持つ元画像を1枚選択してください。';
+
+  @override
   String get usageTokenBreakdown => 'トークン内訳';
 
   @override

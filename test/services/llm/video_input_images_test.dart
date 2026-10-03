@@ -17,10 +17,9 @@ import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 /// publishes them ([VideoSubmission.inputImages] → the ticket → the submit's
 /// usage row), for a fee group to charge (`D2e`).
 ///
-/// What is pinned per surface is the number that went into the body — after
-/// an attachment that cannot be read was dropped, and after the surface's
-/// own exclusion (a first frame over references) — because a count taken any
-/// earlier bills for frames nobody received.
+/// Counts describe the images sent in valid requests. Unreadable or
+/// conflicting explicit media is rejected by shared validation before submit;
+/// billing continues to use the surface's actual sent count.
 void main() {
   late HttpServer server;
   late Map<String, dynamic> Function(HttpRequest request) answer;
@@ -66,19 +65,15 @@ void main() {
     LLMMessage(role: LLMRole.user, content: 'a cat', attachments: attachments),
   ], options: options);
 
-  test('xAI: the first frame alone, or the references, less one unreadable', () async {
+  test('xAI: the first frame alone or valid references', () async {
     answer = (_) => {'request_id': 'req_1'};
     final xai = config(Vendors.xaiApi, 'grok-imagine-video-1.5');
 
-    final firstFrame = await submit(xai, [
-      frame(LLMReferenceType.firstFrame),
-      reference(),
-      reference(),
-    ]);
+    final firstFrame = await submit(xai, [frame(LLMReferenceType.firstFrame)]);
     expect(firstFrame.name, 'req_1');
-    expect(firstFrame.inputImages, 1, reason: 'references are dropped in favour of the frame');
+    expect(firstFrame.inputImages, 1, reason: 'one first frame was sent');
 
-    final references = await submit(xai, [reference(), unreadable(), reference()]);
+    final references = await submit(xai, [reference(), reference()]);
     expect(references.inputImages, 2);
 
     final none = await submit(xai, const []);
@@ -89,11 +84,7 @@ void main() {
     answer = (_) => {'id': 'video_1'};
     final sora = config(Vendors.openAIRest, 'sora-2');
 
-    final ticket = await submit(sora, [
-      frame(LLMReferenceType.firstFrame),
-      reference(),
-      unreadable(),
-    ]);
+    final ticket = await submit(sora, [frame(LLMReferenceType.firstFrame), reference()]);
     expect(ticket.inputImages, 2);
   });
 
@@ -106,58 +97,51 @@ void main() {
     final ticket = await submit(wan, [
       frame(LLMReferenceType.firstFrame),
       frame(LLMReferenceType.lastFrame),
-      unreadable(),
     ]);
     expect(ticket.inputImages, 2);
   });
 
-  test('MiniMax: what survived the frames-over-references exclusion', () async {
+  test('MiniMax: valid frames are counted', () async {
     answer = (_) => {'task_id': 'mm_1'};
     final hailuo = config(Vendors.minimax, 'MiniMax-Hailuo-02');
 
-    final ticket = await submit(hailuo, [
-      frame(LLMReferenceType.firstFrame),
-      reference(),
-      reference(),
-    ]);
+    final ticket = await submit(hailuo, [frame(LLMReferenceType.firstFrame)]);
     expect(ticket.inputImages, 1);
   });
 
-  test(
-    'MiniMax H3 local: the same exclusion, with byte attachments written out as files',
-    () async {
-      answer = (_) => {'id': 'h3_1'};
-      final h3 = config(Vendors.minimaxH3Base, 'minimax-h3-base');
-      // The protocol writes each byte attachment to the system temp dir so it
-      // can travel as a file:// URI, and only the app's start-up sweep reclaims
-      // them (after hours). Take back what this test adds — and only that, so
-      // a running app's in-flight files are left alone.
-      Set<String> tempRefs() => Directory.systemTemp
-          .listSync()
-          .map((e) => e.path)
-          .where((p) => p.split(Platform.pathSeparator).last.startsWith(minimaxH3TempRefPrefix))
-          .toSet();
-      final before = tempRefs();
-      addTearDown(() {
-        for (final path in tempRefs().difference(before)) {
-          try {
-            File(path).deleteSync();
-          } catch (_) {}
-        }
-      });
+  test('MiniMax H3 local: valid inputs with byte attachments written out as files', () async {
+    answer = (_) => {'id': 'h3_1'};
+    final h3 = config(Vendors.minimaxH3Base, 'minimax-h3-base');
+    // The protocol writes each byte attachment to the system temp dir so it
+    // can travel as a file:// URI, and only the app's start-up sweep reclaims
+    // them (after hours). Take back what this test adds — and only that, so
+    // a running app's in-flight files are left alone.
+    Set<String> tempRefs() => Directory.systemTemp
+        .listSync()
+        .map((e) => e.path)
+        .where((p) => p.split(Platform.pathSeparator).last.startsWith(minimaxH3TempRefPrefix))
+        .toSet();
+    final before = tempRefs();
+    addTearDown(() {
+      for (final path in tempRefs().difference(before)) {
+        try {
+          File(path).deleteSync();
+        } catch (_) {}
+      }
+    });
 
-      final frames = await submit(h3, [
-        frame(LLMReferenceType.firstFrame),
-        reference(),
-        reference(),
-      ]);
-      expect(frames.name, 'h3_1');
-      expect(frames.inputImages, 1, reason: 'references are dropped in favour of the keyframe');
+    final frames = await submit(h3, [frame(LLMReferenceType.firstFrame)]);
+    await expectLater(
+      submit(h3, [frame(LLMReferenceType.firstFrame), reference()]),
+      throwsA(isA<LLMApiException>()),
+    );
+    await expectLater(submit(h3, [unreadable()]), throwsA(isA<LLMApiException>()));
+    expect(frames.name, 'h3_1');
+    expect(frames.inputImages, 1, reason: 'one first frame was sent');
 
-      final references = await submit(h3, [reference(), unreadable(), reference()]);
-      expect(references.inputImages, 2);
-    },
-  );
+    final references = await submit(h3, [reference(), reference()]);
+    expect(references.inputImages, 2);
+  });
 
   test('Veo: first frame, last frame and references are all counted', () {
     final payload = prepareVeoPayload([
@@ -168,7 +152,6 @@ void main() {
           frame(LLMReferenceType.firstFrame),
           frame(LLMReferenceType.lastFrame),
           reference(),
-          unreadable(),
         ],
       ),
     ], null);

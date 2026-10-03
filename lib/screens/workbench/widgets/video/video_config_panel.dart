@@ -19,6 +19,7 @@ import '../../../../models/llm_model.dart';
 import '../../../../models/prompt.dart';
 import '../../../../models/prompt_history_entry.dart';
 import '../../../../models/tag.dart';
+import '../../../../services/llm/generation/generation_schema.dart';
 import '../../../../services/llm/model_capabilities.dart';
 import '../../../../state/app_state.dart';
 import '../../../../state/workbench_ui_state.dart';
@@ -26,9 +27,7 @@ import '../../../../widgets/drag/app_drag_session.dart';
 import '../../../../widgets/drag/app_drop_zone.dart';
 import '../../../../widgets/files/file_visuals.dart';
 import '../../../../widgets/models/model_picker_options.dart';
-import '../../../../widgets/ui/app_dropdown.dart';
 import '../../../../widgets/ui/app_field_size.dart';
-import '../../../../widgets/ui/app_segmented_control.dart';
 import '../../../../widgets/ui/app_snackbar.dart';
 import '../../../../widgets/ui/app_switch.dart';
 import '../../../../widgets/ui/markdown_editor.dart';
@@ -38,12 +37,13 @@ import '../config/config_action_bar.dart';
 import '../config/prompt_history_sheet.dart';
 import '../config/prompt_library_sheet.dart';
 import '../config/queue_settings_dialog.dart';
+import '../generation_params/generation_param_panel.dart';
+import '../generation_params/generation_param_texts.dart';
 
 part 'video_drop_parts.dart';
 part 'video_frame_slots.dart';
 part 'video_model_section.dart';
 part 'video_panel_chrome.dart';
-part 'video_param_controls.dart';
 part 'video_reference_images.dart';
 
 /// Space between two cards in the column, and the column's own inset
@@ -55,14 +55,6 @@ const double _kCardPadding = AppSpace.s10;
 
 /// Rhythm between the rows inside a card (`gap:8`).
 const double _kCardInnerGap = 8;
-
-/// Gap between the cells of the parameter grid (`gap:6`).
-const double _kParamGap = AppSpace.s6;
-
-/// A parameter cell's control. `A2 · 1a`'s frame draws these at 30, but its
-/// size table says 「其余同 A1」 and A1's says 「输入 32」; the image panel's
-/// grid is 32, and 30 put these a step shorter than the pickers above them.
-const double _kParamControlHeight = AppSize.control;
 
 /// The prompt card's header row: its caption and the two 28px icon actions.
 const double _kPromptHeaderRow = AppSize.compact;
@@ -167,6 +159,18 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
       ...appState.effectiveVideoParams(selectedModel),
     };
 
+    final diagnostics = appState.generationInputDiagnostics(selectedModel, params, [
+      if (uiState.videoFirstFrame case final image?)
+        GenerationMedia(GenerationMediaRole.firstFrame, image.path),
+      if (uiState.videoLastFrame case final image?)
+        GenerationMedia(GenerationMediaRole.lastFrame, image.path),
+      for (final image in uiState.videoReferenceImages)
+        GenerationMedia(GenerationMediaRole.reference, image.path),
+    ]);
+    if (diagnostics.isNotEmpty) {
+      AppSnackBar.warning(context, GenerationParamTexts.diagnostic(l10n, diagnostics.first));
+      return;
+    }
     appState.submitVideoTask(selectedModel.id, params, modelIdDisplay: selectedModel.modelName);
 
     AppSnackBar.info(context, l10n.taskSubmitted);
@@ -232,9 +236,24 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
     // A model whose channel is not the selected one is a stale pair; nothing
     // below may describe or edit it under the wrong channel.
     final modelInChannel = selectedModel?.channelId == selectedChannel?.id ? selectedModel : null;
-    final caps = modelInChannel == null
-        ? const ModelCapabilities()
-        : appState.descriptorForModel(modelInChannel).capabilities;
+    final schema = modelInChannel == null
+        ? null
+        : appState.generationSchemaForModel(modelInChannel);
+    final caps = modelInChannel == null ? const ModelCapabilities() : schema!.capabilities;
+    final diagnostics = modelInChannel == null
+        ? <GenerationDiagnostic>[]
+        : appState.generationInputDiagnostics(
+            modelInChannel,
+            appState.effectiveVideoParams(modelInChannel),
+            [
+              if (uiState.videoFirstFrame case final image?)
+                GenerationMedia(GenerationMediaRole.firstFrame, image.path),
+              if (uiState.videoLastFrame case final image?)
+                GenerationMedia(GenerationMediaRole.lastFrame, image.path),
+              for (final image in uiState.videoReferenceImages)
+                GenerationMedia(GenerationMediaRole.reference, image.path),
+            ],
+          );
 
     // The bottom sheet is this panel's phone form: the layout opens it below
     // the 600 breakpoint and nowhere else.
@@ -289,18 +308,20 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
                       confirmMessage: l10n.dropSetAsFirstFrame,
                     ),
                   ),
-                  const SizedBox(width: _kCardInnerGap),
-                  Expanded(
-                    child: _FrameDropTarget(
-                      label: l10n.lastFrame,
-                      image: uiState.videoLastFrame,
-                      onDrop: uiState.setVideoLastFrame,
-                      onClear: () => uiState.setVideoLastFrame(null),
-                      emptyIcon: Icons.last_page,
-                      emptyTitle: l10n.dropLastFrame,
-                      confirmMessage: l10n.dropSetAsLastFrame,
+                  if (schema?.supportsLastFrame == true || uiState.videoLastFrame != null) ...[
+                    const SizedBox(width: _kCardInnerGap),
+                    Expanded(
+                      child: _FrameDropTarget(
+                        label: l10n.lastFrame,
+                        image: uiState.videoLastFrame,
+                        onDrop: uiState.setVideoLastFrame,
+                        onClear: () => uiState.setVideoLastFrame(null),
+                        emptyIcon: Icons.last_page,
+                        emptyTitle: l10n.dropLastFrame,
+                        confirmMessage: l10n.dropSetAsLastFrame,
+                      ),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ],
@@ -316,6 +337,13 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
             captionStyle: captionStyle,
           ),
         ),
+        for (final diagnostic in diagnostics) ...[
+          const SizedBox(height: AppSpace.s4),
+          Text(
+            GenerationParamTexts.diagnostic(l10n, diagnostic),
+            style: textTheme.labelSmall?.copyWith(color: colorScheme.error),
+          ),
+        ],
         const SizedBox(height: _kCardGap),
         // `1a` 「开关卡」: a tighter card around one 36px row.
         _PanelCard(

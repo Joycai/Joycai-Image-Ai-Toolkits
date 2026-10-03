@@ -15,6 +15,7 @@ import '../../services/catalogue/output_cap_scale.dart';
 import '../../services/catalogue/route_switching.dart';
 import '../../services/llm/channel_routes.dart';
 import '../../services/llm/context_budget.dart';
+import '../../services/llm/generation/generation_profiles.dart';
 import '../../services/llm/llm_dispatcher.dart';
 import '../../services/llm/llm_types.dart';
 import '../../services/llm/model_routes.dart';
@@ -115,6 +116,7 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
   /// touched until the user saves, at which point it is silently cleared
   /// (never mutate what the user hasn't opened).
   String? wireProtocol;
+  String? generationProfile;
 
   /// The route a chat model rides (`llm_models.active_route`), null to
   /// follow the channel's primary, and the parameters parked under its other
@@ -195,6 +197,7 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
         model?.reasoningEffort ?? ((model?.enableThinking ?? false) ? 'medium' : null);
     enableWebSearch = model?.enableWebSearch ?? false;
     wireProtocol = model?.wireProtocol;
+    generationProfile = widget.appState.generationProfileFor(model?.id);
     activeRoute = model?.activeRoute;
     _parked = model == null ? const {} : ModelRoutes.parked(model);
 
@@ -375,11 +378,14 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
       maxOutputTokens: saved != null ? saved.maxOutputTokens : _storedOutputCap,
     );
 
+    final int savedId;
     if (widget.model == null) {
-      await widget.appState.addModel(data);
+      savedId = await widget.appState.addModel(data);
     } else {
-      await widget.appState.updateModel(widget.model!.id!, data);
+      savedId = widget.model!.id!;
+      await widget.appState.updateModel(savedId, data);
     }
+    await widget.appState.setGenerationProfile(savedId, generationProfile);
 
     if (mounted) Navigator.pop(context);
   }

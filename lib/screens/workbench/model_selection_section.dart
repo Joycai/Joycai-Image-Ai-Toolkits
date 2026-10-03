@@ -6,13 +6,12 @@ import '../../l10n/app_localizations.dart';
 import '../../models/llm_channel.dart';
 import '../../models/llm_model.dart';
 import '../../models/spec_rate.dart';
+import '../../services/llm/generation/generation_schema.dart';
 import '../../services/llm/model_capabilities.dart';
 import '../../widgets/models/model_picker_options.dart';
-import '../../widgets/ui/app_dropdown.dart';
 import '../../widgets/ui/app_field_size.dart';
-import '../../widgets/ui/app_segmented_control.dart';
 import '../../widgets/ui/searchable_picker.dart';
-import 'widgets/size_picker/size_field.dart';
+import 'widgets/generation_params/generation_param_panel.dart';
 
 /// Vertical rhythm inside the card: header → pickers → parameter grid
 /// (`A1 · 1a`, `gap:8`).
@@ -52,6 +51,7 @@ class ModelSelectionSection extends StatelessWidget {
   /// id here: a relay model pinned to a protocol has that protocol's
   /// parameters, which its id cannot know.
   final ModelCapabilities Function(LLMModel model) capabilitiesOf;
+  final GenerationSchema Function(LLMModel model)? schemaOf;
 
   /// What the store holds for a parameter before validation — the size field
   /// says when a sibling model's size was dropped for this one. Null in a
@@ -75,6 +75,7 @@ class ModelSelectionSection extends StatelessWidget {
     required this.imageParamResolver,
     required this.onImageParamChanged,
     required this.capabilitiesOf,
+    this.schemaOf,
     this.storedImageParamOf,
     this.specRatesOf,
   });
@@ -237,242 +238,20 @@ class ModelSelectionSection extends StatelessWidget {
     );
   }
 
-  /// Whether a parameter needs the whole row rather than half of it.
-  ///
-  /// A segmented track of three or four options at half the card's width
-  /// leaves each option ~30px — room for 「低」, not for "Medium". Two options
-  /// and every select-like control fit a half.
-  /// The size field too: value, derived ratio and the swap button are one
-  /// row (`A1c · 30a`).
-  static bool _spansRow(ParamSpec spec) =>
-      spec.control == ParamControl.customSize ||
-      spec.control == ParamControl.segmented && spec.options.length > 2;
-
   Widget _buildModelSpecificOptions(BuildContext context, LLMModel model, AppLocalizations l10n) {
     final caps = capabilitiesOf(model);
-    // Sliders are video-only (grok-imagine-video's duration); no image family
-    // declares one, and this card has nothing to draw for it.
-    final specs = [
-      for (final spec in caps.imageParams)
-        if (spec.control != ParamControl.slider) spec,
-    ];
-    if (!caps.isImageGenerator || specs.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    // `A1 · 1a`: a two-column grid, gap 6. Cells pair up in declaration order;
-    // a cell that spans the row, or a half left without a partner, takes the
-    // full width rather than leaving a hole beside it.
-    final rows = <Widget>[];
-    Widget? pendingHalf;
-    for (final spec in specs) {
-      final cell = _buildParamCell(context, model, spec, l10n);
-      if (_spansRow(spec)) {
-        if (pendingHalf != null) {
-          rows.add(pendingHalf);
-          pendingHalf = null;
-        }
-        rows.add(cell);
-      } else if (pendingHalf == null) {
-        pendingHalf = cell;
-      } else {
-        rows.add(
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(child: pendingHalf),
-              const SizedBox(width: AppSpace.s6),
-              Expanded(child: cell),
-            ],
-          ),
-        );
-        pendingHalf = null;
-      }
-    }
-    if (pendingHalf != null) rows.add(pendingHalf);
-
+    if (!caps.isImageGenerator || caps.imageParams.isEmpty) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.only(top: _kGap),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          for (final (index, row) in rows.indexed) ...[
-            if (index > 0) const SizedBox(height: AppSpace.s6),
-            row,
-          ],
-        ],
+      child: GenerationParamPanel(
+        specs: caps.imageParams,
+        valueOf: (spec) => imageParamResolver(model, spec),
+        onChanged: (key, value) => onImageParamChanged(model, key, value),
+        modelName: model.modelName,
+        storedValueOf: (key) => storedImageParamOf?.call(model, key),
+        rates: specRatesOf?.call(model),
+        schema: schemaOf?.call(model),
       ),
     );
-  }
-
-  /// One grid cell: an 11px secondary caption over its control.
-  Widget _buildParamCell(
-    BuildContext context,
-    LLMModel model,
-    ParamSpec spec,
-    AppLocalizations l10n,
-  ) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final textTheme = theme.textTheme;
-    final current = imageParamResolver(model, spec);
-
-    final Widget control;
-    switch (spec.control) {
-      case ParamControl.dropdown:
-        // The library's dropdown, drawn as the same box as the two pickers
-        // above it. Controlled, so the value is the resolver's every build; the
-        // `FormField` this replaced owned its own and had to be re-keyed per
-        // model to drop a stale one.
-        control = AppDropdown<String>(
-          size: AppFieldSize.regular,
-          value: current,
-          items: [
-            for (final o in spec.options)
-              AppDropdownItem(value: o.value, label: _optionLabel(l10n, spec.key, o.value)),
-          ],
-          onChanged: (v) {
-            if (v != null) onImageParamChanged(model, spec.key, v);
-          },
-        );
-      case ParamControl.segmented:
-        // `1a` 「质量」: every option `flex:1` on the track, the chosen one
-        // lifted out on the panel's ground.
-        control = AppSegmentedControl<String>(
-          segments: spec.options
-              .map((o) => AppSegment(value: o.value, label: _optionLabel(l10n, spec.key, o.value)))
-              .toList(),
-          value: current,
-          onChanged: (v) => onImageParamChanged(model, spec.key, v),
-          compact: true,
-          expand: true,
-          // A half-cell is 137px: two slots of 65, and an English "Medium"
-          // needs 46 of it (`A1f · 4g`).
-          tightLabels: true,
-          style: AppSegmentStyle.raised,
-        );
-      case ParamControl.customSize:
-        // `A1c`: the size field, which opens the size picker.
-        control = SizeField(
-          spec: spec,
-          value: current,
-          modelName: model.modelName,
-          storedValue: storedImageParamOf?.call(model, spec.key),
-          rates: specRatesOf?.call(model),
-          onChanged: (v) => onImageParamChanged(model, spec.key, v),
-        );
-      case ParamControl.slider:
-        // Filtered out above; kept so the switch stays exhaustive.
-        control = const SizedBox.shrink();
-    }
-
-    return MergeSemantics(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            _paramLabel(l10n, spec.labelKey),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
-          ),
-          const SizedBox(height: AppSpace.s4),
-          control,
-        ],
-      ),
-    );
-  }
-
-  String _paramLabel(AppLocalizations l10n, String labelKey) {
-    switch (labelKey) {
-      case 'aspectRatio':
-        return l10n.aspectRatio;
-      case 'resolution':
-        // The image families' `resolution` param is a width×height pair, which
-        // is a size, not a resolution — and `16a` labels the row 「尺寸」. The
-        // video panel's copy of this switch keeps `resolution`: there the
-        // param really is one (720p / 1080p).
-        return l10n.imageSizeLabel;
-      case 'quality':
-        return l10n.quality;
-      case 'promptExtend':
-        return l10n.promptExtend;
-      case 'mjVersion':
-        return l10n.mjVersion;
-      case 'mjMode':
-        return l10n.mjMode;
-      case 'mjStylize':
-        return l10n.mjStylize;
-      case 'mjChaos':
-        return l10n.mjChaos;
-      case 'imageTask':
-        return l10n.paramImageTask;
-      case 'maxImages':
-        return l10n.paramMaxImages;
-      case 'outputFormat':
-        return l10n.paramOutputFormat;
-      case 'optimizeMode':
-        return l10n.paramOptimizeMode;
-      case 'webSearch':
-        return l10n.paramWebSearch;
-      case 'watermark':
-        return l10n.paramWatermark;
-      default:
-        return labelKey;
-    }
-  }
-
-  String _optionLabel(AppLocalizations l10n, String paramKey, String value) {
-    if (value == 'auto' || value == 'not_set') return l10n.optionAuto;
-    // Two-state switches share one on/off vocabulary.
-    if (paramKey == 'promptExtend' || paramKey == 'webSearch' || paramKey == 'watermark') {
-      switch (value) {
-        case 'on':
-          return l10n.promptExtendOn;
-        case 'off':
-          return l10n.promptExtendOff;
-      }
-    }
-    if (paramKey == 'imageTask') {
-      switch (value) {
-        case 'generate':
-          return l10n.taskGenerate;
-        case 'layers':
-          return l10n.taskLayers;
-        case 'transparent':
-          return l10n.taskTransparent;
-      }
-    }
-    if (paramKey == 'maxImages') {
-      final n = int.tryParse(value);
-      if (n == 1) return l10n.promptExtendOff;
-      if (n != null) return l10n.maxImagesUpTo(n);
-    }
-    if (paramKey == 'optimizeMode') {
-      switch (value) {
-        case 'standard':
-          return l10n.optimizeStandard;
-        case 'fast':
-          return l10n.optimizeFast;
-      }
-    }
-    if (paramKey == 'outputFormat') return value.toUpperCase();
-    if (paramKey == 'quality') {
-      switch (value) {
-        case 'low':
-          return l10n.qualityLow;
-        case 'medium':
-          return l10n.qualityMedium;
-        case 'high':
-          return l10n.qualityHigh;
-        case 'xhigh':
-          return l10n.qualityXhigh;
-        case 'max':
-          return l10n.qualityMax;
-      }
-    }
-    return value;
   }
 }

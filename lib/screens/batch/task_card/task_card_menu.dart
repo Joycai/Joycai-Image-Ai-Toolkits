@@ -71,7 +71,7 @@ class _TaskMenuButtonState extends State<TaskMenuButton> {
     final canCancel = _isActive(task);
     final canRetry = task.status == TaskStatus.failed || task.status == TaskStatus.cancelled;
     final canRemove = _isTerminal(task);
-    final hasPrompt = task.parameters.containsKey('prompt');
+    final hasPrompt = task.generationOptions.containsKey('prompt');
 
     setState(() => _open = true);
     await showAppGlassMenuBelow(
@@ -104,7 +104,7 @@ class _TaskMenuButtonState extends State<TaskMenuButton> {
             icon: Icons.content_copy,
             label: l10n.copyPrompt,
             onSelected: () {
-              final prompt = '${task.parameters['prompt'] ?? ''}';
+              final prompt = '${task.generationOptions['prompt'] ?? ''}';
               Clipboard.setData(ClipboardData(text: prompt));
               if (!mounted) return;
               AppSnackBar.info(

@@ -1,4 +1,8 @@
 import '../../core/constants.dart' show ModelTag;
+import 'generation/generation_profiles.dart';
+import 'generation/generation_request.dart';
+import 'generation/generation_schema.dart';
+import 'generation/generation_validator.dart';
 import 'llm_types.dart';
 import 'model_capabilities.dart';
 import 'model_descriptor.dart';
@@ -116,12 +120,21 @@ class LLMDispatcher {
   LLMTarget resolveTarget(LLMModelConfig config) => LLMTarget(
     config: config,
     vendor: Vendors.byId(config.channelType),
-    model: descriptorFor(
-      channelType: config.channelType,
-      modelId: config.modelId,
-      tag: config.tag,
-      wireProtocol: config.wireProtocol,
-    ),
+    model:
+        descriptorFor(
+          channelType: config.channelType,
+          modelId: config.modelId,
+          tag: config.tag,
+          wireProtocol: config.wireProtocol,
+        ).withCapabilities(
+          generationSchemaFor(
+            channelType: config.channelType,
+            modelId: config.modelId,
+            tag: config.tag,
+            wireProtocol: config.wireProtocol,
+            profile: config.generationProfile,
+          ).capabilities,
+        ),
   );
 
   /// The layer-3 facts for a stored model as its channel serves it: the
@@ -140,6 +153,75 @@ class LLMDispatcher {
     modelId,
     servedBy: _servedBy(channelType, modelId, tag: tag, stored: wireProtocol),
   );
+
+  /// Resolve once; schema composition never owns a second routing table.
+  static GenerationSchema generationSchemaFor({
+    required String channelType,
+    required String modelId,
+    String? tag,
+    String? wireProtocol,
+    String? profile,
+  }) {
+    final menu = protocolMenu(channelType, modelId, tag: tag);
+    final protocol = _validPin(menu, wireProtocol) ?? menu.auto;
+    var caps = descriptorFor(
+      channelType: channelType,
+      modelId: modelId,
+      tag: tag,
+      wireProtocol: wireProtocol,
+    ).capabilities;
+    // Native video protocol declarations replace the shared family contract,
+    // including auto routes (which deliberately keep the id descriptor).
+    if (protocol?.surface == Surface.videoJob && !caps.supportsVideoProtocol(protocol!)) {
+      caps = ModelCapabilities.forProtocol(protocol);
+    }
+    try {
+      caps = GenerationProfiles.resolve(profile, protocol) ?? caps;
+    } on ArgumentError {
+      return GenerationSchema(
+        protocol: protocol,
+        capabilities: caps,
+        profileId: caps.profileId,
+        configurationDiagnostics: const [GenerationDiagnostic('incompatibleProfile')],
+      );
+    }
+    return GenerationSchema(protocol: protocol, capabilities: caps, profileId: caps.profileId);
+  }
+
+  Future<Map<String, dynamic>?> _generationOptions(
+    LLMModelConfig config,
+    List<LLMMessage> history,
+    Map<String, dynamic>? options,
+  ) async {
+    final schema = generationSchemaFor(
+      channelType: config.channelType,
+      modelId: config.modelId,
+      tag: config.tag,
+      wireProtocol: config.wireProtocol,
+      profile: config.generationProfile,
+    );
+    final GenerationRequest? request;
+    try {
+      request = GenerationRequest.fromTask(options ?? const {});
+    } on FormatException catch (error) {
+      throw LLMApiException(
+        'Invalid queued generation request: ${error.message}. Nothing was sent.',
+      );
+    }
+    if (request != null &&
+        (!request.matches(model: config.modelId, vendor: config.channelType, schema: schema) ||
+            request.modelRowId != null && request.modelRowId != config.id ||
+            request.channelRowId != null && request.channelRowId != config.channelId)) {
+      throw LLMApiException(
+        'The model, protocol or generation profile changed after this task was queued. Nothing was sent.',
+      );
+    }
+    return validateGeneration(
+      schema,
+      history,
+      options == null ? null : generationTaskOptions(options),
+    );
+  }
 
   // ---------------------------------------------------------------------------
   // Protocol menus and the per-model selection (`llm_models.wire_protocol`)
@@ -739,7 +821,8 @@ class LLMDispatcher {
     Map<String, dynamic>? options,
     List<LLMTool>? tools,
     LLMLogger? logger,
-  }) {
+  }) async {
+    options = await _generationOptions(config, history, options);
     final target = resolveTarget(config);
     switch (target.vendor.family) {
       case ProtocolFamily.midjourney:
@@ -1078,6 +1161,7 @@ class LLMDispatcher {
     List<LLMTool>? tools,
     LLMLogger? logger,
   }) async* {
+    options = await _generationOptions(config, history, options);
     final target = resolveTarget(config);
     switch (target.vendor.family) {
       case ProtocolFamily.midjourney:
@@ -1297,6 +1381,7 @@ class LLMDispatcher {
     Map<String, dynamic>? options,
     LLMLogger? logger,
   }) async {
+    options = await _generationOptions(config, history, options);
     final target = resolveTarget(config);
     final route = _videoSubmitRoute(target);
     if (route != null) {

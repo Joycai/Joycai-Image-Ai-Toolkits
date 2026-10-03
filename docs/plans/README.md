@@ -25,6 +25,32 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 |---|---|
 | [`2026-08-assistant-timeout.md`](2026-08-assistant-timeout.md) | 不是施工说明书，是**一次真实故障的取证记录**（`api_logs/` 里七条日志的耗时还原）。`architecture/assistant-context.md` 直接引它作为「为什么要早elide」的证据。 |
 
+## 2026-10-03 · 生成参数模块与共享表单
+
+图像/视频共用 typed schema、请求快照、验证与参数编辑器；参数表拆成八个 profile
+模块，完整注册表同时供计费条件词汇使用。Dispatcher 仍是唯一选路处，具体视频 wire
+各自使用参数契约；别名可在已选原生 wire 内选择能力 profile，设置落库，不改变路由。
+UI 复用现有 App 控件、尺寸编辑器、字体、主题与玻璃；presentation / editor registry
+可独立替换控件和占行规则。Grok Imagine Image 2.0 的两项「Auto」改为 Default / Auto，
+保留 unset / explicit auto 两个 API 值，四语言一起更新。
+
+视频帧与参考图冲突显示原因并阻止提交；不支持的尾帧仍可移除。Seedream 拆图层隐藏
+无效比例/组图数；透明编辑显示固定 PNG，读取实际源图 alpha 后再请求，绕过会去掉
+透明通道的 JPEG 压缩。新任务只存一份 versioned generation JSON，旧平面参数仍可读；
+首次提交验证 model/channel/wire/profile，已接收视频任务保留原 job/surface 恢复路径。
+偏好按模型、渠道、wire、操作隔离，旧 family 值只作迁移种子，失效草稿不被擦掉。
+
+不变量与扩展流程见 [生成参数与表单](../architecture/generation-parameters.md)，LLM/UI
+架构笔记已链接它。原施工计划与执行记录保存在
+`git show 3e267163:docs/plans/2026-10-03-modular-generation-parameters.md`，提交后退役。
+分支 `codex/modular-generation-parameters`；无版本/数据库 schema 变更。
+
+验证：format / analyze（No issues found）通过；全量非截图测试 3160 通过、1 skip
+（Windows watcher 的一次环境失败单测重跑及四 worker 全量重跑均绿）。Workbench 与
+参数 specimen 共 100 个渲染通过、无布局异常；组件/markdown gallery 32 通过。参数覆盖
+四宽度、四语言、明暗与八主题，已检查真实页面和主题样本。没有付费上游请求或原生
+Android/iOS 实机验证；窄桌面截图不声称原生平台覆盖。既有上游/计费债务留在下表。
+
 ## 2026-10-01 · 用量图表
 
 用量摘要改为 Token 构成圆环（输入 / 缓存输入 / 输出，保留精确计数及占比）与缓存命中率圆环。
@@ -224,7 +250,7 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 | 中转站透传方舟 body 的实机 | 按路径同形推断（New API 的火山渠道），未拿中转 key 验证 |
 | 「自动」尺寸的计费匹配 | 2026-09-23 给 5.0 pro 加了分辨率「自动」（拆图层够到上游 `auto`）与 `billed_image_count`。「自动」的请求没有尺寸：按档位写的计费组只能落到不写尺寸的行。方舟每项回显 `size`，却不发布 `output_size`；发了也不够——按面积就近归档，2.88 MP 会归到 1.5K（0.3 元），而上游按 261 万像素分界收 0.6 元；拆图层的底图与各层尺寸还各不相同。要么按像素阈值写计费行，要么逐张计价 |
 | 链接全部下载失败时不记账 | 方舟已画已扣，协议却因「一张都没拿到」抛错，`LLMService` 的失败路径不写用量行。`billed_image_count` 只修了部分下载失败 |
-| 审阅余项（2026-09-23） | 拆图层模式下比例控件仍可选、被静默丢弃（不 warn、不隐藏）；`_seedream30` 的表在 `volcengine-ark.md` 里没有出处；透明背景模式不在本地检查参考图有无透明通道（上游 400 会响，只是白传一遍） |
+| 审阅余项（2026-09-23） | `_seedream30` 的表在 `volcengine-ark.md` 里没有出处。拆图层比例控件与透明源图 alpha 验证已在 2026-10-03 生成参数模块一轮修复 |
 
 ### 输出上限（2026-09-16）
 

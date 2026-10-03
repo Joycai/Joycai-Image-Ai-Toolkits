@@ -11,6 +11,7 @@ import '../../core/constants.dart';
 import '../../core/design_tokens.dart';
 import '../../core/file_utils.dart';
 import '../../l10n/app_localizations.dart';
+import '../../services/tasks/generation_task_data.dart';
 import '../../services/tasks/task_queue_service.dart';
 import '../../state/app_state.dart';
 import '../../widgets/glass/app_glass_menu.dart';

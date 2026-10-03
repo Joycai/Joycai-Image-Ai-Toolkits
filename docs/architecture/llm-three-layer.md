@@ -352,9 +352,12 @@ LLMService.request(modelIdentifier, messages, ...)
   `app_state.dart`（"这个渠道能不能出视频"）、`channel_provider_presets.dart`
   的 `genericVendorForFamily` / `protocolFamilyLabel`、以及编辑器与向导的
   endpoint 提示。全是 UI/state 对 Layer 2 的只读消费。
-- **新增模型能力**：只动 Layer 3（`model_capability_tables.dart` 的参数表——`model_capabilities.dart`
-  的 part，按 id 分流的 `forModel` / `forProtocol` / `forFamily` 仍在主文件——、
+- **新增模型能力**：只动 Layer 3（`generation/profiles/*_profiles.dart` 的参数表——`model_capabilities.dart`
+  的 part 与 `profiles` 注册表，按 id 分流的 `forModel` / `forProtocol` / `forFamily` 仍在主文件——、
   必要时 `model_family.dart` 的分类规则）。
+  图像/视频共享 schema、参数编辑器、任务 JSON 与偏好迁移见
+  [生成参数与表单](generation-parameters.md)。有效 wire 的输入约束在
+  `protocols/generation_contract.dart`；别名 profile 只能在已选 wire 内声明能力，不能增加路由。
 - **新增任务类型**：与本层无关，见 AGENTS.md 的 task type 扩展流程。
 
 ## 硬编码红线（code review 时直接 grep）

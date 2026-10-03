@@ -19,6 +19,8 @@ import '../assistant/prompt_optimizer_agent.dart';
 import '../db/database_service.dart';
 import '../db/repositories/cookie_repository.dart';
 import '../db/repositories/image_layer_repository.dart';
+import '../llm/generation/generation_execution_context.dart';
+import '../llm/generation/generation_profile_store.dart';
 import '../llm/image_compression.dart';
 import '../llm/job_poll.dart';
 import '../llm/llm_service.dart';
@@ -27,6 +29,7 @@ import '../llm/model_descriptor.dart';
 import '../llm/output_spec.dart' show reportedCostOf;
 import '../media/web_scraper_service.dart';
 import 'ai_rename_agent.dart';
+import 'generation_task_data.dart';
 
 // Re-export the task data model so existing importers of this file keep working.
 export '../../models/task_item.dart';
@@ -206,16 +209,18 @@ class TaskQueueService extends ChangeNotifier {
     int? modelDbId;
     String? channelTag;
     int? channelColor;
+    var taskParams = Map<String, dynamic>.of(params);
 
-    if (modelIdentifier is int) {
-      modelDbId = modelIdentifier;
+    if (modelIdentifier is int || type == TaskType.imageProcess || type == TaskType.videoGenerate) {
+      modelDbId = modelIdentifier is int ? modelIdentifier : null;
       // Fetch model and channel info for visual continuity in history
       final models = await _db.getModels();
       final model = models.cast<LLMModel?>().firstWhere(
-        (m) => m?.id == modelDbId,
+        (m) => modelIdentifier is int ? m?.id == modelDbId : m?.modelId == modelIdentifier,
         orElse: () => null,
       );
       if (model != null) {
+        modelDbId = model.id;
         if (modelIdDisplay == null) {
           modelIdStr = model.modelName.isNotEmpty ? model.modelName : model.modelId;
         }
@@ -225,6 +230,14 @@ class TaskQueueService extends ChangeNotifier {
           if (channel != null) {
             channelTag = channel.tag;
             channelColor = channel.tagColor;
+            taskParams = snapshotGenerationTask(
+              model: model,
+              channel: channel,
+              type: type,
+              imagePaths: imagePaths,
+              options: params,
+              profile: await GenerationProfileStore.read(_db, model.id),
+            );
           }
         }
       }
@@ -238,7 +251,7 @@ class TaskQueueService extends ChangeNotifier {
       modelDbId: modelDbId,
       channelTag: channelTag,
       channelColor: channelColor,
-      parameters: params,
+      parameters: taskParams,
       useStream: useStream,
     );
     if (type == TaskType.imageProcess) {

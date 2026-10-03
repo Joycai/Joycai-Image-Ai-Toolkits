@@ -1,0 +1,20 @@
+{
+  "generationAudio": "音声",
+  "generationInvalidParameter": "この設定は無効です。対応する値を選択してください。",
+  "generationUnsupportedLastFrame": "このリクエストは最終フレームに対応していません。削除してください。",
+  "generationMissingFirstFrame": "最終フレームを使う前に開始フレームを追加してください。",
+  "generationConflictingMedia": "フレームか参照画像のどちらかを使用し、競合する入力を削除してください。",
+  "generationSingleSource": "このモードには元画像が1枚必要です。",
+  "generationMediaLimit": "入力または出力画像の数が上限を超えています。",
+  "generationDuplicateFrame": "各フレームには画像を1枚だけ使用してください。",
+  "generationFixedPng": "透明な出力には PNG が必要です。",
+  "generationStoredReset": "保存した値は使用できません。表示中の既定値を使用します。",
+  "generationUnreadableMedia": "入力画像を読み込めません。選択し直してください。",
+  "generationProfile": "生成プロファイル",
+  "generationProfileAuto": "自動プロファイル",
+  "generationOptionDefault": "既定",
+  "generationIncompatibleProfile": "生成プロファイルがこの接続方式に対応していません。モデル設定で自動または互換性のあるプロファイルを選択してください。",
+  "generationMissingEditor": "この設定に使用できるエディターがありません。",
+  "generationLayersRatioInactive": "レイヤー分解ではアスペクト比を使用しません。",
+  "generationTransparentSource": "透明編集にはアルファチャンネルを持つ元画像を1枚選択してください。"
+}

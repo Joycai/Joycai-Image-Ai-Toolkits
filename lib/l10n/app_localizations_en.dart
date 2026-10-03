@@ -1375,6 +1375,66 @@ class AppLocalizationsEn extends AppLocalizations {
       'Cookies you paste are remembered here for the same site next time.';
 
   @override
+  String get generationAudio => 'Audio';
+
+  @override
+  String get generationInvalidParameter =>
+      'This setting is no longer valid. Choose a supported value.';
+
+  @override
+  String get generationUnsupportedLastFrame =>
+      'This request does not support a last frame. Remove it to continue.';
+
+  @override
+  String get generationMissingFirstFrame => 'Add a first frame before using a last frame.';
+
+  @override
+  String get generationConflictingMedia =>
+      'Use frames or reference images for this request. Remove the conflicting inputs.';
+
+  @override
+  String get generationSingleSource => 'This mode needs exactly one source image.';
+
+  @override
+  String get generationMediaLimit => 'Too many input or output images for this request.';
+
+  @override
+  String get generationDuplicateFrame => 'Use one image for each frame slot.';
+
+  @override
+  String get generationFixedPng => 'PNG is required for transparent output.';
+
+  @override
+  String get generationStoredReset =>
+      'The saved value is unavailable here; the displayed default will be used.';
+
+  @override
+  String get generationUnreadableMedia => 'An input image cannot be read. Select it again.';
+
+  @override
+  String get generationProfile => 'Generation profile';
+
+  @override
+  String get generationProfileAuto => 'Automatic profile';
+
+  @override
+  String get generationOptionDefault => 'Default';
+
+  @override
+  String get generationIncompatibleProfile =>
+      'The generation profile does not match this route. Choose Automatic or a compatible profile in model settings.';
+
+  @override
+  String get generationMissingEditor => 'No editor is available for this setting.';
+
+  @override
+  String get generationLayersRatioInactive => 'Aspect ratio is unused in layer decomposition.';
+
+  @override
+  String get generationTransparentSource =>
+      'Select one source image with an alpha channel for transparent editing.';
+
+  @override
   String get usageTokenBreakdown => 'Token breakdown';
 
   @override

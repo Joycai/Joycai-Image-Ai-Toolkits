@@ -12,6 +12,7 @@ import '../../models/llm_model.dart';
 import '../../models/prompt.dart';
 import '../../models/prompt_history_entry.dart';
 import '../../models/tag.dart';
+import '../../services/llm/generation/generation_schema.dart';
 import '../../state/app_state.dart';
 import '../../state/gallery_state.dart';
 import '../../state/workbench_ui_state.dart';
@@ -29,6 +30,7 @@ import 'widgets/config/config_action_bar.dart';
 import 'widgets/config/prompt_history_sheet.dart';
 import 'widgets/config/prompt_library_sheet.dart';
 import 'widgets/config/queue_settings_dialog.dart';
+import 'widgets/generation_params/generation_param_texts.dart';
 
 part 'config_panel/config_panel_chrome.dart';
 part 'config_panel/config_selection_card.dart';
@@ -316,10 +318,12 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
                 Provider.of<AppState>(context, listen: false).getImageParam(model, spec),
             onImageParamChanged: (model, key, value) =>
                 Provider.of<AppState>(context, listen: false).setImageParam(model, key, value),
+            schemaOf: (model) =>
+                Provider.of<AppState>(context, listen: false).generationSchemaForModel(model),
             capabilitiesOf: (model) => Provider.of<AppState>(
               context,
               listen: false,
-            ).descriptorForModel(model).capabilities,
+            ).generationSchemaForModel(model).capabilities,
             storedImageParamOf: (model, key) =>
                 Provider.of<AppState>(context, listen: false).storedImageParam(model, key),
             specRatesOf: (model) =>
@@ -500,6 +504,18 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
                         ...appState.effectiveImageParams(selectedModel),
                       };
 
+                      final diagnostics = appState
+                          .generationInputDiagnostics(selectedModel, params, [
+                            for (final image in appState.galleryState.selectedImages)
+                              GenerationMedia(GenerationMediaRole.reference, image.path),
+                          ]);
+                      if (diagnostics.isNotEmpty) {
+                        AppSnackBar.warning(
+                          context,
+                          GenerationParamTexts.diagnostic(l10n, diagnostics.first),
+                        );
+                        return;
+                      }
                       appState.submitTask(selectedModelDbId, params, modelIdDisplay: modelName);
 
                       if (widget.scrollController != null) {

@@ -75,13 +75,15 @@ void main() {
     expect(body['quality'], 'low');
   });
 
-  test('a quality the model does not price is left out, not sent', () async {
+  test('a quality outside the contract is rejected before sending', () async {
     // `auto` lets the model choose (and bills unpredictably); `high` is
     // refused with a 400. Neither is offered, and neither leaks through
     // from a store written for another family.
     for (final q in ['auto', 'high', 'not_set', '']) {
-      final body = await send('grok-imagine-image-2.0', {'quality': q});
-      expect(body.containsKey('quality'), isFalse, reason: q);
+      await expectLater(
+        send('grok-imagine-image-2.0', {'quality': q}),
+        throwsA(isA<LLMApiException>()),
+      );
     }
   });
 
@@ -128,13 +130,14 @@ void main() {
     });
   });
 
-  test('the legacy model sends no quality and is re-sized off 1.5k', () async {
+  test('the legacy model refuses an explicit unsupported size', () async {
     // The two families share one parameter store: a `1.5k` chosen on 2.0 is
     // not a size the first generation takes (400 upstream), so the shared
     // size guard swaps in the legacy default before the body is built.
-    final body = await send('grok-imagine-image', {'imageSize': '1.5k', 'quality': 'low'});
-    expect(body.containsKey('quality'), isFalse);
-    expect(body['resolution'], '1k');
+    await expectLater(
+      send('grok-imagine-image', {'imageSize': '1.5k'}),
+      throwsA(isA<LLMApiException>()),
+    );
   });
 }
 
