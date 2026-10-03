@@ -1,5 +1,21 @@
 part of 'prompt_optimizer_agent.dart';
 
+/// Calls postponed by a question were never executed. History consumers must
+/// not reconstruct deliveries or edits from their arguments.
+Set<String> _deferredToolCallIds(List<LLMMessage> history) {
+  final ids = <String>{};
+  for (final message in history) {
+    if (message.role != LLMRole.tool || message.toolCallId == null) continue;
+    try {
+      final result = jsonDecode(message.content);
+      if (result is Map && result['status'] == 'deferred') ids.add(message.toolCallId!);
+    } on FormatException {
+      // Older tool results may be plain text.
+    }
+  }
+  return ids;
+}
+
 /// [PromptOptimizerAgent.repairToolCallPairing], with each output's index in the input (null for
 /// a stub) so a caller can rebase indices it holds.
 List<({LLMMessage message, int? origin})> _repairPairingWithOrigins(List<LLMMessage> history) {

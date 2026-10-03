@@ -243,16 +243,18 @@ nothing throws, the numbers just quietly stop meaning what they claim.
    typed while pending), or the self-healing cancel guard at the top of
    `runTurn`. Add a new way to start a turn and skip that guard, and the first
    request 400s on both providers.
-9. **A suspended `ask_user` call is the *last* message in the history**, which
-   is what makes pairing it later legal — the result appended when the user
-   answers lands immediately after the assistant message that made it.
-   `canStageAskUser` enforces it by refusing to stage a question batched with
-   any other tool call: `view_image` appends its attachment as a **user**
-   message once the batch finishes, so a batched question's answer would arrive
-   behind it and the history would read `assistant(tool_calls) → tool → user →
-   tool`. Providers reject that (docs/api/tools.md §3) and history is
-   cumulative, so the session never recovers — this is a session-killer, not a
-   turn-killer. `_pairDanglingAskUser` additionally checks adjacency at pairing
+9. **Only tool results may follow a suspended `ask_user` call's owning
+   assistant message.** The turn loop gives the first valid, offered question
+   priority and pairs every sibling call as deferred, without executing it.
+   This preserves the original provider-signed message and shows the card even
+   when a model batches tools. Siblings must be reissued after the answer if
+   still needed. Their results carry `status: deferred`; restoration and
+   compaction skip those calls when reconstructing prompts, edits, or questions.
+   `canStageAskUser` remains a solo-dispatch guard: the loop passes
+   only the priority question to the dispatcher. In particular, no `view_image`
+   attachment may be appended while suspended, or the history would read
+   `assistant(tool_calls) → tool → user → tool`. Providers reject that
+   (docs/api/tools.md §3). `_pairDanglingAskUser` also checks adjacency at pairing
    time and, for a history written before this rail existed, strips the call
    rather than appending a misplaced tool message.
 10. **A replayed history is repaired before it is trusted.** Stored rows can be

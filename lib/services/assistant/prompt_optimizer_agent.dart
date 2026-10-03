@@ -841,6 +841,23 @@ class PromptOptimizerAgent {
         // history stays valid for providers whose tool results are text-only.
         final pendingViews = <Map<String, String>>[];
 
+        // A question takes priority over the rest of a batch. Pair the other
+        // calls as deferred without executing them: in particular, a viewed
+        // image must not land between the question and the user's answer.
+        // Keep the original assistant message (including provider signatures)
+        // intact, and leave just one valid question unanswered.
+        LLMToolCall? priorityAsk;
+        if (offered.contains('ask_user')) {
+          for (final call in response.toolCalls) {
+            if (call.name == 'ask_user' &&
+                call.id.isNotEmpty &&
+                AskUserQuestion.tryParse(call.arguments['questions']) != null) {
+              priorityAsk = call;
+              break;
+            }
+          }
+        }
+
         // Every tool call in the batch MUST get a paired tool result before
         // this method returns: the assistant message (with its toolCalls) is
         // already in history, and the finally block persists whatever is
@@ -850,14 +867,14 @@ class PromptOptimizerAgent {
         // result, and a throwing tool becomes an error result instead of
         // escaping the loop.
         //
-        // The ONE deliberate exception is a valid, solo ask_user call: it
+        // The ONE deliberate exception is the priority ask_user call: it
         // stays dangling and the turn returns, because its result IS the
         // user's answer. This is safe — nothing sends the history while it
         // dangles (the turn has ended), every path back into a turn pairs it
         // first (answerAskUser, resolvePendingAskUserAsFreeText, or the
-        // self-healing guard at the top of runTurn), and canStageAskUser
-        // keeps the dangling call the LAST message so that pairing lands
-        // inside its own batch.
+        // self-healing guard at the top of runTurn). All sibling calls are
+        // deferred, so only tool results can follow the owning message and
+        // the user's answer still lands inside its own batch.
         var cancelledMidBatch = false;
         String? pendingAskCallId;
         for (final call in response.toolCalls) {
@@ -868,10 +885,17 @@ class PromptOptimizerAgent {
               'status': 'cancelled',
               'message': 'The user cancelled the task before this tool ran.',
             };
+          } else if (priorityAsk != null && !identical(call, priorityAsk)) {
+            result = {
+              'status': 'deferred',
+              'message':
+                  'This call was deferred because ask_user paused the turn. '
+                  'It did not run. Reissue it after the user answers if still needed.',
+            };
           } else {
             final dispatched = await _dispatchToolCall(
               call,
-              response.toolCalls,
+              priorityAsk == null ? response.toolCalls : [call],
               session,
               db: db,
               offered: offered,
@@ -1087,12 +1111,14 @@ class PromptOptimizerAgent {
       _lastBatchSubmittedPrompt(messages);
 
   static bool _lastBatchSubmittedPrompt(List<LLMMessage> messages) {
+    final deferredCalls = _deferredToolCallIds(messages);
     for (final m in messages.reversed) {
       if (m.role == LLMRole.tool) continue;
       // The image a view_image in the same batch attached: part of the
       // batch's results, not a turn of the user's.
       if (m.role == LLMRole.user && m.content.startsWith(viewResultMarker)) continue;
-      return m.role == LLMRole.assistant && m.toolCalls.any((c) => c.name == 'submit_prompt');
+      return m.role == LLMRole.assistant &&
+          m.toolCalls.any((c) => c.name == 'submit_prompt' && !deferredCalls.contains(c.id));
     }
     return false;
   }
@@ -1327,10 +1353,9 @@ class PromptOptimizerAgent {
   /// docs/api/tools.md §3), and because history is cumulative the request
   /// never becomes valid again — the session is dead, not just the turn.
   ///
-  /// The tool's own description already tells the model to ask alone; this is
-  /// the rail that makes it structural rather than advisory. A batched
-  /// question is refused with an error result, so the model simply re-asks on
-  /// the next iteration of the same turn.
+  /// The turn loop selects one valid question before dispatch and defers all
+  /// sibling calls without running them. It passes only that question here;
+  /// this guard prevents any other caller from suspending an executed batch.
   @visibleForTesting
   static bool canStageAskUser(List<LLMToolCall> batch) => batch.length == 1;
 
