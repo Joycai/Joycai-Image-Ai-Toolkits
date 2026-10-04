@@ -14,9 +14,8 @@ class MainFlutterWindow: NSWindow {
     super.awakeFromNib()
   }
 
-  /// `joycai/trash` — moves a path to the user's Trash through FileManager,
-  /// which is the only route the sandbox allows. See `TrashService` on the
-  /// Dart side for the other platforms.
+  /// `joycai/trash` — recycles through the workspace, using Finder's trash
+  /// behavior instead of FileManager's direct volume trash lookup.
   private func registerTrashChannel(_ controller: FlutterViewController) {
     let channel = FlutterMethodChannel(
       name: "joycai/trash", binaryMessenger: controller.engine.binaryMessenger)
@@ -31,11 +30,17 @@ class MainFlutterWindow: NSWindow {
           result(FlutterError(code: "bad_args", message: "path missing", details: nil))
           return
         }
-        do {
-          try FileManager.default.trashItem(at: URL(fileURLWithPath: path), resultingItemURL: nil)
-          result(nil)
-        } catch {
-          result(FlutterError(code: "trash_failed", message: error.localizedDescription, details: nil))
+        // Start on an active dispatch queue so the completion returns on that
+        // same queue, as required by NSWorkspace and Flutter's platform channel.
+        DispatchQueue.main.async {
+          NSWorkspace.shared.recycle([URL(fileURLWithPath: path)]) { _, error in
+            if let error = error {
+              result(FlutterError(
+                code: "trash_failed", message: error.localizedDescription, details: nil))
+            } else {
+              result(nil)
+            }
+          }
         }
       default:
         result(FlutterMethodNotImplemented)
