@@ -11,6 +11,7 @@ import 'package:joycai_image_ai_toolkits/services/db/database_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 import 'package:joycai_image_ai_toolkits/services/tasks/task_queue_service.dart';
+import 'package:path/path.dart' as p;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import '../../support/private_data_dir.dart';
@@ -103,6 +104,7 @@ void main() {
 
     await queue.addTask(const [], modelId, {
       'prompt': 'two posters',
+      'saveGenerationText': true,
       'maxImages': '2',
       'watermark': 'off',
     }, id: 'stream-save');
@@ -126,6 +128,12 @@ void main() {
     expect(task.status, TaskStatus.completed);
     expect(task.resultPaths, hasLength(2));
     expect(saved, hasLength(2));
+    for (final path in saved) {
+      expect(
+        await File(p.setExtension(path, '.txt')).readAsString(),
+        'Input images:\n(none)\n\nPrompt:\ntwo posters',
+      );
+    }
   });
 
   test('a stream that fails after an image keeps it and records its usage', () async {

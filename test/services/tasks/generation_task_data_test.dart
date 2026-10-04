@@ -35,11 +35,13 @@ void main() {
         'imageSize': '2048x2048',
         'imagePrefix': 'render',
         'retryCount': 2,
+        'saveGenerationText': true,
       },
     );
     expect(params, isNot(contains('prompt')));
     expect(params, isNot(contains('imageSize')));
     expect(params['imagePrefix'], 'render');
+    expect(params['saveGenerationText'], isTrue);
     final decoded = GenerationRequest.fromTask(
       jsonDecode(jsonEncode(params)) as Map<String, dynamic>,
     )!;

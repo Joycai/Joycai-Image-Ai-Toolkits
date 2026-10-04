@@ -5921,6 +5921,24 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get optImagesNotOfferedAction => '打开模型设置';
+
+  @override
+  String get generationSettings => '生成设置';
+
+  @override
+  String get generationOutputFiles => '输出文件';
+
+  @override
+  String get generationExecution => '任务执行';
+
+  @override
+  String get saveGenerationText => '保存提示词为 TXT';
+
+  @override
+  String get saveGenerationTextDesc => '在每个图像或视频旁保存同名 .txt，记录输入图像文件名和提示词。';
+
+  @override
+  String get generationSettingsDesc => '图像与视频生成共用。更改对新任务生效，并发限制立即生效。';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -11840,4 +11858,22 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get optImagesNotOfferedAction => '開啟模型設定';
+
+  @override
+  String get generationSettings => '生成設定';
+
+  @override
+  String get generationOutputFiles => '輸出檔案';
+
+  @override
+  String get generationExecution => '任務執行';
+
+  @override
+  String get saveGenerationText => '將提示詞儲存為 TXT';
+
+  @override
+  String get saveGenerationTextDesc => '在每個圖像或影片旁儲存同名 .txt，記錄輸入圖像檔名和提示詞。';
+
+  @override
+  String get generationSettingsDesc => '圖像與影片生成共用。變更對新任務生效，並行限制立即生效。';
 }

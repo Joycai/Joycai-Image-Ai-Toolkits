@@ -6162,4 +6162,24 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get optImagesNotOfferedAction => 'Open model settings';
+
+  @override
+  String get generationSettings => 'Generation Settings';
+
+  @override
+  String get generationOutputFiles => 'Output files';
+
+  @override
+  String get generationExecution => 'Task execution';
+
+  @override
+  String get saveGenerationText => 'Save prompt as TXT';
+
+  @override
+  String get saveGenerationTextDesc =>
+      'Save a matching .txt beside each image or video with the input image filenames and prompt.';
+
+  @override
+  String get generationSettingsDesc =>
+      'Shared by image and video generation. Changes apply to new tasks; concurrency applies immediately.';
 }

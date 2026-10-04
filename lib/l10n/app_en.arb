@@ -4150,5 +4150,11 @@
       }
     }
   },
-  "optImagesNotOfferedAction": "Open model settings"
+  "optImagesNotOfferedAction": "Open model settings",
+  "generationSettings": "Generation Settings",
+  "generationOutputFiles": "Output files",
+  "generationExecution": "Task execution",
+  "saveGenerationText": "Save prompt as TXT",
+  "saveGenerationTextDesc": "Save a matching .txt beside each image or video with the input image filenames and prompt.",
+  "generationSettingsDesc": "Shared by image and video generation. Changes apply to new tasks; concurrency applies immediately."
 }

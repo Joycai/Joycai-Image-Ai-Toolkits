@@ -166,6 +166,7 @@ class AppState extends ChangeNotifier {
   bool setupCompleted = true;
   int concurrencyLimit = 2;
   int retryCount = 0;
+  bool saveGenerationText = false;
   // Per-category Gemini safety thresholds (category → threshold), applied to
   // every image/video generation request. See [SafetySettings].
   Map<String, String> safetyThresholds = SafetySettings.defaults();
@@ -517,6 +518,12 @@ class AppState extends ChangeNotifier {
   /// keeps its own setter, which is what updates that field.
   Future<void> saveSetting(String key, String value) => _db.saveSetting(key, value);
 
+  Future<void> setSaveGenerationText(bool value) async {
+    saveGenerationText = value;
+    notify();
+    await _db.saveSetting('save_generation_text', value.toString());
+  }
+
   Future<void> loadSettings() async {
     addLog('Loading settings from database...');
 
@@ -528,6 +535,8 @@ class AppState extends ChangeNotifier {
       concurrencyLimit = int.tryParse(savedLimit) ?? 2;
       taskQueue.updateConcurrency(concurrencyLimit);
     }
+
+    saveGenerationText = await _db.getSetting('save_generation_text') == 'true';
 
     final savedRetry = await _db.getSetting('retry_count');
     if (savedRetry != null) {

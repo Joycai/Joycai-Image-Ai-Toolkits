@@ -1203,5 +1203,11 @@
       }
     }
   },
-  "optImagesNotOfferedAction": "打开模型设置"
+  "optImagesNotOfferedAction": "打开模型设置",
+  "generationSettings": "生成设置",
+  "generationOutputFiles": "输出文件",
+  "generationExecution": "任务执行",
+  "saveGenerationText": "保存提示词为 TXT",
+  "saveGenerationTextDesc": "在每个图像或视频旁保存同名 .txt，记录输入图像文件名和提示词。",
+  "generationSettingsDesc": "图像与视频生成共用。更改对新任务生效，并发限制立即生效。"
 }

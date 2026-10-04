@@ -1203,5 +1203,11 @@
       }
     }
   },
-  "optImagesNotOfferedAction": "モデル設定を開く"
+  "optImagesNotOfferedAction": "モデル設定を開く",
+  "generationSettings": "生成設定",
+  "generationOutputFiles": "出力ファイル",
+  "generationExecution": "タスク実行",
+  "saveGenerationText": "プロンプトを TXT に保存",
+  "saveGenerationTextDesc": "各画像・動画と同じ場所に同名の .txt を保存し、入力画像のファイル名とプロンプトを記録します。",
+  "generationSettingsDesc": "画像・動画生成で共通です。変更は新しいタスクに適用され、同時実行数はすぐに反映されます。"
 }
