@@ -302,6 +302,7 @@ extension AppStateWorkbench on AppState {
       return;
     }
 
+    params['saveGenerationText'] = saveGenerationText;
     params['imagePrefix'] = galleryState.imagePrefix;
     params['retryCount'] = retryCount;
     params['compressReferenceImages'] = compressReferenceImages;

@@ -29,6 +29,7 @@ import '../llm/model_descriptor.dart';
 import '../llm/output_spec.dart' show reportedCostOf;
 import '../media/web_scraper_service.dart';
 import 'ai_rename_agent.dart';
+import 'generation_result_text.dart';
 import 'generation_task_data.dart';
 
 // Re-export the task data model so existing importers of this file keep working.

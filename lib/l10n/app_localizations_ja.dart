@@ -5954,4 +5954,22 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get optImagesNotOfferedAction => 'モデル設定を開く';
+
+  @override
+  String get generationSettings => '生成設定';
+
+  @override
+  String get generationOutputFiles => '出力ファイル';
+
+  @override
+  String get generationExecution => 'タスク実行';
+
+  @override
+  String get saveGenerationText => 'プロンプトを TXT に保存';
+
+  @override
+  String get saveGenerationTextDesc => '各画像・動画と同じ場所に同名の .txt を保存し、入力画像のファイル名とプロンプトを記録します。';
+
+  @override
+  String get generationSettingsDesc => '画像・動画生成で共通です。変更は新しいタスクに適用され、同時実行数はすぐに反映されます。';
 }

@@ -10665,6 +10665,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Open model settings'**
   String get optImagesNotOfferedAction;
+
+  /// No description provided for @generationSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Generation Settings'**
+  String get generationSettings;
+
+  /// No description provided for @generationOutputFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Output files'**
+  String get generationOutputFiles;
+
+  /// No description provided for @generationExecution.
+  ///
+  /// In en, this message translates to:
+  /// **'Task execution'**
+  String get generationExecution;
+
+  /// No description provided for @saveGenerationText.
+  ///
+  /// In en, this message translates to:
+  /// **'Save prompt as TXT'**
+  String get saveGenerationText;
+
+  /// No description provided for @saveGenerationTextDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Save a matching .txt beside each image or video with the input image filenames and prompt.'**
+  String get saveGenerationTextDesc;
+
+  /// No description provided for @generationSettingsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared by image and video generation. Changes apply to new tasks; concurrency applies immediately.'**
+  String get generationSettingsDesc;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

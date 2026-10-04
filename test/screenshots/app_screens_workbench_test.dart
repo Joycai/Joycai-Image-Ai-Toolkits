@@ -8,9 +8,13 @@
 @Tags(<String>['screenshots'])
 library;
 
+import 'dart:async';
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:joycai_image_ai_toolkits/core/constants.dart';
+import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/config/generation_settings_dialog.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/gallery/image_card.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/size_picker/size_field.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
@@ -26,6 +30,76 @@ void main() {
   setUpScreenSuite((FixtureEnv e) => env = e);
 
   shootMatrix(() => env, const <AppScreen>[AppScreen.workbench]);
+
+  for (final size in kShotSizes) {
+    for (final brightness in Brightness.values) {
+      testWidgets('generation settings ${size.label} ${brightness.name}', (tester) async {
+        await shoot(
+          tester,
+          env: env,
+          screen: AppScreen.workbench,
+          size: size,
+          brightness: brightness,
+          suffix: 'generationSettings',
+          after: (tester) async {
+            unawaited(showGenerationSettingsDialog(tester.element(find.byType(ImageCard).first)));
+            await settle(tester);
+          },
+        );
+      });
+    }
+  }
+
+  for (final locale in [
+    const Locale('en'),
+    const Locale('ja'),
+    const Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hant'),
+  ]) {
+    testWidgets('generation settings enabled ${locale.toLanguageTag()}', (tester) async {
+      await shoot(
+        tester,
+        env: env,
+        screen: AppScreen.workbench,
+        size: kShotSizes.first,
+        locale: locale,
+        suffix: 'generationSettings_${locale.toLanguageTag()}',
+        accent: AppConstants.presetThemes['Orange'],
+        before: (_) async => AppState().setSaveGenerationText(false),
+        after: (tester) async {
+          unawaited(showGenerationSettingsDialog(tester.element(find.byType(ImageCard).first)));
+          await settle(tester);
+          final toggle = find.descendant(of: find.byType(Dialog), matching: find.byType(Switch));
+          await actInRealAsync(tester, () async {
+            await tester.tap(toggle);
+          });
+          expect(AppState().saveGenerationText, isTrue);
+          await runAsyncRethrowing(tester, () async {
+            expect(await AppState().getSetting('save_generation_text'), 'true');
+          });
+        },
+      );
+    });
+  }
+
+  testWidgets('generation settings expanded safety', (tester) async {
+    await shoot(
+      tester,
+      env: env,
+      screen: AppScreen.workbench,
+      size: kShotSizes.first,
+      locale: const Locale('en'),
+      suffix: 'generationSettings_expanded',
+      after: (tester) async {
+        unawaited(showGenerationSettingsDialog(tester.element(find.byType(ImageCard).first)));
+        await settle(tester);
+        final sliders = find.descendant(of: find.byType(Dialog), matching: find.byType(Slider));
+        expect(sliders, findsNWidgets(2));
+        await tester.tap(find.text('Safety Settings'));
+        await settle(tester);
+        expect(sliders, findsNWidgets(6));
+      },
+    );
+  });
 
   // The image workbench with a selection live (spec A1 16a). Tab 0's own
   // matrix shot only ever catches the empty state, and the right column is a

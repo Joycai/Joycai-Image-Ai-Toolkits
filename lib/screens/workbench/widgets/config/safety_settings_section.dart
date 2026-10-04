@@ -5,12 +5,20 @@ import '../../../../core/design_tokens.dart';
 import '../../../../core/safety_settings.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../state/app_state.dart';
+import '../../../../widgets/ui/app_disclosure_chevron.dart';
 
 /// Per-category Gemini safety-threshold sliders (strict → permissive), shared
-/// by the image and video workbench queue-settings dialogs. Reads and writes
+/// by the image and video workbench generation-settings dialogs. Reads and writes
 /// [AppState.safetyThresholds].
-class SafetySettingsSection extends StatelessWidget {
+class SafetySettingsSection extends StatefulWidget {
   const SafetySettingsSection({super.key});
+
+  @override
+  State<SafetySettingsSection> createState() => _SafetySettingsSectionState();
+}
+
+class _SafetySettingsSectionState extends State<SafetySettingsSection> {
+  bool _expanded = false;
 
   String _categoryLabel(AppLocalizations l10n, String category) {
     switch (category) {
@@ -56,51 +64,67 @@ class SafetySettingsSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        // `A1 · 1a` marks this group with a shield in the deep ink.
-        Row(
-          children: [
-            Icon(Icons.shield_outlined, size: AppSize.iconSm, color: colorScheme.accentText),
-            const SizedBox(width: AppSpace.s4),
-            Expanded(child: Text(l10n.safetySettings, style: textTheme.titleSmall)),
-          ],
-        ),
-        const SizedBox(height: AppSpace.s4),
-        Text(
-          l10n.safetySettingsDesc,
-          style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
-        ),
-        for (final category in SafetySettings.categories) ...[
-          const SizedBox(height: AppSpace.s10),
-          Row(
-            children: [
-              Expanded(child: Text(_categoryLabel(l10n, category), style: textTheme.bodySmall)),
-              Text(
-                _thresholdLabel(l10n, thresholds[category] ?? SafetySettings.defaultThreshold),
-                style: textTheme.labelSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: colorScheme.accentText,
-                ),
+        Semantics(
+          expanded: _expanded,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(AppRadius.control),
+            onTap: () => setState(() => _expanded = !_expanded),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: AppSize.touch),
+              child: Row(
+                children: [
+                  Icon(Icons.shield_outlined, size: AppSize.iconSm, color: colorScheme.accentText),
+                  const SizedBox(width: AppSpace.s6),
+                  Expanded(child: Text(l10n.safetySettings, style: textTheme.bodyMedium)),
+                  AppDisclosureChevron(
+                    open: _expanded,
+                    size: AppSize.iconSm,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ],
               ),
-            ],
-          ),
-          SizedBox(
-            height: AppSize.compact,
-            child: Slider(
-              value: SafetySettings.thresholds
-                  .indexOf(thresholds[category] ?? SafetySettings.defaultThreshold)
-                  .clamp(0, SafetySettings.thresholds.length - 1)
-                  .toDouble(),
-              min: 0,
-              max: (SafetySettings.thresholds.length - 1).toDouble(),
-              divisions: SafetySettings.thresholds.length - 1,
-              onChanged: (v) {
-                Provider.of<AppState>(
-                  context,
-                  listen: false,
-                ).setSafetyThreshold(category, SafetySettings.thresholds[v.round()]);
-              },
             ),
           ),
+        ),
+        if (_expanded) ...[
+          const SizedBox(height: AppSpace.s4),
+          Text(
+            l10n.safetySettingsDesc,
+            style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+          ),
+          for (final category in SafetySettings.categories) ...[
+            const SizedBox(height: AppSpace.s10),
+            Row(
+              children: [
+                Expanded(child: Text(_categoryLabel(l10n, category), style: textTheme.bodySmall)),
+                Text(
+                  _thresholdLabel(l10n, thresholds[category] ?? SafetySettings.defaultThreshold),
+                  style: textTheme.labelSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.accentText,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(
+              height: AppSize.compact,
+              child: Slider(
+                value: SafetySettings.thresholds
+                    .indexOf(thresholds[category] ?? SafetySettings.defaultThreshold)
+                    .clamp(0, SafetySettings.thresholds.length - 1)
+                    .toDouble(),
+                min: 0,
+                max: (SafetySettings.thresholds.length - 1).toDouble(),
+                divisions: SafetySettings.thresholds.length - 1,
+                onChanged: (v) {
+                  Provider.of<AppState>(
+                    context,
+                    listen: false,
+                  ).setSafetyThreshold(category, SafetySettings.thresholds[v.round()]);
+                },
+              ),
+            ),
+          ],
         ],
       ],
     );

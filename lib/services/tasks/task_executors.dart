@@ -157,6 +157,7 @@ extension TaskExecutors on TaskQueueService {
       final file = File(filePath);
       await file.writeAsBytes(bytes);
       task.resultPaths.add(filePath);
+      await saveGenerationResultText(task, filePath);
       if (layer != null) await _recordLayer(task, filePath, layerSetId, layer);
       _emit(task.id, TaskEventType.imageResult, filePath);
       task.addLog('Saved result image to: $filePath');
@@ -656,6 +657,7 @@ extension TaskExecutors on TaskQueueService {
     );
 
     task.resultPaths.add(downloadPath);
+    await saveGenerationResultText(task, downloadPath);
     _emit(task.id, TaskEventType.imageResult, downloadPath); // Reusing imageResult for video path
     task.addLog('Saved video to: $downloadPath');
 

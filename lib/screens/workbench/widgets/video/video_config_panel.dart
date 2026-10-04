@@ -34,9 +34,9 @@ import '../../../../widgets/ui/markdown_editor.dart';
 import '../../../../widgets/ui/scroll_edge_fade.dart';
 import '../../../../widgets/ui/searchable_picker.dart';
 import '../config/config_action_bar.dart';
+import '../config/generation_settings_dialog.dart';
 import '../config/prompt_history_sheet.dart';
 import '../config/prompt_library_sheet.dart';
-import '../config/queue_settings_dialog.dart';
 import '../generation_params/generation_param_panel.dart';
 import '../generation_params/generation_param_texts.dart';
 
@@ -473,9 +473,9 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
     // shared with the image workbench. `1a`: an outlined neutral square the
     // height of the button beside it.
     final gearButton = IconButton(
-      onPressed: () => showQueueSettingsDialog(context),
+      onPressed: () => showGenerationSettingsDialog(context),
       icon: const Icon(Icons.settings_outlined),
-      tooltip: l10n.queueSettings,
+      tooltip: l10n.generationSettings,
       style: IconButton.styleFrom(
         backgroundColor: colorScheme.surface,
         foregroundColor: colorScheme.onSurfaceVariant,
