@@ -14,9 +14,8 @@ import 'package:win32/win32.dart';
 ///
 /// * **Windows** — `SHFileOperationW` with `FOF_ALLOWUNDO`, through the
 ///   `win32` bindings. No runner code involved.
-/// * **macOS** — a `MethodChannel` to `FileManager.trashItem`, registered in
-///   `MainFlutterWindow.swift`. The sandbox will not let anything else touch
-///   `~/.Trash`.
+/// * **macOS** — a `MethodChannel` to `NSWorkspace.recycle`, registered in
+///   `MainFlutterWindow.swift`, using the same trash behavior as Finder.
 /// * **Linux** — `gio trash`, which speaks the freedesktop trash spec for
 ///   whatever desktop is running. No `gio` means no trash.
 ///
