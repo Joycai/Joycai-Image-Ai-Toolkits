@@ -9,17 +9,23 @@ import 'package:path/path.dart' as p;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import '../support/in_memory_database.dart';
+import '../support/private_data_dir.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   sqfliteFfiInit();
+  // GalleryState also initializes its platform result cache on macOS/iOS.
+  usePrivateDataDir('joycai_image_refresh_cache');
 
   test('gallery refresh versions source, result, folder and dropped images', () async {
     final db = await openTestDatabase();
+    addTearDown(() => closeTestDatabase(db));
     final dir = await Directory.systemTemp.createTemp('joycai_image_refresh');
+    addTearDown(() => dir.delete(recursive: true));
     final file = File(p.join(dir.path, 'image.png'));
     await file.writeAsString('before');
     final state = GalleryState(database: db);
+    addTearDown(state.dispose);
     await state.settingsLoaded;
     state.sourceDirectories = [dir.path];
     state.activeSourceDirectories = [dir.path];
@@ -27,11 +33,6 @@ void main() {
     state.viewMode = GalleryViewMode.folder;
     state.viewSourcePath = dir.path;
     state.addDroppedFiles([AppImage.fromFile(file)]);
-    addTearDown(() async {
-      state.dispose();
-      await closeTestDatabase(db);
-      await dir.delete(recursive: true);
-    });
 
     await state.refreshImages();
     final before = state.galleryImages.single.imageProvider;
@@ -59,18 +60,16 @@ void main() {
 
   test('browser refresh changes provider when size changes with timestamp preserved', () async {
     final db = await openTestDatabase();
+    addTearDown(() => closeTestDatabase(db));
     final dir = await Directory.systemTemp.createTemp('joycai_browser_refresh');
+    addTearDown(() => dir.delete(recursive: true));
     final file = File(p.join(dir.path, 'image.png'));
     await file.writeAsString('before');
     final state = FileBrowserState(database: db);
+    addTearDown(state.dispose);
     await state.reloadSettings();
     state.sourceDirectories = [dir.path];
     state.activeDirectories = [dir.path];
-    addTearDown(() async {
-      state.dispose();
-      await closeTestDatabase(db);
-      await dir.delete(recursive: true);
-    });
 
     await state.refresh();
     final before = state.allFiles.single.imageProvider;
