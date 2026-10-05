@@ -252,46 +252,41 @@ void main() {
     expect(find.byType(FileRenameDialog), findsOneWidget);
   });
 
-  testWidgets('the menu row and the key it advertises act on the same files', (
+  testWidgets('context-menu delete targets only the clicked reference image', (
     WidgetTester tester,
   ) async {
-    // A row that carries a key's badge and then acts on one file while the
-    // key acts on five is the drift the round exists to remove — the browser's
-    // menu was given `targets` for exactly this reason, and the gallery's was
-    // left behind.
     final l10n = await AppLocalizations.delegate.load(const Locale('zh'));
     final gallery = await mountGallery(tester, 'workbench-menu-targets');
 
     final cards = find.byType(ImageCard);
-    await tester.tap(cards.at(0));
-    await settle(tester);
-    await shiftClick(tester, cards.at(2));
+    for (var index = 0; index < 3; index++) {
+      await tester.tap(cards.at(index));
+      await settle(tester);
+    }
     expect(gallery.selectedImages, hasLength(3));
+    final selected = List<AppImage>.of(gallery.selectedImages);
+    final clicked = tester.widget<ImageCard>(cards.at(1)).imageFile;
 
-    // Right-click a card that is part of that selection.
-    final TestGesture gesture = await tester.startGesture(
-      tester.getCenter(cards.at(1)),
-      kind: PointerDeviceKind.mouse,
-      buttons: kSecondaryButton,
-    );
-    await gesture.up();
+    await tester.tap(cards.at(1), buttons: kSecondaryButton);
     await settle(tester, 12);
+    expect(find.text(l10n.deleteFiles(3)), findsNothing);
+    expect(find.text(l10n.delete), findsOneWidget);
 
-    expect(
-      find.text(l10n.deleteFiles(3)),
-      findsOneWidget,
-      reason:
-          'the row names the selection it would delete, like the key '
-          'that is badged beside it',
-    );
-    expect(
-      find.text(l10n.delete),
-      findsNothing,
-      reason: 'and never the bare singular while three are picked',
-    );
-
-    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await actInRealAsync(tester, () async {
+      await tester.tap(find.text(l10n.delete));
+    });
     await settle(tester, 12);
+    final dialog = find.byType(AppDialog);
+    expect(dialog, findsOneWidget);
+    expect(find.descendant(of: dialog, matching: find.text(l10n.trashFileTitle)), findsOneWidget);
+    expect(find.descendant(of: dialog, matching: find.text(clicked.name)), findsOneWidget);
+    for (final image in selected.where((image) => image.path != clicked.path)) {
+      expect(find.descendant(of: dialog, matching: find.text(image.name)), findsNothing);
+    }
+
+    await tester.tap(find.text(l10n.cancel));
+    await settle(tester, 12);
+    expect(gallery.selectedImages.map((image) => image.path), selected.map((image) => image.path));
     gallery.clearImageSelection();
   });
 

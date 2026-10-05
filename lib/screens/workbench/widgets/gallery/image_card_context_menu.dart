@@ -286,17 +286,18 @@ Future<void> showImageCardContextMenu(
       // a permanent delete only where it does not — so the row no longer has
       // to guess per platform.
       //
-      // `targets`, like the share row above and like the key: the count is
-      // in the label so a selection of five cannot be mistaken for the one
-      // picture under the pointer.
-      label: multi ? l10n.deleteFiles(targets.length) : l10n.delete,
-      trailing: inTempWorkspace ? null : _keys(AppShortcutIds.delete),
+      // Gallery selection also supplies generation references. Deleting a
+      // card must not delete the other references selected for generation.
+      label: l10n.delete,
+      // The keyboard action still targets the selection, so advertise it
+      // only when that selection is exactly this card.
+      trailing: !inTempWorkspace && isPartOfSelection && !multi
+          ? _keys(AppShortcutIds.delete)
+          : null,
       danger: true,
       onSelected: () {
         if (!context.mounted) return;
-        // Copied: the run refreshes the gallery at the end, which rewrites
-        // the live selection this list is.
-        confirmAndDeleteImageFiles(context, List<AppImage>.of(targets));
+        confirmAndDeleteImageFiles(context, [imageFile]);
       },
     ),
   ];
