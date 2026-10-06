@@ -184,6 +184,16 @@ extension _Composer on _PromptOptimizerChatViewState {
                 children: [
                   Focus(
                     onKeyEvent: (node, event) {
+                      final value = widget.inputCtrl.value;
+                      final isEnter =
+                          event.logicalKey == LogicalKeyboardKey.enter ||
+                          event.logicalKey == LogicalKeyboardKey.numpadEnter;
+                      if (isEnter && value.isComposingRangeValid && !value.composing.isCollapsed) {
+                        // Enter confirms the IME's preedit (including raw Latin
+                        // text). Bypass ancestor shortcuts as well, so Flutter
+                        // does not turn that confirmation into a newline.
+                        return KeyEventResult.skipRemainingHandlers;
+                      }
                       if (canSend && _isSendKey(event)) {
                         widget.onSend();
                         return KeyEventResult.handled;
