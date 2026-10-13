@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import '../services/db/database_service.dart';
 import '../services/mcp/image_mcp_server.dart';
 import '../services/tasks/generation_submission_service.dart';
+import '../services/tasks/reference_folder_rule.dart';
 import '../services/tasks/task_queue_service.dart';
 
 /// Owns desktop server lifecycle and persisted settings; UI only edits a draft.
@@ -85,11 +86,15 @@ class McpServerState extends ChangeNotifier {
     try {
       final canonical = <String>[];
       for (final root in folders.split('\n').map((s) => s.trim()).where((s) => s.isNotEmpty)) {
-        if (!Directory(root).isAbsolute || !await Directory(root).exists()) {
+        try {
+          canonical.add(await ReferenceFolderRule.parse(root).canonicalSetting());
+        } on FormatException {
+          errorCode = 'folder';
+          return;
+        } on FileSystemException {
           errorCode = 'folder';
           return;
         }
-        canonical.add(await Directory(root).resolveSymbolicLinks());
       }
       await _server.stop();
       port = parsed;

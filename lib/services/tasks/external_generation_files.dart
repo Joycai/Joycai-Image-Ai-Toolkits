@@ -7,6 +7,7 @@ import 'package:path/path.dart' as p;
 
 import '../../core/image_magic.dart';
 import 'generation_submission_error.dart';
+import 'reference_folder_rule.dart';
 
 /// Only checked reference bytes and task-owned output paths cross this boundary.
 class ExternalGenerationFiles {
@@ -88,13 +89,12 @@ class ExternalGenerationFiles {
     if (!registeredOutput) {
       for (final root in roots) {
         try {
-          final resolved = await Directory(root).resolveSymbolicLinks();
-          // Settings stores canonical roots. Replacing one by a link must not
-          // grant access to its new target. Missing roots grant nothing.
-          if (resolved == p.normalize(p.absolute(root)) && p.isWithin(resolved, canonical)) {
+          if (await ReferenceFolderRule.parse(root).allows(canonical)) {
             allowed = true;
           }
         } on FileSystemException {
+          continue;
+        } on FormatException {
           continue;
         }
       }

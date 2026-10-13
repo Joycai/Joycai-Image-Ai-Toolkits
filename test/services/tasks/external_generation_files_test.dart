@@ -15,6 +15,76 @@ void main() {
   });
   tearDown(() => temp.delete(recursive: true));
 
+  test('folder patterns distinguish direct files from descendants and sibling folders', () async {
+    final root = await Directory('${temp.path}/approved').create();
+    final child = await Directory('${root.path}/nested/deep').create(recursive: true);
+    final sibling = await Directory('${temp.path}/approved-other').create();
+    final direct = await File('${root.path}/direct.png').writeAsBytes(png);
+    final nested = await File('${child.path}/nested.png').writeAsBytes(png);
+    final outside = await File('${sibling.path}/outside.png').writeAsBytes(png);
+    final stage = Directory('${temp.path}/stage');
+    var index = 0;
+    for (final suffix in ['', '/*', '/**']) {
+      final rules = ['${root.path}$suffix'];
+      expect(
+        await File(
+          await ExternalGenerationFiles.stage(direct.path, rules, stage, index++),
+        ).readAsBytes(),
+        png,
+      );
+      if (suffix == '/*') {
+        await expectLater(
+          ExternalGenerationFiles.stage(nested.path, rules, stage, index++),
+          throwsA(
+            isA<GenerationSubmissionError>().having((e) => e.code, 'code', 'referenceNotAllowed'),
+          ),
+        );
+      } else {
+        expect(
+          await File(
+            await ExternalGenerationFiles.stage(nested.path, rules, stage, index++),
+          ).readAsBytes(),
+          png,
+        );
+      }
+      await expectLater(
+        ExternalGenerationFiles.stage(outside.path, rules, stage, index++),
+        throwsA(isA<GenerationSubmissionError>()),
+      );
+    }
+  });
+
+  test('wildcard grants do not follow links outside their scope', () async {
+    final root = await Directory('${temp.path}/approved').create();
+    final outside = await File('${temp.path}/outside.png').writeAsBytes(png);
+    final link = await Link('${root.path}/image.png').create(outside.path);
+    for (final suffix in ['/*', '/**']) {
+      await expectLater(
+        ExternalGenerationFiles.stage(
+          link.path,
+          ['${root.path}$suffix'],
+          Directory('${temp.path}/stage'),
+          0,
+        ),
+        throwsA(isA<GenerationSubmissionError>()),
+      );
+    }
+    await link.delete();
+    await root.delete();
+    await Link(root.path).create(temp.path);
+    for (final suffix in ['/*', '/**']) {
+      await expectLater(
+        ExternalGenerationFiles.stage(
+          outside.path,
+          ['${root.path}$suffix'],
+          Directory('${temp.path}/stage'),
+          0,
+        ),
+        throwsA(isA<GenerationSubmissionError>()),
+      );
+    }
+  }, skip: Platform.isWindows ? 'Creating symlinks requires Windows privileges' : false);
+
   test('replacing an approved root with a symlink does not grant its new target', () async {
     final root = await Directory('${temp.path}/approved').create();
     final outside = await Directory('${temp.path}/outside').create();

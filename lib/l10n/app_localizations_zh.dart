@@ -3802,7 +3802,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get mcpReferenceFolders => '允许读取的参考图文件夹';
 
   @override
-  String get mcpFoldersHint => '每行一个绝对路径。留空则禁止读取本地参考图。';
+  String get mcpFoldersHint => '每行一个绝对路径。/folder/* 仅允许直接文件；/folder/** 或 /folder 包含子文件夹。留空则禁止本地文件。';
 
   @override
   String get mcpCredentialNote => '连接配置包含私密访问令牌，请仅提供给可信 Agent。更换令牌会断开现有客户端。';
@@ -9790,7 +9790,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get mcpReferenceFolders => '允許讀取的參考圖資料夾';
 
   @override
-  String get mcpFoldersHint => '每行一個絕對路徑。留空則禁止讀取本機參考圖。';
+  String get mcpFoldersHint => '每行一個絕對路徑。/folder/* 僅允許直接檔案；/folder/** 或 /folder 包含子資料夾。留空則禁止本機檔案。';
 
   @override
   String get mcpCredentialNote => '連線設定包含私密存取權杖，請僅提供給可信任的 Agent。更換權杖會中斷現有用戶端。';

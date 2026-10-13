@@ -3831,7 +3831,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get mcpReferenceFolders => '参照画像の読み取りを許可するフォルダー';
 
   @override
-  String get mcpFoldersHint => '1 行に 1 つの絶対パス。空欄の場合、ローカル参照画像は読み取りません。';
+  String get mcpFoldersHint => '絶対パスを1行ずつ入力。/folder/* は直下のみ、/folder/** または /folder は配下すべて。空欄は許可なし。';
 
   @override
   String get mcpCredentialNote =>

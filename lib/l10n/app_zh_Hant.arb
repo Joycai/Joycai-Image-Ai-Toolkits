@@ -1922,7 +1922,7 @@
   "mcpPortBusy": "無法啟動服務，請選擇可用連接埠後重新套用。",
   "mcpSettingsError": "無法更新 MCP 設定，請重試。",
   "mcpReferenceFolders": "允許讀取的參考圖資料夾",
-  "mcpFoldersHint": "每行一個絕對路徑。留空則禁止讀取本機參考圖。",
+  "mcpFoldersHint": "每行一個絕對路徑。/folder/* 僅允許直接檔案；/folder/** 或 /folder 包含子資料夾。留空則禁止本機檔案。",
   "mcpCredentialNote": "連線設定包含私密存取權杖，請僅提供給可信任的 Agent。更換權杖會中斷現有用戶端。",
   "mcpApply": "套用設定",
   "mcpCopyConfiguration": "複製連線設定",
