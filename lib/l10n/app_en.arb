@@ -2613,7 +2613,7 @@
   "mcpPortBusy": "Cannot start the server. Choose an available port and apply again.",
   "mcpSettingsError": "Could not update MCP settings. Please try again.",
   "mcpReferenceFolders": "Allowed reference folders",
-  "mcpFoldersHint": "One absolute folder path per line. Empty means no local reference files.",
+  "mcpFoldersHint": "One absolute path per line. /folder/* allows direct files; /folder/** or /folder includes subfolders. Empty allows no local files.",
   "mcpCredentialNote": "Connection configuration includes a private access token. Only share it with trusted agents. Rotating it disconnects existing clients.",
   "mcpApply": "Apply settings",
   "mcpCopyConfiguration": "Copy connection configuration",

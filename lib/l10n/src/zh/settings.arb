@@ -192,7 +192,7 @@
   "mcpPortBusy": "无法启动服务，请选择可用端口后重新应用。",
   "mcpSettingsError": "无法更新 MCP 设置，请重试。",
   "mcpReferenceFolders": "允许读取的参考图文件夹",
-  "mcpFoldersHint": "每行一个绝对路径。留空则禁止读取本地参考图。",
+  "mcpFoldersHint": "每行一个绝对路径。/folder/* 仅允许直接文件；/folder/** 或 /folder 包含子文件夹。留空则禁止本地文件。",
   "mcpCredentialNote": "连接配置包含私密访问令牌，请仅提供给可信 Agent。更换令牌会断开现有客户端。",
   "mcpApply": "应用设置",
   "mcpCopyConfiguration": "复制连接配置",

@@ -3986,7 +3986,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mcpFoldersHint =>
-      'One absolute folder path per line. Empty means no local reference files.';
+      'One absolute path per line. /folder/* allows direct files; /folder/** or /folder includes subfolders. Empty allows no local files.';
 
   @override
   String get mcpCredentialNote =>

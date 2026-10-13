@@ -6906,7 +6906,7 @@ abstract class AppLocalizations {
   /// No description provided for @mcpFoldersHint.
   ///
   /// In en, this message translates to:
-  /// **'One absolute folder path per line. Empty means no local reference files.'**
+  /// **'One absolute path per line. /folder/* allows direct files; /folder/** or /folder includes subfolders. Empty allows no local files.'**
   String get mcpFoldersHint;
 
   /// No description provided for @mcpCredentialNote.

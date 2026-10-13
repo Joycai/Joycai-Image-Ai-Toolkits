@@ -8,7 +8,12 @@ browser-origin clients are not exposed.
 ## Connect
 
 In Settings → Connectivity, choose a port (default 39287), optionally enter allowed
-reference-image folders (one absolute path per line), and enable MCP. Copy the
+reference-image folders (one absolute path per line), and enable MCP.
+Use `/a/b/*` for files directly in `/a/b`, or `/a/b/**` for files at any
+depth below it. Plain `/a/b` retains recursive access for compatibility.
+Only these trailing wildcard forms are supported, not general glob patterns.
+Rules match canonical file locations, so symlinks cannot grant access outside
+the selected scope. The base folder must exist when saving the setting. Copy the
 connection configuration into a client that supports Streamable HTTP and custom
 Authorization headers. The copied configuration includes a secret bearer token.
 Rotating the token disconnects existing clients. Disabling the listener does not

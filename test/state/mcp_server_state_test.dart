@@ -28,6 +28,36 @@ void main() {
     await closeTestDatabase(db);
   });
 
+  test('folder patterns persist their scope and reject unsupported patterns', () async {
+    final folder = await Directory.systemTemp.createTemp('mcp-pattern-');
+    addTearDown(() => folder.delete(recursive: true));
+    final canonical = await folder.resolveSymbolicLinks();
+    await state.configure(
+      enable: false,
+      portText: '39287',
+      folders: '${folder.path}/*\n${folder.path}/**\n${folder.path}',
+    );
+    expect(state.errorCode, null);
+    final expected = ['$canonical/*', '$canonical/**', canonical];
+    // Use native separators on Windows, like the persisted settings.
+    final normalized = expected
+        .map((s) => Platform.isWindows ? s.replaceAll('/', '\\') : s)
+        .toList();
+    expect(state.roots, normalized);
+    await state.load();
+    expect(state.roots, normalized);
+    for (final invalid in [
+      '${folder.path}/***',
+      '${folder.path}/*/nested',
+      'relative/**',
+      '${folder.path}/missing/**',
+    ]) {
+      await state.configure(enable: false, portText: '39287', folders: invalid);
+      expect(state.errorCode, 'folder');
+      expect(state.roots, normalized);
+    }
+  });
+
   test(
     'disabled by default, validates ports/folders and redacts connection secrets on export',
     () async {
