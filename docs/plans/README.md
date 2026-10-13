@@ -25,6 +25,30 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 |---|---|
 | [`2026-08-assistant-timeout.md`](2026-08-assistant-timeout.md) | 不是施工说明书，是**一次真实故障的取证记录**（`api_logs/` 里七条日志的耗时还原）。`architecture/assistant-context.md` 直接引它作为「为什么要早elide」的证据。 |
 
+## 2026-10-13 · MCP 图像生成第一阶段
+
+桌面应用新增默认关闭、Bearer 鉴权的 localhost Streamable HTTP MCP 服务；
+支持配置模型发现、typed 参数查询、文生图、参考图/edit、状态查询、取消和结果读取。
+复用生成 schema、dispatcher 与任务队列；不新增视频或独立文本生成入口。
+schema v50 原子保存请求去重键与任务，持久化错误、警告和部分结果，重连可查询，
+删除历史也不会让同一请求键再次付费提交。参考图按允许目录校验并复制到应用目录；
+连接凭据及本机授权不随备份导出/导入。四语言设置提供端口、允许目录、复制配置与轮换令牌。
+长期设计与使用说明见 [MCP image server](../architecture/mcp-image-server.md)。
+
+验证：format / analyze（No issues found）通过；非截图测试 3183 通过、9 skip。
+真实 MCP SDK 客户端配合本机假 provider 覆盖文生图/edit、重连、去重、取消、错误脱敏、
+部分结果与资源读取；迁移、备份和监听生命周期另有测试。
+Connectivity 渲染 11 个与组件 gallery 32 个通过，已查看 390/834/1024/1440 明暗面板
+及英/日/繁中错误状态；macOS debug build 成功。
+未调用付费真实 provider，Windows/Linux 原生运行验证与视频 MCP 留作后续。
+设计依据为仓库规格、已有控件与真实渲染；本轮施工说明已退役。
+
+合入前复核修复：允许目录被 symlink 替换时不扩大授权；缺失目录不阻断其他目录或已有
+结果复用；拒绝超出总像素预算/画布边界的动画帧；预览尺寸按实际返回图像报告；
+provider 原始错误只留本机日志，MCP 返回稳定摘要与 HTTP 状态，避免编码后的凭据泄漏；
+先持久化 processing 再访问 provider，写盘失败不提交付费请求。补充令牌撤销、Host 校验
+和上述问题的回归测试。
+
 ## 2026-10-05 · 工作台生成设置与 TXT 伴随文件
 
 图像/视频共用的「队列设置」改名为「生成设置」，按输出文件、任务执行、安全设置

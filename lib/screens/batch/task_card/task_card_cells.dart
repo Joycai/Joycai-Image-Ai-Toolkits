@@ -154,7 +154,7 @@ class _ModelAndChannel extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          task.modelId,
+          task.parameters['origin'] == 'mcp' ? '${task.modelId} · MCP' : task.modelId,
           maxLines: 1,
           softWrap: false,
           overflow: TextOverflow.ellipsis,

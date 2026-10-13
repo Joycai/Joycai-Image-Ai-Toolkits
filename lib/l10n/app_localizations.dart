@@ -6843,6 +6843,108 @@ abstract class AppLocalizations {
   /// **'Coming soon (not in this version)'**
   String get mcpComingSoon;
 
+  /// No description provided for @mcpLocalDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Local agents can generate images with your configured models while this app is running. Provider charges may apply.'**
+  String get mcpLocalDescription;
+
+  /// No description provided for @mcpDesktopOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'MCP hosting is available on desktop.'**
+  String get mcpDesktopOnly;
+
+  /// No description provided for @mcpRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Running'**
+  String get mcpRunning;
+
+  /// No description provided for @mcpStopped.
+  ///
+  /// In en, this message translates to:
+  /// **'Stopped'**
+  String get mcpStopped;
+
+  /// No description provided for @mcpChanging.
+  ///
+  /// In en, this message translates to:
+  /// **'Updating server…'**
+  String get mcpChanging;
+
+  /// No description provided for @mcpInvalidPort.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a port from 1024 to 65535.'**
+  String get mcpInvalidPort;
+
+  /// No description provided for @mcpInvalidFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Each folder must be an existing absolute directory path.'**
+  String get mcpInvalidFolder;
+
+  /// No description provided for @mcpPortBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot start the server. Choose an available port and apply again.'**
+  String get mcpPortBusy;
+
+  /// No description provided for @mcpSettingsError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update MCP settings. Please try again.'**
+  String get mcpSettingsError;
+
+  /// No description provided for @mcpReferenceFolders.
+  ///
+  /// In en, this message translates to:
+  /// **'Allowed reference folders'**
+  String get mcpReferenceFolders;
+
+  /// No description provided for @mcpFoldersHint.
+  ///
+  /// In en, this message translates to:
+  /// **'One absolute folder path per line. Empty means no local reference files.'**
+  String get mcpFoldersHint;
+
+  /// No description provided for @mcpCredentialNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection configuration includes a private access token. Only share it with trusted agents. Rotating it disconnects existing clients.'**
+  String get mcpCredentialNote;
+
+  /// No description provided for @mcpApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply settings'**
+  String get mcpApply;
+
+  /// No description provided for @mcpCopyConfiguration.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy connection configuration'**
+  String get mcpCopyConfiguration;
+
+  /// No description provided for @mcpCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied'**
+  String get mcpCopied;
+
+  /// No description provided for @mcpRotateToken.
+  ///
+  /// In en, this message translates to:
+  /// **'Rotate access token'**
+  String get mcpRotateToken;
+
+  /// No description provided for @mcpTaskOrigin.
+  ///
+  /// In en, this message translates to:
+  /// **'External agent · MCP'**
+  String get mcpTaskOrigin;
+
   /// No description provided for @shortcutNavigateToDestination.
   ///
   /// In en, this message translates to:

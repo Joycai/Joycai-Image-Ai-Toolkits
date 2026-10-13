@@ -41,6 +41,7 @@ import 'file_browser_state.dart';
 import 'file_staging_state.dart';
 import 'gallery_state.dart';
 import 'log_state.dart';
+import 'mcp_server_state.dart';
 import 'model_list_state.dart';
 import 'task_list_state.dart';
 import 'workbench_ui_state.dart';
@@ -63,6 +64,7 @@ class AppState extends ChangeNotifier {
   final DatabaseService _db;
 
   final TaskQueueService taskQueue;
+  late final McpServerState mcpServer;
   final GalleryState galleryState;
   final DownloaderState downloaderState;
   final FileBrowserState fileBrowserState;
@@ -110,6 +112,7 @@ class AppState extends ChangeNotifier {
       taskListState = TaskListState(database: database),
       modelListState = ModelListState(database: database),
       uiPrefs = UiPrefs(database: database) {
+    mcpServer = McpServerState(queue: taskQueue, database: database);
     // Wire up logs
     galleryState.onLog = addLog;
 
@@ -470,6 +473,8 @@ class AppState extends ChangeNotifier {
 
   @override
   void dispose() {
+    unawaited(mcpServer.shutdown());
+    mcpServer.dispose();
     galleryState.dispose();
     fileBrowserState.dispose();
     fileStagingState.dispose();
@@ -656,6 +661,7 @@ class AppState extends ChangeNotifier {
     await downloaderState.loadCookieHistory();
     await loadPromptHistory();
 
+    await mcpServer.load();
     settingsLoaded = true;
     notifyListeners();
   }

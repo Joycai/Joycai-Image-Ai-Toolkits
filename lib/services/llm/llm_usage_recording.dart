@@ -67,7 +67,7 @@ extension _UsageRecording on LLMService {
     final outputTokens = LLMService.outputTokensOf(metadata);
     final cacheTokens = _extractCacheTokens(metadata, promptTokens);
 
-    final sink = LLMService.usageSinkOverride ?? DatabaseService().recordTokenUsage;
+    final sink = LLMService.usageSinkOverride ?? _db.recordTokenUsage;
     await sink(
       TokenUsage(
         // The tag makes delegated work distinguishable in the usage table

@@ -49,6 +49,7 @@ dependencies:
   # Flutter's own HCT library, already here transitively; named so
   # core/theme_accent.dart can import it. Pinned to the version the SDK pins.
   material_color_utilities: ^0.13.0
+  mcp_dart: ^2.4.2
 
 dev_dependencies:
   flutter_test:

@@ -52,6 +52,11 @@ class TaskRepository {
     }
   }
 
+  Future<TaskItem?> getTask(String id) async {
+    final rows = await (await _db).query('tasks', where: 'id = ?', whereArgs: [id]);
+    return rows.isEmpty ? null : TaskItem.fromMap(rows.single);
+  }
+
   /// The newest [limit] tasks by creation time.
   ///
   /// Ordered by `created_at`, not `start_time`: a pending task has no start
@@ -134,7 +139,16 @@ class TaskRepository {
           "AND operation_name != ''",
       whereArgs: ['processing', 'videoGenerate'],
     );
-    await db.update('tasks', {'status': 'failed'}, where: 'status = ?', whereArgs: ['processing']);
+    await db.update(
+      'tasks',
+      {
+        'status': 'failed',
+        'task_error':
+            '{"code":"interrupted","message":"Application stopped during generation. The provider may have charged for this request.","retrySafe":false}',
+      },
+      where: 'status = ?',
+      whereArgs: ['processing'],
+    );
   }
 
   Future<List<double>> getTaskDurations(int modelDbId, int limit) async {
