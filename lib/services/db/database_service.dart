@@ -63,7 +63,7 @@ class DatabaseService {
 
   /// Schema version of this build. Also stamped into full backups so a file
   /// from a newer app can be rejected instead of failing mid-restore.
-  static const int dbVersion = 49;
+  static const int dbVersion = 50;
 
   /// Settings holding absolute paths from the machine that made the backup.
   /// Excluded when the user opts out of directories.
@@ -74,10 +74,16 @@ class DatabaseService {
     'result_cache_directory',
   };
 
-  /// Settings holding a credential. Blanked on export, like channel keys and
+  /// Credentials and machine-local MCP access grants. Blanked on export, like channel keys and
   /// cookies, and kept from the live database on restore when the file's copy
   /// is blank.
-  static const Set<String> secretSettingKeys = {'proxy_password'};
+  static const Set<String> secretSettingKeys = {
+    'proxy_password',
+    'mcp_token',
+    'mcp_enabled',
+    'mcp_roots',
+    'mcp_port',
+  };
 
   /// Table keys that only a full backup carries.
   static const Set<String> _backupTableKeys = {
@@ -693,9 +699,13 @@ class DatabaseService {
 
     if (data['settings'] != null) {
       final List<dynamic> settingsRows = data['settings'];
-      var filteredSettings = settingsRows;
+      var filteredSettings = settingsRows
+          .where(
+            (row) => !{'mcp_token', 'mcp_enabled', 'mcp_roots', 'mcp_port'}.contains(row['key']),
+          )
+          .toList();
       if (!includeDirectories) {
-        filteredSettings = settingsRows
+        filteredSettings = filteredSettings
             .where((row) => !_directorySettingKeys.contains(row['key']))
             .toList();
       }

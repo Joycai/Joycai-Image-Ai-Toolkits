@@ -6,6 +6,7 @@ import '../../../state/app_state.dart';
 import '../../../widgets/ui/api_key_field.dart';
 import '../../../widgets/ui/app_setting_row.dart';
 import '../../../widgets/ui/app_text_field.dart';
+import 'mcp_settings_block.dart';
 import 'settings_layout.dart';
 
 /// `E1 · 1c` right: the proxy and the MCP server, each one column-coloured
@@ -25,7 +26,6 @@ class _ConnectivitySectionState extends State<ConnectivitySection> {
   final TextEditingController _proxyUrlController = TextEditingController();
   final TextEditingController _proxyUsernameController = TextEditingController();
   final TextEditingController _proxyPasswordController = TextEditingController();
-  final TextEditingController _mcpPortController = TextEditingController();
 
   @override
   void initState() {
@@ -38,7 +38,6 @@ class _ConnectivitySectionState extends State<ConnectivitySection> {
     _proxyUrlController.dispose();
     _proxyUsernameController.dispose();
     _proxyPasswordController.dispose();
-    _mcpPortController.dispose();
     super.dispose();
   }
 
@@ -116,27 +115,7 @@ class _ConnectivitySectionState extends State<ConnectivitySection> {
             ],
           ),
         ),
-        SettingsBlock(
-          caption: l10n.mcpServerSettings,
-          child: SettingsGroup(
-            ruled: false,
-            children: [
-              AppToggleRow(
-                title: l10n.enableMcpServer,
-                description: '${l10n.mcpServerDesc}\n${l10n.mcpComingSoon}',
-                value: false,
-                onChanged: null,
-              ),
-              // Held in place, disabled, for as long as the server is: the
-              // switch above cannot be turned on in this version.
-              SettingsField(
-                label: l10n.port,
-                enabled: false,
-                child: AppTextField(controller: _mcpPortController, enabled: false),
-              ),
-            ],
-          ),
-        ),
+        McpSettingsBlock(server: appState.mcpServer),
       ],
     );
   }

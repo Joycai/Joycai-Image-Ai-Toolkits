@@ -3801,6 +3801,58 @@ class AppLocalizationsJa extends AppLocalizations {
   String get mcpComingSoon => '近日公開（このバージョンでは未実装）';
 
   @override
+  String get mcpLocalDescription => 'アプリの起動中、ローカルのエージェントが設定済みモデルで画像を生成できます。プロバイダーの料金が発生する場合があります。';
+
+  @override
+  String get mcpDesktopOnly => 'MCP サーバーはデスクトップで利用できます。';
+
+  @override
+  String get mcpRunning => '実行中';
+
+  @override
+  String get mcpStopped => '停止中';
+
+  @override
+  String get mcpChanging => 'サーバーを更新中…';
+
+  @override
+  String get mcpInvalidPort => '1024〜65535 のポートを指定してください。';
+
+  @override
+  String get mcpInvalidFolder => '各行に既存フォルダーの絶対パスを入力してください。';
+
+  @override
+  String get mcpPortBusy => 'サーバーを起動できません。使用可能なポートを選び、再適用してください。';
+
+  @override
+  String get mcpSettingsError => 'MCP 設定を更新できませんでした。再試行してください。';
+
+  @override
+  String get mcpReferenceFolders => '参照画像の読み取りを許可するフォルダー';
+
+  @override
+  String get mcpFoldersHint => '1 行に 1 つの絶対パス。空欄の場合、ローカル参照画像は読み取りません。';
+
+  @override
+  String get mcpCredentialNote =>
+      '接続設定には秘密のアクセストークンが含まれます。信頼できるエージェントにのみ共有してください。トークンを更新すると既存の接続が切断されます。';
+
+  @override
+  String get mcpApply => '設定を適用';
+
+  @override
+  String get mcpCopyConfiguration => '接続設定をコピー';
+
+  @override
+  String get mcpCopied => 'コピーしました';
+
+  @override
+  String get mcpRotateToken => 'トークンを更新';
+
+  @override
+  String get mcpTaskOrigin => '外部エージェント · MCP';
+
+  @override
   String get shortcutNavigateToDestination => '1〜8 番目のページへ';
 
   @override

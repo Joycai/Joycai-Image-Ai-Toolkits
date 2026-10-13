@@ -36,6 +36,8 @@ class TaskItem {
   TaskStatus status;
   List<String> logs;
   List<String> resultPaths;
+  Map<String, dynamic>? error;
+  List<String> warnings;
   DateTime? startTime;
   DateTime? endTime;
   double? progress; // 0.0 to 1.0 (transient)
@@ -81,6 +83,8 @@ class TaskItem {
     this.status = TaskStatus.pending,
     List<String>? logs,
     List<String>? resultPaths,
+    this.error,
+    List<String>? warnings,
     this.startTime,
     this.endTime,
     this.progress,
@@ -89,6 +93,7 @@ class TaskItem {
     DateTime? createdAt,
   }) : logs = logs ?? [],
        resultPaths = resultPaths ?? [],
+       warnings = warnings ?? [],
        createdAt = createdAt ?? DateTime.now();
 
   /// This task under another display label. [modelId] is display-only — the
@@ -107,6 +112,8 @@ class TaskItem {
     status: status,
     logs: logs,
     resultPaths: resultPaths,
+    error: error,
+    warnings: List.of(warnings),
     startTime: startTime,
     endTime: endTime,
     progress: progress,
@@ -146,6 +153,8 @@ class TaskItem {
       'status': status.name,
       'parameters': jsonEncode(parameters),
       'result_path': jsonEncode(resultPaths),
+      'task_error': error == null ? null : jsonEncode(error),
+      'warnings': jsonEncode(warnings),
       'logs': jsonEncode(logs),
       'start_time': startTime?.toIso8601String(),
       'end_time': endTime?.toIso8601String(),
@@ -224,6 +233,8 @@ class TaskItem {
       ),
       parameters: _decodeParameters(map['parameters']),
       resultPaths: _decodeStringList(map['result_path']),
+      error: map['task_error'] == null ? null : _decodeParameters(map['task_error']),
+      warnings: _decodeStringList(map['warnings']),
       logs: _decodeLogs(map['logs']),
       startTime: _decodeDate(map['start_time']),
       endTime: _decodeDate(map['end_time']),

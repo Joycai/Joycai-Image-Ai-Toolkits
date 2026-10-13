@@ -11,6 +11,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/services/tasks/task_list_ordering.dart';
 import 'package:joycai_image_ai_toolkits/services/tasks/task_queue_service.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
@@ -129,6 +130,51 @@ void main() {
           await actInRealAsync(tester, () => tester.tap(find.text(category).first));
         },
       );
+    });
+  }
+
+  for (final size in kShotSizes) {
+    for (final brightness in Brightness.values) {
+      testWidgets('settings · connectivity @ ${size.label} ${brightness.name}', (tester) async {
+        await shoot(
+          tester,
+          env: env,
+          screen: AppScreen.settings,
+          size: size,
+          brightness: brightness,
+          suffix: 'connectivity',
+          after: (tester) async {
+            await actInRealAsync(tester, () => tester.tap(find.text('连接设置').first));
+          },
+        );
+      });
+    }
+  }
+
+  for (final locale in [
+    const Locale('en'),
+    const Locale('ja'),
+    const Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hant'),
+  ]) {
+    testWidgets('settings · connectivity localized error ${locale.toLanguageTag()}', (
+      tester,
+    ) async {
+      await shoot(
+        tester,
+        env: env,
+        screen: AppScreen.settings,
+        size: kShotSizes.first,
+        locale: locale,
+        suffix: 'connectivityError_${locale.toLanguageTag()}',
+        before: (_) async => AppState().mcpServer.errorCode = 'bind',
+        after: (tester) async {
+          await actInRealAsync(
+            tester,
+            () => tester.tap(find.text(lookupAppLocalizations(locale).connectivity).first),
+          );
+        },
+      );
+      AppState().mcpServer.errorCode = null;
     });
   }
 

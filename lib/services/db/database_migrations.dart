@@ -74,6 +74,7 @@ class DatabaseMigration {
     if (oldVersion < 47) await _createV47Columns(db);
     if (oldVersion < 48) await _createV48Columns(db);
     if (oldVersion < 49) await _createV49Columns(db);
+    if (oldVersion < 50) await _createV50Tables(db);
   }
 
   static Future<void> onCreate(Database db) async {
@@ -126,7 +127,20 @@ class DatabaseMigration {
     await _createV47Columns(db);
     await _createV48Columns(db);
     await _createV49Columns(db);
+    await _createV50Tables(db);
     // Presets are synchronized in DatabaseService
+  }
+
+  static Future<void> _createV50Tables(Database db) async {
+    if (await _tableExists(db, 'tasks')) {
+      await _addColumnIfNotExists(db, 'tasks', 'task_error', 'TEXT');
+      await _addColumnIfNotExists(db, 'tasks', 'warnings', 'TEXT');
+    }
+    // Deliberately no cascade: history removal must not permit a paid replay.
+    await db.execute(
+      'CREATE TABLE IF NOT EXISTS mcp_requests ('
+      'request_key TEXT PRIMARY KEY, digest TEXT NOT NULL, task_id TEXT NOT NULL UNIQUE)',
+    );
   }
 
   /// The provider's own figure for what a request cost (`reported_cost`, in

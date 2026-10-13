@@ -25,6 +25,8 @@ Required reading before touching the subsystem each one covers.
   protocol / vendor / model layering under `lib/services/llm/`, the single
   dispatcher routing table, the greppable hard-coding red-flag list, and the
   old→new path map for reading pre-refactor documents.
+* **[Local MCP image server](architecture/mcp-image-server.md)** — desktop connection,
+  agent tools, reference/edit generation, replay protection and result persistence.
 * **[Generation parameters and forms](architecture/generation-parameters.md)** —
   typed schemas, native alias profiles, request/task compatibility, isolated drafts,
   validation and extensible image/video editors within the existing design system.

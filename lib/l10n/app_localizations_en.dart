@@ -3954,6 +3954,60 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mcpComingSoon => 'Coming soon (not in this version)';
 
   @override
+  String get mcpLocalDescription =>
+      'Local agents can generate images with your configured models while this app is running. Provider charges may apply.';
+
+  @override
+  String get mcpDesktopOnly => 'MCP hosting is available on desktop.';
+
+  @override
+  String get mcpRunning => 'Running';
+
+  @override
+  String get mcpStopped => 'Stopped';
+
+  @override
+  String get mcpChanging => 'Updating server…';
+
+  @override
+  String get mcpInvalidPort => 'Use a port from 1024 to 65535.';
+
+  @override
+  String get mcpInvalidFolder => 'Each folder must be an existing absolute directory path.';
+
+  @override
+  String get mcpPortBusy => 'Cannot start the server. Choose an available port and apply again.';
+
+  @override
+  String get mcpSettingsError => 'Could not update MCP settings. Please try again.';
+
+  @override
+  String get mcpReferenceFolders => 'Allowed reference folders';
+
+  @override
+  String get mcpFoldersHint =>
+      'One absolute folder path per line. Empty means no local reference files.';
+
+  @override
+  String get mcpCredentialNote =>
+      'Connection configuration includes a private access token. Only share it with trusted agents. Rotating it disconnects existing clients.';
+
+  @override
+  String get mcpApply => 'Apply settings';
+
+  @override
+  String get mcpCopyConfiguration => 'Copy connection configuration';
+
+  @override
+  String get mcpCopied => 'Copied';
+
+  @override
+  String get mcpRotateToken => 'Rotate access token';
+
+  @override
+  String get mcpTaskOrigin => 'External agent · MCP';
+
+  @override
   String get shortcutNavigateToDestination => 'Go to page 1–8';
 
   @override

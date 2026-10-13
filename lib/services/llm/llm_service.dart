@@ -21,10 +21,16 @@ part 'llm_usage_recording.dart';
 
 class LLMService {
   static final LLMService _instance = LLMService._internal();
-  factory LLMService() => _instance;
-  LLMService._internal();
+  factory LLMService({DatabaseService? database}) =>
+      database == null || identical(database, DatabaseService())
+      ? _instance
+      : LLMService._internal(database);
+  LLMService._internal([DatabaseService? database])
+    : _db = database ?? DatabaseService(),
+      _configResolver = LLMConfigResolver(database: database);
 
-  final LLMConfigResolver _configResolver = LLMConfigResolver();
+  final DatabaseService _db;
+  final LLMConfigResolver _configResolver;
   final LLMDispatcher _dispatcher = LLMDispatcher();
 
   /// Serial of `request` / `requestStream` calls, for the debug log's
@@ -1277,7 +1283,7 @@ class LLMService {
           final spec = specUsageFor(config, options, {
             'output_seconds': renderedSeconds,
           }, imageCount: 0)!;
-          final update = usageUpdateOverride ?? DatabaseService().updateSpecBilling;
+          final update = usageUpdateOverride ?? _db.updateSpecBilling;
           final rows = await update(rowId, spec.toBilling());
           if (rows > 0) {
             log(
@@ -1296,7 +1302,7 @@ class LLMService {
     }
     if (reportedCost != null) {
       try {
-        final update = reportedCostUpdateOverride ?? DatabaseService().updateReportedCost;
+        final update = reportedCostUpdateOverride ?? _db.updateReportedCost;
         final rows = await update(rowId, reportedCost);
         if (rows > 0) {
           log(

@@ -390,7 +390,7 @@ class _CompactHead extends StatelessWidget {
               const SizedBox(width: _plateGap),
               Expanded(
                 child: Text(
-                  task.modelId,
+                  task.parameters['origin'] == 'mcp' ? '${task.modelId} · MCP' : task.modelId,
                   maxLines: 1,
                   softWrap: false,
                   overflow: TextOverflow.ellipsis,

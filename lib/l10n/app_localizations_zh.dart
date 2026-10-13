@@ -3772,6 +3772,57 @@ class AppLocalizationsZh extends AppLocalizations {
   String get mcpComingSoon => '即将推出（当前版本未实现）';
 
   @override
+  String get mcpLocalDescription => '允许本机 Agent 在应用运行时使用已配置的模型生成图像。可能产生供应商费用。';
+
+  @override
+  String get mcpDesktopOnly => 'MCP 服务仅支持桌面平台。';
+
+  @override
+  String get mcpRunning => '运行中';
+
+  @override
+  String get mcpStopped => '已停止';
+
+  @override
+  String get mcpChanging => '正在更新服务…';
+
+  @override
+  String get mcpInvalidPort => '请输入 1024 至 65535 之间的端口。';
+
+  @override
+  String get mcpInvalidFolder => '每行必须是已存在文件夹的绝对路径。';
+
+  @override
+  String get mcpPortBusy => '无法启动服务，请选择可用端口后重新应用。';
+
+  @override
+  String get mcpSettingsError => '无法更新 MCP 设置，请重试。';
+
+  @override
+  String get mcpReferenceFolders => '允许读取的参考图文件夹';
+
+  @override
+  String get mcpFoldersHint => '每行一个绝对路径。留空则禁止读取本地参考图。';
+
+  @override
+  String get mcpCredentialNote => '连接配置包含私密访问令牌，请仅提供给可信 Agent。更换令牌会断开现有客户端。';
+
+  @override
+  String get mcpApply => '应用设置';
+
+  @override
+  String get mcpCopyConfiguration => '复制连接配置';
+
+  @override
+  String get mcpCopied => '已复制';
+
+  @override
+  String get mcpRotateToken => '更换访问令牌';
+
+  @override
+  String get mcpTaskOrigin => '外部 Agent · MCP';
+
+  @override
   String get shortcutNavigateToDestination => '切到第 1…8 个页面';
 
   @override
@@ -9707,6 +9758,57 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get mcpComingSoon => '即將推出（目前版本未實作）';
+
+  @override
+  String get mcpLocalDescription => '允許本機 Agent 在應用程式執行時使用已設定的模型產生圖像。可能產生供應商費用。';
+
+  @override
+  String get mcpDesktopOnly => 'MCP 服務僅支援桌面平台。';
+
+  @override
+  String get mcpRunning => '執行中';
+
+  @override
+  String get mcpStopped => '已停止';
+
+  @override
+  String get mcpChanging => '正在更新服務…';
+
+  @override
+  String get mcpInvalidPort => '請輸入 1024 至 65535 之間的連接埠。';
+
+  @override
+  String get mcpInvalidFolder => '每行必須是已存在資料夾的絕對路徑。';
+
+  @override
+  String get mcpPortBusy => '無法啟動服務，請選擇可用連接埠後重新套用。';
+
+  @override
+  String get mcpSettingsError => '無法更新 MCP 設定，請重試。';
+
+  @override
+  String get mcpReferenceFolders => '允許讀取的參考圖資料夾';
+
+  @override
+  String get mcpFoldersHint => '每行一個絕對路徑。留空則禁止讀取本機參考圖。';
+
+  @override
+  String get mcpCredentialNote => '連線設定包含私密存取權杖，請僅提供給可信任的 Agent。更換權杖會中斷現有用戶端。';
+
+  @override
+  String get mcpApply => '套用設定';
+
+  @override
+  String get mcpCopyConfiguration => '複製連線設定';
+
+  @override
+  String get mcpCopied => '已複製';
+
+  @override
+  String get mcpRotateToken => '更換存取權杖';
+
+  @override
+  String get mcpTaskOrigin => '外部 Agent · MCP';
 
   @override
   String get shortcutNavigateToDestination => '切到第 1…8 個頁面';

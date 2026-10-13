@@ -31,6 +31,7 @@ import '../media/web_scraper_service.dart';
 import 'ai_rename_agent.dart';
 import 'generation_result_text.dart';
 import 'generation_task_data.dart';
+import 'task_failure.dart';
 
 // Re-export the task data model so existing importers of this file keep working.
 export '../../models/task_item.dart';
@@ -128,7 +129,9 @@ class TaskQueueService extends ChangeNotifier {
   int get concurrencyLimit => _concurrencyLimit;
   int get runningCount => _runningCount;
 
-  TaskQueueService({DatabaseService? database}) : _db = database ?? DatabaseService() {
+  TaskQueueService({DatabaseService? database})
+    : _db = database ?? DatabaseService(),
+      _llm = LLMService(database: database) {
     _loadFuture = _loadRecentTasks();
   }
 
@@ -136,6 +139,7 @@ class TaskQueueService extends ChangeNotifier {
   /// the app's one [DatabaseService]; [AppState] hands down its own, so the
   /// state layer has a single point where the database enters.
   final DatabaseService _db;
+  final LLMService _llm;
 
   /// How many tasks come back from the database on launch.
   ///
@@ -267,14 +271,24 @@ class TaskQueueService extends ChangeNotifier {
       task.addLog('Video generation task created using $modelIdStr.');
     }
 
-    _setQueue([..._queue, task]);
-
-    // Persist task immediately
+    // Publish only after durable acceptance.
     await _db.saveTask(task);
+    _setQueue([..._queue, task]);
 
     _notify();
     _attemptNextExecution();
   }
+
+  /// Adopt a task atomically persisted by an external submission service.
+  Future<void> enqueuePersistedTask(TaskItem task) async {
+    await _loadFuture;
+    if (_disposed) throw StateError('Task queue is closed');
+    if (!_queue.any((item) => item.id == task.id)) _setQueue([..._queue, task]);
+    _notify();
+    _attemptNextExecution();
+  }
+
+  Future<void> get ready => _loadFuture;
 
   Future<void> cancelTask(String taskId) async {
     final index = _queue.indexWhere((t) => t.id == taskId);
@@ -346,6 +360,8 @@ class TaskQueueService extends ChangeNotifier {
   }
 
   Future<void> _requeue(TaskItem task) async {
+    task.error = null;
+    task.warnings = [];
     task.status = TaskStatus.pending;
     task.progress = null;
     task.startTime = null;
@@ -414,6 +430,7 @@ class TaskQueueService extends ChangeNotifier {
       return;
     }
 
+    task.error = null;
     task.status = TaskStatus.processing;
     task.startTime = DateTime.now();
     _emit(task.id, TaskEventType.statusChanged, task.status);
@@ -422,10 +439,13 @@ class TaskQueueService extends ChangeNotifier {
       level: 'RUNNING',
       taskId: task.id,
     );
-    unawaited(_db.saveTask(task));
     _notify();
 
     try {
+      // A provider must never receive work still marked pending on disk: a
+      // restart would otherwise resubmit a potentially billed request.
+      await _db.saveTask(task);
+      if (task.status == TaskStatus.cancelled) return;
       if (task.type == TaskType.imageProcess) {
         await _executeImageProcessTask(task);
       } else if (task.type == TaskType.imageDownload) {
@@ -451,6 +471,7 @@ class TaskQueueService extends ChangeNotifier {
     } catch (e) {
       if (task.status != TaskStatus.cancelled) {
         task.status = TaskStatus.failed;
+        task.error = taskFailure(e);
         _emit(task.id, TaskEventType.statusChanged, task.status);
         _emit(task.id, TaskEventType.error, e.toString());
         task.addLog('Error: ${e.toString()}');
@@ -469,7 +490,7 @@ class TaskQueueService extends ChangeNotifier {
       }
 
       _runningCount--;
-      unawaited(_db.saveTask(task));
+      await _db.saveTask(task);
       onTaskFinished?.call(task);
       _notify();
       _attemptNextExecution();

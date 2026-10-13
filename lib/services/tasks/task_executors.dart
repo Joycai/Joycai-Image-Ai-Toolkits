@@ -140,6 +140,7 @@ extension TaskExecutors on TaskQueueService {
       // them out put an unopenable file in the gallery under a success.
       if (imageMimeFromBytes(bytes) == null) {
         unrecognised++;
+        task.warnings.add('An invalid image returned by the provider was skipped.');
         task.addLog(
           'Warning: result ${i + 1} is not a recognisable image '
           '(${bytes.length} bytes) and was not saved.',
@@ -156,9 +157,13 @@ extension TaskExecutors on TaskQueueService {
 
       final file = File(filePath);
       await file.writeAsBytes(bytes);
-      task.resultPaths.add(filePath);
+      task.resultPaths.add(
+        task.parameters['origin'] == 'mcp' ? await file.resolveSymbolicLinks() : filePath,
+      );
       await saveGenerationResultText(task, filePath);
       if (layer != null) await _recordLayer(task, filePath, layerSetId, layer);
+      // Persist every delivered image before exposing it outside the executor.
+      await _db.saveTask(task);
       _emit(task.id, TaskEventType.imageResult, filePath);
       task.addLog('Saved result image to: $filePath');
 
@@ -166,7 +171,7 @@ extension TaskExecutors on TaskQueueService {
     }
 
     if (actualUseStream) {
-      final stream = LLMService().requestStream(
+      final stream = _llm.requestStream(
         modelIdentifier: task.modelDbId ?? task.modelId,
         messages: messages,
         contextId: task.id,
@@ -194,7 +199,7 @@ extension TaskExecutors on TaskQueueService {
         }
       }
     } else {
-      final response = await LLMService().request(
+      final response = await _llm.request(
         modelIdentifier: task.modelDbId ?? task.modelId,
         messages: messages,
         options: requestOptions,
@@ -223,7 +228,7 @@ extension TaskExecutors on TaskQueueService {
       unrecognised: unrecognised,
       reply: reply.toString(),
     );
-    if (failure != null) throw Exception(failure);
+    if (failure != null) throw ImageGenerationFailure(failure);
   }
 
   /// Records where a saved decomposition file belongs, so the layer canvas
@@ -430,7 +435,7 @@ extension TaskExecutors on TaskQueueService {
     };
 
     if (actualUseStream) {
-      final stream = LLMService().requestStream(
+      final stream = _llm.requestStream(
         modelIdentifier: task.modelDbId ?? task.modelId,
         messages: messages,
         contextId: task.id,
@@ -446,7 +451,7 @@ extension TaskExecutors on TaskQueueService {
         }
       }
     } else {
-      final response = await LLMService().request(
+      final response = await _llm.request(
         modelIdentifier: task.modelDbId ?? task.modelId,
         messages: messages,
         options: requestOptions,
@@ -569,7 +574,7 @@ extension TaskExecutors on TaskQueueService {
           task.addLog(level == 'INFO' ? msg : '$level: $msg');
           refreshQueue();
         },
-        fetch: () => LLMService().checkOperation(
+        fetch: () => _llm.checkOperation(
           modelIdentifier: task.modelDbId ?? task.modelId,
           operationName: operationName,
           operationSurface: task.operationSurface,
@@ -587,7 +592,7 @@ extension TaskExecutors on TaskQueueService {
       // The local task is over either way; this only decides whether the
       // upstream one goes with it. Most surfaces have no cancel and answer
       // null without a request — see LLMDispatcher.cancelOperation.
-      final action = await LLMService().cancelOperation(
+      final action = await _llm.cancelOperation(
         modelIdentifier: task.modelDbId ?? task.modelId,
         operationName: operationName,
         operationSurface: task.operationSurface,
@@ -609,7 +614,7 @@ extension TaskExecutors on TaskQueueService {
     // What the terminal poll knows that the submit could only estimate: the
     // length rendered and, on xAI, the charge itself.
     if (videoSettlementOf(done) case final settle?) {
-      await LLMService().settleVideoUsage(
+      await _llm.settleVideoUsage(
         modelIdentifier: task.modelDbId ?? task.modelId,
         operationName: operationName,
         renderedSeconds: settle.renderedSeconds,
@@ -733,7 +738,7 @@ extension TaskExecutors on TaskQueueService {
     ];
 
     // 2. Start Long Running Operation
-    final ticket = await LLMService().startLongRunning(
+    final ticket = await _llm.startLongRunning(
       modelIdentifier: task.modelDbId ?? task.modelId,
       messages: messages,
       contextId: task.id,
@@ -765,7 +770,7 @@ extension TaskExecutors on TaskQueueService {
   /// and a public link may well work without them.
   Future<Map<String, String>> _videoDownloadHeaders(TaskItem task) async {
     try {
-      return await LLMService().downloadHeadersFor(
+      return await _llm.downloadHeadersFor(
         modelIdentifier: task.modelDbId ?? task.modelId,
         contextId: task.id,
       );
@@ -980,7 +985,8 @@ extension TaskExecutors on TaskQueueService {
 
   /// Checks if primary output is writable, returns it or falls back to Result Cache.
   Future<String> _getEffectiveOutputDir(TaskItem task) async {
-    final String? primary = await _db.getSetting('output_directory');
+    final String? primary =
+        task.parameters['outputDirectory'] as String? ?? await _db.getSetting('output_directory');
 
     // Result Cache is always initialized in GalleryState for iOS/macOS
     String? fallback;
@@ -1002,11 +1008,12 @@ extension TaskExecutors on TaskQueueService {
         await dir.create(recursive: true);
       }
       // Test writability
-      final testFile = File(p.join(primary, '.write_test'));
+      final testFile = File(p.join(primary, '.write_test_${task.id}'));
       await testFile.writeAsString('test');
       await testFile.delete();
       return primary;
     } catch (e) {
+      task.warnings.add('The output folder is unavailable; using the result cache when available.');
       task.addLog(
         'Warning: Primary output directory is unwritable ($e). Falling back to Result Cache.',
       );

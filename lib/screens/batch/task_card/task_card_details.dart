@@ -86,6 +86,7 @@ class _FactsAndActions extends StatelessWidget {
 
     final rows = <(String, String, int)>[
       (l10n.model, task.modelId, 1),
+      if (task.parameters['origin'] == 'mcp') (l10n.mcpTaskOrigin, 'MCP', 1),
       (l10n.createdAt, formatTaskClock(task.createdAt), 1),
       (l10n.started, formatTaskClock(task.startTime), 1),
       (l10n.finished, formatTaskClock(task.endTime), 1),

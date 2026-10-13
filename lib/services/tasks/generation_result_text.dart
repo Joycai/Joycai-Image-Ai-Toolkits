@@ -22,6 +22,9 @@ Future<void> saveGenerationResultText(TaskItem task, String resultPath) async {
     await File(path).writeAsString(text.toString(), flush: true);
     task.addLog('Saved generation text to: $path');
   } on FileSystemException catch (error) {
+    task.warnings.add(
+      'The generated image was saved, but its prompt text sidecar could not be written.',
+    );
     task.addLog('Warning: could not save generation text to $path: $error');
   }
 }
