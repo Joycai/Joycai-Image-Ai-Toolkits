@@ -480,9 +480,8 @@ class _OverflowMenu extends StatelessWidget {
           const SizedBox(width: AppSpace.s10),
           Text(
             action.label,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: ink(action.danger ? scheme.error : scheme.onSurface),
-            ),
+            style: Theme.of(context).textTheme.bodyMedium
+                ?.copyWith(color: ink(action.danger ? scheme.error : scheme.onSurface)),
           ),
         ],
       ),
@@ -578,9 +577,8 @@ class _TagChipLine extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final scheme = Theme.of(context).colorScheme;
-        final moreStyle = Theme.of(
-          context,
-        ).textTheme.labelSmall!.mono.copyWith(color: scheme.outline);
+        final moreStyle = Theme.of(context).textTheme.labelSmall!.mono
+            .copyWith(color: scheme.outline);
         final max = constraints.maxWidth;
 
         final shown = <PromptTag>[];

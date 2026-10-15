@@ -44,7 +44,6 @@ linter:
     - prefer_final_locals
     - unnecessary_breaks
     - unnecessary_parenthesis
-    - unnecessary_await_in_return
     - no_literal_bool_comparisons
 
     # --- Effective Dart ----------------------------------------------------

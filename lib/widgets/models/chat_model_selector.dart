@@ -105,9 +105,8 @@ class ChatModelSelector extends StatelessWidget {
       decoration: isCard
           ? InputDecoration(
               labelText: label ?? l10n.model,
-              labelStyle: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+              labelStyle: Theme.of(context).textTheme.bodySmall
+                  ?.copyWith(color: colorScheme.onSurfaceVariant),
               floatingLabelBehavior: FloatingLabelBehavior.always,
               filled: true,
               fillColor: colorScheme.surface,

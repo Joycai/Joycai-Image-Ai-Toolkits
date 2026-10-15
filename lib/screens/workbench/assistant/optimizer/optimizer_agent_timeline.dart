@@ -163,9 +163,8 @@ extension _AgentTimeline on _PromptOptimizerChatViewState {
   /// row listens to that count: it ticks per fragment, and rebuilding the
   /// whole transcript that often is the cost the notifier exists to avoid.
   Widget _buildWorkingStep(AppLocalizations l10n, ColorScheme colorScheme) {
-    final style = Theme.of(
-      context,
-    ).textTheme.bodySmall?.copyWith(color: colorScheme.accentText, fontWeight: FontWeight.w500);
+    final style = Theme.of(context).textTheme.bodySmall
+        ?.copyWith(color: colorScheme.accentText, fontWeight: FontWeight.w500);
     Widget label(int? chars) => Text(
       chars == null || chars <= 0 ? l10n.optAgentStepWorking : l10n.optAgentStepStreaming(chars),
       maxLines: 1,
@@ -214,9 +213,8 @@ extension _AgentTimeline on _PromptOptimizerChatViewState {
               _toolLabel(entry, l10n),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+              style: Theme.of(context).textTheme.bodySmall
+                  ?.copyWith(color: colorScheme.onSurfaceVariant),
             ),
           ),
         ],

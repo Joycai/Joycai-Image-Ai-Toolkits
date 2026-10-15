@@ -198,9 +198,9 @@ class _CategoryChip extends StatefulWidget {
   static const double _height = 24;
   static const double _padding = AppSpace.s10;
 
-  static TextStyle _style(BuildContext context, {required bool selected}) => Theme.of(
-    context,
-  ).textTheme.bodySmall!.copyWith(fontWeight: selected ? FontWeight.w500 : FontWeight.w400);
+  static TextStyle _style(BuildContext context, {required bool selected}) =>
+      Theme.of(context).textTheme.bodySmall!
+          .copyWith(fontWeight: selected ? FontWeight.w500 : FontWeight.w400);
 
   /// Measured at the selected weight, so choosing one never widens the row.
   static double widthFor(BuildContext context, String label) =>

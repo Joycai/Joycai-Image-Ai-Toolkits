@@ -86,8 +86,7 @@ class WebScraperService {
     final formattedCookies = parseCookies(cookies ?? '');
     final client = HttpClient();
     // Add a realistic User-Agent
-    client.userAgent =
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+    client.userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
     try {
       final request = await client.getUrl(Uri.parse(url));

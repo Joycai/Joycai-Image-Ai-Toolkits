@@ -307,8 +307,7 @@ LLMMessage _elide(LLMMessage m, {required bool bulk, required bool attachments})
       role: LLMRole.tool,
       content: jsonEncode({
         'status': 'ok',
-        'note':
-            'Content elided to save context — it was read and processed earlier in this conversation.',
+        'note': 'Content elided to save context — it was read and processed earlier in this conversation.',
       }),
       toolCallId: m.toolCallId,
       toolName: m.toolName,

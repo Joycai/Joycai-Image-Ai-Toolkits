@@ -398,9 +398,9 @@ class _LargeEditorState extends State<_LargeEditor> {
         : const EdgeInsets.symmetric(horizontal: 32, vertical: 28);
   }
 
-  TextStyle? _textStyle(BuildContext context) => Theme.of(
-    context,
-  ).textTheme.bodyMedium?.copyWith(fontSize: widget.compact ? 15 : 14, height: 1.7);
+  TextStyle? _textStyle(BuildContext context) =>
+      Theme.of(context).textTheme.bodyMedium
+          ?.copyWith(fontSize: widget.compact ? 15 : 14, height: 1.7);
 
   Widget _paneTag(BuildContext context, String text) {
     final theme = Theme.of(context);

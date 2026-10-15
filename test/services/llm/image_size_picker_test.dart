@@ -201,9 +201,8 @@ void main() {
     });
 
     test('an unidentified DashScope model gets the box every family accepts', () {
-      final spec = ModelCapabilities.forProtocol(
-        WireProtocol.dashscopeImagesSync,
-      ).imageParams.firstWhere((p) => p.key == 'imageSize');
+      final spec = ModelCapabilities.forProtocol(WireProtocol.dashscopeImagesSync).imageParams
+          .firstWhere((p) => p.key == 'imageSize');
       expect(spec.sizeRules, kDashscopeCommonSizeRules);
       for (final o in spec.options) {
         final wxh = parseWxH(o.value);

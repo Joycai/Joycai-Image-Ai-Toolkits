@@ -337,9 +337,8 @@ class _MoreRow extends StatelessWidget {
             Expanded(
               child: Text(
                 label,
-                style: Theme.of(context).textTheme.bodyLarge!.metricsOnly.copyWith(
-                  color: selected ? scheme.onAccentTint : ink,
-                ),
+                style: Theme.of(context).textTheme.bodyLarge!.metricsOnly
+                    .copyWith(color: selected ? scheme.onAccentTint : ink),
               ),
             ),
             Icon(Icons.chevron_right, size: AppSize.iconMd, color: ink2),

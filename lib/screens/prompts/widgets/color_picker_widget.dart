@@ -81,10 +81,8 @@ class _ColorPickerWidgetState extends State<ColorPickerWidget> {
         ],
         Text(
           AppLocalizations.of(context)!.colorPresets,
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-            color: scheme.onSurfaceVariant,
-          ),
+          style: Theme.of(context).textTheme.labelMedium
+              ?.copyWith(fontWeight: FontWeight.w600, color: scheme.onSurfaceVariant),
         ),
         const SizedBox(height: AppSpace.s6),
         Wrap(

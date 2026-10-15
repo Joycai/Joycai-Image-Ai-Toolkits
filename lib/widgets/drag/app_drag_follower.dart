@@ -152,10 +152,8 @@ class AppDragCountBadge extends StatelessWidget {
       ),
       child: Text(
         '$count',
-        style: Theme.of(context).textTheme.labelSmall!.mono.metricsOnly.copyWith(
-          fontWeight: FontWeight.w600,
-          color: tone.onColor(context),
-        ),
+        style: Theme.of(context).textTheme.labelSmall!.mono.metricsOnly
+            .copyWith(fontWeight: FontWeight.w600, color: tone.onColor(context)),
       ),
     );
   }

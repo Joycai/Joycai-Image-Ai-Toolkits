@@ -779,11 +779,8 @@ class _TransportBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final monoStyle = Theme.of(context).textTheme.labelSmall?.mono.copyWith(
-      fontWeight: FontWeight.w400,
-      color: AppOverlay.onImagePlate,
-      height: 1,
-    );
+    final monoStyle = Theme.of(context).textTheme.labelSmall?.mono
+        .copyWith(fontWeight: FontWeight.w400, color: AppOverlay.onImagePlate, height: 1);
     return Container(
       height: 24,
       padding: const EdgeInsets.symmetric(horizontal: 8),

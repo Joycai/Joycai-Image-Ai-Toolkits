@@ -61,9 +61,9 @@ class PromptCategoryChip extends StatelessWidget {
   final int? count;
   final double height;
 
-  static TextStyle labelStyle(BuildContext context, {required bool selected}) => Theme.of(
-    context,
-  ).textTheme.bodySmall!.copyWith(fontWeight: selected ? FontWeight.w600 : FontWeight.w500);
+  static TextStyle labelStyle(BuildContext context, {required bool selected}) =>
+      Theme.of(context).textTheme.bodySmall!
+          .copyWith(fontWeight: selected ? FontWeight.w600 : FontWeight.w500);
 
   @override
   Widget build(BuildContext context) {

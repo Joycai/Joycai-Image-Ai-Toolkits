@@ -590,9 +590,8 @@ Color _navInk(ColorScheme colorScheme, Set<WidgetState> states) =>
 /// white at only ~3:1, so the fill keeps the light red in both — the same
 /// committed weight as the primary CTA, differing only in hue.
 ColorScheme errorFillScheme() {
-  return ColorScheme.fromSeed(
-    seedColor: _ErrorRoles.light.error,
-  ).copyWith(primary: _ErrorRoles.light.error, onPrimary: _ErrorRoles.light.onError);
+  return ColorScheme.fromSeed(seedColor: _ErrorRoles.light.error)
+      .copyWith(primary: _ErrorRoles.light.error, onPrimary: _ErrorRoles.light.onError);
 }
 
 /// The monospaced faces to ask for, best first. The design sets numbers,

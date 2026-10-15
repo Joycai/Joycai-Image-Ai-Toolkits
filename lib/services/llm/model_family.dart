@@ -335,9 +335,8 @@ class ModelFamilyClassifier {
   static bool isLegacyClaudeThinking(String modelId) {
     final id = modelId.toLowerCase();
     if (!id.contains('claude')) return false;
-    final m = RegExp(
-      r'claude(?:[-_](?:opus|sonnet|haiku))?[-_](\d+)(?:[-_.](\d+))?',
-    ).firstMatch(id);
+    final m = RegExp(r'claude(?:[-_](?:opus|sonnet|haiku))?[-_](\d+)(?:[-_.](\d+))?')
+        .firstMatch(id);
     if (m == null) return false;
     final major = int.parse(m.group(1)!);
     final minorRaw = m.group(2);
@@ -380,9 +379,8 @@ class ModelFamilyClassifier {
   /// The separator is `-` in the dated ids and `.` in the plan's aliases; the
   /// six-digit date after the version (`-250828`) is never read as a minor.
   static (int, int)? seedreamVersion(String modelId) {
-    final m = RegExp(
-      r'seedream[-_]?(\d+)(?:[-_.](\d{1,2}))?(?!\d)',
-    ).firstMatch(modelId.toLowerCase());
+    final m = RegExp(r'seedream[-_]?(\d+)(?:[-_.](\d{1,2}))?(?!\d)')
+        .firstMatch(modelId.toLowerCase());
     if (m == null) return null;
     return (int.parse(m.group(1)!), int.tryParse(m.group(2) ?? '') ?? 0);
   }

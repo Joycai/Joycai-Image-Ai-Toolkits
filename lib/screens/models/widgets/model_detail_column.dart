@@ -168,9 +168,9 @@ class _ModelDetailColumnState extends State<ModelDetailColumn> {
   /// the picked weight and holds that width in both states, so picking one
   /// does not shove the row — on Windows a CJK bold is synthesised wider
   /// than its regular.
-  TextStyle _chipLabelStyle(BuildContext context, {required bool selected}) => Theme.of(
-    context,
-  ).textTheme.bodySmall!.copyWith(fontWeight: selected ? FontWeight.w600 : FontWeight.w400);
+  TextStyle _chipLabelStyle(BuildContext context, {required bool selected}) =>
+      Theme.of(context).textTheme.bodySmall!
+          .copyWith(fontWeight: selected ? FontWeight.w600 : FontWeight.w400);
 
   /// The count is the label's own size in mono — `1a` sets only the family —
   /// so the digits sit on the label's baseline rather than a smaller slot's.

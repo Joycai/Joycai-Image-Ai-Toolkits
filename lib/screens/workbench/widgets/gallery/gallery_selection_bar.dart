@@ -134,10 +134,8 @@ class _BarContent extends StatelessWidget {
     final canClearWorkspace = isTemp && inputs.hasDropped;
     final selected = inputs.selected;
 
-    final countStyle = Theme.of(context).textTheme.bodySmall!.metricsOnly.copyWith(
-      fontWeight: FontWeight.w600,
-      color: scheme.onAccentTint,
-    );
+    final countStyle = Theme.of(context).textTheme.bodySmall!.metricsOnly
+        .copyWith(fontWeight: FontWeight.w600, color: scheme.onAccentTint);
     final countLabel = l10n.selectedCount(count);
 
     final actions =

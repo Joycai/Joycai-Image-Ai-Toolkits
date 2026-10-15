@@ -110,10 +110,8 @@ class _VersionTextState extends State<_VersionText> {
       textAlign: widget.textAlign,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
-        fontWeight: FontWeight.w400,
-        color: colorScheme.outline,
-      ),
+      style: Theme.of(context).textTheme.labelSmall?.mono
+          .copyWith(fontWeight: FontWeight.w400, color: colorScheme.outline),
     );
   }
 }

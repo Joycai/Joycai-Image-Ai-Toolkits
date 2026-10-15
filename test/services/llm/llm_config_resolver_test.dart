@@ -143,59 +143,56 @@ void main() {
       expect(config.inputFreeUnits, 1);
     });
 
-    test(
-      'a per-second and a request group\'s input-image rate reach the config; a token group\'s does not',
-      () async {
-        final channelId = await db.addChannel(
-          LLMChannel(
-            displayName: 'xAI',
-            type: 'xai-api',
-            endpoint: 'https://api.x.ai/v1',
-            apiKey: 'key-xai',
+    test('a per-second and a request group\'s input-image rate reach the config; a token group\'s does not', () async {
+      final channelId = await db.addChannel(
+        LLMChannel(
+          displayName: 'xAI',
+          type: 'xai-api',
+          endpoint: 'https://api.x.ai/v1',
+          apiKey: 'key-xai',
+        ),
+      );
+      Future<LLMModelConfig> configOf(PricingGroup group) async {
+        final groupId = await db.addPricingGroup(group);
+        final modelPk = await db.addModel(
+          LLMModel(
+            modelId: 'grok-imagine-video-1.5-${group.name}',
+            modelName: group.name,
+            tag: 'video',
+            channelId: channelId,
+            feeGroupId: groupId,
           ),
         );
-        Future<LLMModelConfig> configOf(PricingGroup group) async {
-          final groupId = await db.addPricingGroup(group);
-          final modelPk = await db.addModel(
-            LLMModel(
-              modelId: 'grok-imagine-video-1.5-${group.name}',
-              modelName: group.name,
-              tag: 'video',
-              channelId: channelId,
-              feeGroupId: groupId,
-            ),
-          );
-          return LLMConfigResolver(database: db).resolveConfig(modelPk);
-        }
+        return LLMConfigResolver(database: db).resolveConfig(modelPk);
+      }
 
-        final perSecond = await configOf(
-          PricingGroup(
-            name: 'sec',
-            billingMode: 'spec',
-            outputUnit: OutputUnit.second,
-            inputUnitPrice: 0.01,
-          ),
-        );
-        final perRequest = await configOf(
-          PricingGroup(
-            name: 'req',
-            billingMode: 'request',
-            requestPrice: 0.08,
-            inputUnitPrice: 0.01,
-            inputFreeUnits: 1,
-          ),
-        );
-        final token = await configOf(
-          PricingGroup(name: 'tok', billingMode: 'token', inputUnitPrice: 0.01),
-        );
+      final perSecond = await configOf(
+        PricingGroup(
+          name: 'sec',
+          billingMode: 'spec',
+          outputUnit: OutputUnit.second,
+          inputUnitPrice: 0.01,
+        ),
+      );
+      final perRequest = await configOf(
+        PricingGroup(
+          name: 'req',
+          billingMode: 'request',
+          requestPrice: 0.08,
+          inputUnitPrice: 0.01,
+          inputFreeUnits: 1,
+        ),
+      );
+      final token = await configOf(
+        PricingGroup(name: 'tok', billingMode: 'token', inputUnitPrice: 0.01),
+      );
 
-        expect(perSecond.inputUnitFee, 0.01);
-        expect(perRequest.inputUnitFee, 0.01);
-        expect(perRequest.inputFreeUnits, 1);
-        expect(token.inputUnitFee, 0.0, reason: 'a token group never charges inputs');
-        expect(token.inputFreeUnits, 0);
-      },
-    );
+      expect(perSecond.inputUnitFee, 0.01);
+      expect(perRequest.inputUnitFee, 0.01);
+      expect(perRequest.inputFreeUnits, 1);
+      expect(token.inputUnitFee, 0.0, reason: 'a token group never charges inputs');
+      expect(token.inputFreeUnits, 0);
+    });
 
     test('deleting a channel deletes its models without leaving orphans', () async {
       final channelId = await db.addChannel(

@@ -243,10 +243,8 @@ class _CustomAccentDialogState extends State<_CustomAccentDialog> {
                   children: [
                     Text(
                       message,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: bannerText,
-                        height: AppType.proseHeight,
-                      ),
+                      style: Theme.of(context).textTheme.bodySmall
+                          ?.copyWith(color: bannerText, height: AppType.proseHeight),
                     ),
                     const SizedBox(height: AppSpace.s6),
                     Wrap(

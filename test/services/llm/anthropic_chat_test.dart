@@ -401,24 +401,21 @@ void main() {
 
   group('authentication', () {
     test('the version header is not optional', () {
-      final headers = Vendors.byId(
-        Vendors.anthropicRest,
-      ).headers('secret', 'https://api.anthropic.com/v1');
+      final headers = Vendors.byId(Vendors.anthropicRest)
+          .headers('secret', 'https://api.anthropic.com/v1');
       expect(headers['anthropic-version'], isNotEmpty);
       expect(headers['x-api-key'], 'secret');
     });
 
     test('Anthropic itself is the one host that gets no bearer token', () {
-      final official = Vendors.byId(
-        Vendors.anthropicRest,
-      ).headers('secret', 'https://api.anthropic.com/v1');
+      final official = Vendors.byId(Vendors.anthropicRest)
+          .headers('secret', 'https://api.anthropic.com/v1');
       expect(official.containsKey('Authorization'), isFalse);
     });
 
     test('a relay gets both spellings, since it documents neither', () {
-      final relay = Vendors.byId(
-        Vendors.newApiAnthropic,
-      ).headers('secret', 'https://relay.example.com/v1');
+      final relay = Vendors.byId(Vendors.newApiAnthropic)
+          .headers('secret', 'https://relay.example.com/v1');
       expect(relay['x-api-key'], 'secret');
       expect(relay['Authorization'], 'Bearer secret');
     });

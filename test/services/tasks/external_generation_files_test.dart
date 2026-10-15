@@ -27,9 +27,8 @@ void main() {
     for (final suffix in ['', '/*', '/**']) {
       final rules = ['${root.path}$suffix'];
       expect(
-        await File(
-          await ExternalGenerationFiles.stage(direct.path, rules, stage, index++),
-        ).readAsBytes(),
+        await File(await ExternalGenerationFiles.stage(direct.path, rules, stage, index++))
+            .readAsBytes(),
         png,
       );
       if (suffix == '/*') {
@@ -41,9 +40,8 @@ void main() {
         );
       } else {
         expect(
-          await File(
-            await ExternalGenerationFiles.stage(nested.path, rules, stage, index++),
-          ).readAsBytes(),
+          await File(await ExternalGenerationFiles.stage(nested.path, rules, stage, index++))
+              .readAsBytes(),
           png,
         );
       }

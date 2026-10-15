@@ -114,9 +114,8 @@ class _Row extends StatelessWidget {
             if (region != null)
               Text(
                 region,
-                style: Theme.of(
-                  context,
-                ).textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
+                style: Theme.of(context).textTheme.labelSmall
+                    ?.copyWith(color: scheme.onSurfaceVariant),
               ),
           ],
         ),
@@ -142,9 +141,8 @@ class _CustomisePlaceholder extends StatelessWidget {
           Expanded(
             child: Text(
               l10n.shortcutsCustomise,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+              style: Theme.of(context).textTheme.bodyMedium
+                  ?.copyWith(color: scheme.onSurfaceVariant),
             ),
           ),
           Text(

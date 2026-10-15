@@ -79,9 +79,9 @@ class UsageSummary extends StatelessWidget {
     );
   }
 
-  TextStyle? _metaStyle(BuildContext context) => Theme.of(
-    context,
-  ).textTheme.labelSmall?.mono.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant);
+  TextStyle? _metaStyle(BuildContext context) =>
+      Theme.of(context).textTheme.labelSmall?.mono
+          .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant);
 
   String _requestsText(AppLocalizations l10n) =>
       '${_fmt(stats.totalRequestCount)} ${l10n.requests}';

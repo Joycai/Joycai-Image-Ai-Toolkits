@@ -633,10 +633,8 @@ class _ChoiceTrack extends StatelessWidget {
         decoration: BoxDecoration(color: fill, borderRadius: BorderRadius.circular(AppRadius.sm)),
         child: Text(
           label,
-          style: Theme.of(context).textTheme.labelMedium!.copyWith(
-            color: ink,
-            fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-          ),
+          style: Theme.of(context).textTheme.labelMedium!
+              .copyWith(color: ink, fontWeight: selected ? FontWeight.w600 : FontWeight.w500),
         ),
       ),
     );

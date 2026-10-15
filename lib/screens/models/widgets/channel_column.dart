@@ -157,9 +157,8 @@ class ChannelColumn extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(AppSpace.s6, AppSpace.s6, AppSpace.s6, 0),
                 child: Text(
                   l10n.channelReorderFootnote,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.labelSmall?.mono.copyWith(color: scheme.outline),
+                  style: Theme.of(context).textTheme.labelSmall?.mono
+                      .copyWith(color: scheme.outline),
                 ),
               )
             : null,

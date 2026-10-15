@@ -228,9 +228,8 @@ class _HistoryCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       formatRelativeTime(l10n, entry.usedAt),
-                      style: Theme.of(
-                        context,
-                      ).textTheme.labelMedium?.copyWith(color: colorScheme.outline),
+                      style: Theme.of(context).textTheme.labelMedium
+                          ?.copyWith(color: colorScheme.outline),
                     ),
                   ),
                   Icon(Icons.chevron_right, size: 16, color: colorScheme.outline),
@@ -239,9 +238,8 @@ class _HistoryCard extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 entry.content,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                style: Theme.of(context).textTheme.bodySmall
+                    ?.copyWith(color: colorScheme.onSurfaceVariant),
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
               ),

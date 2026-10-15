@@ -239,9 +239,8 @@ class _SyncSwitchState extends State<_SyncSwitch> {
                 Text(
                   widget.label,
                   maxLines: 1,
-                  style: GlassIconButton.labelStyle(
-                    context,
-                  ).copyWith(color: enabled ? ink : ink2.withValues(alpha: ink2.a * 0.6)),
+                  style: GlassIconButton.labelStyle(context)
+                      .copyWith(color: enabled ? ink : ink2.withValues(alpha: ink2.a * 0.6)),
                 ),
                 const SizedBox(width: 6),
                 AppSwitch(

@@ -50,10 +50,8 @@ class PromptSelectionCapsule extends StatelessWidget {
                 l10n.nSelected(count),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: scheme.onAccentTint,
-                ),
+                style: Theme.of(context).textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w600, color: scheme.onAccentTint),
               ),
             ),
             const SizedBox(width: 12),

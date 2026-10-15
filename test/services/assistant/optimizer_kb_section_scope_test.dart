@@ -24,9 +24,8 @@ void main() {
   setUp(() {
     root = Directory.systemTemp.createTempSync('kb_scope_');
     File(p.join(root.path, 'README.md')).writeAsStringSync('# KB\n');
-    File(
-      p.join(root.path, 'rules.md'),
-    ).writeAsStringSync('# Rules\n\n## Lighting\n\n- soft\n\n## Composition\n\n- thirds\n');
+    File(p.join(root.path, 'rules.md'))
+        .writeAsStringSync('# Rules\n\n## Lighting\n\n- soft\n\n## Composition\n\n- thirds\n');
   });
   tearDown(() {
     PromptOptimizerAgent.debugRequestOverride = null;

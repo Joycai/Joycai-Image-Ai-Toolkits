@@ -147,8 +147,7 @@ class GenerationSubmissionService {
                 },
             },
       ],
-      'parameterEncoding':
-          'Values use {"kind":"choice","value":"..."}, or integer/boolean/size/decimal; unset and auto have no value. Use the advertised choices.',
+      'parameterEncoding': 'Values use {"kind":"choice","value":"..."}, or integer/boolean/size/decimal; unset and auto have no value. Use the advertised choices.',
     };
   }
 

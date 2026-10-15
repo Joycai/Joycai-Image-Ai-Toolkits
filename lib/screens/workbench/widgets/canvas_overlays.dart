@@ -143,10 +143,8 @@ class CanvasBadge extends StatelessWidget {
                 // width, a pixel size, a file's name. Numbers that change
                 // under the pointer should not reflow the label around them
                 // every time a digit does.
-                style: Theme.of(context).textTheme.labelSmall!.metricsOnly.mono.copyWith(
-                  fontWeight: FontWeight.w400,
-                  color: ink,
-                ),
+                style: Theme.of(context).textTheme.labelSmall!.metricsOnly.mono
+                    .copyWith(fontWeight: FontWeight.w400, color: ink),
               ),
             ),
           ],

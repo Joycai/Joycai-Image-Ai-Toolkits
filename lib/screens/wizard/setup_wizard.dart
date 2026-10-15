@@ -535,9 +535,8 @@ class _SetupWizardState extends State<SetupWizard> {
           const SizedBox(height: 6),
           Text(
             l10n.apiKeyStorageNotice,
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+            style: Theme.of(context).textTheme.bodySmall
+                ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
         ],
       ),

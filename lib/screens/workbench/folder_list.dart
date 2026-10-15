@@ -167,10 +167,8 @@ class _FolderListState extends State<FolderList> {
                   ),
                   child: Text(
                     '${sourceDirectories.length}',
-                    style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
-                      fontWeight: FontWeight.w400,
-                      color: colorScheme.onSurfaceVariant,
-                    ),
+                    style: Theme.of(context).textTheme.labelSmall?.mono
+                        .copyWith(fontWeight: FontWeight.w400, color: colorScheme.onSurfaceVariant),
                   ),
                 ),
                 const Spacer(),
@@ -488,19 +486,15 @@ class _FolderListState extends State<FolderList> {
             const SizedBox(height: AppSpace.s6),
             Text(
               l10n.noFolders,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: colorScheme.onSurface,
-              ),
+              style: Theme.of(context).textTheme.bodySmall
+                  ?.copyWith(fontWeight: FontWeight.w600, color: colorScheme.onSurface),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpace.s6),
             Text(
               l10n.clickAddFolder,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-                height: AppType.proseHeight,
-              ),
+              style: Theme.of(context).textTheme.bodySmall
+                  ?.copyWith(color: colorScheme.onSurfaceVariant, height: AppType.proseHeight),
               textAlign: TextAlign.center,
             ),
           ],

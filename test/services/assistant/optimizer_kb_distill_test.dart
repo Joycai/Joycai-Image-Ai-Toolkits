@@ -238,8 +238,7 @@ void main() {
       for (final trailing in [
         LLMMessage(
           role: LLMRole.tool,
-          content:
-              '{"status":"cancelled","message":"The user cancelled the task before this tool ran."}',
+          content: '{"status":"cancelled","message":"The user cancelled the task before this tool ran."}',
           toolCallId: 'r1',
           toolName: 'read_knowledge_file',
         ),

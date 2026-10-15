@@ -58,9 +58,8 @@ class ParamEditorRegistry {
     if (builder == null) {
       return Text(
         AppLocalizations.of(context)!.generationMissingEditor,
-        style: Theme.of(
-          context,
-        ).textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.error),
+        style: Theme.of(context).textTheme.labelSmall
+            ?.copyWith(color: Theme.of(context).colorScheme.error),
       );
     }
     return builder(context, data);
@@ -113,9 +112,8 @@ Widget _slider(BuildContext context, ParamEditorData data) {
       children: [
         Expanded(
           child: SliderTheme(
-            data: SliderTheme.of(
-              context,
-            ).copyWith(overlayShape: const RoundSliderOverlayShape(overlayRadius: 12)),
+            data: SliderTheme.of(context)
+                .copyWith(overlayShape: const RoundSliderOverlayShape(overlayRadius: 12)),
             child: Slider(
               value: value.toDouble(),
               min: lo.toDouble(),
@@ -131,9 +129,8 @@ Widget _slider(BuildContext context, ParamEditorData data) {
           child: Text(
             text,
             textAlign: TextAlign.end,
-            style: Theme.of(
-              context,
-            ).textTheme.labelSmall?.mono.copyWith(color: Theme.of(context).colorScheme.onSurface),
+            style: Theme.of(context).textTheme.labelSmall?.mono
+                .copyWith(color: Theme.of(context).colorScheme.onSurface),
           ),
         ),
       ],

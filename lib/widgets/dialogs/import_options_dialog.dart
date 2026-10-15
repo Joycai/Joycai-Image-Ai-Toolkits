@@ -251,9 +251,8 @@ class _FileName extends StatelessWidget {
       name,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      style: Theme.of(
-        context,
-      ).textTheme.bodySmall?.mono.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+      style: Theme.of(context).textTheme.bodySmall?.mono
+          .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
     );
   }
 }
@@ -283,10 +282,8 @@ class _WarningNote extends StatelessWidget {
           Expanded(
             child: Text(
               text.trim(),
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: semantic.onWarningContainer,
-                height: AppType.proseHeight,
-              ),
+              style: Theme.of(context).textTheme.bodySmall
+                  ?.copyWith(color: semantic.onWarningContainer, height: AppType.proseHeight),
             ),
           ),
         ],

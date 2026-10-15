@@ -345,9 +345,8 @@ class _ComparatorViewState extends State<ComparatorView> {
       return Center(
         child: Text(
           l10n.noImagesSelected,
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+          style: Theme.of(context).textTheme.bodySmall
+              ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
         ),
       );
     }

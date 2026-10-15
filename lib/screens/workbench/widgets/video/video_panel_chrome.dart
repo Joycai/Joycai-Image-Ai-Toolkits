@@ -132,9 +132,8 @@ class _WarningNotice extends StatelessWidget {
           Expanded(
             child: Text(
               message,
-              style: Theme.of(
-                context,
-              ).textTheme.labelSmall?.copyWith(color: semantic.onWarningContainer),
+              style: Theme.of(context).textTheme.labelSmall
+                  ?.copyWith(color: semantic.onWarningContainer),
             ),
           ),
         ],

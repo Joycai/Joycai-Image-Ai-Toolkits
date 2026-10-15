@@ -221,9 +221,8 @@ extension _SelectionCard on _WorkbenchConfigPanelState {
           Expanded(
             child: Text(
               message,
-              style: Theme.of(
-                context,
-              ).textTheme.labelSmall?.copyWith(color: semantic.onWarningContainer),
+              style: Theme.of(context).textTheme.labelSmall
+                  ?.copyWith(color: semantic.onWarningContainer),
             ),
           ),
         ],

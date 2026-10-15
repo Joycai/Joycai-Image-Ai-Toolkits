@@ -370,9 +370,8 @@ class SizeRuleLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final ui = Theme.of(
-      context,
-    ).textTheme.labelSmall!.copyWith(color: scheme.outline, fontSize: 10.5);
+    final ui = Theme.of(context).textTheme.labelSmall!
+        .copyWith(color: scheme.outline, fontSize: 10.5);
     final base = ui.mono;
     final spans = <InlineSpan>[];
     for (final (i, p) in parts.indexed) {

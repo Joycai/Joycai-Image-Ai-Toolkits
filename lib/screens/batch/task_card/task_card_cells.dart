@@ -90,9 +90,8 @@ class TaskLeadingPlate extends StatelessWidget {
           fit: BoxFit.scaleDown,
           child: Text(
             '#$position',
-            style: _mono12(
-              context,
-            ).copyWith(fontWeight: FontWeight.w600, color: scheme.onSurfaceVariant),
+            style: _mono12(context)
+                .copyWith(fontWeight: FontWeight.w600, color: scheme.onSurfaceVariant),
           ),
         ),
       );
@@ -175,10 +174,8 @@ class _ModelAndChannel extends StatelessWidget {
                   maxLines: 1,
                   softWrap: false,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    fontWeight: FontWeight.w400,
-                    color: scheme.onSurfaceVariant,
-                  ),
+                  style: Theme.of(context).textTheme.labelSmall
+                      ?.copyWith(fontWeight: FontWeight.w400, color: scheme.onSurfaceVariant),
                 ),
               ),
             ],
@@ -240,9 +237,8 @@ class TaskOutputs extends StatelessWidget {
                 widthFactor: 1,
                 child: Text(
                   '+$more',
-                  style: _mono11(
-                    context,
-                  ).copyWith(fontWeight: FontWeight.w600, color: scheme.onSurfaceVariant),
+                  style: _mono11(context)
+                      .copyWith(fontWeight: FontWeight.w600, color: scheme.onSurfaceVariant),
                 ),
               ),
             ),

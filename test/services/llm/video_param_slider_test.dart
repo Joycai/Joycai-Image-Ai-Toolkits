@@ -130,9 +130,8 @@ void main() {
     test('size rules still widen a non-slider spec', () {
       // gpt-image-2's arbitrary WxH sizes ride this path; the slider branch
       // must not have displaced it.
-      final spec = ModelCapabilities.forModel(
-        'gpt-image-2',
-      ).imageParams.firstWhere((p) => p.key == 'imageSize');
+      final spec = ModelCapabilities.forModel('gpt-image-2').imageParams
+          .firstWhere((p) => p.key == 'imageSize');
       expect(spec.sizeRules, isNotNull);
       expect(spec.isValid('1024x1024'), isTrue);
     });

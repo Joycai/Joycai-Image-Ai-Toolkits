@@ -143,8 +143,7 @@ class TaskRepository {
       'tasks',
       {
         'status': 'failed',
-        'task_error':
-            '{"code":"interrupted","message":"Application stopped during generation. The provider may have charged for this request.","retrySafe":false}',
+        'task_error': '{"code":"interrupted","message":"Application stopped during generation. The provider may have charged for this request.","retrySafe":false}',
       },
       where: 'status = ?',
       whereArgs: ['processing'],
@@ -156,9 +155,8 @@ class TaskRepository {
     final results = await db.query(
       'tasks',
       columns: ['start_time', 'end_time'],
-      where:
-          'model_pk = ? AND status = "completed" AND start_time IS NOT NULL AND end_time IS NOT NULL'
-              .replaceAll('"', "'"),
+      where: 'model_pk = ? AND status = "completed" AND start_time IS NOT NULL AND end_time IS NOT NULL'
+          .replaceAll('"', "'"),
       whereArgs: [modelDbId],
       orderBy: 'end_time DESC',
       limit: limit,

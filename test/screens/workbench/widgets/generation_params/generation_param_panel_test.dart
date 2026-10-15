@@ -66,9 +66,8 @@ void main() {
   });
 
   testWidgets('Grok Image 2 has distinct Default and Auto ratio choices', (tester) async {
-    final spec = ModelCapabilities.forModel(
-      'grok-imagine-image-2.0',
-    ).imageParams.firstWhere((p) => p.key == 'aspectRatio');
+    final spec = ModelCapabilities.forModel('grok-imagine-image-2.0').imageParams
+        .firstWhere((p) => p.key == 'aspectRatio');
     String? selected;
     await tester.pumpWidget(
       host(
@@ -92,9 +91,8 @@ void main() {
     testWidgets('shared slider emits selected duration in ${video ? 'video' : 'image'} form', (
       tester,
     ) async {
-      final spec = ModelCapabilities.forModel(
-        'grok-imagine-video',
-      ).videoParams.firstWhere((p) => p.key == 'seconds');
+      final spec = ModelCapabilities.forModel('grok-imagine-video').videoParams
+          .firstWhere((p) => p.key == 'seconds');
       String? chosen;
       await tester.pumpWidget(
         host(

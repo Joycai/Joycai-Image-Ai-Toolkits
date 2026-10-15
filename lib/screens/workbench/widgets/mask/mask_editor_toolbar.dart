@@ -79,9 +79,9 @@ class MaskEditorToolbar extends StatefulWidget {
   static TextStyle _captionStyle(BuildContext context) =>
       Theme.of(context).textTheme.labelSmall!.metricsOnly.copyWith(fontWeight: FontWeight.w400);
 
-  static TextStyle _monoStyle(BuildContext context) => Theme.of(
-    context,
-  ).textTheme.labelSmall!.metricsOnly.mono.copyWith(fontWeight: FontWeight.w400);
+  static TextStyle _monoStyle(BuildContext context) =>
+      Theme.of(context).textTheme.labelSmall!.metricsOnly.mono
+          .copyWith(fontWeight: FontWeight.w400);
 
   static String _compactReadout(double brushSize, double opacity) =>
       '${brushSize.round()} px · ${(opacity * 100).round()}%';
@@ -836,9 +836,8 @@ class _OutlinedSaveButtonState extends State<_OutlinedSaveButton> {
                         widget.subtitle!,
                         maxLines: 1,
                         softWrap: false,
-                        style: _TintedSaveButton.subtitleStyle(
-                          context,
-                        ).copyWith(color: ink.withValues(alpha: ink.a * 0.7)),
+                        style: _TintedSaveButton.subtitleStyle(context)
+                            .copyWith(color: ink.withValues(alpha: ink.a * 0.7)),
                       ),
                   ],
                 ),
@@ -869,13 +868,13 @@ class _TintedSaveButton extends StatelessWidget {
   /// Horizontal padding around the text, 12px a side.
   static const double chrome = 12 + 12;
 
-  static TextStyle labelStyle(BuildContext context) => Theme.of(
-    context,
-  ).textTheme.bodySmall!.metricsOnly.copyWith(fontWeight: FontWeight.w600, height: 1.15);
+  static TextStyle labelStyle(BuildContext context) =>
+      Theme.of(context).textTheme.bodySmall!.metricsOnly
+          .copyWith(fontWeight: FontWeight.w600, height: 1.15);
 
-  static TextStyle subtitleStyle(BuildContext context) => Theme.of(
-    context,
-  ).textTheme.labelSmall!.metricsOnly.copyWith(fontWeight: FontWeight.w400, height: 1.15);
+  static TextStyle subtitleStyle(BuildContext context) =>
+      Theme.of(context).textTheme.labelSmall!.metricsOnly
+          .copyWith(fontWeight: FontWeight.w400, height: 1.15);
 
   @override
   Widget build(BuildContext context) {
@@ -905,9 +904,8 @@ class _TintedSaveButton extends StatelessWidget {
                             subtitle!,
                             maxLines: 1,
                             softWrap: false,
-                            style: subtitleStyle(
-                              context,
-                            ).copyWith(color: scheme.onPrimary.withValues(alpha: 0.85)),
+                            style: subtitleStyle(context)
+                                .copyWith(color: scheme.onPrimary.withValues(alpha: 0.85)),
                           ),
                       ],
                     ),

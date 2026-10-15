@@ -191,9 +191,9 @@ class FolderOperationsService {
     if (!_caseInsensitiveFs) return false;
     try {
       final lower = name.toLowerCase();
-      return Directory(
-        parent,
-      ).listSync(followLinks: false).any((e) => p.basename(e.path).toLowerCase() == lower);
+      return Directory(parent)
+          .listSync(followLinks: false)
+          .any((e) => p.basename(e.path).toLowerCase() == lower);
     } on FileSystemException {
       return false;
     }

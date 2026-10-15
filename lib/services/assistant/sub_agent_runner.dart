@@ -57,8 +57,10 @@ Map<String, dynamic> truncatedToolResult({int? emittedTokens}) => {
       'analysis.',
 };
 
-typedef SubAgentRequestFn =
-    Future<LLMResponse> Function(List<LLMMessage> messages, List<LLMTool>? tools);
+typedef SubAgentRequestFn = Future<LLMResponse> Function(
+  List<LLMMessage> messages,
+  List<LLMTool>? tools,
+);
 
 /// A tool executor for one sub-agent run. [occupiedChars] is the run's
 /// current context occupancy (every message so far, including results already

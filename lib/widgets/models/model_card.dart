@@ -372,9 +372,8 @@ class _StaleSelectionBadge extends StatelessWidget {
                 l10n.protocolPinStale,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(
-                  context,
-                ).textTheme.labelSmall?.copyWith(color: semantic.onWarningContainer),
+                style: Theme.of(context).textTheme.labelSmall
+                    ?.copyWith(color: semantic.onWarningContainer),
               ),
             ),
           ],
@@ -447,9 +446,8 @@ class _FeeGroupChip extends StatelessWidget {
               name,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(
-                context,
-              ).textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
+              style: Theme.of(context).textTheme.labelSmall
+                  ?.copyWith(color: scheme.onSurfaceVariant),
             ),
           ),
         ],

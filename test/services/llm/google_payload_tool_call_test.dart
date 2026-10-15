@@ -30,9 +30,10 @@ void main() {
         ],
       };
 
-      final calls = parseGoogleChunks(
-        chunk,
-      ).map((c) => c.toolCallPart).whereType<LLMToolCall>().toList();
+      final calls = parseGoogleChunks(chunk)
+          .map((c) => c.toolCallPart)
+          .whereType<LLMToolCall>()
+          .toList();
 
       expect(calls, hasLength(2));
       expect(calls[0].name, 'list_files');

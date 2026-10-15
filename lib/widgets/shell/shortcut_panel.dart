@@ -221,16 +221,14 @@ class _Header extends StatelessWidget {
             Expanded(
               child: Text(
                 l10n.shortcutsTitle,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                style: Theme.of(context).textTheme.titleSmall
+                    ?.copyWith(fontWeight: FontWeight.w600),
               ),
             ),
             Text(
               l10n.shortcutsClose,
-              style: Theme.of(
-                context,
-              ).textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
+              style: Theme.of(context).textTheme.labelSmall
+                  ?.copyWith(color: scheme.onSurfaceVariant),
             ),
             const SizedBox(width: AppSpace.s6),
             const AppKeyLabel(chord: ShortcutKey(LogicalKeyboardKey.escape)),
@@ -264,10 +262,8 @@ class _Footer extends StatelessWidget {
           Expanded(
             child: Text(
               l10n.shortcutsActiveRegionNote,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: scheme.onSurfaceVariant,
-                height: AppType.proseHeight,
-              ),
+              style: Theme.of(context).textTheme.bodySmall
+                  ?.copyWith(color: scheme.onSurfaceVariant, height: AppType.proseHeight),
             ),
           ),
         ],

@@ -308,11 +308,8 @@ class _Separator extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 3),
       child: Text(
         text,
-        style: Theme.of(context).textTheme.labelSmall!.mono.copyWith(
-          fontSize: dense ? 9.5 : 10,
-          height: 1,
-          color: scheme.outline,
-        ),
+        style: Theme.of(context).textTheme.labelSmall!.mono
+            .copyWith(fontSize: dense ? 9.5 : 10, height: 1, color: scheme.outline),
       ),
     );
   }

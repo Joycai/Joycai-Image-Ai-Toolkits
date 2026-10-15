@@ -86,9 +86,8 @@ class ModelsPhoneLayout extends StatelessWidget {
                                       l10n.modelManager,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                        color: GlassInk.maybeOf(context)?.ink,
-                                      ),
+                                      style: Theme.of(context).textTheme.headlineSmall
+                                          ?.copyWith(color: GlassInk.maybeOf(context)?.ink),
                                     ),
                                   ),
                                 ),
@@ -255,9 +254,8 @@ class _PhoneModelsTab extends StatelessWidget {
               padding: const EdgeInsets.only(left: 4, bottom: 8),
               child: Text(
                 l10n.noModelsConfigured,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.outline),
+                style: Theme.of(context).textTheme.bodySmall
+                    ?.copyWith(color: Theme.of(context).colorScheme.outline),
               ),
             ),
           );
