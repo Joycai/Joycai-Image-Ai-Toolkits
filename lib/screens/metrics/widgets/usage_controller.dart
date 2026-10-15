@@ -16,12 +16,11 @@ import 'usage_stats.dart';
 /// switching away re-queries on return, as the views always have.
 class UsageController extends ChangeNotifier {
   UsageController({
-    required List<LLMModel> Function() models,
+    required this._models,
     this.pageSize = 100,
     this.createCheckpoints = false,
     DatabaseService? database,
-  }) : _models = models,
-       _db = database ?? DatabaseService();
+  }) : _db = database ?? DatabaseService();
 
   final List<LLMModel> Function() _models;
   final DatabaseService _db;

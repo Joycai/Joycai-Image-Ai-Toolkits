@@ -9,9 +9,8 @@ part of 'prompt_optimizer_agent.dart';
 class PromptOptimizerSession extends ChangeNotifier {
   static int _counter = 0;
 
-  PromptOptimizerSession({AssistantMode mode = AssistantMode.systemPrompt, String? id})
-    : _mode = mode,
-      id = id ?? 'opt_${DateTime.now().millisecondsSinceEpoch}_${_counter++}';
+  PromptOptimizerSession({this._mode = AssistantMode.systemPrompt, String? id})
+    : id = id ?? 'opt_${DateTime.now().millisecondsSinceEpoch}_${_counter++}';
 
   final String id;
 

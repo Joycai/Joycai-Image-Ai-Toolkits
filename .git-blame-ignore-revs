@@ -10,3 +10,6 @@
 
 # style(format): main 合入的四个文件按行宽 100 格式化
 88767ce04ca6b86d077386b9138e5ea6c11de4ca
+
+# style: apply Dart 3.13 formatting
+5760dbd68805839c3683f276f8eca145e7271fb1
