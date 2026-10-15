@@ -544,10 +544,8 @@ class _TileLabel extends StatelessWidget {
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                color: ink,
-              ),
+              style: Theme.of(context).textTheme.bodyMedium
+                  ?.copyWith(fontWeight: selected ? FontWeight.w600 : FontWeight.w400, color: ink),
             ),
           ),
         ],

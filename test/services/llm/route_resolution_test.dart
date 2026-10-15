@@ -215,9 +215,9 @@ void main() {
     });
 
     test('a path the user set is honored for chat and for discovery', () async {
-      final routes = RoutedChannel.routesOf(
-        channel,
-      ).withPath(RouteKind.gemini, '${rec.host}/g/v1beta').withPath(RouteKind.chat, '/api/v1');
+      final routes = RoutedChannel.routesOf(channel)
+          .withPath(RouteKind.gemini, '${rec.host}/g/v1beta')
+          .withPath(RouteKind.chat, '/api/v1');
       final moved = LLMChannel(
         displayName: 'relay',
         endpoint: routes.primaryAddress,

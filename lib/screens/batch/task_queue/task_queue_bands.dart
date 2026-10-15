@@ -240,10 +240,8 @@ class _PinToggle extends StatelessWidget {
               Text(
                 label,
                 maxLines: 1,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w500,
-                  color: scheme.onSurfaceVariant,
-                ),
+                style: Theme.of(context).textTheme.bodySmall
+                    ?.copyWith(fontWeight: FontWeight.w500, color: scheme.onSurfaceVariant),
               ),
               const SizedBox(width: 8),
             ],
@@ -272,10 +270,8 @@ class _GroupDivider extends StatelessWidget {
         children: [
           Text(
             label.toUpperCase(),
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              letterSpacing: AppType.trackedLabelSpacing,
-              color: scheme.outline,
-            ),
+            style: Theme.of(context).textTheme.labelSmall
+                ?.copyWith(letterSpacing: AppType.trackedLabelSpacing, color: scheme.outline),
           ),
           const SizedBox(width: AppSpace.s10),
           const Expanded(child: Divider(height: 1)),

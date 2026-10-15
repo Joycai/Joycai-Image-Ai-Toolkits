@@ -39,13 +39,13 @@ TextStyle _valueStyle(BuildContext context) =>
     Theme.of(context).textTheme.bodySmall!.metricsOnly.mono;
 
 /// Save Copy's two lines (`1a`: 600 label over an 11px subtitle, 1.15 apart).
-TextStyle _saveLabelStyle(BuildContext context) => Theme.of(
-  context,
-).textTheme.bodySmall!.metricsOnly.copyWith(fontWeight: FontWeight.w600, height: 1.15);
+TextStyle _saveLabelStyle(BuildContext context) =>
+    Theme.of(context).textTheme.bodySmall!.metricsOnly
+        .copyWith(fontWeight: FontWeight.w600, height: 1.15);
 
-TextStyle _saveSubtitleStyle(BuildContext context) => Theme.of(
-  context,
-).textTheme.labelSmall!.metricsOnly.copyWith(fontWeight: FontWeight.w400, height: 1.15);
+TextStyle _saveSubtitleStyle(BuildContext context) =>
+    Theme.of(context).textTheme.labelSmall!.metricsOnly
+        .copyWith(fontWeight: FontWeight.w400, height: 1.15);
 
 /// Whether Save Copy's two lines stand inside the 32px control at the user's
 /// text scale. Measured, like everything else here: at a large enough scale

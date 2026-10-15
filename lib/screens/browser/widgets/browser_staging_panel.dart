@@ -386,10 +386,8 @@ class _ItemList extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(12, AppSpace.s10, 12, AppSpace.s16),
             child: Text(
               AppLocalizations.of(context)!.stagingDropHint,
-              style: Theme.of(context).textTheme.labelSmall!.mono.copyWith(
-                color: colorScheme.outline,
-                fontWeight: FontWeight.w400,
-              ),
+              style: Theme.of(context).textTheme.labelSmall!.mono
+                  .copyWith(color: colorScheme.outline, fontWeight: FontWeight.w400),
             ),
           );
         }

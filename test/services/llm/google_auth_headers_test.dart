@@ -6,9 +6,8 @@ void main() {
     const key = 'AIza-test-key';
 
     test('always sends the API key in x-goog-api-key', () {
-      final headers = Vendors.byId(
-        Vendors.googleRest,
-      ).headers(key, 'https://generativelanguage.googleapis.com/v1beta');
+      final headers = Vendors.byId(Vendors.googleRest)
+          .headers(key, 'https://generativelanguage.googleapis.com/v1beta');
       expect(headers['x-goog-api-key'], key);
       expect(headers['Content-Type'], 'application/json');
     });
@@ -16,42 +15,37 @@ void main() {
     test('official Google host never receives Authorization: Bearer (the 401 cause)', () {
       // Regression: google-genai-rest pointed at the official endpoint used to
       // also send `Authorization: Bearer <key>`, which Google rejects with 401.
-      final headers = Vendors.byId(
-        Vendors.googleRest,
-      ).headers(key, 'https://generativelanguage.googleapis.com/v1beta');
+      final headers = Vendors.byId(Vendors.googleRest)
+          .headers(key, 'https://generativelanguage.googleapis.com/v1beta');
       expect(headers.containsKey('Authorization'), isFalse);
       expect(headers['x-goog-api-key'], key);
     });
 
     test('official-google-genai-api vendor never sends Authorization', () {
-      final headers = Vendors.byId(
-        Vendors.officialGoogle,
-      ).headers(key, 'https://generativelanguage.googleapis.com/v1beta');
+      final headers = Vendors.byId(Vendors.officialGoogle)
+          .headers(key, 'https://generativelanguage.googleapis.com/v1beta');
       expect(headers.containsKey('Authorization'), isFalse);
       expect(headers['x-goog-api-key'], key);
     });
 
     test('third-party relay still receives bearer token for compatibility', () {
-      final headers = Vendors.byId(
-        Vendors.googleRest,
-      ).headers(key, 'https://api.yyds168.net/v1beta');
+      final headers = Vendors.byId(Vendors.googleRest)
+          .headers(key, 'https://api.yyds168.net/v1beta');
       expect(headers['Authorization'], 'Bearer $key');
       expect(headers['x-goog-api-key'], key);
     });
 
     test('any *.googleapis.com host is treated as official', () {
-      final headers = Vendors.byId(
-        Vendors.googleRest,
-      ).headers(key, 'https://us-central1-aiplatform.googleapis.com/v1');
+      final headers = Vendors.byId(Vendors.googleRest)
+          .headers(key, 'https://us-central1-aiplatform.googleapis.com/v1');
       expect(headers.containsKey('Authorization'), isFalse);
     });
 
     test('newapi-gemini uses bearer token only (no x-goog-api-key)', () {
       // New API's Gemini format authenticates like OpenAI and rejects the
       // x-goog-api-key header; it must receive Authorization: Bearer alone.
-      final headers = Vendors.byId(
-        Vendors.newApiGemini,
-      ).headers(key, 'https://my-newapi-host.com/v1beta');
+      final headers = Vendors.byId(Vendors.newApiGemini)
+          .headers(key, 'https://my-newapi-host.com/v1beta');
       expect(headers['Authorization'], 'Bearer $key');
       expect(headers.containsKey('x-goog-api-key'), isFalse);
       expect(headers['Content-Type'], 'application/json');

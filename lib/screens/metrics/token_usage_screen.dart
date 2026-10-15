@@ -321,9 +321,8 @@ class _PhoneHeader extends StatelessWidget {
                           l10n.tokenUsageMetrics,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                            color: GlassInk.maybeOf(context)?.ink,
-                          ),
+                          style: Theme.of(context).textTheme.headlineMedium
+                              ?.copyWith(color: GlassInk.maybeOf(context)?.ink),
                         ),
                       ),
                     ),

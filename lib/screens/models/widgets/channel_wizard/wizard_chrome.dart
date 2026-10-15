@@ -176,10 +176,8 @@ extension _WizardChrome on _ChannelWizardDialogState {
             padding: const EdgeInsets.fromLTRB(AppSpace.s22, 0, 14, 14),
             child: Text(
               l10n.wizardStepsAdaptNote,
-              style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
-                fontWeight: FontWeight.w400,
-                color: colorScheme.outline,
-              ),
+              style: Theme.of(context).textTheme.labelSmall?.mono
+                  .copyWith(fontWeight: FontWeight.w400, color: colorScheme.outline),
             ),
           ),
         ],

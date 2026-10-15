@@ -135,10 +135,8 @@ class _BarContent extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
 
     final countLabel = l10n.imagesSelected(count);
-    final countStyle = Theme.of(context).textTheme.bodySmall!.metricsOnly.copyWith(
-      fontWeight: FontWeight.w600,
-      color: scheme.onAccentTint,
-    );
+    final countStyle = Theme.of(context).textTheme.bodySmall!.metricsOnly
+        .copyWith(fontWeight: FontWeight.w600, color: scheme.onAccentTint);
 
     final double fullWidth =
         _padStart +

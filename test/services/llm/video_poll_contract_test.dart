@@ -260,8 +260,7 @@ void main() {
                 {
                   // Typed as jsonDecode produces it: the poll adds a bool.
                   'video': <String, dynamic>{
-                    'uri':
-                        'https://generativelanguage.googleapis.com/v1beta/files/abc:download?alt=media',
+                    'uri': 'https://generativelanguage.googleapis.com/v1beta/files/abc:download?alt=media',
                   },
                 },
               ],

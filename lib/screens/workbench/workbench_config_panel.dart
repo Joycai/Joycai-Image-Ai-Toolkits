@@ -504,11 +504,14 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
                         ...appState.effectiveImageParams(selectedModel),
                       };
 
-                      final diagnostics = appState
-                          .generationInputDiagnostics(selectedModel, params, [
-                            for (final image in appState.galleryState.selectedImages)
-                              GenerationMedia(GenerationMediaRole.reference, image.path),
-                          ]);
+                      final diagnostics = appState.generationInputDiagnostics(
+                        selectedModel,
+                        params,
+                        [
+                          for (final image in appState.galleryState.selectedImages)
+                            GenerationMedia(GenerationMediaRole.reference, image.path),
+                        ],
+                      );
                       if (diagnostics.isNotEmpty) {
                         AppSnackBar.warning(
                           context,

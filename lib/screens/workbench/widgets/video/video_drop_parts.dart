@@ -192,9 +192,8 @@ class _PlateLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final TextStyle textStyle = Theme.of(
-      context,
-    ).textTheme.labelSmall!.copyWith(color: AppOverlay.onImagePlate);
+    final TextStyle textStyle = Theme.of(context).textTheme.labelSmall!
+        .copyWith(color: AppOverlay.onImagePlate);
     final TextStyle hintStyle = textStyle.copyWith(fontWeight: FontWeight.w400);
 
     return LayoutBuilder(

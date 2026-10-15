@@ -54,14 +54,12 @@ class FontService {
       displayName: 'Noto Sans SC',
       assets: [
         FontAsset(
-          url:
-              'https://cdn.jsdelivr.net/npm/@expo-google-fonts/noto-sans-sc@0.4.3/400Regular/NotoSansSC_400Regular.ttf',
+          url: 'https://cdn.jsdelivr.net/npm/@expo-google-fonts/noto-sans-sc@0.4.3/400Regular/NotoSansSC_400Regular.ttf',
           filename: 'NotoSansSC-Regular.ttf',
           approxBytes: 10559284,
         ),
         FontAsset(
-          url:
-              'https://cdn.jsdelivr.net/npm/@expo-google-fonts/noto-sans-sc@0.4.3/700Bold/NotoSansSC_700Bold.ttf',
+          url: 'https://cdn.jsdelivr.net/npm/@expo-google-fonts/noto-sans-sc@0.4.3/700Bold/NotoSansSC_700Bold.ttf',
           filename: 'NotoSansSC-Bold.ttf',
           approxBytes: 10549020,
         ),
@@ -72,14 +70,12 @@ class FontService {
       displayName: 'HarmonyOS Sans',
       assets: [
         FontAsset(
-          url:
-              'https://cdn.jsdelivr.net/gh/IKKI2000/harmonyos-fonts@main/fonts/HarmonyOS_Sans_SC/HarmonyOS_Sans_SC_Regular.ttf',
+          url: 'https://cdn.jsdelivr.net/gh/IKKI2000/harmonyos-fonts@main/fonts/HarmonyOS_Sans_SC/HarmonyOS_Sans_SC_Regular.ttf',
           filename: 'HarmonyOS_Sans_SC_Regular.ttf',
           approxBytes: 8261128,
         ),
         FontAsset(
-          url:
-              'https://cdn.jsdelivr.net/gh/IKKI2000/harmonyos-fonts@main/fonts/HarmonyOS_Sans_SC/HarmonyOS_Sans_SC_Bold.ttf',
+          url: 'https://cdn.jsdelivr.net/gh/IKKI2000/harmonyos-fonts@main/fonts/HarmonyOS_Sans_SC/HarmonyOS_Sans_SC_Bold.ttf',
           filename: 'HarmonyOS_Sans_SC_Bold.ttf',
           approxBytes: 8158996,
         ),

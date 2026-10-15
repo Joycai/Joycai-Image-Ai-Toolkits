@@ -49,9 +49,8 @@ class GenerationParamPanel extends StatelessWidget {
       cells.add((
         Text(
           GenerationParamTexts.diagnostic(l10n, diagnostic),
-          style: Theme.of(
-            context,
-          ).textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.error),
+          style: Theme.of(context).textTheme.labelSmall
+              ?.copyWith(color: Theme.of(context).colorScheme.error),
         ),
         true,
       ));
@@ -108,9 +107,8 @@ class GenerationParamPanel extends StatelessWidget {
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+                style: Theme.of(context).textTheme.labelSmall
+                    ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
               ),
               const SizedBox(height: AppSpace.s4),
               if (fieldState == GenerationFieldState.fixed)

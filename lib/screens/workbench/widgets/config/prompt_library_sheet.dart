@@ -241,9 +241,8 @@ class _CompactPromptCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               prompt.content,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+              style: Theme.of(context).textTheme.bodySmall
+                  ?.copyWith(color: colorScheme.onSurfaceVariant),
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
             ),

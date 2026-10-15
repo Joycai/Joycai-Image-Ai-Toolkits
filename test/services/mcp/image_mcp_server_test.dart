@@ -350,9 +350,8 @@ void main() {
     });
     final id = result.structuredContent!['taskId'] as String;
     final done = await finish(id);
-    await File(
-      done['outputs'][0]['path'] as String,
-    ).writeAsBytes(img.encodePng(img.Image(width: 2048, height: 1024)));
+    await File(done['outputs'][0]['path'] as String)
+        .writeAsBytes(img.encodePng(img.Image(width: 2048, height: 1024)));
     final preview = await call('read_generation_image', {'taskId': id, 'outputId': 0});
     final decoded = img.decodeJpg(
       base64Decode(preview.content.whereType<ImageContent>().single.data),

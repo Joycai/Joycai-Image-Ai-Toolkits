@@ -144,45 +144,42 @@ void main() {
       return session;
     }
 
-    test(
-      'a folded delivery is appended to the summary verbatim, and its text never reaches the summarizer',
-      () async {
-        final session = sessionWithDelivery(inTurn: 2);
-        String? summaryInput;
-        String? summaryInstruction;
-        PromptOptimizerAgent.debugRequestOverride = (messages, tools, options) async {
-          if (isSummaryRequest(messages)) {
-            summaryInstruction = messages.first.content;
-            summaryInput = messages.last.content;
-            return LLMResponse(text: 'the gist');
-          }
-          return LLMResponse(text: 'answer');
-        };
+    test('a folded delivery is appended to the summary verbatim, and its text never reaches the summarizer', () async {
+      final session = sessionWithDelivery(inTurn: 2);
+      String? summaryInput;
+      String? summaryInstruction;
+      PromptOptimizerAgent.debugRequestOverride = (messages, tools, options) async {
+        if (isSummaryRequest(messages)) {
+          summaryInstruction = messages.first.content;
+          summaryInput = messages.last.content;
+          return LLMResponse(text: 'the gist');
+        }
+        return LLMResponse(text: 'answer');
+      };
 
-        await PromptOptimizerAgent.runTurn(
-          session: session,
-          modelIdentifier: 'm',
-          referenceImages: const [],
-          contextWindow: 2000,
-        );
+      await PromptOptimizerAgent.runTurn(
+        session: session,
+        modelIdentifier: 'm',
+        referenceImages: const [],
+        contextWindow: 2000,
+      );
 
-        expect(summaryInput, isNotNull);
-        expect(summaryInput, isNot(contains(promptText)));
-        expect(summaryInput, contains('text omitted'));
-        expect(
-          summaryInput,
-          contains('first cut'),
-          reason: 'the note is what distinguished the version',
-        );
-        expect(summaryInstruction, isNot(contains('in full')));
+      expect(summaryInput, isNotNull);
+      expect(summaryInput, isNot(contains(promptText)));
+      expect(summaryInput, contains('text omitted'));
+      expect(
+        summaryInput,
+        contains('first cut'),
+        reason: 'the note is what distinguished the version',
+      );
+      expect(summaryInstruction, isNot(contains('in full')));
 
-        final summary = session.history.first.content;
-        expect(summary, startsWith(PromptOptimizerAgent.summaryMarker));
-        expect(summary, contains('the gist'));
-        expect(summary, contains('${PromptOptimizerAgent.latestPromptMarker} v1\n$promptText'));
-        expect(summary, endsWith(promptText));
-      },
-    );
+      final summary = session.history.first.content;
+      expect(summary, startsWith(PromptOptimizerAgent.summaryMarker));
+      expect(summary, contains('the gist'));
+      expect(summary, contains('${PromptOptimizerAgent.latestPromptMarker} v1\n$promptText'));
+      expect(summary, endsWith(promptText));
+    });
 
     test('a delivery still in the kept tail is not duplicated into the summary', () async {
       final session = sessionWithDelivery(inTurn: 8);

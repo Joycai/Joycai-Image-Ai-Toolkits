@@ -202,14 +202,13 @@ extension _CardChrome on _PromptOptimizerChatViewState {
     );
   }
 
-  TextStyle? get _cardTitleStyle => Theme.of(context).textTheme.bodySmall?.copyWith(
-    fontWeight: FontWeight.w600,
-    color: Theme.of(context).colorScheme.onSurface,
-  );
+  TextStyle? get _cardTitleStyle =>
+      Theme.of(context).textTheme.bodySmall
+          ?.copyWith(fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface);
 
-  TextStyle? get _cardMetaStyle => Theme.of(
-    context,
-  ).textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant);
+  TextStyle? get _cardMetaStyle =>
+      Theme.of(context).textTheme.labelSmall
+          ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant);
 
   /// A deep-ink text action — "Show all 8 steps", "Show full text". Smaller
   /// than a compact [AppButton] on purpose: it sits inside a 40px header or

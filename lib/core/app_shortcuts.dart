@@ -533,13 +533,12 @@ abstract final class AppShortcuts {
   );
 
   /// The destination [event] jumps to (`⌘1…8`), or -1.
-  static int navigationIndexFor(KeyEvent event, {bool? macOS, HardwareKeyboard? keyboard}) => byId(
-    AppShortcutIds.navigateToDestination,
-  ).keys.indexWhere((k) => k.matches(event, macOS: macOS, keyboard: keyboard));
+  static int navigationIndexFor(KeyEvent event, {bool? macOS, HardwareKeyboard? keyboard}) =>
+      byId(AppShortcutIds.navigateToDestination).keys
+          .indexWhere((k) => k.matches(event, macOS: macOS, keyboard: keyboard));
 
   /// The workbench tool tab [event] selects (`⌘⌥1…5`), or -1.
   static int workbenchToolIndexFor(KeyEvent event, {bool? macOS, HardwareKeyboard? keyboard}) =>
-      byId(
-        AppShortcutIds.selectWorkbenchTool,
-      ).keys.indexWhere((k) => k.matches(event, macOS: macOS, keyboard: keyboard));
+      byId(AppShortcutIds.selectWorkbenchTool).keys
+          .indexWhere((k) => k.matches(event, macOS: macOS, keyboard: keyboard));
 }

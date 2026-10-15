@@ -392,9 +392,8 @@ class _EmptyCookieHistory extends StatelessWidget {
             child: Text(
               l10n.cookieHistoryEmptyDesc,
               textAlign: TextAlign.center,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall!.copyWith(color: scheme.onSurfaceVariant),
+              style: Theme.of(context).textTheme.bodySmall!
+                  .copyWith(color: scheme.onSurfaceVariant),
             ),
           ),
         ],

@@ -145,9 +145,8 @@ class _Ratio extends StatelessWidget {
       children: [
         Text(
           '${check.ratio.toStringAsFixed(1)}:1',
-          style: Theme.of(
-            context,
-          ).textTheme.labelSmall?.mono.copyWith(fontWeight: FontWeight.w400, color: ink),
+          style: Theme.of(context).textTheme.labelSmall?.mono
+              .copyWith(fontWeight: FontWeight.w400, color: ink),
         ),
         const SizedBox(width: 2),
         Icon(check.passes ? Icons.check : Icons.close, size: 12, color: ink),

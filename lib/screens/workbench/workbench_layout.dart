@@ -725,9 +725,8 @@ class _DrawerWithHeader extends StatelessWidget {
                     title ?? '',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.titleMedium!.copyWith(fontWeight: FontWeight.w600),
+                    style: Theme.of(context).textTheme.titleMedium!
+                        .copyWith(fontWeight: FontWeight.w600),
                   ),
                 ),
                 IconButton(

@@ -135,9 +135,8 @@ class _MetadataInspectorState extends State<MetadataInspector> {
         child: Text(
           l10n.metadataSelectedNone,
           textAlign: TextAlign.center,
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+          style: Theme.of(context).textTheme.bodySmall
+              ?.copyWith(color: colorScheme.onSurfaceVariant),
         ),
       );
     } else {
@@ -406,10 +405,8 @@ class _OutlineAction extends StatelessWidget {
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w500,
-                  color: colorScheme.onAccentTint,
-                ),
+                style: Theme.of(context).textTheme.bodySmall
+                    ?.copyWith(fontWeight: FontWeight.w500, color: colorScheme.onAccentTint),
               ),
             ),
           ),

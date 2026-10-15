@@ -243,10 +243,8 @@ class _Selection extends StatelessWidget {
                 child: Text(
                   label!,
                   maxLines: 1,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: scheme.onPrimary,
-                    height: AppType.tightHeight,
-                  ),
+                  style: Theme.of(context).textTheme.labelSmall
+                      ?.copyWith(color: scheme.onPrimary, height: AppType.tightHeight),
                 ),
               ),
             ),

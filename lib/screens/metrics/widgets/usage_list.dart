@@ -132,9 +132,8 @@ class UsageList extends StatelessWidget {
           const SizedBox(height: AppSpace.s4),
           Text(
             l10n.noUsageInRangeHint,
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+            style: Theme.of(context).textTheme.bodySmall
+                ?.copyWith(color: colorScheme.onSurfaceVariant),
             textAlign: TextAlign.center,
           ),
         ],
@@ -277,9 +276,8 @@ class UsageList extends StatelessWidget {
                 l10n.usageLoadMoreStatus(perPage, usageData.length, total),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(
-                  context,
-                ).textTheme.labelSmall?.mono.copyWith(color: colorScheme.onSurfaceVariant),
+                style: Theme.of(context).textTheme.labelSmall?.mono
+                    .copyWith(color: colorScheme.onSurfaceVariant),
               ),
             ),
           ],
@@ -745,9 +743,8 @@ class _UsageRowState extends State<_UsageRow> {
     return Text(
       DateFormat('HH:mm').format(_row.timestamp),
       maxLines: 1,
-      style: Theme.of(
-        context,
-      ).textTheme.labelSmall?.mono.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+      style: Theme.of(context).textTheme.labelSmall?.mono
+          .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
     );
   }
 

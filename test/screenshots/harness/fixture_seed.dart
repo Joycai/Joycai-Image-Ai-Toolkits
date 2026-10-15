@@ -1436,9 +1436,8 @@ Future<_Images> _writeImages(FixtureEnv env) async {
   // Non-image types so the browser's category filters and icon fallbacks are
   // actually exercised. These are stubs; they are meant to be listed, not played.
   for (final String name in <String>['clip_a.mp4', 'clip_b.mov', 'notes.txt', 'voice.mp3']) {
-    File(
-      p.join(env.browserDir.path, name),
-    ).writeAsBytesSync(utf8.encode('fixture placeholder for $name'));
+    File(p.join(env.browserDir.path, name))
+        .writeAsBytesSync(utf8.encode('fixture placeholder for $name'));
   }
 
   return _Images(source, output);

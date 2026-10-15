@@ -31,8 +31,7 @@ Map<String, dynamic> taskFailure(Object error) {
     'message': switch (code) {
       'timeout' => 'The provider request timed out. It may still have been processed upstream.',
       'connectionFailed' => 'Could not connect to the configured provider.',
-      'noUsableImage' =>
-        'The provider returned no usable image. It may have replied with text or refused the request.',
+      'noUsableImage' => 'The provider returned no usable image. It may have replied with text or refused the request.',
       'contentBlocked' => 'The provider blocked this request.',
       'providerAuthentication' => 'The provider rejected the configured credentials.',
       'rateLimited' => 'The provider rate limit was reached.',

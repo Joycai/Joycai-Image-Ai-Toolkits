@@ -114,15 +114,13 @@ class FolderOutlineBar extends StatefulWidget {
   static const double _menuWidth = 220;
   static const double _menuWidthPhone = 290;
 
-  static TextStyle labelStyle(BuildContext context, {required bool lit}) => Theme.of(context)
-      .textTheme
-      .labelMedium!
-      .metricsOnly
-      .copyWith(fontWeight: lit ? FontWeight.w600 : FontWeight.w500);
+  static TextStyle labelStyle(BuildContext context, {required bool lit}) =>
+      Theme.of(context).textTheme.labelMedium!.metricsOnly
+          .copyWith(fontWeight: lit ? FontWeight.w600 : FontWeight.w500);
 
-  static TextStyle countStyle(BuildContext context) => Theme.of(
-    context,
-  ).textTheme.labelSmall!.mono.metricsOnly.copyWith(fontWeight: FontWeight.w400);
+  static TextStyle countStyle(BuildContext context) =>
+      Theme.of(context).textTheme.labelSmall!.mono.metricsOnly
+          .copyWith(fontWeight: FontWeight.w400);
 
   /// The width one chip takes, measured at the lit weight so lighting one
   /// never widens the row.

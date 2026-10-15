@@ -226,10 +226,8 @@ class _StatusRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final scheme = Theme.of(context).colorScheme;
-    final base = Theme.of(context).textTheme.labelSmall!.mono.copyWith(
-      fontWeight: FontWeight.w400,
-      color: scheme.onSurfaceVariant,
-    );
+    final base = Theme.of(context).textTheme.labelSmall!.mono
+        .copyWith(fontWeight: FontWeight.w400, color: scheme.onSurfaceVariant);
     final output = Provider.of<AppState>(context, listen: false).galleryState.outputDirectory;
 
     Widget? counts;
@@ -416,9 +414,8 @@ class _EmptyGuide extends StatelessWidget {
             Text(
               l10n.noImagesDiscovered,
               textAlign: TextAlign.center,
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium!.copyWith(color: scheme.onSurfaceVariant),
+              style: Theme.of(context).textTheme.titleMedium!
+                  .copyWith(color: scheme.onSurfaceVariant),
             ),
             const SizedBox(height: AppSpace.s16),
             Wrap(

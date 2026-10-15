@@ -250,18 +250,16 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
                             Flexible(
                               child: Text(
                                 activeFile.name,
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.bodyMedium?.mono.copyWith(color: Colors.white),
+                                style: Theme.of(context).textTheme.bodyMedium?.mono
+                                    .copyWith(color: Colors.white),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
                             const SizedBox(width: 10),
                             Text(
                               '${activeIndex + 1} / ${images.length}',
-                              style: Theme.of(
-                                context,
-                              ).textTheme.labelMedium?.mono.copyWith(color: Colors.white54),
+                              style: Theme.of(context).textTheme.labelMedium?.mono
+                                  .copyWith(color: Colors.white54),
                             ),
                             const Spacer(),
                             IconButton(
@@ -347,9 +345,8 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
                                   ),
                                 ),
                                 clipBehavior: Clip.antiAlias,
-                                child: PreviewRegistry.resolve(
-                                  path,
-                                ).buildThumbnail(context, path: path),
+                                child: PreviewRegistry.resolve(path)
+                                    .buildThumbnail(context, path: path),
                               ),
                             );
                           },

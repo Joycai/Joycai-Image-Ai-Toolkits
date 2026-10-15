@@ -197,9 +197,8 @@ void main() {
     // it would report success against any URL — and a real request would
     // start a paid generation.
     final fake = _FakeDispatcher();
-    final r = await ChannelProbeService(
-      dispatcher: fake,
-    ).probe(config(type: Vendors.midjourneyProxy));
+    final r = await ChannelProbeService(dispatcher: fake)
+        .probe(config(type: Vendors.midjourneyProxy));
     expect(r.status, ChannelProbeStatus.notSupported);
     expect(fake.discoverCalls, 0);
     expect(fake.generateCalls, 0);

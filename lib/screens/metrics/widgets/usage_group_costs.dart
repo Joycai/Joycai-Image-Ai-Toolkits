@@ -227,9 +227,8 @@ class UsageGroupCosts extends StatelessWidget {
       '\$${cost.toStringAsFixed(4)}',
       textAlign: align,
       maxLines: 1,
-      style: Theme.of(
-        context,
-      ).textTheme.bodySmall?.mono.copyWith(color: Theme.of(context).colorScheme.onSurface),
+      style: Theme.of(context).textTheme.bodySmall?.mono
+          .copyWith(color: Theme.of(context).colorScheme.onSurface),
     );
   }
 
@@ -239,9 +238,8 @@ class UsageGroupCosts extends StatelessWidget {
       textAlign: align,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      style: Theme.of(
-        context,
-      ).textTheme.labelSmall?.mono.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+      style: Theme.of(context).textTheme.labelSmall?.mono
+          .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
     );
   }
 }

@@ -235,10 +235,8 @@ class _ListRowSubtitleState extends State<_ListRowSubtitle> {
       maxLines: 1,
       softWrap: false,
       overflow: TextOverflow.ellipsis,
-      style: Theme.of(context).textTheme.labelSmall!.mono.copyWith(
-        color: scheme.onSurfaceVariant,
-        fontWeight: FontWeight.w400,
-      ),
+      style: Theme.of(context).textTheme.labelSmall!.mono
+          .copyWith(color: scheme.onSurfaceVariant, fontWeight: FontWeight.w400),
     );
   }
 }
@@ -266,10 +264,8 @@ class _StagedBadge extends StatelessWidget {
           Text(
             l10n.stagedBadge,
             maxLines: 1,
-            style: Theme.of(context).textTheme.labelSmall!.mono.copyWith(
-              color: scheme.onSurfaceVariant,
-              fontWeight: FontWeight.w400,
-            ),
+            style: Theme.of(context).textTheme.labelSmall!.mono
+                .copyWith(color: scheme.onSurfaceVariant, fontWeight: FontWeight.w400),
           ),
         ],
       ),

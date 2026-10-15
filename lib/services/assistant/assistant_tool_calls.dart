@@ -678,8 +678,7 @@ Map<String, dynamic> _executeTool(
           // went on. `_liveReadPages` is unaffected: it requires a non-null
           // `content` (see the invariant it documents), which this lacks.
           'path': relPath,
-          'note':
-              'This page is already in the conversation — refer to the earlier result instead of re-reading it.',
+          'note': 'This page is already in the conversation — refer to the earlier result instead of re-reading it.',
         };
       }
       final cap = _readCapNow(

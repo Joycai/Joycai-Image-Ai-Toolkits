@@ -119,9 +119,8 @@ extension TaskExecutors on TaskQueueService {
     // of riding the job out.
     final requestOptions = <String, dynamic>{
       ...task.generationOptions,
-      ...GenerationExecutionContext(
-        isCancelled: () => task.status == TaskStatus.cancelled,
-      ).legacyOptions,
+      ...GenerationExecutionContext(isCancelled: () => task.status == TaskStatus.cancelled)
+          .legacyOptions,
     };
 
     var received = 0;
@@ -429,9 +428,8 @@ extension TaskExecutors on TaskQueueService {
     final actualUseStream = await _shouldUseStream(task);
     final requestOptions = <String, dynamic>{
       ...task.generationOptions,
-      ...GenerationExecutionContext(
-        isCancelled: () => task.status == TaskStatus.cancelled,
-      ).legacyOptions,
+      ...GenerationExecutionContext(isCancelled: () => task.status == TaskStatus.cancelled)
+          .legacyOptions,
     };
 
     if (actualUseStream) {
@@ -747,9 +745,8 @@ extension TaskExecutors on TaskQueueService {
       // it into an AbortableRequest trigger while the job is being submitted.
       options: {
         ...task.generationOptions,
-        ...GenerationExecutionContext(
-          isCancelled: () => task.status == TaskStatus.cancelled,
-        ).legacyOptions,
+        ...GenerationExecutionContext(isCancelled: () => task.status == TaskStatus.cancelled)
+            .legacyOptions,
       },
     );
 

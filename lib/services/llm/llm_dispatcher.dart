@@ -840,9 +840,8 @@ class LLMDispatcher {
         // `/anthropic/v1` chat, so the check is the vendor's declaration
         // rather than the family, exactly as on ① below.
         if (_hasNativeImageRoute(target)) {
-          return _nativeImageProtocol(
-            target,
-          ).generateImage(target, history, options: options, logger: logger);
+          return _nativeImageProtocol(target)
+              .generateImage(target, history, options: options, logger: logger);
         }
         // Through [_chatGenerate] rather than straight at the protocol, so a
         // ④ vendor whose chat face sits at a derived path gets its endpoint
@@ -879,9 +878,8 @@ class LLMDispatcher {
         // protocol, when a vendor offers more than one, is the model's pinned
         // selection — see [_nativeImageProtocol].
         if (_hasNativeImageRoute(target)) {
-          return _nativeImageProtocol(
-            target,
-          ).generateImage(target, history, options: options, logger: logger);
+          return _nativeImageProtocol(target)
+              .generateImage(target, history, options: options, logger: logger);
         }
 
         // Grok Imagine image models: xAI's JSON Images API on native
@@ -915,9 +913,8 @@ class LLMDispatcher {
         // native route by the same pinned selection; everything else is
         // chat, on whichever of the three faces the model pinned.
         if (_hasNativeImageRoute(target)) {
-          return _nativeImageProtocol(
-            target,
-          ).generateImage(target, history, options: options, logger: logger);
+          return _nativeImageProtocol(target)
+              .generateImage(target, history, options: options, logger: logger);
         }
         return _chatGenerate(target, history, options: options, tools: tools, logger: logger);
     }
@@ -1560,8 +1557,7 @@ class LLMDispatcher {
                 'generatedSamples': [
                   {
                     'video': {
-                      'uri':
-                          'https://storage.googleapis.com/tf-js-examples/webcam-transfer-learning/video/cat.mp4',
+                      'uri': 'https://storage.googleapis.com/tf-js-examples/webcam-transfer-learning/video/cat.mp4',
                       videoRequiresAuthKey: false,
                     },
                   },

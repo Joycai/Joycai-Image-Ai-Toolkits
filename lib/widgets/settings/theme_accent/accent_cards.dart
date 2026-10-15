@@ -351,10 +351,8 @@ class _PreviewHalf extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.clip,
             softWrap: false,
-            style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
-              fontWeight: FontWeight.w400,
-              color: scheme.onSurfaceVariant,
-            ),
+            style: Theme.of(context).textTheme.labelSmall?.mono
+                .copyWith(fontWeight: FontWeight.w400, color: scheme.onSurfaceVariant),
           ),
         ],
       ),

@@ -97,11 +97,9 @@ class GlassSegmented<T> extends StatelessWidget {
   static double _labelPadding(bool dense) => dense ? 10 : 12;
   static double _iconPadding(bool dense) => dense ? 6 : 10;
 
-  static TextStyle labelStyle(BuildContext context, {required bool selected}) => Theme.of(context)
-      .textTheme
-      .bodySmall!
-      .metricsOnly
-      .copyWith(fontWeight: selected ? FontWeight.w600 : FontWeight.w400);
+  static TextStyle labelStyle(BuildContext context, {required bool selected}) =>
+      Theme.of(context).textTheme.bodySmall!.metricsOnly
+          .copyWith(fontWeight: selected ? FontWeight.w600 : FontWeight.w400);
 
   /// The width this control takes, measured at the selected weight so a
   /// selection change can never make it wider than planned.

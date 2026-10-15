@@ -153,9 +153,8 @@ class UsageLoadingCard extends StatelessWidget {
             Text(
               AppLocalizations.of(context)!.usageLoadingRecords,
               textAlign: TextAlign.center,
-              style: Theme.of(
-                context,
-              ).textTheme.labelSmall?.mono.copyWith(color: colorScheme.onSurfaceVariant),
+              style: Theme.of(context).textTheme.labelSmall?.mono
+                  .copyWith(color: colorScheme.onSurfaceVariant),
             ),
           ],
         ),

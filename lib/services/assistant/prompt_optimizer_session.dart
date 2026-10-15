@@ -540,9 +540,8 @@ class PromptOptimizerSession extends ChangeNotifier {
     final repaired = _repairPairingWithOrigins(history);
     final unchanged =
         repaired.length == history.length &&
-        [
-          for (int i = 0; i < repaired.length; i++) identical(repaired[i].message, history[i]),
-        ].every((same) => same);
+        [for (int i = 0; i < repaired.length; i++) identical(repaired[i].message, history[i])]
+            .every((same) => same);
     if (unchanged) return false;
 
     var rebased = repaired.length;
@@ -873,9 +872,8 @@ class PromptOptimizerSession extends ChangeNotifier {
 
 /// The request [PromptOptimizerAgent] makes, as tests replace it — see
 /// [PromptOptimizerAgent.debugRequestOverride].
-typedef AgentRequestFn =
-    Future<LLMResponse> Function(
-      List<LLMMessage> messages,
-      List<LLMTool>? tools,
-      Map<String, dynamic> options,
-    );
+typedef AgentRequestFn = Future<LLMResponse> Function(
+  List<LLMMessage> messages,
+  List<LLMTool>? tools,
+  Map<String, dynamic> options,
+);

@@ -122,11 +122,8 @@ class _DownloaderLogPanelState extends State<DownloaderLogPanel> {
     final l10n = AppLocalizations.of(context)!;
     final scheme = Theme.of(context).colorScheme;
     final semantic = context.semantic;
-    final base = Theme.of(context).textTheme.labelSmall!.mono.copyWith(
-      fontWeight: FontWeight.w400,
-      height: 1.75,
-      color: scheme.onSurfaceVariant,
-    );
+    final base = Theme.of(context).textTheme.labelSmall!.mono
+        .copyWith(fontWeight: FontWeight.w400, height: 1.75, color: scheme.onSurfaceVariant);
 
     return Material(
       color: scheme.surface,

@@ -100,9 +100,8 @@ void main() {
 
     test('switched off, nothing is sent', () {
       expect(
-        payload(
-          target(Vendors.dashscope, 'qwen3-max', webSearch: false),
-        ).containsKey('enable_search'),
+        payload(target(Vendors.dashscope, 'qwen3-max', webSearch: false))
+            .containsKey('enable_search'),
         isFalse,
       );
     });
@@ -112,9 +111,8 @@ void main() {
       // the adapter is the second guard.
       for (final id in [Vendors.openAIRest, Vendors.deepseek, Vendors.minimax]) {
         expect(
-          payload(
-            target(id, 'm', endpoint: 'https://api.example.com/v1'),
-          ).containsKey('enable_search'),
+          payload(target(id, 'm', endpoint: 'https://api.example.com/v1'))
+              .containsKey('enable_search'),
           isFalse,
           reason: id,
         );

@@ -511,10 +511,8 @@ Future<bool> showBulkDeleteConfirm(
 }) async {
   const int shown = 8;
   final scheme = Theme.of(context).colorScheme;
-  final monoStyle = Theme.of(context).textTheme.labelSmall!.mono.copyWith(
-    fontWeight: FontWeight.w400,
-    color: scheme.onSurfaceVariant,
-  );
+  final monoStyle = Theme.of(context).textTheme.labelSmall!.mono
+      .copyWith(fontWeight: FontWeight.w400, color: scheme.onSurfaceVariant);
 
   final confirmed = await AppDialog.show<bool>(
     context,
@@ -594,9 +592,8 @@ Future<List<int>?> showBulkCategorizeDialog(
             children: [
               Text(
                 l10n.selectCategoriesToApply,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+                style: Theme.of(context).textTheme.bodySmall
+                    ?.copyWith(color: scheme.onSurfaceVariant),
               ),
               const SizedBox(height: 12),
               _TagChips(tags: tags, selectedTagIds: targetTagIds, setDialogState: setDialogState),
@@ -745,10 +742,8 @@ class _CategoryPreview extends StatelessWidget {
               const SizedBox(width: AppSpace.s10),
               Text(
                 l10n.promptCount(count),
-                style: Theme.of(context).textTheme.labelSmall!.mono.copyWith(
-                  fontWeight: FontWeight.w400,
-                  color: scheme.onSurfaceVariant,
-                ),
+                style: Theme.of(context).textTheme.labelSmall!.mono
+                    .copyWith(fontWeight: FontWeight.w400, color: scheme.onSurfaceVariant),
               ),
             ],
           );

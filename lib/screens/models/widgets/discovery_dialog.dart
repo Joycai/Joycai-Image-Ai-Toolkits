@@ -319,9 +319,8 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
             const SizedBox(height: AppSpace.s16),
             Text(
               l10n.discoveringModels,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+              style: Theme.of(context).textTheme.bodySmall
+                  ?.copyWith(color: scheme.onSurfaceVariant),
             ),
           ],
         ),
@@ -394,10 +393,8 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
         // What adding does not bring along, said before the user finds out.
         Text(
           l10n.discoveryCapabilitiesNote,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            color: scheme.onSurfaceVariant,
-            height: AppType.tightHeight,
-          ),
+          style: Theme.of(context).textTheme.labelSmall
+              ?.copyWith(color: scheme.onSurfaceVariant, height: AppType.tightHeight),
         ),
       ],
     );
@@ -574,9 +571,8 @@ class _StateView extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+              style: Theme.of(context).textTheme.bodyMedium
+                  ?.copyWith(color: scheme.onSurfaceVariant),
             ),
             if (action != null) ...[const SizedBox(height: AppSpace.s16), action!],
           ],

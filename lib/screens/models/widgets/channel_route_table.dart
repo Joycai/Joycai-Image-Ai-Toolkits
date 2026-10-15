@@ -108,9 +108,8 @@ class _ChannelRouteTableState extends State<ChannelRouteTable> {
         ChannelFieldLabel(l10n.routeSectionTitle),
         Text(
           l10n.routeTableCaption,
-          style: Theme.of(
-            context,
-          ).textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.outline),
+          style: Theme.of(context).textTheme.labelSmall
+              ?.copyWith(color: Theme.of(context).colorScheme.outline),
         ),
         const SizedBox(height: AppSpace.s6),
         for (final (i, e) in routes.entries.indexed) ...[

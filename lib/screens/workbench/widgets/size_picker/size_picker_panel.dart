@@ -699,9 +699,8 @@ class _SizePickerPanelState extends State<SizePickerPanel> {
           const SizedBox(height: AppSpace.s4),
           Text(
             '16:9 · 16x9 · 16/9 · 1.78',
-            style: Theme.of(
-              context,
-            ).textTheme.labelSmall?.mono.copyWith(color: scheme.outline, fontSize: 10.5),
+            style: Theme.of(context).textTheme.labelSmall?.mono
+                .copyWith(color: scheme.outline, fontSize: 10.5),
           ),
         ],
       ],
