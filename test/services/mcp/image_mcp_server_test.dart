@@ -15,6 +15,7 @@ import 'package:joycai_image_ai_toolkits/services/mcp/image_mcp_server.dart';
 import 'package:joycai_image_ai_toolkits/services/tasks/generation_submission_service.dart';
 import 'package:joycai_image_ai_toolkits/services/tasks/task_queue_service.dart';
 import 'package:mcp_dart/mcp_dart.dart';
+import 'package:path/path.dart' as p;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import '../../support/in_memory_database.dart';
@@ -253,7 +254,7 @@ void main() {
       });
       expect(invalid.structuredContent!['error']['code'], 'invalidParameter');
       final outside = await File(
-        '${files.parent.path}/mcp-outside-${files.path.split('/').last}.png',
+        p.join(files.parent.path, 'mcp-outside-${p.basename(files.path)}.png'),
       ).writeAsBytes(png);
       addTearDown(outside.delete);
       await Link('${files.path}/escape.png').create(outside.path);
