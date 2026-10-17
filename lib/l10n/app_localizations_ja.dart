@@ -6025,4 +6025,25 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get generationSettingsDesc => '画像・動画生成で共通です。変更は新しいタスクに適用され、同時実行数はすぐに反映されます。';
+
+  @override
+  String get paramImageThinkingLevel => '画像の思考レベル';
+
+  @override
+  String get imageThinkingMinimal => '最小';
+
+  @override
+  String get paramImageBackground => '背景';
+
+  @override
+  String get paramOutputCompression => '出力圧縮（0–100）';
+
+  @override
+  String get imageBackgroundTransparent => '透明';
+
+  @override
+  String get imageBackgroundOpaque => '不透明';
+
+  @override
+  String get generationTransparentJpeg => '透明な背景には PNG または WebP が必要です。';
 }

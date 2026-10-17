@@ -19,6 +19,61 @@ void main() {
     ),
   );
 
+  testWidgets('GPT output controls retain compression and explain transparent JPEG', (
+    tester,
+  ) async {
+    final caps = ModelCapabilities.forModel('gpt-image-2.5-flare');
+    final schema = GenerationSchema(
+      protocol: WireProtocol.openaiImages,
+      capabilities: caps,
+      profileId: caps.profileId,
+    );
+    final values = <String, String>{'outputCompression': '42'};
+    await tester.pumpWidget(
+      host(
+        StatefulBuilder(
+          builder: (context, setState) => GenerationParamPanel(
+            specs: caps.imageParams,
+            schema: schema,
+            valueOf: (spec) => spec.normalize(values[spec.key]),
+            onChanged: (key, value) => setState(() => values[key] = value),
+          ),
+        ),
+      ),
+    );
+    expect(find.byType(Slider), findsNothing);
+    AppDropdown<String> format() => tester.widget<AppDropdown<String>>(
+      find.descendant(
+        of: find.byKey(const ValueKey('outputFormat')),
+        matching: find.byType(AppDropdown<String>),
+      ),
+    );
+    format().onChanged!('webp');
+    await tester.pump();
+    expect(tester.widget<Slider>(find.byType(Slider)).value, 42);
+    tester.widget<Slider>(find.byType(Slider)).onChanged!(0);
+    await tester.pump();
+    format().onChanged!('png');
+    await tester.pump();
+    expect(find.byType(Slider), findsNothing);
+    format().onChanged!('jpeg');
+    await tester.pump();
+    expect(tester.widget<Slider>(find.byType(Slider)).value, 0);
+    final background = tester.widget<AppDropdown<String>>(
+      find.descendant(
+        of: find.byKey(const ValueKey('background')),
+        matching: find.byType(AppDropdown<String>),
+      ),
+    );
+    background.onChanged!('transparent');
+    await tester.pump();
+    expect(find.text('Transparent backgrounds require PNG or WebP.'), findsOneWidget);
+    format().onChanged!('webp');
+    await tester.pump();
+    expect(find.text('Transparent backgrounds require PNG or WebP.'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   test('registry covers every declared editor', () {
     expect(ParamEditorRegistry.standard.builders.keys, containsAll(ParamControl.values));
   });

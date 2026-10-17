@@ -17,8 +17,11 @@ import 'package:joycai_image_ai_toolkits/core/constants.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/config/generation_settings_dialog.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/gallery/image_card.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/size_picker/size_field.dart';
+import 'package:joycai_image_ai_toolkits/screens/workbench/workbench_layout.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/widgets/glass/app_glass_menu.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_dropdown.dart';
+import 'package:provider/provider.dart';
 
 import 'harness/fixture_env.dart';
 import 'harness/fixture_seed.dart';
@@ -213,6 +216,75 @@ void main() {
       });
     }
   }
+  for (final (modelId, suffix) in [
+    ('gpt-image-2.5-flare', 'gptImageOutput'),
+    ('gemini-nano-banana-2.1', 'nanoBanana21'),
+    ('gemini-3.1-flash-image', 'nanoBanana2'),
+    ('gemini-3-pro-image', 'nanoBananaPro'),
+  ]) {
+    for (final size in kShotSizes) {
+      for (final brightness in Brightness.values) {
+        testWidgets('$modelId ${size.label} ${brightness.name}', (tester) async {
+          await shoot(
+            tester,
+            env: env,
+            screen: AppScreen.workbench,
+            size: size,
+            brightness: brightness,
+            suffix: suffix,
+            before: (_) async {
+              AppState().setWorkbenchTab(0);
+              AppState().clearImageSelection();
+              AppState().isConsoleExpanded = false;
+              AppState().lastSelectedModelId = modelId;
+            },
+            after: (tester) async {
+              final layout = tester
+                  .element(find.byType(ImageCard).first)
+                  .read<WorkbenchLayoutState>();
+              if (layout.rightPanelDetached) {
+                await actInRealAsync(tester, () async {
+                  layout.openRightPanel();
+                });
+              }
+              await tester.tap(find.text('模型选择').last);
+              await settle(tester);
+              if (modelId == 'gpt-image-2.5-flare') {
+                await actInRealAsync(tester, () async {
+                  for (final (key, value) in [
+                    ('background', 'transparent'),
+                    ('outputFormat', 'webp'),
+                  ]) {
+                    final dropdown = tester.widget<AppDropdown<String>>(
+                      find.descendant(
+                        of: find.byKey(ValueKey(key)),
+                        matching: find.byType(AppDropdown<String>),
+                      ),
+                    );
+                    dropdown.onChanged!(value);
+                  }
+                });
+                await settle(tester);
+              }
+              await tester.ensureVisible(
+                find
+                    .text(
+                      modelId == 'gpt-image-2.5-flare'
+                          ? '输出压缩（0–100）'
+                          : modelId == 'gemini-3-pro-image'
+                          ? '尺寸'
+                          : '图像思考强度',
+                    )
+                    .last,
+              );
+              await settle(tester);
+            },
+          );
+        });
+      }
+    }
+  }
+
   // D1e 3c: the model card on Seedream — each generation grows only the
   // controls its table declares.
   for (final (String modelId, String suffix, Brightness brightness)

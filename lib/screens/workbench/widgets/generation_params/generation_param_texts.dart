@@ -5,6 +5,7 @@ import '../../../../services/llm/generation/generation_schema.dart';
 class GenerationParamTexts {
   static String diagnostic(AppLocalizations l10n, GenerationDiagnostic diagnostic) =>
       switch (diagnostic.code) {
+        'transparentJpeg' => l10n.generationTransparentJpeg,
         'unsupportedLastFrame' => l10n.generationUnsupportedLastFrame,
         'missingFirstFrame' => l10n.generationMissingFirstFrame,
         'conflictingMedia' => l10n.generationConflictingMedia,
@@ -30,6 +31,8 @@ class GenerationParamTexts {
         // video panel's copy of this switch keeps `resolution`: there the
         // param really is one (720p / 1080p).
         return video ? l10n.resolution : l10n.imageSizeLabel;
+      case 'imageThinkingLevel':
+        return l10n.paramImageThinkingLevel;
       case 'quality':
         return l10n.quality;
       case 'promptExtend':
@@ -46,6 +49,10 @@ class GenerationParamTexts {
         return l10n.paramImageTask;
       case 'maxImages':
         return l10n.paramMaxImages;
+      case 'imageBackground':
+        return l10n.paramImageBackground;
+      case 'outputCompression':
+        return l10n.paramOutputCompression;
       case 'outputFormat':
         return l10n.paramOutputFormat;
       case 'optimizeMode':
@@ -65,6 +72,17 @@ class GenerationParamTexts {
     String value, {
     bool hasExplicitAuto = false,
   }) {
+    if (paramKey == 'background' && value == 'transparent') return l10n.imageBackgroundTransparent;
+    if (paramKey == 'background' && value == 'opaque') return l10n.imageBackgroundOpaque;
+    if (paramKey == 'thinkingLevel') {
+      return switch (value) {
+        'not_set' => l10n.generationOptionDefault,
+        'minimal' => l10n.imageThinkingMinimal,
+        'medium' => l10n.reasoningEffortMedium,
+        'high' => l10n.reasoningEffortHigh,
+        _ => value,
+      };
+    }
     if (value == 'not_set' && hasExplicitAuto) return l10n.generationOptionDefault;
     if (paramKey == 'seconds') return '${value}s';
     if (paramKey == 'videoQuality') {

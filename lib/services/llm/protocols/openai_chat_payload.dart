@@ -257,14 +257,32 @@ void _applyGeminiCompatExtensions(Map<String, dynamic> payload, Map<String, dyna
   if (size is String && size.isNotEmpty && size != 'not_set') {
     portable['image_size'] = size;
   }
-  if (portable.isEmpty) return;
+  final imageThinking = options['thinkingLevel'];
+  final hasThinking = imageThinking is String && imageThinking != 'not_set';
+  if (hasThinking && !const ['minimal', 'medium', 'high'].contains(imageThinking)) {
+    throw LLMApiException('Unsupported image thinking level: $imageThinking');
+  }
+  if (portable.isEmpty && !hasThinking) return;
 
-  payload['image_config'] = {'person_generation': 'allow_all', ...portable, 'number_of_images': 1};
+  if (portable.isNotEmpty) {
+    payload['image_config'] = {
+      'person_generation': 'allow_all',
+      ...portable,
+      'number_of_images': 1,
+    };
+  }
+  // Explicit generation settings take precedence over the model's chat setting.
+  // Google rejects reasoning_effort alongside thinking_config.
+  if (hasThinking) payload.remove('reasoning_effort');
 
   final extraBody = (payload['extra_body'] as Map<String, dynamic>?) ?? {};
   final google = (extraBody['google'] as Map<String, dynamic>?) ?? {};
   payload['extra_body'] = {
     ...extraBody,
-    'google': {...google, 'image_config': portable},
+    'google': {
+      ...google,
+      if (portable.isNotEmpty) 'image_config': portable,
+      if (hasThinking) 'thinking_config': {'thinking_level': imageThinking},
+    },
   };
 }

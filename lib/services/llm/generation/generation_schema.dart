@@ -88,7 +88,14 @@ class GenerationSchema {
     return media.isEmpty ? GenerationOperation.textVideo : GenerationOperation.referenceVideo;
   }
 
-  GenerationFieldState fieldState(String key, GenerationOperation operation) {
+  GenerationFieldState fieldState(
+    String key,
+    GenerationOperation operation, [
+    Map<String, GenerationValue> values = const {},
+  ]) {
+    if (key == 'outputCompression' && !['jpeg', 'webp'].contains(values['outputFormat']?.value)) {
+      return GenerationFieldState.inactive;
+    }
     if (operation == GenerationOperation.layers && key == 'aspectRatio') {
       return GenerationFieldState.inactive;
     }
@@ -107,8 +114,8 @@ class GenerationSchema {
     GenerationOperation operation,
   ) => {
     for (final param in params)
-      if (fieldState(param.key, operation) != GenerationFieldState.inactive)
-        param.key: fieldState(param.key, operation) == GenerationFieldState.fixed
+      if (fieldState(param.key, operation, draft) != GenerationFieldState.inactive)
+        param.key: fieldState(param.key, operation, draft) == GenerationFieldState.fixed
             ? const GenerationValue(GenerationValueKind.choice, 'png')
             : draft[param.key] ?? param.defaultValue,
   };
@@ -136,6 +143,9 @@ class GenerationSchema {
           diagnostics.add(GenerationDiagnostic('invalidParameter', field: param.key));
         }
       }
+    }
+    if (values['background']?.value == 'transparent' && values['outputFormat']?.value == 'jpeg') {
+      diagnostics.add(const GenerationDiagnostic('transparentJpeg', field: 'outputFormat'));
     }
     final first = media.where((m) => m.role == GenerationMediaRole.firstFrame).length;
     final last = media.where((m) => m.role == GenerationMediaRole.lastFrame).length;

@@ -138,6 +138,7 @@ class ModelCapabilities {
     _openaiImage2,
     _openaiImage25,
     _geminiImageV2,
+    _geminiImageV21,
     _geminiImagePro,
     _geminiImageLegacy,
     _xaiImageLegacy,
@@ -164,6 +165,7 @@ class ModelCapabilities {
     'geminiImageLegacy': _geminiImageLegacy,
     'geminiImagePro': _geminiImagePro,
     'geminiImageV2': _geminiImageV2,
+    'geminiImageV21': _geminiImageV21,
     'imagen': _imagen,
     'openaiImage': _openaiImage,
     'veoVideo': _veoVideo,
@@ -223,8 +225,11 @@ class ModelCapabilities {
     // Nano Banana variants share the gemini-*-image transport but expose wider
     // aspect-ratio sets than the generic nanoBanana table.
     if (family == ModelFamily.geminiImage) {
+      if (ModelFamilyClassifier.isNanoBanana21(id)) return _geminiImageV21;
       if (id.contains('gemini-3.1-flash-image')) return _geminiImageV2;
-      if (id.contains('gemini-3.1-pro-image')) return _geminiImagePro;
+      if (id.contains('gemini-3-pro-image') || id.contains('gemini-3.1-pro-image')) {
+        return _geminiImagePro;
+      }
       // The 2.5 generation has no resolution parameter at all.
       if (id.contains('gemini-2.5-flash-image')) return _geminiImageLegacy;
     }

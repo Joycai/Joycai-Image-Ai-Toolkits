@@ -1327,5 +1327,12 @@
   "generationExecution": "Task execution",
   "saveGenerationText": "Save prompt as TXT",
   "saveGenerationTextDesc": "Save a matching .txt beside each image or video with the input image filenames and prompt.",
-  "generationSettingsDesc": "Shared by image and video generation. Changes apply to new tasks; concurrency applies immediately."
+  "generationSettingsDesc": "Shared by image and video generation. Changes apply to new tasks; concurrency applies immediately.",
+  "paramImageThinkingLevel": "Image thinking",
+  "imageThinkingMinimal": "Minimal",
+  "paramImageBackground": "Background",
+  "paramOutputCompression": "Compression (0–100)",
+  "imageBackgroundTransparent": "Transparent",
+  "imageBackgroundOpaque": "Opaque",
+  "generationTransparentJpeg": "Transparent backgrounds require PNG or WebP."
 }

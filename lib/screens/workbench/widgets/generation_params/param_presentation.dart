@@ -10,7 +10,8 @@ class ParamPresentation {
   ParamControl editorFor(ParamSpec spec) => editor ?? spec.control;
   bool fullRowFor(ParamSpec spec) =>
       fullRow ??
-      (editorFor(spec) == ParamControl.customSize ||
+      (spec.key == 'background' ||
+          editorFor(spec) == ParamControl.customSize ||
           editorFor(spec) == ParamControl.slider ||
           editorFor(spec) == ParamControl.segmented && spec.options.length > 2);
 }

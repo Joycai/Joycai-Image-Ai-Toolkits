@@ -20,6 +20,26 @@ void main() {
     Locale('ja'),
   ];
   const scenarios = [
+    (
+      Vendors.openAIRest,
+      'gpt-image-2.5-flare',
+      'image',
+      {'background': 'transparent', 'outputFormat': 'webp', 'outputCompression': '75'},
+    ),
+    (
+      Vendors.openAIRest,
+      'gpt-image-2',
+      'image',
+      {'background': 'opaque', 'outputFormat': 'jpeg', 'outputCompression': '0'},
+    ),
+    (
+      Vendors.officialGoogle,
+      'gemini-3.1-flash-image',
+      'image',
+      {'imageSize': '512', 'thinkingLevel': 'high'},
+    ),
+    (Vendors.officialGoogle, 'gemini-3-pro-image', 'image', {'aspectRatio': '21:9'}),
+    (Vendors.officialGoogle, 'gemini-nano-banana-2.1', 'image', {'thinkingLevel': 'medium'}),
     (Vendors.xaiApi, 'grok-imagine-image-2.0', 'image', <String, String>{}),
     (
       Vendors.volcengineArk,
@@ -44,7 +64,7 @@ void main() {
     required String suffix,
   }) {
     testWidgets('generation parameters $suffix', (tester) async {
-      tester.view.physicalSize = Size(width, width < 600 ? 2400 : 1300);
+      tester.view.physicalSize = Size(width, width < 600 ? 4200 : 2200);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
       const root = ValueKey('generation-specimens');

@@ -10803,6 +10803,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Shared by image and video generation. Changes apply to new tasks; concurrency applies immediately.'**
   String get generationSettingsDesc;
+
+  /// No description provided for @paramImageThinkingLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Image thinking'**
+  String get paramImageThinkingLevel;
+
+  /// No description provided for @imageThinkingMinimal.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimal'**
+  String get imageThinkingMinimal;
+
+  /// No description provided for @paramImageBackground.
+  ///
+  /// In en, this message translates to:
+  /// **'Background'**
+  String get paramImageBackground;
+
+  /// No description provided for @paramOutputCompression.
+  ///
+  /// In en, this message translates to:
+  /// **'Compression (0–100)'**
+  String get paramOutputCompression;
+
+  /// No description provided for @imageBackgroundTransparent.
+  ///
+  /// In en, this message translates to:
+  /// **'Transparent'**
+  String get imageBackgroundTransparent;
+
+  /// No description provided for @imageBackgroundOpaque.
+  ///
+  /// In en, this message translates to:
+  /// **'Opaque'**
+  String get imageBackgroundOpaque;
+
+  /// No description provided for @generationTransparentJpeg.
+  ///
+  /// In en, this message translates to:
+  /// **'Transparent backgrounds require PNG or WebP.'**
+  String get generationTransparentJpeg;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

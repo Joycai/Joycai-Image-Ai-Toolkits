@@ -25,6 +25,49 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 |---|---|
 | [`2026-08-assistant-timeout.md`](2026-08-assistant-timeout.md) | 不是施工说明书，是**一次真实故障的取证记录**（`api_logs/` 里七条日志的耗时还原）。`architecture/assistant-context.md` 直接引它作为「为什么要早elide」的证据。 |
 
+## 2026-10-18 · GPT Image 输出控制
+
+GPT Image 2 与 2.5 Flare / Sunburst 增加背景（自动 / 不透明 / 透明）、PNG / JPEG /
+WebP 和 0–100 输出压缩；生成 JSON 与编辑 multipart 使用相同字段。PNG 隐藏并
+省略压缩，草稿值保留；透明 JPEG 在 schema 和原生协议两层拒绝，工作台四语言提示。
+返回格式 / 背景写入响应元数据，既有按实际字节保存流程保留格式和 alpha。
+旧队列快照只允许补新增字段的默认值，非默认意图不匹配仍阻止提交。
+设计沿用现有表单、下拉框、滑杆与 token，无主题 / 数据库变更。
+format / analyze（No issues found）通过，非截图测试 3217 通过、9 skip；参数 specimen
+48 个与真实工作台四宽度 × 明暗 8 个通过，已查看明暗全宽度及英 / 日参数图。
+修复英文压缩标签与透明选项窄栏省略；背景字段使用全行。未做付费上游或原生手机实测。
+
+## 2026-10-18 · GPT Image 2 / 2.5 支持复核
+
+按 OpenAI 官方文档复核 GPT Image 2、2.5 Flare / Sunburst 及各自 dated snapshot。
+已有模型识别、尺寸约束、质量档位与 16 张参考图上限正确，无生产代码改动。
+新增 12 个回归测试覆盖六个官方 ID 的 schema、生成 JSON、单图 / 多图 multipart
+编辑及回包图像、用量、实际规格。支持矩阵与未接参数见
+[API 说明](../api/gpt-image-series.md)：透明背景、输出格式 / 压缩、mask、原生渐进
+预览、Responses 图像工具等仍未接；不能将基础生成 / 编辑支持理解为全 API 覆盖。
+format / analyze（No issues found）通过，非截图测试 3210 通过、9 skip。
+无 UI 改动，无付费上游请求，第三方中转行为未经实测。
+
+## 2026-10-18 · Nano Banana 2.1
+
+按 Google 官方模型页与 generateContent 文档接入 `gemini-nano-banana-2.1`：
+修复新命名被判为聊天模型的问题，独立 profile 提供 14 种比例、1K/2K/4K、
+最多 14 张参考图，以及默认 / minimal / medium / high 图像思考参数。
+工作台复用既有表单与四语言标签；原生 Gemini 与兼容 chat 分别编码思考字段。
+过滤 Gemini 内部 thought 图像，保留最终图像、推理文字及用量。
+参数、请求与已知边界见 [API 说明](../api/nano-banana-2.1.md)。
+
+同轮复核旧模型：Flash Image 补齐 512 尺寸、minimal / high 思考档与 14 张参考图上限；
+Pro 修复官方 `gemini-3-pro-image` ID 未命中专用 profile 的问题，提供含 21:9 的
+10 种比例、1K/2K/4K 与 14 张参考图上限，保持自动思考。保留旧 3.1 Pro ID 的兼容匹配。
+
+验证：format 与 analyze（No issues found）通过；非截图测试 3198 通过、9 skip，
+包括本地假服务验证三个模型的同步 / SSE 路由和 payload。参数 specimen 48 个渲染通过；
+真实工作台三个模型四宽度 × 明暗 24 个通过且已查看，窄窗展开面板并滚动至参数控件。
+设计依据为既有规格、组件与渲染；无主题改动、无数据库迁移、无付费真实请求。
+原生移动设备与第三方中转透传未经实测。Search grounding 的来源展示、视频/PDF
+参考输入和带签名的连续图像会话未接入，未在本轮 UI 暴露相应开关。
+
 ## 2026-10-13 · MCP 图像生成第一阶段
 
 桌面应用新增默认关闭、Bearer 鉴权的 localhost Streamable HTTP MCP 服务；
