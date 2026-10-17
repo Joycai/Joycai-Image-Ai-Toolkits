@@ -9,6 +9,13 @@ class GenerationProfiles {
     WireProtocol.openaiImages: ['openaiImage', 'openaiImage2', 'openaiImage25'],
     WireProtocol.xaiImages: ['xaiImage', 'xaiImageLegacy'],
     WireProtocol.geminiImagen: ['imagen'],
+    WireProtocol.geminiImage: [
+      'geminiImage',
+      'geminiImageLegacy',
+      'geminiImagePro',
+      'geminiImageV2',
+      'geminiImageV21',
+    ],
     WireProtocol.geminiVeo: ['veoVideo'],
     WireProtocol.openaiVideos: ['openaiVideo'],
     WireProtocol.xaiVideos: ['grokImagineVideo'],

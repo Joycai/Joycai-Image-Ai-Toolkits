@@ -9,7 +9,9 @@ import 'package:joycai_image_ai_toolkits/services/llm/vendors/platforms.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/widgets/models/app_route_badge.dart';
+import 'package:joycai_image_ai_toolkits/widgets/models/model_edit_controls/model_edit_menu_field.dart';
 import 'package:joycai_image_ai_toolkits/widgets/models/model_edit_dialog.dart';
+import 'package:joycai_image_ai_toolkits/widgets/models/model_protocol_section.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import '../../support/private_data_dir.dart';
@@ -90,6 +92,49 @@ void main() {
 
   Finder strip(String label) =>
       find.byWidgetPredicate((w) => w is AppRouteBadge && w.label == label && w.onTap != null);
+
+  testWidgets('Gemini image native selection saves and reopens in the editor', (tester) async {
+    final (state, chat) = await seed(tester);
+    final model = await runAsyncRethrowing(tester, () async {
+      final id = await state.addModel(
+        LLMModel(
+          modelId: 'gemini-nano-banana-2.1',
+          modelName: 'Nano Banana 2.1',
+          tag: 'image',
+          channelId: chat.channelId,
+        ),
+      );
+      return state.allModels.firstWhere((m) => m.id == id);
+    });
+    await pump(tester, state, model);
+    final field = find.descendant(
+      of: find.byType(ModelProtocolSection),
+      matching: find.byType(ModelEditMenuField<String>),
+    );
+    await tester.tap(field);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Gemini · generateContent'));
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<ModelProtocolSection>(find.byType(ModelProtocolSection)).activePin,
+      WireProtocol.geminiImage,
+    );
+    await inRealAsyncUntil(
+      tester,
+      () => tester.tap(find.text('Save').last),
+      until: () => state.allModels.any((m) => m.id == model.id && m.wireProtocol == 'gemini-image'),
+    );
+    final saved = await runAsyncRethrowing(tester, () async {
+      await state.refreshDataCache();
+      return state.allModels.firstWhere((m) => m.id == model.id);
+    });
+    await tester.pumpWidget(const SizedBox.shrink());
+    await pump(tester, state, saved);
+    expect(
+      tester.widget<ModelProtocolSection>(find.byType(ModelProtocolSection)).activePin,
+      WireProtocol.geminiImage,
+    );
+  });
 
   testWidgets('a chat model on a multi-route channel has a route strip', (tester) async {
     final (state, model) = await seed(tester);

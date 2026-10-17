@@ -114,6 +114,8 @@ class ModelDescriptor {
         ], ModelFamily.openaiImage);
       case WireProtocol.xaiImages:
         return unlessServes(const [ModelFamily.xaiImage], ModelFamily.xaiImage);
+      case WireProtocol.geminiImage:
+        return unlessServes(const [ModelFamily.geminiImage], ModelFamily.geminiImage);
       case WireProtocol.geminiImagen:
         return unlessServes(const [ModelFamily.geminiImagen], ModelFamily.geminiImagen);
       case WireProtocol.dashscopeImagesSync:

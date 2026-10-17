@@ -72,6 +72,9 @@ enum WireProtocol {
   chatImage('chat-image', Surface.imageGen),
   xaiImages('xai-images', Surface.imageGen),
   geminiImagen('gemini-imagen', Surface.imageGen),
+
+  /// Gemini native image output through generateContent / streamGenerateContent.
+  geminiImage('gemini-image', Surface.imageGen),
   dashscopeImagesSync('dashscope-images-sync', Surface.imageGen),
   dashscopeImagesAsync('dashscope-images-async', Surface.imageGen),
   minimaxImages('minimax-images', Surface.imageGen),
@@ -680,4 +683,15 @@ class UnlistedModel {
 String redactUrl(Uri url) {
   if (!url.queryParameters.containsKey('key')) return url.toString();
   return url.replace(queryParameters: {...url.queryParameters, 'key': '***MASKED***'}).toString();
+}
+
+/// Default Gemini sibling of a compatible base. Explicit channel route paths
+/// take precedence; keep reverse-proxy prefixes and already-native bases.
+String geminiImageBase(String endpoint) {
+  final base = endpoint.replaceFirst(RegExp(r'/+$'), '');
+  if (base.endsWith('/v1beta/openai')) return base.substring(0, base.length - 7);
+  if (base.endsWith('/v1')) return '${base.substring(0, base.length - 3)}/v1beta';
+  final uri = Uri.tryParse(base);
+  if (uri != null && uri.hasAuthority && uri.path.isEmpty) return '$base/v1beta';
+  return base;
 }

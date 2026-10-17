@@ -7,8 +7,15 @@
 @Tags(<String>['screenshots'])
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/state/app_state.dart';
+import 'package:joycai_image_ai_toolkits/widgets/models/model_edit_controls/model_edit_menu_field.dart';
+import 'package:joycai_image_ai_toolkits/widgets/models/model_edit_dialog.dart';
+import 'package:joycai_image_ai_toolkits/widgets/models/model_protocol_section.dart';
 
 import 'harness/fixture_env.dart';
 import 'harness/shoot.dart';
@@ -129,9 +136,27 @@ void main() {
               // Same detour rule as the GPT-5 shot above: on a phone the
               // models tab is already on screen, and 「渠道管理」 would land on
               // the channel editor instead of the model.
-              if (sizeLabel != 'mobile') await tapText('渠道管理');
-              await tapText(shot.channel);
-              await tapText(shot.model);
+              if (shot.suffix == 'editorGeminiNative') {
+                final context = tester.element(find.byType(Scaffold).first);
+                final state = AppState();
+                final model = state.allModels.firstWhere((m) => m.modelId == 'nano-banana-pro');
+                await actInRealAsync(tester, () async {
+                  unawaited(
+                    showDialog<void>(
+                      context: context,
+                      builder: (context) => ModelEditDialog(
+                        l10n: AppLocalizations.of(context)!,
+                        appState: state,
+                        model: model,
+                      ),
+                    ),
+                  );
+                });
+              } else {
+                if (sizeLabel != 'mobile') await tapText('渠道管理');
+                await tapText(shot.channel);
+                await tapText(shot.model);
+              }
               // A phone's single column puts the section below the fold; the
               // frame (20j) is about the section, so bring its caption to the
               // top of the dialog's scroll view.
@@ -143,6 +168,18 @@ void main() {
                     await tester.pump(const Duration(milliseconds: 100));
                   }
                 }
+              }
+              if (shot.suffix == 'editorGeminiNative') {
+                final section = find.byType(ModelProtocolSection);
+                final field = find.descendant(
+                  of: section,
+                  matching: find.byType(ModelEditMenuField<String>),
+                );
+                await Scrollable.ensureVisible(tester.element(field), alignment: 0.5);
+                await settle(tester);
+                await tester.tap(field);
+                await settle(tester);
+                expect(find.text('Gemini · generateContent'), findsOneWidget);
               }
             },
           );
@@ -170,6 +207,13 @@ class _EditorShot {
 }
 
 const List<_EditorShot> _editorShots = <_EditorShot>[
+  _EditorShot(
+    'editorGeminiNative',
+    '中转 · OpenAI 兼容',
+    'Nano Banana Pro',
+    sizes: ['mobile', 'tablet', 'ipad', 'desktop'],
+    brightnesses: [Brightness.light, Brightness.dark],
+  ),
   // 20b / 20i / 20j: unrecognized image model on auto — the unrecognized
   // sentence and the neutral parameter row.
   _EditorShot(
