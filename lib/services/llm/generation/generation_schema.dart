@@ -1,3 +1,4 @@
+import '../image_size_rules.dart';
 import '../model_capabilities.dart';
 import '../protocols/generation_contract.dart';
 import '../vendors/vendor_profile.dart';
@@ -93,6 +94,15 @@ class GenerationSchema {
     GenerationOperation operation, [
     Map<String, GenerationValue> values = const {},
   ]) {
+    if (capabilities.imageRequestShape == ImageRequestShape.dashscopeWan &&
+        key == 'imageThinking' &&
+        operation != GenerationOperation.textImage) {
+      return GenerationFieldState.inactive;
+    }
+    if ((key == 'promptExtendMode' || key == 'imageThinking') &&
+        values['promptExtend']?.value == false) {
+      return GenerationFieldState.inactive;
+    }
     if (key == 'outputCompression' && !['jpeg', 'webp'].contains(values['outputFormat']?.value)) {
       return GenerationFieldState.inactive;
     }
@@ -137,6 +147,16 @@ class GenerationSchema {
     List<GenerationMedia> media,
   ) {
     final diagnostics = <GenerationDiagnostic>[...configurationDiagnostics];
+    if (media.isNotEmpty &&
+        capabilities.imageRequestShape == ImageRequestShape.dashscopeWan &&
+        dashscopeEditSizeTooLarge(values['imageSize']?.value?.toString())) {
+      diagnostics.add(const GenerationDiagnostic('wanEditSize', field: 'imageSize'));
+    }
+    if (media.isNotEmpty &&
+        values['promptExtendMode']?.value == 'agent' &&
+        values['promptExtend']?.value != false) {
+      diagnostics.add(const GenerationDiagnostic('agentTextOnly', field: 'promptExtendMode'));
+    }
     for (final param in params) {
       if (values[param.key] case final value?) {
         if (!param.accepts(value)) {

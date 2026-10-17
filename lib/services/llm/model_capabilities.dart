@@ -152,6 +152,7 @@ class ModelCapabilities {
     _dashscopeQwenImageEditMaxPlus,
     _dashscopeQwenImageEdit,
     _dashscopeQwenImage,
+    _dashscopeQwenImage3,
     _seedream50Pro,
     _seedream50Lite,
     _seedream45,
@@ -175,6 +176,7 @@ class ModelCapabilities {
     'xaiImage': _xaiImage,
     'xaiImageLegacy': _xaiImageLegacy,
     'dashscopeQwenImage': _dashscopeQwenImage,
+    'dashscopeQwenImage3': _dashscopeQwenImage3,
     'dashscopeQwenImageEditMaxPlus': _dashscopeQwenImageEditMaxPlus,
     'dashscopeImageFallback': _dashscopeImageFallback,
     'dashscopeQwenImageFixed': _dashscopeQwenImageFixed,
@@ -288,6 +290,9 @@ class ModelCapabilities {
     if (family == ModelFamily.dashscopeImage) {
       if (id.startsWith('wan')) {
         return id.contains('-pro') ? _dashscopeWanImagePro : _dashscopeWanImage;
+      }
+      if (id == 'qwen-image-3.0' || id.startsWith('qwen-image-3.0-')) {
+        return _dashscopeQwenImage3;
       }
       // First-generation text-to-image: five fixed sizes, no free `WxH`.
       if (id == 'qwen-image' ||

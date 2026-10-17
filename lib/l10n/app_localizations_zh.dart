@@ -6012,6 +6012,21 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get generationTransparentJpeg => '透明背景需要 PNG 或 WebP 格式。';
+
+  @override
+  String get paramPromptExtendMode => '提示词增强方式';
+
+  @override
+  String get promptExtendDirect => '直接增强';
+
+  @override
+  String get promptExtendAgent => '智能体（仅文生图）';
+
+  @override
+  String get generationWanEditSize => '万相图像编辑最高支持 2K。请选择 1K、2K，或总像素不超过 2048 × 2048 的尺寸。';
+
+  @override
+  String get generationAgentTextOnly => '智能体提示词增强仅支持文生图。编辑图像时请选择直接增强。';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -12021,4 +12036,19 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get generationTransparentJpeg => '透明背景需要 PNG 或 WebP 格式。';
+
+  @override
+  String get paramPromptExtendMode => '提示詞增強方式';
+
+  @override
+  String get promptExtendDirect => '直接增強';
+
+  @override
+  String get promptExtendAgent => '智慧體（僅文生圖）';
+
+  @override
+  String get generationWanEditSize => '萬相影像編輯最高支援 2K。請選擇 1K、2K，或總像素不超過 2048 × 2048 的尺寸。';
+
+  @override
+  String get generationAgentTextOnly => '智慧體提示詞增強僅支援文生圖。編輯影像時請選擇直接增強。';
 }

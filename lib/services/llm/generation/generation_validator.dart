@@ -3,6 +3,7 @@ import 'dart:isolate';
 import 'package:image/image.dart' as img;
 
 import '../llm_types.dart';
+import '../model_capabilities.dart' show ImageRequestShape;
 import '../protocols/protocol.dart' show readAttachmentBytes;
 import 'generation_request.dart';
 import 'generation_schema.dart';
@@ -18,6 +19,12 @@ Future<Map<String, dynamic>?> validateGeneration(
     throw LLMApiException('Generation input invalid: incompatibleProfile. Nothing was sent.');
   }
   if (!schema.capabilities.isImageGenerator && !schema.isVideo) return options;
+  // Older Wan snapshots included an unset, undocumented prompt rewrite field.
+  // Explicit on/off requests remain errors rather than silently changing intent.
+  final retiredWanDefault =
+      schema.capabilities.imageRequestShape == ImageRequestShape.dashscopeWan &&
+      options?['promptExtend'] == 'not_set';
+  if (retiredWanDefault) options = Map.of(options!)..remove('promptExtend');
   if ((options ?? const {}).keys.any(
     (key) =>
         GenerationSchema.semanticKeys.contains(key) &&
@@ -44,20 +51,35 @@ Future<Map<String, dynamic>?> validateGeneration(
   final operation = schema.operation(draft, media);
   final effective = schema.effective(draft, operation);
   final request = GenerationRequest.fromTask(options ?? const {});
-  // Pre-output-controls GPT snapshots contain size/quality only. Permit the
-  // three additive defaults, never a changed or extra explicit value. Other
-  // profiles keep their existing strict snapshot comparison.
+  // Old GPT and DashScope snapshots predate the additive output controls.
+  // Permit only their missing defaults, never changed explicit values.
   if (request != null &&
       (request.operation != operation ||
           request.media.length != media.length ||
           request.prompt != user?.content ||
-          request.values.keys.any((key) => !effective.containsKey(key)) ||
+          request.values.keys.any(
+            (key) =>
+                !effective.containsKey(key) &&
+                !(retiredWanDefault &&
+                    key == 'promptExtend' &&
+                    request.values[key]?.kind == GenerationValueKind.unset),
+          ) ||
           effective.entries.any(
             (entry) =>
                 request.values[entry.key] != entry.value &&
                 !(request.values[entry.key] == null &&
-                    schema.params.any((p) => p.key == 'background') &&
-                    const ['background', 'outputFormat', 'outputCompression'].contains(entry.key) &&
+                    ((schema.params.any((p) => p.key == 'background') &&
+                            const [
+                              'background',
+                              'outputFormat',
+                              'outputCompression',
+                            ].contains(entry.key)) ||
+                        (schema.capabilities.imageRequestShape != ImageRequestShape.none &&
+                            const [
+                              'promptExtendMode',
+                              'imageThinking',
+                              'watermark',
+                            ].contains(entry.key))) &&
                     schema.params.firstWhere((p) => p.key == entry.key).defaultValue ==
                         entry.value),
           ))) {

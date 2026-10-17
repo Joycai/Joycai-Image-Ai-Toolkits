@@ -1216,5 +1216,10 @@
   "paramOutputCompression": "輸出壓縮（0–100）",
   "imageBackgroundTransparent": "透明",
   "imageBackgroundOpaque": "不透明",
-  "generationTransparentJpeg": "透明背景需要 PNG 或 WebP 格式。"
+  "generationTransparentJpeg": "透明背景需要 PNG 或 WebP 格式。",
+  "paramPromptExtendMode": "提示詞增強方式",
+  "promptExtendDirect": "直接增強",
+  "promptExtendAgent": "智慧體（僅文生圖）",
+  "generationWanEditSize": "萬相影像編輯最高支援 2K。請選擇 1K、2K，或總像素不超過 2048 × 2048 的尺寸。",
+  "generationAgentTextOnly": "智慧體提示詞增強僅支援文生圖。編輯影像時請選擇直接增強。"
 }

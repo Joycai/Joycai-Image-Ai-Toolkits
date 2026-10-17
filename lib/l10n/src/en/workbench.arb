@@ -1334,5 +1334,10 @@
   "paramOutputCompression": "Compression (0–100)",
   "imageBackgroundTransparent": "Transparent",
   "imageBackgroundOpaque": "Opaque",
-  "generationTransparentJpeg": "Transparent backgrounds require PNG or WebP."
+  "generationTransparentJpeg": "Transparent backgrounds require PNG or WebP.",
+  "paramPromptExtendMode": "Prompt enhancement",
+  "promptExtendDirect": "Direct",
+  "promptExtendAgent": "Agent (text only)",
+  "generationWanEditSize": "Wan image editing supports up to 2K. Choose 1K, 2K, or dimensions within 2048 × 2048 pixels in area.",
+  "generationAgentTextOnly": "Agent prompt enhancement supports text-to-image only. Choose Direct for image editing."
 }

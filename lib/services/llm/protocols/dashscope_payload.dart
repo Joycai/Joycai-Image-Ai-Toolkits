@@ -203,11 +203,9 @@ int _floorToGrid(double edge, int step) {
 /// its own sizes; a sentinel falls through to the dialect's default, which
 /// is fitted to the spec's size rules.
 ///
-/// `n` is always sent, and always 1. The upstream default is **not** 1
-/// everywhere: `wan2.7-*` defaults to four images and bills every one of
-/// them, so a request that leaves `n` off buys four pictures for one task.
-/// Every model in scope accepts `n: 1` (the ceilings differ — 6, 4, and the
-/// basic `qwen-image-edit`'s hard 1 — but the floor is shared).
+/// `n` is always sent as 1: one image per task, independent of upstream
+/// defaults (the October 2026 Wan docs now specify 1 for ordinary mode).
+/// Every model in scope accepts it; image sets are not exposed.
 ///
 /// Both shapes carry the conversation under `input` — the envelope is always
 /// `model` / `input` / `parameters`. A second-hand mirror of the docs showed
@@ -244,8 +242,35 @@ Map<String, dynamic> buildDashScopeImagePayload({
           ),
         };
   }
+  final wan = shape == ImageRequestShape.dashscopeWan;
   final promptExtend = dashscopePromptExtend(options);
-  final parameters = <String, dynamic>{'n': 1, 'size': ?size, 'prompt_extend': ?promptExtend};
+  final mode = readStringOption(options, 'promptExtendMode');
+  final thinking = switch (readStringOption(options, 'imageThinking')) {
+    'on' => true,
+    'off' => false,
+    _ => null,
+  };
+  final watermark = switch (readStringOption(options, 'watermark')) {
+    'on' => true,
+    'off' => false,
+    _ => null,
+  };
+  if (wan && imageRefs.isNotEmpty && dashscopeEditSizeTooLarge(size)) {
+    throw LLMApiException('Wan image editing supports at most 2K. Nothing was sent.');
+  }
+  if (!wan && promptExtend != false && mode == 'agent' && imageRefs.isNotEmpty) {
+    throw LLMApiException('Agent prompt enhancement requires text-to-image. Nothing was sent.');
+  }
+  final parameters = <String, dynamic>{
+    'n': 1,
+    'size': ?size,
+    if (!wan) 'prompt_extend': ?promptExtend,
+    if (!wan && promptExtend != false && mode != null && mode != 'not_set')
+      'prompt_extend_mode': mode,
+    if (wan && imageRefs.isEmpty) 'thinking_mode': ?thinking,
+    if (!wan && promptExtend != false) 'enable_thinking': ?thinking,
+    'watermark': ?watermark,
+  };
 
   final images = [
     for (final ref in imageRefs) {'image': ref},

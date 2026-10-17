@@ -105,7 +105,8 @@ class GenerationRequest {
       modelId == model &&
       channelType == vendor &&
       protocolId == schema.protocol?.id &&
-      profileId == schema.profileId &&
+      (profileId == schema.profileId ||
+          (profileId == 'dashscopeQwenImage' && schema.profileId == 'dashscopeQwenImage3')) &&
       schemaVersion == GenerationSchema.version;
 }
 

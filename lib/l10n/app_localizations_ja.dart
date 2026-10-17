@@ -6046,4 +6046,20 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get generationTransparentJpeg => '透明な背景には PNG または WebP が必要です。';
+
+  @override
+  String get paramPromptExtendMode => 'プロンプト拡張方式';
+
+  @override
+  String get promptExtendDirect => '直接拡張';
+
+  @override
+  String get promptExtendAgent => 'エージェント（テキストのみ）';
+
+  @override
+  String get generationWanEditSize =>
+      'Wan の画像編集は最大 2K に対応します。1K、2K、または総画素数が 2048 × 2048 以下のサイズを選択してください。';
+
+  @override
+  String get generationAgentTextOnly => 'エージェントによるプロンプト拡張はテキストからの生成専用です。画像編集には直接拡張を選択してください。';
 }

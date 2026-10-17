@@ -10,9 +10,8 @@ import 'protocol.dart';
 /// Alibaba DashScope's native image generation / editing surface:
 /// `POST /api/v1/services/aigc/multimodal-generation/generation`.
 ///
-/// This is not the OpenAI-compatible images API and cannot be reached through
-/// one — `qwen-image*` and `wan2.7-image*` are served only here, with a body
-/// DashScope defines itself (see [buildDashScopeImagePayload]) and an error
+/// Uses the native DashScope envelope (Qwen 3.0 also offers a separate
+/// OpenAI-compatible endpoint). The body is defined by DashScope (see [buildDashScopeImagePayload]) and an error
 /// envelope that no other family uses (see [throwIfDashScopeError]).
 ///
 /// Synchronous: the response arrives once the image exists, which is why the
@@ -197,8 +196,8 @@ Map<String, dynamic> dashscopeImageMetadata({
 }) {
   final rawUsage = data['usage'];
   final usage = rawUsage is Map ? rawUsage.cast<String, dynamic>() : const <String, dynamic>{};
-  final width = usage['width'];
-  final height = usage['height'];
+  final width = usage['output_width'] ?? usage['width'];
+  final height = usage['output_height'] ?? usage['height'];
   final usageSize = usage['size'];
   final String? rendered;
   if (width is num && height is num && width > 0 && height > 0) {
