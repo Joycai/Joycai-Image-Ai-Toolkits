@@ -12,6 +12,46 @@
 
 ## 0. 总览
 
+### Seedream 5.0 Pro support audit — 2026-10-18
+
+Rechecked against the official [Volcengine image API](https://docs.volcengine.com/docs/ark/image-generation-api?lang=en),
+[BytePlus image API](https://docs.byteplus.com/en/docs/modelark/image-generation-api?redirect=1)
+and [BytePlus model announcements](https://docs.byteplus.com/en/docs/modelark/model-release-announcement).
+Seedream is the image family; Seedance is the video family.
+
+| Serving platform | Model ID | Base URL |
+| --- | --- | --- |
+| Volcengine | `doubao-seedream-5-0-pro-260628` | `https://ark.cn-beijing.volces.com/api/v3` |
+| BytePlus | `dola-seedream-5-0-pro-260628` | `https://ark.ap-southeast.bytepluses.com/api/v3` |
+
+Both use bearer authentication and `POST /images/generations`. In the app,
+use the existing Ark channel with the appropriate base URL and platform key;
+manually add the BytePlus ID (the existing fallback catalogue is Volcengine-specific).
+Opaque endpoint IDs can select the existing `seedream50Pro` generation profile.
+`Seedream5.0pro` is supported as a relay alias, **not an official API ID**;
+the configured ID is sent unchanged and must exist on that provider.
+
+| Capability | Audit result |
+| --- | --- |
+| Generation / reference editing | Already supported; 10-reference ceiling |
+| Resolution | 1K / 1.5K / 2K, default 2K; eight mapped ratios |
+| Output / optimization | JPEG or PNG; standard or fast; explicit watermark |
+| Layer decomposition | One source, optional prompt, automatic size available; base plus up to 16 layers |
+| Transparent editing | One alpha-bearing source; PNG output enforced |
+| Interactive editing | Prompt coordinates / markings in references; no dedicated coordinate editor |
+| Group generation / streaming / web search | Not offered for Pro |
+
+The compact alias previously fell through to Lite, exposing 4K, groups and search
+while hiding Pro operations. Layer-3 tier matching now selects the Pro profile.
+Regression coverage checks official IDs and compact aliases, request routing,
+pixel mapping and output controls. Existing payload/transport tests cover layers,
+reference editing, returned layer placement and usage. No new paid API calls were
+made during this audit; §7 records older live observations separately.
+
+The UI offers tiers and mapped ratios, not arbitrary `WxH` input. Current docs
+also describe **5.0 Flash**; this Pro audit does not add Flash support. Per-layer
+pixel-based billing remains the follow-up recorded in the plan ledger.
+
 | 项 | 值 |
 | --- | --- |
 | 端点 | `POST https://ark.cn-beijing.volces.com/api/v3/images/generations` |
