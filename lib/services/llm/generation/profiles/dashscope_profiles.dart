@@ -108,6 +108,51 @@ const _dashscopeQwenImage = ModelCapabilities(
   ],
 );
 
+/// Qwen Image 3.0 (standard and Pro): native prompt enhancement controls.
+const _dashscopeQwenImage3 = ModelCapabilities(
+  isImageGenerator: true,
+  maxReferenceImages: 3,
+  longRunning: true,
+  imageRequestShape: ImageRequestShape.dashscopeQwen,
+  imageParams: [
+    ParamSpec(
+      key: 'imageSize',
+      labelKey: 'resolution',
+      control: ParamControl.customSize,
+      defaultValue: 'not_set',
+      options: [ParamOption('not_set')],
+      sizeRules: kDashscopeQwenSizeRules,
+      sizeVocabulary: _dashscopeQwenSizeVocabulary,
+    ),
+    _dashscopePromptExtend,
+    ParamSpec(
+      key: 'promptExtendMode',
+      labelKey: 'promptExtendMode',
+      control: ParamControl.dropdown,
+      defaultValue: 'not_set',
+      options: [ParamOption('not_set'), ParamOption('direct'), ParamOption('agent')],
+    ),
+    _dashscopeImageThinking,
+    _dashscopeImageWatermark,
+  ],
+);
+
+const _dashscopeImageThinking = ParamSpec(
+  key: 'imageThinking',
+  labelKey: 'imageThinkingLevel',
+  control: ParamControl.segmented,
+  defaultValue: 'not_set',
+  options: [ParamOption('not_set'), ParamOption('on'), ParamOption('off')],
+);
+
+const _dashscopeImageWatermark = ParamSpec(
+  key: 'watermark',
+  labelKey: 'watermark',
+  control: ParamControl.segmented,
+  defaultValue: 'not_set',
+  options: [ParamOption('not_set'), ParamOption('off'), ParamOption('on')],
+);
+
 /// `qwen-image-edit-max` / `-plus` (and their dated builds): the same shape,
 /// references and `not_set` default as [_dashscopeQwenImage], but a
 /// **per-edge** size range — each edge 512–2048 — rather than 2.0 / 3.0's
@@ -247,7 +292,7 @@ const _dashscopeQwenImageEdit = ModelCapabilities(
 ///
 /// `not_set` sends `1K`, not nothing: wan's own omitted default is the 2K
 /// tier at twice the price, the same trap as qwen's. `n` is always sent as
-/// 1 — wan2.7's upstream default is **four** images, each billed.
+/// 1 to keep one image per task independent of upstream defaults.
 const _dashscopeWanImage = ModelCapabilities(
   isImageGenerator: true,
   maxReferenceImages: 9,
@@ -264,13 +309,14 @@ const _dashscopeWanImage = ModelCapabilities(
       sizeRules: kDashscopeWanSizeRules,
       sizeVocabulary: _dashscopeWanSizeVocabulary,
     ),
-    _dashscopePromptExtend,
+    _dashscopeImageThinking,
+    _dashscopeImageWatermark,
   ],
 );
 
 /// `wan2.7-image-pro`: [_dashscopeWanImage] with the ceiling raised to 4096²
-/// and a `4K` keyword. Upstream documents 4K for text-to-image; whether an
-/// edit accepts it is not stated ⚠ — a refusal there is a 400.
+/// and a `4K` keyword. Editing is limited to 2048², checked by the schema
+/// and the shared payload builder before either sync or async submission.
 const _dashscopeWanImagePro = ModelCapabilities(
   isImageGenerator: true,
   maxReferenceImages: 9,
@@ -287,6 +333,7 @@ const _dashscopeWanImagePro = ModelCapabilities(
       sizeRules: kDashscopeWanProSizeRules,
       sizeVocabulary: _dashscopeWanProSizeVocabulary,
     ),
-    _dashscopePromptExtend,
+    _dashscopeImageThinking,
+    _dashscopeImageWatermark,
   ],
 );

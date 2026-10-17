@@ -6258,4 +6258,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get generationTransparentJpeg => 'Transparent backgrounds require PNG or WebP.';
+
+  @override
+  String get paramPromptExtendMode => 'Prompt enhancement';
+
+  @override
+  String get promptExtendDirect => 'Direct';
+
+  @override
+  String get promptExtendAgent => 'Agent (text only)';
+
+  @override
+  String get generationWanEditSize =>
+      'Wan image editing supports up to 2K. Choose 1K, 2K, or dimensions within 2048 × 2048 pixels in area.';
+
+  @override
+  String get generationAgentTextOnly =>
+      'Agent prompt enhancement supports text-to-image only. Choose Direct for image editing.';
 }

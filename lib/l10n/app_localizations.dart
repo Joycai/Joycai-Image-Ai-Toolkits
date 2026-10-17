@@ -10845,6 +10845,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Transparent backgrounds require PNG or WebP.'**
   String get generationTransparentJpeg;
+
+  /// No description provided for @paramPromptExtendMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Prompt enhancement'**
+  String get paramPromptExtendMode;
+
+  /// No description provided for @promptExtendDirect.
+  ///
+  /// In en, this message translates to:
+  /// **'Direct'**
+  String get promptExtendDirect;
+
+  /// No description provided for @promptExtendAgent.
+  ///
+  /// In en, this message translates to:
+  /// **'Agent (text only)'**
+  String get promptExtendAgent;
+
+  /// No description provided for @generationWanEditSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Wan image editing supports up to 2K. Choose 1K, 2K, or dimensions within 2048 × 2048 pixels in area.'**
+  String get generationWanEditSize;
+
+  /// No description provided for @generationAgentTextOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Agent prompt enhancement supports text-to-image only. Choose Direct for image editing.'**
+  String get generationAgentTextOnly;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -39,9 +39,8 @@ enum ModelFamily {
   openaiVideo,
 
   /// Alibaba DashScope's *native* image surface — `qwen-image*` and
-  /// `wan2.7-image*`. These models are not served by the OpenAI-compatible
-  /// images API: the only endpoint that generates them speaks DashScope's
-  /// own `input`/`parameters` body. On a channel that is not DashScope-native
+  /// `wan2.7-image*`. The app uses DashScope's `input`/`parameters` body
+  /// (Qwen 3.0 also documents an optional compatible images API). On a channel that is not DashScope-native
   /// (a relay), the dispatcher deliberately keeps routing them through chat,
   /// where relays hand images back in the chat response.
   dashscopeImage,

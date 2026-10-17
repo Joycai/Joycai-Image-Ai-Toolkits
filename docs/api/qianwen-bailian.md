@@ -114,13 +114,13 @@
   —— 提图逻辑不得依赖 `type` 存在。
 - usage 形状按系列不同（qwen 3.0 系 `output_width/height +
   input/output_image_count/type`；wan 系 `image_count + token 数 + size`），
-  只透传不解析。
+  原始值保留在 `dashscope_usage`；输出宽高映射为 `output_size`，供规格计费使用。
 
 ### 4.1 逐模型参数档（Layer 3 建表依据）
 
 | 模型 | 输入图 | 文本上限 | `n` | `size` | 特有 |
 | --- | --- | --- | --- | --- | --- |
-| `qwen-image-3.0(-pro)` | 1–3 张，≤10MB，建议 384–3072px | 4500 tok | 1–6 | `宽*高`，512²–2048²，比例 1:8–8:1 | `prompt_extend_mode: direct\|agent`（agent 仅文生图） |
+| `qwen-image-3.0(-pro)` | 1–3 张，≤10MB，建议 384–2048px | 4500 tok | 1–6 | `宽*高`，512²–2048²，比例 1:8–8:1 | `prompt_extend_mode: direct\|agent`（agent 仅文生图） |
 | `qwen-image-2.0(-pro)`（含日期版） | 同上 | 1300 tok | 1–6 | `宽*高`，512²–2048² | |
 | `qwen-image-edit-max` / `-plus`（含日期版） | 同上 | 800 tok | 1–6 | **单边** 512–2048（不是面积；改图指南原文「宽度和高度的取值范围为 512 至 2048 像素」，2026-09-19 复核），自动取 16 倍数；缺省约 1024² 并保持原图比例 | |
 | `qwen-image` / `qwen-image-plus` / `qwen-image-max`（初代文生图） | — | | | **仅五个固定值** ⚠：`1664*928`（缺省）、`1472*1104`、`1328*1328`、`1104*1472`、`928*1664` | 自由 `宽*高` 不收 |
@@ -131,17 +131,16 @@
   `1K`=1024²、`2K`=2048²、`4K`=4096²（关键字本身出方图）。各比例的推荐像素：
   16:9 → 1696×960 / 2688×1536 / 4096×2304；4:3 → 1472×1104 / 2368×1728 /
   4096×3072（竖版对调）。全部落在 16 的倍数上。本项目的尺寸选择器以此为 wan 的
-  预设；规则数值在 `lib/services/llm/image_size_rules.dart`。4K 文档只在文生图
-  语境下出现，改图是否接受未写明 ⚠。
+  预设；规则数值在 `lib/services/llm/image_size_rules.dart`。2026-10-11 文档明确：Pro 的 4K 仅限文生图；编辑及组图上限 2048²。
 - 图片传入：公网 URL 或 `data:{mime};base64,{data}`。qwen 系收
   JPG/JPEG/PNG/BMP/TIFF/WEBP/GIF（GIF 取首帧）；wan 系收 JPEG/JPG/PNG/BMP/WEBP。
 - qwen 多图编辑时输出宽高比由**最后一张**输入图决定。
-- 公共 `parameters`：`prompt_extend`（默认 true）、`watermark`（默认 false）、
-  `seed`（0–2147483647）。仅 qwen 系：`negative_prompt`（≤500 字符）、
+- 公共 `parameters`：`watermark`（默认 false）、`seed`（0–2147483647）。
+  仅 qwen 系：`prompt_extend`（默认 true）、`negative_prompt`、
   `enable_thinking`（默认 true，仅 prompt_extend 开着才生效）——
   wan2.7 的参数表**没有** `negative_prompt`，发了会 400 或被静默忽略 ⚠。
-- wan2.7 的 `n` 默认 **4**，且按成功生成的张数计费 —— 不显式发 `n` 的
-  客户端每次请求都花四倍的钱。
+- 2026-10-11 文档：wan2.7 普通模式 `n` 默认 1，组图模式默认 12。
+  本项目仍明确发送 `n: 1`，固定每任务一图。
 
 ## 5. I2 — 图片·异步任务
 
@@ -248,3 +247,41 @@ C1 与 C2 的流式面现在都声明工具（`streamingDeclaresTools`），共�
 
 **未实测**：本文全部 ⚠ 条目，以及 C2 的多模态面与 SSE 增量（含其 `tool_calls`
 究竟按哪种方言到达）。
+
+
+## 10. Wan Pro / Qwen 3.0 audit — 2026-10-18 (v4.31.0)
+
+Official references:
+- [Wan 2.7 generation/editing](https://www.alibabacloud.com/help/en/model-studio/wan-image-generation-and-editing-api-reference)
+- [Qwen Image generation/editing](https://www.alibabacloud.com/help/en/model-studio/qwen-image-generation-and-editing-api-reference)
+
+Both requested IDs already resolve to the native DashScope image surface on
+Alibaba compatible and native channels. Qwen uses synchronous generation;
+Wan also offers asynchronous submit/poll. Workspace-specific regional hosts
+are supported by the existing path-based base conversion; use the endpoint
+and key supplied for your workspace. No new vendor or database migration.
+
+Changes in this release:
+- Qwen 3.0 and 3.0 Pro get their own profile: prompt rewriting, direct/agent
+  enhancement, thinking and watermark. Agent mode is rejected for editing;
+  enhancement mode/thinking are omitted when rewriting is off. Older Qwen
+  generations retain their previous controls.
+- Wan Pro retains 4K text-to-image; reference-image edits reject 4K and
+  explicit sizes above 2048² before HTTP submission (sync and async). Wan's
+  thinking flag is sent only for text-to-image. Watermark is configurable.
+  The undocumented Wan prompt-rewrite control is removed; an old queued
+  unset value remains compatible, while an explicit on/off value requires
+  correcting the request rather than silently dropping it.
+- Qwen output_width/output_height now take precedence over requested size
+  in billing metadata. Raw provider usage remains namespaced.
+- Defaults remain one output per task and the app's existing 1K size policy.
+  Missing new controls in queued snapshots are accepted only at defaults.
+
+Coverage limits: this app uses the native endpoint, even though Qwen 3.0 now
+also documents OpenAI-compatible `/images/generations` (JSON references,
+not multipart edits). That optional wire is not added here. Seed and Qwen
+negative prompts are not exposed. Multi-output/image sets, Wan palettes and
+bounding-box editing require additional task/editor contracts and remain
+unimplemented. Reference byte/dimension limits are documented above; this
+change does not add full image preprocessing validation. Verification uses
+local tests and renders, not paid upstream calls.

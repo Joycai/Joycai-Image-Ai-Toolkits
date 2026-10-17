@@ -162,13 +162,26 @@ class ModelCard extends StatelessWidget {
       children: [
         titleRow,
         SizedBox(height: _phone ? AppSpace.s4 : AppSpace.s6),
-        Text(
-          model.modelId,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: (_phone ? textTheme.bodySmall : textTheme.labelSmall)?.mono.copyWith(
-            color: scheme.onSurfaceVariant,
-          ),
+        Row(
+          children: [
+            if (model.id case final id?) ...[
+              Text(
+                '# $id',
+                style: textTheme.labelSmall?.mono.copyWith(color: scheme.onSurfaceVariant),
+              ),
+              const SizedBox(width: AppSpace.s10),
+            ],
+            Flexible(
+              child: Text(
+                model.modelId,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: (_phone ? textTheme.bodySmall : textTheme.labelSmall)?.mono.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+          ],
         ),
         if (showChannel && channel != null) ...[
           SizedBox(height: _phone ? AppSpace.s4 : AppSpace.s6),

@@ -1216,5 +1216,10 @@
   "paramOutputCompression": "出力圧縮（0–100）",
   "imageBackgroundTransparent": "透明",
   "imageBackgroundOpaque": "不透明",
-  "generationTransparentJpeg": "透明な背景には PNG または WebP が必要です。"
+  "generationTransparentJpeg": "透明な背景には PNG または WebP が必要です。",
+  "paramPromptExtendMode": "プロンプト拡張方式",
+  "promptExtendDirect": "直接拡張",
+  "promptExtendAgent": "エージェント（テキストのみ）",
+  "generationWanEditSize": "Wan の画像編集は最大 2K に対応します。1K、2K、または総画素数が 2048 × 2048 以下のサイズを選択してください。",
+  "generationAgentTextOnly": "エージェントによるプロンプト拡張はテキストからの生成専用です。画像編集には直接拡張を選択してください。"
 }

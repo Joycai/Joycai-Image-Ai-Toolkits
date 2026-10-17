@@ -27,6 +27,18 @@ void main() {
   shootMatrix(() => env, const <AppScreen>[AppScreen.models, AppScreen.usage]);
 
   for (final size in kShotSizes.take(3)) {
+    testWidgets('models @ ${size.label} dark', (tester) async {
+      await shoot(
+        tester,
+        env: env,
+        screen: AppScreen.models,
+        size: size,
+        brightness: Brightness.dark,
+      );
+    });
+  }
+
+  for (final size in kShotSizes.take(3)) {
     testWidgets('usage charts @ ${size.label} dark', (tester) async {
       await shoot(
         tester,

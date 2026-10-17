@@ -292,3 +292,10 @@ class SizeRuleResult {
   String f(double v) => v.toStringAsFixed(2);
   return (value: f(shown), min: f(shownMin), max: f(shownMax));
 }
+
+/// Wan's edit ceiling applies to both tier keywords and explicit pixels.
+bool dashscopeEditSizeTooLarge(String? size) {
+  if (size == '4K') return true;
+  final pixels = parseWxH(size ?? '');
+  return pixels != null && pixels.width * pixels.height > 2048 * 2048;
+}

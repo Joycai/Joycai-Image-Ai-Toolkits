@@ -5,6 +5,8 @@ import '../../../../services/llm/generation/generation_schema.dart';
 class GenerationParamTexts {
   static String diagnostic(AppLocalizations l10n, GenerationDiagnostic diagnostic) =>
       switch (diagnostic.code) {
+        'wanEditSize' => l10n.generationWanEditSize,
+        'agentTextOnly' => l10n.generationAgentTextOnly,
         'transparentJpeg' => l10n.generationTransparentJpeg,
         'unsupportedLastFrame' => l10n.generationUnsupportedLastFrame,
         'missingFirstFrame' => l10n.generationMissingFirstFrame,
@@ -35,6 +37,8 @@ class GenerationParamTexts {
         return l10n.paramImageThinkingLevel;
       case 'quality':
         return l10n.quality;
+      case 'promptExtendMode':
+        return l10n.paramPromptExtendMode;
       case 'promptExtend':
         return l10n.promptExtend;
       case 'mjVersion':
@@ -74,6 +78,10 @@ class GenerationParamTexts {
   }) {
     if (paramKey == 'background' && value == 'transparent') return l10n.imageBackgroundTransparent;
     if (paramKey == 'background' && value == 'opaque') return l10n.imageBackgroundOpaque;
+    if (paramKey == 'promptExtendMode') {
+      if (value == 'direct') return l10n.promptExtendDirect;
+      if (value == 'agent') return l10n.promptExtendAgent;
+    }
     if (paramKey == 'thinkingLevel') {
       return switch (value) {
         'not_set' => l10n.generationOptionDefault,
@@ -93,6 +101,7 @@ class GenerationParamTexts {
     // Two-state switches share one on/off vocabulary.
     if (paramKey == 'videoAudio' ||
         paramKey == 'promptExtend' ||
+        paramKey == 'imageThinking' ||
         paramKey == 'webSearch' ||
         paramKey == 'watermark') {
       switch (value) {

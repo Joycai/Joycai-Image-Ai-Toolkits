@@ -54,7 +54,18 @@ void main() {
       {'imageTask': 'layers', 'aspectRatio': '16:9'},
     ),
     (Vendors.xaiApi, 'grok-imagine-video', 'video', {'seconds': '9'}),
-    (Vendors.dashscopeNative, 'qwen-image-3.0', 'image', {'imageSize': '1024x1024'}),
+    (
+      Vendors.dashscopeNative,
+      'qwen-image-3.0',
+      'image',
+      {'imageSize': '1024x1024', 'promptExtendMode': 'agent', 'imageThinking': 'off'},
+    ),
+    (
+      Vendors.dashscopeNative,
+      'wan2.7-image-pro',
+      'image',
+      {'imageSize': '4K', 'imageThinking': 'on', 'watermark': 'off'},
+    ),
   ];
   void shot({
     required double width,
@@ -64,7 +75,7 @@ void main() {
     required String suffix,
   }) {
     testWidgets('generation parameters $suffix', (tester) async {
-      tester.view.physicalSize = Size(width, width < 600 ? 4200 : 2200);
+      tester.view.physicalSize = Size(width, width < 600 ? 5200 : 2600);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
       const root = ValueKey('generation-specimens');
