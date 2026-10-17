@@ -6237,4 +6237,25 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get generationSettingsDesc =>
       'Shared by image and video generation. Changes apply to new tasks; concurrency applies immediately.';
+
+  @override
+  String get paramImageThinkingLevel => 'Image thinking';
+
+  @override
+  String get imageThinkingMinimal => 'Minimal';
+
+  @override
+  String get paramImageBackground => 'Background';
+
+  @override
+  String get paramOutputCompression => 'Compression (0–100)';
+
+  @override
+  String get imageBackgroundTransparent => 'Transparent';
+
+  @override
+  String get imageBackgroundOpaque => 'Opaque';
+
+  @override
+  String get generationTransparentJpeg => 'Transparent backgrounds require PNG or WebP.';
 }

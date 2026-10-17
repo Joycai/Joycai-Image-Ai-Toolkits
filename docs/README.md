@@ -55,7 +55,9 @@ per topic — [tools](api/tools.md), [streaming](api/streaming.md),
 one per vendor whose wire is its own ([Qianwen/DashScope](api/qianwen-bailian.md),
 [MiniMax](api/minimax.md), [Volcengine Ark / Seedream](api/volcengine-ark.md),
 [Veo](api/veo.md), [Gemini](api/gemini-api.md),
-[Gemini images](api/google-api-standard.md)).
+[Gemini images](api/google-api-standard.md),
+[Nano Banana 2.1](api/nano-banana-2.1.md),
+[GPT Image 2 / 2.5](api/gpt-image-series.md)).
 
 ## AI agent playbook
 

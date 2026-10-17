@@ -99,6 +99,35 @@ const _gptImageSizeVocabulary = ImageSizeVocabulary(
   sentinel: SizeSentinelMeaning.modelDecides,
 );
 
+/// Output controls shared by GPT Image 2 and 2.5. Compression only applies
+/// to JPEG/WebP; PNG remains the default for existing drafts and tasks.
+const _openaiOutputParams = <ParamSpec>[
+  ParamSpec(
+    key: 'background',
+    labelKey: 'imageBackground',
+    control: ParamControl.dropdown,
+    defaultValue: 'auto',
+    options: [ParamOption('auto'), ParamOption('opaque'), ParamOption('transparent')],
+  ),
+  ParamSpec(
+    key: 'outputFormat',
+    labelKey: 'outputFormat',
+    control: ParamControl.dropdown,
+    defaultValue: 'png',
+    options: [ParamOption('png'), ParamOption('jpeg'), ParamOption('webp')],
+  ),
+  ParamSpec(
+    key: 'outputCompression',
+    labelKey: 'outputCompression',
+    control: ParamControl.slider,
+    valueType: ParamValueType.integer,
+    defaultValue: '100',
+    options: [],
+    min: 0,
+    max: 100,
+  ),
+];
+
 /// Native OpenAI image v2 (`gpt-image-2`). The size param renders as a
 /// custom picker (preset chips + free WxH input). OpenAI accepts any
 /// dimensions meeting four rules — see [kOpenAIImage2SizeRules] — so the
@@ -127,6 +156,7 @@ const _openaiImage2 = ModelCapabilities(
       sizeVocabulary: _gptImageSizeVocabulary,
     ),
     _openaiQualityParam,
+    ..._openaiOutputParams,
   ],
 );
 
@@ -157,5 +187,6 @@ const _openaiImage25 = ModelCapabilities(
       sizeVocabulary: _gptImageSizeVocabulary,
     ),
     _openaiQuality25Param,
+    ..._openaiOutputParams,
   ],
 );

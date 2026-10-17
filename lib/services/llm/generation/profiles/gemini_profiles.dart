@@ -54,11 +54,11 @@ const _geminiImageLegacy = ModelCapabilities(
   imageParams: [_geminiAspectParam],
 );
 
-/// Nano Banana Pro — `gemini-3.1-pro-image`. The standard nanoBanana set plus
+/// Nano Banana Pro — `gemini-3-pro-image` (including preview IDs). The standard nanoBanana set plus
 /// the 21:9 ultrawide ratio.
 const _geminiImagePro = ModelCapabilities(
   isImageGenerator: true,
-  maxReferenceImages: null,
+  maxReferenceImages: 14,
   imageParams: [
     ParamSpec(
       key: 'aspectRatio',
@@ -83,36 +83,80 @@ const _geminiImagePro = ModelCapabilities(
   ],
 );
 
+const _geminiV2AspectParam = ParamSpec(
+  key: 'aspectRatio',
+  labelKey: 'aspectRatio',
+  control: ParamControl.dropdown,
+  defaultValue: 'not_set',
+  options: [
+    ParamOption('not_set'),
+    ParamOption('1:1'),
+    ParamOption('2:3'),
+    ParamOption('3:2'),
+    ParamOption('3:4'),
+    ParamOption('4:3'),
+    ParamOption('4:5'),
+    ParamOption('5:4'),
+    ParamOption('9:16'),
+    ParamOption('16:9'),
+    ParamOption('21:9'),
+    ParamOption('1:4'),
+    ParamOption('4:1'),
+    ParamOption('1:8'),
+    ParamOption('8:1'),
+  ],
+);
+
 /// Nano Banana 2 — `gemini-3.1-flash-image`. The Pro set plus the extreme
 /// panoramic / strip ratios (1:4, 4:1, 1:8, 8:1).
 const _geminiImageV2 = ModelCapabilities(
   isImageGenerator: true,
-  maxReferenceImages: null,
+  maxReferenceImages: 14,
   imageParams: [
+    _geminiV2AspectParam,
     ParamSpec(
-      key: 'aspectRatio',
-      labelKey: 'aspectRatio',
+      key: 'imageSize',
+      labelKey: 'resolution',
+      control: ParamControl.segmented,
+      defaultValue: 'not_set',
+      options: [
+        ParamOption('not_set'),
+        ParamOption('512'),
+        ParamOption('1K'),
+        ParamOption('2K'),
+        ParamOption('4K'),
+      ],
+    ),
+    ParamSpec(
+      key: 'thinkingLevel',
+      labelKey: 'imageThinkingLevel',
+      control: ParamControl.dropdown,
+      defaultValue: 'not_set',
+      options: [ParamOption('not_set'), ParamOption('minimal'), ParamOption('high')],
+    ),
+  ],
+);
+
+/// Nano Banana 2.1: same 14 ratios, 1K/2K/4K (no 512px), up to
+/// 14 references. Thinking is a per-generation setting, not the chat ladder.
+const _geminiImageV21 = ModelCapabilities(
+  isImageGenerator: true,
+  maxReferenceImages: 14,
+  imageParams: [
+    _geminiV2AspectParam,
+    _geminiSizeParam,
+    ParamSpec(
+      key: 'thinkingLevel',
+      labelKey: 'imageThinkingLevel',
       control: ParamControl.dropdown,
       defaultValue: 'not_set',
       options: [
         ParamOption('not_set'),
-        ParamOption('1:1'),
-        ParamOption('2:3'),
-        ParamOption('3:2'),
-        ParamOption('3:4'),
-        ParamOption('4:3'),
-        ParamOption('4:5'),
-        ParamOption('5:4'),
-        ParamOption('9:16'),
-        ParamOption('16:9'),
-        ParamOption('21:9'),
-        ParamOption('1:4'),
-        ParamOption('4:1'),
-        ParamOption('1:8'),
-        ParamOption('8:1'),
+        ParamOption('minimal'),
+        ParamOption('medium'),
+        ParamOption('high'),
       ],
     ),
-    _geminiSizeParam,
   ],
 );
 

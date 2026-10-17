@@ -486,7 +486,8 @@ Iterable<LLMResponseChunk> parseGoogleChunks(
         yield LLMResponseChunk(
           textPart: textPart,
           reasoningPart: reasoningPart,
-          imagePart: imgData != null ? base64Decode(imgData as String) : null,
+          // Thought images are internal drafts, never deliverable output.
+          imagePart: !isThought && imgData != null ? base64Decode(imgData as String) : null,
           toolCallPart: toolCall,
           metadata: metadata,
         );
@@ -664,6 +665,13 @@ Map<String, dynamic> prepareGooglePayload(
     generationConfig['thinkingConfig'] = thinkingConfig;
   }
   if (options != null) {
+    final imageThinking = options['thinkingLevel'];
+    if (emitsImages && imageThinking is String && imageThinking != 'not_set') {
+      if (!const ['minimal', 'medium', 'high'].contains(imageThinking)) {
+        throw LLMApiException('Unsupported image thinking level: $imageThinking');
+      }
+      generationConfig['thinkingConfig'] = {'thinkingLevel': imageThinking.toUpperCase()};
+    }
     final imageConfig = <String, dynamic>{};
     // personGeneration is Only for Imagen model
     // Only add aspectRatio if it's not "not_set"

@@ -118,6 +118,10 @@ class ModelFamilyClassifier {
     return GeminiThinkingGeneration.none;
   }
 
+  /// Official ID, including provider namespaces; do not guess future versions.
+  static bool isNanoBanana21(String modelId) =>
+      modelId.toLowerCase().split('/').last == 'gemini-nano-banana-2.1';
+
   /// Classify a raw model id (case-insensitive).
   static ModelFamily classify(String modelId) {
     final id = modelId.toLowerCase();
@@ -246,7 +250,7 @@ class ModelFamilyClassifier {
     if (id.contains('veo')) return ModelFamily.geminiVideo;
     if (id.contains('imagen')) return ModelFamily.geminiImagen;
     // nanoBanana: a gemini model that also emits images.
-    if (id.contains('gemini') && id.contains('image')) {
+    if ((id.contains('gemini') && id.contains('image')) || isNanoBanana21(id)) {
       return ModelFamily.geminiImage;
     }
     if (id.contains('gemini')) return ModelFamily.geminiChat;

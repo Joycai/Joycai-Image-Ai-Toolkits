@@ -5991,6 +5991,27 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get generationSettingsDesc => '图像与视频生成共用。更改对新任务生效，并发限制立即生效。';
+
+  @override
+  String get paramImageThinkingLevel => '图像思考强度';
+
+  @override
+  String get imageThinkingMinimal => '最低';
+
+  @override
+  String get paramImageBackground => '背景';
+
+  @override
+  String get paramOutputCompression => '输出压缩（0–100）';
+
+  @override
+  String get imageBackgroundTransparent => '透明';
+
+  @override
+  String get imageBackgroundOpaque => '不透明';
+
+  @override
+  String get generationTransparentJpeg => '透明背景需要 PNG 或 WebP 格式。';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -11979,4 +12000,25 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get generationSettingsDesc => '圖像與影片生成共用。變更對新任務生效，並行限制立即生效。';
+
+  @override
+  String get paramImageThinkingLevel => '圖像思考強度';
+
+  @override
+  String get imageThinkingMinimal => '最低';
+
+  @override
+  String get paramImageBackground => '背景';
+
+  @override
+  String get paramOutputCompression => '輸出壓縮（0–100）';
+
+  @override
+  String get imageBackgroundTransparent => '透明';
+
+  @override
+  String get imageBackgroundOpaque => '不透明';
+
+  @override
+  String get generationTransparentJpeg => '透明背景需要 PNG 或 WebP 格式。';
 }

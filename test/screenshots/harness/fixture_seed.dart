@@ -288,6 +288,39 @@ Future<_Catalog> _seedCatalog(DatabaseService db) async {
   );
 
   final List<LLMModel> models = <LLMModel>[
+    for (final id in ['gpt-image-2', 'gpt-image-2.5-flare', 'gpt-image-2.5-sunburst'])
+      LLMModel(
+        modelId: id,
+        modelName: id,
+        tag: ModelTag.image.value,
+        channelId: openaiId,
+        feeGroupId: perImageFee,
+        sortOrder: 103,
+      ),
+    LLMModel(
+      modelId: 'gemini-nano-banana-2.1',
+      modelName: 'Nano Banana 2.1',
+      tag: ModelTag.image.value,
+      channelId: googleId,
+      feeGroupId: perImageFee,
+      sortOrder: 100,
+    ),
+    LLMModel(
+      modelId: 'gemini-3.1-flash-image',
+      modelName: 'Nano Banana 2',
+      tag: ModelTag.image.value,
+      channelId: googleId,
+      feeGroupId: perImageFee,
+      sortOrder: 101,
+    ),
+    LLMModel(
+      modelId: 'gemini-3-pro-image',
+      modelName: 'Nano Banana Pro',
+      tag: ModelTag.image.value,
+      channelId: googleId,
+      feeGroupId: perImageFee,
+      sortOrder: 102,
+    ),
     LLMModel(
       modelId: 'gemini-2.5-flash-image',
       modelName: 'Nano Banana 图像生成',

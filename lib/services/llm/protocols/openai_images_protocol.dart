@@ -53,6 +53,7 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
 
     final size = resolveImageSize(optionsWithCheckedSize(target, options, logger: logger));
     final quality = _resolveQuality(options);
+    final output = _outputOptions(options);
     final client = config.createClient();
     // Files actually attached to the edit — an unreadable attachment is not.
     var sentImages = 0;
@@ -80,6 +81,7 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
         if (size != null) request.fields['size'] = size;
         if (quality != null) request.fields['quality'] = quality;
         request.fields['n'] = '1';
+        request.fields.addAll(output.map((key, value) => MapEntry(key, value.toString())));
 
         final field = openaiImageEditFieldName(inputImages.length);
         for (int i = 0; i < inputImages.length; i++) {
@@ -112,6 +114,7 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
           'n': 1,
           'size': ?size,
           'quality': ?quality,
+          ...output,
         };
 
         if (LLMDebugLogger.enabled) {
@@ -196,12 +199,43 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
           // these echoes over what was asked for. Facts only: no price here.
           if (data['size'] is String) 'output_size': data['size'],
           if (data['quality'] is String) 'output_quality': data['quality'],
+          if (data['output_format'] is String) 'output_format': data['output_format'],
+          if (data['background'] is String) 'output_background': data['background'],
           ...sentInputImages(sentImages),
         },
       );
     } finally {
       client.close();
     }
+  }
+
+  /// Keep direct protocol callers under the same cross-field contract as the
+  /// shared schema. Compression is never sent for PNG, including parked drafts.
+  static Map<String, dynamic> _outputOptions(Map<String, dynamic>? options) {
+    final background = options?['background'];
+    final format = options?['outputFormat'];
+    if (background != null && !['auto', 'opaque', 'transparent'].contains(background)) {
+      throw LLMApiException('Invalid image background. Nothing was sent.');
+    }
+    if (format != null && !['png', 'jpeg', 'webp'].contains(format)) {
+      throw LLMApiException('Invalid image output format. Nothing was sent.');
+    }
+    if (background == 'transparent' && format == 'jpeg') {
+      throw LLMApiException('Transparent backgrounds require PNG or WebP. Nothing was sent.');
+    }
+    final rawCompression = options?['outputCompression'];
+    final compression = rawCompression == null ? null : int.tryParse(rawCompression.toString());
+    if (rawCompression != null && (compression == null || compression < 0 || compression > 100)) {
+      throw LLMApiException(
+        'Image output compression must be an integer from 0 to 100. Nothing was sent.',
+      );
+    }
+    return {
+      'background': ?background,
+      'output_format': ?format,
+      if (compression != null && ['jpeg', 'webp'].contains(format))
+        'output_compression': compression,
+    };
   }
 
   /// Map the app's aspect-ratio / image-size options onto an OpenAI image size.

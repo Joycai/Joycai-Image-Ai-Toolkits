@@ -57,7 +57,14 @@ and explicitly invalid inputs before paid submission. Protocol defensive checks
 remain for direct protocol callers. Supported keys are checked against the
 complete registry; undeclared generation parameters are not treated as metadata.
 
-Dependencies are bounded operation rules, not arbitrary expressions; there is
+GPT Image 2/2.5 output compression is inactive for PNG and retained in the draft
+for JPEG/WebP. Transparent JPEG is rejected with a localized diagnostic; PNG and
+WebP remain selectable. These output controls apply to both generation and edits,
+without requiring a transparent input image (the Seedream transparent operation
+still has its separate alpha-source requirement). Older queued GPT snapshots may
+omit the newly added output fields only when their effective values are defaults.
+
+Dependencies are bounded operation and output-format rules, not arbitrary expressions; there is
 no dependency graph to evaluate or cycle to schedule. General expression/JSON
 form languages and speculative new media types are intentionally excluded.
 

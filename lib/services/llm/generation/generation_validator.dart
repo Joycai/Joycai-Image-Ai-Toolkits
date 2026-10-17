@@ -44,12 +44,23 @@ Future<Map<String, dynamic>?> validateGeneration(
   final operation = schema.operation(draft, media);
   final effective = schema.effective(draft, operation);
   final request = GenerationRequest.fromTask(options ?? const {});
+  // Pre-output-controls GPT snapshots contain size/quality only. Permit the
+  // three additive defaults, never a changed or extra explicit value. Other
+  // profiles keep their existing strict snapshot comparison.
   if (request != null &&
       (request.operation != operation ||
           request.media.length != media.length ||
           request.prompt != user?.content ||
-          request.values.length != effective.length ||
-          effective.entries.any((entry) => request.values[entry.key] != entry.value))) {
+          request.values.keys.any((key) => !effective.containsKey(key)) ||
+          effective.entries.any(
+            (entry) =>
+                request.values[entry.key] != entry.value &&
+                !(request.values[entry.key] == null &&
+                    schema.params.any((p) => p.key == 'background') &&
+                    const ['background', 'outputFormat', 'outputCompression'].contains(entry.key) &&
+                    schema.params.firstWhere((p) => p.key == entry.key).defaultValue ==
+                        entry.value),
+          ))) {
     throw LLMApiException(
       'Generation snapshot does not match the submitted input. Nothing was sent.',
     );
@@ -79,7 +90,7 @@ Future<Map<String, dynamic>?> validateGeneration(
       if (!schema.params.any((p) => p.key == entry.key)) entry.key: entry.value,
     for (final entry in schema.legacyOptions(effective).entries)
       if (options?.containsKey(entry.key) == true ||
-          schema.fieldState(entry.key, operation) == GenerationFieldState.fixed)
+          schema.fieldState(entry.key, operation, draft) == GenerationFieldState.fixed)
         entry.key: entry.value,
   };
 }

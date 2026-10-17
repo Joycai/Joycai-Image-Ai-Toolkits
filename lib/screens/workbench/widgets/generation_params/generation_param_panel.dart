@@ -67,10 +67,20 @@ class GenerationParamPanel extends StatelessWidget {
         true,
       ));
     }
+    if (draft['background']?.value == 'transparent' && draft['outputFormat']?.value == 'jpeg') {
+      cells.add((
+        Text(
+          l10n.generationTransparentJpeg,
+          style: Theme.of(context).textTheme.labelSmall
+              ?.copyWith(color: Theme.of(context).colorScheme.error),
+        ),
+        true,
+      ));
+    }
     for (final spec in specs) {
       final fieldState = operation == null
           ? GenerationFieldState.active
-          : schema!.fieldState(spec.key, operation);
+          : schema!.fieldState(spec.key, operation, draft);
       if (fieldState == GenerationFieldState.inactive) continue;
       final param = GenerationParam(spec);
       final appearance = presentation[spec.key] ?? const ParamPresentation();

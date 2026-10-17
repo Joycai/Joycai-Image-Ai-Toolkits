@@ -1209,5 +1209,12 @@
   "generationExecution": "任务执行",
   "saveGenerationText": "保存提示词为 TXT",
   "saveGenerationTextDesc": "在每个图像或视频旁保存同名 .txt，记录输入图像文件名和提示词。",
-  "generationSettingsDesc": "图像与视频生成共用。更改对新任务生效，并发限制立即生效。"
+  "generationSettingsDesc": "图像与视频生成共用。更改对新任务生效，并发限制立即生效。",
+  "paramImageThinkingLevel": "图像思考强度",
+  "imageThinkingMinimal": "最低",
+  "paramImageBackground": "背景",
+  "paramOutputCompression": "输出压缩（0–100）",
+  "imageBackgroundTransparent": "透明",
+  "imageBackgroundOpaque": "不透明",
+  "generationTransparentJpeg": "透明背景需要 PNG 或 WebP 格式。"
 }
