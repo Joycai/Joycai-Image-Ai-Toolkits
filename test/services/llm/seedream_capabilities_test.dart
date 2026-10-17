@@ -16,6 +16,8 @@ void main() {
   group('classification', () {
     const seedreamIds = [
       'doubao-seedream-5-0-pro-260628',
+      'dola-seedream-5-0-pro-260628',
+      'Seedream5.0pro',
       'doubao-seedream-5-0-lite-260128',
       'doubao-seedream-5-0-260128',
       'doubao-seedream-5.0-pro',
@@ -59,6 +61,8 @@ void main() {
         'doubao-seedream-5-0-lite-260128',
         'doubao-seedream-5-0-260128',
         'doubao-seedream-5.0-lite',
+        'seedream-5.0-lite-pro',
+        'seedream5.0professional',
       ]) {
         expect(ModelFamilyClassifier.isSeedreamPro(lite), isFalse, reason: lite);
       }
@@ -67,7 +71,13 @@ void main() {
 
   group('tables per generation', () {
     test('5.0 pro: task modes, auto/1K/1.5K/2K, format, fast mode, no groups', () {
-      for (final id in ['doubao-seedream-5-0-pro-260628', 'doubao-seedream-5.0-pro']) {
+      for (final id in [
+        'doubao-seedream-5-0-pro-260628',
+        'dola-seedream-5-0-pro-260628',
+        'doubao-seedream-5.0-pro',
+        'Seedream5.0pro',
+        'relay/seedream-5.0pro',
+      ]) {
         final caps = ModelCapabilities.forModel(id);
         expect(keysOf(caps), [
           'imageTask',
@@ -85,6 +95,9 @@ void main() {
         // 2K stays the default: a tier-priced fee group can match it.
         expect(spec(caps, 'imageSize').defaultValue, '2K');
         expect(caps.maxReferenceImages, 10);
+        expect(caps.streamsImages, isFalse);
+        expect(optionsOf(caps, 'outputFormat'), ['jpeg', 'png']);
+        expect(optionsOf(caps, 'optimizeMode'), ['standard', 'fast']);
       }
     });
 

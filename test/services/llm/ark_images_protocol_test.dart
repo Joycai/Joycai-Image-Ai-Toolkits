@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/models/spec_rate.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/llm_dispatcher.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/model_descriptor.dart';
@@ -86,6 +87,46 @@ void main() {
   }
 
   group('synchronous', () {
+    for (final modelId in [
+      'doubao-seedream-5-0-pro-260628',
+      'dola-seedream-5-0-pro-260628',
+      'Seedream5.0pro',
+    ]) {
+      test('$modelId sends Pro controls through the dispatcher', () async {
+        answer = (req, _) {
+          expect(req.uri.path, '/api/v3/images/generations');
+          expect(req.headers.value('authorization'), 'Bearer k');
+          json(req, {
+            'data': [
+              {'b64_json': base64Encode(png)},
+            ],
+            'usage': {'generated_images': 1},
+          });
+        };
+        final r = await LLMDispatcher().generate(
+          target(modelId).config,
+          prompt,
+          options: const {
+            'imageSize': '1.5K',
+            'aspectRatio': '16:9',
+            'outputFormat': 'png',
+            'optimizeMode': 'fast',
+            'watermark': 'on',
+          },
+        );
+        expect(posted.single, {
+          'model': modelId,
+          'prompt': 'two apples',
+          'size': '2048x1152',
+          'output_format': 'png',
+          'optimize_prompt_options': {'mode': 'fast'},
+          'watermark': true,
+          'response_format': 'url',
+        });
+        expect(r.generatedImages.single, png);
+      });
+    }
+
     test('a link that fails to download is still charged', () async {
       answer = (req, _) => json(req, {
         'data': [

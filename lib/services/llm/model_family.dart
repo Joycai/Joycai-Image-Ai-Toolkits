@@ -393,8 +393,11 @@ class ModelFamilyClassifier {
   /// (`doubao-seedream-5-0-pro-260628`, `doubao-seedream-5.0-pro`). Lite is
   /// spelled three ways — `-lite-260128`, `.0-lite`, and the bare dated
   /// `5-0-260128` — so pro is the one worth naming.
+  /// Compact relay names such as `Seedream5.0pro` carry the same tier.
+  /// Anchor the tier to the version so `-lite-pro` is not mistaken for Pro.
   static bool isSeedreamPro(String modelId) =>
-      RegExp(r'seedream.*[-_.]pro(?:[-_.]|$)').hasMatch(modelId.toLowerCase());
+      RegExp(r'seedream[-_]?\d+(?:[-_.]\d{1,2})?[-_.]?pro(?:[-_.]|$)')
+          .hasMatch(modelId.toLowerCase());
 
   /// True for long-running video generation.
   static bool isVideo(ModelFamily f) =>
