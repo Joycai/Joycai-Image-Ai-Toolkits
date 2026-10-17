@@ -133,7 +133,11 @@ void main() {
   group('relay image models', () {
     test('an unrecognized alias tagged image gets a menu and draws through chat', () {
       final menu = LLMDispatcher.protocolMenu(Vendors.openAIRest, 'nano-banana-pro', tag: 'image');
-      expect(menu.options, [WireProtocol.openaiImages, WireProtocol.chatImage]);
+      expect(menu.options, [
+        WireProtocol.openaiImages,
+        WireProtocol.geminiImage,
+        WireProtocol.chatImage,
+      ]);
       expect(menu.auto, WireProtocol.chatImage);
 
       final model = served('nano-banana-pro', Vendors.openAIRest, tag: 'image');

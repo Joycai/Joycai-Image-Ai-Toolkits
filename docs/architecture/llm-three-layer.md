@@ -981,3 +981,23 @@ Grok 4.5/4.6 在该面上「关闭」必 400（见第 8 条），编辑器提示
 | `llm/llm_provider_interface.dart`（`ILLMProvider`） | `protocols/protocol.dart`（能力接口）+ `llm_dispatcher.dart`（路由） |
 | `llm_models.type` 数据库列 | 已删除（v32）；运行时 `channel.type → Vendors.byId → family` |
 | `main.dart` 的 `registerProvider(...)` 注册 | 不存在；dispatcher 静态持有协议实例 |
+
+
+## Gemini 原生图片协议点单（2026-10-18）
+
+模型编辑器的图片协议菜单新增 `gemini-image`（Gemini · generateContent），复用
+`GeminiChatProtocol` 的同步 `:generateContent` 与流式 `:streamGenerateContent`。
+Gemini 渠道可显式选择；通用 OpenAI / New API 图片菜单在 Gemini 图片或未识别
+图片别名上也提供它。既有 auto、Images API、对话出图的选择与默认行为不变。
+
+`resolveTarget` 在 dispatcher 内把有效的原生图片点单解析为 Gemini target；因此
+生成、流式、超时与工具能力查询共享同一条路由。优先使用渠道的 Gemini route base，
+原生渠道保留自己的 base；兼容渠道没有配置 Gemini 路由时，末尾 `/v1` 替换为
+`/v1beta`（保留代理前缀），Google `/v1beta/openai` 去掉 `/openai`，裸 host 补
+`/v1beta`，自定义路径原样保留。New API 保留 Bearer，其他兼容渠道使用既有
+Google key / Bearer fallback 策略。模型 ID 不改写。
+
+已识别的 Pro、2、2.1 保留各自参数表；未识别别名可选择显式 Gemini generation
+profile。新协议是 imageGen surface，沿用 `wire_protocol` 存储，无数据库迁移。
+参考 [Google generateContent API](https://ai.google.dev/api/generate-content)。
+回归测试覆盖同步 / 流式、参考图、参数、认证、自定义路由与旧 auto 行为；未调用付费上游。

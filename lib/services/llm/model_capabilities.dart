@@ -354,6 +354,8 @@ class ModelCapabilities {
         return _openaiImage;
       case WireProtocol.xaiImages:
         return _xaiImage;
+      case WireProtocol.geminiImage:
+        return _geminiImage;
       case WireProtocol.geminiImagen:
         return _imagen;
       case WireProtocol.dashscopeImagesSync:

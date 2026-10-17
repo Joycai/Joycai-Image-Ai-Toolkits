@@ -26,6 +26,8 @@ String wireProtocolLabel(AppLocalizations l10n, WireProtocol protocol) {
       return l10n.protocolImageAsync;
     case WireProtocol.chatImage:
       return l10n.protocolChatImage;
+    case WireProtocol.geminiImage:
+      return 'Gemini · generateContent';
     case WireProtocol.geminiChat:
       return 'Gemini';
     case WireProtocol.midjourney:
@@ -101,6 +103,7 @@ String? wireProtocolPath(WireProtocol protocol, ProtocolFamily channelFamily) {
       return '/v1/responses';
     case WireProtocol.anthropicChat:
       return '/v1/messages';
+    case WireProtocol.geminiImage:
     case WireProtocol.geminiChat:
       return ':generateContent';
     case WireProtocol.openaiImages:

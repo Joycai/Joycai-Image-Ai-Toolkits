@@ -117,25 +117,48 @@ class LLMDispatcher {
   /// the model's kind and protocol selection were consulted. Only a selection
   /// (or a kind) that moves the route re-describes the model, and the
   /// branches then follow it without a line of their own.
-  LLMTarget resolveTarget(LLMModelConfig config) => LLMTarget(
-    config: config,
-    vendor: Vendors.byId(config.channelType),
-    model:
-        descriptorFor(
-          channelType: config.channelType,
-          modelId: config.modelId,
-          tag: config.tag,
-          wireProtocol: config.wireProtocol,
-        ).withCapabilities(
-          generationSchemaFor(
+  LLMTarget resolveTarget(LLMModelConfig config) {
+    final target = LLMTarget(
+      config: config,
+      vendor: Vendors.byId(config.channelType),
+      model:
+          descriptorFor(
             channelType: config.channelType,
             modelId: config.modelId,
             tag: config.tag,
             wireProtocol: config.wireProtocol,
-            profile: config.generationProfile,
-          ).capabilities,
-        ),
-  );
+          ).withCapabilities(
+            generationSchemaFor(
+              channelType: config.channelType,
+              modelId: config.modelId,
+              tag: config.tag,
+              wireProtocol: config.wireProtocol,
+              profile: config.generationProfile,
+            ).capabilities,
+          ),
+    );
+    if (_pinnedProtocol(target, Surface.imageGen) != WireProtocol.geminiImage) return target;
+    // The image protocol uses the configured Gemini route, including custom
+    // hosts/paths, with the native auth policy. Keep the original config's
+    // channel identity so menu validation still sees the user's saved choice.
+    final endpoint =
+        config.faceBases[WireProtocol.geminiChat] ??
+        (target.vendor.family == ProtocolFamily.gemini
+            ? config.endpoint
+            : geminiImageBase(config.endpoint));
+    return LLMTarget(
+      config: config.withEndpoint(endpoint),
+      vendor: target.vendor.family == ProtocolFamily.gemini
+          ? target.vendor
+          : Vendors.byId(
+              target.vendor.id == Vendors.newApiOpenAI ||
+                      target.vendor.id == Vendors.newApiOpenAIResponses
+                  ? Vendors.newApiGemini
+                  : Vendors.googleRest,
+            ),
+      model: target.model,
+    );
+  }
 
   /// The layer-3 facts for a stored model as its channel serves it: the
   /// family, and the capability table the workbench must render.
@@ -395,11 +418,13 @@ class LLMDispatcher {
         return [
           if (modelFamily == ModelFamily.seedreamImage) WireProtocol.arkImages,
           WireProtocol.openaiImages,
+          if (modelFamily == ModelFamily.geminiImage || modelFamily == ModelFamily.other)
+            WireProtocol.geminiImage,
           WireProtocol.chatImage,
         ];
       case ProtocolFamily.gemini:
         return image
-            ? const [WireProtocol.geminiImagen, WireProtocol.chatImage]
+            ? const [WireProtocol.geminiImagen, WireProtocol.geminiImage, WireProtocol.chatImage]
             : const [WireProtocol.geminiVeo];
       case ProtocolFamily.anthropic:
       case ProtocolFamily.dashscope:
@@ -622,6 +647,7 @@ class LLMDispatcher {
     WireProtocol.chatImage ||
     WireProtocol.xaiImages ||
     WireProtocol.geminiImagen ||
+    WireProtocol.geminiImage ||
     WireProtocol.dashscopeImagesSync ||
     WireProtocol.dashscopeImagesAsync ||
     WireProtocol.minimaxImages ||
