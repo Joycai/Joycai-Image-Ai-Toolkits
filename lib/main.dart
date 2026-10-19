@@ -28,6 +28,7 @@ import 'screens/workbench/workbench_screen.dart';
 import 'services/files/temp_storage_service.dart';
 import 'services/llm/protocols/minimax_h3_base_video_protocol.dart';
 import 'services/media/video_thumbnail_service.dart';
+import 'services/system/dock_badge_service.dart';
 import 'services/system/notification_service.dart';
 import 'services/system/window_chrome_service.dart';
 import 'services/tasks/task_queue_service.dart';
@@ -113,9 +114,17 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   final ShellCoverController _shellCover = ShellCoverController();
+  late final DockBadgeService _dockBadge;
+
+  @override
+  void initState() {
+    super.initState();
+    _dockBadge = DockBadgeService(context.read<AppState>().taskQueue);
+  }
 
   @override
   void dispose() {
+    _dockBadge.dispose();
     _shellCover.dispose();
     super.dispose();
   }

@@ -10,8 +10,27 @@ class MainFlutterWindow: NSWindow {
 
     RegisterGeneratedPlugins(registry: flutterViewController)
     registerTrashChannel(flutterViewController)
+    registerDockBadgeChannel(flutterViewController)
 
     super.awakeFromNib()
+  }
+
+  /// AppKit supplies the standard system badge appearance on the app icon.
+  private func registerDockBadgeChannel(_ controller: FlutterViewController) {
+    let channel = FlutterMethodChannel(
+      name: "joycai/dock_badge", binaryMessenger: controller.engine.binaryMessenger)
+    channel.setMethodCallHandler { call, result in
+      guard call.method == "setCount" else {
+        result(FlutterMethodNotImplemented)
+        return
+      }
+      guard let count = call.arguments as? Int, count >= 0 else {
+        result(FlutterError(code: "bad_args", message: "nonnegative count required", details: nil))
+        return
+      }
+      NSApplication.shared.dockTile.badgeLabel = count > 0 ? String(count) : nil
+      result(nil)
+    }
   }
 
   /// `joycai/trash` — recycles through the workspace, using Finder's trash
