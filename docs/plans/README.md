@@ -25,6 +25,17 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 |---|---|
 | [`2026-08-assistant-timeout.md`](2026-08-assistant-timeout.md) | 不是施工说明书，是**一次真实故障的取证记录**（`api_logs/` 里七条日志的耗时还原）。`architecture/assistant-context.md` 直接引它作为「为什么要早elide」的证据。 |
 
+## 2026-10-19 · macOS Dock 任务角标
+
+应用图标使用 AppKit 原生角标显示 `processing` 任务数；等待与结束状态不计入，
+归零清除。由应用根节点持有 `DockBadgeService`，监听任务队列并去重跨平台调用，
+其他平台不调用原生通道。约定见 [UI 工作流](../architecture/ui-design-workflow.md)。
+format、analyze（No issues found）、非截图测试（3245 通过、9 skip）与 macOS debug
+构建通过。新增测试覆盖状态计数、去重、清除、生命周期、平台隔离与缺少通道。
+另用临时 portable 副本启动 macOS app，通过 Dart debugger 注入内存任务，
+LLDB 读取原生 `NSApplication.shared.dockTile.badgeLabel`，确认 `3 → 1 → nil`；
+没有调用 AI 接口。Flutter 截图不包含系统 Dock，Dock 截图工具超时，未做外观复核。
+
 ## 2026-10-18 · GPT Image 输出控制
 
 GPT Image 2 与 2.5 Flare / Sunburst 增加背景（自动 / 不透明 / 透明）、PNG / JPEG /

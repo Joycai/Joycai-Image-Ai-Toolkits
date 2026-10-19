@@ -79,6 +79,15 @@ cost using the documented probes when a change affects blur, painting or rebuild
 
 ## Handoff and durable decisions
 
+The macOS app icon uses AppKit's native Dock badge to show the number of tasks
+whose status is `processing`. Pending, completed, failed and cancelled tasks do
+not count; zero clears the badge. `DockBadgeService` listens to the application
+queue for the lifetime of `MyApp`, synchronizes on attachment and only sends
+count changes through `joycai/dock_badge`. The badge uses the system appearance,
+independent of window size, app accent and locale. Flutter screenshot renders do
+not include the operating system's Dock; native appearance needs a running macOS
+app check.
+
 Image and video parameter forms share the workbench's `generation_params` panel,
 presentation hints, editor registry and localized text mapping. Replace an editor
 through that registry; do not copy a control switch into either form. Model/wire
