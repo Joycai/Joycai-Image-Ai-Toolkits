@@ -100,3 +100,26 @@ character code, payload length and data-line count instead of suggesting an HTML
 page. Long base64 runs and credentials remain masked. The original reported log
 was truncated, so these compatibility cases are regression scenarios rather than
 a claim that its exact wire-level cause has been established.
+
+### Slow responses and saved late results
+
+GPT Image's default timeout is 25 minutes. Settings → Application → Image generation
+lets users choose a different duration; the preference is stored under
+`gpt_image_timeout_minutes` and resolved when each request starts (including MCP
+and older queued tasks). Streaming first/subsequent image gaps and standard
+requests use the same value. GPT Image 1/2/2.5 share this policy; unrelated routes
+retain their own timeout behavior.
+
+This is a soft response threshold: after it elapses, the app logs a warning and
+keeps the original pending request/read. A late final image follows normal saving,
+result persistence and usage accounting; the timeout never submits a second
+generation. Explicit cancellation still aborts the transport. Waiting continues
+until a result, an upstream error/disconnection, explicit cancellation or app exit;
+there is no recovery endpoint for a request lost when the app closes.
+
+This follows an observed `image_edit.completed` response with a valid 7,246,878-byte
+PNG after 790,894 ms: the previous five-minute guard discarded the pending read
+while cancellation waited for that successful response. Parser success did not
+mean delivery to the executor. Regression tests accelerate only the configured
+deadline timer, hold the HTTP response until it fires, and verify a saved image
+and one usage record for both streaming and standard requests.

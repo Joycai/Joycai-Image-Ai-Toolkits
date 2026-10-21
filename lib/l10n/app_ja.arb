@@ -1929,6 +1929,17 @@
   "mcpCopied": "コピーしました",
   "mcpRotateToken": "トークンを更新",
   "mcpTaskOrigin": "外部エージェント · MCP",
+  "gptImageGenerationSettings": "画像生成",
+  "gptImageTimeout": "GPT Image のタイムアウト",
+  "gptImageTimeoutDesc": "この時間を超えると応答の遅延を通知します。キャンセルするまで待機を続け、遅れて届いた結果も保存します。新しいリクエストに適用されます。",
+  "gptImageTimeoutMinutes": "{minutes} 分",
+  "@gptImageTimeoutMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
   "shortcutNavigateToDestination": "1〜8 番目のページへ",
   "shortcutShowShortcutPanel": "キーボードショートカット",
   "shortcutOpenSettings": "設定",

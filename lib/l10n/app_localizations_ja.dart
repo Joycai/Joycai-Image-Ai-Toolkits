@@ -3854,6 +3854,21 @@ class AppLocalizationsJa extends AppLocalizations {
   String get mcpTaskOrigin => '外部エージェント · MCP';
 
   @override
+  String get gptImageGenerationSettings => '画像生成';
+
+  @override
+  String get gptImageTimeout => 'GPT Image のタイムアウト';
+
+  @override
+  String get gptImageTimeoutDesc =>
+      'この時間を超えると応答の遅延を通知します。キャンセルするまで待機を続け、遅れて届いた結果も保存します。新しいリクエストに適用されます。';
+
+  @override
+  String gptImageTimeoutMinutes(int minutes) {
+    return '$minutes 分';
+  }
+
+  @override
   String get shortcutNavigateToDestination => '1〜8 番目のページへ';
 
   @override

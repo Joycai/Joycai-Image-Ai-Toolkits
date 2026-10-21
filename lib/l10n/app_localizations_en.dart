@@ -4009,6 +4009,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mcpTaskOrigin => 'External agent · MCP';
 
   @override
+  String get gptImageGenerationSettings => 'Image generation';
+
+  @override
+  String get gptImageTimeout => 'GPT Image timeout';
+
+  @override
+  String get gptImageTimeoutDesc =>
+      'Warn when GPT Image takes longer than this. Keep waiting and save late results until you cancel. Applies to new requests.';
+
+  @override
+  String gptImageTimeoutMinutes(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
   String get shortcutNavigateToDestination => 'Go to page 1–8';
 
   @override

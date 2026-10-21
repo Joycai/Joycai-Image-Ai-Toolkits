@@ -25,6 +25,20 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 |---|---|
 | [`2026-08-assistant-timeout.md`](2026-08-assistant-timeout.md) | 不是施工说明书，是**一次真实故障的取证记录**（`api_logs/` 里七条日志的耗时还原）。`architecture/assistant-context.md` 直接引它作为「为什么要早elide」的证据。 |
 
+## 2026-10-21 · GPT Image 25-minute timeout and late results
+
+- Added a persisted Application setting, localized in all four languages; default
+  25 minutes, applied when a GPT Image request starts.
+- GPT Image stream/standard waits retain the original pending request after the
+  threshold and warn instead of discarding a paid late image. Explicit cancellation
+  still aborts; unrelated model routes keep their existing deadline rules.
+- Durable contracts: [API note](../api/gpt-image-series.md),
+  [LLM architecture](../architecture/llm-three-layer.md),
+  [UI workflow](../architecture/ui-design-workflow.md). Tests cover late saved
+  results/usage/cancellation and settings persistence in all four locales.
+- Before/after renders at 390/834/1024/1440, light/dark, inspected using the maintained
+  repository specification. No paid upstream calls; app-exit recovery is unsupported.
+
 ## 2026-10-21 · GPT Image 2 / 2.5 流式生成与渐进预览
 
 GPT Image 2、2.5 Flare / Sunburst（含 dated snapshot）的 Images 路由在任务与模型

@@ -3824,6 +3824,20 @@ class AppLocalizationsZh extends AppLocalizations {
   String get mcpTaskOrigin => '外部 Agent · MCP';
 
   @override
+  String get gptImageGenerationSettings => '图像生成';
+
+  @override
+  String get gptImageTimeout => 'GPT Image 超时';
+
+  @override
+  String get gptImageTimeoutDesc => '超过此时长会提示响应较慢，但仍继续等待并保存迟到的结果，直到你取消。对新请求生效。';
+
+  @override
+  String gptImageTimeoutMinutes(int minutes) {
+    return '$minutes 分钟';
+  }
+
+  @override
   String get shortcutNavigateToDestination => '切到第 1…8 个页面';
 
   @override
@@ -9849,6 +9863,20 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get mcpTaskOrigin => '外部 Agent · MCP';
+
+  @override
+  String get gptImageGenerationSettings => '圖像生成';
+
+  @override
+  String get gptImageTimeout => 'GPT Image 逾時';
+
+  @override
+  String get gptImageTimeoutDesc => '超過此時長會提示回應較慢，但仍繼續等待並儲存遲到的結果，直到你取消。對新請求生效。';
+
+  @override
+  String gptImageTimeoutMinutes(int minutes) {
+    return '$minutes 分鐘';
+  }
 
   @override
   String get shortcutNavigateToDestination => '切到第 1…8 個頁面';

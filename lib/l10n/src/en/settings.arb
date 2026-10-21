@@ -198,5 +198,16 @@
   "mcpCopyConfiguration": "Copy connection configuration",
   "mcpCopied": "Copied",
   "mcpRotateToken": "Rotate access token",
-  "mcpTaskOrigin": "External agent · MCP"
+  "mcpTaskOrigin": "External agent · MCP",
+  "gptImageGenerationSettings": "Image generation",
+  "gptImageTimeout": "GPT Image timeout",
+  "gptImageTimeoutDesc": "Warn when GPT Image takes longer than this. Keep waiting and save late results until you cancel. Applies to new requests.",
+  "gptImageTimeoutMinutes": "{minutes} min",
+  "@gptImageTimeoutMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  }
 }

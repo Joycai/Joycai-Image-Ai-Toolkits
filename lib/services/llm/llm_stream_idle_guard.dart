@@ -29,6 +29,10 @@ const Duration _idleGap = Duration(seconds: 120);
 /// The old spelling let a slow single-shot image generation time out and
 /// be re-sent while upstream was still drawing (and billing) the first.
 ///
+/// [onSlowResponse] makes both gaps soft: notify once for a pending read and
+/// keep that same read alive. GPT Image uses it to retain paid late results;
+/// its cancellation watcher still aborts the underlying request on explicit stop.
+///
 /// [subsequent] replaces [_idleGap] on a route whose chunks are whole
 /// generations ([LLMDispatcher.imageStreamChunkGap]).
 Stream<LLMResponseChunk> _idleGuarded(
@@ -36,11 +40,13 @@ Stream<LLMResponseChunk> _idleGuarded(
   Duration? first,
   Duration? subsequent,
   bool firstIsDeadline = false,
+  void Function()? onSlowResponse,
 }) => _guard(
   stream,
   first: first ?? _firstChunkGap,
   subsequent: subsequent ?? _idleGap,
   firstIsDeadline: firstIsDeadline,
+  onSlowResponse: onSlowResponse,
 );
 
 Stream<T> _guard<T>(
@@ -48,20 +54,30 @@ Stream<T> _guard<T>(
   required Duration first,
   required Duration subsequent,
   bool firstIsDeadline = false,
+  void Function()? onSlowResponse,
 }) async* {
   final iterator = StreamIterator(stream);
   var gap = first;
   var awaitingFirst = true;
   try {
-    while (await iterator.moveNext().timeout(
-      gap,
-      onTimeout: () {
-        if (awaitingFirst && firstIsDeadline) {
-          throw LLMDeadlineExceeded(first);
-        }
-        throw TimeoutException('No stream chunk within $gap', gap);
-      },
-    )) {
+    while (true) {
+      // Keep the exact in-flight moveNext. Cancelling it on a soft deadline
+      // discards the paid image, even if cancellation waits for it to arrive.
+      final pending = iterator.moveNext();
+      final hasNext = await pending.timeout(
+        gap,
+        onTimeout: () {
+          if (onSlowResponse != null) {
+            onSlowResponse();
+            return pending;
+          }
+          if (awaitingFirst && firstIsDeadline) {
+            throw LLMDeadlineExceeded(first);
+          }
+          throw TimeoutException('No stream chunk within $gap', gap);
+        },
+      );
+      if (!hasNext) break;
       awaitingFirst = false;
       gap = subsequent;
       yield iterator.current;

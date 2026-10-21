@@ -8,6 +8,7 @@ import '../../models/token_usage.dart';
 import '../billing/spec_billing.dart';
 import '../db/database_service.dart';
 import 'context_budget.dart';
+import 'gpt_image_timeout.dart';
 import 'job_poll.dart' show cancellableSleep, cancellationProbeOf;
 import 'llm_config_resolver.dart';
 import 'llm_debug_logger.dart';
@@ -108,6 +109,7 @@ class LLMService {
       logger: (msg, {level = 'INFO'}) => _emitLog(msg, level: level, contextId: contextId),
       options: options,
     );
+    options = await _imageTimeoutOptions(config, options);
     // Tool calling reaches the streaming surface only where the protocol
     // assembles calls out of deltas — every chat family does now, but
     // Midjourney's stream still cannot, see
@@ -205,7 +207,7 @@ class LLMService {
             level: 'DEBUG',
           );
           final deadline = _dispatcher.generateTimeout(config, options: options);
-          response = await LLMDebugLogger.runCorrelated(
+          final pending = LLMDebugLogger.runCorrelated(
             correlation,
             () => _dispatcher.generate(
               config,
@@ -213,12 +215,18 @@ class LLMService {
               options: attemptOptions,
               tools: tools,
               logger: log,
-              // Its own type rather than the bare TimeoutException Future
-              // supplies, so the retry decision can tell "the generation ran
-              // long" apart from "the connection died" — see
-              // [LLMDeadlineExceeded].
             ),
-          ).timeout(deadline, onTimeout: () => throw LLMDeadlineExceeded(deadline));
+          );
+          response = await pending.timeout(
+            deadline,
+            onTimeout: () {
+              if (_dispatcher.keepsLateImageResults(config)) {
+                _slowImageResponse(correlation, log);
+                return pending;
+              }
+              throw LLMDeadlineExceeded(deadline);
+            },
+          );
           if (response.text.isNotEmpty) {
             log('[AI]: ${response.text}');
           }
@@ -374,8 +382,11 @@ class LLMService {
     await for (final chunk in _idleGuarded(
       stream,
       first: _firstChunkGapFor(config, options),
-      subsequent: _dispatcher.imageStreamChunkGap(config),
+      subsequent: _dispatcher.imageStreamChunkGap(config, options: options),
       firstIsDeadline: _firstChunkIsDeadline(config),
+      onSlowResponse: _dispatcher.keepsLateImageResults(config)
+          ? () => _slowImageResponse(LLMDebugLogger.currentCorrelation, log)
+          : null,
     )) {
       if (isCancelled?.call() ?? false) {
         // Leaving the loop is the abort. `await for` cancels its
@@ -528,6 +539,33 @@ class LLMService {
     return merged;
   }
 
+  Future<Map<String, dynamic>?> _imageTimeoutOptions(
+    LLMModelConfig config,
+    Map<String, dynamic>? options,
+  ) async {
+    if (!_dispatcher.keepsLateImageResults(config)) return options;
+    return {
+      ...?options,
+      GptImageTimeout.settingKey: GptImageTimeout.normalize(
+        options?[GptImageTimeout.settingKey] ?? await _db.getSetting(GptImageTimeout.settingKey),
+      ),
+    };
+  }
+
+  void _slowImageResponse(
+    LLMLogCorrelation? correlation,
+    void Function(String, {String level}) log,
+  ) {
+    const message =
+        'GPT Image response is taking longer than the configured timeout. '
+        'Still waiting on the original request; late images will be saved. '
+        'Cancel the task to stop waiting. Nothing was resubmitted.';
+    log(message, level: 'WARN');
+    for (final file in correlation?.opened ?? <LLMDebugLog>[]) {
+      unawaited(LLMDebugLogger.appendLine(file, 'Slow response: $message'));
+    }
+  }
+
   /// How long the first chunk may take on this particular route.
   ///
   /// [_firstChunkGap] asks "is this connection alive", which is the right
@@ -551,12 +589,14 @@ class LLMService {
   /// so it borrows that gap — and, like the single-shot routes, expiring is
   /// a deadline rather than a dead connection.
   Duration _firstChunkGapFor(LLMModelConfig config, Map<String, dynamic>? options) {
-    final imageGap = _dispatcher.imageStreamChunkGap(config);
+    final imageGap = _dispatcher.imageStreamChunkGap(config, options: options);
     if (imageGap != null) {
+      if (_dispatcher.keepsLateImageResults(config)) return imageGap;
       return imageGap > _firstChunkGap ? imageGap : _firstChunkGap;
     }
     if (!_dispatcher.streamIsSingleShot(config)) return _firstChunkGap;
     final deadline = _dispatcher.generateTimeout(config, options: options);
+    if (_dispatcher.keepsLateImageResults(config)) return deadline;
     return deadline > _firstChunkGap ? deadline : _firstChunkGap;
   }
 
@@ -571,7 +611,14 @@ class LLMService {
     required Duration first,
     required Duration subsequent,
     bool firstIsDeadline = false,
-  }) => _guard(stream, first: first, subsequent: subsequent, firstIsDeadline: firstIsDeadline);
+    void Function()? onSlowResponse,
+  }) => _guard(
+    stream,
+    first: first,
+    subsequent: subsequent,
+    firstIsDeadline: firstIsDeadline,
+    onSlowResponse: onSlowResponse,
+  );
 
   /// Whether a failed attempt is worth retrying: network-level failures and
   /// transient HTTP codes (5xx / 429), nothing else.
@@ -788,6 +835,7 @@ class LLMService {
       logger: (msg, {level = 'INFO'}) => _emitLog(msg, level: level, contextId: contextId),
       options: options,
     );
+    options = await _imageTimeoutOptions(config, options);
     _emitLog('Connecting to ${config.channelType}...', level: 'DEBUG', contextId: contextId);
 
     final int maxRetries = options?['retryCount'] ?? 0;
@@ -860,8 +908,14 @@ class LLMService {
         await for (final chunk in _idleGuarded(
           stream,
           first: _firstChunkGapFor(config, options),
-          subsequent: _dispatcher.imageStreamChunkGap(config),
+          subsequent: _dispatcher.imageStreamChunkGap(config, options: options),
           firstIsDeadline: _firstChunkIsDeadline(config),
+          onSlowResponse: _dispatcher.keepsLateImageResults(config)
+              ? () => _slowImageResponse(
+                  correlation,
+                  (msg, {level = 'INFO'}) => _emitLog(msg, level: level, contextId: contextId),
+                )
+              : null,
         )) {
           if (chunk.reasoningPart != null) {
             _emitLog('[AI thinking]: ${chunk.reasoningPart}', level: 'DEBUG', contextId: contextId);
