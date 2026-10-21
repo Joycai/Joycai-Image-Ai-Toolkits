@@ -81,3 +81,22 @@ Existing size-picker tests cover legal-size calculation and boundary constraints
 - [Generate image API reference](https://developers.openai.com/api/reference/resources/images/methods/generate)
 - [Edit image API reference (multipart)](https://developers.openai.com/api/reference/python/resources/images/methods/edit)
 - [Edit image API reference (JSON)](https://developers.openai.com/api/reference/resources/images/methods/edit)
+
+### Gateway framing compatibility and diagnostics
+
+The Images stream reader detects SSE versus regular JSON from the response body,
+including a UTF-8 BOM and SSE comments, rather than trusting a relay's content-type
+header. Complete JSON events are consumed immediately, so missing blank event
+separators and connections kept open after completion do not discard a final image.
+Multi-line SSE data uses the standard newline join first; if JSON decoding fails,
+the reader tries joining the data fragments without inserted newlines to support
+relays that wrap a base64 string. Invalid or truncated events still fail without
+resubmitting the generation.
+
+With API debug logging enabled, the request log now includes response status and
+content headers, detected framing, sanitized SSE lines, parsed event types and image
+byte counts, plus elapsed time. JSON failures report the decoder message, offset,
+character code, payload length and data-line count instead of suggesting an HTML
+page. Long base64 runs and credentials remain masked. The original reported log
+was truncated, so these compatibility cases are regression scenarios rather than
+a claim that its exact wire-level cause has been established.

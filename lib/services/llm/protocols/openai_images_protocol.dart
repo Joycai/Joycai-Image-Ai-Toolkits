@@ -247,10 +247,16 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
     final client = target.config.createClient();
     try {
       final response = await client.send(trackBodySent(req.request, options));
-      if (response.statusCode != 200 ||
-          !(response.headers['content-type'] ?? '').contains('text/event-stream')) {
-        // Some compatible gateways return JSON even when asked for SSE.
-        // Consume that same response, never resubmit an accepted generation.
+      await LLMDebugLogger.appendLine(
+        req.debugFile,
+        'Stream response: status=${response.statusCode} '
+        'content-type=${response.headers['content-type'] ?? '(missing)'} '
+        'content-length=${response.headers['content-length'] ?? '(missing)'} '
+        'content-encoding=${response.headers['content-encoding'] ?? '(missing)'}',
+      );
+      if (response.statusCode != 200) {
+        // Decode the provider's HTTP error from this response; never resubmit
+        // an image request that may already have been accepted.
         final whole = await _decode(
           await http.Response.fromStream(response),
           client,
@@ -268,12 +274,49 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
       var completed = false;
       var eventName = '';
       final dataLines = <String>[];
-      Future<LLMResponseChunk?> consume() async {
+      var events = 0;
+      Future<LLMResponseChunk?> consume({bool deferInvalid = false}) async {
         if (dataLines.isEmpty) return null;
         final payload = dataLines.join('\n');
+        if (payload == '[DONE]') {
+          dataLines.clear();
+          return null;
+        }
+        dynamic decoded;
+        try {
+          decoded = jsonDecode(payload);
+        } on FormatException catch (error) {
+          // Some relays wrap a JSON string over multiple data lines. SSE's
+          // required newline join is invalid inside a string; try removing
+          // only those framing newlines, without changing image characters.
+          try {
+            decoded = jsonDecode(dataLines.join());
+          } on FormatException catch (compactError) {
+            if (deferInvalid) return null;
+            final offset = error.offset;
+            final detail =
+                'Invalid image stream JSON: ${error.message}; '
+                'offset=$offset compactError=${compactError.message} compactOffset=${compactError.offset} '
+                'chars=${payload.length} dataLines=${dataLines.length} '
+                'event=${events + 1} name=$eventName '
+                'codeUnit=${offset != null && offset < payload.length ? payload.codeUnitAt(offset) : 'EOF'}';
+            await LLMDebugLogger.appendLine(req.debugFile, detail);
+            throw LLMApiException(detail);
+          }
+          await LLMDebugLogger.appendLine(
+            req.debugFile,
+            'Compatibility: joined wrapped data lines',
+          );
+        }
         dataLines.clear();
-        if (payload == '[DONE]') return null;
-        final data = decodeJsonBody(http.Response(payload, 200), apiName: 'OpenAI Images stream');
+        events++;
+        if (decoded is! Map<String, dynamic>) {
+          throw LLMApiException(
+            'OpenAI Images stream returned an unexpected event shape: ${decoded.runtimeType}',
+          );
+        }
+        final data = decoded;
+        throwIfEnvelopeError(data);
         final type = data['type'] ?? eventName;
         if (type == 'error' || type == 'image_generation.failed' || type == 'image_edit.failed') {
           throw LLMApiException(
@@ -300,6 +343,10 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
         if (images.isEmpty) {
           throw LLMApiException('OpenAI Images stream returned an invalid image.');
         }
+        await LLMDebugLogger.appendLine(
+          req.debugFile,
+          'Parsed event: index=$events type=$type imageBytes=${images.single.length} final=$done',
+        );
         if (partial) return LLMResponseChunk(imagePreview: images.single);
         completed = true;
         return LLMResponseChunk(
@@ -315,27 +362,64 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
         );
       }
 
-      await for (final line
+      bool? isSse;
+      final jsonLines = <String>[];
+      await for (var line
           in response.stream.transform(utf8.decoder).transform(const LineSplitter())) {
-        if (line.isEmpty) {
-          final chunk = await consume();
-          if (chunk != null) yield chunk;
-          if (completed) {
-            yield LLMResponseChunk(isDone: true);
-            return;
-          }
-          eventName = '';
-        } else if (line.startsWith('event:')) {
-          eventName = line.substring(6).trim();
+        if (isSse == null) {
+          line = line.replaceFirst(RegExp(r'^\uFEFF'), '');
+          if (line.trim().isEmpty) continue;
+          isSse = line.startsWith(':') || ['data:', 'event:', 'id:', 'retry:'].any(line.startsWith);
+          await LLMDebugLogger.appendLine(
+            req.debugFile,
+            'Detected format: ${isSse ? 'SSE' : 'JSON'}',
+          );
+        }
+        if (!isSse) {
+          jsonLines.add(line);
+          continue;
+        }
+        await LLMDebugLogger.appendStreamLine(req.debugFile, line);
+        LLMResponseChunk? chunk;
+        if (line.isEmpty || line.startsWith('event:')) {
+          chunk = await consume();
+          eventName = line.startsWith('event:') ? line.substring(6).trim() : '';
         } else if (line.startsWith('data:')) {
           dataLines.add(line.substring(5).replaceFirst(RegExp(r'^ '), ''));
+          // A complete JSON event needs no following blank line. Relays may
+          // omit separators or keep the connection open after completion.
+          chunk = await consume(deferInvalid: true);
         }
+        if (chunk != null) yield chunk;
+        if (completed) {
+          yield LLMResponseChunk(isDone: true);
+          return;
+        }
+      }
+      if (isSse == false) {
+        final whole = await _decode(
+          http.Response(jsonLines.join('\n'), response.statusCode),
+          client,
+          options,
+          logger,
+          req.sentImages,
+          req.debugFile,
+        );
+        for (final image in whole.generatedImages) {
+          yield LLMResponseChunk(imagePart: image);
+        }
+        yield LLMResponseChunk(textPart: whole.text, metadata: whole.metadata, isDone: true);
+        return;
       }
       final tail = await consume();
       if (tail != null) yield tail;
       if (!completed) throw LLMApiException('OpenAI Images stream ended before the final image.');
       yield LLMResponseChunk(isDone: true);
+    } catch (error) {
+      await LLMDebugLogger.appendLine(req.debugFile, 'Stream failure: $error');
+      rethrow;
     } finally {
+      await LLMDebugLogger.finish(req.debugFile);
       client.close();
     }
   }
