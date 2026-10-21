@@ -42,15 +42,20 @@ void main() {
           AppState().taskQueue.setQueueForTest([task]);
         },
       );
-      final preview = find.byWidgetPredicate((w) => w is Image && w.image is ResizeImage);
+      // Linux window chrome also contains a resized AssetImage. Identify the
+      // task preview by its accessible label, not by image order or decoder.
+      final preview = find.byWidgetPredicate(
+        (w) => w is Image && w.semanticLabel == 'Generation preview · not saved',
+      );
+      expect(preview, findsOneWidget);
       expect(find.text('Generation preview · not saved'), findsOneWidget);
-      final first = tester.widget<Image>(preview.first).image as ResizeImage;
+      final first = tester.widget<Image>(preview).image as ResizeImage;
       expect((first.imageProvider as MemoryImage).bytes, same(bytes));
       final next = Uint8List.fromList(bytes);
       task.imagePreview = next;
       AppState().taskQueue.setQueueForTest([task]);
       await tester.pump();
-      final second = tester.widget<Image>(preview.first).image as ResizeImage;
+      final second = tester.widget<Image>(preview).image as ResizeImage;
       expect((second.imageProvider as MemoryImage).bytes, same(next));
       expect(task.resultPaths, isEmpty);
       task.status = TaskStatus.completed;
@@ -58,6 +63,7 @@ void main() {
       AppState().taskQueue.setQueueForTest([task]);
       await tester.pump();
       expect(find.text('Generation preview · not saved'), findsNothing);
+      expect(preview, findsNothing);
       expect(tester.takeException(), isNull);
     });
   }
