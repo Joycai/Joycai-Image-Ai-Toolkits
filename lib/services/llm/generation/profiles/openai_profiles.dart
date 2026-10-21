@@ -134,6 +134,8 @@ const _openaiOutputParams = <ParamSpec>[
 /// preset list below is only quick-pick scaffolding; the dialog enforces
 /// the actual constraints.
 const _openaiImage2 = ModelCapabilities(
+  streamsImages: true,
+  longRunning: true,
   isImageGenerator: true,
   maxReferenceImages: 16,
   imageParams: [
@@ -165,6 +167,8 @@ const _openaiImage2 = ModelCapabilities(
 /// [_openaiImage2]; the only visible difference is the quality ladder,
 /// which gains `xhigh` and `max`.
 const _openaiImage25 = ModelCapabilities(
+  streamsImages: true,
+  longRunning: true,
   isImageGenerator: true,
   maxReferenceImages: 16,
   imageParams: [

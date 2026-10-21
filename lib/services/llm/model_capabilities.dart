@@ -107,8 +107,8 @@ class ModelCapabilities {
   /// drawn at its own default tier, not the smallest one listed.
   final Map<String, Map<String, String>> tierPixelSizes;
 
-  /// True when the model's image surface can stream — push each image the
-  /// moment it is drawn rather than answer once the whole group exists.
+  /// True when the model's image surface can stream finished images or
+  /// progressive previews (GPT Image 2 / 2.5).
   /// Seedream 5.0 lite / 4.5 / 4.0 (`stream: true`, docs/api/volcengine-ark.md
   /// §5); 5.0 pro rejects the field with a 400. Whether a request actually
   /// streams is the dispatcher's call — the route has to serve it too.

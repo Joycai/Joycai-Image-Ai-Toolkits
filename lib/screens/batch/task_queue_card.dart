@@ -231,6 +231,32 @@ class TaskQueueCard extends StatelessWidget {
               ),
             ),
           ),
+          if (task.status == TaskStatus.processing && task.imagePreview != null)
+            Padding(
+              padding: const EdgeInsets.all(AppSpace.s10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    AppLocalizations.of(context)!.imageGenerationPreview,
+                    style: Theme.of(context).textTheme.labelSmall,
+                  ),
+                  const SizedBox(height: AppSpace.s6),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(AppRadius.control),
+                    child: Image.memory(
+                      task.imagePreview!,
+                      height: 220,
+                      fit: BoxFit.contain,
+                      cacheWidth: 640,
+                      gaplessPlayback: true,
+                      semanticLabel: AppLocalizations.of(context)!.imageGenerationPreview,
+                      errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           if (expanded) TaskExpandedDetails(task: task),
         ],
       ),

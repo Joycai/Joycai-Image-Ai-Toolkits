@@ -4168,6 +4168,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get noTaskLogCancelledHint => '任务在开始执行前被取消，所以没有留下日志。';
 
   @override
+  String get imageGenerationPreview => '生成预览 · 尚未保存';
+
+  @override
   String get setupWizardTitle => '欢迎设置向导';
 
   @override
@@ -10190,6 +10193,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get noTaskLogCancelledHint => '任務在開始執行前被取消，所以沒有留下日誌。';
+
+  @override
+  String get imageGenerationPreview => '生成預覽 · 尚未儲存';
 
   @override
   String get setupWizardTitle => '歡迎設定';

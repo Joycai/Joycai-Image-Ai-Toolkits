@@ -101,3 +101,10 @@ review. Record durable design decisions and accepted departures in the relevant
 architecture note, and completed work or remaining obligations in the plan ledger.
 Retire executed construction plans according to the existing repository convention.
 Keep token values in their existing sources rather than a second copied style guide.
+
+GPT Image 2 / 2.5 progressive previews appear directly below the running task's
+header on the task queue, without expanding the row. The localized caption marks
+the image as an unsaved generation preview. Each preview replaces the prior one;
+only the final image becomes a saved result. The preview uses the existing opaque
+card, token spacing/radius, a bounded 220px image area and a 640px decode width.
+It clears on every terminal outcome. No new glass, animations or theme roles.

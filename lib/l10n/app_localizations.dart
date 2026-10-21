@@ -7569,6 +7569,12 @@ abstract class AppLocalizations {
   /// **'The task was cancelled before it started, so it left no log.'**
   String get noTaskLogCancelledHint;
 
+  /// No description provided for @imageGenerationPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Generation preview · not saved'**
+  String get imageGenerationPreview;
+
   /// No description provided for @setupWizardTitle.
   ///
   /// In en, this message translates to:

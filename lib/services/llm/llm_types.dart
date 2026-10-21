@@ -204,6 +204,9 @@ class LLMResponseChunk {
   /// which carries no obligation at all.
   final String? reasoningFieldName;
 
+  /// Temporary preview; never a deliverable or an extra billed image.
+  final Uint8List? imagePreview;
+
   final Uint8List? imagePart;
 
   /// [imagePart]'s place in a layer decomposition, on the same chunk so the
@@ -269,6 +272,7 @@ class LLMResponseChunk {
     this.reasoningPart,
     this.reasoningFieldName,
     this.imagePart,
+    this.imagePreview,
     this.imageLayer,
     this.metadata,
     this.toolCallPart,

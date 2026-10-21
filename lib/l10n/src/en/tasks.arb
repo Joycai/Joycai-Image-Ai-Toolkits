@@ -174,5 +174,6 @@
   },
   "clearAllKeepsFiles": "Running tasks are left alone. Generated files stay in the output folder; only the queue's records are cleared.",
   "taskNoOutputsFailed": "No outputs. The task failed before writing any.",
-  "noTaskLogCancelledHint": "The task was cancelled before it started, so it left no log."
+  "noTaskLogCancelledHint": "The task was cancelled before it started, so it left no log.",
+  "imageGenerationPreview": "Generation preview · not saved"
 }

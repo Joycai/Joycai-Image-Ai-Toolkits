@@ -2138,6 +2138,7 @@
   "clearAllKeepsFiles": "実行中のタスクはそのままです。生成済みのファイルは出力フォルダーに残り、キューの記録だけが消去されます。",
   "taskNoOutputsFailed": "出力はありません。書き込み前にタスクが失敗しました。",
   "noTaskLogCancelledHint": "開始前にキャンセルされたため、ログはありません。",
+  "imageGenerationPreview": "生成プレビュー · 未保存",
   "setupWizardTitle": "ようこそセットアップ",
   "welcomeMessage": "Joycai Image AI Toolkitsへようこそ！セットアップを始めましょう。",
   "getStarted": "始める",

@@ -1236,13 +1236,22 @@ class LLMDispatcher {
         return;
 
       case ProtocolFamily.openai:
+        if (_openAIImageStreamIsLive(target)) {
+          yield* _openaiImages.generateImageStream(
+            target,
+            history,
+            options: options,
+            logger: logger,
+          );
+          return;
+        }
         // Ark's image surface streams for the versions that declare it: one
         // event per finished image (docs/api/volcengine-ark.md §5).
         if (_imageStreamIsLive(target)) {
           yield* _arkImages.generateImageStream(target, history, options: options, logger: logger);
           return;
         }
-        // The other Images APIs do not stream — fall back to a single-shot
+        // Remaining image routes use their single-shot adapter — fall back to a
         // call and surface the result as chunks.
         if (_streamIsSingleShot(target)) {
           logger?.call('Image model does not support streaming; using Images API.', level: 'DEBUG');
@@ -1288,7 +1297,7 @@ class LLMDispatcher {
   /// Whether [generateStream] on this route is really a single-shot call
   /// re-emitted as chunks, rather than a live stream.
   ///
-  /// The image surfaces have no streaming form, so their whole generation
+  /// Image surfaces without a live streaming route run their whole generation
   /// runs inside one awaited `generate()` and the first chunk appears only
   /// once it is finished. Public because the guard wrapped around the stream
   /// has to know: an idle gap sized for "is this connection still alive"
@@ -1328,7 +1337,7 @@ class LLMDispatcher {
   }
 
   bool _streamIsSingleShot(LLMTarget target) {
-    if (_imageStreamIsLive(target)) return false;
+    if (_imageStreamIsLive(target) || _openAIImageStreamIsLive(target)) return false;
     switch (target.vendor.family) {
       case ProtocolFamily.midjourney:
         return false;
@@ -1346,6 +1355,11 @@ class LLMDispatcher {
     }
   }
 
+  bool _openAIImageStreamIsLive(LLMTarget target) =>
+      target.model.family == ModelFamily.openaiImage &&
+      target.model.capabilities.streamsImages &&
+      target.vendor.family == ProtocolFamily.openai;
+
   /// Whether [generateStream] on this route is an image surface that really
   /// streams — each chunk one finished image. Seedream on Ark's own channel,
   /// for a version whose table declares `streamsImages`. A relay keeps the
@@ -1358,17 +1372,17 @@ class LLMDispatcher {
       _hasNativeImageRoute(target) &&
       identical(_nativeImageProtocol(target), _arkImages);
 
-  /// How long a live image stream ([_imageStreamIsLive]) may go quiet, or
+  /// How long a live image stream (Ark or GPT Image) may go quiet, or
   /// null for every other route.
   ///
-  /// Its chunks are whole images, and upstream sends nothing while it draws,
+  /// Chunks carry whole images or progressive previews; upstream may go quiet,
   /// so the silence before each one is a generation, not a stalled
   /// connection: the chat stream's two-minute idle guard would abandon a 4K
   /// image that is still being drawn — and billed. Each gap gets the
   /// single-image deadline instead.
   Duration? imageStreamChunkGap(LLMModelConfig config) {
     final target = resolveTarget(config);
-    if (!_imageStreamIsLive(target)) return null;
+    if (!_imageStreamIsLive(target) && !_openAIImageStreamIsLive(target)) return null;
     return generateTimeout(config);
   }
 
