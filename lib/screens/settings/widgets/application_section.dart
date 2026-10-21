@@ -14,6 +14,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../models/llm_model.dart';
 import '../../../services/assistant/knowledge_base_service.dart';
 import '../../../services/assistant/prompt_optimizer_agent.dart';
+import '../../../services/llm/gpt_image_timeout.dart';
 import '../../../services/llm/llm_debug_logger.dart';
 import '../../../services/system/gpu_info_service.dart';
 import '../../../state/app_state.dart';
@@ -128,6 +129,30 @@ class _ApplicationSectionState extends State<ApplicationSection> {
 
     return SettingsSections(
       children: [
+        SettingsBlock(
+          caption: l10n.gptImageGenerationSettings,
+          child: AppSettingRow(
+            title: l10n.gptImageTimeout,
+            description: l10n.gptImageTimeoutDesc,
+            trailing: SizedBox(
+              width: 112,
+              child: AppDropdown<int>(
+                key: const ValueKey('gpt-image-timeout'),
+                value: appState.gptImageTimeoutMinutes,
+                items: [
+                  for (final minutes in ({
+                    ...GptImageTimeout.choices,
+                    appState.gptImageTimeoutMinutes,
+                  }.toList()..sort()))
+                    AppDropdownItem(value: minutes, label: l10n.gptImageTimeoutMinutes(minutes)),
+                ],
+                onChanged: (value) {
+                  if (value != null) appState.setGptImageTimeoutMinutes(value);
+                },
+              ),
+            ),
+          ),
+        ),
         SettingsBlock(
           caption: l10n.settingsGroupNotifications,
           child: SettingsGroup(

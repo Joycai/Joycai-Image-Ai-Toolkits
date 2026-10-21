@@ -108,3 +108,11 @@ the image as an unsaved generation preview. Each preview replaces the prior one;
 only the final image becomes a saved result. The preview uses the existing opaque
 card, token spacing/radius, a bounded 220px image area and a 640px decode width.
 It clears on every terminal outcome. No new glass, animations or theme roles.
+
+The GPT Image timeout control sits first in Application settings under Image
+generation, using the existing setting row and dropdown. It defaults to 25 minutes
+and applies to new requests. All four locales explain that the threshold warns
+about a slow response while waiting continues and late results are saved until
+the user cancels. Opaque surfaces, theme roles and existing responsive behavior
+are preserved. The maintained specifications and real Flutter before/after
+renders are the reference; original Claude Design frames were unavailable.

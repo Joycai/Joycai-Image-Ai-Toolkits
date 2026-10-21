@@ -6945,6 +6945,30 @@ abstract class AppLocalizations {
   /// **'External agent · MCP'**
   String get mcpTaskOrigin;
 
+  /// No description provided for @gptImageGenerationSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Image generation'**
+  String get gptImageGenerationSettings;
+
+  /// No description provided for @gptImageTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'GPT Image timeout'**
+  String get gptImageTimeout;
+
+  /// No description provided for @gptImageTimeoutDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Warn when GPT Image takes longer than this. Keep waiting and save late results until you cancel. Applies to new requests.'**
+  String get gptImageTimeoutDesc;
+
+  /// No description provided for @gptImageTimeoutMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min'**
+  String gptImageTimeoutMinutes(int minutes);
+
   /// No description provided for @shortcutNavigateToDestination.
   ///
   /// In en, this message translates to:

@@ -3,6 +3,7 @@ import 'generation/generation_profiles.dart';
 import 'generation/generation_request.dart';
 import 'generation/generation_schema.dart';
 import 'generation/generation_validator.dart';
+import 'gpt_image_timeout.dart';
 import 'llm_types.dart';
 import 'model_capabilities.dart';
 import 'model_descriptor.dart';
@@ -756,6 +757,7 @@ class LLMDispatcher {
     if (target.vendor.family == ProtocolFamily.midjourney) {
       return const Duration(minutes: 11);
     }
+    if (keepsLateImageResults(config)) return GptImageTimeout.fromOptions(options);
     // Routes whose single request runs the generation to completion upstream
     // (DashScope's synchronous image surface). Declared per model in layer 3
     // rather than derived from the family, because the same family also
@@ -1372,6 +1374,14 @@ class LLMDispatcher {
       _hasNativeImageRoute(target) &&
       identical(_nativeImageProtocol(target), _arkImages);
 
+  /// GPT Image has already been billed by the time a slow response arrives.
+  /// Keep waiting on this route, including its older single-response models.
+  bool keepsLateImageResults(LLMModelConfig config) {
+    final target = resolveTarget(config);
+    return target.vendor.family == ProtocolFamily.openai &&
+        target.model.family == ModelFamily.openaiImage;
+  }
+
   /// How long a live image stream (Ark or GPT Image) may go quiet, or
   /// null for every other route.
   ///
@@ -1380,10 +1390,10 @@ class LLMDispatcher {
   /// connection: the chat stream's two-minute idle guard would abandon a 4K
   /// image that is still being drawn — and billed. Each gap gets the
   /// single-image deadline instead.
-  Duration? imageStreamChunkGap(LLMModelConfig config) {
+  Duration? imageStreamChunkGap(LLMModelConfig config, {Map<String, dynamic>? options}) {
     final target = resolveTarget(config);
     if (!_imageStreamIsLive(target) && !_openAIImageStreamIsLive(target)) return null;
-    return generateTimeout(config);
+    return generateTimeout(config, options: options);
   }
 
   /// Surface a single-shot [response] through the chunk protocol.

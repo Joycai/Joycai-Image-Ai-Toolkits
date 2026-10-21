@@ -198,5 +198,16 @@
   "mcpCopyConfiguration": "複製連線設定",
   "mcpCopied": "已複製",
   "mcpRotateToken": "更換存取權杖",
-  "mcpTaskOrigin": "外部 Agent · MCP"
+  "mcpTaskOrigin": "外部 Agent · MCP",
+  "gptImageGenerationSettings": "圖像生成",
+  "gptImageTimeout": "GPT Image 逾時",
+  "gptImageTimeoutDesc": "超過此時長會提示回應較慢，但仍繼續等待並儲存遲到的結果，直到你取消。對新請求生效。",
+  "gptImageTimeoutMinutes": "{minutes} 分鐘",
+  "@gptImageTimeoutMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  }
 }

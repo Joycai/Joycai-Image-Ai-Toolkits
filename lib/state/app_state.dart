@@ -24,6 +24,7 @@ import '../services/db/database_service.dart';
 import '../services/llm/generation/generation_preferences.dart';
 import '../services/llm/generation/generation_profile_store.dart';
 import '../services/llm/generation/generation_schema.dart';
+import '../services/llm/gpt_image_timeout.dart';
 import '../services/llm/llm_debug_logger.dart';
 import '../services/llm/llm_dispatcher.dart';
 import '../services/llm/llm_service.dart';
@@ -169,6 +170,7 @@ class AppState extends ChangeNotifier {
   bool setupCompleted = true;
   int concurrencyLimit = 2;
   int retryCount = 0;
+  int gptImageTimeoutMinutes = GptImageTimeout.defaultMinutes;
   bool saveGenerationText = false;
   // Per-category Gemini safety thresholds (category → threshold), applied to
   // every image/video generation request. See [SafetySettings].
@@ -548,6 +550,10 @@ class AppState extends ChangeNotifier {
       retryCount = int.tryParse(savedRetry) ?? 0;
     }
 
+    gptImageTimeoutMinutes = GptImageTimeout.normalize(
+      await _db.getSetting(GptImageTimeout.settingKey),
+    );
+
     final savedSafety = await _db.getSetting('safety_thresholds');
     if (savedSafety != null && savedSafety.isNotEmpty) {
       try {
@@ -695,6 +701,12 @@ class AppState extends ChangeNotifier {
     retryCount = count;
     await _db.saveSetting('retry_count', count.toString());
     addLog('Retry count set to $count');
+    notifyListeners();
+  }
+
+  Future<void> setGptImageTimeoutMinutes(int minutes) async {
+    gptImageTimeoutMinutes = GptImageTimeout.normalize(minutes);
+    await _db.saveSetting(GptImageTimeout.settingKey, '$gptImageTimeoutMinutes');
     notifyListeners();
   }
 

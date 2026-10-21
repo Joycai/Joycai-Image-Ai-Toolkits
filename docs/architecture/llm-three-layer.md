@@ -1001,3 +1001,18 @@ Google key / Bearer fallback 策略。模型 ID 不改写。
 profile。新协议是 imageGen surface，沿用 `wire_protocol` 存储，无数据库迁移。
 参考 [Google generateContent API](https://ai.google.dev/api/generate-content)。
 回归测试覆盖同步 / 流式、参考图、参数、认证、自定义路由与旧 auto 行为；未调用付费上游。
+
+
+## GPT Image slow-response policy (2026-10-21)
+
+`GptImageTimeout` owns the persisted minutes/default/validation contract (25 minutes
+by default). `LLMService` resolves the setting from its injected database once per
+request. The dispatcher alone identifies GPT Image routes and supplies the timeout
+for standard calls and first/subsequent stream gaps. No service reads AppState.
+
+GPT Image uses a soft deadline: the stream guard retains its original `moveNext`
+future when the warning timer expires, rather than cancelling and discarding a
+late image. Standard calls likewise await the original generation future.
+Cancellation probes/abort triggers remain active throughout the extended wait;
+other routes retain hard timeout semantics. Late deliverables use the existing
+executor saving and exactly-once usage path, with no detached/background resubmit.
