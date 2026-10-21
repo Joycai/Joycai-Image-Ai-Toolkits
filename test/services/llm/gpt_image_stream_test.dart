@@ -3,15 +3,21 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/llm_debug_logger.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_dispatcher.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
+
+import '../../support/private_data_dir.dart';
 
 final png = base64Decode(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
 );
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  usePrivateDataDir('gpt_stream_compat');
+  setUpAll(() => HttpOverrides.global = null);
   for (final id in [
     'gpt-image-2',
     'gpt-image-2-2026-04-21',
@@ -109,7 +115,15 @@ void main() {
     }
   }
 
-  for (final mode in ['json', 'empty', 'error', 'malformed', 'previewOnly', 'finalOnly']) {
+  for (final mode in [
+    'json',
+    'jsonAsSse',
+    'empty',
+    'error',
+    'malformed',
+    'previewOnly',
+    'finalOnly',
+  ]) {
     test('stream handles $mode without resubmitting', () async {
       var requests = 0;
       final release = Completer<void>();
@@ -125,7 +139,7 @@ void main() {
         r.response.headers.contentType = mode == 'json'
             ? ContentType.json
             : ContentType('text', 'event-stream');
-        if (mode == 'json') {
+        if (mode == 'json' || mode == 'jsonAsSse') {
           r.response.write(
             jsonEncode({
               'data': [
@@ -157,7 +171,7 @@ void main() {
         ),
         [LLMMessage(role: LLMRole.user, content: 'tree')],
       );
-      if (mode == 'json' || mode == 'finalOnly') {
+      if (mode == 'json' || mode == 'jsonAsSse' || mode == 'finalOnly') {
         expect(
           (await stream.toList().timeout(const Duration(seconds: 10)))
               .where((c) => c.imagePart != null),
@@ -168,6 +182,117 @@ void main() {
       }
       release.complete();
       expect(requests, 1);
+    });
+  }
+
+  for (final mode in [
+    'missingSeparators',
+    'wrapped',
+    'multiline',
+    'wrongHeader',
+    'bom',
+    'truncated',
+    'invalid',
+  ]) {
+    test('gateway compatibility and diagnostics: $mode', () async {
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      addTearDown(() => server.close(force: true));
+      final release = Completer<void>();
+      addTearDown(() {
+        if (!release.isCompleted) release.complete();
+      });
+      var requests = 0;
+      final encoded = base64Encode(png);
+      final partial = jsonEncode({'type': 'image_edit.partial_image', 'b64_json': encoded});
+      var finalEvent = jsonEncode({
+        'type': 'image_edit.completed',
+        'b64_json': encoded,
+        'usage': {'input_tokens': 7, 'output_tokens': 11},
+        'size': '1024x1024',
+        'padding': 'x' * 4096,
+      });
+      server.listen((r) async {
+        requests++;
+        await r.drain<void>();
+        r.response
+          ..bufferOutput = false
+          ..headers.contentType = mode == 'wrongHeader'
+              ? ContentType.json
+              : ContentType('text', 'event-stream');
+        if (mode == 'bom') r.response.add(utf8.encode('\uFEFF: keepalive\r\n'));
+        if (mode == 'missingSeparators') r.response.write('data: $partial\n');
+        if (mode == 'wrapped') {
+          finalEvent = finalEvent.replaceFirst(
+            encoded,
+            '${encoded.substring(0, 40)}\ndata: ${encoded.substring(40)}',
+          );
+        } else if (mode == 'multiline') {
+          finalEvent = finalEvent.replaceFirst(',"b64_json"', ',\ndata: "b64_json"');
+        } else if (mode == 'truncated') {
+          finalEvent = finalEvent.substring(0, finalEvent.length - 2);
+        } else if (mode == 'invalid') {
+          finalEvent += '}';
+        }
+        r.response.write('data: $finalEvent\n');
+        if (mode == 'invalid' || mode == 'truncated') {
+          await r.response.close();
+        } else {
+          await r.response.flush();
+          await release.future;
+          await r.response.close();
+        }
+      });
+      final correlation = LLMLogCorrelation(contextId: 'compat', request: 1, leg: 0, attempt: 0);
+      LLMDebugLogger.enabled = true;
+      addTearDown(() => LLMDebugLogger.enabled = false);
+      final stream = LLMDebugLogger.correlatedStream(
+        correlation,
+        () => LLMDispatcher().generateStream(
+          LLMModelConfig(
+            modelId: 'gpt-image-2.5-sunburst',
+            channelType: Vendors.openAIRest,
+            endpoint: 'http://127.0.0.1:${server.port}/v1',
+            apiKey: 'test-secret',
+          ),
+          [
+            LLMMessage(
+              role: LLMRole.user,
+              content: 'tree',
+              attachments: [LLMAttachment.fromBytes(png, 'image/png')],
+            ),
+          ],
+        ),
+      );
+      if (mode == 'invalid' || mode == 'truncated') {
+        await expectLater(
+          stream.drain<void>(),
+          throwsA(
+            isA<LLMApiException>().having(
+              (e) => e.toString(),
+              'diagnostic',
+              allOf(contains('offset='), contains('dataLines='), isNot(contains('HTML'))),
+            ),
+          ),
+        );
+      } else {
+        final chunks = await stream.toList().timeout(const Duration(seconds: 10));
+        expect(chunks.where((c) => c.imagePart != null).single.imagePart, png);
+        expect(chunks.firstWhere((c) => c.imagePart != null).metadata!['output_tokens'], 11);
+        if (mode == 'missingSeparators') expect(chunks.first.imagePreview, png);
+      }
+      release.complete();
+      expect(requests, 1);
+      final log = await correlation.opened.single.file.readAsString();
+      expect(log, contains('status=200'));
+      expect(log, contains('Detected format: SSE'));
+      expect(log, contains('image_edit.completed'));
+      expect(log, isNot(contains('x' * 4096)));
+      expect(log, isNot(contains('test-secret')));
+      expect(log, contains('Elapsed:'));
+      if (mode == 'invalid' || mode == 'truncated') {
+        expect(log, contains('Stream failure:'));
+        expect(log, contains('codeUnit='));
+      }
     });
   }
 
