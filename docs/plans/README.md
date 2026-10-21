@@ -25,6 +25,26 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 |---|---|
 | [`2026-08-assistant-timeout.md`](2026-08-assistant-timeout.md) | 不是施工说明书，是**一次真实故障的取证记录**（`api_logs/` 里七条日志的耗时还原）。`architecture/assistant-context.md` 直接引它作为「为什么要早elide」的证据。 |
 
+## 2026-10-21 · GPT Image 2 / 2.5 流式生成与渐进预览
+
+GPT Image 2、2.5 Flare / Sunburst（含 dated snapshot）的 Images 路由在任务与模型
+均启用流式时发送 `stream: true`、`partial_images: 3`，JSON 生成与 multipart
+参考图编辑共用请求构造与校验。任务列表运行卡直接显示最新预览，四语言标明尚未保存；
+沿用现有不透明卡片、间距和圆角，390 / 834 / 1024 / 1440 的明暗布局一致。
+预览使用独立 chunk 字段，仅驻内存，不进图库、数据库、MCP 输出或输出图片计数；
+仅 completed 事件落盘并计量最终 usage，成功 / 失败 / 取消都清理预览。
+缺少 completed 的流失败；已有预览后不重发。中转返回 JSON 时消费同一响应，
+不重新提交；拒绝流式的中转需用户关闭现有流式开关。首包与后续间隔使用图片生成时限。
+协议、超时与交互约定见 [API 支持矩阵](../api/gpt-image-series.md) 和
+[UI 工作流](../architecture/ui-design-workflow.md)。
+
+新增本地 HTTP 测试覆盖六个 ID 的生成 / 单图与多图编辑、逐次预览、最终 usage、
+JSON 回退、错误与截断；队列测试确认预览不落盘、取消可中断仍未返回的上游，
+widget 测试确认窄 / 宽布局更新和清理。format、analyze（No issues found）、
+非截图测试（3275 通过、9 skip）通过；新增预览 harness 的八张明暗全宽截图已查看。
+旧 task/settings harness 的两张 expanded 场景在改动前因过期模型名定位失败，
+本轮新增 harness 不依赖该定位。未做付费上游或原生手机实测。
+
 ## 2026-10-19 · macOS Dock 任务角标
 
 应用图标使用 AppKit 原生角标显示 `processing` 任务数；等待与结束状态不计入，

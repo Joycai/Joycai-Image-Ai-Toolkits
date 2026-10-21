@@ -187,11 +187,18 @@ extension TaskExecutors on TaskQueueService {
           refreshQueue();
         }
 
+        if (chunk.imagePreview != null && imageMimeFromBytes(chunk.imagePreview!) != null) {
+          task.imagePreview = chunk.imagePreview;
+          _emit(task.id, TaskEventType.imagePreview);
+          refreshQueue();
+        }
+
         // Saved the moment it arrives, not when the stream ends: on a route
         // that streams images one by one (Seedream on Ark) the first of a
         // group lands minutes before the last, and one that fails late no
         // longer takes the finished — and billed — ones with it.
         if (chunk.imagePart != null) {
+          task.imagePreview = null;
           task.addLog('Received image chunk.');
           await save(chunk.imagePart!, chunk.imageLayer);
           refreshQueue();

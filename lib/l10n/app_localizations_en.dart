@@ -4356,6 +4356,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'The task was cancelled before it started, so it left no log.';
 
   @override
+  String get imageGenerationPreview => 'Generation preview · not saved';
+
+  @override
   String get setupWizardTitle => 'Welcome Setup';
 
   @override

@@ -301,6 +301,7 @@ class TaskQueueService extends ChangeNotifier {
       // Without this, a running video task polls its LRO for up to 30
       // minutes with no way to stop it, holding a concurrency slot.
       if (task.status == TaskStatus.pending || task.status == TaskStatus.processing) {
+        task.imagePreview = null;
         task.status = TaskStatus.cancelled;
         task.addLog('Task cancelled by user.');
         _emit(task.id, TaskEventType.statusChanged, task.status);
@@ -431,6 +432,7 @@ class TaskQueueService extends ChangeNotifier {
     }
 
     task.error = null;
+    task.imagePreview = null;
     task.status = TaskStatus.processing;
     task.startTime = DateTime.now();
     _emit(task.id, TaskEventType.statusChanged, task.status);
@@ -482,6 +484,7 @@ class TaskQueueService extends ChangeNotifier {
         );
       }
     } finally {
+      task.imagePreview = null;
       task.endTime = DateTime.now();
 
       // Update Estimation Checkpoint

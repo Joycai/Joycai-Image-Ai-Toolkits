@@ -30,6 +30,25 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
     Map<String, dynamic>? options,
     LLMLogger? logger,
   }) async {
+    final req = await _prepare(target, history, options, logger, stream: false);
+    final client = target.config.createClient();
+    try {
+      final response = await http.Response.fromStream(
+        await client.send(trackBodySent(req.request, options)),
+      );
+      return await _decode(response, client, options, logger, req.sentImages, req.debugFile);
+    } finally {
+      client.close();
+    }
+  }
+
+  Future<({http.BaseRequest request, int sentImages, LLMDebugLog? debugFile})> _prepare(
+    LLMTarget target,
+    List<LLMMessage> history,
+    Map<String, dynamic>? options,
+    LLMLogger? logger, {
+    required bool stream,
+  }) async {
     final config = target.config;
     final userMsg = history.lastWhere((m) => m.role == LLMRole.user, orElse: () => history.last);
     final prompt = userMsg.content;
@@ -53,157 +72,269 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
 
     final size = resolveImageSize(optionsWithCheckedSize(target, options, logger: logger));
     final quality = _resolveQuality(options);
-    final output = _outputOptions(options);
-    final client = config.createClient();
+    final output = {
+      ..._outputOptions(options),
+      if (stream) ...{'stream': true, 'partial_images': 3},
+    };
     // Files actually attached to the edit — an unreadable attachment is not.
     var sentImages = 0;
-    try {
-      LLMDebugLog? debugFile;
-      http.Response response;
+    LLMDebugLog? debugFile;
+    http.BaseRequest request;
 
-      if (isEdit) {
-        // Abortable like every non-streaming send (see sendJsonRequest).
-        final request = http.AbortableMultipartRequest(
-          'POST',
-          url,
-          abortTrigger: abortTriggerOf(options),
-        );
-        // Auth comes from the vendor profile (layer 2) like every other
-        // surface — a hardcoded bearer header worked only because today's
-        // OpenAI-family vendors all happen to use one, and would have failed
-        // on the next one while plain generation kept working. Content-Type
-        // is dropped: the multipart body sets its own with a boundary.
-        request.headers.addAll(
-          Map.of(target.headers())..removeWhere((k, _) => k.toLowerCase() == 'content-type'),
-        );
-        request.fields['model'] = config.modelId;
-        request.fields['prompt'] = prompt;
-        if (size != null) request.fields['size'] = size;
-        if (quality != null) request.fields['quality'] = quality;
-        request.fields['n'] = '1';
-        request.fields.addAll(output.map((key, value) => MapEntry(key, value.toString())));
-
-        final field = openaiImageEditFieldName(inputImages.length);
-        for (int i = 0; i < inputImages.length; i++) {
-          final att = inputImages[i];
-          final bytes = await readAttachmentBytes(att);
-          if (bytes == null) continue;
-          // With an explicit Content-Type per part — see [imageMultipartFile]
-          // for the relay that 400s on the octet-stream default.
-          request.files.add(
-            imageMultipartFile(field, bytes, declaredMime: att.mimeType, baseName: 'image_$i'),
-          );
-          sentImages++;
-        }
-
-        if (LLMDebugLogger.enabled) {
-          debugFile = await LLMDebugLogger.startLog(config.modelId, 'OpenAI (Image Edit)', {
-            'url': redactUrl(url),
-            'fields': request.fields,
-            'files': request.files.map((f) => f.filename).toList(),
-          });
-        }
-
-        final streamed = await client.send(request);
-        response = await http.Response.fromStream(streamed);
-      } else {
-        final headers = target.headers();
-        final payload = <String, dynamic>{
-          'model': config.modelId,
-          'prompt': prompt,
-          'n': 1,
-          'size': ?size,
-          'quality': ?quality,
-          ...output,
-        };
-
-        if (LLMDebugLogger.enabled) {
-          debugFile = await LLMDebugLogger.startLog(config.modelId, 'OpenAI (Image Generate)', {
-            'url': redactUrl(url),
-            'headers': headers,
-            'body': payload,
-          });
-        }
-
-        response = await sendJsonRequest(
-          client,
-          url,
-          headers: headers,
-          body: jsonEncode(payload),
-          options: options,
-        );
-      }
-
-      if (debugFile != null) {
-        await LLMDebugLogger.appendLine(debugFile, 'Status: ${response.statusCode}');
-        await LLMDebugLogger.appendLine(debugFile, 'Body: ${response.body}');
-      }
-
-      // Status → JSON → shape → envelope, in that order (decodeJsonBody).
-      // 200 does not mean success on a relay — an `{"error": …}` body used
-      // to parse as zero images and report the task as finished with
-      // nothing in it.
-      final data = decodeJsonBody(response, apiName: 'OpenAI Images API');
-      final rawItems = data['data'];
-      final List<dynamic> items = rawItems is List ? rawItems : const [];
-      // Both spellings through the shared resolver: a `url` that is really a
-      // `data:` URI (relays do this) used to be fetched as a link and fail,
-      // a malformed `b64_json` threw out of the loop, and an HTML body behind
-      // a link was saved as a picture. The resolver validates the bytes and
-      // retries a link once.
-      final refs = <String>[
-        for (final item in items)
-          if (item is Map)
-            if (item['b64_json'] is String && (item['b64_json'] as String).isNotEmpty)
-              item['b64_json'] as String
-            else if (item['url'] is String && (item['url'] as String).isNotEmpty)
-              item['url'] as String,
-      ];
-      final images = await resolveImageRefs(
-        refs,
-        client,
-        logger,
-        source: 'OpenAI Images API',
+    if (isEdit) {
+      // Abortable like every non-streaming send (see sendJsonRequest).
+      final multipart = http.AbortableMultipartRequest(
+        'POST',
+        url,
         abortTrigger: abortTriggerOf(options),
       );
+      // Auth comes from the vendor profile (layer 2) like every other
+      // surface — a hardcoded bearer header worked only because today's
+      // OpenAI-family vendors all happen to use one, and would have failed
+      // on the next one while plain generation kept working. Content-Type
+      // is dropped: the multipart body sets its own with a boundary.
+      multipart.headers.addAll(
+        Map.of(target.headers())..removeWhere((k, _) => k.toLowerCase() == 'content-type'),
+      );
+      multipart.fields['model'] = config.modelId;
+      multipart.fields['prompt'] = prompt;
+      if (size != null) multipart.fields['size'] = size;
+      if (quality != null) multipart.fields['quality'] = quality;
+      multipart.fields['n'] = '1';
+      multipart.fields.addAll(output.map((key, value) => MapEntry(key, value.toString())));
 
-      if (images.isEmpty) {
-        // The Images API has exactly one deliverable. Returning an empty
-        // response here reads to the task executor as a successful generation
-        // that produced nothing, which is indistinguishable from a model
-        // refusing — so say what actually came back instead.
-        final body = response.body;
-        throw LLMApiException(
-          'OpenAI Images API returned no image: '
-          '${body.length > 500 ? '${body.substring(0, 500)}…' : body}',
+      final field = openaiImageEditFieldName(inputImages.length);
+      for (int i = 0; i < inputImages.length; i++) {
+        final att = inputImages[i];
+        final bytes = await readAttachmentBytes(att);
+        if (bytes == null) continue;
+        // With an explicit Content-Type per part — see [imageMultipartFile]
+        // for the relay that 400s on the octet-stream default.
+        multipart.files.add(
+          imageMultipartFile(field, bytes, declaredMime: att.mimeType, baseName: 'image_$i'),
+        );
+        sentImages++;
+      }
+
+      if (LLMDebugLogger.enabled) {
+        debugFile = await LLMDebugLogger.startLog(config.modelId, 'OpenAI (Image Edit)', {
+          'url': redactUrl(url),
+          'fields': multipart.fields,
+          'files': multipart.files.map((f) => f.filename).toList(),
+        });
+      }
+
+      request = multipart;
+    } else {
+      final headers = target.headers();
+      final payload = <String, dynamic>{
+        'model': config.modelId,
+        'prompt': prompt,
+        'n': 1,
+        'size': ?size,
+        'quality': ?quality,
+        ...output,
+      };
+
+      if (LLMDebugLogger.enabled) {
+        debugFile = await LLMDebugLogger.startLog(config.modelId, 'OpenAI (Image Generate)', {
+          'url': redactUrl(url),
+          'headers': headers,
+          'body': payload,
+        });
+      }
+
+      request = buildJsonRequest(
+        'POST',
+        url,
+        headers: headers,
+        body: jsonEncode(payload),
+        options: options,
+      );
+    }
+
+    return (request: request, sentImages: sentImages, debugFile: debugFile);
+  }
+
+  Future<LLMResponse> _decode(
+    http.Response response,
+    http.Client client,
+    Map<String, dynamic>? options,
+    LLMLogger? logger,
+    int sentImages,
+    LLMDebugLog? debugFile,
+  ) async {
+    if (debugFile != null) {
+      await LLMDebugLogger.appendLine(debugFile, 'Status: ${response.statusCode}');
+      await LLMDebugLogger.appendLine(debugFile, 'Body: ${response.body}');
+    }
+
+    // Status → JSON → shape → envelope, in that order (decodeJsonBody).
+    // 200 does not mean success on a relay — an `{"error": …}` body used
+    // to parse as zero images and report the task as finished with
+    // nothing in it.
+    final data = decodeJsonBody(response, apiName: 'OpenAI Images API');
+    final rawItems = data['data'];
+    final List<dynamic> items = rawItems is List ? rawItems : const [];
+    // Both spellings through the shared resolver: a `url` that is really a
+    // `data:` URI (relays do this) used to be fetched as a link and fail,
+    // a malformed `b64_json` threw out of the loop, and an HTML body behind
+    // a link was saved as a picture. The resolver validates the bytes and
+    // retries a link once.
+    final refs = <String>[
+      for (final item in items)
+        if (item is Map)
+          if (item['b64_json'] is String && (item['b64_json'] as String).isNotEmpty)
+            item['b64_json'] as String
+          else if (item['url'] is String && (item['url'] as String).isNotEmpty)
+            item['url'] as String,
+    ];
+    final images = await resolveImageRefs(
+      refs,
+      client,
+      logger,
+      source: 'OpenAI Images API',
+      abortTrigger: abortTriggerOf(options),
+    );
+
+    if (images.isEmpty) {
+      // The Images API has exactly one deliverable. Returning an empty
+      // response here reads to the task executor as a successful generation
+      // that produced nothing, which is indistinguishable from a model
+      // refusing — so say what actually came back instead.
+      final body = response.body;
+      throw LLMApiException(
+        'OpenAI Images API returned no image: '
+        '${body.length > 500 ? '${body.substring(0, 500)}…' : body}',
+      );
+    }
+
+    logger?.call('Images parse complete. Images: ${images.length}', level: 'DEBUG');
+
+    // dall-e-3 rewrites the prompt and says so per item; gpt-image-1 does
+    // not. What was actually drawn goes in the text (standard 13 §1).
+    final revised = revisedPromptFrom(items);
+
+    return LLMResponse(
+      text: revised,
+      generatedImages: images,
+      // gpt-image-1 reports `input_tokens`/`output_tokens` here, not the
+      // chat spelling — see LLMService._recordUsage, which reads both.
+      metadata: {
+        if (revised.isNotEmpty) 'revised_prompt': revised,
+        ...upstreamUsage(data['usage']),
+        // The size and quality the endpoint settled on. A request that
+        // said `auto` has no spec of its own, and a spec-billed fee group
+        // prices by exactly this — see `OutputSpec.from`, which prefers
+        // these echoes over what was asked for. Facts only: no price here.
+        if (data['size'] is String) 'output_size': data['size'],
+        if (data['quality'] is String) 'output_quality': data['quality'],
+        if (data['output_format'] is String) 'output_format': data['output_format'],
+        if (data['background'] is String) 'output_background': data['background'],
+        ...sentInputImages(sentImages),
+      },
+    );
+  }
+
+  /// Partial previews are a separate carrier: never a saved/billed output.
+  Stream<LLMResponseChunk> generateImageStream(
+    LLMTarget target,
+    List<LLMMessage> history, {
+    Map<String, dynamic>? options,
+    LLMLogger? logger,
+  }) async* {
+    final req = await _prepare(target, history, options, logger, stream: true);
+    final client = target.config.createClient();
+    try {
+      final response = await client.send(trackBodySent(req.request, options));
+      if (response.statusCode != 200 ||
+          !(response.headers['content-type'] ?? '').contains('text/event-stream')) {
+        // Some compatible gateways return JSON even when asked for SSE.
+        // Consume that same response, never resubmit an accepted generation.
+        final whole = await _decode(
+          await http.Response.fromStream(response),
+          client,
+          options,
+          logger,
+          req.sentImages,
+          req.debugFile,
+        );
+        for (final image in whole.generatedImages) {
+          yield LLMResponseChunk(imagePart: image);
+        }
+        yield LLMResponseChunk(textPart: whole.text, metadata: whole.metadata, isDone: true);
+        return;
+      }
+      var completed = false;
+      var eventName = '';
+      final dataLines = <String>[];
+      Future<LLMResponseChunk?> consume() async {
+        if (dataLines.isEmpty) return null;
+        final payload = dataLines.join('\n');
+        dataLines.clear();
+        if (payload == '[DONE]') return null;
+        final data = decodeJsonBody(http.Response(payload, 200), apiName: 'OpenAI Images stream');
+        final type = data['type'] ?? eventName;
+        if (type == 'error' || type == 'image_generation.failed' || type == 'image_edit.failed') {
+          throw LLMApiException(
+            'OpenAI Images stream failed: ${data['message'] ?? data['error'] ?? type}',
+            isEnvelope: true,
+          );
+        }
+        final partial =
+            type == 'image_generation.partial_image' || type == 'image_edit.partial_image';
+        final done = type == 'image_generation.completed' || type == 'image_edit.completed';
+        if (!partial && !done) return null;
+        if (completed) throw LLMApiException('OpenAI Images stream returned duplicate completion.');
+        final encoded = data['b64_json'];
+        if (encoded is! String || encoded.isEmpty) {
+          throw LLMApiException('OpenAI Images stream returned an empty image.');
+        }
+        final images = await resolveImageRefs(
+          [encoded],
+          client,
+          logger,
+          source: 'OpenAI Images stream',
+          abortTrigger: abortTriggerOf(options),
+        );
+        if (images.isEmpty) {
+          throw LLMApiException('OpenAI Images stream returned an invalid image.');
+        }
+        if (partial) return LLMResponseChunk(imagePreview: images.single);
+        completed = true;
+        return LLMResponseChunk(
+          imagePart: images.single,
+          metadata: {
+            ...upstreamUsage(data['usage']),
+            ...sentInputImages(req.sentImages),
+            if (data['size'] is String) 'output_size': data['size'],
+            if (data['quality'] is String) 'output_quality': data['quality'],
+            if (data['output_format'] is String) 'output_format': data['output_format'],
+            if (data['background'] is String) 'output_background': data['background'],
+          },
         );
       }
 
-      logger?.call('Images parse complete. Images: ${images.length}', level: 'DEBUG');
-
-      // dall-e-3 rewrites the prompt and says so per item; gpt-image-1 does
-      // not. What was actually drawn goes in the text (standard 13 §1).
-      final revised = revisedPromptFrom(items);
-
-      return LLMResponse(
-        text: revised,
-        generatedImages: images,
-        // gpt-image-1 reports `input_tokens`/`output_tokens` here, not the
-        // chat spelling — see LLMService._recordUsage, which reads both.
-        metadata: {
-          if (revised.isNotEmpty) 'revised_prompt': revised,
-          ...upstreamUsage(data['usage']),
-          // The size and quality the endpoint settled on. A request that
-          // said `auto` has no spec of its own, and a spec-billed fee group
-          // prices by exactly this — see `OutputSpec.from`, which prefers
-          // these echoes over what was asked for. Facts only: no price here.
-          if (data['size'] is String) 'output_size': data['size'],
-          if (data['quality'] is String) 'output_quality': data['quality'],
-          if (data['output_format'] is String) 'output_format': data['output_format'],
-          if (data['background'] is String) 'output_background': data['background'],
-          ...sentInputImages(sentImages),
-        },
-      );
+      await for (final line
+          in response.stream.transform(utf8.decoder).transform(const LineSplitter())) {
+        if (line.isEmpty) {
+          final chunk = await consume();
+          if (chunk != null) yield chunk;
+          if (completed) {
+            yield LLMResponseChunk(isDone: true);
+            return;
+          }
+          eventName = '';
+        } else if (line.startsWith('event:')) {
+          eventName = line.substring(6).trim();
+        } else if (line.startsWith('data:')) {
+          dataLines.add(line.substring(5).replaceFirst(RegExp(r'^ '), ''));
+        }
+      }
+      final tail = await consume();
+      if (tail != null) yield tail;
+      if (!completed) throw LLMApiException('OpenAI Images stream ended before the final image.');
+      yield LLMResponseChunk(isDone: true);
     } finally {
       client.close();
     }

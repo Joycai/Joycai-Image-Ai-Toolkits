@@ -2271,6 +2271,7 @@
   "clearAllKeepsFiles": "运行中的任务不受影响。已生成的文件保留在输出目录里，只是队列里的记录被清空。",
   "taskNoOutputsFailed": "本次没有产物——任务在写入前就失败了",
   "noTaskLogCancelledHint": "任务在开始执行前被取消，所以没有留下日志。",
+  "imageGenerationPreview": "生成预览 · 尚未保存",
   "setupWizardTitle": "欢迎设置向导",
   "welcomeMessage": "欢迎使用 Joycai 图像 AI 工具箱！让我们开始设置吧。",
   "getStarted": "开始",

@@ -1,6 +1,6 @@
 # GPT Image 2 / 2.5 support audit
 
-Verified against OpenAI documentation on 2026-10-18.
+Verified against OpenAI documentation on 2026-10-21.
 
 ## Model IDs
 
@@ -38,8 +38,21 @@ transport. The follow-up implementation adds background, output format and compr
 - One output per request (`n=1`); base64 results, actual size/quality, and token
   usage are retained. The app's queue can submit separate generation tasks.
 - `input_fidelity` is omitted. GPT Image 2 uses high fidelity automatically.
-- The Images route returns a complete image; the app's stream adapter wraps that
-  single response. It does not request progressive image previews.
+- With task streaming enabled and the model's streaming setting enabled, GPT Image
+  2 / 2.5 Images routes send `stream: true`, `partial_images: 3` for both JSON
+  generation and multipart reference edits. Earlier GPT Image models retain the
+  single-response adapter.
+- `image_generation.partial_image` / `image_edit.partial_image` replace one
+  transient preview on the running task card, in all responsive layouts. Only
+  `*.completed` yields a deliverable; preview bytes never enter result paths,
+  the gallery, persistence, MCP output lists, or the billed output-image count.
+  Final provider token usage (including upstream preview charges) is retained.
+- Preview state clears on completion, failure and cancellation. A stream ending
+  without a completed image fails; no automatic resubmission after previews.
+  Both first-byte and subsequent waits use the image-generation allowance.
+- A compatible gateway returning JSON is consumed as the same request's final
+  response. A gateway rejecting streaming must have streaming disabled by the
+  user; the app does not resubmit a potentially billed generation.
 
 ## API features not exposed by this workflow
 
@@ -50,7 +63,7 @@ is broken. The UI and transport currently do not send these optional fields:
 |---|---|
 | `moderation` auto/low | API default auto |
 | `n` 1–10 | Fixed at 1 |
-| `stream`, `partial_images` 0–3 | No native image SSE previews |
+| Preview count (`partial_images` 0–3) | Fixed at 3 when streaming; no separate count control |
 | Edit `mask` | No mask attachment workflow |
 | Responses `image_generation` tool | Not implemented as a conversational image workflow |
 

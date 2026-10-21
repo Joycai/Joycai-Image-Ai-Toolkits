@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 /// Data model and enums for the task queue.
 ///
@@ -10,7 +11,7 @@ enum TaskStatus { pending, processing, completed, failed, cancelled }
 
 enum TaskType { imageProcess, imageDownload, promptRefine, aiRename, videoGenerate }
 
-enum TaskEventType { textChunk, imageResult, progress, statusChanged, error }
+enum TaskEventType { textChunk, imageResult, imagePreview, progress, statusChanged, error }
 
 class TaskEvent {
   final String taskId;
@@ -40,6 +41,10 @@ class TaskItem {
   List<String> warnings;
   DateTime? startTime;
   DateTime? endTime;
+
+  /// Latest in-memory preview. Never serialized or exposed as a saved output.
+  Uint8List? imagePreview;
+
   double? progress; // 0.0 to 1.0 (transient)
 
   /// When the task was queued. The task list's one sort key (`C1 11a`).
@@ -88,6 +93,7 @@ class TaskItem {
     this.startTime,
     this.endTime,
     this.progress,
+    this.imagePreview,
     this.operationSurface,
     this.operationName,
     DateTime? createdAt,
@@ -117,6 +123,7 @@ class TaskItem {
     startTime: startTime,
     endTime: endTime,
     progress: progress,
+    imagePreview: imagePreview,
     operationSurface: operationSurface,
     operationName: operationName,
     createdAt: createdAt,

@@ -4199,6 +4199,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get noTaskLogCancelledHint => '開始前にキャンセルされたため、ログはありません。';
 
   @override
+  String get imageGenerationPreview => '生成プレビュー · 未保存';
+
+  @override
   String get setupWizardTitle => 'ようこそセットアップ';
 
   @override
