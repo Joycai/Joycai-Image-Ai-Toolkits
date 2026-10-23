@@ -38,6 +38,7 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
       );
       return await _decode(response, client, options, logger, req.sentImages, req.debugFile);
     } finally {
+      await LLMDebugLogger.finish(req.debugFile);
       client.close();
     }
   }
@@ -385,10 +386,17 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
           chunk = await consume();
           eventName = line.startsWith('event:') ? line.substring(6).trim() : '';
         } else if (line.startsWith('data:')) {
-          dataLines.add(line.substring(5).replaceFirst(RegExp(r'^ '), ''));
+          final dataLine = line.substring(5).replaceFirst(RegExp(r'^ '), '');
+          dataLines.add(dataLine);
           // A complete JSON event needs no following blank line. Relays may
           // omit separators or keep the connection open after completion.
-          chunk = await consume(deferInvalid: true);
+          // Only probe plausible object endings: rejoining and decoding on
+          // every wrapped base64 line makes large images quadratic to parse.
+          // Event boundaries and EOF still decode unconditionally for errors.
+          final tail = dataLine.trimRight();
+          if (tail.endsWith('}') || tail == '[DONE]') {
+            chunk = await consume(deferInvalid: true);
+          }
         }
         if (chunk != null) yield chunk;
         if (completed) {

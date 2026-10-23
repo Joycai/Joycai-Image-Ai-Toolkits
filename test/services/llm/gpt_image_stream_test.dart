@@ -296,6 +296,109 @@ void main() {
     });
   }
 
+  test('large wrapped image completes promptly without a separator or disconnect', () async {
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    addTearDown(() => server.close(force: true));
+    final release = Completer<void>();
+    addTearDown(() {
+      if (!release.isCompleted) release.complete();
+    });
+    // The resolver validates the image signature; pad the fixture to exercise
+    // a realistic base64 payload without adding a large binary test asset.
+    final bytes = [...png, ...List<int>.filled(768 * 1024, 0)];
+    final payload = jsonEncode({
+      'type': 'image_generation.completed',
+      'b64_json': base64Encode(bytes),
+    });
+    final wire = StringBuffer();
+    for (var start = 0; start < payload.length; start += 76) {
+      final end = start + 76 < payload.length ? start + 76 : payload.length;
+      wire.writeln('data: ${payload.substring(start, end)}');
+    }
+    var requests = 0;
+    server.listen((r) async {
+      requests++;
+      await r.drain<void>();
+      r.response
+        ..bufferOutput = false
+        ..headers.contentType = ContentType('text', 'event-stream')
+        ..write(wire);
+      await r.response.flush();
+      await release.future;
+      await r.response.close();
+    });
+    final watch = Stopwatch()..start();
+    final chunks = await LLMDispatcher()
+        .generateStream(
+          LLMModelConfig(
+            modelId: 'gpt-image-2',
+            channelType: Vendors.openAIRest,
+            endpoint: 'http://127.0.0.1:${server.port}/v1',
+            apiKey: 'test',
+          ),
+          [LLMMessage(role: LLMRole.user, content: 'tree')],
+        )
+        .toList()
+        .timeout(const Duration(seconds: 5));
+    watch.stop();
+    // Also measure elapsed time: synchronous decoding can starve timeout timers.
+    expect(watch.elapsed, lessThan(const Duration(seconds: 5)));
+    expect(chunks.where((c) => c.imagePart != null).single.imagePart, bytes);
+    expect(chunks.last.isDone, isTrue);
+    expect(requests, 1);
+    release.complete();
+  });
+
+  for (final fails in [false, true]) {
+    test('non-streaming image logs elapsed time on ${fails ? 'error' : 'success'}', () async {
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      addTearDown(() => server.close(force: true));
+      server.listen((r) async {
+        await r.drain<void>();
+        r.response
+          ..headers.contentType = ContentType.json
+          ..statusCode = fails ? 400 : 200
+          ..write(
+            jsonEncode(
+              fails
+                  ? {
+                      'error': {'message': 'blocked'},
+                    }
+                  : {
+                      'data': [
+                        {'b64_json': base64Encode(png)},
+                      ],
+                    },
+            ),
+          );
+        await r.response.close();
+      });
+      LLMDebugLogger.enabled = true;
+      addTearDown(() => LLMDebugLogger.enabled = false);
+      final correlation = LLMLogCorrelation(contextId: 'elapsed', request: 1, leg: 0, attempt: 0);
+      final response = LLMDebugLogger.runCorrelated(
+        correlation,
+        () => LLMDispatcher().generate(
+          LLMModelConfig(
+            modelId: 'gpt-image-2',
+            channelType: Vendors.openAIRest,
+            endpoint: 'http://127.0.0.1:${server.port}/v1',
+            apiKey: 'test',
+          ),
+          [LLMMessage(role: LLMRole.user, content: 'tree')],
+        ),
+      );
+      if (fails) {
+        await expectLater(response, throwsA(isA<LLMApiException>()));
+      } else {
+        expect((await response).generatedImages.single, png);
+      }
+      final log = await correlation.opened.single.file.readAsString();
+      expect(RegExp(r'Elapsed: \d+ ms').allMatches(log), hasLength(1));
+      expect(log.indexOf('Elapsed:'), greaterThan(log.indexOf('Body:')));
+    });
+  }
+
   test('earlier image models keep single-shot streaming adapter', () {
     expect(
       LLMDispatcher().streamIsSingleShot(
