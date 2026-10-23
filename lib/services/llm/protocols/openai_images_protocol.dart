@@ -363,6 +363,11 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
         );
       }
 
+      // Relay compatibility is pinned in gpt_image_stream_test.dart: SSE with
+      // JSON headers, BOM/comments/leading whitespace, missing separators,
+      // multiline JSON, wrapped base64, and completion on a held-open socket.
+      // Prefer standard newline joining; compact joining above is only a
+      // fallback after invalid JSON, not a rewrite of valid multiline events.
       bool? isSse;
       final jsonLines = <String>[];
       await for (var line
