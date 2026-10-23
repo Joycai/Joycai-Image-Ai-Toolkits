@@ -195,8 +195,11 @@ void main() {
         before: (_) async => AppState().isConsoleExpanded = false,
         after: (WidgetTester tester) async {
           // The failed row: the one whose detail panel has something to say.
-          // Found by its model, the one only the failed fixture task uses.
-          await tester.tap(find.text('gemini-2.5-flash').first);
+          // Use fixture identity: the displayed model name can change with
+          // catalogue labels without changing which task this shot exercises.
+          final row = find.byKey(const ValueKey('fixture-task-3'));
+          await tester.ensureVisible(row);
+          await tester.tap(find.descendant(of: row, matching: find.byType(InkWell)).first);
           for (int p = 0; p < 5; p++) {
             await tester.pump(const Duration(milliseconds: 100));
           }

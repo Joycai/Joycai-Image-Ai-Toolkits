@@ -191,6 +191,7 @@ void main() {
     'multiline',
     'wrongHeader',
     'bom',
+    'leadingWhitespace',
     'truncated',
     'invalid',
   ]) {
@@ -220,6 +221,7 @@ void main() {
               ? ContentType.json
               : ContentType('text', 'event-stream');
         if (mode == 'bom') r.response.add(utf8.encode('\uFEFF: keepalive\r\n'));
+        if (mode == 'leadingWhitespace') r.response.write('\n \t\r\n\t\n');
         if (mode == 'missingSeparators') r.response.write('data: $partial\n');
         if (mode == 'wrapped') {
           finalEvent = finalEvent.replaceFirst(
@@ -289,6 +291,11 @@ void main() {
       expect(log, isNot(contains('x' * 4096)));
       expect(log, isNot(contains('test-secret')));
       expect(log, contains('Elapsed:'));
+      if (mode == 'wrapped') {
+        expect(log, contains('Compatibility: joined wrapped data lines'));
+      } else if (mode == 'multiline') {
+        expect(log, isNot(contains('Compatibility: joined wrapped data lines')));
+      }
       if (mode == 'invalid' || mode == 'truncated') {
         expect(log, contains('Stream failure:'));
         expect(log, contains('codeUnit='));
