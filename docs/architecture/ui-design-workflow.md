@@ -88,6 +88,15 @@ independent of window size, app accent and locale. Flutter screenshot renders do
 not include the operating system's Dock; native appearance needs a running macOS
 app check.
 
+Windows uses the same service/channel and processing-only count, rendered as a
+white number on a fixed red taskbar overlay through `ITaskbarList3`. The exact
+count shrinks to fit for multiple digits; zero removes the overlay. The runner
+retains the latest count until `TaskbarButtonCreated` and reapplies it after
+Explorer restarts, with DPI-aware rendering. Native icon/COM/drawing resources
+are released after each update. This OS badge is independent of the app theme
+and screen layout. Windows build and taskbar visual checks require a Windows host;
+Flutter screenshots cannot validate the overlay.
+
 Image and video parameter forms share the workbench's `generation_params` panel,
 presentation hints, editor registry and localized text mapping. Replace an editor
 through that registry; do not copy a control switch into either form. Model/wire

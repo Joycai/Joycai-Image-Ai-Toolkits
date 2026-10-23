@@ -40,37 +40,44 @@ void main() {
     debugDefaultTargetPlatformOverride = null;
   });
 
-  test('counts processing tasks, deduplicates updates and clears when finished', () async {
-    queue.setQueueForTest([
-      task('running', TaskStatus.processing),
-      task('waiting', TaskStatus.pending),
-      task('done', TaskStatus.completed),
-      task('failed', TaskStatus.failed),
-      task('cancelled', TaskStatus.cancelled),
-    ]);
-    final badge = DockBadgeService(queue);
-    queue.setQueueForTest(queue.queue);
-    queue.setQueueForTest([...queue.queue, task('second', TaskStatus.processing)]);
-    // Cancellation changes the badge immediately, before the executor unwinds.
-    queue.queue.first.status = TaskStatus.cancelled;
-    queue.setQueueForTest(queue.queue);
-    queue.setQueueForTest([task('second', TaskStatus.completed)]);
-    await Future<void>.delayed(Duration.zero);
-    expect(counts, [1, 2, 1, 0]);
-    badge.dispose();
-  });
+  for (final platform in [TargetPlatform.macOS, TargetPlatform.windows]) {
+    group(platform.name, () {
+      setUp(() => debugDefaultTargetPlatformOverride = platform);
+      test('counts processing tasks, deduplicates updates and clears when finished', () async {
+        queue.setQueueForTest([
+          task('running', TaskStatus.processing),
+          task('waiting', TaskStatus.pending),
+          task('done', TaskStatus.completed),
+          task('failed', TaskStatus.failed),
+          task('cancelled', TaskStatus.cancelled),
+        ]);
+        final badge = DockBadgeService(queue);
+        queue.setQueueForTest(queue.queue);
+        queue.setQueueForTest([...queue.queue, task('second', TaskStatus.processing)]);
+        // Cancellation changes the badge immediately, before the executor unwinds.
+        queue.queue.first.status = TaskStatus.cancelled;
+        queue.setQueueForTest(queue.queue);
+        queue.setQueueForTest([task('second', TaskStatus.completed)]);
+        await Future<void>.delayed(Duration.zero);
+        expect(counts, [1, 2, 1, 0]);
+        badge.dispose();
+      });
 
-  test('clears stale badges on startup and detaches on disposal', () async {
-    final badge = DockBadgeService(queue);
-    queue.setQueueForTest([task('running', TaskStatus.processing)]);
-    badge.dispose();
-    queue.setQueueForTest([task('other', TaskStatus.processing)]);
-    await Future<void>.delayed(Duration.zero);
-    expect(counts, [0, 1, 0]);
-  });
+      test('clears stale badges on startup and detaches on disposal', () async {
+        final badge = DockBadgeService(queue);
+        queue.setQueueForTest([task('running', TaskStatus.processing)]);
+        badge.dispose();
+        queue.setQueueForTest([task('other', TaskStatus.processing)]);
+        await Future<void>.delayed(Duration.zero);
+        expect(counts, [0, 1, 0]);
+      });
+    });
+  }
 
   test('does not call native code on other platforms', () async {
-    for (final platform in TargetPlatform.values.where((p) => p != TargetPlatform.macOS)) {
+    for (final platform in TargetPlatform.values.where(
+      (p) => p != TargetPlatform.macOS && p != TargetPlatform.windows,
+    )) {
       debugDefaultTargetPlatformOverride = platform;
       final badge = DockBadgeService(queue);
       queue.setQueueForTest([task(platform.name, TaskStatus.processing)]);

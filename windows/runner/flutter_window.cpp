@@ -7,6 +7,7 @@
 
 #include "flutter/generated_plugin_registrant.h"
 #include "gpu_info.h"
+#include "taskbar_badge.h"
 
 namespace {
 
@@ -64,6 +65,8 @@ bool FlutterWindow::OnCreate() {
   if (!Win32Window::OnCreate()) {
     return false;
   }
+
+  taskbar_created_message_ = RegisterWindowMessage(L"TaskbarButtonCreated");
 
   RECT frame = GetClientArea();
 
@@ -176,6 +179,37 @@ bool FlutterWindow::OnCreate() {
                              : flutter::EncodableValue());
       });
 
+  dock_badge_channel_ =
+      std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
+          flutter_controller_->engine()->messenger(), "joycai/dock_badge",
+          &flutter::StandardMethodCodec::GetInstance());
+  dock_badge_channel_->SetMethodCallHandler(
+      [this](const flutter::MethodCall<flutter::EncodableValue>& call,
+             std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
+        if (call.method_name() != "setCount") {
+          result->NotImplemented();
+          return;
+        }
+        int64_t count = -1;
+        if (const auto* args = call.arguments()) {
+          if (const auto* narrow = std::get_if<int32_t>(args)) {
+            count = *narrow;
+          } else if (const auto* wide = std::get_if<int64_t>(args)) {
+            count = *wide;
+          }
+        }
+        if (count < 0) {
+          result->Error("bad_args", "nonnegative count required");
+          return;
+        }
+        taskbar_count_ = count;
+        if (taskbar_ready_ && !SetTaskbarBadge(GetHandle(), count)) {
+          result->Error("badge_failed", "Could not update taskbar overlay");
+          return;
+        }
+        result->Success();
+      });
+
   flutter_controller_->engine()->SetNextFrameCallback([&]() {
     this->Show();
   });
@@ -188,7 +222,18 @@ bool FlutterWindow::OnCreate() {
   return true;
 }
 
+void FlutterWindow::UpdateTaskbarBadge() {
+  if (taskbar_ready_) {
+    SetTaskbarBadge(GetHandle(), taskbar_count_);
+  }
+}
+
 void FlutterWindow::OnDestroy() {
+  dock_badge_channel_ = nullptr;
+  if (taskbar_ready_) {
+    SetTaskbarBadge(GetHandle(), 0);
+    taskbar_ready_ = false;
+  }
   if (flutter_controller_) {
     flutter_controller_ = nullptr;
   }
@@ -200,6 +245,15 @@ LRESULT
 FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
                               WPARAM const wparam,
                               LPARAM const lparam) noexcept {
+  // This also arrives when Explorer recreates the taskbar after a restart.
+  // Keep the latest count even when Dart sends it before the button exists.
+  if (taskbar_created_message_ != 0 && message == taskbar_created_message_) {
+    taskbar_ready_ = true;
+    UpdateTaskbarBadge();
+  } else if (message == WM_DPICHANGED) {
+    UpdateTaskbarBadge();
+  }
+
   // Blocked on the view window too (see ViewWndProc). The engine also answers
   // WM_GETOBJECT for the top-level window through HandleTopLevelWindowProc, so
   // it has to be swallowed here as well, before the controller sees it.
