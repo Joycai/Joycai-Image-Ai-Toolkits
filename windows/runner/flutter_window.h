@@ -6,6 +6,7 @@
 #include <flutter/method_channel.h>
 #include <flutter/standard_method_codec.h>
 
+#include <cstdint>
 #include <memory>
 
 #include "win32_window.h"
@@ -25,6 +26,13 @@ class FlutterWindow : public Win32Window {
                          LPARAM const lparam) noexcept override;
 
  private:
+  void UpdateTaskbarBadge();
+  UINT taskbar_created_message_ = 0;
+  bool taskbar_ready_ = false;
+  int64_t taskbar_count_ = 0;
+  std::unique_ptr<flutter::MethodChannel<flutter::EncodableValue>>
+      dock_badge_channel_;
+
   // The project to run.
   flutter::DartProject project_;
 

@@ -487,3 +487,12 @@ Linux 构建没装 libsecret、最小桌面常无 keyring；便携模式下钥�
 正式签名的 macOS 构建（带 `keychain-access-groups`）和 Linux 的 libsecret 依赖，单开一轮。
 
 其余 66 条按 v2.3.0 的行号写成，未逐条复核。
+
+### Windows taskbar processing counter (2026-10-24)
+
+- Extended the macOS counter service to Windows with the same processing-only
+  counting, deduplication, startup clearing and disposal behavior.
+- Added a native numbered taskbar overlay, including delayed taskbar creation and
+  Explorer restart recovery. Behavior is documented in the UI design workflow.
+- Shared service tests cover both platforms. Native Windows build/visual checks
+  remain to be run on Windows (implementation developed on macOS).

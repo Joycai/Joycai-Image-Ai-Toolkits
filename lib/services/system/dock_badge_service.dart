@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../tasks/task_queue_service.dart';
 
-/// Keeps the macOS Dock badge in sync with actively processing tasks.
+/// Keeps the macOS Dock / Windows taskbar badge in sync with actively processing tasks.
 /// Pending and finished tasks do not contribute to the badge.
 class DockBadgeService {
   DockBadgeService(this._queue) {
@@ -16,7 +16,10 @@ class DockBadgeService {
 
   static const _channel = MethodChannel('joycai/dock_badge');
   final TaskQueueService _queue;
-  final bool _supported = !kIsWeb && defaultTargetPlatform == TargetPlatform.macOS;
+  final bool _supported =
+      !kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.macOS ||
+          defaultTargetPlatform == TargetPlatform.windows);
   int? _lastCount;
 
   void _sync() {
