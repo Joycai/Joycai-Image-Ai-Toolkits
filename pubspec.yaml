@@ -40,7 +40,7 @@ dependencies:
   video_player: ^2.11.1
   # Never imported: video_player's Windows implementation.
   video_player_win: ^3.3.1
-  fc_native_video_thumbnail: ^3.0.1
+  fc_native_video_thumbnail: ^4.0.0
   window_manager: ^0.5.2
   # Both only for the Windows recycle-bin call in trash_service.dart; win32 was
   # already here transitively.

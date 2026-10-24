@@ -35,13 +35,10 @@ Future<void> saveImageFile(
 ) async {
   try {
     if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
-      final extension = sourcePath.split('.').last;
       final bytes = await File(sourcePath).readAsBytes();
       final outputFile = await FilePicker.saveFile(
         dialogTitle: l10n.save,
         fileName: fileName,
-        type: FileType.custom,
-        allowedExtensions: [extension],
         bytes: bytes,
       );
 
