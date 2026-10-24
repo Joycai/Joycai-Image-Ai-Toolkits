@@ -3,7 +3,7 @@
 Cross-platform Flutter desktop/mobile app for AI image and video generation, built
 around a multi-vendor LLM layer, for artists and designers working with AI media.
 
-**Version:** 4.31.6 · **Dart SDK:** ^3.13.0 · **Tested on Flutter:** 3.47.7 (CI tracks `stable`)
+**Version:** 4.31.6 · **Dart SDK:** ^3.13.0 · **Tested on Flutter:** 3.47.8 (CI pins `stable` 3.47.8)
 
 ## Codex workflow
 

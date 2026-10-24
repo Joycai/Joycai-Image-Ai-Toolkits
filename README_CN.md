@@ -69,7 +69,7 @@ Joycai Image AI Toolkits 是一个功能强大的跨平台桌面与移动应用�
 ## 📦 快速开始
 
 ### 前置条件
-*   Flutter SDK (^3.10.8，已在 3.41.1 上测试)
+*   Flutter SDK 3.47.8（包含 Dart 3.13.7；CI 和发布构建使用此版本）
 *   [OpenAI](https://platform.openai.com/) 或 [Google Gemini / Veo](https://aistudio.google.com/) 的 API 密钥
 
 ### 安装
