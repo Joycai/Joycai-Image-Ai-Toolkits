@@ -101,13 +101,10 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
   Future<void> _saveFile(String path, String fileName, AppLocalizations l10n) async {
     try {
       if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
-        final extension = path.split('.').last;
         final bytes = await File(path).readAsBytes();
         final outputFile = await FilePicker.saveFile(
           dialogTitle: l10n.save,
           fileName: fileName,
-          type: FileType.custom,
-          allowedExtensions: [extension],
           bytes: bytes,
         );
 

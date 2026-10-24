@@ -117,12 +117,7 @@ class DataSection extends StatelessWidget {
 
     // file_picker >= 12 writes `bytes` itself on every platform and returns the
     // destination as a Uri, so no follow-up write is needed here.
-    final Uri? saved = await FilePicker.saveFile(
-      fileName: 'joycai_backup.json',
-      type: FileType.custom,
-      allowedExtensions: ['json'],
-      bytes: bytes,
-    );
+    final Uri? saved = await FilePicker.saveFile(fileName: 'joycai_backup.json', bytes: bytes);
 
     if (!context.mounted) return;
 

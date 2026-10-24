@@ -39,12 +39,7 @@ Future<void> exportPrompts(
 
   // file_picker >= 12 writes `bytes` itself on every platform and returns the
   // destination as a Uri, so no follow-up write is needed here.
-  final Uri? saved = await FilePicker.saveFile(
-    fileName: 'joycai_prompts.json',
-    type: FileType.custom,
-    allowedExtensions: ['json'],
-    bytes: bytes,
-  );
+  final Uri? saved = await FilePicker.saveFile(fileName: 'joycai_prompts.json', bytes: bytes);
 
   if (saved != null && context.mounted) {
     AppSnackBar.success(context, l10n.settingsExported);
