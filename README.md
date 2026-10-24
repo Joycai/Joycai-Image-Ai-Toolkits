@@ -69,7 +69,7 @@ Joycai Image AI Toolkits is a powerful, cross-platform desktop & mobile applicat
 ## 📦 Getting Started
 
 ### Prerequisites
-*   Flutter SDK (^3.10.8, tested on 3.41.1)
+*   Flutter SDK 3.47.8 (includes Dart 3.13.7; CI and release builds use this version)
 *   API Keys for [OpenAI](https://platform.openai.com/) or [Google Gemini / Veo](https://aistudio.google.com/)
 
 ### Installation
