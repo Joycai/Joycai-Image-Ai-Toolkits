@@ -135,8 +135,9 @@ jobs:
             artifacts/*.tar.gz
             artifacts/*.dmg
             artifacts/*.apk
-            artifacts/*.exe
-            artifacts/*.msix
+            artifacts/dist/*.exe
+            artifacts/windows/x64/runner/Release/*.msix
+          fail_on_unmatched_files: true
           generate_release_notes: true
           draft: false
           prerelease: false
