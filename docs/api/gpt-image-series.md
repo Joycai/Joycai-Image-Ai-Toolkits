@@ -1,6 +1,6 @@
 # GPT Image 2 / 2.5 support audit
 
-Verified against OpenAI documentation on 2026-10-21.
+Verified against OpenAI documentation on 2026-10-26.
 
 ## Model IDs
 
@@ -123,3 +123,71 @@ while cancellation waited for that successful response. Parser success did not
 mean delivery to the executor. Regression tests accelerate only the configured
 deadline timer, hold the HTTP response until it fires, and verify a saved image
 and one usage record for both streaming and standard requests.
+
+
+## Asynchronous Batch images (2026-10-26)
+
+Workbench exposes **Asynchronous submission** for the six exact IDs above on
+an official OpenAI channel, `https://api.openai.com`, and the native Images route.
+Relay model aliases, custom hosts, chat/Responses image tools and Nano Banana
+Batch are not enabled. Batch is a task execution mode, not a new image task type.
+
+One task uploads one JSONL request (`custom_id = task.id`, `n=1`) using Files
+`purpose=batch`, then creates a `/batches` job with a `24h` window. Generation
+uses `/v1/images/generations`; reference edits use JSON `/v1/images/edits` with
+inline data URLs (maximum 16 references, with the documented per-URL limit).
+The existing generation schema validates size, quality, background and format.
+Batch has no stream or partial previews.
+
+The task row owns execution mode and a JSON checkpoint (schema v51): original
+channel/model/endpoint, immutable price snapshot, input-file/job/result-file IDs,
+submission intent, polling schedule, cancellation and settlement checkpoints.
+Status and checkpoint are saved together. Credentials remain in the channel;
+changing them permits re-authentication, while changing the endpoint/channel
+identity pauses recovery. Active Batch jobs protect their model/channel from
+removal and channel merge. Input JSON is frozen in the chosen output directory's
+`.joycai-batch/<task-id>/input.json`; keep this folder until submission completes.
+Ordinary database backups include checkpoints, **not** these external input files
+or generated media. Cross-machine pre-submission recovery therefore also needs
+that output directory. Frozen input caches are retained for diagnosis.
+
+After acceptance, local execution concurrency is released. A queue-owned timer
+polls after 30 seconds, then approximately 60/120/300 seconds with jitter;
+refreshes are serialized and deduplicated, including manual refresh. Transient
+failures back off up to 30 minutes and respect Retry-After. Authentication,
+changed configuration and ambiguous submission require manual attention.
+The app need not stay on the task screen. Closing it stops polling; reopening
+restores active jobs even outside the normal history limit. Remote work continues
+while the app is closed; the app must reopen to download results.
+
+A lost create response never triggers another generation: reconcile the exact
+submission intent and input-file ID against the remote batch listing. An
+unresolved/ambiguous match stays protected. Cancellation stays active until
+confirmed remotely. Terminal batches are still protected while their matching
+result, saved image or usage settlement is outstanding. Results are matched by
+custom ID, written atomically to deterministic filenames, and checked against
+existing bytes before reuse. A retry of a settled failed job is explicitly a new
+request; refresh always follows the original job.
+
+Official Batch USD/million-token prices are snapshotted explicitly: text input
+2.5, image input 4, text cache 0.625, image cache 1, image output 15. TokenUsage
+performs cost arithmetic with a weighted input/cache rate; this does not halve
+an arbitrary custom pricing group. A unique `batch:<task-id>` usage identity
+prevents duplicate billing records after a crash. Missing or inconsistent usage
+keeps settlement pending, even when the image has been delivered.
+
+Task filters combine submission mode (all/immediate/asynchronous) with existing
+status filters. Row/detail actions offer refresh; the toolbar refreshes all active
+Batch tasks. Clear-completed, clear-all and direct repository deletion preserve
+unfinished or unsettled Batch jobs. Remote waiting/cancelling/retrieving/attention
+labels are visible on compact status pills and details show the last refresh.
+
+Local HTTP tests cover wire requests and matching; queue tests cover restart,
+automatic/manual polling, cancellation, cleanup protection, usage idempotency,
+network/Retry-After and partial recovery. Four locales, four viewport widths and
+light/dark screenshots cover the controls. No paid live OpenAI request or native
+mobile run was performed.
+
+Sources: [Batch guide](https://developers.openai.com/api/docs/guides/batch),
+[pricing](https://developers.openai.com/api/docs/pricing),
+[JSON image edits](https://developers.openai.com/api/reference/resources/images/methods/edit).

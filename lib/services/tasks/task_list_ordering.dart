@@ -10,10 +10,13 @@ import '../../models/task_item.dart';
 /// apart by its grey stripe, its glyph and its 「已取消 · 手动」 line instead.
 enum TaskFilter { all, running, pending, done, failed }
 
+enum TaskModeFilter { all, immediate, batch }
+
 extension TaskFilterMatch on TaskFilter {
   bool matches(TaskItem task) => switch (this) {
     TaskFilter.all => true,
-    TaskFilter.running => task.status == TaskStatus.processing,
+    TaskFilter.running =>
+      task.status == TaskStatus.processing || task.status == TaskStatus.awaitingRemote,
     TaskFilter.pending => task.status == TaskStatus.pending,
     TaskFilter.done => task.status == TaskStatus.completed,
     TaskFilter.failed => task.status == TaskStatus.failed || task.status == TaskStatus.cancelled,
@@ -24,8 +27,7 @@ extension TaskFilterMatch on TaskFilter {
 enum TaskSortOrder { newestFirst, oldestFirst }
 
 /// A task that is still going to do something: running, or waiting to run.
-bool isActiveTask(TaskItem task) =>
-    task.status == TaskStatus.pending || task.status == TaskStatus.processing;
+bool isActiveTask(TaskItem task) => !task.isTerminal;
 
 /// The list as the screen draws it: the tasks pinned above the seam, and the
 /// tasks below it. With pinning off everything is in [rest].

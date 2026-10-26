@@ -36,7 +36,7 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
       final response = await http.Response.fromStream(
         await client.send(trackBodySent(req.request, options)),
       );
-      return await _decode(response, client, options, logger, req.sentImages, req.debugFile);
+      return await decodeResult(response, client, options, logger, req.sentImages, req.debugFile);
     } finally {
       await LLMDebugLogger.finish(req.debugFile);
       client.close();
@@ -74,7 +74,7 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
     final size = resolveImageSize(optionsWithCheckedSize(target, options, logger: logger));
     final quality = _resolveQuality(options);
     final output = {
-      ..._outputOptions(options),
+      ...outputOptions(options),
       if (stream) ...{'stream': true, 'partial_images': 3},
     };
     // Files actually attached to the edit — an unreadable attachment is not.
@@ -157,7 +157,7 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
     return (request: request, sentImages: sentImages, debugFile: debugFile);
   }
 
-  Future<LLMResponse> _decode(
+  Future<LLMResponse> decodeResult(
     http.Response response,
     http.Client client,
     Map<String, dynamic>? options,
@@ -258,7 +258,7 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
       if (response.statusCode != 200) {
         // Decode the provider's HTTP error from this response; never resubmit
         // an image request that may already have been accepted.
-        final whole = await _decode(
+        final whole = await decodeResult(
           await http.Response.fromStream(response),
           client,
           options,
@@ -410,7 +410,7 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
         }
       }
       if (isSse == false) {
-        final whole = await _decode(
+        final whole = await decodeResult(
           http.Response(jsonLines.join('\n'), response.statusCode),
           client,
           options,
@@ -439,7 +439,7 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
 
   /// Keep direct protocol callers under the same cross-field contract as the
   /// shared schema. Compression is never sent for PNG, including parked drafts.
-  static Map<String, dynamic> _outputOptions(Map<String, dynamic>? options) {
+  static Map<String, dynamic> outputOptions(Map<String, dynamic>? options) {
     final background = options?['background'];
     final format = options?['outputFormat'];
     if (background != null && !['auto', 'opaque', 'transparent'].contains(background)) {

@@ -325,6 +325,13 @@ enum ServerWebSearch {
 }
 
 class VendorProfile {
+  /// Official image Batch is deliberately host-gated; generic relays don't inherit it.
+  bool supportsImageBatchAt(String endpoint) =>
+      imageBatch &&
+      Uri.tryParse(endpoint)?.host == 'api.openai.com' &&
+      Uri.tryParse(endpoint)?.scheme == 'https';
+  final bool imageBatch;
+
   /// The chat faces on which this vendor accepts a host-run web search
   /// *switch* — DashScope's `enable_search`, spelled at the top level on ①
   /// and under `parameters` on its native face.
@@ -522,6 +529,7 @@ class VendorProfile {
   }
 
   const VendorProfile({
+    this.imageBatch = false,
     required this.id,
     required this.family,
     required this.auth,

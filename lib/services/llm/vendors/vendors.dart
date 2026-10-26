@@ -166,6 +166,7 @@ class Vendors {
   static const List<VendorProfile> all = [
     VendorProfile(
       id: openAIRest,
+      imageBatch: true,
       family: ProtocolFamily.openai,
       auth: AuthScheme.bearer,
       // ① stays the default; the Responses API is a per-model alternate on
@@ -188,6 +189,7 @@ class Vendors {
     ),
     VendorProfile(
       id: openAIResponsesRest,
+      imageBatch: true,
       family: ProtocolFamily.openai,
       auth: AuthScheme.bearer,
       // The same menu as [openAIRest], Responses first: the first entry is

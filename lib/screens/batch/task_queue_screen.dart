@@ -73,11 +73,17 @@ class TaskQueueScreen extends StatefulWidget {
 
 /// The queue in five figures.
 class _Counts {
-  _Counts(List<TaskItem> queue) : total = queue.length {
+  _Counts(List<TaskItem> queue)
+    : total = queue.length,
+      clearable = queue
+          .where((t) => t.canRemove || (!t.isBatch && t.status == TaskStatus.pending))
+          .length {
     for (final task in queue) {
       switch (task.status) {
         case TaskStatus.processing:
           running++;
+        case TaskStatus.awaitingRemote:
+          remote++;
         case TaskStatus.pending:
           pending++;
         case TaskStatus.completed:
@@ -91,6 +97,7 @@ class _Counts {
   }
 
   final int total;
+  int remote = 0;
   int running = 0;
   int pending = 0;
   int done = 0;
@@ -101,7 +108,7 @@ class _Counts {
   int get settled => done + failed + cancelled;
 
   /// What 清除全部 is offered for: anything not running.
-  int get clearable => total - running;
+  final int clearable;
 }
 
 /// How much of the header's action group fits beside the title block.
@@ -193,6 +200,7 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
       children: [
         _ColumnBand(height: 72, child: _buildHeader(context, counts, l10n)),
         _ColumnBand(height: 44, child: _buildFilterRow(context, queue, listState, l10n)),
+        _batchFilterBar(context, listState, queue, l10n),
         Expanded(
           child: tasks.isEmpty
               ? _buildEmptyOrFiltered(context, queue, listState, l10n)
@@ -206,6 +214,42 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
                 ),
         ),
       ],
+    );
+  }
+
+  Widget _batchFilterBar(
+    BuildContext context,
+    TaskListState state,
+    List<TaskItem> tasks,
+    AppLocalizations l10n,
+  ) {
+    if (!tasks.any((t) => t.isBatch)) return const SizedBox.shrink();
+    final queue = context.read<TaskQueueService>();
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpace.s16, vertical: AppSpace.s4),
+      child: Row(
+        children: [
+          Expanded(
+            child: AppSegmentedControl<TaskModeFilter>(
+              compact: true,
+              segments: [
+                AppSegment(value: TaskModeFilter.all, label: l10n.batchModeAll),
+                AppSegment(value: TaskModeFilter.immediate, label: l10n.batchModeImmediate),
+                AppSegment(value: TaskModeFilter.batch, label: l10n.batchModeAsync),
+              ],
+              value: state.modeFilter,
+              onChanged: state.setModeFilter,
+            ),
+          ),
+          IconButton(
+            tooltip: l10n.batchRefreshAll,
+            icon: const Icon(Icons.sync),
+            onPressed: tasks.any((t) => t.canRefresh && !queue.isBatchRefreshing(t.id))
+                ? queue.refreshBatchTasks
+                : null,
+          ),
+        ],
+      ),
     );
   }
 
@@ -308,21 +352,13 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
 
   Future<void> _handleBulkAction(String action, TaskQueueService queue) async {
     if (action == 'clear_completed') {
-      final toRemove = queue.queue
-          .where(
-            (t) =>
-                t.status == TaskStatus.completed ||
-                t.status == TaskStatus.failed ||
-                t.status == TaskStatus.cancelled,
-          )
-          .map((t) => t.id)
-          .toList();
+      final toRemove = queue.queue.where((t) => t.canRemove).map((t) => t.id).toList();
       for (final id in toRemove) {
         unawaited(queue.removeTask(id));
       }
     } else if (action == 'cancel_pending') {
       final toCancel = queue.queue
-          .where((t) => t.status == TaskStatus.pending)
+          .where((t) => t.status == TaskStatus.pending && !t.isBatch)
           .map((t) => t.id)
           .toList();
       for (final id in toCancel) {
@@ -333,21 +369,13 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
       // A running task is left alone: cancelling it mid-write would let its
       // executor save the row back after the clear deleted it.
       final waiting = queue.queue
-          .where((t) => t.status == TaskStatus.pending)
+          .where((t) => t.status == TaskStatus.pending && !t.isBatch)
           .map((t) => t.id)
           .toList();
       for (final id in waiting) {
         await queue.cancelTask(id);
       }
-      final toRemove = queue.queue
-          .where(
-            (t) =>
-                t.status == TaskStatus.completed ||
-                t.status == TaskStatus.failed ||
-                t.status == TaskStatus.cancelled,
-          )
-          .map((t) => t.id)
-          .toList();
+      final toRemove = queue.queue.where((t) => t.canRemove).map((t) => t.id).toList();
       for (final id in toRemove) {
         await queue.removeTask(id);
       }
@@ -372,7 +400,7 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
       title: l10n.clearAllTasksTitle,
       subtitle: running > 0 ? l10n.clearAllRunningNote(running) : null,
       content: Text(
-        l10n.clearAllKeepsFiles,
+        '${l10n.clearAllKeepsFiles}\n${l10n.batchProtected}',
         style: textTheme.bodyMedium?.copyWith(
           color: scheme.onSurfaceVariant,
           height: AppType.proseHeight,

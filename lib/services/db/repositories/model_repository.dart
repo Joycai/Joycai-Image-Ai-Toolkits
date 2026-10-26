@@ -44,6 +44,14 @@ class ModelRepository {
 
   Future<void> deleteModel(int id) async {
     final db = await _db;
+    final active = await db.query(
+      'tasks',
+      columns: ['id'],
+      where: "model_pk = ? AND execution_mode = 'batch' AND COALESCE(json_extract(batch_state, '\$.settled'), 0) != 1",
+      whereArgs: [id],
+      limit: 1,
+    );
+    if (active.isNotEmpty) throw StateError('An unfinished Batch task still uses this model.');
     await db.delete('llm_models', where: 'id = ?', whereArgs: [id]);
   }
 
@@ -129,6 +137,11 @@ class ModelRepository {
 
   Future<void> deleteChannel(int id) async {
     final db = await _db;
+    final active = await db.rawQuery(
+      "SELECT id FROM tasks WHERE execution_mode = 'batch' AND COALESCE(json_extract(batch_state, '\$.settled'), 0) != 1 AND model_pk IN (SELECT id FROM llm_models WHERE channel_id = ?) LIMIT 1",
+      [id],
+    );
+    if (active.isNotEmpty) throw StateError('An unfinished Batch task still uses this channel.');
     // Delete the channel's models too. A model without a channel can't resolve
     // an endpoint/key (it's unusable), and the previous behavior of merely
     // nulling channel_id left orphaned rows that leaked into the workbench model
@@ -151,6 +164,13 @@ class ModelRepository {
   }) async {
     final db = await _db;
     await db.transaction((txn) async {
+      final active = await txn.rawQuery(
+        "SELECT id FROM tasks WHERE execution_mode = 'batch' AND COALESCE(json_extract(batch_state, '\$.settled'), 0) != 1 AND model_pk IN (SELECT id FROM llm_models WHERE channel_id IN (?, ?)) LIMIT 1",
+        [channel.id, absorbedChannelId],
+      );
+      if (active.isNotEmpty) {
+        throw StateError('Unfinished Batch tasks prevent merging these channels.');
+      }
       await txn.update(
         'llm_channels',
         normalizedChannel(channel).toMap(includeId: false),

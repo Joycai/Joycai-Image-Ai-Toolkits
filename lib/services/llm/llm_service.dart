@@ -9,6 +9,7 @@ import '../billing/spec_billing.dart';
 import '../db/database_service.dart';
 import 'context_budget.dart';
 import 'gpt_image_timeout.dart';
+import 'image_batch_session.dart';
 import 'job_poll.dart' show cancellableSleep, cancellationProbeOf;
 import 'llm_config_resolver.dart';
 import 'llm_debug_logger.dart';
@@ -33,6 +34,46 @@ class LLMService {
   final DatabaseService _db;
   final LLMConfigResolver _configResolver;
   final LLMDispatcher _dispatcher = LLMDispatcher();
+
+  Future<ImageBatchSession> imageBatchSession(
+    dynamic modelIdentifier, {
+    Map<String, dynamic>? snapshot,
+  }) async {
+    var config = await _configResolver.resolveConfig(modelIdentifier);
+    if (snapshot != null) {
+      if (config.channelId != snapshot['channelId'] ||
+          config.endpoint != snapshot['endpoint'] ||
+          config.channelType != snapshot['channelType']) {
+        throw LLMApiException(
+          'Batch connection changed. Restore the original channel endpoint to refresh.',
+        );
+      }
+      // A saved job is not re-routed by a later model or protocol edit.
+      config = LLMModelConfig(
+        modelId: snapshot['modelId'] as String,
+        id: config.id,
+        channelId: config.channelId,
+        channelType: config.channelType,
+        endpoint: config.endpoint,
+        apiKey: config.apiKey,
+        wireProtocol: 'openai-images',
+        proxyEnabled: config.proxyEnabled,
+        proxyUrl: config.proxyUrl,
+        proxyUsername: config.proxyUsername,
+        proxyPassword: config.proxyPassword,
+      );
+    }
+    return ImageBatchSession(_dispatcher.imageBatchTarget(config));
+  }
+
+  Future<Map<String, dynamic>> prepareImageBatch(
+    dynamic modelIdentifier,
+    List<LLMMessage> messages,
+    Map<String, dynamic> options,
+  ) async {
+    final config = await _configResolver.resolveConfig(modelIdentifier);
+    return _dispatcher.imageBatchPayload(config, messages, options);
+  }
 
   /// Serial of `request` / `requestStream` calls, for the debug log's
   /// correlation header ([LLMLogCorrelation.request]).

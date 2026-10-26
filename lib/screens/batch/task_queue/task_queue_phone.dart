@@ -57,6 +57,7 @@ extension _PhoneForm on _TaskQueueScreenState {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          _batchFilterBar(context, listState, queue, l10n),
           // The counts are why this screen is opened, so the phone shortens
           // them rather than dropping them.
           _ColumnBand(

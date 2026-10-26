@@ -69,7 +69,8 @@ class _TaskMenuButtonState extends State<TaskMenuButton> {
     final queue = Provider.of<AppState>(context, listen: false).taskQueue;
 
     final canCancel = _isActive(task);
-    final canRetry = task.status == TaskStatus.failed || task.status == TaskStatus.cancelled;
+    final canRetry =
+        task.canRemove && (task.status == TaskStatus.failed || task.status == TaskStatus.cancelled);
     final canRemove = _isTerminal(task);
     final hasPrompt = task.generationOptions.containsKey('prompt');
 
@@ -87,6 +88,12 @@ class _TaskMenuButtonState extends State<TaskMenuButton> {
             if (mounted) TaskLogDialog.show(context, task);
           },
         ),
+        if (task.canRefresh && !queue.isBatchRefreshing(task.id))
+          AppGlassMenuItem(
+            icon: Icons.sync,
+            label: l10n.batchRefresh,
+            onSelected: () => queue.refreshBatchTask(task.id),
+          ),
         if (TaskQueueService.canResumeVideoJob(task))
           AppGlassMenuItem(
             icon: Icons.play_arrow_rounded,
@@ -96,7 +103,7 @@ class _TaskMenuButtonState extends State<TaskMenuButton> {
         if (canRetry)
           AppGlassMenuItem(
             icon: Icons.refresh,
-            label: l10n.retryTask,
+            label: task.isBatch ? l10n.batchRetry : l10n.retryTask,
             onSelected: () => queue.retryTask(task.id),
           ),
         if (hasPrompt)

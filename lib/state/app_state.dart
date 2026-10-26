@@ -282,6 +282,27 @@ class AppState extends ChangeNotifier {
   List<PromptHistoryEntry> imagePromptHistory = [];
   List<PromptHistoryEntry> videoPromptHistory = [];
   bool useStream = true;
+  bool useImageBatch = false;
+  void setUseImageBatch(bool value) {
+    useImageBatch = value;
+    notifyListeners();
+  }
+
+  bool supportsImageBatch(LLMModel? model) {
+    if (model == null) return false;
+    final channel = allChannels.where((c) => c.id == model.channelId).firstOrNull;
+    if (channel == null) return false;
+    final routed = RoutedChannel.forModel(channel, model);
+    return !routed.missing &&
+        LLMDispatcher.supportsImageBatch(
+          channelType: routed.channelType,
+          modelId: model.modelId,
+          endpoint: routed.endpoint,
+          tag: model.tag,
+          wireProtocol: routed.wireProtocol,
+        );
+  }
+
   // Opt-in: recompress oversized (>3MB) reference/source images to JPEG
   // before sending, trading fidelity for smaller requests. Off by default so
   // existing behavior (original bytes reach the API) doesn't change silently.

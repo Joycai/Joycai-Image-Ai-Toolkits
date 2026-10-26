@@ -29,6 +29,13 @@ class TaskListState extends ChangeNotifier {
   final DatabaseService _db;
 
   TaskFilter filter = TaskFilter.all;
+  TaskModeFilter modeFilter = TaskModeFilter.all;
+  void setModeFilter(TaskModeFilter value) {
+    if (modeFilter == value) return;
+    modeFilter = value;
+    notifyListeners();
+  }
+
   TaskSortOrder sortOrder = TaskSortOrder.newestFirst;
   bool pinActive = true;
 
@@ -63,6 +70,18 @@ class TaskListState extends ChangeNotifier {
   }
 
   /// [queue] as the list should draw it under the current settings.
-  ArrangedTasks arrange(List<TaskItem> queue) =>
-      arrangeTasks(queue, filter: filter, order: sortOrder, pinActive: pinActive);
+  ArrangedTasks arrange(List<TaskItem> queue) => arrangeTasks(
+    queue
+        .where(
+          (task) => switch (modeFilter) {
+            TaskModeFilter.all => true,
+            TaskModeFilter.immediate => !task.isBatch,
+            TaskModeFilter.batch => task.isBatch,
+          },
+        )
+        .toList(),
+    filter: filter,
+    order: sortOrder,
+    pinActive: pinActive,
+  );
 }

@@ -4185,6 +4185,51 @@ class AppLocalizationsZh extends AppLocalizations {
   String get imageGenerationPreview => '生成预览 · 尚未保存';
 
   @override
+  String get batchSubmit => '异步提交';
+
+  @override
+  String get batchSubmitHint => 'OpenAI Batch 费率 · 最长 24 小时 · 无实时预览，重开应用可取回结果。';
+
+  @override
+  String get batchWaiting => '云端处理中';
+
+  @override
+  String get batchRefresh => '刷新异步任务';
+
+  @override
+  String get batchRefreshAll => '刷新全部异步任务';
+
+  @override
+  String get batchModeAll => '全部方式';
+
+  @override
+  String get batchModeImmediate => '即时';
+
+  @override
+  String get batchModeAsync => '异步';
+
+  @override
+  String get batchCancelling => '正在取消远端任务';
+
+  @override
+  String get batchAttention => '需要处理 · 刷新以重试';
+
+  @override
+  String get batchRetrieving => '正在取回结果';
+
+  @override
+  String get batchLastRefresh => '上次刷新';
+
+  @override
+  String get batchProtected => '未结束的异步任务将被保留。';
+
+  @override
+  String get batchRetry => '重新生成（新请求）';
+
+  @override
+  String get batchStatusAttention => '需要处理';
+
+  @override
   String get setupWizardTitle => '欢迎设置向导';
 
   @override
@@ -10224,6 +10269,51 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get imageGenerationPreview => '生成預覽 · 尚未儲存';
+
+  @override
+  String get batchSubmit => '非同步提交';
+
+  @override
+  String get batchSubmitHint => 'OpenAI Batch 費率 · 最長 24 小時 · 無即時預覽，重開應用可取回結果。';
+
+  @override
+  String get batchWaiting => '雲端處理中';
+
+  @override
+  String get batchRefresh => '重新整理非同步任務';
+
+  @override
+  String get batchRefreshAll => '重新整理所有非同步任務';
+
+  @override
+  String get batchModeAll => '全部方式';
+
+  @override
+  String get batchModeImmediate => '即時';
+
+  @override
+  String get batchModeAsync => '非同步';
+
+  @override
+  String get batchCancelling => '正在取消遠端任務';
+
+  @override
+  String get batchAttention => '需要處理 · 重新整理以重試';
+
+  @override
+  String get batchRetrieving => '正在取回結果';
+
+  @override
+  String get batchLastRefresh => '上次重新整理';
+
+  @override
+  String get batchProtected => '尚未結束的非同步任務將保留。';
+
+  @override
+  String get batchRetry => '重新產生（新請求）';
+
+  @override
+  String get batchStatusAttention => '需要處理';
 
   @override
   String get setupWizardTitle => '歡迎設定';

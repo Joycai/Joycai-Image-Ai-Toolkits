@@ -4374,6 +4374,52 @@ class AppLocalizationsEn extends AppLocalizations {
   String get imageGenerationPreview => 'Generation preview · not saved';
 
   @override
+  String get batchSubmit => 'Asynchronous submission';
+
+  @override
+  String get batchSubmitHint =>
+      'OpenAI Batch rates · up to 24h · no live previews. Reopen the app to retrieve results.';
+
+  @override
+  String get batchWaiting => 'Cloud processing';
+
+  @override
+  String get batchRefresh => 'Refresh batch';
+
+  @override
+  String get batchRefreshAll => 'Refresh all batches';
+
+  @override
+  String get batchModeAll => 'All methods';
+
+  @override
+  String get batchModeImmediate => 'Immediate';
+
+  @override
+  String get batchModeAsync => 'Asynchronous';
+
+  @override
+  String get batchCancelling => 'Cancelling remotely';
+
+  @override
+  String get batchAttention => 'Needs attention · refresh to retry';
+
+  @override
+  String get batchRetrieving => 'Retrieving result';
+
+  @override
+  String get batchLastRefresh => 'Last refresh';
+
+  @override
+  String get batchProtected => 'Unfinished asynchronous tasks are kept.';
+
+  @override
+  String get batchRetry => 'Generate again (new request)';
+
+  @override
+  String get batchStatusAttention => 'Needs attention';
+
+  @override
   String get setupWizardTitle => 'Welcome Setup';
 
   @override

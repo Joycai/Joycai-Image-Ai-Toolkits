@@ -7,7 +7,9 @@ import 'dart:typed_data';
 /// separate from the serializable data it operates on. The service re-exports
 /// these symbols, so existing imports of `task_queue_service.dart` keep working.
 
-enum TaskStatus { pending, processing, completed, failed, cancelled }
+enum TaskStatus { pending, processing, awaitingRemote, completed, failed, cancelled }
+
+enum TaskExecutionMode { immediate, batch }
 
 enum TaskType { imageProcess, imageDownload, promptRefine, aiRename, videoGenerate }
 
@@ -34,6 +36,19 @@ class TaskItem {
   final String? channelTag;
   final int? channelColor;
   final bool useStream;
+  final TaskExecutionMode executionMode;
+
+  /// Durable Batch checkpoints; never contains credentials or image payloads.
+  Map<String, dynamic>? batchState;
+
+  bool get isBatch => executionMode == TaskExecutionMode.batch;
+  bool get isTerminal =>
+      status == TaskStatus.completed ||
+      status == TaskStatus.failed ||
+      status == TaskStatus.cancelled;
+  bool get canRemove => isTerminal && (!isBatch || batchState?['settled'] == true);
+  bool get canRefresh =>
+      isBatch && !isTerminal && status != TaskStatus.pending && status != TaskStatus.processing;
   TaskStatus status;
   List<String> logs;
   List<String> resultPaths;
@@ -85,6 +100,8 @@ class TaskItem {
     this.channelColor,
     required this.parameters,
     this.useStream = true,
+    this.executionMode = TaskExecutionMode.immediate,
+    this.batchState,
     this.status = TaskStatus.pending,
     List<String>? logs,
     List<String>? resultPaths,
@@ -115,6 +132,8 @@ class TaskItem {
     channelColor: channelColor,
     parameters: parameters,
     useStream: useStream,
+    executionMode: executionMode,
+    batchState: batchState == null ? null : Map.of(batchState!),
     status: status,
     logs: logs,
     resultPaths: resultPaths,
@@ -157,6 +176,8 @@ class TaskItem {
       'channel_tag': channelTag,
       'channel_color': channelColor,
       'use_stream': useStream ? 1 : 0,
+      'execution_mode': executionMode.name,
+      'batch_state': batchState == null ? null : jsonEncode(batchState),
       'status': status.name,
       'parameters': jsonEncode(parameters),
       'result_path': jsonEncode(resultPaths),
@@ -234,6 +255,10 @@ class TaskItem {
       channelTag: map['channel_tag'] as String?,
       channelColor: map['channel_color'] as int?,
       useStream: (map['use_stream'] ?? 1) == 1,
+      executionMode: map['execution_mode'] == 'batch'
+          ? TaskExecutionMode.batch
+          : TaskExecutionMode.immediate,
+      batchState: map['batch_state'] == null ? null : _decodeParameters(map['batch_state']),
       status: TaskStatus.values.firstWhere(
         (e) => e.name == map['status'],
         orElse: () => TaskStatus.failed,

@@ -75,6 +75,7 @@ class DatabaseMigration {
     if (oldVersion < 48) await _createV48Columns(db);
     if (oldVersion < 49) await _createV49Columns(db);
     if (oldVersion < 50) await _createV50Tables(db);
+    if (oldVersion < 51) await _createV51Columns(db);
   }
 
   static Future<void> onCreate(Database db) async {
@@ -128,7 +129,20 @@ class DatabaseMigration {
     await _createV48Columns(db);
     await _createV49Columns(db);
     await _createV50Tables(db);
+    await _createV51Columns(db);
     // Presets are synchronized in DatabaseService
+  }
+
+  static Future<void> _createV51Columns(Database db) async {
+    if (await _tableExists(db, 'tasks')) {
+      await _addColumnIfNotExists(db, 'tasks', 'execution_mode', "TEXT DEFAULT 'immediate'");
+      await _addColumnIfNotExists(db, 'tasks', 'batch_state', 'TEXT');
+    }
+    if (await _tableExists(db, 'token_usage')) {
+      await db.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS batch_usage_identity ON token_usage(task_id) WHERE task_id LIKE 'batch:%'",
+      );
+    }
   }
 
   static Future<void> _createV50Tables(Database db) async {

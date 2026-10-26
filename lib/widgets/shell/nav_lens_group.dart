@@ -69,9 +69,7 @@ class NavLensGroup extends StatelessWidget {
     final current =
         AppDestination.values[context.select<AppState, int>((s) => s.activeScreenIndex)];
     final queueCount = context.select<TaskQueueService, int>(
-      (q) => q.queue
-          .where((t) => t.status == TaskStatus.pending || t.status == TaskStatus.processing)
-          .length,
+      (q) => q.queue.where((t) => !t.isTerminal).length,
     );
     final scheme = Theme.of(context).colorScheme;
     final edge = GlassInk.maybeOf(context)?.edge ?? scheme.outlineVariant;

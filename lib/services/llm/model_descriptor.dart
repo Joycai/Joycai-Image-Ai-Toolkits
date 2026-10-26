@@ -18,6 +18,16 @@ export 'model_family.dart' show GeminiThinkingGeneration;
 /// of this layer — protocols (layer 1) and vendors (layer 2) must never call
 /// them directly; they receive a resolved descriptor instead.
 class ModelDescriptor {
+  /// Explicit official Batch model allowlist, not permissive relay classification.
+  bool get supportsImageBatch => const {
+    'gpt-image-2',
+    'gpt-image-2-2026-04-21',
+    'gpt-image-2.5-flare',
+    'gpt-image-2.5-flare-2026-09-08',
+    'gpt-image-2.5-sunburst',
+    'gpt-image-2.5-sunburst-2026-09-08',
+  }.contains(modelId);
+
   final String modelId;
   final ModelFamily family;
   final ModelCapabilities capabilities;

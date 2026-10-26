@@ -13,7 +13,13 @@ class UsageRepository {
 
   Future<void> recordTokenUsage(TokenUsage usage) async {
     final db = await _db;
-    await db.insert('token_usage', usage.toMap());
+    await db.insert(
+      'token_usage',
+      usage.toMap(),
+      conflictAlgorithm: (usage.taskId?.startsWith('batch:') ?? false)
+          ? ConflictAlgorithm.ignore
+          : ConflictAlgorithm.abort,
+    );
   }
 
   /// Re-prices the usage row recorded under [taskId] at [billing]; returns
