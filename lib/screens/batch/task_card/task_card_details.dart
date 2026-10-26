@@ -86,6 +86,14 @@ class _FactsAndActions extends StatelessWidget {
 
     final rows = <(String, String, int)>[
       (l10n.model, task.modelId, 1),
+      if (task.isBatch)
+        (
+          l10n.batchModeAsync,
+          '${task.batchState?['batchId'] ?? task.batchState?['phase'] ?? ''}',
+          2,
+        ),
+      if (task.batchState?['lastError'] case final String error) (l10n.batchAttention, error, 4),
+      if (task.batchState?['pricingSource'] case final String price) (l10n.config, price, 2),
       if (task.parameters['origin'] == 'mcp') (l10n.mcpTaskOrigin, 'MCP', 1),
       (l10n.createdAt, formatTaskClock(task.createdAt), 1),
       (l10n.started, formatTaskClock(task.startTime), 1),
@@ -99,6 +107,16 @@ class _FactsAndActions extends StatelessWidget {
     final actions = <Widget>[
       // Before retry: on a video whose job was accepted, picking it back up
       // costs nothing, while a retry submits — and pays for — a new one.
+      if (task.canRefresh)
+        AppButton(
+          label: l10n.batchRefresh,
+          icon: Icons.sync,
+          size: AppButtonSize.compact,
+          variant: AppButtonVariant.secondary,
+          onPressed: queue.isBatchRefreshing(task.id)
+              ? null
+              : () => queue.refreshBatchTask(task.id),
+        ),
       if (TaskQueueService.canResumeVideoJob(task))
         AppButton(
           label: l10n.resumeVideoJob,
@@ -107,9 +125,9 @@ class _FactsAndActions extends StatelessWidget {
           variant: AppButtonVariant.secondary,
           onPressed: () => queue.resumeVideoJob(task.id),
         ),
-      if (failed || task.status == TaskStatus.cancelled)
+      if (task.canRemove && (failed || task.status == TaskStatus.cancelled))
         AppButton(
-          label: l10n.retryTask,
+          label: task.isBatch ? l10n.batchRetry : l10n.retryTask,
           icon: Icons.refresh,
           size: AppButtonSize.compact,
           // A failure's retry is the solid error fill (`B2`); a cancellation

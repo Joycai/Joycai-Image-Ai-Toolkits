@@ -816,6 +816,7 @@ List<String> _logLines(TaskStatus status, String? error) {
       lines.add('[14:02:23] 任务失败');
     case TaskStatus.cancelled:
       lines.add('[14:02:19] 用户取消了任务');
+    case TaskStatus.awaitingRemote:
     case TaskStatus.pending:
     case TaskStatus.processing:
       return lines.take(2).toList();

@@ -7599,6 +7599,96 @@ abstract class AppLocalizations {
   /// **'Generation preview · not saved'**
   String get imageGenerationPreview;
 
+  /// No description provided for @batchSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Asynchronous submission'**
+  String get batchSubmit;
+
+  /// No description provided for @batchSubmitHint.
+  ///
+  /// In en, this message translates to:
+  /// **'OpenAI Batch rates · up to 24h · no live previews. Reopen the app to retrieve results.'**
+  String get batchSubmitHint;
+
+  /// No description provided for @batchWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud processing'**
+  String get batchWaiting;
+
+  /// No description provided for @batchRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh batch'**
+  String get batchRefresh;
+
+  /// No description provided for @batchRefreshAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh all batches'**
+  String get batchRefreshAll;
+
+  /// No description provided for @batchModeAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All methods'**
+  String get batchModeAll;
+
+  /// No description provided for @batchModeImmediate.
+  ///
+  /// In en, this message translates to:
+  /// **'Immediate'**
+  String get batchModeImmediate;
+
+  /// No description provided for @batchModeAsync.
+  ///
+  /// In en, this message translates to:
+  /// **'Asynchronous'**
+  String get batchModeAsync;
+
+  /// No description provided for @batchCancelling.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelling remotely'**
+  String get batchCancelling;
+
+  /// No description provided for @batchAttention.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs attention · refresh to retry'**
+  String get batchAttention;
+
+  /// No description provided for @batchRetrieving.
+  ///
+  /// In en, this message translates to:
+  /// **'Retrieving result'**
+  String get batchRetrieving;
+
+  /// No description provided for @batchLastRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Last refresh'**
+  String get batchLastRefresh;
+
+  /// No description provided for @batchProtected.
+  ///
+  /// In en, this message translates to:
+  /// **'Unfinished asynchronous tasks are kept.'**
+  String get batchProtected;
+
+  /// No description provided for @batchRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate again (new request)'**
+  String get batchRetry;
+
+  /// No description provided for @batchStatusAttention.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs attention'**
+  String get batchStatusAttention;
+
   /// No description provided for @setupWizardTitle.
   ///
   /// In en, this message translates to:

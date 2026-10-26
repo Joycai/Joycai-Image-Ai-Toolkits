@@ -172,6 +172,7 @@ extension _WideHeader on _TaskQueueScreenState {
   }) {
     final ink2 = scheme.onSurfaceVariant;
     return [
+      if (counts.remote > 0) ('${counts.remote} ${l10n.batchWaiting}', ink2, FontWeight.w400),
       (
         '${counts.running} ${short ? l10n.statusShortRunning : l10n.processingTasks}',
         counts.running > 0 ? scheme.onAccentTint : ink2,

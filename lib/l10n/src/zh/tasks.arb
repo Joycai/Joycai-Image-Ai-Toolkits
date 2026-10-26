@@ -168,5 +168,20 @@
   "clearAllKeepsFiles": "运行中的任务不受影响。已生成的文件保留在输出目录里，只是队列里的记录被清空。",
   "taskNoOutputsFailed": "本次没有产物——任务在写入前就失败了",
   "noTaskLogCancelledHint": "任务在开始执行前被取消，所以没有留下日志。",
-  "imageGenerationPreview": "生成预览 · 尚未保存"
+  "imageGenerationPreview": "生成预览 · 尚未保存",
+  "batchSubmit": "异步提交",
+  "batchSubmitHint": "OpenAI Batch 费率 · 最长 24 小时 · 无实时预览，重开应用可取回结果。",
+  "batchWaiting": "云端处理中",
+  "batchRefresh": "刷新异步任务",
+  "batchRefreshAll": "刷新全部异步任务",
+  "batchModeAll": "全部方式",
+  "batchModeImmediate": "即时",
+  "batchModeAsync": "异步",
+  "batchCancelling": "正在取消远端任务",
+  "batchAttention": "需要处理 · 刷新以重试",
+  "batchRetrieving": "正在取回结果",
+  "batchLastRefresh": "上次刷新",
+  "batchProtected": "未结束的异步任务将被保留。",
+  "batchRetry": "重新生成（新请求）",
+  "batchStatusAttention": "需要处理"
 }

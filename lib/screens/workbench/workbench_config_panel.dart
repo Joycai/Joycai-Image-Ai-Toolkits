@@ -169,6 +169,7 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
     final lastSelectedModelId = context.select<AppState, String?>((s) => s.lastSelectedModelId);
     final lastPrompt = context.select<AppState, String>((s) => s.lastPrompt);
     final useStream = context.select<AppState, bool>((s) => s.useStream);
+    final useBatch = context.select<AppState, bool>((s) => s.useImageBatch);
     final compressReferenceImages = context.select<AppState, bool>(
       (s) => s.compressReferenceImages,
     );
@@ -202,6 +203,8 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
       selectedChannelId = resolved.channelId;
       resolvedModel = resolved;
     }
+    final batchSupported = context.read<AppState>().supportsImageBatch(resolvedModel);
+    final batchEnabled = useBatch && batchSupported;
 
     final appState = Provider.of<AppState>(context, listen: false);
 
@@ -337,12 +340,22 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _ToggleRow(
-                title: l10n.useStreaming,
-                hint: l10n.useStreamingDesc,
-                value: useStream,
-                onChanged: (v) => _updateConfig(useStream: v),
-              ),
+              if (batchSupported) ...[
+                _ToggleRow(
+                  title: l10n.batchSubmit,
+                  hint: l10n.batchSubmitHint,
+                  value: batchEnabled,
+                  onChanged: context.read<AppState>().setUseImageBatch,
+                ),
+                const Divider(),
+              ],
+              if (!batchEnabled)
+                _ToggleRow(
+                  title: l10n.useStreaming,
+                  hint: l10n.useStreamingDesc,
+                  value: useStream,
+                  onChanged: (v) => _updateConfig(useStream: v),
+                ),
               const Divider(),
               _ToggleRow(
                 title: l10n.compressReferenceImages,
@@ -480,7 +493,7 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
             child: FilledButton(
               onPressed: !enabled
                   ? null
-                  : () {
+                  : () async {
                       final appState = Provider.of<AppState>(context, listen: false);
                       if (selectedModelDbId == null) {
                         AppSnackBar.warning(
@@ -501,6 +514,7 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
 
                       final params = <String, dynamic>{
                         'prompt': _promptController.text,
+                        'executionMode': batchEnabled ? 'batch' : 'immediate',
                         ...appState.effectiveImageParams(selectedModel),
                       };
 
@@ -519,7 +533,17 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
                         );
                         return;
                       }
-                      appState.submitTask(selectedModelDbId, params, modelIdDisplay: modelName);
+                      try {
+                        await appState.submitTask(
+                          selectedModelDbId,
+                          params,
+                          modelIdDisplay: modelName,
+                        );
+                      } catch (error) {
+                        if (context.mounted) AppSnackBar.warning(context, error.toString());
+                        return;
+                      }
+                      if (!context.mounted) return;
 
                       if (widget.scrollController != null) {
                         Navigator.pop(context);
@@ -531,7 +555,11 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
                 minimumSize: Size(double.infinity, inSheet ? AppSize.touch : AppSize.large),
               ),
               child: Text(
-                selectedCount == 0 ? l10n.processPrompt : l10n.processImages(selectedCount),
+                batchEnabled
+                    ? l10n.batchSubmit
+                    : selectedCount == 0
+                    ? l10n.processPrompt
+                    : l10n.processImages(selectedCount),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),

@@ -8,9 +8,10 @@ part of '../task_queue_card.dart';
 /// Running is the accent's 12% form with the breathing dot — the one loop the
 /// system allows, and it stops under reduce-motion and reduce-visual-effects.
 class TaskStatusPill extends StatelessWidget {
-  const TaskStatusPill({super.key, required this.status});
+  const TaskStatusPill({super.key, required this.status, this.label});
 
   final TaskStatus status;
+  final String? label;
 
   static const double padX = 8;
   static const double dotSize = 6;
@@ -24,6 +25,7 @@ class TaskStatusPill extends StatelessWidget {
 
     final (Color background, Color ink) = switch (status) {
       TaskStatus.processing => (scheme.accentTint, scheme.onAccentTint),
+      TaskStatus.awaitingRemote => (scheme.surfaceContainerHighest, scheme.onSurfaceVariant),
       TaskStatus.pending => (scheme.surfaceContainerHighest, scheme.onSurfaceVariant),
       TaskStatus.completed => (semantic.successContainer, semantic.onSuccessContainer),
       TaskStatus.failed => (scheme.errorContainer, scheme.onErrorContainer),
@@ -44,7 +46,7 @@ class TaskStatusPill extends StatelessWidget {
             const SizedBox(width: dotGap),
           ],
           Text(
-            taskStatusLabel(status, l10n),
+            label ?? taskStatusLabel(status, l10n),
             maxLines: 1,
             softWrap: false,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(color: ink),

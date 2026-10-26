@@ -25,6 +25,19 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 |---|---|
 | [`2026-08-assistant-timeout.md`](2026-08-assistant-timeout.md) | 不是施工说明书，是**一次真实故障的取证记录**（`api_logs/` 里七条日志的耗时还原）。`architecture/assistant-context.md` 直接引它作为「为什么要早elide」的证据。 |
 
+## 2026-10-26 · GPT Image 2/2.5 Batch
+
+已实现官方 Images 路由的异步提交、自动/手动刷新、重启恢复、未完成清理保护和
+任务筛选；一项本地任务对应一项远端 Batch，未知提交结果只对账、不重新购买。
+采用 task 行 JSON checkpoint（schema v51），使任务状态与恢复信息原子持久化；
+明确价格快照和唯一 usage identity 防止重启重复计费。Nano Banana Batch 留待下一轮。
+长期协议、恢复/备份边界与费用约定见 [GPT Image API 说明](../api/gpt-image-series.md)。
+施工提案已退役；UI 继续使用既有控件、暖石灰与语义色，四语言同步。
+
+验证：format 通过、analyze 为 No issues found；非截图测试 3332 通过、9 skip。
+四语言 × 四宽度 × 明暗的 Batch 页面和组件 gallery 共 96 个渲染通过，无 overflow；
+已查看页面全矩阵及主题组件样本。未调用付费真实 API，也未做原生移动设备验证。
+
 ## 2026-10-21 · GPT Image 25-minute timeout and late results
 
 - Added a persisted Application setting, localized in all four languages; default

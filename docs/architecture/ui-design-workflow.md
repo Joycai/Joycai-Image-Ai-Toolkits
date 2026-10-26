@@ -125,3 +125,18 @@ about a slow response while waiting continues and late results are saved until
 the user cancels. Opaque surfaces, theme roles and existing responsive behavior
 are preserved. The maintained specifications and real Flutter before/after
 renders are the reference; original Claude Design frames were unavailable.
+
+
+### GPT Image Batch controls (2026-10-26)
+
+The workbench adds an optional asynchronous switch only for supported official
+Images routes; its hint explains the 24-hour window, no previews and reopening
+the app to collect results. Mode is visibly reflected in the submit label.
+Tasks keep the existing status filters and add an independent submission-mode
+segment. Remote phases use compact neutral status pills so cancellation or a
+required action remains visible at narrow widths; details retain IDs, last check
+and diagnostic text. Refresh is available per task and for all active batches.
+Unfinished/unsettled jobs are protected by queue and repository rules, not merely
+a disabled menu item. Clear-all explains the protection. Design authority is the
+maintained specification and current controls, with four-locale renders at
+390/834/1024/1440 in both themes; no new visual system or animation was introduced.

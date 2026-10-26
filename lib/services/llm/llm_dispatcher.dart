@@ -25,6 +25,7 @@ import 'protocols/minimax_h3_base_video_protocol.dart';
 import 'protocols/minimax_images_protocol.dart';
 import 'protocols/minimax_video_protocol.dart';
 import 'protocols/openai_chat_protocol.dart';
+import 'protocols/openai_image_batch_protocol.dart';
 import 'protocols/openai_images_protocol.dart';
 import 'protocols/openai_responses_protocol.dart';
 import 'protocols/openai_videos_protocol.dart';
@@ -83,6 +84,48 @@ class LLMOperationTicket {
 }
 
 class LLMDispatcher {
+  static bool supportsImageBatch({
+    required String channelType,
+    required String modelId,
+    required String endpoint,
+    String? tag,
+    String? wireProtocol,
+  }) {
+    final schema = generationSchemaFor(
+      channelType: channelType,
+      modelId: modelId,
+      tag: tag,
+      wireProtocol: wireProtocol,
+    );
+    return Vendors.byId(channelType).supportsImageBatchAt(endpoint) &&
+        ModelDescriptor.of(modelId).supportsImageBatch &&
+        schema.protocol == WireProtocol.openaiImages;
+  }
+
+  LLMTarget imageBatchTarget(LLMModelConfig config) {
+    final target = _faceTarget(resolveTarget(config), WireProtocol.openaiImages);
+    if (!supportsImageBatch(
+      channelType: config.channelType,
+      modelId: config.modelId,
+      endpoint: target.config.endpoint,
+      tag: config.tag,
+      wireProtocol: config.wireProtocol,
+    )) {
+      throw LLMApiException('This model and route do not support image Batch.');
+    }
+    return target;
+  }
+
+  Future<Map<String, dynamic>> imageBatchPayload(
+    LLMModelConfig config,
+    List<LLMMessage> messages,
+    Map<String, dynamic> options,
+  ) async => OpenAIImageBatchProtocol().payload(
+    imageBatchTarget(config),
+    messages,
+    await _generationOptions(config, messages, options),
+  );
+
   // Layer-1 protocol implementations (stateless).
   static final _openaiChat = OpenAIChatProtocol();
   static final _openaiResponses = OpenAIResponsesProtocol();

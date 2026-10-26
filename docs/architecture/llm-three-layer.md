@@ -1016,3 +1016,16 @@ late image. Standard calls likewise await the original generation future.
 Cancellation probes/abort triggers remain active throughout the extended wait;
 other routes retain hard timeout semantics. Late deliverables use the existing
 executor saving and exactly-once usage path, with no detached/background resubmit.
+
+
+### GPT Image Batch lifecycle
+
+Batch capability is the intersection of `ModelDescriptor.supportsImageBatch`,
+the official vendor/endpoint capability and the dispatcher-selected Images wire.
+`LLMDispatcher` alone resolves/validates it; `ImageBatchSession` carries that target
+to `OpenAIImageBatchProtocol`. Tasks keep a durable original routing snapshot and
+resolve current credentials without silently migrating a paid job to another host.
+Queue polling is independent of immediate-image concurrency and excludes Batch
+waits from model ETA estimates. Persist submission intent before POST; reconcile
+an ambiguous POST instead of resubmitting. Details and recovery/settlement
+invariants: [GPT Image Batch](../api/gpt-image-series.md#asynchronous-batch-images-2026-10-26).

@@ -168,5 +168,20 @@
   "clearAllKeepsFiles": "実行中のタスクはそのままです。生成済みのファイルは出力フォルダーに残り、キューの記録だけが消去されます。",
   "taskNoOutputsFailed": "出力はありません。書き込み前にタスクが失敗しました。",
   "noTaskLogCancelledHint": "開始前にキャンセルされたため、ログはありません。",
-  "imageGenerationPreview": "生成プレビュー · 未保存"
+  "imageGenerationPreview": "生成プレビュー · 未保存",
+  "batchSubmit": "非同期送信",
+  "batchSubmitHint": "OpenAI Batch 料金 · 最大24時間 · プレビューなし。アプリ再起動後も結果を取得できます。",
+  "batchWaiting": "クラウド処理中",
+  "batchRefresh": "非同期タスクを更新",
+  "batchRefreshAll": "すべての非同期タスクを更新",
+  "batchModeAll": "すべての方式",
+  "batchModeImmediate": "即時",
+  "batchModeAsync": "非同期",
+  "batchCancelling": "リモートでキャンセル中",
+  "batchAttention": "要確認 · 更新して再試行",
+  "batchRetrieving": "結果を取得中",
+  "batchLastRefresh": "最終更新",
+  "batchProtected": "未完了の非同期タスクは保持されます。",
+  "batchRetry": "再生成（新しいリクエスト）",
+  "batchStatusAttention": "要確認"
 }

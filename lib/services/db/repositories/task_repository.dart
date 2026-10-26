@@ -76,8 +76,7 @@ class TaskRepository {
     // restart can silently abandon queued work.
     final pending = await db.query(
       'tasks',
-      where: 'status = ?',
-      whereArgs: ['pending'],
+      where: "status = 'pending' OR (execution_mode = 'batch' AND (status NOT IN ('completed', 'failed', 'cancelled') OR COALESCE(json_extract(batch_state, '\$.settled'), 0) != 1))",
       orderBy: 'COALESCE(created_at, start_time, end_time) DESC',
     );
     final byId = <String, Map<String, dynamic>>{
@@ -119,7 +118,11 @@ class TaskRepository {
 
   Future<void> deleteTask(String id) async {
     final db = await _db;
-    await db.delete('tasks', where: 'id = ?', whereArgs: [id]);
+    await db.transaction((txn) async {
+      final rows = await txn.query('tasks', where: 'id = ?', whereArgs: [id]);
+      if (rows.isEmpty || !TaskItem.fromMap(rows.single).canRemove) return;
+      await txn.delete('tasks', where: 'id = ?', whereArgs: [id]);
+    });
   }
 
   /// Settles tasks a previous run left `processing`.
@@ -131,6 +134,9 @@ class TaskRepository {
   /// Everything else interrupted mid-run is marked failed, as before.
   Future<void> cleanupStuckTasks() async {
     final db = await _db;
+    await db.update('tasks', {
+      'status': 'awaitingRemote',
+    }, where: "execution_mode = 'batch' AND status = 'processing'");
     await db.update(
       'tasks',
       {'status': 'pending'},
@@ -155,8 +161,10 @@ class TaskRepository {
     final results = await db.query(
       'tasks',
       columns: ['start_time', 'end_time'],
-      where: 'model_pk = ? AND status = "completed" AND start_time IS NOT NULL AND end_time IS NOT NULL'
-          .replaceAll('"', "'"),
+      where:
+          "COALESCE(execution_mode, 'immediate') != 'batch' AND "
+                  'model_pk = ? AND status = "completed" AND start_time IS NOT NULL AND end_time IS NOT NULL'
+              .replaceAll('"', "'"),
       whereArgs: [modelDbId],
       orderBy: 'end_time DESC',
       limit: limit,

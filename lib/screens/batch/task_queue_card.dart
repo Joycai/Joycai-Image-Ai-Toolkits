@@ -39,10 +39,21 @@ part 'task_card/task_card_menu.dart';
 String taskStatusLabel(TaskStatus status, AppLocalizations l10n) => switch (status) {
   TaskStatus.processing => l10n.processingTasks,
   TaskStatus.pending => l10n.pendingTasks,
+  TaskStatus.awaitingRemote => l10n.batchWaiting,
   TaskStatus.completed => l10n.completedTasks,
   TaskStatus.failed => l10n.failedTasks,
   TaskStatus.cancelled => l10n.cancelledByUser,
 };
+
+String? batchStatusLabel(TaskItem task, AppLocalizations l10n) {
+  if (!task.canRefresh) return null;
+  if (task.batchState?['lastError'] != null) return l10n.batchStatusAttention;
+  if (task.batchState?['cancelRequested'] == true) return l10n.batchCancelling;
+  if (task.batchState?['phase'] == 'retrieving' || task.batchState?['phase'] == 'settling') {
+    return l10n.batchRetrieving;
+  }
+  return l10n.batchWaiting;
+}
 
 /// The status column's width: the widest of the five pills in this locale at
 /// this text scale.
@@ -62,6 +73,10 @@ double taskStatusColumnWidth(BuildContext context) {
         measureGlassText(context, taskStatusLabel(status, l10n), style) +
         dot +
         TaskStatusPill.padX * 2;
+    if (width > widest) widest = width;
+  }
+  for (final label in [l10n.batchStatusAttention, l10n.batchCancelling, l10n.batchRetrieving]) {
+    final width = measureGlassText(context, label, style) + TaskStatusPill.padX * 2;
     if (width > widest) widest = width;
   }
   return widest.ceilToDouble();
@@ -99,6 +114,17 @@ String? taskElapsed(TaskItem task) {
 List<String> taskFacts(TaskItem task, int position, AppLocalizations l10n) {
   final elapsed = taskElapsed(task);
   return [
+    if (task.isBatch) l10n.batchModeAsync,
+    if (task.canRefresh) ...[
+      if (task.batchState?['lastError'] != null)
+        l10n.batchAttention
+      else if (task.batchState?['cancelRequested'] == true)
+        l10n.batchCancelling
+      else if (task.batchState?['phase'] == 'retrieving' || task.batchState?['phase'] == 'settling')
+        l10n.batchRetrieving,
+      if (task.batchState?['lastSuccessfulCheckAt'] case final String stamp)
+        '${l10n.batchLastRefresh}: ${formatTaskClock(DateTime.tryParse(stamp)?.toLocal())}',
+    ],
     if (task.imagePaths.length > 1) l10n.filesCount(task.imagePaths.length),
     if (task.status == TaskStatus.pending && position > 0) l10n.queuedPosition(position),
     // The image task is the ordinary case; naming the others says what the
@@ -128,13 +154,9 @@ String taskLatestLog(TaskItem task) {
 /// A leading `[HH:MM:SS]` on a log line.
 final RegExp _logStamp = RegExp(r'^\s*\[[^\]]{1,12}\]\s*');
 
-bool _isActive(TaskItem task) =>
-    task.status == TaskStatus.pending || task.status == TaskStatus.processing;
+bool _isActive(TaskItem task) => !task.isTerminal;
 
-bool _isTerminal(TaskItem task) =>
-    task.status == TaskStatus.completed ||
-    task.status == TaskStatus.failed ||
-    task.status == TaskStatus.cancelled;
+bool _isTerminal(TaskItem task) => task.canRemove;
 
 /// Mono 11 — facts, log lines, parameters.
 TextStyle _mono11(BuildContext context) =>
@@ -331,7 +353,7 @@ class _RowHead extends StatelessWidget {
                   width: statusColumnWidth,
                   child: Align(
                     alignment: AlignmentDirectional.centerStart,
-                    child: TaskStatusPill(status: task.status),
+                    child: TaskStatusPill(status: task.status, label: batchStatusLabel(task, l10n)),
                   ),
                 ),
                 const SizedBox(width: _gap),
@@ -424,7 +446,7 @@ class _CompactHead extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              TaskStatusPill(status: task.status),
+              TaskStatusPill(status: task.status, label: batchStatusLabel(task, l10n)),
               const SizedBox(width: AppSpace.s4),
               TaskMenuButton(task: task),
             ],

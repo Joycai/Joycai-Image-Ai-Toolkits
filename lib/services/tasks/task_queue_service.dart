@@ -21,6 +21,7 @@ import '../db/repositories/cookie_repository.dart';
 import '../db/repositories/image_layer_repository.dart';
 import '../llm/generation/generation_execution_context.dart';
 import '../llm/generation/generation_profile_store.dart';
+import '../llm/image_batch_session.dart';
 import '../llm/image_compression.dart';
 import '../llm/job_poll.dart';
 import '../llm/llm_service.dart';
@@ -37,12 +38,20 @@ import 'task_failure.dart';
 export '../../models/task_item.dart';
 
 part 'task_executors.dart';
+part 'image_batch_tasks.dart';
 
 class TaskQueueService extends ChangeNotifier {
   /// Never edited in place: every change goes through [_setQueue], so the
   /// list [queue] hands out is a snapshot and its identity moves with its
   /// content.
   List<TaskItem> _queue = const [];
+  Timer? _batchTimer;
+  Future<void> _batchSerial = Future.value();
+  final Map<String, Future<void>> _batchRefreshes = {};
+  final Set<String> _batchCancels = {};
+  DateTime? _lastBatchSubmit;
+  final Future<ImageBatchSession> Function(TaskItem)? batchSessionFactory;
+  final Future<Map<String, dynamic>> Function(TaskItem)? batchPayloadBuilder;
   int _concurrencyLimit = 2;
   int _runningCount = 0;
   final _uuid = const Uuid();
@@ -129,7 +138,7 @@ class TaskQueueService extends ChangeNotifier {
   int get concurrencyLimit => _concurrencyLimit;
   int get runningCount => _runningCount;
 
-  TaskQueueService({DatabaseService? database})
+  TaskQueueService({DatabaseService? database, this.batchSessionFactory, this.batchPayloadBuilder})
     : _db = database ?? DatabaseService(),
       _llm = LLMService(database: database) {
     _loadFuture = _loadRecentTasks();
@@ -167,6 +176,7 @@ class TaskQueueService extends ChangeNotifier {
     await _loadFuture;
     if (_disposed) return;
     _attemptNextExecution();
+    _scheduleBatchPoll();
   }
 
   /// Repairs titles that hold a model's row id instead of its name.
@@ -257,6 +267,9 @@ class TaskQueueService extends ChangeNotifier {
       channelTag: channelTag,
       channelColor: channelColor,
       parameters: taskParams,
+      executionMode: params['executionMode'] == 'batch' && type == TaskType.imageProcess
+          ? TaskExecutionMode.batch
+          : TaskExecutionMode.immediate,
       useStream: useStream,
     );
     if (type == TaskType.imageProcess) {
@@ -271,6 +284,7 @@ class TaskQueueService extends ChangeNotifier {
       task.addLog('Video generation task created using $modelIdStr.');
     }
 
+    if (task.isBatch) await _prepareBatchTask(task);
     // Publish only after durable acceptance.
     await _db.saveTask(task);
     _setQueue([..._queue, task]);
@@ -291,6 +305,11 @@ class TaskQueueService extends ChangeNotifier {
   Future<void> get ready => _loadFuture;
 
   Future<void> cancelTask(String taskId) async {
+    final batch = _queue.where((t) => t.id == taskId && t.isBatch).firstOrNull;
+    if (batch != null) {
+      await _cancelBatchTask(batch);
+      return;
+    }
     final index = _queue.indexWhere((t) => t.id == taskId);
     if (index != -1) {
       final task = _queue[index];
@@ -345,6 +364,14 @@ class TaskQueueService extends ChangeNotifier {
     if (task.status != TaskStatus.failed && task.status != TaskStatus.cancelled) {
       return;
     }
+    if (task.isBatch) {
+      if (!task.canRemove) return;
+      await addTask(task.imagePaths, task.modelDbId ?? task.modelId, {
+        ...task.parameters,
+        'executionMode': 'batch',
+      }, useStream: false);
+      return;
+    }
     // A retry is a request for a fresh attempt, so a video task forgets its
     // upstream job and submits a new one. Only an interrupted run resumes
     // its job (see TaskRepository.cleanupStuckTasks), or the user asking for
@@ -392,7 +419,7 @@ class TaskQueueService extends ChangeNotifier {
           status == TaskStatus.completed ||
           status == TaskStatus.failed ||
           status == TaskStatus.cancelled;
-      if (!finished) return;
+      if (!finished || !_queue[index].canRemove) return;
       _setQueue([..._queue]..removeAt(index));
     }
     await _db.deleteTask(taskId);
@@ -449,6 +476,10 @@ class TaskQueueService extends ChangeNotifier {
       await _db.saveTask(task);
       if (task.status == TaskStatus.cancelled) return;
       if (task.type == TaskType.imageProcess) {
+        if (task.isBatch) {
+          await _submitBatchTask(task);
+          return;
+        }
         await _executeImageProcessTask(task);
       } else if (task.type == TaskType.imageDownload) {
         await _executeDownloadTask(task);
@@ -472,7 +503,18 @@ class TaskQueueService extends ChangeNotifier {
       }
     } catch (e) {
       if (task.status != TaskStatus.cancelled) {
-        task.status = TaskStatus.failed;
+        task.status = task.isBatch ? TaskStatus.awaitingRemote : TaskStatus.failed;
+        if (task.isBatch) {
+          task.batchState?['lastError'] = e.toString();
+          task.batchState?['paused'] = true;
+          if (task.batchState?['phase'] == 'submitting' &&
+              e is LLMApiException &&
+              const [400, 401, 403, 404, 413, 422, 429].contains(e.statusCode)) {
+            task.batchState?['settled'] = true;
+            task.batchState?['phase'] = 'rejected';
+            task.status = TaskStatus.failed;
+          }
+        }
         task.error = taskFailure(e);
         _emit(task.id, TaskEventType.statusChanged, task.status);
         _emit(task.id, TaskEventType.error, e.toString());
@@ -485,16 +527,17 @@ class TaskQueueService extends ChangeNotifier {
       }
     } finally {
       task.imagePreview = null;
-      task.endTime = DateTime.now();
+      if (task.isTerminal) task.endTime = DateTime.now();
 
       // Update Estimation Checkpoint
-      if (task.status == TaskStatus.completed && task.modelDbId != null) {
+      if (!task.isBatch && task.status == TaskStatus.completed && task.modelDbId != null) {
         unawaited(_handleEstimationCheckpoint(task.modelDbId!));
       }
 
       _runningCount--;
       await _db.saveTask(task);
-      onTaskFinished?.call(task);
+      if (task.isTerminal) onTaskFinished?.call(task);
+      if (task.isBatch) _scheduleBatchPoll();
       _notify();
       _attemptNextExecution();
     }
@@ -537,7 +580,7 @@ class TaskQueueService extends ChangeNotifier {
     final models = _cachedModelsForProgress!;
 
     for (final task in _queue) {
-      if (task.status == TaskStatus.processing && task.startTime != null) {
+      if (!task.isBatch && task.status == TaskStatus.processing && task.startTime != null) {
         hasActive = true;
         // Find checkpoint for this model
         final model = models.cast<LLMModel?>().firstWhere(
@@ -583,6 +626,7 @@ class TaskQueueService extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    _batchTimer?.cancel();
     _progressTimer?.cancel();
     _eventController.close();
     progressTick.dispose();

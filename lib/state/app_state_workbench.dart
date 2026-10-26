@@ -35,6 +35,10 @@ extension AppStateWorkbench on AppState {
 
     if (modelId != null) {
       lastSelectedModelId = modelId;
+      final selected = imageModels
+          .where((m) => m.id.toString() == modelId || m.modelId == modelId)
+          .firstOrNull;
+      if (!supportsImageBatch(selected)) useImageBatch = false;
       writes.add(_db.saveSetting('last_model_id', modelId));
     }
     if (prompt != null) {

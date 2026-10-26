@@ -4217,6 +4217,51 @@ class AppLocalizationsJa extends AppLocalizations {
   String get imageGenerationPreview => '生成プレビュー · 未保存';
 
   @override
+  String get batchSubmit => '非同期送信';
+
+  @override
+  String get batchSubmitHint => 'OpenAI Batch 料金 · 最大24時間 · プレビューなし。アプリ再起動後も結果を取得できます。';
+
+  @override
+  String get batchWaiting => 'クラウド処理中';
+
+  @override
+  String get batchRefresh => '非同期タスクを更新';
+
+  @override
+  String get batchRefreshAll => 'すべての非同期タスクを更新';
+
+  @override
+  String get batchModeAll => 'すべての方式';
+
+  @override
+  String get batchModeImmediate => '即時';
+
+  @override
+  String get batchModeAsync => '非同期';
+
+  @override
+  String get batchCancelling => 'リモートでキャンセル中';
+
+  @override
+  String get batchAttention => '要確認 · 更新して再試行';
+
+  @override
+  String get batchRetrieving => '結果を取得中';
+
+  @override
+  String get batchLastRefresh => '最終更新';
+
+  @override
+  String get batchProtected => '未完了の非同期タスクは保持されます。';
+
+  @override
+  String get batchRetry => '再生成（新しいリクエスト）';
+
+  @override
+  String get batchStatusAttention => '要確認';
+
+  @override
   String get setupWizardTitle => 'ようこそセットアップ';
 
   @override
