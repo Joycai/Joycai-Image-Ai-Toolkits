@@ -86,6 +86,7 @@ class MediaAccounting {
           valid = false;
         }
         if (cache == 0) {
+          if ((textCache ?? 0) > 0 || (imageCache ?? 0) > 0) valid = false;
           textCache = 0;
           imageCache = 0;
         }
@@ -194,12 +195,17 @@ class MediaAccounting {
 
   static UsageAccounting settle(UsageAccounting original, Map<String, dynamic> evidence) {
     final q = {...original.quantities, ...evidence};
+    final changed =
+        original.status == 'pending' ||
+        evidence.entries.any(
+          (e) => e.key != 'settlement_version' && original.quantities[e.key] != e.value,
+        );
     return price(
       PricingGroup.fromMap(original.pricing),
       q,
       options: Map<String, dynamic>.from(original.pricing['options'] as Map? ?? {}),
       video: original.pricing['video'] == true,
-      revision: original.revision + 1,
+      revision: original.revision + (changed ? 1 : 0),
       pricingKnown: original.pricing['pricingKnown'] != false,
       priceSource: original.pricing['priceSource'] as String? ?? 'user',
     );

@@ -49,6 +49,17 @@ disk and are logged. If journal persistence fails, SQLite is still attempted; if
 both stores fail, recording loss is explicitly reported without hiding a paid
 result. In-memory test databases disable disk journaling; recovery tests use a
 private temporary file database. Accounting updates invalidate usage checkpoints.
+Malformed recovery envelopes are isolated so other events can still replay. Clearing
+usage records atomically discards matching pending events before removing their
+spool files, including model-scoped clears. Settlement identity includes its version;
+a later correction may restore an earlier quantity, while identical evidence does
+not advance the accounting revision.
+
+Gemini nonempty modality breakdowns explicitly enumerate present modalities; a
+text-only breakdown therefore has no image usage, while a missing breakdown stays
+unknown. Counters are validated individually before aggregation, and reasoning
+output belongs to the text bucket. Ordinary token requests and Batch both derive
+legacy chart counters and blended rates from the same disjoint components.
 
 The editor reuses existing fee-group fields and the spec table, with an optional
 input-video section and four languages. Usage rows show `≈` for estimates and `—`

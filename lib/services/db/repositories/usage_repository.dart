@@ -47,13 +47,16 @@ class UsageRepository {
     Map<String, dynamic> evidence, {
     double? reportedCost,
     int? version,
-  }) => _journal({
-    'version': version ?? DateTime.now().microsecondsSinceEpoch,
-    'kind': 'settle',
-    'taskId': taskId,
-    'evidence': evidence,
-    'reportedCost': ?reportedCost,
-  }, 'settle:$taskId:${jsonEncode(evidence)}:$reportedCost');
+  }) {
+    final eventVersion = version ?? DateTime.now().microsecondsSinceEpoch;
+    return _journal({
+      'version': eventVersion,
+      'kind': 'settle',
+      'taskId': taskId,
+      'evidence': evidence,
+      'reportedCost': ?reportedCost,
+    }, 'settle:$taskId:$eventVersion:${jsonEncode(evidence)}:$reportedCost');
+  }
 
   /// Flush before touching SQLite; transaction identity makes a crash between
   /// commit and spool deletion safe. The spool contains no credentials.
@@ -124,7 +127,10 @@ class UsageRepository {
           ..removeWhere((key, value) => value == null);
         final version = payload['version'] as int? ?? 0;
         final previousVersion = original?.quantities['settlement_version'] as int? ?? -1;
-        if (version < previousVersion) return;
+        if (version < previousVersion) {
+          await txn.insert('usage_events', {'id': id, 'payload': '{}'});
+          return;
+        }
         evidence['settlement_version'] = version;
         // Legacy rows have no full rule snapshot. Never use today's prices.
         final updated = original == null ? null : MediaAccounting.settle(original, evidence);
@@ -133,7 +139,7 @@ class UsageRepository {
         final options = updated?.pricing['options'] as Map?;
         final cost = payload['reportedCost'];
         final values = <String, Object?>{
-          if (updated != null) 'accounting': updated.encode(),
+          if (updated != null) ...{'accounting': updated.encode(), ...updated.tokenProjection},
           if (output != null) ...{
             'output_units': output.quantity,
             'output_unit_price': output.price,
@@ -186,9 +192,9 @@ class UsageRepository {
     // failing. Restore all submissions before applying their terminal evidence.
     for (final kind in ['record', 'settle']) {
       for (final (entry, event) in events) {
-        final payload = Map<String, dynamic>.from(event['payload'] as Map);
-        if (payload['kind'] != kind) continue;
         try {
+          final payload = Map<String, dynamic>.from(event['payload'] as Map);
+          if (payload['kind'] != kind) continue;
           await _apply(event['id'] as String, payload);
           if (await entry.exists()) await entry.delete();
         } catch (e) {
@@ -258,10 +264,53 @@ class UsageRepository {
 
   Future<void> clearTokenUsage({String? modelId}) async {
     final db = await _db;
-    if (modelId != null) {
-      await db.delete('token_usage', where: 'model_id = ?', whereArgs: [modelId]);
-    } else {
-      await db.delete('token_usage');
+    final directory = await _dbService.usageJournalDirectory;
+    final pending = <(File, Map<String, dynamic>)>[];
+    if (directory != null && await Directory(directory).exists()) {
+      await for (final entry in Directory(directory).list()) {
+        if (entry is! File || !entry.path.endsWith('.json')) continue;
+        try {
+          final event = Map<String, dynamic>.from(jsonDecode(await entry.readAsString()) as Map);
+          if (event['id'] is String && event['payload'] is Map) pending.add((entry, event));
+        } catch (e) {
+          debugPrint('Unreadable accounting recovery event ${entry.path}: $e');
+        }
+      }
+    }
+    final discarded = <File>[];
+    await db.transaction((txn) async {
+      final rows = await txn.query('token_usage', columns: ['task_id', 'model_id']);
+      final models = <Object?, Object?>{
+        for (final row in rows) row['task_id']: row['model_id'],
+        for (final (_, event) in pending)
+          if ((event['payload'] as Map)['row'] case final Map row) row['task_id']: row['model_id'],
+      };
+      for (final (file, event) in pending) {
+        final payload = event['payload'] as Map;
+        final row = payload['row'];
+        final taskId = row is Map ? row['task_id'] : payload['taskId'];
+        if (modelId != null && models[taskId] != modelId) continue;
+        // Persist the discard before removing the spool. A crash cannot
+        // resurrect cleared history when the journal is replayed next time.
+        await txn.insert('usage_events', {
+          'id': event['id'],
+          'payload': '{}',
+        }, conflictAlgorithm: ConflictAlgorithm.ignore);
+        discarded.add(file);
+      }
+      await txn.delete(
+        'token_usage',
+        where: modelId == null ? null : 'model_id = ?',
+        whereArgs: modelId == null ? null : [modelId],
+      );
+      await txn.delete('usage_checkpoints');
+    });
+    for (final file in discarded) {
+      try {
+        if (await file.exists()) await file.delete();
+      } catch (e) {
+        debugPrint('Cleared accounting event awaiting spool cleanup: $e');
+      }
     }
   }
 

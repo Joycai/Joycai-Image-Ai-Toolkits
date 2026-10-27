@@ -169,4 +169,67 @@ void main() {
     );
     expect(unknown.complete, isFalse);
   });
+  test('Gemini text-only modality lists do not require image rates', () {
+    final normalized = normalizeTokenUsage({
+      'promptTokenCount': '100',
+      'promptTokensDetails': [
+        {'modality': 'TEXT', 'tokenCount': '100'},
+      ],
+      'candidatesTokenCount': '20',
+      'thoughtsTokenCount': '5',
+      'candidatesTokensDetails': [
+        {'modality': 'TEXT', 'tokenCount': '20'},
+      ],
+    });
+    final a = MediaAccounting.price(
+      PricingGroup(name: 'text', inputPrice: 2, outputPrice: 8),
+      normalized,
+    );
+    expect(a.complete, isTrue);
+    expect(a.cost, closeTo(0.0004, 1e-12));
+  });
+  test('Gemini mixed output includes reasoning once in the text bucket', () {
+    final a = MediaAccounting.price(
+      pricing,
+      normalizeTokenUsage({
+        'promptTokenCount': 100,
+        'promptTokensDetails': [
+          {'modality': 'TEXT', 'tokenCount': 100},
+        ],
+        'candidatesTokenCount': 30,
+        'thoughtsTokenCount': 5,
+        'candidatesTokensDetails': [
+          {'modality': 'TEXT', 'tokenCount': 10},
+          {'modality': 'IMAGE', 'tokenCount': 20},
+        ],
+      }),
+    );
+    expect(a.complete, isTrue);
+    expect(a.categoryCost('output'), closeTo((15 * 8 + 20 * 16) / 1e6, 1e-12));
+  });
+  test('malformed modality counters retain an incomplete record without throwing', () {
+    for (final value in ['bad', -1, 1.5, null, double.infinity]) {
+      final a = MediaAccounting.price(
+        pricing,
+        normalizeTokenUsage({
+          'promptTokenCount': 100,
+          'promptTokensDetails': [
+            {'modality': 'TEXT', 'tokenCount': value},
+          ],
+          'candidatesTokenCount': 20,
+          'thoughtsTokenCount': 'bad',
+        }),
+      );
+      expect(a.complete, isFalse);
+      expect(a.encode(), isNotEmpty);
+    }
+  });
+  test('one nonzero cache bucket conflicts with a reported zero cache total', () {
+    final raw = usage(cache: 0);
+    (raw['input_tokens_details'] as Map)['cached_tokens_details'] = {'text_tokens': 10};
+    expect(
+      MediaAccounting.price(pricing, normalizeTokenUsage(raw, imageOutput: true)).complete,
+      isFalse,
+    );
+  });
 }

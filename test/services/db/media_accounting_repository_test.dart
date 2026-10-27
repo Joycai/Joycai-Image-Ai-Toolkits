@@ -128,8 +128,13 @@ void main() {
       disk = await open();
       service = DatabaseService.forDatabase(disk);
       repository = UsageRepository(db: service);
+      // Valid JSON with an invalid event shape must not block other recovery.
+      final broken = File('${spool.path}/broken.json');
+      await broken.writeAsString('{"id":"broken","payload":null}');
       await repository.replayPending();
       await repository.replayPending();
+      expect(await broken.exists(), isTrue);
+      await broken.delete();
       expect(await repository.getTokenUsage(), hasLength(1));
       expect(await spool.list().length, 0);
       await disk.execute(
@@ -144,6 +149,20 @@ void main() {
       final result = (await repository.getTokenUsage()).single;
       expect(result.cost, 0);
       expect(result.snapshotCost, closeTo(1.45, 1e-12));
+      // A failed write awaiting replay must respect an explicit history clear.
+      await repository.clearTokenUsage();
+      await disk.execute('DELETE FROM usage_events');
+      await disk.execute(
+        "CREATE TRIGGER fail_insert BEFORE INSERT ON token_usage BEGIN SELECT RAISE(FAIL, 'write failure'); END",
+      );
+      await expectLater(repository.recordTokenUsage(submit()), throwsA(anything));
+      await disk.execute('DROP TRIGGER fail_insert');
+      await repository.clearTokenUsage(modelId: 'unrelated');
+      expect(await spool.list().length, 1);
+      await repository.clearTokenUsage(modelId: 'video');
+      await repository.replayPending();
+      expect(await repository.getTokenUsage(), isEmpty);
+      expect(await spool.list().length, 0);
     } finally {
       await disk.close();
       await root.delete(recursive: true);
@@ -169,5 +188,25 @@ void main() {
     expect(old.accounting, isNull);
     expect(old.cost, 0.0002);
     expect(await sql.query('usage_events'), isEmpty);
+  });
+  test('a newer version can restore previously reported values', () async {
+    await repo.recordTokenUsage(submit());
+    await repo.settleMedia('video:account:job', {'output_seconds': 8}, version: 10);
+    await repo.settleMedia('video:account:job', {'output_seconds': 6}, version: 20);
+    await repo.settleMedia('video:account:job', {'output_seconds': 8}, version: 30);
+    final row = (await repo.getTokenUsage()).single;
+    expect(row.snapshotCost, 1.6);
+    expect(row.accounting!.quantities['settlement_version'], 30);
+    expect(row.accounting!.revision, 3);
+  });
+  test('automatic settlement versions allow corrections back to earlier values', () async {
+    await repo.recordTokenUsage(submit());
+    await repo.settleMedia('video:account:job', {'output_seconds': 8});
+    await repo.settleMedia('video:account:job', {'output_seconds': 6});
+    await repo.settleMedia('video:account:job', {'output_seconds': 8});
+    await repo.settleMedia('video:account:job', {'output_seconds': 8});
+    final row = (await repo.getTokenUsage()).single;
+    expect(row.snapshotCost, 1.6);
+    expect(row.accounting!.revision, 3);
   });
 }

@@ -68,35 +68,37 @@ extension _UsageRecording on LLMService {
     final outputTokens = LLMService.outputTokensOf(metadata);
     final cacheTokens = _extractCacheTokens(metadata, promptTokens);
 
+    final accounting = MediaAccounting.price(
+      config.pricingSnapshot,
+      {
+        ...normalizeTokenUsage(
+          metadata,
+          imageOutput: metadata['image_token_output'] == true,
+          hasGeneratedImages: imageCount > 0,
+        ),
+        'channel_id': config.channelId,
+        'model_id': config.modelId,
+        'protocol': config.wireProtocol ?? config.channelType,
+        'images': billedImageCountOf(metadata) ?? (imageCount > 0 ? imageCount : null),
+        'images_source': billedImageCountOf(metadata) == null ? 'estimated' : 'reported',
+        'input_images': inputImageCountOf(metadata),
+        if (metadata['operation'] == 'submit') ...{
+          'input_seconds': metadata['input_video_seconds'],
+          'input_seconds_source': 'estimated',
+        },
+        for (final key in ['output_size', 'output_quality', 'output_seconds'])
+          if (metadata.containsKey(key)) key: metadata[key],
+      },
+      pricingKnown: config.pricingKnown,
+      options: options,
+      video: metadata['operation'] == 'submit',
+      pending: metadata['operation'] == 'submit',
+    );
+    final projection = accounting.tokenProjection;
     final sink = LLMService.usageSinkOverride ?? _db.recordTokenUsage;
     await sink(
       TokenUsage(
-        accounting: MediaAccounting.price(
-          config.pricingSnapshot,
-          {
-            ...normalizeTokenUsage(
-              metadata,
-              imageOutput: metadata['image_token_output'] == true,
-              hasGeneratedImages: imageCount > 0,
-            ),
-            'channel_id': config.channelId,
-            'model_id': config.modelId,
-            'protocol': config.wireProtocol ?? config.channelType,
-            'images': billedImageCountOf(metadata) ?? (imageCount > 0 ? imageCount : null),
-            'images_source': billedImageCountOf(metadata) == null ? 'estimated' : 'reported',
-            'input_images': inputImageCountOf(metadata),
-            if (metadata['operation'] == 'submit') ...{
-              'input_seconds': metadata['input_video_seconds'],
-              'input_seconds_source': 'estimated',
-            },
-            for (final key in ['output_size', 'output_quality', 'output_seconds'])
-              if (metadata.containsKey(key)) key: metadata[key],
-          },
-          pricingKnown: config.pricingKnown,
-          options: options,
-          video: metadata['operation'] == 'submit',
-          pending: metadata['operation'] == 'submit',
-        ),
+        accounting: accounting,
         // The tag makes delegated work distinguishable in the usage table
         // (e.g. `task_id LIKE 'subagent:%'`) — a sub-agent's spend should be
         // attributable to delegation, not blended into ordinary requests.
@@ -107,12 +109,24 @@ extension _UsageRecording on LLMService {
         // Both providers count cached tokens inside their prompt total, so the
         // cached part is subtracted out here — input_tokens and cache_tokens are
         // stored disjoint and sum back to the full input.
-        inputTokens: promptTokens - cacheTokens,
-        cacheTokens: cacheTokens,
-        outputTokens: outputTokens,
-        inputPrice: config.inputFee,
-        cachePrice: config.effectiveCacheInputFee,
-        outputPrice: config.outputFee,
+        inputTokens: config.billingMode == 'token'
+            ? projection['input_tokens'] as int
+            : promptTokens - cacheTokens,
+        cacheTokens: config.billingMode == 'token'
+            ? projection['cache_tokens'] as int
+            : cacheTokens,
+        outputTokens: config.billingMode == 'token'
+            ? projection['output_tokens'] as int
+            : outputTokens,
+        inputPrice: config.billingMode == 'token'
+            ? projection['input_price'] as double
+            : config.inputFee,
+        cachePrice: config.billingMode == 'token'
+            ? projection['cache_price'] as double
+            : config.effectiveCacheInputFee,
+        outputPrice: config.billingMode == 'token'
+            ? projection['output_price'] as double
+            : config.outputFee,
         requestPrice: config.requestFee,
         billingMode: config.billingMode,
         // Null on token mode: the row then prices exactly as it did before

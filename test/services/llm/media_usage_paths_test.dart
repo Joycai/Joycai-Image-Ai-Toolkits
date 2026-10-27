@@ -56,6 +56,11 @@ void main() {
     );
     final batch = (await db.getTokenUsage()).single;
     expect(batch.cost, rows.single.cost);
+    expect(batch.inputTokens, rows.single.inputTokens);
+    expect(batch.outputTokens, rows.single.outputTokens);
+    expect(batch.inputPrice, rows.single.inputPrice);
+    expect(batch.cachePrice, rows.single.cachePrice);
+    expect(batch.outputPrice, rows.single.outputPrice);
     expect(
       batch.accounting!.components.map((c) => c.toMap()).toList(),
       rows.single.accounting!.components.map((c) => c.toMap()).toList(),
