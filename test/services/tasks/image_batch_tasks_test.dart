@@ -271,11 +271,12 @@ void main() {
     await q.refreshBatchTask(task.id);
     expect(task.resultPaths, hasLength(1));
     expect(task.canRemove, isFalse);
-    expect(await db.getTokenUsage(), isEmpty);
+    expect((await db.getTokenUsage()).single.costIncomplete, isTrue);
     remote.body = body;
     await q.refreshBatchTask(task.id);
     expect(task.resultPaths, hasLength(1));
     expect(task.status, TaskStatus.completed);
+    expect((await db.getTokenUsage()).single.costIncomplete, isFalse);
   });
 
   test('startup recovers processing and active jobs outside history window', () async {

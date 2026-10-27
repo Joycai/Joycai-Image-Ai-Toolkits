@@ -76,6 +76,7 @@ class DatabaseMigration {
     if (oldVersion < 49) await _createV49Columns(db);
     if (oldVersion < 50) await _createV50Tables(db);
     if (oldVersion < 51) await _createV51Columns(db);
+    if (oldVersion < 52) await _createV52Columns(db);
   }
 
   static Future<void> onCreate(Database db) async {
@@ -130,7 +131,20 @@ class DatabaseMigration {
     await _createV49Columns(db);
     await _createV50Tables(db);
     await _createV51Columns(db);
+    await _createV52Columns(db);
     // Presets are synchronized in DatabaseService
+  }
+
+  static Future<void> _createV52Columns(Database db) async {
+    if (await _tableExists(db, 'fee_groups')) {
+      await _addColumnIfNotExists(db, 'fee_groups', 'media_pricing', 'TEXT');
+    }
+    if (await _tableExists(db, 'token_usage')) {
+      await _addColumnIfNotExists(db, 'token_usage', 'accounting', 'TEXT');
+    }
+    await db.execute(
+      'CREATE TABLE IF NOT EXISTS usage_events (id TEXT PRIMARY KEY, payload TEXT NOT NULL)',
+    );
   }
 
   static Future<void> _createV51Columns(Database db) async {

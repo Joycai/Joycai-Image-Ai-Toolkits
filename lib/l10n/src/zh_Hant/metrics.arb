@@ -82,5 +82,8 @@
   "usageGoFixRates": "去補檔位",
   "usageUnitPrice": "單價",
   "usageReportedCost": "上游報價",
-  "usageTableEstimate": "檔位估算"
+  "usageTableEstimate": "檔位估算",
+  "usageIncomplete": "費用不完整",
+  "usagePending": "待確認計費",
+  "usageAccountingNote": "估算合計僅包含已知費用項；不完整或待確認記錄不代表實扣金額。"
 }

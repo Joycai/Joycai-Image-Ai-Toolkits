@@ -1029,3 +1029,12 @@ Queue polling is independent of immediate-image concurrency and excludes Batch
 waits from model ETA estimates. Persist submission intent before POST; reconcile
 an ambiguous POST instead of resubmitting. Details and recovery/settlement
 invariants: [GPT Image Batch](../api/gpt-image-series.md#asynchronous-batch-images-2026-10-26).
+
+## Unified media accounting (2026-10-27)
+
+The v52 [media accounting contract](media-accounting.md) supersedes the earlier
+submit-as-billed and output-only/best-effort settlement descriptions above.
+Ordinary requests and Image Batch share disjoint modality components; asynchronous
+video keeps submitted rules, separate input/output seconds, pending evidence and
+atomic durable replay. Protocols supply measurements; current prices never
+reprice a submitted job. Missing fields remain incomplete rather than actual zero.

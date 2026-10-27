@@ -1,6 +1,10 @@
+import 'dart:convert';
+
+import 'media_pricing.dart';
 import 'spec_rate.dart';
 
 class PricingGroup {
+  final MediaPricing mediaPricing;
   final int? id;
   final String name;
   final String billingMode; // token, request, spec
@@ -32,6 +36,7 @@ class PricingGroup {
   final int inputFreeUnits;
 
   PricingGroup({
+    this.mediaPricing = const MediaPricing(),
     this.id,
     required this.name,
     this.billingMode = 'token',
@@ -63,6 +68,7 @@ class PricingGroup {
 
   factory PricingGroup.fromMap(Map<String, dynamic> map) {
     return PricingGroup(
+      mediaPricing: MediaPricing.decode(map['media_pricing']),
       id: map['id'] as int?,
       name: map['name'] as String,
       billingMode: map['billing_mode'] as String? ?? 'token',
@@ -79,6 +85,7 @@ class PricingGroup {
 
   Map<String, dynamic> toMap({bool includeId = true}) {
     final Map<String, dynamic> data = {
+      'media_pricing': jsonEncode(mediaPricing.toMap()),
       'name': name,
       'billing_mode': billingMode,
       'input_price': inputPrice,

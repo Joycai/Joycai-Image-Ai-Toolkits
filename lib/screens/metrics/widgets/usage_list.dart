@@ -762,7 +762,9 @@ class _UsageRowState extends State<_UsageRow> {
     final reported = _row.reportedCost;
 
     final text = Text(
-      '\$${cost.toStringAsFixed(4)}',
+      _row.costIncomplete && cost == 0
+          ? '—'
+          : '${_row.costEstimated ? '≈' : ''}\$${cost.toStringAsFixed(4)}',
       textAlign: TextAlign.end,
       maxLines: 1,
       style: base?.mono.copyWith(
@@ -770,6 +772,15 @@ class _UsageRowState extends State<_UsageRow> {
         color: cost > 0 ? colorScheme.onSurface : colorScheme.outline,
       ),
     );
+    if (_row.accounting != null && tooltip) {
+      final l10n = AppLocalizations.of(context)!;
+      final status = _row.accounting!.status == 'pending'
+          ? l10n.usagePending
+          : _row.costIncomplete
+          ? l10n.usageIncomplete
+          : l10n.estimatedCost;
+      return Tooltip(message: reported != null ? l10n.usageReportedCost : status, child: text);
+    }
     if (reported == null || !tooltip) return text;
     final l10n = AppLocalizations.of(context)!;
     return Tooltip(
@@ -849,7 +860,45 @@ class _UsageRowState extends State<_UsageRow> {
     final demoted = reported != null;
     String money(double v) => '\$${v.toStringAsFixed(4)}';
 
+    final accounting = _row.accounting;
+    String componentLabel(String meter, String category) => switch (meter) {
+      'image_input_tokens' => l10n.mediaImageInput,
+      'image_input_cached_tokens' => l10n.mediaImageCache,
+      'image_output_tokens' => l10n.mediaImageOutput,
+      'video_input_seconds' => l10n.mediaVideoInput,
+      'input_images' => l10n.specInputTitle,
+      _ => switch (category) {
+        'input' => l10n.inputTokens,
+        'cache' => l10n.cachedInputTokens,
+        'output' => l10n.outputTokens,
+        'request' => l10n.requests,
+        _ => l10n.usageOutputAmount,
+      },
+    };
     final pairs = <(String, String, {bool muted, bool wide})>[
+      if (accounting != null) ...[
+        (
+          reported != null
+              ? l10n.usageReportedCost
+              : accounting.status == 'pending'
+              ? l10n.usagePending
+              : _row.costIncomplete
+              ? l10n.usageIncomplete
+              : l10n.estimatedCost,
+          accounting.currency,
+          muted: false,
+          wide: true,
+        ),
+        for (final c in accounting.components)
+          (
+            componentLabel(c.meter, c.category),
+            c.quantity == null || c.price == null
+                ? '—'
+                : '${c.quantity} × ${money(c.price!)}${c.basis == 1 ? '' : '/M'} = ${money(c.cost)}',
+            muted: reported != null,
+            wide: true,
+          ),
+      ],
       // The comparison leads: the report, the only full-ink amount in the
       // grid, beside what the table would have charged. The estimate never
       // hides — a $0.0000 under a default token-mode group is the point.
@@ -858,12 +907,12 @@ class _UsageRowState extends State<_UsageRow> {
         (l10n.usageTableEstimate, money(_row.snapshotCost), muted: true, wide: false),
       ],
       (l10n.requests, _exact(_row.requestCount), muted: false, wide: false),
-      if (_isTokenRow) ...[
+      if (_isTokenRow && accounting == null) ...[
         (l10n.inputTokens, _exact(_row.inputTokens), muted: false, wide: false),
         (l10n.cachedInputTokens, _exact(_row.cacheTokens), muted: false, wide: false),
         (l10n.outputTokens, _exact(_row.outputTokens), muted: false, wide: false),
       ],
-      if (_isSpecRow) ...[
+      if (_isSpecRow && accounting == null) ...[
         (
           l10n.usageSpecColumn,
           _specLabel?.isNotEmpty == true ? _specLabel! : '—',
@@ -874,12 +923,12 @@ class _UsageRowState extends State<_UsageRow> {
       ]
       // `D2e · 24e`: a request-billed row that charged inputs is the spec
       // row less its 「规格」 cell — the request price is its unit price.
-      else if (chargesInput)
+      else if (chargesInput && accounting == null)
         (l10n.usageUnitPrice, money(_row.requestPrice), muted: demoted, wide: false),
       // `D2c · 22g`: a row whose group charges for reference images splits
       // its amount in two and writes the input side out — what was sent, how
       // many of those were free, and the sum. Other rows are as they were.
-      if (chargesInput) ...[
+      if (chargesInput && accounting == null) ...[
         (
           l10n.usageOutputAmount,
           money(_isSpecRow ? spec.cost : _row.requestCount * _row.requestPrice),

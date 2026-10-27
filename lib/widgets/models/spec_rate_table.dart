@@ -27,7 +27,7 @@ double? parsePriceInput(String text) {
 class SpecRateDraft {
   String? size;
   String? quality;
-  int? seconds;
+  num? seconds;
   final TextEditingController priceCtrl;
 
   SpecRateDraft({this.size, this.quality, this.seconds, String price = ''})
@@ -97,6 +97,7 @@ class SpecTableIssues {
 class SpecRateTableEditor extends StatelessWidget {
   const SpecRateTableEditor({
     super.key,
+    this.inputVideo = false,
     required this.unit,
     required this.onUnitChanged,
     required this.rows,
@@ -112,6 +113,7 @@ class SpecRateTableEditor extends StatelessWidget {
     required this.narrow,
   });
 
+  final bool inputVideo;
   final OutputUnit unit;
   final ValueChanged<OutputUnit> onUnitChanged;
   final List<SpecRateDraft> rows;
@@ -155,7 +157,7 @@ class SpecRateTableEditor extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
-        _buildUnitRow(context, l10n, suffix),
+        if (!inputVideo) _buildUnitRow(context, l10n, suffix),
         const SizedBox(height: AppSpace.s10),
         _buildHeader(context, l10n, suffix),
         const SizedBox(height: _gap),
@@ -231,15 +233,16 @@ class SpecRateTableEditor extends StatelessWidget {
         // Under every unit (`D2e · 24a`): the video surfaces report the
         // frames they were sent, and xAI prices them beside its per-second
         // rate. Only the subtitle changes with the unit — what is counted.
-        SpecInputImagesBlock(
-          inputPriceCtrl: inputPriceCtrl,
-          inputFreeCtrl: inputFreeCtrl,
-          inputPriceInvalid: inputPriceInvalid,
-          inputFreeWithoutPrice: inputFreeWithoutPrice,
-          onChanged: onChanged,
-          narrow: narrow,
-          subtitle: unit == OutputUnit.image ? l10n.specInputSub : l10n.specInputSubVideo,
-        ),
+        if (!inputVideo)
+          SpecInputImagesBlock(
+            inputPriceCtrl: inputPriceCtrl,
+            inputFreeCtrl: inputFreeCtrl,
+            inputPriceInvalid: inputPriceInvalid,
+            inputFreeWithoutPrice: inputFreeWithoutPrice,
+            onChanged: onChanged,
+            narrow: narrow,
+            subtitle: unit == OutputUnit.image ? l10n.specInputSub : l10n.specInputSubVideo,
+          ),
       ],
     );
   }
@@ -376,7 +379,7 @@ class SpecRateTableEditor extends StatelessWidget {
           ],
           normalize: (raw) => OutputSpec.normalizeSeconds(raw)?.toString(),
           onChanged: (v) {
-            row.seconds = v == null ? null : int.tryParse(v);
+            row.seconds = v == null ? null : num.tryParse(v);
             onChanged();
           },
         ),

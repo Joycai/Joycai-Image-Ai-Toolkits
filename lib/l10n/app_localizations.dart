@@ -2835,6 +2835,24 @@ abstract class AppLocalizations {
   /// **'Table estimate'**
   String get usageTableEstimate;
 
+  /// No description provided for @usageIncomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Incomplete cost'**
+  String get usageIncomplete;
+
+  /// No description provided for @usagePending.
+  ///
+  /// In en, this message translates to:
+  /// **'Awaiting billing evidence'**
+  String get usagePending;
+
+  /// No description provided for @usageAccountingNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated totals include known items only; incomplete or pending rows are not confirmed charges.'**
+  String get usageAccountingNote;
+
   /// No description provided for @models.
   ///
   /// In en, this message translates to:
@@ -5088,7 +5106,7 @@ abstract class AppLocalizations {
   /// No description provided for @specOtherBlankHint.
   ///
   /// In en, this message translates to:
-  /// **'Leave blank and unlisted specs are billed at 0.'**
+  /// **'Unlisted specifications remain incomplete until a price is supplied.'**
   String get specOtherBlankHint;
 
   /// No description provided for @specOnlyOtherHint.
@@ -5118,7 +5136,7 @@ abstract class AppLocalizations {
   /// No description provided for @specOtherZero.
   ///
   /// In en, this message translates to:
-  /// **'Other specs at 0'**
+  /// **'Other specs unpriced'**
   String get specOtherZero;
 
   /// No description provided for @modelCardBilling.
@@ -5208,7 +5226,7 @@ abstract class AppLocalizations {
   /// No description provided for @tokenPriceHint.
   ///
   /// In en, this message translates to:
-  /// **'Priced per million tokens; a blank cache rate follows the input rate. For image and video models use Per spec.'**
+  /// **'Prices per million tokens; blank text cache price follows text input. Image token prices are configured below.'**
   String get tokenPriceHint;
 
   /// No description provided for @discardChangesTitle.
@@ -5720,6 +5738,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Merge failed, nothing was changed: {error}'**
   String mergeFailed(String error);
+
+  /// No description provided for @mediaTokenPrices.
+  ///
+  /// In en, this message translates to:
+  /// **'Image token prices'**
+  String get mediaTokenPrices;
+
+  /// No description provided for @mediaPriceUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Blank means unknown; 0 means free. Text uses the input and output prices above.'**
+  String get mediaPriceUnknown;
+
+  /// No description provided for @mediaImageInput.
+  ///
+  /// In en, this message translates to:
+  /// **'Image input'**
+  String get mediaImageInput;
+
+  /// No description provided for @mediaImageCache.
+  ///
+  /// In en, this message translates to:
+  /// **'Cached image input'**
+  String get mediaImageCache;
+
+  /// No description provided for @mediaImageOutput.
+  ///
+  /// In en, this message translates to:
+  /// **'Image output'**
+  String get mediaImageOutput;
+
+  /// No description provided for @mediaVideoInput.
+  ///
+  /// In en, this message translates to:
+  /// **'Input video · USD/second'**
+  String get mediaVideoInput;
+
+  /// No description provided for @mediaVideoPriceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Match input video rates using the output resolution and quality. Missing rates remain incomplete.'**
+  String get mediaVideoPriceHint;
 
   /// No description provided for @prompts.
   ///

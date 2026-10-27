@@ -157,6 +157,6 @@ void main() {
       'Other specs  \$0.1000/s',
     ]);
     final noOther = PricingGroup(name: 'N', billingMode: 'spec', outputRates: veo.sublist(0, 1));
-    expect(feeGroupRateTable(l10n, noOther).split('\n').last, 'Other specs  Other specs at 0');
+    expect(feeGroupRateTable(l10n, noOther).split('\n').last, 'Other specs  Other specs unpriced');
   });
 }

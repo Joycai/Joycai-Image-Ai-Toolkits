@@ -880,8 +880,8 @@ void main() {
       },
     );
 
-    test('this build writes schema 51, which a v50 build rejects', () {
-      expect(DatabaseService.dbVersion, 51);
+    test('this build writes schema 52, which a v51 build rejects', () {
+      expect(DatabaseService.dbVersion, 52);
     });
   });
 }

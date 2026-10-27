@@ -96,5 +96,8 @@
   "usageGoFixRates": "去补档位",
   "usageUnitPrice": "单价",
   "usageReportedCost": "上游报价",
-  "usageTableEstimate": "档位估算"
+  "usageTableEstimate": "档位估算",
+  "usageIncomplete": "费用不完整",
+  "usagePending": "待确认计费",
+  "usageAccountingNote": "估算合计仅包含已知费用项；不完整或待确认记录不代表实扣金额。"
 }

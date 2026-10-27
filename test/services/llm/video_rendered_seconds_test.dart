@@ -1,12 +1,16 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:joycai_image_ai_toolkits/models/pricing_group.dart';
 import 'package:joycai_image_ai_toolkits/models/spec_rate.dart';
 import 'package:joycai_image_ai_toolkits/models/token_usage.dart';
-import 'package:joycai_image_ai_toolkits/services/billing/spec_billing.dart';
+import 'package:joycai_image_ai_toolkits/services/billing/media_accounting.dart';
+import 'package:joycai_image_ai_toolkits/services/db/database_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/output_spec.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/protocol.dart';
-import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+
+import '../../support/in_memory_database.dart';
 
 /// A video is billed at submit by the seconds it asked for; once the job is
 /// done, the seconds the provider reports it rendered correct that row. A
@@ -14,6 +18,7 @@ import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 /// billed zero seconds. Where the terminal poll also says what the job cost
 /// (xAI), that figure lands on the row too, under every billing mode.
 void main() {
+  sqfliteFfiInit();
   group('videoDoneEnvelope', () {
     test('carries a reported length', () {
       final done = videoDoneEnvelope(
@@ -34,7 +39,7 @@ void main() {
       );
     });
 
-    test('an absent or zero length is left out', () {
+    test('an absent length is unknown and a reported zero survives', () {
       expect(
         videoDoneEnvelope('op', 'u', requiresAuth: false).containsKey(videoRenderedSecondsKey),
         isFalse,
@@ -46,7 +51,7 @@ void main() {
           requiresAuth: false,
           renderedSeconds: 0,
         ).containsKey(videoRenderedSecondsKey),
-        isFalse,
+        isTrue,
       );
     });
 
@@ -75,116 +80,54 @@ void main() {
   });
 
   group('settleVideoUsage', () {
-    late List<(String, UsageSpecBilling)> updates;
-    late List<(String, double)> costs;
-
-    LLMModelConfig config(String billingMode) => LLMModelConfig(
-      modelId: 'wan3.0-video',
-      channelType: Vendors.dashscopeNative,
-      endpoint: 'https://dashscope.aliyuncs.com/api/v1',
-      apiKey: 'k',
-      billingMode: billingMode,
-      outputUnit: OutputUnit.second,
-      outputRates: const [
-        SpecRate(size: '1080p', price: 0.2),
-        SpecRate(size: '1080p', seconds: 10, price: 0.15),
-      ],
-    );
-
-    setUp(() {
-      updates = [];
-      costs = [];
-      LLMService.usageUpdateOverride = (id, billing) async {
-        updates.add((id, billing));
-        return 1;
-      };
-      LLMService.reportedCostUpdateOverride = (id, cost) async {
-        costs.add((id, cost));
-        return 1;
-      };
+    late DatabaseService database;
+    setUp(() async {
+      database = await openTestDatabase();
     });
-
-    tearDown(() {
-      LLMService.usageUpdateOverride = null;
-      LLMService.reportedCostUpdateOverride = null;
+    tearDown(() async {
       LLMService.configResolverOverride = null;
+      await closeTestDatabase(database);
     });
-
-    test('a spec-billed row is re-priced by the rendered seconds', () async {
-      LLMService.configResolverOverride = (_) => config(specBillingMode);
-      await LLMService().settleVideoUsage(
-        modelIdentifier: 1,
-        operationName: 'task-1',
-        renderedSeconds: 10,
-        options: const {'resolution': '1080P', 'seconds': -1},
+    test('uses submitted rules and atomically retains inputs and zero quote', () async {
+      final row = TokenUsage(
+        modelId: 'video',
+        taskId: 'video:job',
+        timestamp: DateTime(2026),
+        accounting: MediaAccounting.price(
+          PricingGroup(
+            name: 'old',
+            billingMode: 'spec',
+            outputUnit: OutputUnit.second,
+            outputRates: const [SpecRate(price: 0.2)],
+            inputUnitPrice: 0.01,
+          ),
+          {'input_images': 2, 'input_seconds': 0},
+          options: {'seconds': 5},
+          video: true,
+          pending: true,
+        ),
       );
-      final (id, billing) = updates.single;
-      expect(id, LLMService.videoUsageRowId('task-1'));
-      expect(billing.units, 10);
-      // The duration-keyed tier matches now that the length is known.
-      expect(billing.unitPrice, 0.15);
-      expect(billing.snapshot!.seconds, 10);
-      expect(costs, isEmpty, reason: 'nothing was reported');
+      await database.recordTokenUsage(row);
+      LLMService.configResolverOverride = (_) => throw StateError('must never read current prices');
+      await LLMService(database: database).settleVideoUsage(
+        modelIdentifier: 1,
+        operationName: 'job',
+        renderedSeconds: 6.25,
+        reportedCost: 0,
+      );
+      final result = (await database.getTokenUsage()).single;
+      expect(result.cost, 0);
+      expect(result.snapshotCost, closeTo(1.27, 1e-12));
+      expect(result.accounting!.quantities['input_images'], 2);
     });
-
-    test('other billing modes are left as recorded', () async {
-      LLMService.configResolverOverride = (_) => config('request');
-      await LLMService().settleVideoUsage(
+    test('missing submit row never creates a zero-cost final record', () async {
+      await LLMService(database: database).settleVideoUsage(
         modelIdentifier: 1,
-        operationName: 'task-2',
-        renderedSeconds: 10,
+        operationName: 'absent',
+        renderedSeconds: 6,
+        reportedCost: 1,
       );
-      expect(updates, isEmpty);
-      expect(costs, isEmpty);
-    });
-
-    test('a reported cost is written under every mode, beside the re-pricing', () async {
-      LLMService.configResolverOverride = (_) => config(specBillingMode);
-      await LLMService().settleVideoUsage(
-        modelIdentifier: 1,
-        operationName: 'task-3',
-        renderedSeconds: 1,
-        reportedCost: 0.10,
-        options: const {'resolution': '1080P', 'seconds': 1},
-      );
-      expect(updates.single.$1, LLMService.videoUsageRowId('task-3'));
-      expect(costs.single, (LLMService.videoUsageRowId('task-3'), 0.10));
-
-      updates.clear();
-      costs.clear();
-      LLMService.configResolverOverride = (_) => config('request');
-      await LLMService().settleVideoUsage(
-        modelIdentifier: 1,
-        operationName: 'task-4',
-        reportedCost: 0.10,
-      );
-      expect(updates, isEmpty, reason: 'a request-billed row has no seconds to re-price');
-      expect(costs.single, (LLMService.videoUsageRowId('task-4'), 0.10));
-    });
-
-    test('a failing re-pricing does not lose the reported cost, nor the reverse', () async {
-      LLMService.configResolverOverride = (_) => config(specBillingMode);
-      LLMService.usageUpdateOverride = (_, _) async => throw StateError('db locked');
-      await LLMService().settleVideoUsage(
-        modelIdentifier: 1,
-        operationName: 'task-5',
-        renderedSeconds: 1,
-        reportedCost: 0.08,
-      );
-      expect(costs.single.$2, 0.08);
-
-      LLMService.usageUpdateOverride = (id, billing) async {
-        updates.add((id, billing));
-        return 1;
-      };
-      LLMService.reportedCostUpdateOverride = (_, _) async => throw StateError('db locked');
-      await LLMService().settleVideoUsage(
-        modelIdentifier: 1,
-        operationName: 'task-6',
-        renderedSeconds: 1,
-        reportedCost: 0.08,
-      );
-      expect(updates.single.$1, LLMService.videoUsageRowId('task-6'));
+      expect(await database.getTokenUsage(), isEmpty);
     });
   });
 }

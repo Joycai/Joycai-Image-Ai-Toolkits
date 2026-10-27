@@ -19,6 +19,7 @@ import '../assistant/prompt_optimizer_agent.dart';
 import '../db/database_service.dart';
 import '../db/repositories/cookie_repository.dart';
 import '../db/repositories/image_layer_repository.dart';
+import '../db/repositories/usage_repository.dart';
 import '../llm/generation/generation_execution_context.dart';
 import '../llm/generation/generation_profile_store.dart';
 import '../llm/image_batch_session.dart';
@@ -159,6 +160,11 @@ class TaskQueueService extends ChangeNotifier {
   static const int reloadLimit = 200;
 
   Future<void> _loadRecentTasks() async {
+    try {
+      await UsageRepository(db: _db).replayPending();
+    } catch (e) {
+      debugPrint('Usage recovery remains pending: $e');
+    }
     await _db.cleanupStuckTasks();
     final tasks = await _relabelled(await _db.getRecentTasks(reloadLimit));
     if (_disposed) return;

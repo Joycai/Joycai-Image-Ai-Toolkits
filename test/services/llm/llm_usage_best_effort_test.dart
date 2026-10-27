@@ -17,7 +17,7 @@ void main() {
     apiKey: 'k',
   );
 
-  test('a throwing usage sink is swallowed and logged at WARN', () async {
+  test('a throwing usage sink is swallowed and reported as an accounting error', () async {
     LLMService.usageSinkOverride = (_) async => throw StateError('db locked');
     final logs = <(String, String)>[];
     final service = LLMService();
@@ -27,7 +27,7 @@ void main() {
     addTearDown(() => service.removeLogListener(listener));
 
     await expectLater(service.recordUsageForTest(config(), const {'prompt_tokens': 3}), completes);
-    expect(logs.where((l) => l.$2 == 'WARN' && l.$1.contains('db locked')), isNotEmpty);
+    expect(logs.where((l) => l.$2 == 'ERROR' && l.$1.contains('db locked')), isNotEmpty);
   });
 
   test('the row still reaches a working sink', () async {

@@ -82,5 +82,8 @@
   "usageGoFixRates": "料金を追加",
   "usageUnitPrice": "単価",
   "usageReportedCost": "上流の請求額",
-  "usageTableEstimate": "料金表の見積"
+  "usageTableEstimate": "料金表の見積",
+  "usageIncomplete": "料金が不完全",
+  "usagePending": "課金情報待ち",
+  "usageAccountingNote": "見積合計は既知の項目のみです。不完全・確認待ちの記録は確定請求額ではありません。"
 }

@@ -306,6 +306,20 @@ class _FeeGroupShot {
 }
 
 final List<_FeeGroupShot> _feeGroupShots = <_FeeGroupShot>[
+  _FeeGroupShot('mediaTokens', (_, tapText) async {
+    await tapText('Gemini Flash');
+  }, sizes: const ['mobile', 'tablet', 'ipad', 'desktop']),
+  _FeeGroupShot('videoInputRates', (tester, tapText) async {
+    await tapText('Veo 3 视频');
+    final input = find.text('输入视频 · 美元/秒');
+    expect(input, findsOneWidget);
+    await tester.ensureVisible(input);
+    await tapText('输入视频 · 美元/秒');
+    final hint = find.text('输入视频按输出分辨率和质量匹配单价；未配置的档位标记为费用不完整。');
+    expect(hint, findsOneWidget);
+    await tester.ensureVisible(hint);
+    await tester.pump(const Duration(milliseconds: 500));
+  }, sizes: const ['mobile', 'tablet', 'ipad', 'desktop']),
   // D2 1d: the default view — the list beside the dashed placeholder; on a
   // phone (1h) the two-line cards on the canvas.
   _FeeGroupShot('list', (_, _) async {}, sizes: const <String>['desktop', 'mobile']),

@@ -20,7 +20,7 @@ enum OutputUnit {
 class SpecRate {
   final String? size;
   final String? quality;
-  final int? seconds;
+  final num? seconds;
   final double price;
 
   const SpecRate({this.size, this.quality, this.seconds, this.price = 0.0});
@@ -49,7 +49,7 @@ class SpecRate {
     return SpecRate(
       size: _nonEmpty(json['size']),
       quality: _nonEmpty(json['quality']),
-      seconds: rawSeconds is num ? rawSeconds.toInt() : int.tryParse(rawSeconds?.toString() ?? ''),
+      seconds: rawSeconds is num ? rawSeconds : num.tryParse(rawSeconds?.toString() ?? ''),
       price: (json['price'] as num? ?? 0.0).toDouble(),
     );
   }

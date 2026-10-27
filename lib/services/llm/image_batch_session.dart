@@ -1,9 +1,13 @@
+import '../../models/media_pricing.dart';
+import '../../models/pricing_group.dart';
 import '../../models/token_usage.dart';
+import '../billing/media_accounting.dart';
 import '../db/database_service.dart';
 import '../db/repositories/usage_repository.dart';
 import 'llm_types.dart';
 import 'protocols/openai_image_batch_protocol.dart';
 import 'protocols/protocol.dart';
+import 'protocols/usage_normalization.dart';
 
 /// Already routed by the dispatcher. Carries live credentials only in memory.
 class ImageBatchSession {
@@ -37,8 +41,8 @@ class ImageBatchSession {
   Future<LLMResponse> decodeResult(Map<String, dynamic> body, int inputs) =>
       _protocol.decodeResult(_target, body, inputs);
 
-  /// TokenUsage owns arithmetic. Mixed text/image input becomes a weighted
-  /// price snapshot; missing modality detail must not look like a free image.
+  /// Uses the same disjoint components as immediate requests. Legacy chart
+  /// counters are projections; missing detail remains explicitly incomplete.
   static Future<void> settle(
     DatabaseService database,
     String taskId,
@@ -46,68 +50,45 @@ class ImageBatchSession {
     Map<String, dynamic> state,
     Map<String, dynamic> body,
   ) async {
-    final usage = body['usage'];
-    if (usage is! Map) {
-      throw LLMApiException('Batch usage is unavailable; result saved, settlement pending.');
-    }
-    final details = usage['input_tokens_details'];
-    if (details is! Map ||
-        details['text_tokens'] is! num ||
-        details['image_tokens'] is! num ||
-        usage['output_tokens'] is! num) {
-      throw LLMApiException('Batch token details are incomplete; settlement pending.');
-    }
-    if ((usage['output_tokens'] as num) < 0 ||
-        usage['input_tokens'] is! num ||
-        usage['input_tokens'] !=
-            (details['text_tokens'] as num) + (details['image_tokens'] as num)) {
-      throw LLMApiException('Invalid Batch token totals; settlement pending.');
-    }
-    final text = (details['text_tokens'] as num).toInt();
-    final image = (details['image_tokens'] as num).toInt();
-    final cached = (details['cached_tokens'] as num?)?.toInt() ?? 0;
-    // Images usage currently has no guaranteed cached modality split. Keep
-    // nonzero unknown splits pending rather than silently mispricing them.
-    final cachedDetails = details['cached_tokens_details'];
-    if (cached > 0 && cachedDetails is! Map) {
-      throw LLMApiException('Batch cached token breakdown unavailable; settlement pending.');
-    }
-    final cachedText = cachedDetails is Map
-        ? (cachedDetails['text_tokens'] as num?)?.toInt() ?? 0
-        : 0;
-    final cachedImage = cachedDetails is Map
-        ? (cachedDetails['image_tokens'] as num?)?.toInt() ?? 0
-        : 0;
-    if (cachedText + cachedImage != cached ||
-        cachedText > text ||
-        cachedImage > image ||
-        text < 0 ||
-        image < 0 ||
-        cached < 0) {
-      throw LLMApiException('Invalid Batch token accounting.');
-    }
-    final input = text + image - cached;
+    final rawUsage = body['usage'];
+    final usage = rawUsage is Map ? Map<String, dynamic>.from(rawUsage) : <String, dynamic>{};
     double rate(String key) => (state[key] as num).toDouble();
-    await UsageRepository(db: database).recordTokenUsage(
+    final accounting = MediaAccounting.price(
+      PricingGroup(
+        name: state['modelId'] as String,
+        inputPrice: rate('textInputRate'),
+        cacheInputPrice: rate('textCacheRate'),
+        outputPrice: rate('outputRate'),
+        mediaPricing: MediaPricing(
+          imageInput: rate('imageInputRate'),
+          imageCache: rate('imageCacheRate'),
+          imageOutput: rate('outputRate'),
+        ),
+      ),
+      normalizeTokenUsage(Map<String, dynamic>.from(usage), imageOutput: true),
+      priceSource: state['pricingSource'] as String? ?? 'OpenAI Batch snapshot',
+    );
+    final projection = accounting.tokenProjection;
+    final repository = UsageRepository(db: database);
+    await repository.recordTokenUsage(
       TokenUsage(
+        accounting: accounting,
         taskId: 'batch:$taskId',
         modelId: state['modelId'] as String,
         modelDbId: modelPk,
         timestamp: DateTime.parse(state['submittedAt'] as String),
-        inputTokens: input,
-        cacheTokens: cached,
-        outputTokens: (usage['output_tokens'] as num).toInt(),
-        inputPrice: input == 0
-            ? 0
-            : ((text - cachedText) * rate('textInputRate') +
-                      (image - cachedImage) * rate('imageInputRate')) /
-                  input,
-        cachePrice: cached == 0
-            ? 0
-            : (cachedText * rate('textCacheRate') + cachedImage * rate('imageCacheRate')) / cached,
-        outputPrice: rate('outputRate'),
+        inputTokens: projection['input_tokens'] as int,
+        cacheTokens: projection['cache_tokens'] as int,
+        outputTokens: projection['output_tokens'] as int,
+        inputPrice: projection['input_price'] as double,
+        cachePrice: projection['cache_price'] as double,
+        outputPrice: projection['output_price'] as double,
         billingMode: 'token',
       ),
     );
+    final saved = await repository.usageFor('batch:$taskId');
+    if (saved == null || saved.costIncomplete) {
+      throw LLMApiException('Batch usage incomplete; settlement pending.');
+    }
   }
 }

@@ -275,7 +275,7 @@ void main() {
     // pre-filling a zero here would quietly turn the cache free on next save.
     final field = tester.widget<TextField>(find.widgetWithText(TextField, 'Cache'));
     expect(field.controller?.text, isEmpty);
-    expect(find.textContaining('a blank cache rate follows the input rate'), findsOneWidget);
+    expect(find.textContaining('blank text cache price'), findsOneWidget);
     // The blank field hints the rate it would inherit from the input field.
     expect(field.decoration?.hintText, '1.25');
   });

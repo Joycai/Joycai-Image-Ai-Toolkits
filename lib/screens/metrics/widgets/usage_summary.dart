@@ -25,41 +25,51 @@ class UsageSummary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return UsagePanel(
-      padding: const EdgeInsets.all(AppSpace.s16),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final charts = UsageTokenCharts(stats: stats);
-          if (!compact && constraints.maxWidth >= 1100) {
-            return Row(
-              children: [
-                SizedBox(
-                  width: 220,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      UsageCaption(l10n.estimatedCost),
-                      const SizedBox(height: AppSpace.s6),
-                      _costFigure(context),
-                      const SizedBox(height: AppSpace.s6),
-                      _metaLine(context, l10n),
-                    ],
+    return Tooltip(
+      message: l10n.usageAccountingNote,
+      child: UsagePanel(
+        padding: const EdgeInsets.all(AppSpace.s16),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final charts = UsageTokenCharts(stats: stats);
+            if (!compact && constraints.maxWidth >= 1100) {
+              return Row(
+                children: [
+                  SizedBox(
+                    width: 220,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        UsageCaption(l10n.estimatedCost),
+                        const SizedBox(height: AppSpace.s6),
+                        _costFigure(context),
+                        const SizedBox(height: AppSpace.s6),
+                        _metaLine(context, l10n),
+                        const SizedBox(height: AppSpace.s6),
+                        Text(
+                          l10n.usageAccountingNote,
+                          style: Theme.of(context).textTheme.labelSmall,
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(width: AppSpace.s28),
-                Expanded(child: charts),
+                  const SizedBox(width: AppSpace.s28),
+                  Expanded(child: charts),
+                ],
+              );
+            }
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _headlineRow(context, l10n),
+                const SizedBox(height: AppSpace.s16),
+                charts,
+                const SizedBox(height: AppSpace.s6),
+                Text(l10n.usageAccountingNote, style: Theme.of(context).textTheme.labelSmall),
               ],
             );
-          }
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _headlineRow(context, l10n),
-              const SizedBox(height: AppSpace.s16),
-              charts,
-            ],
-          );
-        },
+          },
+        ),
       ),
     );
   }

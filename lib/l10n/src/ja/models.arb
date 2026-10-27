@@ -491,7 +491,7 @@
       }
     }
   },
-  "specOtherBlankHint": "空欄の場合、未掲載の仕様は 0 として計算します。",
+  "specOtherBlankHint": "未設定の仕様は、単価が入力されるまで料金不完全として表示されます。",
   "specOnlyOtherHint": "「その他の仕様」だけの場合は「回数別」と同じ動作です。",
   "specSwitchToRequest": "回数別に切り替え",
   "specSummary": "{unit} · {n} 段階 · {min}–{max}",
@@ -519,7 +519,7 @@
       }
     }
   },
-  "specOtherZero": "その他の仕様は 0",
+  "specOtherZero": "その他の仕様は単価未設定",
   "modelCardBilling": "課金",
   "specUnitSuffixRequest": "/回",
   "filterFeeGroups": "料金グループを絞り込む…",
@@ -541,7 +541,7 @@
   },
   "editGroupTitle": "グループを編集",
   "feeGroupNamePlaceholder": "グループ名を入力",
-  "tokenPriceHint": "100 万トークン単位で課金。キャッシュ入力が未入力なら入力価格で計算。画像 / 動画モデルは「仕様別」を使ってください。",
+  "tokenPriceHint": "100万トークン当たりの単価。テキストキャッシュが空欄の場合は入力単価を使用します。画像単価は下で設定します。",
   "discardChangesTitle": "未保存の変更を破棄しますか？",
   "discardChangesBody": "別のグループに切り替えると、ここでの変更は失われます。",
   "discard": "破棄",
@@ -636,5 +636,12 @@
   "platformCustom": "カスタム",
   "routePrimaryCantRemove": "メインルートはオフにできません。先に別のルートをメインにしてください",
   "routeEnableShort": "有効にする",
-  "mergeFailed": "統合に失敗しました。何も変更していません：{error}"
+  "mergeFailed": "統合に失敗しました。何も変更していません：{error}",
+  "mediaTokenPrices": "画像トークン単価",
+  "mediaPriceUnknown": "空欄は不明、0 は無料です。テキストには上の入出力単価を使用します。",
+  "mediaImageInput": "画像入力",
+  "mediaImageCache": "画像キャッシュ入力",
+  "mediaImageOutput": "画像出力",
+  "mediaVideoInput": "入力動画 · USD/秒",
+  "mediaVideoPriceHint": "入力動画の単価は出力解像度と品質で選択します。未設定の料金は不完全として表示します。"
 }

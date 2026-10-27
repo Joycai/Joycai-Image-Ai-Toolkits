@@ -29,7 +29,7 @@ void main() {
     expect(known.qualities, isNot(contains('auto')));
   });
 
-  test('seconds are integers in ascending order', () {
+  test('seconds are numbers in ascending order', () {
     expect(known.seconds, containsAllInOrder([4, 5, 8, 10]));
     expect(known.seconds, isSorted);
   });
@@ -42,7 +42,7 @@ class _Sorted extends Matcher {
 
   @override
   bool matches(Object? item, Map matchState) {
-    if (item is! List<int>) return false;
+    if (item is! List<num>) return false;
     for (var i = 1; i < item.length; i++) {
       if (item[i - 1] > item[i]) return false;
     }

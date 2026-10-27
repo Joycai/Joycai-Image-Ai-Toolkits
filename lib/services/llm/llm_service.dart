@@ -3,10 +3,13 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:uuid/uuid.dart';
 
 import '../../models/token_usage.dart';
+import '../billing/media_accounting.dart';
 import '../billing/spec_billing.dart';
 import '../db/database_service.dart';
+import '../db/repositories/usage_repository.dart';
 import 'context_budget.dart';
 import 'gpt_image_timeout.dart';
 import 'image_batch_session.dart';
@@ -16,6 +19,7 @@ import 'llm_debug_logger.dart';
 import 'llm_dispatcher.dart';
 import 'llm_types.dart';
 import 'output_spec.dart';
+import 'protocols/usage_normalization.dart';
 import 'turn_continuation.dart';
 
 part 'llm_stream_idle_guard.dart';
@@ -1307,59 +1311,33 @@ class LLMService {
       cancelWatch?.cancel();
       if (!abort.isCompleted) abort.complete();
     }
-    // Video jobs never flow back through request()/requestStream(), so the
-    // accepted submission is the only moment they can be billed at all —
-    // without this every Veo/Sora/xAI generation was invisible to the metrics
-    // page and to request-billed channels. Providers report no token usage at
-    // submit time; the row records the request itself (tokens 0).
-    //
-    // A spec-billed group prices the submission by what was asked for —
-    // resolution and seconds are in the options — so a job that later fails
-    // is still billed here, exactly as a request-billed one is; a surface
-    // that reports the length it rendered corrects the row on completion
-    // ([settleVideoUsage]). The reference images the submit sent ride along
-    // under the images protocols' own key, so a group that charges inputs
-    // charges a video's frames too (`D2e`).
+    // Submission is only an estimate, not evidence of a charge. Persist the
+    // complete applicable price rules now; terminal evidence reprices against
+    // these rules, never a later edit. Failures/cancellation remain pending
+    // unless the provider supplies billing evidence.
     await _recordUsage(
       config.modelId,
       config,
-      {'operation': 'submit', if (ticket.inputImages > 0) inputImageCountKey: ticket.inputImages},
+      {
+        'operation': 'submit',
+        inputImageCountKey: ticket.inputImages,
+        'input_video_seconds': ticket.inputVideoSeconds,
+      },
       modelDbId: modelIdentifier is int ? modelIdentifier : null,
       options: options,
       // Durable, so [settleVideoUsage] can find the row again — also from a
       // run that resumed the job after a restart.
-      rowId: videoUsageRowId(ticket.name),
+      rowId: videoUsageRowId(ticket.name, scope: contextId),
     );
     return ticket;
   }
 
   /// The usage row a video submit is recorded under.
-  static String videoUsageRowId(String operationName) => 'video:$operationName';
+  static String videoUsageRowId(String operationName, {String? scope}) =>
+      scope == null ? 'video:$operationName' : 'video:$scope:$operationName';
 
-  /// Test doors in front of the two usage-row updates [settleVideoUsage]
-  /// makes.
-  @visibleForTesting
-  static Future<int> Function(String taskId, UsageSpecBilling billing)? usageUpdateOverride;
-  @visibleForTesting
-  static Future<int> Function(String taskId, double cost)? reportedCostUpdateOverride;
-
-  /// Settles a finished video job's submit row by what the terminal poll
-  /// reported: the seconds the provider rendered ([videoRenderedSecondsKey])
-  /// and, where it says so, what it charged ([reportedCostKey]).
-  ///
-  /// Only a spec-billed group prices seconds; every other mode is left as
-  /// recorded. The request's other conditions (resolution, quality) come
-  /// from the same [options] the submit was priced with, so the rate row is
-  /// matched again with only the length corrected — a tier keyed on
-  /// duration may change. The output four columns alone are rewritten: the
-  /// frames the submit sent stay as recorded ([UsageSpecBilling.toOutputMap]).
-  ///
-  /// A reported cost is written under every mode, onto `reported_cost`
-  /// alone, and outranks the row's estimate from then on
-  /// ([TokenUsage.costParts]) — the submit could only estimate, the terminal
-  /// poll knows (xAI: the frames at \$0.01 each are inside the figure).
-  /// Both writes are best effort and independent: a failure is logged, the
-  /// video is not affected, and one failing does not stop the other.
+  /// Apply terminal evidence atomically to the submitted rule snapshot. A
+  /// failure leaves a durable replay event, never a resubmitted generation.
   Future<void> settleVideoUsage({
     required dynamic modelIdentifier,
     required String operationName,
@@ -1367,51 +1345,21 @@ class LLMService {
     double? reportedCost,
     Map<String, dynamic>? options,
     String? contextId,
+    String? usageRowId,
+    Map<String, dynamic>? evidence,
   }) async {
-    void log(String msg, {String level = 'INFO'}) =>
-        _emitLog(msg, level: level, contextId: contextId);
-    final rowId = videoUsageRowId(operationName);
-    if (renderedSeconds != null) {
-      try {
-        final config = await _resolveConfig(modelIdentifier, logger: log);
-        if (config.billingMode == specBillingMode) {
-          final spec = specUsageFor(config, options, {
-            'output_seconds': renderedSeconds,
-          }, imageCount: 0)!;
-          final update = usageUpdateOverride ?? _db.updateSpecBilling;
-          final rows = await update(rowId, spec.toBilling());
-          if (rows > 0) {
-            log(
-              'Video $operationName: billed by the ${spec.spec.seconds}s '
-              'the provider reports it rendered.',
-            );
-          }
-        }
-      } catch (e) {
-        log(
-          'Could not settle the usage of video $operationName by its '
-          'rendered length (the video is unaffected): $e',
-          level: 'WARN',
-        );
-      }
-    }
-    if (reportedCost != null) {
-      try {
-        final update = reportedCostUpdateOverride ?? _db.updateReportedCost;
-        final rows = await update(rowId, reportedCost);
-        if (rows > 0) {
-          log(
-            'Video $operationName: the provider reports it cost '
-            '\$${reportedCost.toStringAsFixed(4)}.',
-          );
-        }
-      } catch (e) {
-        log(
-          'Could not record the cost the provider reported for video '
-          '$operationName (the video is unaffected): $e',
-          level: 'WARN',
-        );
-      }
+    try {
+      await UsageRepository(db: _db).settleMedia(
+        usageRowId ?? videoUsageRowId(operationName, scope: contextId),
+        {'output_seconds': ?renderedSeconds, ...?evidence},
+        reportedCost: reportedCost,
+      );
+    } catch (e) {
+      _emitLog(
+        'Video $operationName accounting is pending; replay will retry durable events: $e',
+        level: 'WARN',
+        contextId: contextId,
+      );
     }
   }
 
