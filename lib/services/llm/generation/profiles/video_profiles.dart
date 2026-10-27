@@ -34,51 +34,78 @@ const _veoVideo = ModelCapabilities(
   videoParams: [_veoResolutionParam, _veoAspectRatioParam],
 );
 
-/// grok-imagine-video-1.5 — xAI's native async video surface
-/// (`/videos/generations`, see `_submitXaiVideo`) on xAI channels, or the
-/// NewAPI `/v1/videos` relay otherwise. Overrides the shared Veo
-/// resolution/aspect-ratio dropdowns (the video panel hides those and
-/// renders these instead) since xAI's option set is different:
-///  * `aspectRatio` — 1:1, 16:9/9:16, 4:3/3:4, 3:2/2:3, or unset (skips the
-///    `aspect_ratio` field entirely and lets the model choose).
-///  * `resolution` — 480p / 720p / 1080p.
-///  * `seconds` — a 1–15s duration slider (xAI's `duration` field).
+/// Native xAI profiles. Keep the existing profile ID for 1.5 snapshots.
 const _grokImagineVideo = ModelCapabilities(
   isVideoGenerator: true,
+  maxReferenceImages: 14,
+  nativeVideoContract: GenerationProtocolContract(
+    standaloneLastFrame: true,
+    referenceMaxResolution: '720p',
+  ),
+  videoParams: [_grokAspect, _grokResolution, _grokSeconds],
+);
+
+const _grokImagineVideoClassic = ModelCapabilities(
+  isVideoGenerator: true,
   maxReferenceImages: 7,
+  nativeVideoContract: GenerationProtocolContract(
+    lastFrame: false,
+    exclusiveFrames: true,
+    referenceMaxSeconds: 10,
+    referenceMaxResolution: '720p',
+  ),
   videoParams: [
-    ParamSpec(
-      key: 'aspectRatio',
-      labelKey: 'aspectRatio',
-      control: ParamControl.dropdown,
-      defaultValue: 'not_set',
-      options: [
-        ParamOption('not_set'),
-        ParamOption('1:1'),
-        ParamOption('16:9'),
-        ParamOption('9:16'),
-        ParamOption('4:3'),
-        ParamOption('3:4'),
-        ParamOption('3:2'),
-        ParamOption('2:3'),
-      ],
-    ),
+    _grokAspect,
     ParamSpec(
       key: 'resolution',
       labelKey: 'resolution',
       control: ParamControl.segmented,
       defaultValue: '720p',
-      options: [ParamOption('480p'), ParamOption('720p'), ParamOption('1080p')],
+      options: [ParamOption('480p'), ParamOption('720p')],
     ),
-    ParamSpec(
-      key: 'seconds',
-      valueType: ParamValueType.integer,
-      labelKey: 'videoSeconds',
-      control: ParamControl.slider,
-      defaultValue: '6',
-      options: [],
-      min: 1,
-      max: 15,
-    ),
+    _grokSeconds,
   ],
+);
+
+const _grokImagineVideoLite = ModelCapabilities(
+  isVideoGenerator: true,
+  maxReferenceImages: 0,
+  nativeVideoContract: GenerationProtocolContract(lastFrame: false, exclusiveFrames: true),
+  videoParams: [_grokAspect, _grokResolution, _grokSeconds],
+);
+
+const _grokAspect = ParamSpec(
+  key: 'aspectRatio',
+  labelKey: 'aspectRatio',
+  control: ParamControl.dropdown,
+  defaultValue: 'not_set',
+  options: [
+    ParamOption('not_set'),
+    ParamOption('1:1'),
+    ParamOption('16:9'),
+    ParamOption('9:16'),
+    ParamOption('4:3'),
+    ParamOption('3:4'),
+    ParamOption('3:2'),
+    ParamOption('2:3'),
+    ParamOption('21:9'),
+    ParamOption('5:2'),
+  ],
+);
+const _grokResolution = ParamSpec(
+  key: 'resolution',
+  labelKey: 'resolution',
+  control: ParamControl.segmented,
+  defaultValue: '720p',
+  options: [ParamOption('480p'), ParamOption('720p'), ParamOption('1080p')],
+);
+const _grokSeconds = ParamSpec(
+  key: 'seconds',
+  valueType: ParamValueType.integer,
+  labelKey: 'videoSeconds',
+  control: ParamControl.slider,
+  defaultValue: '6',
+  options: [],
+  min: 1,
+  max: 15,
 );

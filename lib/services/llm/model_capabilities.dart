@@ -2,6 +2,7 @@ import 'image_size_rules.dart';
 import 'image_size_vocabulary.dart';
 import 'model_family.dart';
 import 'param_spec.dart';
+import 'protocols/generation_contract.dart';
 import 'vendors/vendor_profile.dart' show WireProtocol;
 
 export 'param_spec.dart';
@@ -90,6 +91,9 @@ class ModelCapabilities {
   ///  * `> 0` — supported up to this many (e.g. OpenAI `gpt-image-1`).
   final int? maxReferenceImages;
 
+  /// Model-specific restrictions on the native video wire only.
+  final GenerationProtocolContract? nativeVideoContract;
+
   /// The exact pixels each (resolution tier, aspect ratio) pair maps to, for
   /// a model whose `size` takes *either* a tier (`2K`) *or* pixels
   /// (`2848x1600`) but not both — Seedream's. Keyed tier → ratio → `WxH`.
@@ -120,6 +124,7 @@ class ModelCapabilities {
     this.imageParams = const [],
     this.videoParams = const [],
     this.maxReferenceImages,
+    this.nativeVideoContract,
     this.longRunning = false,
     this.imageRequestShape = ImageRequestShape.none,
     this.supportsAsyncImageTask = false,
@@ -143,6 +148,8 @@ class ModelCapabilities {
     _geminiImageLegacy,
     _xaiImageLegacy,
     _grokImagineVideo,
+    _grokImagineVideoClassic,
+    _grokImagineVideoLite,
     _dashscopeWanVideo,
     _minimaxVideo,
     _minimaxHighspeed,
@@ -175,6 +182,8 @@ class ModelCapabilities {
     'veoVideo': _veoVideo,
     'openaiVideo': _openaiVideo,
     'grokImagineVideo': _grokImagineVideo,
+    'grokImagineVideoClassic': _grokImagineVideoClassic,
+    'grokImagineVideoLite': _grokImagineVideoLite,
     'dashscopeWanVideo': _dashscopeWanVideo,
     'xaiImage': _xaiImage,
     'xaiImageLegacy': _xaiImageLegacy,
@@ -213,6 +222,8 @@ class ModelCapabilities {
   /// Several native video wires share one classification but not one contract.
   bool supportsVideoProtocol(WireProtocol protocol) =>
       identical(this, forProtocol(protocol)) ||
+      (protocol == WireProtocol.xaiVideos &&
+          [_grokImagineVideoClassic, _grokImagineVideoLite].any((caps) => identical(this, caps))) ||
       (protocol == WireProtocol.minimaxVideo &&
           [_minimaxHighspeed, _minimaxLite, _minimaxMax].any((caps) => identical(this, caps)));
 
@@ -259,7 +270,11 @@ class ModelCapabilities {
     // 3:2 aspect ratios, 480p–1080p resolution, a 1–15s duration slider) than
     // the generic Sora-style openaiVideo table.
     if (family == ModelFamily.openaiVideo && id.contains('grok-imagine-video')) {
-      return _grokImagineVideo;
+      return switch (ModelFamilyClassifier.grokVideoGeneration(id)) {
+        GrokVideoGeneration.classic => _grokImagineVideoClassic,
+        GrokVideoGeneration.v15 => _grokImagineVideo,
+        GrokVideoGeneration.lite => _grokImagineVideoLite,
+      };
     }
 
     // wan3.x on DashScope's native video-synthesis surface: its own

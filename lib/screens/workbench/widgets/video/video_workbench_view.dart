@@ -12,6 +12,8 @@ import '../../../../core/design_tokens.dart';
 import '../../../../core/responsive.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../state/workbench_ui_state.dart';
+import '../../../../widgets/ui/app_button.dart';
+import '../../../../widgets/ui/app_icon_button.dart';
 
 /// The gap between the player panel and the gallery area's edges
 /// (`A2` 「与画廊间距 10」).
@@ -528,66 +530,40 @@ class _VideoWorkbenchOverlayState extends State<VideoWorkbenchOverlay> {
   }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final shape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.control));
-    final side = BorderSide(color: colorScheme.outlineVariant);
 
     if (!labelled) {
-      return IconButton(
+      return AppIconButton(
         onPressed: onPressed,
         tooltip: label,
-        icon: Icon(icon),
-        style: IconButton.styleFrom(
-          foregroundColor: colorScheme.onSurface,
-          iconSize: AppSize.iconMd,
-          fixedSize: Size.square(height),
-          minimumSize: Size.square(height),
-          maximumSize: Size.square(height),
-          padding: EdgeInsets.zero,
-          visualDensity: VisualDensity.standard,
-          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          side: side,
-          shape: shape,
-        ),
+        icon: icon,
+        color: colorScheme.onSurface,
+        iconSize: AppSize.iconMd,
+        size: height,
       );
     }
 
-    return OutlinedButton.icon(
-      onPressed: onPressed,
-      icon: Icon(icon, size: AppSize.iconMd),
-      label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
-      style: OutlinedButton.styleFrom(
-        foregroundColor: colorScheme.onSurface,
-        side: side,
-        shape: shape,
-        fixedSize: Size.fromHeight(height),
-        minimumSize: Size(0, height),
-        maximumSize: Size(double.infinity, height),
-        padding: const EdgeInsets.symmetric(horizontal: AppSpace.s10),
-        visualDensity: VisualDensity.standard,
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        textStyle: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500),
+    return SizedBox(
+      height: height,
+      child: AppButton(
+        onPressed: onPressed,
+        icon: icon,
+        label: label,
+        variant: AppButtonVariant.secondary,
       ),
     );
   }
 
   Widget _closeButton(BuildContext context, AppLocalizations l10n, {required double size}) {
     final colorScheme = Theme.of(context).colorScheme;
-    return IconButton(
-      icon: const Icon(Icons.close),
+    return AppIconButton(
+      icon: Icons.close,
       tooltip: l10n.close,
       onPressed: () =>
           Provider.of<WorkbenchUIState>(context, listen: false).setLastGeneratedVideoPath(null),
-      style: IconButton.styleFrom(
-        foregroundColor: colorScheme.onSurfaceVariant,
-        iconSize: AppSize.iconMd,
-        fixedSize: Size.square(size),
-        minimumSize: Size.square(size),
-        maximumSize: Size.square(size),
-        padding: EdgeInsets.zero,
-        visualDensity: VisualDensity.standard,
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.control)),
-      ),
+      outlined: false,
+      color: colorScheme.onSurfaceVariant,
+      iconSize: AppSize.iconMd,
+      size: size,
     );
   }
 

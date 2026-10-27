@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/design_tokens.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../models/prompt_history_entry.dart';
 import '../../../../state/app_state.dart';
 import '../../../../widgets/ui/app_button.dart';
 import '../../../../widgets/ui/app_dialog.dart';
+import '../../../../widgets/ui/app_icon_button.dart';
 import '../../../../widgets/ui/app_side_panel.dart';
 import '../../../../widgets/ui/scroll_edge_fade.dart';
 
@@ -20,12 +22,18 @@ import '../../../../widgets/ui/scroll_edge_fade.dart';
 class PromptHistoryButton extends StatelessWidget {
   final List<PromptHistoryEntry> entries;
   final PromptHistoryType type;
+  final double size;
+  final double iconSize;
+  final Color? color;
   final ValueChanged<String> onApply;
 
   const PromptHistoryButton({
     super.key,
     required this.entries,
     required this.type,
+    this.size = AppSize.iconButton,
+    this.iconSize = AppSize.iconMd,
+    this.color,
     required this.onApply,
   });
 
@@ -33,7 +41,7 @@ class PromptHistoryButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
-    return IconButton(
+    return AppIconButton(
       onPressed: entries.isEmpty
           ? null
           : () => PromptHistorySheet.show(
@@ -42,11 +50,12 @@ class PromptHistoryButton extends StatelessWidget {
               onApply: onApply,
               onClear: () => Provider.of<AppState>(context, listen: false).clearPromptHistory(type),
             ),
-      icon: const Icon(Icons.history, size: 18),
+      icon: Icons.history,
+      outlined: false,
+      size: size,
+      iconSize: iconSize,
+      color: color,
       tooltip: l10n.promptHistory,
-      visualDensity: VisualDensity.compact,
-      padding: const EdgeInsets.symmetric(horizontal: 6),
-      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
     );
   }
 }

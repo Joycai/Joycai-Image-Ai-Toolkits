@@ -9,6 +9,7 @@ import 'package:joycai_image_ai_toolkits/services/llm/model_capabilities.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendor_profile.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_dropdown.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_segmented_control.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_slider.dart';
 
 void main() {
   Widget host(Widget child) => MaterialApp(
@@ -41,7 +42,7 @@ void main() {
         ),
       ),
     );
-    expect(find.byType(Slider), findsNothing);
+    expect(find.byType(AppSlider), findsNothing);
     AppDropdown<String> format() => tester.widget<AppDropdown<String>>(
       find.descendant(
         of: find.byKey(const ValueKey('outputFormat')),
@@ -50,15 +51,15 @@ void main() {
     );
     format().onChanged!('webp');
     await tester.pump();
-    expect(tester.widget<Slider>(find.byType(Slider)).value, 42);
-    tester.widget<Slider>(find.byType(Slider)).onChanged!(0);
+    expect(tester.widget<AppSlider>(find.byType(AppSlider)).value, 42);
+    tester.widget<AppSlider>(find.byType(AppSlider)).onChanged!(0);
     await tester.pump();
     format().onChanged!('png');
     await tester.pump();
-    expect(find.byType(Slider), findsNothing);
+    expect(find.byType(AppSlider), findsNothing);
     format().onChanged!('jpeg');
     await tester.pump();
-    expect(tester.widget<Slider>(find.byType(Slider)).value, 0);
+    expect(tester.widget<AppSlider>(find.byType(AppSlider)).value, 0);
     final background = tester.widget<AppDropdown<String>>(
       find.descendant(
         of: find.byKey(const ValueKey('background')),
@@ -189,7 +190,7 @@ void main() {
           ),
         ),
       );
-      tester.widget<Slider>(find.byType(Slider)).onChanged!(9);
+      tester.widget<AppSlider>(find.byType(AppSlider)).onChanged!(9);
       expect(chosen, '9');
       expect(find.text('6s'), findsOneWidget);
     });

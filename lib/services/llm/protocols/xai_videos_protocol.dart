@@ -1,8 +1,11 @@
 import 'dart:convert';
 
+import '../generation/generation_schema.dart';
+import '../generation/generation_validator.dart';
 import '../llm_debug_logger.dart';
 import '../llm_types.dart';
 import '../output_spec.dart' show reportedCostFromTicks, reportedCostOf;
+import '../vendors/vendor_profile.dart';
 import 'protocol.dart';
 
 /// xAI native async video (`POST /videos/generations` →
@@ -12,17 +15,17 @@ import 'protocol.dart';
 ///   * `prompt` — from the last user message.
 ///   * `duration` — seconds, 1–15 (mapped from the shared `seconds` option).
 ///   * `aspect_ratio` — e.g. "16:9" (from the shared `aspectRatio` option).
-///   * `resolution` — "480p" | "720p" | "1080p" (mapped from `resolution`;
-///     "4k" is clamped to "1080p").
+///   * `resolution` — validated against the version and input mode.
+///   * `last_frame` — 1.5 pinned last frame, an object `{url: ...}`.
 ///   * `image` — image-to-video first frame: an object `{url: ...}` where
 ///     `url` is a public URL or base64 data URI (per the REST schema —
 ///     a bare string is rejected with a 422).
 ///   * `reference_images` — reference-to-video guidance images, each an
 ///     object `{url: ...}` like `image`.
 ///
-/// `image` and `reference_images` are mutually exclusive upstream (400
-/// otherwise), so the first frame wins and reference images are dropped
-/// with a warning when both are supplied. [submit] returns the `request_id`.
+/// Version-specific validation runs before encoding. 1.5 supports pinned
+/// first/last frames together with references; classic keeps them exclusive.
+/// [submit] returns the request ID and the count of all images actually sent.
 class XaiVideosProtocol implements VideoJobProtocol {
   @override
   Future<VideoSubmission> submit(
@@ -31,60 +34,48 @@ class XaiVideosProtocol implements VideoJobProtocol {
     Map<String, dynamic>? options,
     LLMLogger? logger,
   }) async {
+    options = await validateGeneration(
+      GenerationSchema(
+        protocol: WireProtocol.xaiVideos,
+        capabilities: target.model.capabilities,
+        profileId: target.model.capabilities.profileId,
+      ),
+      history,
+      options,
+    );
     final config = target.config;
     final userMsg = history.lastWhere((m) => m.role == LLMRole.user, orElse: () => history.last);
 
     final payload = <String, dynamic>{'model': config.modelId, 'prompt': userMsg.content};
 
     final seconds = int.tryParse(resolveVideoSeconds(options) ?? '');
-    if (seconds != null) payload['duration'] = seconds.clamp(1, 15);
+    if (seconds != null) payload['duration'] = seconds;
 
     final aspect = readStringOption(options, 'aspectRatio');
     if (aspect != null && aspect != 'not_set') payload['aspect_ratio'] = aspect;
 
     final resolution = readStringOption(options, 'resolution');
-    if (resolution != null) {
-      // xAI supports 480p / 720p / 1080p; the shared dropdown also offers 4k.
-      payload['resolution'] = resolution == '4k' ? '1080p' : resolution;
-    }
+    if (resolution != null) payload['resolution'] = resolution;
 
-    // First frame → image-to-video; remaining attachments → reference images.
-    LLMAttachment? firstFrame;
-    final references = <LLMAttachment>[];
+    final references = <Map<String, String>>[];
+    var sentImages = 0;
     for (final att in userMsg.attachments) {
-      if (att.referenceType == LLMReferenceType.lastFrame) {
-        logger?.call('Last frame is not supported by the xAI video API — skipped.', level: 'WARN');
-        continue;
+      final bytes = await readAttachmentBytes(att);
+      if (bytes == null || bytes.isEmpty) {
+        throw LLMApiException('Unreadable xAI video input. Nothing was sent.');
       }
-      if (firstFrame == null && att.referenceType == LLMReferenceType.firstFrame) {
-        firstFrame = att;
-      } else {
-        references.add(att);
+      final image = {'url': imageDataUrl(bytes, att.mimeType)};
+      switch (att.referenceType) {
+        case LLMReferenceType.firstFrame:
+          payload['image'] = image;
+        case LLMReferenceType.lastFrame:
+          payload['last_frame'] = image;
+        default:
+          references.add(image);
       }
+      sentImages++;
     }
-
-    if (firstFrame != null) {
-      final bytes = await readAttachmentBytes(firstFrame);
-      if (bytes != null) {
-        payload['image'] = {'url': imageDataUrl(bytes, firstFrame.mimeType)};
-      }
-      if (references.isNotEmpty) {
-        logger?.call(
-          'xAI video: image and reference_images are mutually exclusive — '
-          '${references.length} reference image(s) dropped in favor of the first frame.',
-          level: 'WARN',
-        );
-      }
-    } else if (references.isNotEmpty) {
-      final encoded = <Map<String, String>>[];
-      for (final att in references) {
-        final bytes = await readAttachmentBytes(att);
-        if (bytes != null) {
-          encoded.add({'url': imageDataUrl(bytes, att.mimeType)});
-        }
-      }
-      if (encoded.isNotEmpty) payload['reference_images'] = encoded;
-    }
+    if (references.isNotEmpty) payload['reference_images'] = references;
 
     final baseUrl = trimBaseUrl(config.endpoint);
     final url = Uri.parse('$baseUrl/videos/generations');
@@ -97,6 +88,7 @@ class XaiVideosProtocol implements VideoJobProtocol {
         'payload': {
           ...payload,
           if (payload.containsKey('image')) 'image': '[base64 data]',
+          if (payload.containsKey('last_frame')) 'last_frame': '[base64 data]',
           if (payload.containsKey('reference_images'))
             'reference_images': '[${(payload['reference_images'] as List).length} base64 image(s)]',
         },
@@ -124,12 +116,6 @@ class XaiVideosProtocol implements VideoJobProtocol {
         throw LLMApiException('xAI video submit returned no request_id: ${response.body}');
       }
       logger?.call('xAI video request id: $requestId', level: 'DEBUG');
-      // What went out: the one first frame, or the references — never both
-      // (the exclusion above). xAI bills each at \$0.01 beside the
-      // per-second rate (docs/api/usage.md §5).
-      final sentImages = payload.containsKey('image')
-          ? 1
-          : (payload['reference_images'] as List?)?.length ?? 0;
       return VideoSubmission(requestId, inputImages: sentImages);
     } finally {
       client.close();

@@ -73,7 +73,9 @@ class GenerationSchema {
   });
 
   bool get isVideo => capabilities.isVideoGenerator;
-  GenerationProtocolContract get contract => GenerationProtocolContract.forWire(protocol);
+  GenerationProtocolContract get contract =>
+      (protocol == WireProtocol.xaiVideos ? capabilities.nativeVideoContract : null) ??
+      GenerationProtocolContract.forWire(protocol);
   bool get supportsLastFrame => isVideo && contract.lastFrame;
   bool get exclusiveFrames => contract.exclusiveFrames;
 
@@ -214,6 +216,22 @@ class GenerationSchema {
     }
     if (exclusiveFrames && first + last > 0 && refs + videos + audios > 0) {
       diagnostics.add(const GenerationDiagnostic('conflictingMedia'));
+    }
+    // A pinned last frame (alone or with a first frame) is reference mode too.
+    if (refs > 0 || last > 0) {
+      final seconds = values['seconds']?.value;
+      if (contract.referenceMaxSeconds case final max?) {
+        if (seconds is num && seconds > max) {
+          diagnostics.add(const GenerationDiagnostic('invalidParameter', field: 'seconds'));
+        }
+      }
+      if (contract.referenceMaxResolution case final max?) {
+        final resolution = values['resolution']?.value?.toString();
+        final pixels = int.tryParse(resolution?.replaceAll('p', '') ?? '');
+        if (pixels != null && pixels > int.parse(max.replaceAll('p', ''))) {
+          diagnostics.add(const GenerationDiagnostic('invalidParameter', field: 'resolution'));
+        }
+      }
     }
     final limit = capabilities.maxReferenceImages;
     if (limit != null && refs > limit) {
