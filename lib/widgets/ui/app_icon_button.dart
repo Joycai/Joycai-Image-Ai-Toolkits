@@ -9,8 +9,8 @@ import '../../core/design_tokens.dart';
 /// there has no edge and reads as decoration; the outline says it is a target,
 /// and squares it up with the controls beside it.
 ///
-/// Not for icons inside rows, cards or app bars — a box around every one of
-/// those is noise. Use a plain [IconButton] there.
+/// Use [outlined] = false inside rows and card headers that already provide
+/// a surface and boundary.
 class AppIconButton extends StatelessWidget {
   final IconData icon;
   final String tooltip;
@@ -31,6 +31,9 @@ class AppIconButton extends StatelessWidget {
   /// should not carry the same visual weight as a stated verb — and at this
   /// difference the two still read as one row.
   final double size;
+  final double? iconSize;
+  final bool outlined;
+  final Color? backgroundColor;
 
   const AppIconButton({
     super.key,
@@ -40,6 +43,9 @@ class AppIconButton extends StatelessWidget {
     this.color,
     this.selected = false,
     this.size = AppSize.iconButton,
+    this.iconSize,
+    this.outlined = true,
+    this.backgroundColor,
   });
 
   @override
@@ -53,20 +59,28 @@ class AppIconButton extends StatelessWidget {
       child: IconButton(
         // Half the box, per the spec's 16-in-32. The old 0.47 predates the box
         // being 32 and came out a pixel light once it shrank.
-        icon: Icon(icon, size: size * 0.5),
+        icon: Icon(icon, size: iconSize ?? size * 0.5),
         color: selected ? accent : color,
         padding: EdgeInsets.zero,
         style: IconButton.styleFrom(
           // `color` when the caller named one — a destructive action's box
           // should wash in its own red, not in the accent.
-          backgroundColor: selected ? accent.withValues(alpha: AppAlpha.tint) : null,
+          backgroundColor: selected ? accent.withValues(alpha: AppAlpha.tint) : backgroundColor,
+          disabledForegroundColor: colorScheme.outline,
+          fixedSize: Size.square(size),
+          minimumSize: Size.square(size),
+          maximumSize: Size.square(size),
+          visualDensity: VisualDensity.standard,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.control),
-            side: BorderSide(
-              color: selected
-                  ? accent.withValues(alpha: AppAlpha.ring)
-                  : colorScheme.outlineVariant,
-            ),
+            side: !outlined
+                ? BorderSide.none
+                : BorderSide(
+                    color: selected
+                        ? accent.withValues(alpha: AppAlpha.ring)
+                        : colorScheme.outlineVariant,
+                  ),
           ),
         ),
         onPressed: onPressed,

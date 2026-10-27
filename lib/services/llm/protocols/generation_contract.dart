@@ -5,6 +5,8 @@ import '../vendors/vendor_profile.dart';
 class GenerationProtocolContract {
   const GenerationProtocolContract({
     this.lastFrame = true,
+    this.referenceMaxSeconds,
+    this.referenceMaxResolution,
     this.exclusiveFrames = false,
     this.groupLimit,
     this.subjectReferences = false,
@@ -14,6 +16,8 @@ class GenerationProtocolContract {
     this.requiredPromptMaxCharacters,
   });
 
+  final int? referenceMaxSeconds;
+  final String? referenceMaxResolution;
   final bool lastFrame;
   final bool exclusiveFrames;
   final int? groupLimit;

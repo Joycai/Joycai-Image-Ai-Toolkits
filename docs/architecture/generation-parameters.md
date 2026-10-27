@@ -50,7 +50,7 @@ against decoded bytes in an isolate before transport. Transparent source images
 bypass optional JPEG compression, which would destroy their required alpha.
 
 The video UI keeps conflicting inputs removable and shows localized reasons.
-xAI hides an empty last-frame slot; a previously selected unsupported last frame
+xAI Classic/Lite hide an empty last-frame slot; a previously selected unsupported last frame
 stays visible for removal. Frames/reference exclusivity comes from the wire
 declaration. Shared non-UI validation rejects conflicting, excessive, unreadable
 and explicitly invalid inputs before paid submission. Protocol defensive checks
@@ -142,3 +142,31 @@ with local metadata probing and an exact final UTF-8 JSON size check. Invalid
 media blocks the POST instead of silently being dropped. Existing accepted jobs
 still resume without re-submission; old unsupported parameter snapshots fail
 before a new paid request rather than changing the requested specification.
+
+
+### Grok video versions (2026-10-27)
+
+Native xAI schemas compose a model-specific video contract with the wire.
+`grokImagineVideo` remains the 1.5 profile ID; Classic and Lite have separate
+profiles, preserved by native route resolution and selectable for aliases.
+Classic allows seven references at up to 10 seconds and 720p; Lite allows only
+text or a first frame. 1.5 allows fourteen references, standalone last frames,
+first/last frames, and first-frame plus reference combinations. Reference modes
+(including last-frame pins) are limited to 720p. Text and single-first-frame
+1.5/Lite requests allow 1080p. Invalid explicit combinations fail before POST,
+including direct protocol callers. Native model restrictions do not override
+the OpenAI-compatible relay wire contract. Accepted jobs still resume unchanged.
+All encoded first/last/reference images contribute to submission input billing.
+Source: https://docs.x.ai/developers/model-capabilities/video/overview and
+https://docs.x.ai/developers/model-capabilities/video/generation (reviewed 2026-10-27).
+
+
+### Video control primitives
+
+Video actions use `AppButton` and `AppIconButton`; icon actions inside card
+headers use the latter's borderless option, while settings and player actions
+keep their outlined treatment. `PromptHistoryButton` exposes size and ink
+through the same primitive. `AppSlider` owns the native slider implementation
+and inherits the application's SliderTheme, keyboard and accessibility behavior;
+parameter editors only pass range, divisions, value and callbacks. No separate
+video control switch or provider-specific widget is introduced.

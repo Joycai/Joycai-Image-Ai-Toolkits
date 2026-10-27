@@ -18,7 +18,7 @@ class GenerationProfiles {
     ],
     WireProtocol.geminiVeo: ['veoVideo'],
     WireProtocol.openaiVideos: ['openaiVideo'],
-    WireProtocol.xaiVideos: ['grokImagineVideo'],
+    WireProtocol.xaiVideos: ['grokImagineVideo', 'grokImagineVideoClassic', 'grokImagineVideoLite'],
     WireProtocol.dashscopeImagesSync: [
       'dashscopeImageFallback',
       'dashscopeQwenImage',

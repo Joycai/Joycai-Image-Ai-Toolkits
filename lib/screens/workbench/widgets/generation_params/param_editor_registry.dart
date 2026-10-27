@@ -10,6 +10,7 @@ import '../../../../services/llm/param_spec.dart';
 import '../../../../widgets/ui/app_dropdown.dart';
 import '../../../../widgets/ui/app_field_size.dart';
 import '../../../../widgets/ui/app_segmented_control.dart';
+import '../../../../widgets/ui/app_slider.dart';
 import '../size_picker/size_field.dart';
 
 typedef ParamEditorBuilder = Widget Function(BuildContext context, ParamEditorData data);
@@ -115,17 +116,13 @@ Widget _slider(BuildContext context, ParamEditorData data) {
     child: Row(
       children: [
         Expanded(
-          child: SliderTheme(
-            data: SliderTheme.of(context)
-                .copyWith(overlayShape: const RoundSliderOverlayShape(overlayRadius: 12)),
-            child: Slider(
-              value: value.toDouble(),
-              min: lo.toDouble(),
-              max: hi.toDouble(),
-              divisions: hi > lo ? hi - lo : null,
-              label: text,
-              onChanged: hi > lo ? (v) => data.change(v.round().toString()) : null,
-            ),
+          child: AppSlider(
+            value: value.toDouble(),
+            min: lo.toDouble(),
+            max: hi.toDouble(),
+            divisions: hi > lo ? hi - lo : null,
+            label: text,
+            onChanged: hi > lo ? (v) => data.change(v.round().toString()) : null,
           ),
         ),
         SizedBox(

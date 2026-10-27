@@ -1,3 +1,5 @@
+enum GrokVideoGeneration { classic, v15, lite }
+
 /// Single source of truth for classifying a model id into a "family".
 ///
 /// A family determines two things across the app:
@@ -96,6 +98,13 @@ enum GeminiThinkingGeneration {
 enum MiniMaxCloudVideoVariant { standard, highspeed, lite, max }
 
 class ModelFamilyClassifier {
+  static GrokVideoGeneration grokVideoGeneration(String id) {
+    final lower = id.toLowerCase();
+    if (lower.contains('grok-imagine-video-1.5-lite')) return GrokVideoGeneration.lite;
+    if (lower.contains('grok-imagine-video-1.5')) return GrokVideoGeneration.v15;
+    return GrokVideoGeneration.classic;
+  }
+
   /// Cloud variants share a wire but not output constraints. Keep model-id
   /// matching here; capability tables and protocols consume the classification.
   static MiniMaxCloudVideoVariant? minimaxCloudVideoVariant(String modelId) {

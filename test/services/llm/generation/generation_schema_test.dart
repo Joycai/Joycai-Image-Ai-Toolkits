@@ -68,10 +68,10 @@ void main() {
     }
   });
 
-  test('xAI blocks last frames and mutually exclusive reference input', () {
+  test('classic xAI blocks last frames and mutually exclusive reference input', () {
     final schema = GenerationSchema(
       protocol: WireProtocol.xaiVideos,
-      capabilities: ModelCapabilities.forProtocol(WireProtocol.xaiVideos),
+      capabilities: ModelCapabilities.forModel('grok-imagine-video'),
       profileId: 'xai',
     );
     final diagnostics = schema.validate(schema.readLegacy({}), const [

@@ -146,7 +146,9 @@ class _ReferenceImagesSectionState extends State<_ReferenceImagesSection> {
           builder: (context, candidateData, rejectedData) {
             final bool full = _isFull;
             final AppDropZoneState state;
-            if (candidateData.isNotEmpty) {
+            if (max == 0) {
+              state = AppDropZoneState.full;
+            } else if (candidateData.isNotEmpty) {
               state = AppDropZoneState.hover;
             } else if (rejectedData.isNotEmpty) {
               // A picture turned away can only have met the ceiling.

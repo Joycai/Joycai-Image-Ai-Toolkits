@@ -61,6 +61,7 @@ import 'package:joycai_image_ai_toolkits/widgets/ui/app_neutral_marker.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_search_field.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_section_label.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_segmented_control.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_slider.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_text_field.dart';
 
 void main() {
@@ -267,6 +268,12 @@ class _Gallery extends StatelessWidget {
                   AppButton(label: '静默操作', onPressed: () {}, variant: AppButtonVariant.text),
                   const AppButton(label: '禁用', onPressed: null),
                   AppIconButton(icon: Icons.settings, tooltip: '设置', onPressed: () {}),
+                  AppIconButton(
+                    icon: Icons.history,
+                    tooltip: '历史',
+                    outlined: false,
+                    onPressed: () {},
+                  ),
                   AppIconButton(
                     icon: Icons.grid_view,
                     tooltip: '已选',
@@ -585,7 +592,7 @@ class _Sliders extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Slider(value: 0.62, onChanged: (_) {});
+    return AppSlider(value: 0.62, onChanged: (_) {});
   }
 }
 

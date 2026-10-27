@@ -59,9 +59,11 @@ class _ReferenceFilesSection extends StatelessWidget {
                 Expanded(
                   child: Text(p.basename(path), maxLines: 1, overflow: TextOverflow.ellipsis),
                 ),
-                IconButton(
+                AppIconButton(
                   tooltip: l10n.remove,
-                  icon: const Icon(Icons.close, size: AppSize.iconSm),
+                  icon: Icons.close,
+                  outlined: false,
+                  iconSize: AppSize.iconSm,
                   onPressed: () => state.removeVideoReferenceFile(path, audio: audio),
                 ),
               ],

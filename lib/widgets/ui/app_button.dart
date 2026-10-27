@@ -124,6 +124,10 @@ class AppButton extends StatelessWidget {
   /// of a bottom sheet, which is expected to span it.
   final bool fullWidth;
 
+  /// Token-sized action rows may need a taller minimum without changing the
+  /// label's typographic role. Native tap-target padding remains intact.
+  final double? minimumHeight;
+
   /// Puts the accent on an [AppButtonVariant.secondary]'s label, in place of
   /// its usual `onSurface`.
   ///
@@ -155,6 +159,7 @@ class AppButton extends StatelessWidget {
     this.loading = false,
     this.size = AppButtonSize.normal,
     this.fullWidth = false,
+    this.minimumHeight,
     this.accentLabel = false,
     this.autofocus = false,
   });
@@ -193,7 +198,7 @@ class AppButton extends StatelessWidget {
   /// Returns null for the default, so an ordinary button keeps whatever the
   /// theme says rather than having the same numbers restated over it.
   ButtonStyle? _sizeStyle(TextTheme textTheme) {
-    if (size == AppButtonSize.normal && !fullWidth) return null;
+    if (size == AppButtonSize.normal && !fullWidth && minimumHeight == null) return null;
 
     final (height, padding, textStyle) = switch (size) {
       // `E1`'s row button: 28 high, 10 in from each edge, 12/500 label. The
@@ -216,7 +221,9 @@ class AppButton extends StatelessWidget {
     };
 
     return ButtonStyle(
-      minimumSize: WidgetStatePropertyAll(Size(fullWidth ? double.infinity : 0, height)),
+      minimumSize: WidgetStatePropertyAll(
+        Size(fullWidth ? double.infinity : 0, minimumHeight ?? height),
+      ),
       // A compact button lays out at its own 28, not the 48 Material pads a
       // touch target to: it sits inside a row that is already ≥48 (`E1`'s
       // setting rows are 48 and 56), and the padding was pushing every such

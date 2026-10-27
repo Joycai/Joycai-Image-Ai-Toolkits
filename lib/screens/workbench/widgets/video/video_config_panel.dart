@@ -31,6 +31,7 @@ import '../../../../widgets/files/file_visuals.dart';
 import '../../../../widgets/models/model_picker_options.dart';
 import '../../../../widgets/ui/app_button.dart';
 import '../../../../widgets/ui/app_field_size.dart';
+import '../../../../widgets/ui/app_icon_button.dart';
 import '../../../../widgets/ui/app_snackbar.dart';
 import '../../../../widgets/ui/app_switch.dart';
 import '../../../../widgets/ui/markdown_editor.dart';
@@ -329,16 +330,18 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
             ],
           ),
         ),
-        const SizedBox(height: _kCardGap),
-        _PanelCard(
-          child: _ReferenceImagesSection(
-            images: uiState.videoReferenceImages,
-            onDrop: uiState.addVideoReferenceImage,
-            onRemove: uiState.removeVideoReferenceImage,
-            maxImages: caps.maxReferenceImages,
-            captionStyle: captionStyle,
+        if (caps.supportsReferenceImages || uiState.videoReferenceImages.isNotEmpty) ...[
+          const SizedBox(height: _kCardGap),
+          _PanelCard(
+            child: _ReferenceImagesSection(
+              images: uiState.videoReferenceImages,
+              onDrop: uiState.addVideoReferenceImage,
+              onRemove: uiState.removeVideoReferenceImage,
+              maxImages: caps.maxReferenceImages,
+              captionStyle: captionStyle,
+            ),
           ),
-        ),
+        ],
         if (schema?.contract.referenceAudioVideo == true ||
             uiState.videoReferenceVideos.isNotEmpty ||
             uiState.videoReferenceAudios.isNotEmpty) ...[
@@ -393,25 +396,23 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
                     style: captionStyle,
                   ),
                 ),
-                // The history button is shared and styles its own box;
-                // the theme is how its glyph takes the deep ink `1a` draws.
-                IconButtonTheme(
-                  data: IconButtonThemeData(
-                    style: _cardIconStyle(colorScheme, colorScheme.onAccentTint),
-                  ),
-                  child: PromptHistoryButton(
-                    entries: appState.videoPromptHistory,
-                    type: PromptHistoryType.video,
-                    onApply: (content) {
-                      _promptController.text = content;
-                      appState.updateVideoConfig(prompt: content);
-                    },
-                  ),
+                PromptHistoryButton(
+                  size: AppSize.compact,
+                  color: colorScheme.onAccentTint,
+                  entries: appState.videoPromptHistory,
+                  type: PromptHistoryType.video,
+                  onApply: (content) {
+                    _promptController.text = content;
+                    appState.updateVideoConfig(prompt: content);
+                  },
                 ),
-                IconButton(
-                  icon: const Icon(Icons.library_books_outlined),
+                AppIconButton(
+                  icon: Icons.library_books_outlined,
                   tooltip: l10n.library,
-                  style: _cardIconStyle(colorScheme, colorScheme.onAccentTint),
+                  outlined: false,
+                  size: AppSize.compact,
+                  iconSize: AppSize.iconMd,
+                  color: colorScheme.onAccentTint,
                   onPressed: _allUserPrompts.isEmpty ? null : _showPromptPickerMenu,
                 ),
               ],
@@ -473,10 +474,11 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
                   ]
                 : null,
           ),
-          child: FilledButton(
+          child: AppButton(
             onPressed: enabled ? _handleSubmit : null,
-            style: FilledButton.styleFrom(minimumSize: Size(double.infinity, actionHeight)),
-            child: Text(l10n.generateVideo, maxLines: 1, overflow: TextOverflow.ellipsis),
+            fullWidth: true,
+            minimumHeight: actionHeight,
+            label: l10n.generateVideo,
           ),
         );
       },
@@ -485,23 +487,14 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
     // Queue settings (concurrency / retry / prefix / safety thresholds),
     // shared with the image workbench. `1a`: an outlined neutral square the
     // height of the button beside it.
-    final gearButton = IconButton(
+    final gearButton = AppIconButton(
       onPressed: () => showGenerationSettingsDialog(context),
-      icon: const Icon(Icons.settings_outlined),
+      icon: Icons.settings_outlined,
       tooltip: l10n.generationSettings,
-      style: IconButton.styleFrom(
-        backgroundColor: colorScheme.surface,
-        foregroundColor: colorScheme.onSurfaceVariant,
-        iconSize: AppSize.iconLg,
-        fixedSize: Size.square(actionHeight),
-        minimumSize: Size.square(actionHeight),
-        maximumSize: Size.square(actionHeight),
-        padding: EdgeInsets.zero,
-        visualDensity: VisualDensity.standard,
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        side: BorderSide(color: colorScheme.outlineVariant),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.control)),
-      ),
+      size: actionHeight,
+      iconSize: AppSize.iconLg,
+      color: colorScheme.onSurfaceVariant,
+      backgroundColor: colorScheme.surface,
     );
 
     final actionArea = Column(
@@ -629,19 +622,4 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
   /// not.
   static Widget _fillable({required bool fill, required Widget child}) =>
       fill ? Expanded(child: child) : child;
-
-  /// A 28px bare icon action inside a card: a 16px glyph in [ink], the muted
-  /// ink when disabled.
-  static ButtonStyle _cardIconStyle(ColorScheme colorScheme, Color ink) => IconButton.styleFrom(
-    foregroundColor: ink,
-    disabledForegroundColor: colorScheme.outline,
-    iconSize: AppSize.iconMd,
-    fixedSize: const Size.square(AppSize.compact),
-    minimumSize: const Size.square(AppSize.compact),
-    maximumSize: const Size.square(AppSize.compact),
-    padding: EdgeInsets.zero,
-    visualDensity: VisualDensity.standard,
-    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.control)),
-  );
 }
