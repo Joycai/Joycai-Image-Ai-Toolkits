@@ -734,6 +734,17 @@ extension TaskExecutors on TaskQueueService {
       }
     }
 
+    for (final (key, role) in [
+      ('referenceVideoPaths', LLMReferenceType.referenceVideo),
+      ('referenceAudioPaths', LLMReferenceType.referenceAudio),
+    ]) {
+      for (final path in (task.generationOptions[key] as List?) ?? []) {
+        // Audio/video never goes through image recompression.
+        attachments.add(
+          LLMAttachment.fromFile(File(path as String), _getMimeType(path), referenceType: role),
+        );
+      }
+    }
     final messages = [
       LLMMessage(
         role: LLMRole.user,
@@ -982,6 +993,12 @@ extension TaskExecutors on TaskQueueService {
 
   String _getMimeType(String path) {
     final ext = p.extension(path).toLowerCase();
+    if (ext == '.mp4') return 'video/mp4';
+    if (ext == '.mov') return 'video/quicktime';
+    if (ext == '.mp3') return 'audio/mpeg';
+    if (ext == '.wav') return 'audio/wav';
+    if (ext == '.heic') return 'image/heic';
+    if (ext == '.heif') return 'image/heif';
     if (ext == '.png') return 'image/png';
     if (ext == '.webp') return 'image/webp';
     return 'image/jpeg';

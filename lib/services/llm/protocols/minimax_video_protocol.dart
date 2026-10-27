@@ -1,13 +1,15 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
+import '../../media/reference_media_probe.dart';
 import '../llm_debug_logger.dart';
 import '../llm_types.dart';
 import 'minimax_payload.dart';
 import 'protocol.dart';
 
-/// MiniMax's native async video surface (`MiniMax-H3` — its *only* surface;
+/// MiniMax's native async video surface (the four cloud H3 variants;
 /// there is no synchronous form), docs/api/minimax.md §5:
 ///
 ///   `POST   {base}/v2/video_generation`              → `{task_id}`
@@ -31,41 +33,82 @@ class MiniMaxVideoProtocol implements VideoJobProtocol, CancellableJobProtocol {
     final config = target.config;
     final userMsg = history.lastWhere((m) => m.role == LLMRole.user, orElse: () => history.last);
 
+    // Validate cheap parameters/counts before reading potentially large files.
+    MiniMaxVideoRole roleOf(LLMAttachment att) => switch (att.referenceType) {
+      LLMReferenceType.firstFrame => MiniMaxVideoRole.firstFrame,
+      LLMReferenceType.lastFrame => MiniMaxVideoRole.lastFrame,
+      LLMReferenceType.referenceVideo => MiniMaxVideoRole.referenceVideo,
+      LLMReferenceType.referenceAudio => MiniMaxVideoRole.referenceAudio,
+      _ => MiniMaxVideoRole.referenceImage,
+    };
+    buildMiniMaxVideoPayload(
+      modelId: config.modelId,
+      prompt: userMsg.content,
+      media: [for (final att in userMsg.attachments) MiniMaxVideoMedia(roleOf(att), '')],
+      options: options,
+      capabilities: target.model.capabilities,
+    );
     final media = <MiniMaxVideoMedia>[];
+    var videoSeconds = 0.0;
+    var audioSeconds = 0.0;
+    var encodedMediaBytes = 0;
     for (final att in userMsg.attachments) {
-      final bytes = await readAttachmentBytes(att);
-      if (bytes == null) continue;
-      final MiniMaxVideoRole role;
-      switch (att.referenceType) {
-        case LLMReferenceType.firstFrame:
-          role = MiniMaxVideoRole.firstFrame;
-        case LLMReferenceType.lastFrame:
-          role = MiniMaxVideoRole.lastFrame;
-        default:
-          role = MiniMaxVideoRole.referenceImage;
+      final role = roleOf(att);
+      final isVideo = role == MiniMaxVideoRole.referenceVideo;
+      final isAudio = role == MiniMaxVideoRole.referenceAudio;
+      final limit =
+          (isVideo
+              ? 50
+              : isAudio
+              ? 15
+              : 30) *
+          1024 *
+          1024;
+      final size = att.bytes?.length ?? (att.path == null ? 0 : await File(att.path!).length());
+      if (size > limit) {
+        throw LLMApiException('Generation input invalid: mediaFileSize. Nothing was sent.');
       }
-      media.add(MiniMaxVideoMedia(role, imageDataUrl(bytes, att.mimeType)));
+      encodedMediaBytes += ((size + 2) ~/ 3) * 4;
+      validateMiniMaxBodySize(encodedMediaBytes);
+      final bytes = await readAttachmentBytes(att);
+      if (bytes == null || bytes.isEmpty) {
+        throw LLMApiException('Generation input invalid: unreadableMedia. Nothing was sent.');
+      }
+      if (bytes.length >
+          (isVideo
+                  ? 50
+                  : isAudio
+                  ? 15
+                  : 30) *
+              1024 *
+              1024) {
+        throw LLMApiException('Generation input invalid: mediaFileSize. Nothing was sent.');
+      }
+      final ReferenceMediaInfo info;
+      try {
+        info = isVideo || isAudio
+            ? probeReferenceMedia(bytes, video: isVideo)
+            : await probeReferenceImage(bytes);
+      } catch (e) {
+        throw LLMApiException('Generation input invalid: unreadableMedia ($e). Nothing was sent.');
+      }
+      validateMiniMaxMediaInfo(info, video: isVideo, audio: isAudio);
+      if (isVideo) videoSeconds += info.seconds!;
+      if (isAudio) audioSeconds += info.seconds!;
+      if (videoSeconds > 15.000001 || audioSeconds > 15.000001) {
+        throw LLMApiException('Generation input invalid: mediaTotalDuration. Nothing was sent.');
+      }
+      media.add(MiniMaxVideoMedia(role, imageDataUrl(bytes, info.mime)));
     }
-
-    // Upstream rejects a request that mixes the image-based modality with the
-    // reference one, and the body shape does not prevent it — nothing but
-    // the `role` tag distinguishes them.
-    final (kept, dropped) = partitionMiniMaxVideoMedia(media);
-    if (dropped.isNotEmpty) {
-      logger?.call(
-        'MiniMax video: frames and reference material are mutually exclusive '
-        '— ${dropped.length} reference image(s) dropped in favor of the '
-        'first/last frame.',
-        level: 'WARN',
-      );
-    }
-
     final payload = buildMiniMaxVideoPayload(
       modelId: config.modelId,
       prompt: userMsg.content,
-      media: kept,
+      media: media,
       options: options,
+      capabilities: target.model.capabilities,
     );
+    final body = jsonEncode(payload);
+    validateMiniMaxBodySize(utf8.encode(body).length);
 
     final url = Uri.parse('${minimaxV2Base(config.endpoint)}/video_generation');
     logger?.call('Submitting MiniMax video task to: ${url.host}', level: 'DEBUG');
@@ -84,7 +127,7 @@ class MiniMaxVideoProtocol implements VideoJobProtocol, CancellableJobProtocol {
         client,
         url,
         headers: target.headers(),
-        body: jsonEncode(payload),
+        body: body,
         options: options,
       );
 
@@ -103,8 +146,11 @@ class MiniMaxVideoProtocol implements VideoJobProtocol, CancellableJobProtocol {
       // ever dies. Records live 7 days upstream, so a lost id is recoverable
       // by hand for that long and not after.
       logger?.call('MiniMax video task id: $taskId', level: 'INFO');
-      // The media that survived the frames-vs-references exclusion.
-      return VideoSubmission(taskId, inputImages: kept.length);
+      // Bill only actual image inputs, never audio/video reference files.
+      return VideoSubmission(
+        taskId,
+        inputImages: media.where((m) => m.role.type == 'image_url').length,
+      );
     } finally {
       client.close();
     }
@@ -270,5 +316,31 @@ class MiniMaxVideoProtocol implements VideoJobProtocol, CancellableJobProtocol {
       );
     }
     return task.cast<String, dynamic>();
+  }
+}
+
+/// Kept separate from transport so actual metadata limits are testable.
+void validateMiniMaxMediaInfo(ReferenceMediaInfo info, {required bool video, required bool audio}) {
+  if (!audio) {
+    final w = info.width ?? 0;
+    final h = info.height ?? 0;
+    if (w < 256 || h < 256 || w > 5760 || h > 5760 || w / h < 0.4 || w / h > 2.5) {
+      throw LLMApiException('Generation input invalid: mediaDimensions. Nothing was sent.');
+    }
+  }
+  if (video || audio) {
+    final seconds = info.seconds ?? 0;
+    if (!seconds.isFinite || seconds < 2 || seconds > 15.000001) {
+      throw LLMApiException('Generation input invalid: mediaDuration. Nothing was sent.');
+    }
+  }
+  if (video && (info.fps == null || !info.fps!.isFinite || info.fps! < 23.976 || info.fps! > 60)) {
+    throw LLMApiException('Generation input invalid: mediaFrameRate. Nothing was sent.');
+  }
+}
+
+void validateMiniMaxBodySize(int bytes) {
+  if (bytes > 64 * 1024 * 1024) {
+    throw LLMApiException('Generation input invalid: requestBodySize (64 MB). Nothing was sent.');
   }
 }

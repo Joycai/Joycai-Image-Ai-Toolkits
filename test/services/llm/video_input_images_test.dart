@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image/image.dart' as img;
 import 'package:joycai_image_ai_toolkits/models/spec_rate.dart';
 import 'package:joycai_image_ai_toolkits/models/token_usage.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_dispatcher.dart';
@@ -103,9 +104,15 @@ void main() {
 
   test('MiniMax: valid frames are counted', () async {
     answer = (_) => {'task_id': 'mm_1'};
-    final hailuo = config(Vendors.minimax, 'MiniMax-Hailuo-02');
+    final hailuo = config(Vendors.minimax, 'MiniMax-H3');
 
-    final ticket = await submit(hailuo, [frame(LLMReferenceType.firstFrame)]);
+    final ticket = await submit(hailuo, [
+      LLMAttachment.fromBytes(
+        Uint8List.fromList(img.encodePng(img.Image(width: 256, height: 256))),
+        'image/png',
+        referenceType: LLMReferenceType.firstFrame,
+      ),
+    ]);
     expect(ticket.inputImages, 1);
   });
 

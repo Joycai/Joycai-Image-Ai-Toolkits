@@ -2,9 +2,11 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:desktop_drop/desktop_drop.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 
 import '../../../../core/app_semantic_colors.dart';
@@ -27,6 +29,7 @@ import '../../../../widgets/drag/app_drag_session.dart';
 import '../../../../widgets/drag/app_drop_zone.dart';
 import '../../../../widgets/files/file_visuals.dart';
 import '../../../../widgets/models/model_picker_options.dart';
+import '../../../../widgets/ui/app_button.dart';
 import '../../../../widgets/ui/app_field_size.dart';
 import '../../../../widgets/ui/app_snackbar.dart';
 import '../../../../widgets/ui/app_switch.dart';
@@ -45,6 +48,7 @@ part 'video_frame_slots.dart';
 part 'video_model_section.dart';
 part 'video_panel_chrome.dart';
 part 'video_reference_images.dart';
+part 'video_reference_files.dart';
 
 /// Space between two cards in the column, and the column's own inset
 /// (`A2 · 1a`: `padding:10; gap:10`, the same column as `A1`).
@@ -152,6 +156,8 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
     final params = <String, dynamic>{
       'prompt': _promptController.text,
       'referenceImagePaths': uiState.videoReferenceImages.map((i) => i.path).toList(),
+      'referenceVideoPaths': uiState.videoReferenceVideos,
+      'referenceAudioPaths': uiState.videoReferenceAudios,
       'firstFramePath': uiState.videoFirstFrame?.path,
       'lastFramePath': uiState.videoLastFrame?.path,
       // Every video control is declared per family (resolution, ratio,
@@ -159,14 +165,17 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
       ...appState.effectiveVideoParams(selectedModel),
     };
 
-    final diagnostics = appState.generationInputDiagnostics(selectedModel, params, [
-      if (uiState.videoFirstFrame case final image?)
-        GenerationMedia(GenerationMediaRole.firstFrame, image.path),
-      if (uiState.videoLastFrame case final image?)
-        GenerationMedia(GenerationMediaRole.lastFrame, image.path),
-      for (final image in uiState.videoReferenceImages)
-        GenerationMedia(GenerationMediaRole.reference, image.path),
-    ]);
+    final diagnostics = appState.generationInputDiagnostics(
+      selectedModel,
+      params,
+      uiState.videoGenerationMedia,
+    );
+    final schema = appState.generationSchemaForModel(selectedModel);
+    final promptDiagnostics = schema.validatePrompt(_promptController.text);
+    if (promptDiagnostics.isNotEmpty) {
+      AppSnackBar.warning(context, GenerationParamTexts.diagnostic(l10n, promptDiagnostics.first));
+      return;
+    }
     if (diagnostics.isNotEmpty) {
       AppSnackBar.warning(context, GenerationParamTexts.diagnostic(l10n, diagnostics.first));
       return;
@@ -245,14 +254,7 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
         : appState.generationInputDiagnostics(
             modelInChannel,
             appState.effectiveVideoParams(modelInChannel),
-            [
-              if (uiState.videoFirstFrame case final image?)
-                GenerationMedia(GenerationMediaRole.firstFrame, image.path),
-              if (uiState.videoLastFrame case final image?)
-                GenerationMedia(GenerationMediaRole.lastFrame, image.path),
-              for (final image in uiState.videoReferenceImages)
-                GenerationMedia(GenerationMediaRole.reference, image.path),
-            ],
+            uiState.videoGenerationMedia,
           );
 
     // The bottom sheet is this panel's phone form: the layout opens it below
@@ -337,6 +339,17 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
             captionStyle: captionStyle,
           ),
         ),
+        if (schema?.contract.referenceAudioVideo == true ||
+            uiState.videoReferenceVideos.isNotEmpty ||
+            uiState.videoReferenceAudios.isNotEmpty) ...[
+          const SizedBox(height: _kCardGap),
+          _PanelCard(
+            child: _ReferenceFilesSection(
+              enabled: schema?.contract.referenceAudioVideo == true,
+              captionStyle: captionStyle,
+            ),
+          ),
+        ],
         for (final diagnostic in diagnostics) ...[
           const SizedBox(height: AppSpace.s4),
           Text(

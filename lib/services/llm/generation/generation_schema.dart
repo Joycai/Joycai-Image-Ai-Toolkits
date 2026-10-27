@@ -17,7 +17,14 @@ enum GenerationOperation {
   referenceVideo,
 }
 
-enum GenerationMediaRole { source, reference, firstFrame, lastFrame }
+enum GenerationMediaRole {
+  source,
+  reference,
+  firstFrame,
+  lastFrame,
+  referenceVideo,
+  referenceAudio,
+}
 
 enum GenerationFieldState { active, inactive, fixed }
 
@@ -94,6 +101,12 @@ class GenerationSchema {
     GenerationOperation operation, [
     Map<String, GenerationValue> values = const {},
   ]) {
+    if (key == 'aspectRatio' &&
+        contract.frameRatioAdaptive &&
+        (operation == GenerationOperation.firstFrame ||
+            operation == GenerationOperation.firstLastFrame)) {
+      return GenerationFieldState.fixed;
+    }
     if (capabilities.imageRequestShape == ImageRequestShape.dashscopeWan &&
         key == 'imageThinking' &&
         operation != GenerationOperation.textImage) {
@@ -126,9 +139,12 @@ class GenerationSchema {
     for (final param in params)
       if (fieldState(param.key, operation, draft) != GenerationFieldState.inactive)
         param.key: fieldState(param.key, operation, draft) == GenerationFieldState.fixed
-            ? const GenerationValue(GenerationValueKind.choice, 'png')
+            ? fixedValue(param.key)
             : draft[param.key] ?? param.defaultValue,
   };
+
+  GenerationValue fixedValue(String key) =>
+      GenerationValue(GenerationValueKind.choice, key == 'aspectRatio' ? 'adaptive' : 'png');
 
   Map<String, dynamic> legacyOptions(Map<String, GenerationValue> values) => {
     for (final param in params)
@@ -141,6 +157,14 @@ class GenerationSchema {
           ? param.defaultValue
           : param.decode(options[param.key].toString()),
   };
+
+  List<GenerationDiagnostic> validatePrompt(String prompt) {
+    final limit = contract.requiredPromptMaxCharacters;
+    return [
+      if (limit != null && (prompt.trim().isEmpty || prompt.runes.length > limit))
+        const GenerationDiagnostic('videoPromptLength'),
+    ];
+  }
 
   List<GenerationDiagnostic> validate(
     Map<String, GenerationValue> values,
@@ -158,6 +182,9 @@ class GenerationSchema {
       diagnostics.add(const GenerationDiagnostic('agentTextOnly', field: 'promptExtendMode'));
     }
     for (final param in params) {
+      if (fieldState(param.key, operation(values, media), values) == GenerationFieldState.fixed) {
+        continue;
+      }
       if (values[param.key] case final value?) {
         if (!param.accepts(value)) {
           diagnostics.add(GenerationDiagnostic('invalidParameter', field: param.key));
@@ -169,13 +196,23 @@ class GenerationSchema {
     }
     final first = media.where((m) => m.role == GenerationMediaRole.firstFrame).length;
     final last = media.where((m) => m.role == GenerationMediaRole.lastFrame).length;
-    final refs = media.length - first - last;
+    final videos = media.where((m) => m.role == GenerationMediaRole.referenceVideo).length;
+    final audios = media.where((m) => m.role == GenerationMediaRole.referenceAudio).length;
+    final refs = media.length - first - last - videos - audios;
+    if (videos + audios > 0 && !contract.referenceAudioVideo) {
+      diagnostics.add(const GenerationDiagnostic('unsupportedReferenceMedia'));
+    }
+    if (contract.referenceAudioVideo && (videos > 3 || audios > 3 || media.length > 12)) {
+      diagnostics.add(const GenerationDiagnostic('tooManyReferences'));
+    }
     if (first > 1 || last > 1) diagnostics.add(const GenerationDiagnostic('duplicateFrame'));
     if (last > 0 && !supportsLastFrame) {
       diagnostics.add(const GenerationDiagnostic('unsupportedLastFrame'));
     }
-    if (last > 0 && first == 0) diagnostics.add(const GenerationDiagnostic('missingFirstFrame'));
-    if (exclusiveFrames && first + last > 0 && refs > 0) {
+    if (last > 0 && first == 0 && !contract.standaloneLastFrame) {
+      diagnostics.add(const GenerationDiagnostic('missingFirstFrame'));
+    }
+    if (exclusiveFrames && first + last > 0 && refs + videos + audios > 0) {
       diagnostics.add(const GenerationDiagnostic('conflictingMedia'));
     }
     final limit = capabilities.maxReferenceImages;

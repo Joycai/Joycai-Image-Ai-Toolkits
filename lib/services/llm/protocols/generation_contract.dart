@@ -8,18 +8,32 @@ class GenerationProtocolContract {
     this.exclusiveFrames = false,
     this.groupLimit,
     this.subjectReferences = false,
+    this.referenceAudioVideo = false,
+    this.standaloneLastFrame = false,
+    this.frameRatioAdaptive = false,
+    this.requiredPromptMaxCharacters,
   });
 
   final bool lastFrame;
   final bool exclusiveFrames;
   final int? groupLimit;
   final bool subjectReferences;
+  final bool referenceAudioVideo;
+  final bool standaloneLastFrame;
+  final bool frameRatioAdaptive;
+  final int? requiredPromptMaxCharacters;
 
   static const standard = GenerationProtocolContract();
   static const declarations = <WireProtocol, GenerationProtocolContract>{
     WireProtocol.xaiVideos: GenerationProtocolContract(lastFrame: false, exclusiveFrames: true),
     WireProtocol.openaiVideos: GenerationProtocolContract(lastFrame: false),
-    WireProtocol.minimaxVideo: GenerationProtocolContract(exclusiveFrames: true),
+    WireProtocol.minimaxVideo: GenerationProtocolContract(
+      exclusiveFrames: true,
+      referenceAudioVideo: true,
+      standaloneLastFrame: true,
+      frameRatioAdaptive: true,
+      requiredPromptMaxCharacters: 7000,
+    ),
     WireProtocol.minimaxH3BaseVideo: GenerationProtocolContract(exclusiveFrames: true),
     WireProtocol.arkImages: GenerationProtocolContract(groupLimit: 15),
     WireProtocol.minimaxImages: GenerationProtocolContract(subjectReferences: true),

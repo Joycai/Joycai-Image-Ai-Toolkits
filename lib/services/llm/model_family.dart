@@ -93,7 +93,20 @@ enum GeminiThinkingGeneration {
   level,
 }
 
+enum MiniMaxCloudVideoVariant { standard, highspeed, lite, max }
+
 class ModelFamilyClassifier {
+  /// Cloud variants share a wire but not output constraints. Keep model-id
+  /// matching here; capability tables and protocols consume the classification.
+  static MiniMaxCloudVideoVariant? minimaxCloudVideoVariant(String modelId) {
+    final id = modelId.toLowerCase();
+    if (!id.startsWith('minimax-h3')) return null;
+    if (id.startsWith('minimax-h3-highspeed')) return MiniMaxCloudVideoVariant.highspeed;
+    if (id.startsWith('minimax-h3-lite')) return MiniMaxCloudVideoVariant.lite;
+    if (id.startsWith('minimax-h3-max')) return MiniMaxCloudVideoVariant.max;
+    return MiniMaxCloudVideoVariant.standard;
+  }
+
   /// The `thinkingConfig` generation for [modelId].
   ///
   /// Reads the first version after `gemini-`: 3+ → [GeminiThinkingGeneration

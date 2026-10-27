@@ -6,6 +6,7 @@ import 'package:joycai_image_ai_toolkits/models/llm_model.dart';
 import 'package:joycai_image_ai_toolkits/models/task_item.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/generation/generation_request.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/generation/generation_schema.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 import 'package:joycai_image_ai_toolkits/services/tasks/generation_task_data.dart';
 
 void main() {
@@ -23,6 +24,43 @@ void main() {
     tag: 'image',
     channelId: 2,
   );
+
+  test('H3 snapshot carries audio/video once and restores them as separate inputs', () {
+    final params = snapshotGenerationTask(
+      model: LLMModel(
+        id: 5,
+        modelId: 'MiniMax-H3-Max',
+        modelName: 'Max',
+        tag: 'video',
+        channelId: 2,
+      ),
+      channel: LLMChannel(
+        id: 2,
+        displayName: 'MiniMax',
+        endpoint: 'https://api.minimax.cn/v1',
+        apiKey: 'secret',
+        type: Vendors.minimax,
+      ),
+      type: TaskType.videoGenerate,
+      imagePaths: ['ref.png'],
+      options: {
+        'prompt': 'animate',
+        'referenceImagePaths': ['ref.png'],
+        'referenceVideoPaths': ['v.mp4'],
+        'referenceAudioPaths': ['a.wav'],
+        'resolution': '480P',
+      },
+    );
+    expect(params.containsKey('referenceVideoPaths'), false);
+    expect(params.containsKey('referenceAudioPaths'), false);
+    final restored = jsonDecode(jsonEncode(params)) as Map<String, dynamic>;
+    final options = generationTaskOptions(restored);
+    expect(options['referenceImagePaths'], ['ref.png']);
+    expect(options['referenceVideoPaths'], ['v.mp4']);
+    expect(options['referenceAudioPaths'], ['a.wav']);
+    expect(options['resolution'], '480P');
+    expect(jsonEncode(params), isNot(contains('secret')));
+  });
 
   test('new task JSON owns prompt, media and values once, retaining application metadata', () {
     final params = snapshotGenerationTask(

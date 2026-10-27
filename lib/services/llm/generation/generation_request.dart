@@ -95,6 +95,14 @@ class GenerationRequest {
       'firstFramePath': media.firstWhere((m) => m.role == GenerationMediaRole.firstFrame).path,
     if (media.any((m) => m.role == GenerationMediaRole.lastFrame))
       'lastFramePath': media.firstWhere((m) => m.role == GenerationMediaRole.lastFrame).path,
+    'referenceVideoPaths': [
+      for (final m in media)
+        if (m.role == GenerationMediaRole.referenceVideo) m.path,
+    ],
+    'referenceAudioPaths': [
+      for (final m in media)
+        if (m.role == GenerationMediaRole.referenceAudio) m.path,
+    ],
     'referenceImagePaths': [
       for (final m in media)
         if (m.role == GenerationMediaRole.reference || m.role == GenerationMediaRole.source) m.path,
@@ -113,7 +121,14 @@ class GenerationRequest {
 Map<String, dynamic> generationTaskOptions(Map<String, dynamic> parameters) {
   final request = GenerationRequest.fromTask(parameters);
   if (request == null) return Map.of(parameters);
-  const mediaKeys = {'prompt', 'firstFramePath', 'lastFramePath', 'referenceImagePaths'};
+  const mediaKeys = {
+    'prompt',
+    'firstFramePath',
+    'lastFramePath',
+    'referenceImagePaths',
+    'referenceVideoPaths',
+    'referenceAudioPaths',
+  };
   return {
     for (final entry in parameters.entries)
       if (!mediaKeys.contains(entry.key)) entry.key: entry.value,

@@ -11,7 +11,7 @@
 >
 > **来源**：`platform.minimaxi.com` 官方 API reference，2026-08-25 抓取；
 > 图像面（§3）与视频面的复核为 2026-08-29 抓取；模型列表端点（§5.1）
-> 为 2026-08-29 抓取。
+> 为 2026-08-29 抓取。云端 H3 四型号与输入限制于 2026-10-27 按最新创建 API 复核。
 
 ## 0. 总览：四条 wire 一张表
 
@@ -20,7 +20,7 @@
 | C1 | chat | OpenAI 兼容 | `/v1/chat/completions` | 同步/SSE | M 系全家：`MiniMax-M3`、`MiniMax-M2.7(-highspeed)`、`MiniMax-M2.5(-highspeed)`、`MiniMax-M2.1(-highspeed)`、`MiniMax-M2` |
 | C2 | chat | Anthropic 兼容 | `/anthropic/v1/messages` | 同步/SSE | **与 C1 完全相同的 8 个 id** |
 | I1 | imageGen | 私有图像面 | `POST /v1/image_generation` | **仅同步** | `image-01`、`image-01-live` |
-| V1 | videoJob | 私有 v2 任务面 | `POST /v2/video_generation` + 查询/列表/取消删除（§4） | **仅异步** | `MiniMax-H3`（文档仅此一个；无 Hailuo 旧拼写） |
+| V1 | videoJob | 私有 v2 任务面 | `POST /v2/video_generation` + 查询/列表/取消删除（§4） | **仅异步** | `MiniMax-H3` / `MiniMax-H3-Highspeed` / `MiniMax-H3-Lite` / `MiniMax-H3-Max` |
 
 **路径版本不齐**：chat 与图像在 `/v1`，视频独自在 `/v2`，④ 面又多一层
 `/anthropic`。四条 wire 由同一个 host + 同一把 key 服务，但**没有一个公共
@@ -133,42 +133,49 @@
 
 ### 4.1 创建：`POST /v2/video_generation`
 
-| 字段 | 必填 | 说明 |
-| --- | --- | --- |
-| `model` | 是 | `MiniMax-H3` |
-| `content[]` | 是 | 多模态数组，**至少一个 `text` 项**（≤7000 字符）；媒体项见下 |
-| `resolution` | **是** | `768P` / `2K` |
-| `duration` | **是** | 4–15 秒 |
-| `ratio` | 否 | `adaptive`（默认）/ `21:9` / `16:9` / `4:3` / `1:1` / `3:4` / `9:16`。**纯文本请求必须显式给值**——`adaptive` 的含义是「跟随输入素材」，没有素材就没有可跟随的对象 |
-| `callback_url` | 否 | HTTPS webhook；注册时 MiniMax 先发 `challenge`，需 **3 秒内原样回显** |
-| `aigc_watermark` | 否 | 默认 false |
+2026-10-27 重新核对：[使用指南](https://platform.minimax.cn/docs/guides/video-generation.md)、
+[创建 API](https://platform.minimaxi.com/docs/api-reference/video-generation-v2-create.md)。
+指南当前只列 H3 / Max，详细 API 另列 Highspeed / Lite；按详细 API 区分型号：
 
-**`content[]` 项的形状**（这里最容易写错，且写错不报错）：
+| 模型 | 分辨率 | 整数秒数 |
+| --- | --- | --- |
+| `MiniMax-H3` | `768P` / `2K` | 4–15 |
+| `MiniMax-H3-Highspeed` | `768P` | 4–15 |
+| `MiniMax-H3-Lite` | `480P` / `768P` | 4–15 |
+| `MiniMax-H3-Max` | `480P` / `768P` | 5–15 |
+
+`model`、`content`、`resolution`、`duration` 必填。所有场景必须有一个**非空**
+text 项，最多 7000 Unicode 字符。客户端默认 768P / 5 秒；明确给出的无效值拒绝，
+不能把 480P 悄悄改成 768P。
+
+`ratio`：`adaptive` / `21:9` / `16:9` / `4:3` / `1:1` / `3:4` / `9:16`。
+纯文本必须指定固定比例（客户端默认 16:9）；首尾帧模式恒为 adaptive；参考模式
+可选自适应，**Lite 参考模式必须固定比例**（客户端默认 16:9）。API 的 content
+组合说明与指南均允许单独尾帧；同页 role 字段仍写“成对”，存在文档内部不一致，
+此处按明确列举的输入组合支持单独尾帧，尚未付费实测。
+
+媒体 URL 嵌套于同名对象，role 与 type 平级：
 
 ```json
-{"type": "text",      "text": "..."}
-{"type": "image_url", "image_url": {"url": "..."}, "role": "first_frame"}
-{"type": "video_url", "video_url": {"url": "..."}, "role": "reference_video"}
-{"type": "audio_url", "audio_url": {"url": "..."}, "role": "reference_audio"}
+{"type":"image_url","image_url":{"url":"..."},"role":"reference_image"}
+{"type":"video_url","video_url":{"url":"..."},"role":"reference_video"}
+{"type":"audio_url","audio_url":{"url":"..."},"role":"reference_audio"}
 ```
 
-一句话：**`role` 是 `type` 的兄弟键，但 URL 是嵌在同名对象里的**。两半只有一半是
-扁平的，很容易连带把 URL 也写成扁平的 `url` —— 那样上游不会报错，会当成没带素材
-正常出片并计费，日志里看不出是 body 的问题。
+`first_frame` / `last_frame` 属于帧模式，各最多一张，与三种 reference role 互斥。
+参考图片最多 9 张、视频最多 3 段、音频最多 3 段，混合总计最多 12 个文件。
+图片单个 ≤30 MB，视频 ≤50 MB，音频 ≤15 MB；图片/视频宽高 256–5760，宽高比
+0.4–2.5。视频/音频每段 2–15 秒，分别累计 ≤15 秒；视频帧率 23.976–60。
+图片 JPG/JPEG/PNG/WEBP/HEIC/HEIF；视频 MP4/MOV、H.264/H.265（内嵌音频 AAC/MP3）；
+音频 WAV/MP3。请求体最终 JSON ≤64 MB，Base64 膨胀也计入；官方支持公网 URL、
+`mm_file://` 与 data URI。本项目工作台使用本地文件，发送前检查文件规格及最终
+UTF-8 JSON 大小，超限拒绝，不自动上传到外部存储或丢弃素材。
 
-`url` 三种形式：公网 URL / `mm_file://{file_id}` / `data:image/…;base64,…`。
-`role` 取值：`first_frame` / `last_frame` / `reference_image` /
-`reference_video` / `reference_audio` —— 首帧/尾帧/参考素材没有独立字段，全靠这个
-标注区分。
+Max 可选 `extra.prompt_expansion_mode`：`disabled` / `balanced` / `quality`，
+默认 `balanced`，不是 `balance`。其他可选项：`callback_url`（3 秒 challenge 回显）、
+`aigc_watermark`（默认 false）；当前工作台不提供这两个选项。
 
-体积限制：请求总量 ≤64 MB；单图 ≤30 MB（256–5760 px）；视频 ≤50 MB（2–15 s）；
-音频 ≤15 MB（2–15 s）。
-
-**图像模式与参考模式互斥**：`first_frame`/`last_frame` 属于前者，
-`reference_image`/`reference_video`/`reference_audio` 属于后者，同时给会被拒。
-两者只由 `role` 区分，body 结构本身拦不住——这条得客户端自己保证。
-
-成功响应**极简**：`{"task_id": "424010985738629"}` —— 无 base_resp、无状态字段。
+成功响应：`{"task_id":"424010985738629"}`。
 
 ### 4.2 查询：`GET /v2/query/video_generation/{task_id}`
 
@@ -192,7 +199,7 @@ task: {
 - **结果是直链** `task.content.url` —— v1 时代「file_id → files/retrieve
   换 URL」的二段式已废除。链接有时效（未给具体时长），及时下载转存。
 - **任务记录仅保留 7 天**（单查与列表都受限）。
-- 轮询间隔文档未给建议值。
+- 指南示例建议 10 秒轮询；项目沿用有截止时间的共享退避循环（7–20 秒）。
 
 ### 4.3 列表：`GET /v2/query/video_generation`
 
@@ -219,7 +226,7 @@ task: {
 | `MiniMax-M3`（1M 上下文，唯一多模态输入） | ✅ | ✅ | — | — |
 | `MiniMax-M2.x` 全家（纯文本+工具） | ✅ | ✅ | — | — |
 | `image-01` / `image-01-live` | — | — | ✅ 唯一 | — |
-| `MiniMax-H3` | — | — | — | ✅ 唯一 |
+| `MiniMax-H3` / `-Highspeed` / `-Lite` / `-Max` | — | — | — | ✅ 原生 |
 
 chat 两面模型 id **完全一致** —— 选面不改变可用模型，只改变路径、
 thinking 默认值、错误信封和参数细节。
@@ -233,12 +240,12 @@ thinking 默认值、错误信封和参数细节。
 | `GET /v1/models` | OpenAI 兼容 | M 系 chat 模型（官方示例：`MiniMax-M3`、`MiniMax-M2.7`、`MiniMax-M2.5`） |
 | `GET /anthropic/v1/models` | Anthropic 兼容（带 `limit` / `after_id` / `before_id` 分页） | 同上 |
 
-`image-01` / `image-01-live` / `MiniMax-H3` **不在里面，也不可能在里面**：
-兼容层枚举的是兼容层，而这三个模型只存在于私有的 `/v1/image_generation`
+`image-01` / `image-01-live` / H3 四型号不由这两个 chat 列表完整覆盖：
+兼容层枚举的是兼容层，而这些媒体模型存在于私有的 `/v1/image_generation`
 与 `/v2/video_generation` 上，那两条 wire 在 OpenAI/Anthropic 的模型对象里
 没有对应词汇。
 
-结论：**任何"拉取模型列表"的流程都必须自带这三个 id**。不带的话，接了
+结论：**任何"拉取模型列表"的流程都必须补齐这些媒体 id**。不带的话，接了
 图像面和视频面的客户端在 UI 上仍然是一家纯 chat 供应商——按钮能按、请求
 成功、列表返回、就是没有那两条 wire 的模型，而且不会有任何报错说明原因。
 
@@ -266,7 +273,7 @@ thinking 默认值、错误信封和参数细节。
 9. I1 的 `subject_reference` 是主体参考不是编辑（§3.2）；把它接到「图生图」
    按钮上，用户会得到一张与输入无关的图而没有任何报错。
 10. V1 的 `resolution` / `duration` 必填、`ratio` 在纯文本时必须显式，
-    三者都没有服务端默认——客户端必须各有一个缺省值。
+    客户端显式提供必填项与场景适用的比例；不能把有素材时的 adaptive 默认套给纯文本。
 11. 四条 wire 没有公共前缀（§0）：`/v1`、`/anthropic/v1`、`/v2`。
     渠道只存一个地址，另外三条得推导出来。**chat 面自己也要推导**：用户照
     视频文档填 `…/v2` 是常见操作，这时只有不推导 base 的通用协议会 404。
@@ -288,7 +295,7 @@ thinking 默认值、错误信封和参数细节。
 `minimaxAnthropicBase` / `minimaxV2Base`，幂等、只看路径），四条 wire 全部
 经过它——包括 chat 面自己（`protocolBases`），所以渠道存哪一面都能打全。
 
-§5.1 那三个模型由 `VendorProfile.unlistedModels` 声明，`mergeUnlistedModels`
+§5.1 的六个媒体模型由 `VendorProfile.unlistedModels` 声明，`mergeUnlistedModels`
 追加在实测列表**之后**并按 id 去重（大小写不敏感——转发站可能给小写）。
 追加而非替换：Midjourney 那种"根本没有列表端点"的才用内置目录整体顶替。
 
@@ -430,3 +437,23 @@ cookbook 的 t2va 样例（逐字）：
 （是否 `video_` 前缀）、进行中状态的拼写、`GET /v1/models` 在 H3-Base
 serve 变体上是否存在（不存在时"拉取模型"报错，自带目录只在列表成功时
 合并——用户仍可手输 id）、`seed` 缺省时是否被接受（本项目不发）。
+
+
+### 2026-10-27 H3 实现补充
+
+四个云端型号各自有注册的能力 profile；dispatcher 在解析原生视频面时保留
+它们的差异，别名可选对应 profile。两种 MiniMax chat 接入面的发现目录均补齐
+四个云端视频 id，不把它们加入 SGLang 本地目录。
+
+视频/音频引用以 `GenerationMediaRole.referenceVideo/referenceAudio` 持久化，
+兼容读取 `referenceVideoPaths/referenceAudioPaths`，执行时不经过图片压缩。
+实际发出的图片数单独计数，音视频不计成参考图。帧/参考冲突直接拒绝，旧的
+“帧优先、丢弃参考图”逻辑不再适用于云端协议。
+
+本地检查器解析 MP4/MOV sample tables、WAV 和 MP3 帧，不依赖 ffmpeg 安装。
+HEIC/HEIF 通过 Flutter 引擎读取主图尺寸，不能解码的主机明确拒绝而非猜测。
+文件格式、大小、尺寸、比例、时长、帧率、数量及最终请求体均在 POST 前检查；
+这是元数据与格式检查，并不代替服务端完整解码、内容审核。远程 URL/mm_file
+选择器、Context-IR、regeneration 不在本轮工作台范围内。
+
+测试使用本地 HTTP 服务捕获提交及合成真实 MP4/WAV/MP3 文件；没有调用付费 API。

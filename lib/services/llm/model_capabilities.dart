@@ -145,6 +145,9 @@ class ModelCapabilities {
     _grokImagineVideo,
     _dashscopeWanVideo,
     _minimaxVideo,
+    _minimaxHighspeed,
+    _minimaxLite,
+    _minimaxMax,
     _minimaxH3Base,
     _dashscopeWanImage,
     _dashscopeWanImagePro,
@@ -188,6 +191,9 @@ class ModelCapabilities {
     'openaiImage25': _openaiImage25,
     'minimaxImage': _minimaxImage,
     'minimaxVideo': _minimaxVideo,
+    'minimaxHighspeed': _minimaxHighspeed,
+    'minimaxLite': _minimaxLite,
+    'minimaxMax': _minimaxMax,
     'minimaxH3Base': _minimaxH3Base,
     'seedream50Pro': _seedream50Pro,
     'seedream50Lite': _seedream50Lite,
@@ -205,7 +211,10 @@ class ModelCapabilities {
       'chatImage';
 
   /// Several native video wires share one classification but not one contract.
-  bool supportsVideoProtocol(WireProtocol protocol) => identical(this, forProtocol(protocol));
+  bool supportsVideoProtocol(WireProtocol protocol) =>
+      identical(this, forProtocol(protocol)) ||
+      (protocol == WireProtocol.minimaxVideo &&
+          [_minimaxHighspeed, _minimaxLite, _minimaxMax].any((caps) => identical(this, caps)));
 
   /// Whether the model accepts any reference images at all.
   bool get supportsReferenceImages => maxReferenceImages != 0;
@@ -261,11 +270,16 @@ class ModelCapabilities {
       return _dashscopeWanVideo;
     }
 
-    // MiniMax-H3 on the native `/v2/video_generation` task surface: two
-    // resolution tiers rather than the usual three, and a 4–15 s window that
-    // starts above the Sora-style table's floor.
-    if (family == ModelFamily.openaiVideo && id.startsWith('minimax-h3')) {
-      return _minimaxVideo;
+    if (family == ModelFamily.openaiVideo) {
+      final variant = ModelFamilyClassifier.minimaxCloudVideoVariant(modelId);
+      if (variant != null) {
+        return switch (variant) {
+          MiniMaxCloudVideoVariant.standard => _minimaxVideo,
+          MiniMaxCloudVideoVariant.highspeed => _minimaxHighspeed,
+          MiniMaxCloudVideoVariant.lite => _minimaxLite,
+          MiniMaxCloudVideoVariant.max => _minimaxMax,
+        };
+      }
     }
 
     // The same model behind the self-hosted SGLang H3-Base surface, which

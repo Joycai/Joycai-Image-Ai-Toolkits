@@ -5,6 +5,8 @@ import '../../../../services/llm/generation/generation_schema.dart';
 class GenerationParamTexts {
   static String diagnostic(AppLocalizations l10n, GenerationDiagnostic diagnostic) =>
       switch (diagnostic.code) {
+        'unsupportedReferenceMedia' => l10n.generationUnsupportedReferenceMedia,
+        'videoPromptLength' => l10n.generationVideoPromptLength,
         'wanEditSize' => l10n.generationWanEditSize,
         'agentTextOnly' => l10n.generationAgentTextOnly,
         'transparentJpeg' => l10n.generationTransparentJpeg,
@@ -21,6 +23,8 @@ class GenerationParamTexts {
       };
   static String label(AppLocalizations l10n, String labelKey, {bool video = false}) {
     switch (labelKey) {
+      case 'promptExpansionMode':
+        return l10n.paramPromptExpansionMode;
       case 'videoSeconds':
         return l10n.videoSeconds;
       case 'videoAudio':
@@ -76,6 +80,14 @@ class GenerationParamTexts {
     String value, {
     bool hasExplicitAuto = false,
   }) {
+    if (paramKey == 'promptExpansionMode') {
+      return switch (value) {
+        'disabled' => l10n.promptExpansionDisabled,
+        'balanced' => l10n.promptExpansionBalanced,
+        'quality' => l10n.promptExpansionQuality,
+        _ => value,
+      };
+    }
     if (paramKey == 'background' && value == 'transparent') return l10n.imageBackgroundTransparent;
     if (paramKey == 'background' && value == 'opaque') return l10n.imageBackgroundOpaque;
     if (paramKey == 'promptExtendMode') {
