@@ -147,9 +147,11 @@ changing them permits re-authentication, while changing the endpoint/channel
 identity pauses recovery. Active Batch jobs protect their model/channel from
 removal and channel merge. Input JSON is frozen in the chosen output directory's
 `.joycai-batch/<task-id>/input.json`; keep this folder until submission completes.
-Ordinary database backups include checkpoints, **not** these external input files
-or generated media. Cross-machine pre-submission recovery therefore also needs
-that output directory. Frozen input caches are retained for diagnosis.
+The app's JSON configuration export excludes task history and Batch checkpoints,
+as well as these external input files and generated media. Moving an active job
+to another machine requires the actual app database and, for pre-submission
+recovery, the corresponding output directory. Frozen input caches are retained
+for diagnosis.
 
 After acceptance, local execution concurrency is released. A queue-owned timer
 polls after 30 seconds, then approximately 60/120/300 seconds with jitter;
