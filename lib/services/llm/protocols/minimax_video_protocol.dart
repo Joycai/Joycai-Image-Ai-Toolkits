@@ -150,6 +150,7 @@ class MiniMaxVideoProtocol implements VideoJobProtocol, CancellableJobProtocol {
       return VideoSubmission(
         taskId,
         inputImages: media.where((m) => m.role.type == 'image_url').length,
+        inputVideoSeconds: videoSeconds,
       );
     } finally {
       client.close();
@@ -195,7 +196,10 @@ class MiniMaxVideoProtocol implements VideoJobProtocol, CancellableJobProtocol {
             operationName,
             videoUrl,
             requiresAuth: videoUriNeedsAuth(videoUrl, target.config.endpoint),
-            renderedSeconds: (usage is Map ? usage['output_seconds'] : null) ?? task['duration'],
+            renderedSeconds: usage is Map ? usage['output_seconds'] : null,
+            inputSeconds: usage is Map ? usage['input_seconds'] : null,
+            inputImages: usage is Map ? usage['input_image_count'] : null,
+            outputSize: task['resolution'] as String?,
           );
         case 'failed':
         case 'cancelled':

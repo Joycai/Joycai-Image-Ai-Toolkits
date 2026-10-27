@@ -65,15 +65,14 @@ Map<String, dynamic>? inputImageCountEntry(Map<String, dynamic>? metadata) {
 const String billedImageCountKey = 'billed_image_count';
 
 /// [billedImageCountKey] off a response's metadata, or null when the
-/// provider reported none — absent, not a whole positive number, or zero. A
-/// zero is not trusted over the pictures that did arrive: a response that
-/// carried images was not free, whatever its usage block says.
+/// provider reported none. A trusted explicit zero remains zero, even when
+/// the response delivered pictures. Fractional image counts are invalid.
 int? billedImageCountOf(Map<String, dynamic>? metadata) {
   final raw = metadata?[billedImageCountKey];
-  final count = raw is num && raw.isFinite
+  final count = raw is num && raw.isFinite && raw == raw.truncateToDouble()
       ? raw.toInt()
       : (raw is String ? int.tryParse(raw) : null);
-  return count == null || count <= 0 ? null : count;
+  return count == null || count < 0 ? null : count;
 }
 
 /// The metadata key a protocol publishes the money the provider says this
@@ -120,7 +119,7 @@ Map<String, dynamic> reportedCostFromTicks(Object? ticks) {
 class OutputSpec {
   final String? size;
   final String? quality;
-  final int? seconds;
+  final num? seconds;
 
   const OutputSpec({this.size, this.quality, this.seconds});
 
@@ -137,7 +136,10 @@ class OutputSpec {
     final quality = normalizeQuality(
       metadata?['output_quality'] ?? options?['quality'] ?? options?['videoQuality'],
     );
-    final seconds = normalizeSeconds(metadata?['output_seconds'] ?? options?['seconds']);
+    final seconds = normalizeSeconds(
+      metadata?['output_seconds'] ?? options?['seconds'],
+      allowZero: metadata?['output_seconds'] != null,
+    );
     return OutputSpec(size: size, quality: quality, seconds: seconds);
   }
 
@@ -159,12 +161,12 @@ class OutputSpec {
     return _unset.contains(s) ? null : s;
   }
 
-  static int? normalizeSeconds(dynamic raw) {
+  static num? normalizeSeconds(dynamic raw, {bool allowZero = false}) {
     if (raw == null) return null;
-    if (raw is num) return raw <= 0 ? null : raw.round();
+    if (raw is num) return !raw.isFinite || raw < 0 || (!allowZero && raw == 0) ? null : raw;
     final s = raw.toString().trim().toLowerCase().replaceAll(RegExp(r's$'), '');
     final n = num.tryParse(s);
-    return (n == null || n <= 0) ? null : n.round();
+    return (n == null || !n.isFinite || n < 0 || (!allowZero && n == 0)) ? null : n;
   }
 
   bool get isEmpty => size == null && quality == null && seconds == null;

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'spec_rate.dart';
+import 'usage_accounting.dart';
 
 // A cell of the wrong type reads as absent. SQLite keeps text in a REAL
 // column as text, and a row is decoded whole whatever its billing mode — so a
@@ -38,7 +39,7 @@ enum UsageBilling {
 class UsageSpecSnapshot {
   final String? size;
   final String? quality;
-  final int? seconds;
+  final num? seconds;
 
   /// False when no rate row priced the spec — the request then cost zero,
   /// which is a configuration gap the usage page counts. A snapshot written
@@ -60,7 +61,9 @@ class UsageSpecSnapshot {
         size: size is String ? size : null,
         quality: quality is String ? quality : null,
         // toInt() throws on infinity, and one bad cell must not fail the page.
-        seconds: seconds is num && seconds.isFinite ? seconds.toInt() : null,
+        seconds: seconds is num && seconds.isFinite
+            ? (seconds == seconds.roundToDouble() ? seconds.toInt() : seconds)
+            : null,
         matched: decoded['matched'] != false,
       );
     } on FormatException {
@@ -199,6 +202,10 @@ typedef UsageCostParts = ({
 /// prices of its fee group snapshotted at record time — so re-pricing a group
 /// later never rewrites history.
 class TokenUsage {
+  final UsageAccounting? accounting;
+  bool get costIncomplete =>
+      reportedCost == null && (accounting != null ? !accounting!.complete : unmatched);
+  bool get costEstimated => reportedCost == null && accounting != null;
   final int? id;
 
   /// Not the queue's task id: a tag plus a timestamp (`req_…`,
@@ -253,6 +260,7 @@ class TokenUsage {
   final double? reportedCost;
 
   const TokenUsage({
+    this.accounting,
     this.id,
     this.taskId,
     required this.modelId,
@@ -288,6 +296,18 @@ class TokenUsage {
         spec: 0.0,
         specInput: 0.0,
         reported: reported,
+      );
+    }
+    final a = accounting;
+    if (a != null) {
+      return (
+        input: a.categoryCost('input'),
+        cache: a.categoryCost('cache'),
+        output: a.categoryCost('output'),
+        request: a.categoryCost('request'),
+        spec: a.categoryCost('spec'),
+        specInput: a.categoryCost('specInput'),
+        reported: 0.0,
       );
     }
     return switch (billing) {
@@ -341,6 +361,7 @@ class TokenUsage {
   double get snapshotCost => reportedCost == null
       ? cost
       : TokenUsage(
+          accounting: accounting,
           modelId: modelId,
           timestamp: timestamp,
           inputTokens: inputTokens,
@@ -368,6 +389,7 @@ class TokenUsage {
   String? get specLabel => billing == UsageBilling.spec ? spec?.snapshot?.label : null;
 
   factory TokenUsage.fromMap(Map<String, dynamic> map) => TokenUsage(
+    accounting: UsageAccounting.decode(map['accounting']),
     id: _int(map['id']),
     taskId: _text(map['task_id']),
     modelId: _text(map['model_id']) ?? '',
@@ -395,6 +417,7 @@ class TokenUsage {
   /// NULL, so it prices exactly as it did before spec billing existed; one
   /// without a reported cost writes NULL there too.
   Map<String, dynamic> toMap() => {
+    if (accounting != null) 'accounting': accounting!.encode(),
     if (id != null) 'id': id,
     'task_id': taskId,
     'model_id': modelId,

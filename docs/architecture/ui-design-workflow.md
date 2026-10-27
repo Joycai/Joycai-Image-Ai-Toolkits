@@ -158,3 +158,16 @@ action reachable. Frame-mode aspect ratio is fixed with an explanatory caption;
 Lite reference mode offers only fixed ratios. Four locales cover controls,
 limits and unsupported-model diagnostics. Maintained design specs and baseline
 Flutter renders were used, without historical design-service originals.
+
+### Media accounting editor theme coverage
+
+Fee-group names, image token prices, video/spec prices and custom spec values use
+`AppTextField`, including its shared accent focus ring. Domain decorations retain
+monospaced numeric text, unit suffixes, validation messages and compact table
+geometry; colours and borders use the app theme roles. `AppButton`,
+`AppSegmentedControl` and `AppGlassMenu` own the corresponding actions/selectors.
+Row deletion keeps the globally themed inline `IconButton` convention, and usage
+explanations use the global `TooltipTheme`. Neither is an unthemed Material default.
+Theme tests cover all eight presets in light/dark, field validation and focus;
+editor renders cover 390/834/1024/1440 widths in both brightnesses. The existing
+mobile usage-harness build-time notification warning remains reproducible.

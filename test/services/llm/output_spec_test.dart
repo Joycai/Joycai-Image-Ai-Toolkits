@@ -71,7 +71,7 @@ void main() {
 
     test('seconds accept numbers, numeric strings and a trailing s; junk is null', () {
       expect(OutputSpec.normalizeSeconds(8), 8);
-      expect(OutputSpec.normalizeSeconds(7.6), 8);
+      expect(OutputSpec.normalizeSeconds(7.6), 7.6);
       expect(OutputSpec.normalizeSeconds('10'), 10);
       expect(OutputSpec.normalizeSeconds('10s'), 10);
       expect(OutputSpec.normalizeSeconds('0'), isNull);

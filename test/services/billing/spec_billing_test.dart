@@ -397,11 +397,11 @@ void main() {
       expect(plain.units, 1);
     });
 
-    test('the charged count is read leniently and never as zero', () {
+    test('the charged count preserves reported zero and rejects invalid values', () {
       expect(billedImageCountOf(const {billedImageCountKey: 3}), 3);
       expect(billedImageCountOf(const {billedImageCountKey: 3.0}), 3);
       expect(billedImageCountOf(const {billedImageCountKey: '3'}), 3);
-      expect(billedImageCountOf(const {billedImageCountKey: 0}), isNull);
+      expect(billedImageCountOf(const {billedImageCountKey: 0}), 0);
       expect(billedImageCountOf(const {billedImageCountKey: -1}), isNull);
       expect(billedImageCountOf(const {billedImageCountKey: 'many'}), isNull);
       expect(billedImageCountOf(const {}), isNull);

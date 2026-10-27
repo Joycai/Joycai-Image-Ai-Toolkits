@@ -618,12 +618,25 @@ extension TaskExecutors on TaskQueueService {
 
     // What the terminal poll knows that the submit could only estimate: the
     // length rendered and, on xAI, the charge itself.
-    if (videoSettlementOf(done) case final settle?) {
+    {
+      final settle = videoSettlementOf(done);
       await _llm.settleVideoUsage(
         modelIdentifier: task.modelDbId ?? task.modelId,
         operationName: operationName,
-        renderedSeconds: settle.renderedSeconds,
-        reportedCost: settle.reportedCost,
+        usageRowId:
+            task.parameters['video_usage_row_id'] as String? ??
+            LLMService.videoUsageRowId(operationName),
+        renderedSeconds: settle?.renderedSeconds,
+        evidence: {
+          if (done['input_video_seconds'] != null) ...{
+            'input_seconds': done['input_video_seconds'],
+            'input_seconds_source': 'reported',
+          },
+          'protocol': task.operationSurface,
+          if (done['input_image_count'] != null) 'input_images': done['input_image_count'],
+          if (done['output_size'] != null) 'output_size': done['output_size'],
+        },
+        reportedCost: settle?.reportedCost,
         options: task.generationOptions,
         contextId: task.id,
       );
@@ -774,6 +787,7 @@ extension TaskExecutors on TaskQueueService {
     // channel is re-pointed at another vendor while the job runs.
     task.operationName = ticket.name;
     task.operationSurface = ticket.surfaceId;
+    task.parameters['video_usage_row_id'] = LLMService.videoUsageRowId(ticket.name, scope: task.id);
     await _db.saveTask(task);
 
     task.addLog('LRO started: ${ticket.name}');

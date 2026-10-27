@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 
+import '../../models/media_pricing.dart';
 import '../../models/pricing_group.dart';
 import '../../models/spec_rate.dart';
 import '../../services/billing/spec_billing.dart';
@@ -20,6 +21,17 @@ import 'spec_rate_table.dart';
 class FeeGroupDraft extends ChangeNotifier {
   FeeGroupDraft(this.group) {
     final g = group;
+    imageTokenInputCtrl = TextEditingController(text: g?.mediaPricing.imageInput?.toString() ?? '');
+    imageTokenCacheCtrl = TextEditingController(text: g?.mediaPricing.imageCache?.toString() ?? '');
+    imageTokenOutputCtrl = TextEditingController(
+      text: g?.mediaPricing.imageOutput?.toString() ?? '',
+    );
+    final videoRates = g?.mediaPricing.videoInputRates ?? <SpecRate>[];
+    videoInputOtherCtrl = TextEditingController(
+      text: videoRates.where((r) => r.isCatchAll).firstOrNull?.price.toString() ?? '',
+    );
+    videoInputRows.addAll(videoRates.where((r) => !r.isCatchAll).map(SpecRateDraft.of));
+    videoInputExpanded = videoRates.isNotEmpty;
     nameCtrl = TextEditingController(text: g?.name ?? '');
     inputPriceCtrl = TextEditingController(text: (g?.inputPrice ?? 0.0).toString());
     // Left blank when unset, which is what makes the field mean "follow the
@@ -56,6 +68,18 @@ class FeeGroupDraft extends ChangeNotifier {
   /// The group being edited; null while adding.
   final PricingGroup? group;
 
+  late final TextEditingController imageTokenInputCtrl;
+  late final TextEditingController imageTokenCacheCtrl;
+  late final TextEditingController imageTokenOutputCtrl;
+  late final TextEditingController videoInputOtherCtrl;
+  final List<SpecRateDraft> videoInputRows = [];
+  bool videoInputExpanded = false;
+  List<TextEditingController> get mediaControllers => [
+    imageTokenInputCtrl,
+    imageTokenCacheCtrl,
+    imageTokenOutputCtrl,
+    videoInputOtherCtrl,
+  ];
   late final TextEditingController nameCtrl;
   late final TextEditingController inputPriceCtrl;
   late final TextEditingController cacheInputPriceCtrl;
@@ -76,6 +100,7 @@ class FeeGroupDraft extends ChangeNotifier {
   bool _disposed = false;
 
   List<TextEditingController> get _controllers => [
+    ...mediaControllers,
     nameCtrl,
     inputPriceCtrl,
     cacheInputPriceCtrl,
@@ -99,6 +124,7 @@ class FeeGroupDraft extends ChangeNotifier {
   /// "inherit"; every other rate must parse.
   bool invalid(TextEditingController ctrl) {
     final text = ctrl.text.trim();
+    if (mediaControllers.contains(ctrl) && text.isEmpty) return false;
     if (identical(ctrl, cacheInputPriceCtrl) && text.isEmpty) return false;
     return _parsePrice(text) == null;
   }
@@ -135,7 +161,11 @@ class FeeGroupDraft extends ChangeNotifier {
       : !_activeFields.any(invalid) && !inputImagePriceInvalid;
 
   /// `1f`: Save lights up once the group has a name and its rates parse.
-  bool get canSave => name.isNotEmpty && ratesValid;
+  bool get canSave =>
+      name.isNotEmpty &&
+      ratesValid &&
+      !mediaControllers.any(invalid) &&
+      !SpecTableIssues.of(videoInputRows).blocksSave;
 
   /// Whether anything differs from the group as it was opened.
   bool get isDirty => _snapshot() != _initial;
@@ -184,6 +214,15 @@ class FeeGroupDraft extends ChangeNotifier {
   PricingGroup toGroup() {
     final cacheText = cacheInputPriceCtrl.text.trim();
     return PricingGroup(
+      mediaPricing: MediaPricing(
+        imageInput: _parsePrice(imageTokenInputCtrl.text),
+        imageCache: _parsePrice(imageTokenCacheCtrl.text),
+        imageOutput: _parsePrice(imageTokenOutputCtrl.text),
+        videoInputRates: [
+          for (final row in videoInputRows) row.toRate(),
+          if (_parsePrice(videoInputOtherCtrl.text) case final price?) SpecRate(price: price),
+        ],
+      ),
       name: name,
       billingMode: billingMode,
       inputPrice: _parsePrice(inputPriceCtrl.text) ?? 0.0,
@@ -205,6 +244,8 @@ class FeeGroupDraft extends ChangeNotifier {
   }
 
   String _snapshot() => [
+    for (final ctrl in mediaControllers) ctrl.text,
+    for (final r in videoInputRows) '${r.size}|${r.quality}|${r.seconds}|${r.priceCtrl.text}',
     nameCtrl.text,
     billingMode,
     inputPriceCtrl.text,
@@ -244,7 +285,7 @@ class FeeGroupDraft extends ChangeNotifier {
       ctrl.removeListener(notifyListeners);
       ctrl.dispose();
     }
-    for (final row in specRows) {
+    for (final row in [...specRows, ...videoInputRows]) {
       row.dispose();
     }
     super.dispose();

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../../models/llm_model.dart';
+import '../../models/media_pricing.dart';
 import '../../models/pricing_group.dart';
 import '../../models/spec_rate.dart';
 import '../db/database_service.dart';
@@ -105,6 +106,8 @@ class LLMConfigResolver {
 
     // Fetch Pricing Group
     final pricingGroupId = modelData.feeGroupId;
+    var pricingKnown = false;
+    var mediaPricing = const MediaPricing();
     double inputFee = 0.0;
     double? cacheInputFee;
     double outputFee = 0.0;
@@ -122,6 +125,8 @@ class LLMConfigResolver {
         orElse: () => null,
       );
       if (group != null) {
+        pricingKnown = true;
+        mediaPricing = group.mediaPricing;
         inputFee = group.inputPrice;
         cacheInputFee = group.cacheInputPrice;
         outputFee = group.outputPrice;
@@ -201,6 +206,8 @@ class LLMConfigResolver {
       contextWindow: modelData.contextWindow,
       // Raw too; `outputCapFor` in the protocol layer is its only reader.
       maxOutputTokens: modelData.maxOutputTokens,
+      pricingKnown: pricingKnown,
+      mediaPricing: mediaPricing,
       inputFee: inputFee,
       cacheInputFee: cacheInputFee,
       outputFee: outputFee,

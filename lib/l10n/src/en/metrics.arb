@@ -144,5 +144,8 @@
   "usageGoFixRates": "Add rates",
   "usageUnitPrice": "Unit price",
   "usageReportedCost": "Reported cost",
-  "usageTableEstimate": "Table estimate"
+  "usageTableEstimate": "Table estimate",
+  "usageIncomplete": "Incomplete cost",
+  "usagePending": "Awaiting billing evidence",
+  "usageAccountingNote": "Estimated totals include known items only; incomplete or pending rows are not confirmed charges."
 }

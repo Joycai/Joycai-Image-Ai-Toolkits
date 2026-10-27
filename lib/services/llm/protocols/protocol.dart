@@ -149,7 +149,8 @@ class VideoSubmission {
   final String requestId;
   final int inputImages;
 
-  const VideoSubmission(this.requestId, {this.inputImages = 0});
+  final num? inputVideoSeconds;
+  const VideoSubmission(this.requestId, {this.inputImages = 0, this.inputVideoSeconds = 0});
 }
 
 abstract class VideoJobProtocol {
@@ -810,7 +811,13 @@ Map<String, dynamic> upstreamUsage(Object? raw) {
   };
 }
 
-const _reservedMetadataKeys = {reportedCostKey, inputImageCountKey, billedImageCountKey};
+const _reservedMetadataKeys = {
+  reportedCostKey,
+  inputImageCountKey,
+  billedImageCountKey,
+  'image_token_output',
+  'input_video_seconds',
+};
 
 Future<Uint8List?> readAttachmentBytes(LLMAttachment att) async {
   if (att.path != null) return File(att.path!).readAsBytes();
@@ -899,7 +906,7 @@ bool videoUriNeedsAuth(String uri, String endpoint) {
 
 num? _positiveSeconds(Object? raw) {
   final n = raw is num ? raw : num.tryParse(raw?.toString() ?? '');
-  return n != null && n > 0 ? n : null;
+  return n != null && n.isFinite && n >= 0 ? n : null;
 }
 
 /// [options] with its `imageSize` checked against the size control the
@@ -947,10 +954,18 @@ Map<String, dynamic> videoDoneEnvelope(
   String uri, {
   required bool requiresAuth,
   Object? renderedSeconds,
+  Object? inputSeconds,
+  Object? inputImages,
+  String? outputSize,
   double? reportedCost,
 }) => {
   'name': operationName,
   'done': true,
+  if (inputImages is num && inputImages.isFinite && inputImages >= 0)
+    inputImageCountKey: inputImages,
+  'output_size': ?outputSize,
+  if (inputSeconds is num && inputSeconds.isFinite && inputSeconds >= 0)
+    'input_video_seconds': inputSeconds,
   videoRenderedSecondsKey: ?_positiveSeconds(renderedSeconds),
   if (reportedCost != null && reportedCost.isFinite && reportedCost >= 0)
     reportedCostKey: reportedCost,

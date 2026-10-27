@@ -63,7 +63,16 @@ class DatabaseService {
 
   /// Schema version of this build. Also stamped into full backups so a file
   /// from a newer app can be rejected instead of failing mid-restore.
-  static const int dbVersion = 51;
+  static const int dbVersion = 52;
+
+  /// A separate durable spool, alongside this database. Injected in-memory
+  /// databases never touch the user's filesystem.
+  Future<String?> get usageJournalDirectory async {
+    final path = _database?.path;
+    if (path != null && (path.contains(':memory:') || path.contains('mode=memory'))) return null;
+    final root = path == null ? await AppPaths.getDataDirectory() : dirname(path);
+    return join(root, 'usage-journal');
+  }
 
   /// Settings holding absolute paths from the machine that made the backup.
   /// Excluded when the user opts out of directories.

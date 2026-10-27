@@ -511,6 +511,26 @@ Linux 构建没装 libsecret、最小桌面常无 keyring；便携模式下钥�
   remain to be run on Windows (implementation developed on macOS).
 
 
+### Unified image/video usage accounting (2026-10-27)
+
+- Ordinary requests and Image Batch share disjoint modality/cache components.
+  Optional image token prices and input-video spec rates distinguish missing from zero.
+- Video submission freezes rules; terminal evidence settles atomically against
+  that snapshot, retaining fractional/zero quantities and independent input costs.
+  Incomplete Batch evidence merges into one row without changing original prices.
+- Additive v52 migration preserves legacy history. Durable events recover failed
+  writes without resubmitting generation; duplicate/stale evidence cannot double bill.
+- Four-locale fee controls and usage details expose unknown, estimated and pending
+  costs. Durable contract: [media accounting](../architecture/media-accounting.md).
+- Verified format (888 files, zero changes), analyze (No issues found), and full
+  non-screenshot regression (3377 passed, 9 skipped). Model/usage screenshot suite:
+  71 passed; inspected 390/834/1024/1440 in both themes, no overflow observed.
+  The existing mobile usage harness build-time setState warning also appears in
+  baseline renders and remains outside this accounting change.
+- No paid API calls or real user database mutations during verification.
+  Missing provider evidence remains incomplete; historical prices are not inferred.
+  Construction brief retired.
+
 ### MiniMax H3 family and multimodal references (2026-10-27)
 
 - Split cloud H3 / Highspeed / Lite / Max profiles, including resolution,

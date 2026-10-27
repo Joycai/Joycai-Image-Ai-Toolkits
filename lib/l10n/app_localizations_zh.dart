@@ -1589,6 +1589,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get usageTableEstimate => '档位估算';
 
   @override
+  String get usageIncomplete => '费用不完整';
+
+  @override
+  String get usagePending => '待确认计费';
+
+  @override
+  String get usageAccountingNote => '估算合计仅包含已知费用项；不完整或待确认记录不代表实扣金额。';
+
+  @override
   String get models => '模型';
 
   @override
@@ -2812,7 +2821,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get specOtherBlankHint => '留空则未列出的规格按 0 计。';
+  String get specOtherBlankHint => '未覆盖规格将标记为费用不完整，直到补充单价。';
 
   @override
   String get specOnlyOtherHint => '只有「其他规格」一档时，效果与「按次」相同。';
@@ -2831,7 +2840,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get specOtherZero => '其他规格按 0 计';
+  String get specOtherZero => '其他规格未定价';
 
   @override
   String get modelCardBilling => '计费';
@@ -2878,7 +2887,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get feeGroupNamePlaceholder => '给这组起个名字';
 
   @override
-  String get tokenPriceHint => '按百万 token 计价；缓存输入留空按输入价算。图片 / 视频模型请改用「按规格」。';
+  String get tokenPriceHint => '按百万 Token 计价；文本缓存留空使用文本输入价。图像 Token 单价在下方配置。';
 
   @override
   String get discardChangesTitle => '放弃未保存的改动？';
@@ -3178,6 +3187,27 @@ class AppLocalizationsZh extends AppLocalizations {
   String mergeFailed(String error) {
     return '合并失败，未做任何改动：$error';
   }
+
+  @override
+  String get mediaTokenPrices => '图像 Token 单价';
+
+  @override
+  String get mediaPriceUnknown => '留空表示未知，0 表示免费。文本使用上方输入和输出单价。';
+
+  @override
+  String get mediaImageInput => '图像输入';
+
+  @override
+  String get mediaImageCache => '图像缓存输入';
+
+  @override
+  String get mediaImageOutput => '图像输出';
+
+  @override
+  String get mediaVideoInput => '输入视频 · 美元/秒';
+
+  @override
+  String get mediaVideoPriceHint => '输入视频按输出分辨率和质量匹配单价；未配置的档位标记为费用不完整。';
 
   @override
   String get prompts => '提示词';
@@ -7709,6 +7739,15 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get usageTableEstimate => '檔位估算';
 
   @override
+  String get usageIncomplete => '費用不完整';
+
+  @override
+  String get usagePending => '待確認計費';
+
+  @override
+  String get usageAccountingNote => '估算合計僅包含已知費用項；不完整或待確認記錄不代表實扣金額。';
+
+  @override
   String get models => '模型';
 
   @override
@@ -8932,7 +8971,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   }
 
   @override
-  String get specOtherBlankHint => '留空則未列出的規格以 0 計。';
+  String get specOtherBlankHint => '未涵蓋規格將標記為費用不完整，直到補充單價。';
 
   @override
   String get specOnlyOtherHint => '只有「其他規格」一檔時，效果與「按次」相同。';
@@ -8951,7 +8990,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   }
 
   @override
-  String get specOtherZero => '其他規格以 0 計';
+  String get specOtherZero => '其他規格未定價';
 
   @override
   String get modelCardBilling => '計費';
@@ -8998,7 +9037,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get feeGroupNamePlaceholder => '給這組取個名字';
 
   @override
-  String get tokenPriceHint => '按百萬 token 計價；快取輸入留空按輸入價算。圖片 / 影片模型請改用「按規格」。';
+  String get tokenPriceHint => '按百萬 Token 計價；文字快取留空使用文字輸入價。圖像 Token 單價在下方設定。';
 
   @override
   String get discardChangesTitle => '放棄未儲存的變更？';
@@ -9298,6 +9337,27 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String mergeFailed(String error) {
     return '合併失敗，未做任何變更：$error';
   }
+
+  @override
+  String get mediaTokenPrices => '圖像 Token 單價';
+
+  @override
+  String get mediaPriceUnknown => '留空表示未知，0 表示免費。文字使用上方輸入和輸出單價。';
+
+  @override
+  String get mediaImageInput => '圖像輸入';
+
+  @override
+  String get mediaImageCache => '圖像快取輸入';
+
+  @override
+  String get mediaImageOutput => '圖像輸出';
+
+  @override
+  String get mediaVideoInput => '輸入影片 · 美元/秒';
+
+  @override
+  String get mediaVideoPriceHint => '輸入影片按輸出解析度和品質匹配單價；未設定的檔位標記為費用不完整。';
 
   @override
   String get prompts => '提示';

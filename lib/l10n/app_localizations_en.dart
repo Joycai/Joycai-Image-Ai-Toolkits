@@ -1651,6 +1651,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get usageTableEstimate => 'Table estimate';
 
   @override
+  String get usageIncomplete => 'Incomplete cost';
+
+  @override
+  String get usagePending => 'Awaiting billing evidence';
+
+  @override
+  String get usageAccountingNote =>
+      'Estimated totals include known items only; incomplete or pending rows are not confirmed charges.';
+
+  @override
   String get models => 'Models';
 
   @override
@@ -2920,7 +2930,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get specOtherBlankHint => 'Leave blank and unlisted specs are billed at 0.';
+  String get specOtherBlankHint =>
+      'Unlisted specifications remain incomplete until a price is supplied.';
 
   @override
   String get specOnlyOtherHint => 'With only \"Other specs\", this works the same as Per request.';
@@ -2939,7 +2950,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get specOtherZero => 'Other specs at 0';
+  String get specOtherZero => 'Other specs unpriced';
 
   @override
   String get modelCardBilling => 'Billing';
@@ -2990,7 +3001,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tokenPriceHint =>
-      'Priced per million tokens; a blank cache rate follows the input rate. For image and video models use Per spec.';
+      'Prices per million tokens; blank text cache price follows text input. Image token prices are configured below.';
 
   @override
   String get discardChangesTitle => 'Discard unsaved changes?';
@@ -3336,6 +3347,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String mergeFailed(String error) {
     return 'Merge failed, nothing was changed: $error';
   }
+
+  @override
+  String get mediaTokenPrices => 'Image token prices';
+
+  @override
+  String get mediaPriceUnknown =>
+      'Blank means unknown; 0 means free. Text uses the input and output prices above.';
+
+  @override
+  String get mediaImageInput => 'Image input';
+
+  @override
+  String get mediaImageCache => 'Cached image input';
+
+  @override
+  String get mediaImageOutput => 'Image output';
+
+  @override
+  String get mediaVideoInput => 'Input video · USD/second';
+
+  @override
+  String get mediaVideoPriceHint =>
+      'Match input video rates using the output resolution and quality. Missing rates remain incomplete.';
 
   @override
   String get prompts => 'Prompts';

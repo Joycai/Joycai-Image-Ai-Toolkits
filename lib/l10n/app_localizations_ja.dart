@@ -1595,6 +1595,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get usageTableEstimate => '料金表の見積';
 
   @override
+  String get usageIncomplete => '料金が不完全';
+
+  @override
+  String get usagePending => '課金情報待ち';
+
+  @override
+  String get usageAccountingNote => '見積合計は既知の項目のみです。不完全・確認待ちの記録は確定請求額ではありません。';
+
+  @override
   String get models => 'モデル';
 
   @override
@@ -2832,7 +2841,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get specOtherBlankHint => '空欄の場合、未掲載の仕様は 0 として計算します。';
+  String get specOtherBlankHint => '未設定の仕様は、単価が入力されるまで料金不完全として表示されます。';
 
   @override
   String get specOnlyOtherHint => '「その他の仕様」だけの場合は「回数別」と同じ動作です。';
@@ -2851,7 +2860,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get specOtherZero => 'その他の仕様は 0';
+  String get specOtherZero => 'その他の仕様は単価未設定';
 
   @override
   String get modelCardBilling => '課金';
@@ -2898,7 +2907,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get feeGroupNamePlaceholder => 'グループ名を入力';
 
   @override
-  String get tokenPriceHint => '100 万トークン単位で課金。キャッシュ入力が未入力なら入力価格で計算。画像 / 動画モデルは「仕様別」を使ってください。';
+  String get tokenPriceHint => '100万トークン当たりの単価。テキストキャッシュが空欄の場合は入力単価を使用します。画像単価は下で設定します。';
 
   @override
   String get discardChangesTitle => '未保存の変更を破棄しますか？';
@@ -3199,6 +3208,27 @@ class AppLocalizationsJa extends AppLocalizations {
   String mergeFailed(String error) {
     return '統合に失敗しました。何も変更していません：$error';
   }
+
+  @override
+  String get mediaTokenPrices => '画像トークン単価';
+
+  @override
+  String get mediaPriceUnknown => '空欄は不明、0 は無料です。テキストには上の入出力単価を使用します。';
+
+  @override
+  String get mediaImageInput => '画像入力';
+
+  @override
+  String get mediaImageCache => '画像キャッシュ入力';
+
+  @override
+  String get mediaImageOutput => '画像出力';
+
+  @override
+  String get mediaVideoInput => '入力動画 · USD/秒';
+
+  @override
+  String get mediaVideoPriceHint => '入力動画の単価は出力解像度と品質で選択します。未設定の料金は不完全として表示します。';
 
   @override
   String get prompts => 'プロンプト';

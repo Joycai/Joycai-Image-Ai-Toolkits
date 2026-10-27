@@ -147,6 +147,9 @@ Map<String, dynamic> veoPollResult(
   // keeps on every other surface).
   data.remove(reportedCostKey);
   data.remove(videoRenderedSecondsKey);
+  data.remove('input_video_seconds');
+  data.remove('input_image_count');
+  data.remove('output_size');
 
   final error = data['error'];
   if (error != null) {

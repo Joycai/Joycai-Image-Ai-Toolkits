@@ -3,8 +3,11 @@ import 'package:flutter/material.dart';
 import '../../core/app_theme.dart';
 import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
+import '../../models/spec_rate.dart';
 import '../../services/billing/spec_billing.dart';
+import '../ui/app_button.dart';
 import '../ui/app_segmented_control.dart';
+import '../ui/app_text_field.dart';
 import 'fee_group_draft.dart';
 import 'spec_rate_table.dart';
 
@@ -40,7 +43,7 @@ class FeeGroupEditorFields extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             _Caption(l10n.groupName),
-            TextField(
+            AppTextField(
               controller: draft.nameCtrl,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
               decoration: _decoration(context).copyWith(hintText: l10n.feeGroupNamePlaceholder),
@@ -71,7 +74,58 @@ class FeeGroupEditorFields extends StatelessWidget {
               duration: AppMotion.durationOf(context, AppMotion.state),
               curve: AppMotion.enter,
               alignment: Alignment.topCenter,
-              child: _buildRates(context, l10n),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildRates(context, l10n),
+                  const SizedBox(height: AppSpace.s10),
+                  if (draft.isToken) ...[
+                    _Caption(l10n.mediaTokenPrices),
+                    Text(l10n.mediaPriceUnknown, style: Theme.of(context).textTheme.labelSmall),
+                    const SizedBox(height: AppSpace.s10),
+                    _priceField(context, draft.imageTokenInputCtrl, l10n.mediaImageInput, '\$/M'),
+                    const SizedBox(height: AppSpace.s10),
+                    _priceField(context, draft.imageTokenCacheCtrl, l10n.mediaImageCache, '\$/M'),
+                    const SizedBox(height: AppSpace.s10),
+                    _priceField(context, draft.imageTokenOutputCtrl, l10n.mediaImageOutput, '\$/M'),
+                  ] else ...[
+                    AppButton(
+                      label: l10n.mediaVideoInput,
+                      variant: AppButtonVariant.text,
+                      icon: draft.videoInputExpanded ? Icons.expand_less : Icons.expand_more,
+                      onPressed: () {
+                        draft.videoInputExpanded = !draft.videoInputExpanded;
+                        draft.touch();
+                      },
+                    ),
+                    if (draft.videoInputExpanded) ...[
+                      Text(l10n.mediaVideoPriceHint, style: Theme.of(context).textTheme.labelSmall),
+                      SpecRateTableEditor(
+                        inputVideo: true,
+                        unit: OutputUnit.second,
+                        onUnitChanged: (_) {},
+                        rows: draft.videoInputRows,
+                        otherPriceCtrl: draft.videoInputOtherCtrl,
+                        inputPriceCtrl: draft.inputImagePriceCtrl,
+                        inputFreeCtrl: draft.inputFreeCtrl,
+                        inputPriceInvalid: false,
+                        inputFreeWithoutPrice: false,
+                        onAddRow: () {
+                          draft.videoInputRows.add(SpecRateDraft());
+                          draft.touch();
+                        },
+                        onRemoveRow: (i) {
+                          draft.videoInputRows.removeAt(i).dispose();
+                          draft.touch();
+                        },
+                        onChanged: draft.touch,
+                        onSwitchToRequest: () {},
+                        narrow: narrow,
+                      ),
+                    ],
+                  ],
+                ],
+              ),
             ),
           ],
         );
@@ -198,7 +252,7 @@ class FeeGroupEditorFields extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final invalid = draft.invalid(ctrl);
 
-    return TextField(
+    return AppTextField(
       controller: ctrl,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       style: textTheme.bodyMedium?.mono,

@@ -5,6 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
 
+import '../../models/media_pricing.dart';
+import '../../models/pricing_group.dart';
 import '../../models/spec_rate.dart';
 import 'vendors/vendor_profile.dart';
 
@@ -133,6 +135,22 @@ class LLMModelConfig {
   /// it without remembering to pass it along.
   final int? maxOutputTokens;
 
+  final bool pricingKnown;
+  final MediaPricing mediaPricing;
+  PricingGroup get pricingSnapshot => PricingGroup(
+    name: modelId,
+    billingMode: billingMode,
+    inputPrice: inputFee,
+    cacheInputPrice: cacheInputFee,
+    outputPrice: outputFee,
+    requestPrice: requestFee,
+    outputUnit: outputUnit,
+    outputRates: outputRates,
+    inputUnitPrice: inputUnitFee,
+    inputFreeUnits: inputFreeUnits,
+    mediaPricing: mediaPricing,
+  );
+
   final double inputFee;
 
   /// Rate for cached input tokens, or null when the fee group leaves it unset —
@@ -176,6 +194,8 @@ class LLMModelConfig {
     this.tag,
     this.contextWindow,
     this.maxOutputTokens,
+    this.pricingKnown = true,
+    this.mediaPricing = const MediaPricing(),
     this.inputFee = 0.0,
     this.cacheInputFee,
     this.outputFee = 0.0,
@@ -223,6 +243,8 @@ class LLMModelConfig {
         tag: tag,
         contextWindow: contextWindow,
         maxOutputTokens: maxOutputTokens,
+        pricingKnown: pricingKnown,
+        mediaPricing: mediaPricing,
         inputFee: inputFee,
         cacheInputFee: cacheInputFee,
         outputFee: outputFee,

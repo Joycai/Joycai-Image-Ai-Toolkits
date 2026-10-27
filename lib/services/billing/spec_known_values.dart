@@ -14,7 +14,7 @@ class SpecKnownValues {
   final List<String> imageSizes;
   final List<String> videoResolutions;
   final List<String> qualities;
-  final List<int> seconds;
+  final List<num> seconds;
 
   const SpecKnownValues({
     required this.imageSizes,
@@ -33,7 +33,7 @@ class SpecKnownValues {
     // the tables below cover them.
     final videoResolutions = <String>{};
     final qualities = <String>{};
-    final seconds = <int>{};
+    final seconds = <num>{};
 
     // Every table there is: the ones a family owns, the ones only a wire
     // protocol reaches, and the ones `forModel` reaches by id alone (a

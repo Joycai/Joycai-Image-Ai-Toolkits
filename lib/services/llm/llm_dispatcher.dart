@@ -8,7 +8,6 @@ import 'llm_types.dart';
 import 'model_capabilities.dart';
 import 'model_descriptor.dart';
 import 'model_family.dart';
-import 'output_spec.dart' show inputImageCountEntry, reportedCostEntry;
 import 'protocols/anthropic_chat_protocol.dart';
 import 'protocols/anthropic_thinking.dart';
 import 'protocols/anthropic_wire.dart';
@@ -80,7 +79,13 @@ class LLMOperationTicket {
   /// degrades to the legacy routing instead of failing.
   String? get surfaceId => surface?.id;
 
-  const LLMOperationTicket(this.name, this.surface, {this.inputImages = 0});
+  final num? inputVideoSeconds;
+  const LLMOperationTicket(
+    this.name,
+    this.surface, {
+    this.inputImages = 0,
+    this.inputVideoSeconds = 0,
+  });
 }
 
 class LLMDispatcher {
@@ -1448,9 +1453,7 @@ class LLMDispatcher {
     // provider charged, where it said — so a consumer that stops before the
     // closing chunk still bills them, and by the provider's figure rather
     // than the table's.
-    final inputs = inputImageCountEntry(response.metadata);
-    final reported = reportedCostEntry(response.metadata);
-    final perImage = inputs == null && reported == null ? null : {...?inputs, ...?reported};
+    final perImage = response.metadata;
     for (final (i, img) in response.generatedImages.indexed) {
       yield LLMResponseChunk(
         imagePart: img,
@@ -1485,6 +1488,7 @@ class LLMDispatcher {
         submission.requestId,
         route.surface,
         inputImages: submission.inputImages,
+        inputVideoSeconds: submission.inputVideoSeconds,
       );
     }
     // No surface: say why, per family.

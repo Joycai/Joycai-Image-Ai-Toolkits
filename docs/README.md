@@ -31,6 +31,9 @@ Required reading before touching the subsystem each one covers.
   old→new path map for reading pre-refactor documents.
 * **[Local MCP image server](architecture/mcp-image-server.md)** — desktop connection,
   agent tools, reference/edit generation, replay protection and result persistence.
+* **[Media usage and cost accounting](architecture/media-accounting.md)** — shared
+  ordinary/Batch arithmetic, modality prices, submitted video pricing snapshots,
+  incomplete evidence, atomic settlement and durable recovery.
 * **[Generation parameters and forms](architecture/generation-parameters.md)** —
   typed schemas, native alias profiles, request/task compatibility, isolated drafts,
   validation and extensible image/video editors within the existing design system.

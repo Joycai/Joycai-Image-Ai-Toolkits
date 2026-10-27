@@ -224,6 +224,7 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
       metadata: {
         if (revised.isNotEmpty) 'revised_prompt': revised,
         ...upstreamUsage(data['usage']),
+        'image_token_output': true,
         // The size and quality the endpoint settled on. A request that
         // said `auto` has no spec of its own, and a spec-billed fee group
         // prices by exactly this — see `OutputSpec.from`, which prefers
@@ -267,7 +268,7 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
           req.debugFile,
         );
         for (final image in whole.generatedImages) {
-          yield LLMResponseChunk(imagePart: image);
+          yield LLMResponseChunk(imagePart: image, metadata: whole.metadata);
         }
         yield LLMResponseChunk(textPart: whole.text, metadata: whole.metadata, isDone: true);
         return;
@@ -354,6 +355,7 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
           imagePart: images.single,
           metadata: {
             ...upstreamUsage(data['usage']),
+            'image_token_output': true,
             ...sentInputImages(req.sentImages),
             if (data['size'] is String) 'output_size': data['size'],
             if (data['quality'] is String) 'output_quality': data['quality'],
@@ -419,7 +421,7 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
           req.debugFile,
         );
         for (final image in whole.generatedImages) {
-          yield LLMResponseChunk(imagePart: image);
+          yield LLMResponseChunk(imagePart: image, metadata: whole.metadata);
         }
         yield LLMResponseChunk(textPart: whole.text, metadata: whole.metadata, isDone: true);
         return;
