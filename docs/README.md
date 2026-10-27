@@ -17,6 +17,10 @@ request a fresh code review or security review instead.
 
 ---
 
+Start with the [English README](../README.md) or [中文 README](../README_CN.md)
+for features and setup, and [TESTING.md](../TESTING.md) for verification commands
+and database/widget test helpers.
+
 ## Architecture notes
 
 Required reading before touching the subsystem each one covers.
@@ -137,6 +141,6 @@ re-sync; the checked-in playbook remains readable without installing them.
 
 ## Release notes
 
-[`release_notes/`](release_notes/) archives v1.1.0 – v2.3.0. From v2.4.0
-onwards the notes live on
+[`release_notes/`](release_notes/) contains historical notes for v1.1.0–v2.3.0
+and a v4.30.0 note. See the full release history on
 [GitHub Releases](https://github.com/Joycai/Joycai-Image-Ai-Toolkits/releases).

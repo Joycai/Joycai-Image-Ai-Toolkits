@@ -20,7 +20,7 @@ Rotating the token disconnects existing clients. Disabling the listener does not
 cancel already accepted image tasks.
 
 The endpoint is `http://127.0.0.1:39287/mcp` with `Authorization: Bearer <token>`.
-The `mcp_dart` 2.4.2 adapter uses its stable protocol profile: 2026-07-28 discovery
+The `mcp_dart` adapter uses its stable protocol profile: 2026-07-28 discovery
 and stateless calls, plus legacy initialization including 2025-11-25. The app uses
 ordinary asynchronous tool handles; no MCP tasks extension is advertised. The SDK
 owns protocol framing, schemas, lifecycle, headers and resource templates.
