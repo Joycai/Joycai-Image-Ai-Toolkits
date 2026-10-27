@@ -7,6 +7,7 @@ import '../../models/spec_rate.dart';
 import '../../services/billing/spec_billing.dart';
 import '../ui/app_button.dart';
 import '../ui/app_segmented_control.dart';
+import '../ui/app_text_field.dart';
 import 'fee_group_draft.dart';
 import 'spec_rate_table.dart';
 
@@ -42,7 +43,7 @@ class FeeGroupEditorFields extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             _Caption(l10n.groupName),
-            TextField(
+            AppTextField(
               controller: draft.nameCtrl,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
               decoration: _decoration(context).copyWith(hintText: l10n.feeGroupNamePlaceholder),
@@ -251,7 +252,7 @@ class FeeGroupEditorFields extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final invalid = draft.invalid(ctrl);
 
-    return TextField(
+    return AppTextField(
       controller: ctrl,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       style: textTheme.bodyMedium?.mono,

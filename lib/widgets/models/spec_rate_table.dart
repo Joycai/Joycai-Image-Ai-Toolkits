@@ -9,6 +9,7 @@ import '../../services/billing/spec_known_values.dart';
 import '../../services/llm/output_spec.dart';
 import '../glass/app_glass_menu.dart';
 import '../ui/app_button.dart';
+import '../ui/app_text_field.dart';
 import 'fee_group_summary.dart';
 
 /// Parses a price the way users type them, not just the way Dart does:
@@ -705,7 +706,7 @@ class _SpecConditionFieldState extends State<SpecConditionField> {
           bindings: {const SingleActivator(LogicalKeyboardKey.escape): _cancelCustom},
           child: SizedBox(
             height: AppSize.control,
-            child: TextField(
+            child: AppTextField(
               controller: _ctrl,
               autofocus: true,
               style: mono?.copyWith(color: scheme.onSurface),
@@ -809,7 +810,7 @@ class _PriceField extends StatelessWidget {
 
     return SizedBox(
       height: AppSize.control,
-      child: TextField(
+      child: AppTextField(
         controller: controller,
         keyboardType: integer
             ? TextInputType.number

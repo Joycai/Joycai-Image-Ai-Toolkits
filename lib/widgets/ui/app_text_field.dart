@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../core/design_tokens.dart';
 import 'app_field_size.dart';
@@ -31,6 +32,15 @@ class AppTextField extends StatefulWidget {
   final bool enabled;
   final TextInputType? keyboardType;
   final ValueChanged<String>? onChanged;
+  final ValueChanged<String>? onSubmitted;
+  final TapRegionCallback? onTapOutside;
+  final List<TextInputFormatter>? inputFormatters;
+  final bool autofocus;
+  final TextStyle? style;
+
+  /// A domain form may supply content slots and compact geometry while keeping
+  /// the shared focus ring. Unspecified decoration roles inherit the app theme.
+  final InputDecoration? decoration;
 
   /// Switches the field to [TextFormField] and wires this in — pass this
   /// only inside a [Form] with a [GlobalKey<FormState>], the same
@@ -52,6 +62,12 @@ class AppTextField extends StatefulWidget {
     this.enabled = true,
     this.keyboardType,
     this.onChanged,
+    this.onSubmitted,
+    this.onTapOutside,
+    this.inputFormatters,
+    this.autofocus = false,
+    this.style,
+    this.decoration,
     this.validator,
     this.prefixIcon,
     this.suffixIcon,
@@ -71,7 +87,7 @@ class _AppTextFieldState extends State<AppTextField> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final style = theme.textTheme.bodyMedium;
+    final style = widget.style ?? theme.textTheme.bodyMedium;
     // An obscured field showing more than one line makes no sense — an
     // obscured newline can't be told apart from an obscured character — so
     // this pins it to one regardless of what the caller passed.
@@ -82,6 +98,7 @@ class _AppTextFieldState extends State<AppTextField> {
     // and `constraints` bounds that whole box, so those fields keep the
     // theme's height rather than being clipped.
     final bool pinned =
+        widget.decoration == null &&
         widget.label == null &&
         widget.errorText == null &&
         effectiveMaxLines == 1 &&
@@ -99,18 +116,20 @@ class _AppTextFieldState extends State<AppTextField> {
     // Shape and borders come from the ambient inputDecorationTheme; only the
     // content slots — and, when pinned, the height — are named here, so this
     // field and the bare TextFields around the app cannot drift apart again.
-    final decoration = InputDecoration(
-      labelText: widget.label,
-      hintText: widget.hint,
-      errorText: widget.errorText,
-      prefixIcon: widget.prefixIcon,
-      suffixIcon: widget.suffixIcon,
-      isDense: pinned ? true : null,
-      constraints: pinned ? const BoxConstraints.tightFor(height: AppSize.control) : null,
-      contentPadding: padding,
-      prefixIconConstraints: pinned ? iconBox : null,
-      suffixIconConstraints: pinned ? iconBox : null,
-    );
+    final decoration =
+        widget.decoration ??
+        InputDecoration(
+          labelText: widget.label,
+          hintText: widget.hint,
+          errorText: widget.errorText,
+          prefixIcon: widget.prefixIcon,
+          suffixIcon: widget.suffixIcon,
+          isDense: pinned ? true : null,
+          constraints: pinned ? const BoxConstraints.tightFor(height: AppSize.control) : null,
+          contentPadding: padding,
+          prefixIconConstraints: pinned ? iconBox : null,
+          suffixIconConstraints: pinned ? iconBox : null,
+        );
     final TextAlignVertical? align = pinned ? TextAlignVertical.center : null;
 
     final Widget field = widget.validator != null
@@ -122,6 +141,10 @@ class _AppTextFieldState extends State<AppTextField> {
             enabled: widget.enabled,
             keyboardType: widget.keyboardType,
             onChanged: widget.onChanged,
+            onFieldSubmitted: widget.onSubmitted,
+            onTapOutside: widget.onTapOutside,
+            inputFormatters: widget.inputFormatters,
+            autofocus: widget.autofocus,
             validator: widget.validator,
             style: style,
             textAlignVertical: align,
@@ -135,6 +158,10 @@ class _AppTextFieldState extends State<AppTextField> {
             enabled: widget.enabled,
             keyboardType: widget.keyboardType,
             onChanged: widget.onChanged,
+            onSubmitted: widget.onSubmitted,
+            onTapOutside: widget.onTapOutside,
+            inputFormatters: widget.inputFormatters,
+            autofocus: widget.autofocus,
             style: style,
             textAlignVertical: align,
             decoration: decoration,
