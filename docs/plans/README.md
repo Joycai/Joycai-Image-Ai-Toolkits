@@ -509,3 +509,28 @@ Linux 构建没装 libsecret、最小桌面常无 keyring；便携模式下钥�
   Explorer restart recovery. Behavior is documented in the UI design workflow.
 - Shared service tests cover both platforms. Native Windows build/visual checks
   remain to be run on Windows (implementation developed on macOS).
+
+
+### MiniMax H3 family and multimodal references (2026-10-27)
+
+- Split cloud H3 / Highspeed / Lite / Max profiles, including resolution,
+  duration, Lite reference ratio and Max prompt expansion. Discover all four
+  on both official MiniMax channel types; keep local H3-Base separate.
+- Added persisted video/audio reference roles and workbench file selection,
+  with independent removal and unsupported-route diagnostics in four locales.
+  Frame ratios are visibly fixed; reference limits are nine images, three
+  videos, three audio files and twelve combined.
+- Validate prompt, role counts, actual media metadata, per-file and combined
+  durations, codecs and final JSON byte size before POST. Local synthetic
+  MP4/WAV/MP3 fixtures and loopback transport tests exercise valid/invalid paths.
+- Durable facts and limitations: `docs/api/minimax.md` and
+  `docs/architecture/generation-parameters.md`; UI rationale and evidence:
+  `docs/architecture/ui-design-workflow.md`. Construction brief retired.
+- Verified final format (874 files, zero changes), analyze (No issues found),
+  and full non-screenshot tests (3348 passed, 9 skipped). Rendered parameter
+  and reference views at 390/834/1024/1440, both themes and four locales;
+  inspected representative widths/themes and Japanese/Traditional Chinese
+  labels, plus mobile reference controls after scrolling. No overflow reported.
+- No paid API calls or native Windows/mobile device verification. HEIC/HEIF
+  inspection depends on host decoding support. URL/mm_file input UI,
+  Context-IR and regeneration remain outside this implementation scope.

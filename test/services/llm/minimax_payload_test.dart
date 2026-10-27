@@ -227,12 +227,12 @@ void main() {
     test('the text item is always present and always first', () {
       final body = buildMiniMaxVideoPayload(
         modelId: 'MiniMax-H3',
-        prompt: '',
+        prompt: 'animate',
         media: const [MiniMaxVideoMedia(MiniMaxVideoRole.firstFrame, 'data:image/png;base64,A')],
       );
       // Exactly one text item is mandatory upstream even for a pure
-      // image-to-video request, so an empty prompt is still a text item.
-      expect(content(body).first, {'type': 'text', 'text': ''});
+      // image-to-video request; its text must be nonempty.
+      expect(content(body).first, {'type': 'text', 'text': 'animate'});
       expect(content(body).where((c) => c['type'] == 'text'), hasLength(1));
     });
 
@@ -273,18 +273,6 @@ void main() {
       final bare = buildMiniMaxVideoPayload(modelId: 'MiniMax-H3', prompt: 'p', media: const []);
       expect(bare['resolution'], '768P');
       expect(bare['duration'], 5);
-
-      // The capability table carries MiniMax's own spelling; the builder
-      // still accepts either case, because the value round-trips through
-      // saved task parameters and a stored lowercase one must keep working.
-      expect(minimaxVideoResolution(const {'resolution': '2K'}), '2K');
-      expect(minimaxVideoResolution(const {'resolution': '768P'}), '768P');
-      expect(minimaxVideoResolution(const {'resolution': '2k'}), '2K');
-      expect(minimaxVideoResolution(const {'resolution': '768p'}), '768P');
-      // An unrecognized tier (a shared 1080p dropdown, say) falls to the
-      // cheaper of the two rather than 400ing.
-      expect(minimaxVideoResolution(const {'resolution': '1080p'}), '768P');
-      expect(minimaxVideoResolution(null), '768P');
     });
 
     test('duration is clamped into the documented 4-15s window', () {
@@ -328,37 +316,6 @@ void main() {
   });
 
   group('video media exclusion', () {
-    test('frames win over reference material when both are supplied', () {
-      const media = [
-        MiniMaxVideoMedia(MiniMaxVideoRole.referenceImage, 'r1'),
-        MiniMaxVideoMedia(MiniMaxVideoRole.firstFrame, 'f'),
-        MiniMaxVideoMedia(MiniMaxVideoRole.referenceImage, 'r2'),
-      ];
-      final (kept, dropped) = partitionMiniMaxVideoMedia(media);
-      expect(kept.map((m) => m.url), ['f']);
-      expect(dropped.map((m) => m.url), ['r1', 'r2']);
-    });
-
-    test('a pure reference request keeps everything', () {
-      const media = [
-        MiniMaxVideoMedia(MiniMaxVideoRole.referenceImage, 'r1'),
-        MiniMaxVideoMedia(MiniMaxVideoRole.referenceImage, 'r2'),
-      ];
-      final (kept, dropped) = partitionMiniMaxVideoMedia(media);
-      expect(kept, hasLength(2));
-      expect(dropped, isEmpty);
-    });
-
-    test('a last frame counts as a frame, not as reference material', () {
-      const media = [
-        MiniMaxVideoMedia(MiniMaxVideoRole.lastFrame, 'l'),
-        MiniMaxVideoMedia(MiniMaxVideoRole.referenceImage, 'r'),
-      ];
-      final (kept, dropped) = partitionMiniMaxVideoMedia(media);
-      expect(kept.map((m) => m.url), ['l']);
-      expect(dropped.map((m) => m.url), ['r']);
-    });
-
     test('only the two frame roles count as frames', () {
       // Spelled positively in the enum so a future reference_video /
       // reference_audio defaults to the reference side. An exclusion test
@@ -368,12 +325,6 @@ void main() {
       expect(MiniMaxVideoRole.referenceImage.isFrame, isFalse);
       expect(MiniMaxVideoRole.values.where((r) => r.isFrame), hasLength(2));
     });
-
-    test('nothing in, nothing out', () {
-      final (kept, dropped) = partitionMiniMaxVideoMedia(const []);
-      expect(kept, isEmpty);
-      expect(dropped, isEmpty);
-    });
   });
 
   group('debug log redaction', () {
@@ -382,7 +333,7 @@ void main() {
         modelId: 'MiniMax-H3',
         prompt: 'p',
         media: const [
-          MiniMaxVideoMedia(MiniMaxVideoRole.firstFrame, 'data:image/png;base64,AAAA'),
+          MiniMaxVideoMedia(MiniMaxVideoRole.referenceImage, 'data:image/png;base64,AAAA'),
           MiniMaxVideoMedia(MiniMaxVideoRole.referenceImage, 'https://example/img.png'),
         ],
       );
@@ -394,7 +345,7 @@ void main() {
       expect(items[1]['image_url'], {'url': '[base64 image_url]'});
       expect(items[2]['image_url'], {'url': 'https://example/img.png'});
       // Roles and types survive redaction — the log is for reading.
-      expect(items[1]['role'], 'first_frame');
+      expect(items[1]['role'], 'reference_image');
       expect(items[2]['role'], 'reference_image');
       // Redaction must not disturb anything else in the body.
       expect(logged['duration'], body['duration']);

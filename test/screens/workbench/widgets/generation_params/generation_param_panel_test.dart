@@ -74,6 +74,36 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('Lite frames display fixed adaptive and preserve the reference draft', (
+    tester,
+  ) async {
+    final caps = ModelCapabilities.forModel('MiniMax-H3-Lite');
+    final schema = GenerationSchema(
+      protocol: WireProtocol.minimaxVideo,
+      capabilities: caps,
+      profileId: caps.profileId,
+    );
+    Future<void> show(List<GenerationMedia> media) => tester.pumpWidget(
+      host(
+        GenerationParamPanel(
+          specs: caps.videoParams,
+          video: true,
+          schema: schema,
+          media: media,
+          valueOf: (spec) => spec.key == 'aspectRatio' ? '9:16' : spec.defaultValue,
+          onChanged: (_, _) => fail('A fixed field must not edit the draft'),
+        ),
+      ),
+    );
+    await show(const [GenerationMedia(GenerationMediaRole.lastFrame, 'last.png')]);
+    expect(find.text('adaptive'), findsOneWidget);
+    expect(find.text('The frame image determines the output aspect ratio.'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await show(const []);
+    expect(find.text('9:16'), findsOneWidget);
+    expect(find.text('The frame image determines the output aspect ratio.'), findsNothing);
+  });
+
   test('registry covers every declared editor', () {
     expect(ParamEditorRegistry.standard.builders.keys, containsAll(ParamControl.values));
   });

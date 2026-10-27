@@ -1391,13 +1391,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get generationConflictingMedia =>
-      'Use frames or reference images for this request. Remove the conflicting inputs.';
+      'Use frames or reference media for this request. Remove the conflicting inputs.';
 
   @override
   String get generationSingleSource => 'This mode needs exactly one source image.';
 
   @override
-  String get generationMediaLimit => 'Too many input or output images for this request.';
+  String get generationMediaLimit => 'Too many input or output media items for this request.';
 
   @override
   String get generationDuplicateFrame => 'Use one image for each frame slot.';
@@ -1410,7 +1410,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'The saved value is unavailable here; the displayed default will be used.';
 
   @override
-  String get generationUnreadableMedia => 'An input image cannot be read. Select it again.';
+  String get generationUnreadableMedia => 'An input file cannot be read. Select it again.';
 
   @override
   String get generationProfile => 'Generation profile';
@@ -1434,6 +1434,41 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get generationTransparentSource =>
       'Select one source image with an alpha channel for transparent editing.';
+
+  @override
+  String get generationReferenceMedia => 'Reference video / audio';
+
+  @override
+  String get generationReferenceMediaHint =>
+      'Up to 9 images, 3 videos and 3 audio files; 12 files total. Each clip: 2–15 s; videos and audio each total at most 15 s.';
+
+  @override
+  String get generationAddReferenceVideo => 'Add video';
+
+  @override
+  String get generationAddReferenceAudio => 'Add audio';
+
+  @override
+  String get generationUnsupportedReferenceMedia =>
+      'This model does not support video/audio references. Remove them to continue.';
+
+  @override
+  String get generationVideoPromptLength => 'Enter a nonempty prompt of at most 7000 characters.';
+
+  @override
+  String get generationFrameRatio => 'The frame image determines the output aspect ratio.';
+
+  @override
+  String get paramPromptExpansionMode => 'Prompt expansion';
+
+  @override
+  String get promptExpansionDisabled => 'Disabled';
+
+  @override
+  String get promptExpansionBalanced => 'Balanced';
+
+  @override
+  String get promptExpansionQuality => 'Quality priority';
 
   @override
   String get usageTokenBreakdown => 'Token breakdown';

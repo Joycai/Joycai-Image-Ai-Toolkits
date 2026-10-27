@@ -122,6 +122,7 @@ extension _ModelSection on _VideoConfigPanelState {
             GenerationParamPanel(
               specs: caps.videoParams,
               video: true,
+              media: context.watch<WorkbenchUIState>().videoGenerationMedia,
               storedValueOf: (key) => appState.storedVideoParam(modelInChannel, key),
               modelName: modelInChannel.modelName,
               valueOf: (spec) => appState.getVideoParam(modelInChannel, spec),

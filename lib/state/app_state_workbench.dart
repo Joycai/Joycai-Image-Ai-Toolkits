@@ -143,14 +143,7 @@ extension AppStateWorkbench on AppState {
       _imageParamStore['$base.mode'] ?? _imageParamStore['${_familyKey(model)}.imageTask'],
     );
     final media = video
-        ? <GenerationMedia>[
-            if (workbenchUIState.videoFirstFrame case final image?)
-              GenerationMedia(GenerationMediaRole.firstFrame, image.path),
-            if (workbenchUIState.videoLastFrame case final image?)
-              GenerationMedia(GenerationMediaRole.lastFrame, image.path),
-            for (final image in workbenchUIState.videoReferenceImages)
-              GenerationMedia(GenerationMediaRole.reference, image.path),
-          ]
+        ? workbenchUIState.videoGenerationMedia
         : [
             for (final image in galleryState.selectedImages)
               GenerationMedia(GenerationMediaRole.reference, image.path),

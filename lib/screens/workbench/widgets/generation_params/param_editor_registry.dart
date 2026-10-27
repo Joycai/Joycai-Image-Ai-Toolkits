@@ -70,6 +70,10 @@ Widget _dropdown(BuildContext context, ParamEditorData data) => AppDropdown<Stri
   size: AppFieldSize.regular,
   value: data.legacyValue,
   items: [
+    // Operation-fixed values may be outside the editable choices (Lite
+    // references require a fixed ratio, but its frame mode is adaptive).
+    if (!data.param.legacy.options.any((o) => o.value == data.legacyValue))
+      AppDropdownItem(value: data.legacyValue, label: data.optionLabel(data.legacyValue)),
     for (final option in data.param.legacy.options)
       AppDropdownItem(value: option.value, label: data.optionLabel(option.value)),
   ],

@@ -140,3 +140,21 @@ Unfinished/unsettled jobs are protected by queue and repository rules, not merel
 a disabled menu item. Clear-all explains the protection. Design authority is the
 maintained specification and current controls, with four-locale renders at
 390/834/1024/1440 in both themes; no new visual system or animation was introduced.
+
+### H3 reference inputs (2026-10-27)
+
+Reference file actions use `AppButton.secondary`, sharing the design system's
+label/icon geometry and themed outline. File-row removal intentionally uses
+`IconButton` under the global `iconButtonTheme`: `AppIconButton` is reserved
+for standalone boxed actions, not icons inside rows or cards. Parameter editors
+use `AppDropdown` / `AppSegmentedControl`; duration sliders inherit the global
+`SliderTheme` (with a local overlay radius only).
+
+The video workbench retains the existing model/frame/image-reference cards and
+adds a compact video/audio reference card only on supported routes (or while
+parked files need removal). Buttons wrap, filenames truncate with independent
+remove actions, and the existing scrolling column/drawer/sheet keeps the primary
+action reachable. Frame-mode aspect ratio is fixed with an explanatory caption;
+Lite reference mode offers only fixed ratios. Four locales cover controls,
+limits and unsupported-model diagnostics. Maintained design specs and baseline
+Flutter renders were used, without historical design-service originals.

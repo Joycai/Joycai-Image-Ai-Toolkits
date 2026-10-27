@@ -1345,13 +1345,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get generationMissingFirstFrame => '最終フレームを使う前に開始フレームを追加してください。';
 
   @override
-  String get generationConflictingMedia => 'フレームか参照画像のどちらかを使用し、競合する入力を削除してください。';
+  String get generationConflictingMedia => 'フレームまたは参照素材のどちらかを使用し、競合する入力を削除してください。';
 
   @override
   String get generationSingleSource => 'このモードには元画像が1枚必要です。';
 
   @override
-  String get generationMediaLimit => '入力または出力画像の数が上限を超えています。';
+  String get generationMediaLimit => 'このリクエストの入力または出力素材の数が上限を超えています。';
 
   @override
   String get generationDuplicateFrame => '各フレームには画像を1枚だけ使用してください。';
@@ -1363,7 +1363,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get generationStoredReset => '保存した値は使用できません。表示中の既定値を使用します。';
 
   @override
-  String get generationUnreadableMedia => '入力画像を読み込めません。選択し直してください。';
+  String get generationUnreadableMedia => '入力ファイルを読み込めません。選択し直してください。';
 
   @override
   String get generationProfile => '生成プロファイル';
@@ -1386,6 +1386,40 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get generationTransparentSource => '透明編集にはアルファチャンネルを持つ元画像を1枚選択してください。';
+
+  @override
+  String get generationReferenceMedia => '参照動画・音声';
+
+  @override
+  String get generationReferenceMediaHint =>
+      '画像9枚、動画3本、音声3本まで、合計12ファイル。各クリップ2〜15秒、動画・音声はそれぞれ合計15秒以内。';
+
+  @override
+  String get generationAddReferenceVideo => '動画を追加';
+
+  @override
+  String get generationAddReferenceAudio => '音声を追加';
+
+  @override
+  String get generationUnsupportedReferenceMedia => 'このモデルは動画・音声参照に対応していません。削除して続行してください。';
+
+  @override
+  String get generationVideoPromptLength => '7000文字以内の空でないプロンプトを入力してください。';
+
+  @override
+  String get generationFrameRatio => '出力の縦横比はフレーム画像に従います。';
+
+  @override
+  String get paramPromptExpansionMode => 'プロンプト拡張';
+
+  @override
+  String get promptExpansionDisabled => '無効';
+
+  @override
+  String get promptExpansionBalanced => 'バランス';
+
+  @override
+  String get promptExpansionQuality => '品質優先';
 
   @override
   String get usageTokenBreakdown => 'トークン内訳';

@@ -32,7 +32,7 @@ class GenerationProfiles {
     WireProtocol.dashscopeImagesAsync: ['dashscopeWanImage', 'dashscopeWanImagePro'],
     WireProtocol.dashscopeVideo: ['dashscopeWanVideo'],
     WireProtocol.minimaxImages: ['minimaxImage'],
-    WireProtocol.minimaxVideo: ['minimaxVideo'],
+    WireProtocol.minimaxVideo: ['minimaxVideo', 'minimaxHighspeed', 'minimaxLite', 'minimaxMax'],
     WireProtocol.minimaxH3BaseVideo: ['minimaxH3Base'],
     WireProtocol.arkImages: [
       'seedreamGeneric',

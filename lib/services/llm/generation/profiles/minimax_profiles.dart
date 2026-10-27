@@ -56,46 +56,13 @@ const _minimaxPromptOptimizer = ParamSpec(
   options: [ParamOption('not_set'), ParamOption('on'), ParamOption('off')],
 );
 
-/// `MiniMax-H3` — the native `/v2/video_generation` task surface
-/// (docs/api/minimax.md §5). Overrides the shared Veo dropdowns because
-/// MiniMax's vocabulary matches neither:
-///
-///  * `resolution` — **two** tiers, `768P` and `2K`. Not the 480/720/1080
-///    ladder every other family uses, so the options carry MiniMax's own
-///    spelling rather than being bent into the shared one; the payload
-///    builder normalizes case and falls back to the cheaper tier for
-///    anything it does not recognize.
-///  * `aspectRatio` — `adaptive` (upstream's default, meaning "follow the
-///    input media") plus six fixed ratios. A text-only request has nothing
-///    to adapt to and upstream demands an explicit value; the payload
-///    builder substitutes 16:9 in that case.
-///  * `seconds` — 4–15 s. Both `resolution` and `duration` are **required**
-///    upstream with no server-side default, which is why neither can be
-///    left unset the way an optional knob would be.
-///
-/// `maxReferenceImages: 3` is a client-side ceiling, not a documented one:
-/// MiniMax states no count for `reference_image`, only a 64 MB cap on the
-/// whole request against a 30 MB cap per image. Three base64 images is the
-/// most that reliably fits.
+/// Cloud H3 variants, verified against the official V2 create API 2026-10-27.
+/// Keep model-specific vocabulary here; encoders consume the resolved profile.
 const _minimaxVideo = ModelCapabilities(
   isVideoGenerator: true,
-  maxReferenceImages: 3,
+  maxReferenceImages: 9,
   videoParams: [
-    ParamSpec(
-      key: 'aspectRatio',
-      labelKey: 'aspectRatio',
-      control: ParamControl.dropdown,
-      defaultValue: 'adaptive',
-      options: [
-        ParamOption('adaptive'),
-        ParamOption('21:9'),
-        ParamOption('16:9'),
-        ParamOption('4:3'),
-        ParamOption('1:1'),
-        ParamOption('3:4'),
-        ParamOption('9:16'),
-      ],
-    ),
+    _minimaxCloudRatio,
     ParamSpec(
       key: 'resolution',
       labelKey: 'resolution',
@@ -116,6 +83,119 @@ const _minimaxVideo = ModelCapabilities(
   ],
 );
 
+const _minimaxHighspeed = ModelCapabilities(
+  isVideoGenerator: true,
+  maxReferenceImages: 9,
+  videoParams: [
+    _minimaxCloudRatio,
+    ParamSpec(
+      key: 'resolution',
+      labelKey: 'resolution',
+      control: ParamControl.segmented,
+      defaultValue: '768P',
+      options: [ParamOption('768P')],
+    ),
+    ParamSpec(
+      key: 'seconds',
+      valueType: ParamValueType.integer,
+      labelKey: 'videoSeconds',
+      control: ParamControl.slider,
+      defaultValue: '5',
+      options: [],
+      min: 4,
+      max: 15,
+    ),
+  ],
+);
+
+const _minimaxLite = ModelCapabilities(
+  isVideoGenerator: true,
+  maxReferenceImages: 9,
+  videoParams: [
+    _minimaxFixedRatio,
+    ParamSpec(
+      key: 'resolution',
+      labelKey: 'resolution',
+      control: ParamControl.segmented,
+      defaultValue: '768P',
+      options: [ParamOption('480P'), ParamOption('768P')],
+    ),
+    ParamSpec(
+      key: 'seconds',
+      valueType: ParamValueType.integer,
+      labelKey: 'videoSeconds',
+      control: ParamControl.slider,
+      defaultValue: '5',
+      options: [],
+      min: 4,
+      max: 15,
+    ),
+  ],
+);
+
+const _minimaxMax = ModelCapabilities(
+  isVideoGenerator: true,
+  maxReferenceImages: 9,
+  videoParams: [
+    _minimaxCloudRatio,
+    ParamSpec(
+      key: 'resolution',
+      labelKey: 'resolution',
+      control: ParamControl.segmented,
+      defaultValue: '768P',
+      options: [ParamOption('480P'), ParamOption('768P')],
+    ),
+    ParamSpec(
+      key: 'seconds',
+      valueType: ParamValueType.integer,
+      labelKey: 'videoSeconds',
+      control: ParamControl.slider,
+      defaultValue: '5',
+      options: [],
+      min: 5,
+      max: 15,
+    ),
+    ParamSpec(
+      key: 'promptExpansionMode',
+      labelKey: 'promptExpansionMode',
+      control: ParamControl.dropdown,
+      defaultValue: 'balanced',
+      options: [ParamOption('disabled'), ParamOption('balanced'), ParamOption('quality')],
+    ),
+  ],
+);
+
+const _minimaxCloudRatio = ParamSpec(
+  key: 'aspectRatio',
+  labelKey: 'aspectRatio',
+  control: ParamControl.dropdown,
+  defaultValue: 'adaptive',
+  options: [
+    ParamOption('adaptive'),
+    ParamOption('21:9'),
+    ParamOption('16:9'),
+    ParamOption('4:3'),
+    ParamOption('1:1'),
+    ParamOption('3:4'),
+    ParamOption('9:16'),
+  ],
+);
+
+const _minimaxFixedRatio = ParamSpec(
+  key: 'aspectRatio',
+  labelKey: 'aspectRatio',
+  control: ParamControl.dropdown,
+  defaultValue: '16:9',
+  options: [
+    ParamOption('21:9'),
+    ParamOption('16:9'),
+    ParamOption('4:3'),
+    ParamOption('1:1'),
+    ParamOption('3:4'),
+    ParamOption('9:16'),
+  ],
+);
+
 /// `MiniMaxAI/MiniMax-H3` — the self-hosted SGLang H3-Base surface
 /// (docs/api/minimax.md §8). Diverges from [_minimaxVideo] in exactly the
 /// ways the local wire diverges from the cloud one:
@@ -128,9 +208,8 @@ const _minimaxVideo = ModelCapabilities(
 ///    translates it to H3-Base's `auto`.
 ///  * `seconds` — the same 4–15 s window as the cloud surface.
 ///
-/// `maxReferenceImages: 3` mirrors the cloud table's client-side ceiling:
-/// references travel as server-local file paths here, so size is no
-/// constraint, but the ref2va task documents no count of its own either.
+/// The local checkpoint keeps its existing three-reference ceiling; the
+/// cloud API's nine-image contract does not establish local checkpoint limits.
 const _minimaxH3Base = ModelCapabilities(
   isVideoGenerator: true,
   maxReferenceImages: 3,

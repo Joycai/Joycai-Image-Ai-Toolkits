@@ -1340,13 +1340,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get generationMissingFirstFrame => '使用尾帧前请先添加首帧。';
 
   @override
-  String get generationConflictingMedia => '此请求只能使用帧或参考图片，请移除冲突的输入。';
+  String get generationConflictingMedia => '请选择首尾帧或参考素材，移除冲突的输入。';
 
   @override
   String get generationSingleSource => '此模式需要且只能使用一张源图。';
 
   @override
-  String get generationMediaLimit => '此请求的输入或输出图片数量超出上限。';
+  String get generationMediaLimit => '此请求的输入或输出素材数量超出限制。';
 
   @override
   String get generationDuplicateFrame => '每个帧位置只能使用一张图片。';
@@ -1358,7 +1358,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get generationStoredReset => '此处无法使用已保存的值，将使用显示的默认值。';
 
   @override
-  String get generationUnreadableMedia => '无法读取输入图片，请重新选择。';
+  String get generationUnreadableMedia => '无法读取输入文件，请重新选择。';
 
   @override
   String get generationProfile => '生成能力配置';
@@ -1380,6 +1380,40 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get generationTransparentSource => '透明编辑需要一张带透明通道的原图。';
+
+  @override
+  String get generationReferenceMedia => '参考视频／音频';
+
+  @override
+  String get generationReferenceMediaHint =>
+      '最多 9 张图片、3 段视频、3 段音频，合计最多 12 个文件。每段 2–15 秒；视频和音频各自总时长不超过 15 秒。';
+
+  @override
+  String get generationAddReferenceVideo => '添加视频';
+
+  @override
+  String get generationAddReferenceAudio => '添加音频';
+
+  @override
+  String get generationUnsupportedReferenceMedia => '此模型不支持视频／音频参考，请移除后继续。';
+
+  @override
+  String get generationVideoPromptLength => '请输入非空提示词，最多 7000 个字符。';
+
+  @override
+  String get generationFrameRatio => '输出比例由首尾帧图片决定。';
+
+  @override
+  String get paramPromptExpansionMode => '提示词扩写';
+
+  @override
+  String get promptExpansionDisabled => '关闭';
+
+  @override
+  String get promptExpansionBalanced => '均衡';
+
+  @override
+  String get promptExpansionQuality => '质量优先';
 
   @override
   String get usageTokenBreakdown => 'Token 构成';
@@ -7426,13 +7460,13 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get generationMissingFirstFrame => '使用尾幀前請先新增首幀。';
 
   @override
-  String get generationConflictingMedia => '此請求只能使用影格或參考圖片，請移除衝突的輸入。';
+  String get generationConflictingMedia => '請選擇首尾幀或參考素材，移除衝突的輸入。';
 
   @override
   String get generationSingleSource => '此模式需要且只能使用一張來源圖片。';
 
   @override
-  String get generationMediaLimit => '此請求的輸入或輸出圖片數量超出上限。';
+  String get generationMediaLimit => '此請求的輸入或輸出素材數量超出限制。';
 
   @override
   String get generationDuplicateFrame => '每個影格位置只能使用一張圖片。';
@@ -7444,7 +7478,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get generationStoredReset => '此處無法使用已儲存的值，將使用顯示的預設值。';
 
   @override
-  String get generationUnreadableMedia => '無法讀取輸入圖片，請重新選擇。';
+  String get generationUnreadableMedia => '無法讀取輸入檔案，請重新選擇。';
 
   @override
   String get generationProfile => '生成能力設定';
@@ -7466,6 +7500,40 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get generationTransparentSource => '透明編輯需要一張帶透明通道的原圖。';
+
+  @override
+  String get generationReferenceMedia => '參考影片／音訊';
+
+  @override
+  String get generationReferenceMediaHint =>
+      '最多 9 張圖片、3 段影片、3 段音訊，合計最多 12 個檔案。每段 2–15 秒；影片和音訊各自總時長不超過 15 秒。';
+
+  @override
+  String get generationAddReferenceVideo => '新增影片';
+
+  @override
+  String get generationAddReferenceAudio => '新增音訊';
+
+  @override
+  String get generationUnsupportedReferenceMedia => '此模型不支援影片／音訊參考，請移除後繼續。';
+
+  @override
+  String get generationVideoPromptLength => '請輸入非空提示詞，最多 7000 個字元。';
+
+  @override
+  String get generationFrameRatio => '輸出比例由首尾幀圖片決定。';
+
+  @override
+  String get paramPromptExpansionMode => '提示詞擴寫';
+
+  @override
+  String get promptExpansionDisabled => '關閉';
+
+  @override
+  String get promptExpansionBalanced => '均衡';
+
+  @override
+  String get promptExpansionQuality => '品質優先';
 
   @override
   String get usageTokenBreakdown => 'Token 組成';

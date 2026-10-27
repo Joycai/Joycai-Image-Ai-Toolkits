@@ -1,11 +1,11 @@
 import '../llm_types.dart';
+import '../model_capabilities.dart';
+import '../model_descriptor.dart';
 import 'protocol.dart';
 
 /// Pure request/response helpers for MiniMax's native surfaces.
 ///
-/// IO-free on purpose: the repo has no HTTP mock setup, so the only way these
-/// rules get pinned by tests is to keep them out of the protocol's request
-/// path. `dashscope_payload.dart` and `gemini_payload.dart` are the same
+/// IO-free request rules, tested independently of transport. `dashscope_payload.dart` and `gemini_payload.dart` are the same
 /// arrangement.
 ///
 /// The wire facts these encode are recorded in `docs/api/minimax.md`.
@@ -208,7 +208,9 @@ void throwIfMiniMaxImagesFailed(Map<String, dynamic> data) {
 enum MiniMaxVideoRole {
   firstFrame('first_frame', 'image_url'),
   lastFrame('last_frame', 'image_url'),
-  referenceImage('reference_image', 'image_url');
+  referenceImage('reference_image', 'image_url'),
+  referenceVideo('reference_video', 'video_url'),
+  referenceAudio('reference_audio', 'audio_url');
 
   final String role;
   final String type;
@@ -218,12 +220,7 @@ enum MiniMaxVideoRole {
   /// frame) rather than the *reference* one. Upstream rejects a request that
   /// mixes the two.
   ///
-  /// Spelled as a positive list rather than "not a reference image": MiniMax
-  /// documents five roles and this enum implements three, so an exclusion
-  /// test would silently classify a future `reference_video` /
-  /// `reference_audio` as a frame and invert the rule this predicate exists
-  /// to enforce. A new role now defaults to the reference side, which is the
-  /// safe one.
+  /// Audio/video references remain on the reference side of the exclusion.
   bool get isFrame => this == MiniMaxVideoRole.firstFrame || this == MiniMaxVideoRole.lastFrame;
 }
 
@@ -237,15 +234,6 @@ class MiniMaxVideoMedia {
   const MiniMaxVideoMedia(this.role, this.url);
 }
 
-/// MiniMax's spelling of the shared `resolution` option: `768P` or `2K`.
-///
-/// Required upstream with no server-side default, so this never returns null —
-/// a missing or unrecognized option resolves to `768P`, the cheaper tier.
-String minimaxVideoResolution(Map<String, dynamic>? options) {
-  final raw = readStringOption(options, 'resolution')?.toLowerCase() ?? '';
-  return raw.contains('2k') ? '2K' : '768P';
-}
-
 /// MiniMax's `duration`, clamped into the documented 4–15 s window.
 ///
 /// Also required with no server-side default, hence the 5 s fallback rather
@@ -257,29 +245,51 @@ int minimaxVideoDuration(Map<String, dynamic>? options) {
 
 /// The request body for one video generation task.
 ///
-/// [media] must already be filtered for the image-based/reference mutual
-/// exclusion — see [partitionMiniMaxVideoMedia], which is where that rule
-/// lives so it can be tested without encoding an image.
+/// Invalid input is rejected rather than silently dropping references.
 Map<String, dynamic> buildMiniMaxVideoPayload({
   required String modelId,
   required String prompt,
   required List<MiniMaxVideoMedia> media,
   Map<String, dynamic>? options,
+  ModelCapabilities? capabilities,
 }) {
-  final aspect = readStringOption(options, 'aspectRatio');
-  // `adaptive` means "take the ratio from the input media", so a text-only
-  // request has nothing to adapt to and upstream demands an explicit value.
-  // Substituting the most common landscape ratio beats a 400 the user can
-  // only fix by discovering the coupling themselves.
-  final ratio = (aspect == null || aspect == 'not_set' || aspect == 'adaptive')
-      ? (media.isEmpty ? '16:9' : 'adaptive')
-      : aspect;
+  final caps = capabilities ?? ModelDescriptor.of(modelId).capabilities;
+  if (prompt.trim().isEmpty || prompt.runes.length > 7000) {
+    throw LLMApiException('Generation input invalid: videoPromptLength. Nothing was sent.');
+  }
+  final counts = {
+    for (final role in MiniMaxVideoRole.values) role: media.where((m) => m.role == role).length,
+  };
+  final frames = counts[MiniMaxVideoRole.firstFrame]! + counts[MiniMaxVideoRole.lastFrame]!;
+  if (counts[MiniMaxVideoRole.firstFrame]! > 1 ||
+      counts[MiniMaxVideoRole.lastFrame]! > 1 ||
+      counts[MiniMaxVideoRole.referenceImage]! > 9 ||
+      counts[MiniMaxVideoRole.referenceVideo]! > 3 ||
+      counts[MiniMaxVideoRole.referenceAudio]! > 3 ||
+      media.length > 12 ||
+      (frames > 0 && frames != media.length)) {
+    throw LLMApiException(
+      'Generation input invalid: conflictingMedia or tooManyReferences. Nothing was sent.',
+    );
+  }
+  String option(String key) {
+    final spec = caps.videoParams.firstWhere((p) => p.key == key);
+    final raw = readStringOption(options, key) ?? spec.defaultValue;
+    if (!spec.isValid(raw)) {
+      throw LLMApiException('Generation input invalid: $key. Nothing was sent.');
+    }
+    return raw;
+  }
+
+  final resolution = option('resolution');
+  final duration = int.parse(option('seconds'));
+  final ratio = frames > 0 ? 'adaptive' : option('aspectRatio');
 
   return {
     'model': modelId,
     'content': [
       // Exactly one text item is mandatory and it must be present even for a
-      // pure image-to-video request — an empty prompt is still a text item.
+      // image-to-video request — the prompt must be nonempty.
       {'type': 'text', 'text': prompt},
       for (final item in media)
         {
@@ -299,27 +309,12 @@ Map<String, dynamic> buildMiniMaxVideoPayload({
           'role': item.role.role,
         },
     ],
-    'resolution': minimaxVideoResolution(options),
-    'duration': minimaxVideoDuration(options),
-    'ratio': ratio,
+    'resolution': resolution,
+    'duration': duration,
+    'ratio': media.isEmpty && ratio == 'adaptive' ? '16:9' : ratio,
+    if (caps.videoParams.any((p) => p.key == 'promptExpansionMode'))
+      'extra': {'prompt_expansion_mode': option('promptExpansionMode')},
   };
-}
-
-/// Split [media] into the items that will be sent and the ones dropped by
-/// MiniMax's image-based/reference mutual exclusion.
-///
-/// The frames win when both are present: a first/last frame is a precise
-/// instruction the user placed deliberately, while reference images are
-/// supplementary. Returns the kept items first.
-(List<MiniMaxVideoMedia> kept, List<MiniMaxVideoMedia> dropped) partitionMiniMaxVideoMedia(
-  List<MiniMaxVideoMedia> media,
-) {
-  final hasFrame = media.any((m) => m.role.isFrame);
-  if (!hasFrame) return (media, const []);
-  return (
-    media.where((m) => m.role.isFrame).toList(),
-    media.where((m) => !m.role.isFrame).toList(),
-  );
 }
 
 /// The payload with base64 media replaced by a placeholder — a base64 image

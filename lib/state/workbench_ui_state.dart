@@ -12,6 +12,7 @@ import '../services/assistant/prompt_provenance.dart';
 import '../services/db/database_service.dart';
 import '../services/db/repositories/assistant_session_repository.dart';
 import '../services/db/repositories/task_repository.dart';
+import '../services/llm/generation/generation_schema.dart';
 
 /// How the comparator arranges the two images.
 ///
@@ -108,6 +109,41 @@ class WorkbenchUIState extends ChangeNotifier {
 
   // Video Generation State
   List<AppImage> videoReferenceImages = [];
+  List<String> _videoReferenceVideos = [];
+  List<String> _videoReferenceAudios = [];
+  List<String> get videoReferenceVideos => List.unmodifiable(_videoReferenceVideos);
+  List<String> get videoReferenceAudios => List.unmodifiable(_videoReferenceAudios);
+  List<GenerationMedia> get videoGenerationMedia => [
+    if (videoFirstFrame case final image?)
+      GenerationMedia(GenerationMediaRole.firstFrame, image.path),
+    if (videoLastFrame case final image?)
+      GenerationMedia(GenerationMediaRole.lastFrame, image.path),
+    for (final image in videoReferenceImages)
+      GenerationMedia(GenerationMediaRole.reference, image.path),
+    for (final path in _videoReferenceVideos)
+      GenerationMedia(GenerationMediaRole.referenceVideo, path),
+    for (final path in _videoReferenceAudios)
+      GenerationMedia(GenerationMediaRole.referenceAudio, path),
+  ];
+
+  void addVideoReferenceFiles(Iterable<String> paths, {required bool audio}) {
+    if (audio) {
+      _videoReferenceAudios = {..._videoReferenceAudios, ...paths}.toList();
+    } else {
+      _videoReferenceVideos = {..._videoReferenceVideos, ...paths}.toList();
+    }
+    notifyListeners();
+  }
+
+  void removeVideoReferenceFile(String path, {required bool audio}) {
+    if (audio) {
+      _videoReferenceAudios = _videoReferenceAudios.where((p) => p != path).toList();
+    } else {
+      _videoReferenceVideos = _videoReferenceVideos.where((p) => p != path).toList();
+    }
+    notifyListeners();
+  }
+
   AppImage? videoFirstFrame;
   AppImage? videoLastFrame;
   String? lastGeneratedVideoPath;

@@ -9,6 +9,8 @@ enum LLMReferenceType {
   asset,
   firstFrame,
   lastFrame,
+  referenceVideo,
+  referenceAudio,
 
   /// The model only looks at this attachment to describe it in text — it is
   /// never fed into image generation/editing. Eligible for lossy

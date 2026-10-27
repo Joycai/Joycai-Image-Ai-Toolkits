@@ -44,6 +44,10 @@ Map<String, dynamic> snapshotGenerationTask({
             GenerationMedia(GenerationMediaRole.firstFrame, path),
           if (options['lastFramePath'] case final String path)
             GenerationMedia(GenerationMediaRole.lastFrame, path),
+          for (final path in (options['referenceVideoPaths'] as List?) ?? [])
+            GenerationMedia(GenerationMediaRole.referenceVideo, path as String),
+          for (final path in (options['referenceAudioPaths'] as List?) ?? [])
+            GenerationMedia(GenerationMediaRole.referenceAudio, path as String),
           for (final path in (options['referenceImagePaths'] as List?) ?? [])
             GenerationMedia(GenerationMediaRole.reference, path as String),
         ]
@@ -63,7 +67,14 @@ Map<String, dynamic> snapshotGenerationTask({
     protocolId: schema.protocol?.id,
     profileId: schema.profileId,
   );
-  const mediaKeys = {'prompt', 'firstFramePath', 'lastFramePath', 'referenceImagePaths'};
+  const mediaKeys = {
+    'prompt',
+    'firstFramePath',
+    'lastFramePath',
+    'referenceImagePaths',
+    'referenceVideoPaths',
+    'referenceAudioPaths',
+  };
   return {
     for (final entry in options.entries)
       if (!mediaKeys.contains(entry.key) && !schema.params.any((p) => p.key == entry.key))

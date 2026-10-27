@@ -39,6 +39,8 @@ Future<Map<String, dynamic>?> validateGeneration(
       GenerationMedia(switch (attachment.referenceType) {
         LLMReferenceType.firstFrame => GenerationMediaRole.firstFrame,
         LLMReferenceType.lastFrame => GenerationMediaRole.lastFrame,
+        LLMReferenceType.referenceVideo => GenerationMediaRole.referenceVideo,
+        LLMReferenceType.referenceAudio => GenerationMediaRole.referenceAudio,
         _ => GenerationMediaRole.reference,
       }, attachment.path ?? ''),
   ];
@@ -87,13 +89,19 @@ Future<Map<String, dynamic>?> validateGeneration(
       'Generation snapshot does not match the submitted input. Nothing was sent.',
     );
   }
-  final diagnostics = schema.validate(effective, media);
+  final diagnostics = [
+    ...schema.validate(effective, media),
+    ...schema.validatePrompt(user?.content ?? ''),
+  ];
   if (diagnostics.isNotEmpty) {
     throw LLMApiException(
       'Generation input invalid: ${diagnostics.map((d) => d.code).join(', ')}. Nothing was sent.',
     );
   }
   for (final attachment in attachments) {
+    // The multimodal video wire owns bounded stat/read/probe/encode. Reading
+    // it here first would allocate an arbitrarily large file before its cap.
+    if (schema.contract.referenceAudioVideo) continue;
     final bytes = await readAttachmentBytes(attachment);
     if (bytes == null || bytes.isEmpty) {
       throw LLMApiException('Generation input invalid: unreadableMedia. Nothing was sent.');

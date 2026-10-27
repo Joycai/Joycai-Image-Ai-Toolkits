@@ -85,7 +85,7 @@ bool minimaxH3TempRefIsStale(
 
 /// Split [media] into the items that will be sent and the ones dropped by the
 /// keyframe/reference exclusivity rule — the same client-side rule the cloud
-/// surface applies (`partitionMiniMaxVideoMedia`), for the same reason: the
+/// surface enforces, for the same reason: the
 /// frames are a precise instruction the user placed deliberately, and the
 /// released H3-Base checkpoints serve one task variant per process, so a
 /// request mixing the two modalities has no shape the cookbook documents.

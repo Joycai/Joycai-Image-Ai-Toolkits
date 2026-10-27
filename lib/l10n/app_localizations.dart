@@ -2394,7 +2394,7 @@ abstract class AppLocalizations {
   /// No description provided for @generationConflictingMedia.
   ///
   /// In en, this message translates to:
-  /// **'Use frames or reference images for this request. Remove the conflicting inputs.'**
+  /// **'Use frames or reference media for this request. Remove the conflicting inputs.'**
   String get generationConflictingMedia;
 
   /// No description provided for @generationSingleSource.
@@ -2406,7 +2406,7 @@ abstract class AppLocalizations {
   /// No description provided for @generationMediaLimit.
   ///
   /// In en, this message translates to:
-  /// **'Too many input or output images for this request.'**
+  /// **'Too many input or output media items for this request.'**
   String get generationMediaLimit;
 
   /// No description provided for @generationDuplicateFrame.
@@ -2430,7 +2430,7 @@ abstract class AppLocalizations {
   /// No description provided for @generationUnreadableMedia.
   ///
   /// In en, this message translates to:
-  /// **'An input image cannot be read. Select it again.'**
+  /// **'An input file cannot be read. Select it again.'**
   String get generationUnreadableMedia;
 
   /// No description provided for @generationProfile.
@@ -2474,6 +2474,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Select one source image with an alpha channel for transparent editing.'**
   String get generationTransparentSource;
+
+  /// No description provided for @generationReferenceMedia.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference video / audio'**
+  String get generationReferenceMedia;
+
+  /// No description provided for @generationReferenceMediaHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to 9 images, 3 videos and 3 audio files; 12 files total. Each clip: 2–15 s; videos and audio each total at most 15 s.'**
+  String get generationReferenceMediaHint;
+
+  /// No description provided for @generationAddReferenceVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'Add video'**
+  String get generationAddReferenceVideo;
+
+  /// No description provided for @generationAddReferenceAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Add audio'**
+  String get generationAddReferenceAudio;
+
+  /// No description provided for @generationUnsupportedReferenceMedia.
+  ///
+  /// In en, this message translates to:
+  /// **'This model does not support video/audio references. Remove them to continue.'**
+  String get generationUnsupportedReferenceMedia;
+
+  /// No description provided for @generationVideoPromptLength.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a nonempty prompt of at most 7000 characters.'**
+  String get generationVideoPromptLength;
+
+  /// No description provided for @generationFrameRatio.
+  ///
+  /// In en, this message translates to:
+  /// **'The frame image determines the output aspect ratio.'**
+  String get generationFrameRatio;
+
+  /// No description provided for @paramPromptExpansionMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Prompt expansion'**
+  String get paramPromptExpansionMode;
+
+  /// No description provided for @promptExpansionDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Disabled'**
+  String get promptExpansionDisabled;
+
+  /// No description provided for @promptExpansionBalanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Balanced'**
+  String get promptExpansionBalanced;
+
+  /// No description provided for @promptExpansionQuality.
+  ///
+  /// In en, this message translates to:
+  /// **'Quality priority'**
+  String get promptExpansionQuality;
 
   /// No description provided for @usageTokenBreakdown.
   ///

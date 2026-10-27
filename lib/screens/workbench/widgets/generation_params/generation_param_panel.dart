@@ -5,7 +5,6 @@ import '../../../../l10n/app_localizations.dart';
 import '../../../../models/spec_rate.dart';
 import '../../../../services/llm/generation/generation_param.dart';
 import '../../../../services/llm/generation/generation_schema.dart';
-import '../../../../services/llm/generation/generation_value.dart';
 import '../../../../services/llm/param_spec.dart';
 import 'generation_param_texts.dart';
 import 'param_editor_registry.dart';
@@ -20,6 +19,7 @@ class GenerationParamPanel extends StatelessWidget {
     required this.valueOf,
     required this.onChanged,
     this.video = false,
+    this.media = const [],
     this.modelName = '',
     this.storedValueOf,
     this.rates,
@@ -32,6 +32,7 @@ class GenerationParamPanel extends StatelessWidget {
   final String Function(ParamSpec) valueOf;
   final void Function(String key, String value) onChanged;
   final bool video;
+  final List<GenerationMedia> media;
   final String modelName;
   final String? Function(String key)? storedValueOf;
   final List<SpecRate>? rates;
@@ -43,7 +44,7 @@ class GenerationParamPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final draft = {for (final spec in specs) spec.key: GenerationParam(spec).decode(valueOf(spec))};
-    final operation = schema?.operation(draft, const []);
+    final operation = schema?.operation(draft, media);
     final cells = <(Widget, bool)>[];
     for (final diagnostic in schema?.configurationDiagnostics ?? <GenerationDiagnostic>[]) {
       cells.add((
@@ -85,7 +86,7 @@ class GenerationParamPanel extends StatelessWidget {
       final param = GenerationParam(spec);
       final appearance = presentation[spec.key] ?? const ParamPresentation();
       final value = fieldState == GenerationFieldState.fixed
-          ? const GenerationValue(GenerationValueKind.choice, 'png')
+          ? schema!.fixedValue(spec.key)
           : draft[spec.key]!;
       final label = GenerationParamTexts.label(l10n, spec.labelKey, video: video);
       final control = registry.build(
@@ -130,7 +131,10 @@ class GenerationParamPanel extends StatelessWidget {
                 control,
               if (fieldState == GenerationFieldState.fixed) ...[
                 const SizedBox(height: AppSpace.s4),
-                Text(l10n.generationFixedPng, style: Theme.of(context).textTheme.labelSmall),
+                Text(
+                  spec.key == 'aspectRatio' ? l10n.generationFrameRatio : l10n.generationFixedPng,
+                  style: Theme.of(context).textTheme.labelSmall,
+                ),
               ],
               if (storedValueOf?.call(spec.key) case final stored?)
                 if (!spec.isValid(stored)) ...[

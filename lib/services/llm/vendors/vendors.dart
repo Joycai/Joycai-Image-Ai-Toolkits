@@ -478,6 +478,9 @@ class Vendors {
 
   static const List<UnlistedModel> _minimaxNativeModels = [
     UnlistedModel('MiniMax-H3', description: 'Video generation (MiniMax /v2 task surface)'),
+    UnlistedModel('MiniMax-H3-Highspeed', description: 'Video generation, 768P'),
+    UnlistedModel('MiniMax-H3-Lite', description: 'Video generation, 480P / 768P'),
+    UnlistedModel('MiniMax-H3-Max', description: 'Video generation, 480P / 768P, 5–15 seconds'),
     UnlistedModel('image-01', description: 'Image generation (MiniMax /v1 surface)'),
     UnlistedModel('image-01-live', description: 'Image generation (MiniMax /v1 surface)'),
   ];

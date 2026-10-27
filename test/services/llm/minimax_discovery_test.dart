@@ -42,7 +42,14 @@ void main() {
       for (final vendor in [minimax, minimaxAnthropic]) {
         expect(
           vendor.unlistedModels.map((m) => m.id),
-          containsAll(['MiniMax-H3', 'image-01', 'image-01-live']),
+          containsAll([
+            'MiniMax-H3',
+            'MiniMax-H3-Highspeed',
+            'MiniMax-H3-Lite',
+            'MiniMax-H3-Max',
+            'image-01',
+            'image-01-live',
+          ]),
           reason: vendor.id,
         );
       }
@@ -185,7 +192,14 @@ void main() {
   group('unlistedBeyond', () {
     test('adds every catalog entry to a listing that has none of them', () {
       final extra = minimax.unlistedBeyond(['MiniMax-M3', 'MiniMax-M2.7', 'MiniMax-M2.5']);
-      expect(extra.map((m) => m.id), ['MiniMax-H3', 'image-01', 'image-01-live']);
+      expect(extra.map((m) => m.id), [
+        'MiniMax-H3',
+        'MiniMax-H3-Highspeed',
+        'MiniMax-H3-Lite',
+        'MiniMax-H3-Max',
+        'image-01',
+        'image-01-live',
+      ]);
     });
 
     test('a relay that already lists one produces one row, not two', () {
@@ -200,11 +214,23 @@ void main() {
       // The catalog spells it `MiniMax-H3` because that is what the endpoint
       // wants; a relay is under no obligation to agree.
       final extra = minimax.unlistedBeyond(['minimax-h3', 'IMAGE-01']);
-      expect(extra.map((m) => m.id), ['image-01-live']);
+      expect(extra.map((m) => m.id), [
+        'MiniMax-H3-Highspeed',
+        'MiniMax-H3-Lite',
+        'MiniMax-H3-Max',
+        'image-01-live',
+      ]);
     });
 
     test('a listing covering everything adds nothing', () {
-      final extra = minimax.unlistedBeyond(['MiniMax-H3', 'image-01', 'image-01-live']);
+      final extra = minimax.unlistedBeyond([
+        'MiniMax-H3',
+        'MiniMax-H3-Highspeed',
+        'MiniMax-H3-Lite',
+        'MiniMax-H3-Max',
+        'image-01',
+        'image-01-live',
+      ]);
       expect(extra, isEmpty);
     });
 
@@ -225,6 +251,9 @@ void main() {
         'MiniMax-M3',
         'MiniMax-M2.5',
         'MiniMax-H3',
+        'MiniMax-H3-Highspeed',
+        'MiniMax-H3-Lite',
+        'MiniMax-H3-Max',
         'image-01',
         'image-01-live',
       ]);
@@ -253,7 +282,7 @@ void main() {
     test('an id the listing already returned is not added twice', () {
       final merged = mergeUnlistedModels(minimax, [listed('image-01'), listed('gpt-4o')]);
       expect(merged.where((m) => m.modelId == 'image-01'), hasLength(1));
-      expect(merged, hasLength(4));
+      expect(merged, hasLength(7));
     });
 
     test('a vendor with no catalog gets its listing back unchanged', () {
@@ -268,6 +297,9 @@ void main() {
       // throwing; the native models must survive that.
       expect(mergeUnlistedModels(minimaxAnthropic, const []).map((m) => m.modelId), [
         'MiniMax-H3',
+        'MiniMax-H3-Highspeed',
+        'MiniMax-H3-Lite',
+        'MiniMax-H3-Max',
         'image-01',
         'image-01-live',
       ]);

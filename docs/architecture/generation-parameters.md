@@ -122,3 +122,23 @@ The specimen captures complement real screens; neither desktop test proves
 Android/iOS native navigation or live upstream support. Harnesses write PNGs
 without pixel assertions; inspect images and printed exceptions. Behavior,
 payload, persistence, routing and billing tests provide the regression gates.
+
+
+## H3 reference media (2026-10-27)
+
+The cloud H3 variants have separate profiles (H3, Highspeed, Lite, Max); explicit
+unsupported values fail before transport. Max's expansion mode is nested under
+`extra`. Wire contracts declare audio/video references, standalone last frames
+and adaptive frame ratio. The shared panel receives actual media when deriving
+fixed fields; fixed values come from the schema, not a hard-coded PNG assumption.
+
+Version-1 snapshots accept the additive `referenceVideo` / `referenceAudio` media
+roles. Compatibility options expose separate path arrays; image paths never
+include these entries. New audio/video files remain in WorkbenchUIState across
+model switches and are removable even on unsupported routes. Only the native
+cloud MiniMax video wire advertises these inputs; SGLang and other wires reject
+them. H3 media validation checks the outgoing (possibly image-compressed) files,
+with local metadata probing and an exact final UTF-8 JSON size check. Invalid
+media blocks the POST instead of silently being dropped. Existing accepted jobs
+still resume without re-submission; old unsupported parameter snapshots fail
+before a new paid request rather than changing the requested specification.
