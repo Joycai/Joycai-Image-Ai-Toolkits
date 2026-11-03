@@ -6153,6 +6153,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get generationAgentTextOnly => '智能体提示词增强仅支持文生图。编辑图像时请选择直接增强。';
+
+  @override
+  String get imageSizeFollowReference => '跟随参考图';
+
+  @override
+  String get imageSizeFollowReferenceHint => '采用最后一张参考图比例；无参考图时为正方形';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -12303,4 +12309,10 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get generationAgentTextOnly => '智慧體提示詞增強僅支援文生圖。編輯影像時請選擇直接增強。';
+
+  @override
+  String get imageSizeFollowReference => '跟隨參考圖';
+
+  @override
+  String get imageSizeFollowReferenceHint => '採用最後一張參考圖比例；無參考圖時為正方形';
 }

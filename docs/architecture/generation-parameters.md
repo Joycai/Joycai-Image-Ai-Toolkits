@@ -170,3 +170,19 @@ through the same primitive. `AppSlider` owns the native slider implementation
 and inherits the application's SliderTheme, keyboard and accessibility behavior;
 parameter editors only pass range, divisions, value and callbacks. No separate
 video control switch or provider-specific widget is introduced.
+
+### Qwen editing contract (2026-11-03)
+
+- Native Qwen 2.1 Pro/Turbo use the `dashscopeQwenImage21` profile with ten
+  references; 2.0/3.0 retain three. Saved generic Qwen request snapshots remain
+  compatible with the new profile, subject to current parameter validation.
+- Modern Qwen sizes use integer pixels within the area/aspect bounds. Legacy
+  edit-plus/max keep their per-edge bounds and 16-pixel grid.
+- `ParamSpec.omitSizeWhenUnset` explicitly delegates modern Qwen defaults to
+  the server. The size picker displays Auto and no assumed billing tier; an
+  explicit tier still submits concrete dimensions. Legacy defaults remain
+  separate. Contract evidence: `docs/api/qianwen-bailian.md` §4.1 / §8.
+
+### Wan 2.7 recovery and sizes (2026-11-03)
+
+Explicit ratio/tier choices always send pixels, including squares; only Follow reference sends a tier keyword. Integer edges retain the documented area/ratio bounds. Shared validation checks the actual reference bytes. Async image jobs persist ImageJob recovery data before polling, without credentials or media bytes. Recovery bypasses the original inputs and sends GET only, after checking the original endpoint/model. Terminal failures clear recovery; poll/download failures retain it. Usage rows are stable per accepted job.

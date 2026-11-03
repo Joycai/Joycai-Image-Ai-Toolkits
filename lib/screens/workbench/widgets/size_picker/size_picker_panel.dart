@@ -287,6 +287,7 @@ class _SizePickerPanelState extends State<SizePickerPanel> {
     setState(() {
       _dropTyping();
       _ratio = r;
+      _value = '${_w}x$_h';
       _ratioChip = chip;
       _customRatioLabel = customLabel;
       _ratioDerived = false;
@@ -312,10 +313,13 @@ class _SizePickerPanelState extends State<SizePickerPanel> {
     _solveFromLong(math.max(_w, _h));
   }
 
+  bool get _followsReference =>
+      _vocab.tierKind == SizeTierKind.keyword && _vocab.tiers.contains(_value);
+
   // S3
   void _chooseTier(String tier) {
     final (w, h) = tierSize(_ratio, tier, _rules, _vocab);
-    final value = tierValue(_ratio, tier, _rules, _vocab);
+    final value = _followsReference ? tier : tierValue(_ratio, tier, _rules, _vocab);
     setState(() {
       _typing = null;
       _w = w;
@@ -511,15 +515,16 @@ class _SizePickerPanelState extends State<SizePickerPanel> {
         gap,
         _tierSection(l10n, scheme, text),
         gap,
-        SizePreview(
-          width: _w,
-          height: _h,
-          referenceEdge: areaReferenceEdge(_rules),
-          referenceLabel: l10n.imageSizeAreaRef(areaReferenceEdge(_rules)),
-          boxHeight: widget.density.preview,
-          invalid: blocked,
-          dimmed: typing,
-        ),
+        if (!_followsReference)
+          SizePreview(
+            width: _w,
+            height: _h,
+            referenceEdge: areaReferenceEdge(_rules),
+            referenceLabel: l10n.imageSizeAreaRef(areaReferenceEdge(_rules)),
+            boxHeight: widget.density.preview,
+            invalid: blocked,
+            dimmed: typing,
+          ),
       ],
       gap,
       if (blocked)
@@ -527,7 +532,7 @@ class _SizePickerPanelState extends State<SizePickerPanel> {
       else
         _summary(l10n, scheme, text, dimmed: typing),
       gap,
-      _dimsRow(l10n, scheme, blocked: blocked),
+      if (!_followsReference) _dimsRow(l10n, scheme, blocked: blocked),
       gap,
       SizeRuleLine(
         parts: sizeRuleParts(
@@ -639,7 +644,7 @@ class _SizePickerPanelState extends State<SizePickerPanel> {
         ? l10n.imageSizeRatioDerived
         : (_ratioChip == null && _customRatioLabel != null ? l10n.imageSizeRatioAccepted : null);
     final dimmed = _typing == _Field.width || _typing == _Field.height;
-    final customSelected = _ratioChip == null && !_isSentinel;
+    final customSelected = _ratioChip == null && !_isSentinel && !_followsReference;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
@@ -650,11 +655,23 @@ class _SizePickerPanelState extends State<SizePickerPanel> {
           spacing: AppSpace.s6,
           runSpacing: AppSpace.s6,
           children: [
+            if (_vocab.tierKind == SizeTierKind.keyword)
+              SizeRatioChip(
+                label: l10n.imageSizeFollowReference,
+                ratio: null,
+                selected: _followsReference,
+                height: widget.density.control,
+                onTap: () {
+                  final tier = _currentTier ?? _vocab.tiers.first;
+                  setState(() => _value = tier);
+                  _chooseTier(tier);
+                },
+              ),
             for (final c in _vocab.ratios)
               SizeRatioChip(
                 label: c,
                 ratio: _chipShape(c),
-                selected: !_isSentinel && _ratioChip == c,
+                selected: !_isSentinel && !_followsReference && _ratioChip == c,
                 height: widget.density.control,
                 onTap: () => _chooseRatio(parseAspectRatio(c)!, chip: c),
               ),
@@ -742,6 +759,7 @@ class _SizePickerPanelState extends State<SizePickerPanel> {
             style: AppSegmentStyle.raised,
             onChanged: (v) {
               if (v == custom) {
+                if (_followsReference) _chooseRatio(_ratio, chip: _ratioChip);
                 _longFocus.requestFocus();
               } else {
                 _chooseTier(v);
@@ -749,29 +767,30 @@ class _SizePickerPanelState extends State<SizePickerPanel> {
             },
           ),
         ),
-        const SizedBox(height: AppSpace.s6),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            SizedBox(
-              width: 104,
-              child: SizeNumberInput(
-                controller: _longCtrl,
-                focusNode: _longFocus,
-                height: widget.density.control,
-                suffix: l10n.imageSizeLongEdge,
-                flash: _flash.contains(_Field.long),
-                onChanged: (t) => _typed(_Field.long, t),
-                onSubmitted: (_) => _settle(_Field.long),
-                semanticsLabel: l10n.imageSizeLongEdge,
+        if (!_followsReference) const SizedBox(height: AppSpace.s6),
+        if (!_followsReference)
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 104,
+                child: SizeNumberInput(
+                  controller: _longCtrl,
+                  focusNode: _longFocus,
+                  height: widget.density.control,
+                  suffix: l10n.imageSizeLongEdge,
+                  flash: _flash.contains(_Field.long),
+                  onChanged: (t) => _typed(_Field.long, t),
+                  onSubmitted: (_) => _settle(_Field.long),
+                  semanticsLabel: l10n.imageSizeLongEdge,
+                ),
               ),
-            ),
-            if (_notice != null) ...[
-              const SizedBox(width: AppSpace.s10),
-              Expanded(child: _noticeLine(scheme, text)),
+              if (_notice != null) ...[
+                const SizedBox(width: AppSpace.s10),
+                Expanded(child: _noticeLine(scheme, text)),
+              ],
             ],
-          ],
-        ),
+          ),
       ],
     );
   }
@@ -796,7 +815,9 @@ class _SizePickerPanelState extends State<SizePickerPanel> {
     required bool dimmed,
   }) {
     final billing = _billing(l10n);
-    final label = _isSentinel && _vocab.sentinel == SizeSentinelMeaning.modelDecides
+    final label = _followsReference
+        ? l10n.imageSizeFollowReferenceHint
+        : _isSentinel && _vocab.sentinel == SizeSentinelMeaning.modelDecides
         ? l10n.imageSizeHintGpt
         : '$_w × $_h · ${_ratioChip ?? _customRatioLabel ?? ratioLabel(_w, _h)} · ${megapixels(_w * _h)} MP';
     final mono = text.bodySmall?.mono.copyWith(color: scheme.onSurface);

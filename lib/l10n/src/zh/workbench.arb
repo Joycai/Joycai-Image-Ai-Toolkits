@@ -1221,5 +1221,7 @@
   "promptExtendDirect": "直接增强",
   "promptExtendAgent": "智能体（仅文生图）",
   "generationWanEditSize": "万相图像编辑最高支持 2K。请选择 1K、2K，或总像素不超过 2048 × 2048 的尺寸。",
-  "generationAgentTextOnly": "智能体提示词增强仅支持文生图。编辑图像时请选择直接增强。"
+  "generationAgentTextOnly": "智能体提示词增强仅支持文生图。编辑图像时请选择直接增强。",
+  "imageSizeFollowReference": "跟随参考图",
+  "imageSizeFollowReferenceHint": "采用最后一张参考图比例；无参考图时为正方形"
 }

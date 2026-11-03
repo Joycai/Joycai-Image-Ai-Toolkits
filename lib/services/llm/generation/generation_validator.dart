@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:isolate';
 
 import 'package:image/image.dart' as img;
@@ -8,6 +9,7 @@ import '../protocols/protocol.dart' show readAttachmentBytes;
 import 'generation_request.dart';
 import 'generation_schema.dart';
 import 'generation_value.dart';
+import 'wan_reference_validation.dart';
 
 /// Shared non-UI guard, before transport can discard or reinterpret inputs.
 Future<Map<String, dynamic>?> validateGeneration(
@@ -102,9 +104,18 @@ Future<Map<String, dynamic>?> validateGeneration(
     // The multimodal video wire owns bounded stat/read/probe/encode. Reading
     // it here first would allocate an arbitrarily large file before its cap.
     if (schema.contract.referenceAudioVideo) continue;
+    if (schema.capabilities.imageRequestShape == ImageRequestShape.dashscopeWan &&
+        attachment.bytes == null &&
+        attachment.path != null &&
+        await File(attachment.path!).length() > 20 * 1024 * 1024) {
+      throw LLMApiException('Wan reference image exceeds 20 MB. Nothing was sent.');
+    }
     final bytes = await readAttachmentBytes(attachment);
     if (bytes == null || bytes.isEmpty) {
       throw LLMApiException('Generation input invalid: unreadableMedia. Nothing was sent.');
+    }
+    if (schema.capabilities.imageRequestShape == ImageRequestShape.dashscopeWan) {
+      await validateWanReference(bytes);
     }
     if (operation == GenerationOperation.transparent) {
       final hasAlpha = await Isolate.run(() => img.decodeImage(bytes)?.hasAlpha == true);

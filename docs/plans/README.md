@@ -554,3 +554,20 @@ Linux 构建没装 libsecret、最小桌面常无 keyring；便携模式下钥�
 - No paid API calls or native Windows/mobile device verification. HEIC/HEIF
   inspection depends on host decoding support. URL/mm_file input UI,
   Context-IR and regeneration remain outside this implementation scope.
+
+### Qwen image editing limits and automatic size (2026-11-03)
+
+- Qwen 2.1 Pro/Turbo accept ten ordered references; 2.0/3.0 remain at three.
+  Existing generic Qwen task snapshots can resolve the new 2.1 profile.
+- Modern Qwen preserves integer-pixel sizes such as 1080×1920 and omits size
+  for Auto. Explicit tiers still send pixels. Legacy edit models and Wan keep
+  their existing defaults. Facts and UI rationale are in the API, generation
+  parameters and UI workflow notes.
+- Verified format (889 files, zero changes), analyze (No issues found), and
+  non-screenshot tests (3412 passed, 9 skipped). Local HTTP tests assert ordered
+  references, overflow rejection before POST and omitted automatic size.
+- Rendered and inspected Qwen workbench at 390/834/1024/1440 in both themes and
+  the size picker before/after sheets; no new overflow observed. No paid API
+  requests or native phone device verification.
+
+- 2026-11-03 Wan 2.7 audit items 1-4: explicit ratio dimensions, one-pixel size grid, reference validation, and persisted asynchronous image recovery. Regression coverage includes GET-only recovery, durable task data, invalid reference inputs, and explicit square versus adaptive keyword selection. Responsive renders cover all four widths in both themes.

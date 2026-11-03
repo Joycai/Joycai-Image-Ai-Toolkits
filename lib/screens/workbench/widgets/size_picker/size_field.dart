@@ -270,7 +270,7 @@ class _SizeFieldState extends State<SizeField> {
           false,
         );
       case SizeTierValue(:final tier):
-        return (tier, l10n.imageSizeKeywordHint('1:1'), true);
+        return (tier, l10n.imageSizeFollowReference, true);
       case SizeSentinelValue():
         final (title, hint) = sentinelTexts(l10n, _vocab.sentinel);
         return (title, hint, false);

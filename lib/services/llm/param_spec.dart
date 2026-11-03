@@ -51,6 +51,11 @@ class ParamSpec {
   /// is one. The offer only — [sizeRules] is what a size may be.
   final ImageSizeVocabulary? sizeVocabulary;
 
+  /// Omit the wire size when no explicit dimensions were chosen. DashScope
+  /// modern Qwen models delegate this to the server; legacy models retain
+  /// their computed default. Independent of the picker's display vocabulary.
+  final bool omitSizeWhenUnset;
+
   /// Inclusive bounds for [ParamControl.slider]. Unused by every other
   /// control.
   final int? min;
@@ -65,6 +70,7 @@ class ParamSpec {
     required this.defaultValue,
     this.sizeRules,
     this.sizeVocabulary,
+    this.omitSizeWhenUnset = false,
     this.min,
     this.max,
   });

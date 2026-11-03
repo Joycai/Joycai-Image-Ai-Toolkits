@@ -73,39 +73,36 @@ const _dashscopePromptExtend = ParamSpec(
   options: [ParamOption('not_set'), ParamOption('on'), ParamOption('off')],
 );
 
-/// `qwen-image-2.0*` / `-3.0*` on DashScope's native surface — the
-/// `input.messages` shape. Up to 3 reference images (10 MB each). The size
-/// is a free `WxH` inside [kDashscopeQwenSizeRules] (area 512²–2048²,
-/// 1:8–8:1), picked in the size dialog — presets, a ratio calculator, or
-/// typed edges — and normalized to DashScope's `W*H` spelling on the wire.
-///
-/// `not_set` here does **not** mean "send nothing": this endpoint renders an
-/// unsized request at 2048² and bills it at the 2K tier — twice the 1K
-/// price — so the dialect always sends a size, and `not_set` means "the
-/// dialect's default": a 1K square for text-to-image, the input's own
-/// proportions fitted into the 1K area for an edit (`dashscopeQwenDefaultSize`).
-///
-/// `n` is deliberately not exposed — every request sends 1. The ceiling
-/// differs *within* the family (6, but `qwen-image-edit` takes only 1) and
-/// sending the wrong one is a 400, so the control waits until there is a
-/// reason to produce more than one image per task.
+const _dashscopeQwenAutomaticSize = ParamSpec(
+  key: 'imageSize',
+  labelKey: 'resolution',
+  control: ParamControl.customSize,
+  defaultValue: 'not_set',
+  options: [ParamOption('not_set')],
+  sizeRules: kDashscopeQwenSizeRules,
+  sizeVocabulary: _dashscopeQwenAutomaticSizeVocabulary,
+  omitSizeWhenUnset: true,
+);
+
+/// Modern Qwen uses free pixel dimensions and delegates an unset size to
+/// the server. 2.0 editing follows the last input's size; 2.1 / 3.0 let the
+/// model recommend a size. Explicit 1K / 2K choices remain available.
+/// Every request still produces one image (`n: 1`).
 const _dashscopeQwenImage = ModelCapabilities(
   isImageGenerator: true,
   maxReferenceImages: 3,
   longRunning: true,
   imageRequestShape: ImageRequestShape.dashscopeQwen,
-  imageParams: [
-    ParamSpec(
-      key: 'imageSize',
-      labelKey: 'resolution',
-      control: ParamControl.customSize,
-      defaultValue: 'not_set',
-      options: [ParamOption('not_set')],
-      sizeRules: kDashscopeQwenSizeRules,
-      sizeVocabulary: _dashscopeQwenSizeVocabulary,
-    ),
-    _dashscopePromptExtend,
-  ],
+  imageParams: [_dashscopeQwenAutomaticSize, _dashscopePromptExtend],
+);
+
+/// Qwen 2.1 (Pro / Turbo, including dated builds) accepts ten references.
+const _dashscopeQwenImage21 = ModelCapabilities(
+  isImageGenerator: true,
+  maxReferenceImages: 10,
+  longRunning: true,
+  imageRequestShape: ImageRequestShape.dashscopeQwen,
+  imageParams: [_dashscopeQwenAutomaticSize, _dashscopePromptExtend],
 );
 
 /// Qwen Image 3.0 (standard and Pro): native prompt enhancement controls.
@@ -115,15 +112,7 @@ const _dashscopeQwenImage3 = ModelCapabilities(
   longRunning: true,
   imageRequestShape: ImageRequestShape.dashscopeQwen,
   imageParams: [
-    ParamSpec(
-      key: 'imageSize',
-      labelKey: 'resolution',
-      control: ParamControl.customSize,
-      defaultValue: 'not_set',
-      options: [ParamOption('not_set')],
-      sizeRules: kDashscopeQwenSizeRules,
-      sizeVocabulary: _dashscopeQwenSizeVocabulary,
-    ),
+    _dashscopeQwenAutomaticSize,
     _dashscopePromptExtend,
     ParamSpec(
       key: 'promptExtendMode',
@@ -154,7 +143,7 @@ const _dashscopeImageWatermark = ParamSpec(
 );
 
 /// `qwen-image-edit-max` / `-plus` (and their dated builds): the same shape,
-/// references and `not_set` default as [_dashscopeQwenImage], but a
+/// three-reference limit and computed 1K `not_set` default, with a
 /// **per-edge** size range — each edge 512–2048 — rather than 2.0 / 3.0's
 /// area range ([kDashscopeQwenEditSizeRules]). Sharing the area rules let
 /// the picker offer `4096x512`, an edge twice the documented ceiling.
@@ -204,6 +193,13 @@ const _dashscopeImageFallback = ModelCapabilities(
 /// The size picker's offer on qwen (`A1c · 30c`): upstream's five ratios,
 /// and 1K / 2K as the two area tiers it bills by. No table — the tier's
 /// pixels are computed at the ratio (`tierSize`).
+const _dashscopeQwenAutomaticSizeVocabulary = ImageSizeVocabulary(
+  ratios: ['1:1', '16:9', '9:16', '4:3', '3:4'],
+  tiers: ['1K', '2K'],
+  tierKind: SizeTierKind.areaTier,
+  sentinel: SizeSentinelMeaning.modelDecides,
+);
+
 const _dashscopeQwenSizeVocabulary = ImageSizeVocabulary(
   ratios: ['1:1', '16:9', '9:16', '4:3', '3:4'],
   tiers: ['1K', '2K'],

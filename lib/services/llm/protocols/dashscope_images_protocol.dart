@@ -38,21 +38,24 @@ class DashScopeImagesProtocol implements ImageGenProtocol {
     final config = target.config;
     final userMsg = history.lastWhere((m) => m.role == LLMRole.user, orElse: () => history.last);
 
-    // Cap the reference images to what the model accepts (qwen: 3, wan2.7: 9).
+    // Apply the model-specific reference ceiling (Qwen 2.1: 10, 2.0 / 3.0: 3).
     final inputImages = capReferenceImages(
       userMsg.attachments,
       target.model.capabilities.maxReferenceImages,
       logger,
     );
 
+    final sizeSpec = dashscopeSizeSpec(target);
     final imageRefs = <String>[];
     ({int width, int height})? inputSize;
     for (final att in inputImages) {
       final bytes = await readAttachmentBytes(att);
       if (bytes == null) continue;
-      // The first input's proportions drive the default size of an edit —
-      // see [dashscopeQwenDefaultSize] for why "no size" is not an option.
-      inputSize ??= ImageCompressor.dimensionsOf(bytes);
+      // Only legacy defaults need local dimensions. Modern Qwen selects its
+      // own default from the full, ordered input when size is omitted.
+      if (sizeSpec != null && !sizeSpec.omitSizeWhenUnset) {
+        inputSize ??= ImageCompressor.dimensionsOf(bytes);
+      }
       imageRefs.add('data:${resolveImageMime(bytes, att.mimeType)};base64,${base64Encode(bytes)}');
     }
 
@@ -73,7 +76,7 @@ class DashScopeImagesProtocol implements ImageGenProtocol {
       imageRefs: imageRefs,
       options: options,
       inputSize: inputSize,
-      sizeSpec: dashscopeSizeSpec(target),
+      sizeSpec: sizeSpec,
     );
 
     final client = config.createClient();

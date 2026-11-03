@@ -139,10 +139,11 @@ const kOpenAIImage2SizeRules = ImageSizeRules(
   maxPixels: 8294400,
 );
 
-/// `qwen-image-2.0*` / `-3.0*`: area 512²–2048², proportion 1:8–8:1, edges
-/// rounded to 16 upstream — sent already on the grid so the request asks for
-/// exactly what is rendered.
+/// Modern Qwen: area 512²–2048², proportion 1:8–8:1. The current API
+/// accepts integer pixels, including its recommended 1080×1920 size.
+/// Do not apply the legacy edit-plus / max 16-pixel grid here.
 const kDashscopeQwenSizeRules = ImageSizeRules(
+  edgeStep: 1,
   maxRatio: 8,
   minPixels: 512 * 512,
   maxPixels: 2048 * 2048,
@@ -160,10 +161,9 @@ const kDashscopeQwenEditSizeRules = ImageSizeRules(
   maxPixels: 2048 * 2048,
 );
 
-/// `wan2.7-image`: area 768²–2048², proportion 1:8–8:1. The 16 grid is ours,
-/// not documented — every size in upstream's own recommendation table sits
-/// on it, so it costs nothing and cannot be the reason for a 400.
+/// `wan2.7-image`: area 768²–2048², proportion 1:8–8:1; integer edges.
 const kDashscopeWanSizeRules = ImageSizeRules(
+  edgeStep: 1,
   maxRatio: 8,
   minPixels: 768 * 768,
   maxPixels: 2048 * 2048,
@@ -171,6 +171,7 @@ const kDashscopeWanSizeRules = ImageSizeRules(
 
 /// `wan2.7-image-pro`: the same, with the ceiling raised to 4096².
 const kDashscopeWanProSizeRules = ImageSizeRules(
+  edgeStep: 1,
   maxRatio: 8,
   minPixels: 768 * 768,
   maxPixels: 4096 * 4096,

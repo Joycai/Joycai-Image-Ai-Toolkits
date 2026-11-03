@@ -162,6 +162,7 @@ class ModelCapabilities {
     _dashscopeQwenImageEditMaxPlus,
     _dashscopeQwenImageEdit,
     _dashscopeQwenImage,
+    _dashscopeQwenImage21,
     _dashscopeQwenImage3,
     _seedream50Pro,
     _seedream50Lite,
@@ -188,6 +189,7 @@ class ModelCapabilities {
     'xaiImage': _xaiImage,
     'xaiImageLegacy': _xaiImageLegacy,
     'dashscopeQwenImage': _dashscopeQwenImage,
+    'dashscopeQwenImage21': _dashscopeQwenImage21,
     'dashscopeQwenImage3': _dashscopeQwenImage3,
     'dashscopeQwenImageEditMaxPlus': _dashscopeQwenImageEditMaxPlus,
     'dashscopeImageFallback': _dashscopeImageFallback,
@@ -319,6 +321,9 @@ class ModelCapabilities {
     if (family == ModelFamily.dashscopeImage) {
       if (id.startsWith('wan')) {
         return id.contains('-pro') ? _dashscopeWanImagePro : _dashscopeWanImage;
+      }
+      if (ModelFamilyClassifier.isQwenImage21(modelId)) {
+        return _dashscopeQwenImage21;
       }
       if (id == 'qwen-image-3.0' || id.startsWith('qwen-image-3.0-')) {
         return _dashscopeQwenImage3;

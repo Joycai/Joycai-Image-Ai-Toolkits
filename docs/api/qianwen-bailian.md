@@ -1,5 +1,7 @@
 # 千问（阿里云百炼 / DashScope）协议标准
 
+2026-11-03 Wan 2.7 复核补充：`1K/2K` 关键词有参考图时采用最后一张参考图比例，无参考图时为正方形；明确比例应使用具体 `宽*高`，包括 1:1。自定义宽高没有 16 像素步长要求。参考图最多 9 张，每张最多 20 MB，单边 240–8000，比例 1:8–8:1；接受 JPEG/PNG/BMP/WEBP，PNG 不得包含 alpha 通道。任务和结果链接有效期为 24 小时。依据：[同步接口](https://platform.qianwenai.com/docs/api-reference/image-generation/wan27-image-gen-edit/synchronous)、[任务查询](https://platform.qianwenai.com/docs/api-reference/image-generation/wan27-image-gen-edit/query-result)。
+
 > 一家供应商、一把 key、一个 host（`dashscope.aliyuncs.com`），六条 wire：
 > 3 种 chat + 图片同步/异步 + 视频异步。本文只写协议事实（本目录的规矩）；
 > 本项目怎么路由这六条 wire，见
@@ -121,6 +123,7 @@
 | 模型 | 输入图 | 文本上限 | `n` | `size` | 特有 |
 | --- | --- | --- | --- | --- | --- |
 | `qwen-image-3.0(-pro)` | 1–3 张，≤10MB，建议 384–2048px | 4500 tok | 1–6 | `宽*高`，512²–2048²，比例 1:8–8:1 | `prompt_extend_mode: direct\|agent`（agent 仅文生图） |
+| `qwen-image-2.1-pro` / `-turbo` | 1–10 张，≤10MB/张 | 4500 tok | 1–6 | `宽*高`，512²–2048²，比例 1:8–8:1；不设尺寸由模型推荐 | 2026-11-03 千问平台文档 |
 | `qwen-image-2.0(-pro)`（含日期版） | 同上 | 1300 tok | 1–6 | `宽*高`，512²–2048² | |
 | `qwen-image-edit-max` / `-plus`（含日期版） | 同上 | 800 tok | 1–6 | **单边** 512–2048（不是面积；改图指南原文「宽度和高度的取值范围为 512 至 2048 像素」，2026-09-19 复核），自动取 16 倍数；缺省约 1024² 并保持原图比例 | |
 | `qwen-image` / `qwen-image-plus` / `qwen-image-max`（初代文生图） | — | | | **仅五个固定值** ⚠：`1664*928`（缺省）、`1472*1104`、`1328*1328`、`1104*1472`、`928*1664` | 自由 `宽*高` 不收 |
@@ -128,7 +131,7 @@
 | `wan2.7-image(-pro)` | **0–9** 张，≤20MB，单边 240–8000px，比例 1:8–8:1 | 5000 字符 | 1–4（`enable_sequential` 时 1–12） | `1K`/`2K`（pro 另有 `4K`）或 `宽*高`：总像素 768²–2048²（pro 到 4096²），比例 1:8–8:1，缺省 `2K` | `enable_sequential`（组图）、`thinking_mode`（仅纯文生图）、`bbox_list`（编辑选区，每图 ≤2 框）、`color_palette`（3–10 个 `{hex, ratio}`） |
 
 - **`size` 的推荐值**（文生图指南「设置输出图像分辨率」，2026-09-19 抓取）：
-  `1K`=1024²、`2K`=2048²、`4K`=4096²（关键字本身出方图）。各比例的推荐像素：
+  `1K`=1024²、`2K`=2048²、`4K`=4096²（关键词无参考图时出方图，有参考图时跟随最后一张）。各比例的推荐像素：
   16:9 → 1696×960 / 2688×1536 / 4096×2304；4:3 → 1472×1104 / 2368×1728 /
   4096×3072（竖版对调）。全部落在 16 的倍数上。本项目的尺寸选择器以此为 wan 的
   预设；规则数值在 `lib/services/llm/image_size_rules.dart`。2026-10-11 文档明确：Pro 的 4K 仅限文生图；编辑及组图上限 2048²。
@@ -209,17 +212,19 @@
    那是 OSS 签名地址，签名在 URL 里，API key 在那个 host 没有意义。
 7. usage 三套命名并存（C1 是 prompt/completion_tokens、C2/C3 是
    input/output_tokens、图片视频按张/按秒）—— 统一计量的客户端要自己翻译。
-8. 与计费相关的默认值偏贵：wan2.7 图片 `n` 默认 **4**、V1 `audio` 默认
+8. 与计费相关的默认值：wan2.7 普通图片 `n` 默认 **1**（组图默认 12）、V1 `audio` 默认
    true、`prompt_extend` 默认 true —— 不想吃服务端默认就得显式下发。
-   **`size` 同理**（2026-09-04 外部实测 qwen-image-3.0-pro / wan2.7-image-pro）：
-   省略 `size` 两家都出 2048² 并按 **2K 档**计费（qwen 是 1K 档的两倍价）；
-   qwen 改图省略 `size` 画幅跟随输入，但同样放大到 2K 面积（768×1376 出
-   1520×2736）。本仓 I1/I2 因此**永远显式发** `n: 1` 与 `size`：qwen 默认
-   `1024*1024`、改图按第一张输入图的比例在 1K 面积内重算（16 的倍数、面积
-   ≤ 1024²、比例夹在 1:8–8:1）；wan 默认 `"1K"`。唯一例外是基础版
-   `qwen-image-edit`——它没有 `size`（第 5 条），Layer 3 的参数表不声明该
-   控件，协议据此不发。qwen 3.0 的 `size` **只收** `宽*高`，发 `"1K"` 是
-   400 `InvalidParameter: Expected format: '<width>*<height>'`。
+   **`size` 的历史实测与当前契约分开看**：2026-09-04 外部实测
+   qwen-image-3.0-pro / wan2.7-image-pro 省略尺寸时曾得到 2K 输出。
+   2026-11-03 对照[当前千问图像编辑文档](https://platform.qianwenai.com/docs/api-reference/image-generation/qwen-image-editing)：
+   Qwen 2.1 / 3.0 省略尺寸时由模型推荐；2.0 编辑默认随输入，多图以最后一张为准。
+   本仓现代 Qwen 的 `not_set` 现在省略 `size`，UI 显示「自动」，不预估固定计费档。
+   用户可显式选 1K / 2K 或具体像素；尺寸原样归一为 `宽*高`，不再强制 16 倍数，
+   因而可提交官方推荐的 `1080*1920`。保留面积与比例校验。
+   旧版 edit-plus/max、未知别名的计算默认和 Wan 的 `"1K"` 默认不变；基础版
+   `qwen-image-edit` 仍不发送 `size`。所有型号仍显式发送 `n: 1`。
+   Qwen 的 1K / 2K 控件计算具体像素，不向接口发送 `"1K"` 关键词。
+
 9. C2 的 `result_format` 默认是 `"text"`：不显式发 `"message"` 就只回一个
    裸字符串、没有 `choices`、没有 tool_calls、没有 finish_reason ——
    读 choices 的解析器会把它当"模型什么都没说"，不会报错。

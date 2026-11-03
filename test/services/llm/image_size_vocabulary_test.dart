@@ -24,17 +24,18 @@ void main() {
       expect(cell('wan2.7-image-pro', '3:4', '4K'), (3072, 4096));
     });
 
-    test('a wan square submits the keyword itself, any other cell pixels', () {
+    test('explicit wan ratios submit pixels including squares', () {
       final spec = sizeSpec('wan2.7-image');
       final rules = spec.sizeRules!;
       final vocab = spec.sizeVocabulary!;
-      expect(tierValue(parseAspectRatio('1:1')!, '2K', rules, vocab), '2K');
+      expect(tierValue(parseAspectRatio('1:1')!, '2K', rules, vocab), '2048x2048');
       expect(tierValue(parseAspectRatio('4:3')!, '2K', rules, vocab), '2368x1728');
     });
 
     test("qwen's tier is an area: the exact ratio at or under it", () {
-      // `30c`: 4:3 at 1K is 1152×864 (1.00 MP), not a size past the 1K tier.
-      expect(cell('qwen-image-3.0', '4:3', '1K'), (1152, 864));
+      // Integer-pixel sizes can fit the area more closely than the legacy grid.
+      expect(cell('qwen-image-3.0', '4:3', '1K'), (1180, 885));
+      expect(cell('qwen-image-edit-plus', '4:3', '1K'), (1152, 864));
       expect(cell('qwen-image-3.0', '1:1', '1K'), (1024, 1024));
       expect(cell('qwen-image-3.0', '1:1', '2K'), (2048, 2048));
     });

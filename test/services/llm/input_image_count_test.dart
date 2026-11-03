@@ -20,8 +20,10 @@ import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 void main() {
   late HttpServer server;
   late Map<String, dynamic> Function(HttpRequest request) answer;
+  late List<String> postedBodies;
 
   setUp(() async {
+    postedBodies = [];
     server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     server.listen((request) async {
       if (request.method == 'GET' && !request.uri.path.contains('/mj/')) {
@@ -30,7 +32,11 @@ void main() {
         await request.response.close();
         return;
       }
-      await request.drain<void>();
+      if (request.headers.contentType?.mimeType == 'application/json') {
+        postedBodies.add(await utf8.decoder.bind(request).join());
+      } else {
+        await request.drain<void>();
+      }
       request.response.headers.contentType = ContentType.json;
       request.response.write(jsonEncode(answer(request)));
       await request.response.close();
@@ -181,6 +187,51 @@ void main() {
     ]);
     expect(response.metadata[inputImageCountKey], 2);
   });
+
+  for (final (model, limit) in [
+    ('qwen-image-2.1-pro', 10),
+    ('qwen-image-2.1-turbo', 10),
+    ('qwen-image-2.1-pro-2026-11-03', 10),
+    ('qwen-image-2.0-pro', 3),
+    ('qwen-image-3.0-pro', 3),
+  ]) {
+    test('$model sends all $limit references in order and rejects overflow', () async {
+      answer = (_) => {
+        'output': {
+          'choices': [
+            {
+              'message': {
+                'content': [
+                  {'image': '${base()}/img/1.png'},
+                ],
+              },
+            },
+          ],
+        },
+      };
+      // Distinct byte payloads retain valid PNG dimensions and make order observable.
+      final inputs = List.generate(limit, (i) => Uint8List.fromList([..._png, i]));
+      final response = await generate(config(Vendors.dashscopeNative, model), [
+        for (final bytes in inputs) LLMAttachment.fromBytes(bytes, 'image/png'),
+      ]);
+      expect(response.metadata[inputImageCountKey], limit);
+      final body = jsonDecode(postedBodies.single) as Map;
+      final content = body['input']['messages'][0]['content'] as List;
+      expect(content, [
+        for (final bytes in inputs) {'image': 'data:image/png;base64,${base64Encode(bytes)}'},
+        {'text': 'merge'},
+      ]);
+      expect(body['parameters'], isNot(contains('size')));
+      await expectLater(
+        generate(
+          config(Vendors.dashscopeNative, model),
+          List.generate(limit + 1, (_) => readable()),
+        ),
+        throwsA(isA<LLMApiException>()),
+      );
+      expect(postedBodies, hasLength(1), reason: 'Overflow must fail before POST');
+    });
+  }
 
   test('DashScope metadata, shared with the task surface, carries the count it is given', () {
     expect(

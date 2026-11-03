@@ -1339,5 +1339,7 @@
   "promptExtendDirect": "Direct",
   "promptExtendAgent": "Agent (text only)",
   "generationWanEditSize": "Wan image editing supports up to 2K. Choose 1K, 2K, or dimensions within 2048 × 2048 pixels in area.",
-  "generationAgentTextOnly": "Agent prompt enhancement supports text-to-image only. Choose Direct for image editing."
+  "generationAgentTextOnly": "Agent prompt enhancement supports text-to-image only. Choose Direct for image editing.",
+  "imageSizeFollowReference": "Follow reference",
+  "imageSizeFollowReferenceHint": "Uses the last reference ratio; square without references"
 }

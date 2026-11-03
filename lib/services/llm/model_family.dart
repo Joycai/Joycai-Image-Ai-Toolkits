@@ -143,6 +143,12 @@ class ModelFamilyClassifier {
   static bool isNanoBanana21(String modelId) =>
       modelId.toLowerCase().split('/').last == 'gemini-nano-banana-2.1';
 
+  /// Qwen 2.1 Pro / Turbo and dated builds share the ten-reference contract.
+  static bool isQwenImage21(String modelId) {
+    final id = modelId.toLowerCase();
+    return id == 'qwen-image-2.1' || id.startsWith('qwen-image-2.1-');
+  }
+
   /// Classify a raw model id (case-insensitive).
   static ModelFamily classify(String modelId) {
     final id = modelId.toLowerCase();
