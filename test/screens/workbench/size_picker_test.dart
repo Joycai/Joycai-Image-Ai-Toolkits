@@ -104,10 +104,24 @@ void main() {
       await tester.pumpAndSettle();
       expect(written.last, '4096x2304');
 
-      // Back to the square: the keyword itself, not its pixels.
+      // An explicit square must remain square even with portrait references.
       await tester.tap(find.text('1:1'));
       await tester.pumpAndSettle();
-      expect(written.last, '4K');
+      expect(written.last, '4096x4096');
+    });
+
+    testWidgets('keyword mode follows references; explicit square uses pixels', (tester) async {
+      final (written, _) = await open(tester, 'wan2.7-image', '2K');
+      expect(find.byType(TextField), findsNothing);
+      await tester.tap(find.text('1:1'));
+      await tester.pumpAndSettle();
+      expect(written.last, '2048x2048');
+      await tester.tap(find.text('Follow reference'));
+      await tester.pumpAndSettle();
+      expect(written.last, '2K');
+      await tester.tap(find.text('1K'));
+      await tester.pumpAndSettle();
+      expect(written.last, '1K');
     });
 
     testWidgets('Esc puts back the value it opened on', (tester) async {
@@ -182,7 +196,7 @@ void main() {
 
     testWidgets('a click after typing replaces the typed edge and writes', (tester) async {
       // A chip does not take focus from the box: the edge is still "typing".
-      final (written, _) = await open(tester, 'wan2.7-image-pro', '2K');
+      final (written, _) = await open(tester, 'wan2.7-image-pro', '2048x2048');
       await tester.enterText(find.byType(TextField).first, '3000');
       await tester.pump();
       await tester.tap(find.text('16:9'));
@@ -209,6 +223,31 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Billed 2K'), findsOneWidget);
       expect(find.textContaining('Over the 1K area'), findsOneWidget);
+    });
+
+    testWidgets('Qwen automatic has no assumed billing tier and restores unset', (tester) async {
+      const rates = [SpecRate(size: '1K', price: 0.2), SpecRate(size: '2K', price: 0.4)];
+      final (written, _) = await open(tester, 'qwen-image-2.1-pro', 'not_set', rates: rates);
+      expect(find.text('Auto'), findsOneWidget);
+      expect(find.textContaining('Billed'), findsNothing);
+      expect(find.textContaining('×16'), findsNothing);
+      await tester.tap(find.text('1K'));
+      await tester.pumpAndSettle();
+      expect(written.last, '1024x1024');
+      await tester.tap(find.text('Auto'));
+      await tester.pumpAndSettle();
+      expect(written.last, 'not_set');
+      expect(find.textContaining('Billed'), findsNothing);
+    });
+
+    testWidgets('Qwen preserves 1080 pixels when editing unlocked dimensions', (tester) async {
+      final (written, _) = await open(tester, 'qwen-image-3.0', '1024x1920');
+      await tester.tap(find.byIcon(Icons.link));
+      await tester.pump();
+      await tester.enterText(find.byType(TextField).at(1), '1080');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+      expect(written.last, '1080x1920');
     });
 
     testWidgets('without billing information nothing stands in for it', (tester) async {

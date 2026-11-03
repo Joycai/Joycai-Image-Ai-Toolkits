@@ -3,9 +3,9 @@ import '../../../../services/llm/image_size_vocabulary.dart';
 import '../../../../services/llm/output_spec.dart';
 
 /// The sentinel's title and the one true sentence beside it (`A1c · 30a`):
-/// gpt's `auto` is "the model decides"; qwen's and wan's `not_set` are *not*
-/// automatic — the app chooses — so they say what the app sends. [long] is
-/// the popover's fuller qwen wording.
+/// GPT and modern Qwen delegate to the server. Legacy Qwen and Wan have
+/// explicit client defaults, so they say what the app sends. [long] is
+/// the popover's fuller legacy Qwen wording.
 (String, String) sentinelTexts(
   AppLocalizations l10n,
   SizeSentinelMeaning meaning, {

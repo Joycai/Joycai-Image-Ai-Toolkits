@@ -408,7 +408,7 @@ List<SizeRulePart> sizeRuleParts(
   bool ok(String key) => results == null || results.firstWhere((r) => r.labelKey == key).passes;
   final range = formatPixelRange(rules.minPixels, rules.minPixels, rules.maxPixels);
   return [
-    SizeRulePart('×${rules.edgeStep}', passes: ok('sizeRuleEdgeGrid')),
+    if (rules.edgeStep > 1) SizeRulePart('×${rules.edgeStep}', passes: ok('sizeRuleEdgeGrid')),
     if (rules.minEdge != null)
       SizeRulePart(minEdgeLabel(rules.minEdge!), passes: ok('sizeRuleMinEdge')),
     if (rules.maxEdge != null)

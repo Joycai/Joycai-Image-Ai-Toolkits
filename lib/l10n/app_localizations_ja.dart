@@ -6189,4 +6189,10 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get generationAgentTextOnly => 'エージェントによるプロンプト拡張はテキストからの生成専用です。画像編集には直接拡張を選択してください。';
+
+  @override
+  String get imageSizeFollowReference => '参照画像に合わせる';
+
+  @override
+  String get imageSizeFollowReferenceHint => '最後の参照画像の比率を使用。参照画像なしでは正方形';
 }

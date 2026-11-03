@@ -111,11 +111,8 @@ bool? dashscopePromptExtend(Map<String, dynamic>? options) {
   }
 }
 
-/// The pixel area every default qwen-image size is fitted into: the 1K
-/// billing tier. DashScope bills `qwen-image*` by output *area* in two tiers
-/// (`qima_output_1k` / `qima_output_2k`), and an omitted `size` renders at
-/// 2048² — the 2K tier, at twice the price — so "no size" is never sent on
-/// this dialect; a size is always derived, and it lands in the cheaper tier.
+/// Legacy Qwen edits and unknown DashScope aliases retain a computed 1K
+/// default. Modern Qwen delegates an unset size to the server instead.
 const int dashscopeQwenDefaultArea = 1024 * 1024;
 
 /// This target's size control, or null when its model takes no `size` at
@@ -129,24 +126,13 @@ ParamSpec? dashscopeSizeSpec(LLMTarget target) {
   return null;
 }
 
-/// The `size` a qwen-image request gets when the author picked none.
-///
-/// Text-to-image: a 1K square. Edit: the input's own proportions, fitted
-/// into the 1K area — because "follow the input" has no cheaper spelling on
-/// this endpoint. Omitting `size` on an edit does follow the input's ratio,
-/// but scales it up to the 2K area (a 768×1376 source came back 1520×2736)
-/// and bills accordingly. So the ratio is honoured here, at the area the
-/// author would have got for free elsewhere.
-///
-/// Both edges are floored to the model's grid; the area therefore lands just
-/// under 1024², never over it. Proportions past the model's limit ([rules]:
-/// 8:1 for qwen 2.0 / 3.0, 4:1 for edit-max / plus, whose edges must stay in
-/// 512–2048) are clamped rather than refused — the endpoint would 400 on
-/// them, and a clamped picture beats a failed request for a source that is a
-/// strip or a banner.
+/// The computed default retained for legacy Qwen edits and unknown aliases.
+/// Uses a 1K square without a measurable input, otherwise fits the first input's
+/// proportions into the 1K area on the model's grid. Extreme proportions are
+/// clamped to the declared limit. Modern Qwen never calls this for unset size.
 String dashscopeQwenDefaultSize(
   ({int width, int height})? input, {
-  ImageSizeRules rules = kDashscopeQwenSizeRules,
+  ImageSizeRules rules = kDashscopeCommonSizeRules,
 }) {
   if (input == null || input.width <= 0 || input.height <= 0) {
     return '1024*1024';
@@ -191,17 +177,17 @@ int _floorToGrid(double edge, int step) {
 /// the model takes no `size` at all — derived from the model's declared
 /// parameters (layer 3), because the answer differs *within* the family:
 /// `qwen-image-edit` (the basic one, not `-max` / `-plus`) has no `size` and
-/// 400s on receiving one, while every sibling both accepts it and, left
-/// without it, renders at the 2K tier. So where a size control exists one is
-/// always sent — and where none exists, none is.
+/// 400s on receiving one. Modern Qwen specs set [ParamSpec.omitSizeWhenUnset]
+/// so the server chooses the default; legacy Qwen and Wan keep their explicit
+/// low-tier defaults.
 ///
 /// The requested size goes through the spec first: task options outlive the
 /// model they were chosen for (a retried task, a size left over from another
 /// family), and a value the model's own table rejects is replaced by the
 /// table's default rather than forwarded to a 400. A closed list without a
 /// sentinel (first-generation `qwen-image`) therefore always sends one of
-/// its own sizes; a sentinel falls through to the dialect's default, which
-/// is fitted to the spec's size rules.
+/// its own sizes; a sentinel either omits size or uses the declared legacy
+/// default, fitted to the spec's size rules.
 ///
 /// `n` is always sent as 1: one image per task, independent of upstream
 /// defaults (the October 2026 Wan docs now specify 1 for ordinary mode).
@@ -225,22 +211,23 @@ Map<String, dynamic> buildDashScopeImagePayload({
   ({int width, int height})? inputSize,
   ParamSpec? sizeSpec,
 }) {
-  final String? size;
+  String? size;
   if (sizeSpec == null) {
     size = null;
   } else {
     final requested = sizeSpec.normalize(readStringOption(options, 'imageSize'));
-    size =
-        dashscopeSize({'imageSize': requested}) ??
-        switch (shape) {
-          // wan takes the tier presets directly, and its own omitted default
-          // is the 2K tier — the same double-price trap as qwen's.
-          ImageRequestShape.dashscopeWan => '1K',
-          ImageRequestShape.dashscopeQwen || ImageRequestShape.none => dashscopeQwenDefaultSize(
-            inputSize,
-            rules: sizeSpec.sizeRules ?? kDashscopeQwenSizeRules,
-          ),
-        };
+    size = dashscopeSize({'imageSize': requested});
+    if (size == null && !sizeSpec.omitSizeWhenUnset) {
+      size = switch (shape) {
+        // wan takes the tier presets directly, and its own omitted default
+        // is the 2K tier — the same double-price trap as qwen's.
+        ImageRequestShape.dashscopeWan => '1K',
+        ImageRequestShape.dashscopeQwen || ImageRequestShape.none => dashscopeQwenDefaultSize(
+          inputSize,
+          rules: sizeSpec.sizeRules ?? kDashscopeCommonSizeRules,
+        ),
+      };
+    }
   }
   final wan = shape == ImageRequestShape.dashscopeWan;
   final promptExtend = dashscopePromptExtend(options);

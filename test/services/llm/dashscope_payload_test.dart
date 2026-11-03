@@ -147,49 +147,34 @@ void main() {
       );
     });
 
-    group('size is always sent on the qwen dialect', () {
-      // An unsized qwen-image request renders at 2048² and is billed at the
-      // 2K tier — twice the price. "No size" therefore never goes out; the
-      // author's choice or the dialect's 1K default does.
-      test('text-to-image with nothing chosen is a 1K square', () {
-        expect((qwen()['parameters'] as Map)['size'], '1024*1024');
-        expect((qwen(options: {'imageSize': 'not_set'})['parameters'] as Map)['size'], '1024*1024');
-      });
-
-      test('a stale value from another family still gets the default, not nothing', () {
-        expect((qwen(options: {'imageSize': 'auto'})['parameters'] as Map)['size'], '1024*1024');
+    group('modern Qwen delegates unset sizes to the server', () {
+      test('missing, unset and stale sizes omit the wire field', () {
+        for (final options in [
+          null,
+          {'imageSize': 'not_set'},
+          {'imageSize': 'auto'},
+        ]) {
+          expect(qwen(options: options)['parameters'], isNot(contains('size')));
+        }
       });
 
       test('an explicit choice is kept in the wire spelling', () {
-        expect(
-          (qwen(options: {'imageSize': '1536x1024'})['parameters'] as Map)['size'],
-          '1536*1024',
-        );
+        for (final size in ['1536x1024', '1080x1920', '1920x1080']) {
+          expect(
+            qwen(options: {'imageSize': size})['parameters']['size'],
+            size.replaceAll('x', '*'),
+          );
+        }
       });
 
-      test('an edit with nothing chosen follows the input ratio at the 1K area', () {
-        // Omitting size on an edit also follows the ratio — but at the 2K
-        // area (768×1376 came back 1520×2736) and the 2K price.
-        final body = qwen(
-          refs: ['data:image/png;base64,AAA'],
-          inputSize: (width: 768, height: 1376),
-        );
-        final size = (body['parameters'] as Map)['size'] as String;
-        final m = RegExp(r'^(\d+)\*(\d+)$').firstMatch(size)!;
-        final w = int.parse(m.group(1)!);
-        final h = int.parse(m.group(2)!);
-        expect(w % 16, 0);
-        expect(h % 16, 0);
-        expect(w * h, lessThanOrEqualTo(dashscopeQwenDefaultArea));
-        expect(w * h, greaterThan(dashscopeQwenDefaultArea * 0.9));
-        // Within one grid step of the source ratio.
-        expect((w / h - 768 / 1376).abs(), lessThan(16 / h));
-        expect(w, lessThan(h));
-      });
-
-      test('an edit whose input could not be measured falls back to the square', () {
-        final body = qwen(refs: ['https://example.com/a.png']);
-        expect((body['parameters'] as Map)['size'], '1024*1024');
+      test('edits do not derive size from the first input, measured or not', () {
+        for (final inputSize in [null, (width: 768, height: 1376)]) {
+          final body = qwen(
+            refs: ['https://example.com/portrait.png', 'https://example.com/landscape.png'],
+            inputSize: inputSize,
+          );
+          expect(body['parameters'], isNot(contains('size')));
+        }
       });
     });
 

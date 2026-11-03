@@ -55,7 +55,7 @@ void main() {
           'promptExtendMode': 'agent',
           'imageThinking': 'on',
         }, edit: true)['parameters'],
-        {'n': 1, 'size': '1024*1024', 'prompt_extend': false},
+        {'n': 1, 'prompt_extend': false},
       );
     });
     test('$model rejects Agent edits and disables enhancement when rewriting is off', () {
@@ -76,6 +76,45 @@ void main() {
       expect(effective, isNot(contains('promptExtendMode')));
       expect(effective, isNot(contains('imageThinking')));
       expect(schema.validate(effective, media), isEmpty);
+    });
+  }
+
+  for (final model in [
+    'qwen-image-2.0',
+    'qwen-image-2.0-pro-2026-06-22',
+    'qwen-image-2.1-pro',
+    'qwen-image-2.1-turbo',
+    'qwen-image-2.1-pro-2026-11-03',
+    'qwen-image-3.0',
+    'qwen-image-3.0-pro',
+  ]) {
+    test('$model preserves documented pixel sizes and automatic sizing', () {
+      final schema = schemaFor(model);
+      const media = [GenerationMedia(GenerationMediaRole.reference, 'input.png')];
+      for (final size in [
+        '1080x1920',
+        '1920x1080',
+        '768x1152',
+        '1536x1024',
+        '512x512',
+        '2048x2048',
+      ]) {
+        expect(schema.validate(schema.readLegacy({'imageSize': size}), media), isEmpty);
+        expect(
+          payload(model, {'imageSize': size}, edit: true)['parameters']['size'],
+          size.replaceAll('x', '*'),
+        );
+      }
+      for (final edit in [false, true]) {
+        expect(payload(model, {}, edit: edit)['parameters'], isNot(contains('size')));
+        expect(
+          payload(model, {'imageSize': 'not_set'}, edit: edit)['parameters'],
+          isNot(contains('size')),
+        );
+      }
+      for (final size in ['511x511', '2049x2049', '4608x512']) {
+        expect(schema.validate(schema.readLegacy({'imageSize': size}), media), isNotEmpty);
+      }
     });
   }
 
@@ -137,7 +176,7 @@ void main() {
     expect(metadata, isNot(contains('output_tokens')));
   });
 
-  for (final model in ['qwen-image-3.0', 'wan2.7-image-pro']) {
+  for (final model in ['qwen-image-2.1-pro', 'qwen-image-3.0', 'wan2.7-image-pro']) {
     test('$model queued snapshots accept only additive defaults', () async {
       final schema = schemaFor(model);
       final oldValues = {
@@ -152,7 +191,7 @@ void main() {
         modelId: model,
         channelType: Vendors.dashscopeNative,
         protocolId: schema.protocol!.id,
-        profileId: model == 'qwen-image-3.0' ? 'dashscopeQwenImage' : schema.profileId,
+        profileId: model.startsWith('qwen-image') ? 'dashscopeQwenImage' : schema.profileId,
       );
       expect(
         request.matches(model: model, vendor: Vendors.dashscopeNative, schema: schema),

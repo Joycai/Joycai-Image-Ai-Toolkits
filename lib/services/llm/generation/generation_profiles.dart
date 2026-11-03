@@ -22,6 +22,7 @@ class GenerationProfiles {
     WireProtocol.dashscopeImagesSync: [
       'dashscopeImageFallback',
       'dashscopeQwenImage',
+      'dashscopeQwenImage21',
       'dashscopeQwenImage3',
       'dashscopeQwenImageFixed',
       'dashscopeQwenImageEdit',

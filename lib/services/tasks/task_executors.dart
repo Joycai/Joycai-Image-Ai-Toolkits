@@ -99,9 +99,20 @@ extension TaskExecutors on TaskQueueService {
 
     final outputDir = await _getEffectiveOutputDir(task);
 
-    final attachments = await Future.wait(
-      task.generationImagePaths.map((path) => _buildReferenceAttachment(task, path)),
-    );
+    final resumeJob = task.operationName == null
+        ? null
+        : ImageJob.fromJson(task.parameters[ImageJob.taskKey]);
+    if (task.operationName != null &&
+        (resumeJob == null ||
+            resumeJob.id != task.operationName ||
+            task.operationSurface != ImageJob.surface)) {
+      throw LLMJobAbandoned(task.operationName!, 'Image task recovery data is missing.');
+    }
+    final attachments = resumeJob != null
+        ? <LLMAttachment>[]
+        : await Future.wait(
+            task.generationImagePaths.map((path) => _buildReferenceAttachment(task, path)),
+          );
 
     final messages = [
       LLMMessage(
@@ -111,7 +122,7 @@ extension TaskExecutors on TaskQueueService {
       ),
     ];
 
-    final actualUseStream = await _shouldUseStream(task);
+    final actualUseStream = resumeJob == null && await _shouldUseStream(task);
 
     // A fresh map, not a mutation of task.parameters: the probe is a function
     // value and task.parameters is persisted as JSON. Only the async image
@@ -119,6 +130,14 @@ extension TaskExecutors on TaskQueueService {
     // of riding the job out.
     final requestOptions = <String, dynamic>{
       ...task.generationOptions,
+      ImageJob.resumeKey: ?resumeJob,
+      ImageJob.callbackKey: (ImageJob job) async {
+        task.operationName = job.id;
+        task.operationSurface = ImageJob.surface;
+        task.parameters[ImageJob.taskKey] = job.toJson();
+        await _db.saveTask(task);
+        _notify();
+      },
       ...GenerationExecutionContext(isCancelled: () => task.status == TaskStatus.cancelled)
           .legacyOptions,
     };

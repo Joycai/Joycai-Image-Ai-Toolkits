@@ -24,6 +24,7 @@ import '../llm/generation/generation_execution_context.dart';
 import '../llm/generation/generation_profile_store.dart';
 import '../llm/image_batch_session.dart';
 import '../llm/image_compression.dart';
+import '../llm/image_job.dart';
 import '../llm/job_poll.dart';
 import '../llm/llm_service.dart';
 import '../llm/llm_types.dart';
@@ -337,17 +338,20 @@ class TaskQueueService extends ChangeNotifier {
   }
 
   /// Whether [task] can pick its upstream job back up instead of submitting
-  /// a new one: a video task that ended — failed, or cancelled — after its
+  /// a new one: an async image or video task that ended — failed, or cancelled — after its
   /// job was accepted (and billed). The poll gave up at its deadline, a poll
   /// failed three times running, the download broke, or the user stopped
-  /// watching: in every case the video may exist upstream already, and a
+  /// watching: in every case the result may exist upstream already, and a
   /// [retryTask] would pay for it again.
   static bool canResumeVideoJob(TaskItem task) =>
-      task.type == TaskType.videoGenerate &&
+      (task.type == TaskType.videoGenerate ||
+          (task.type == TaskType.imageProcess &&
+              task.operationSurface == ImageJob.surface &&
+              ImageJob.fromJson(task.parameters[ImageJob.taskKey])?.id == task.operationName)) &&
       (task.operationName?.isNotEmpty ?? false) &&
       (task.status == TaskStatus.failed || task.status == TaskStatus.cancelled);
 
-  /// Re-queues a video task on its existing upstream job: the executor
+  /// Re-queues a task on its existing upstream job: the executor
   /// resumes polling it (with a fresh deadline) and downloads the result,
   /// submitting nothing. See [canResumeVideoJob].
   Future<void> resumeVideoJob(String taskId) async {
@@ -389,6 +393,7 @@ class TaskQueueService extends ChangeNotifier {
       );
       task.operationName = null;
       task.operationSurface = null;
+      task.parameters.remove(ImageJob.taskKey);
     }
     await _requeue(task);
   }
@@ -508,6 +513,11 @@ class TaskQueueService extends ChangeNotifier {
         );
       }
     } catch (e) {
+      if (task.type == TaskType.imageProcess && e is LLMApiException && e.isJobEnded) {
+        task.operationName = null;
+        task.operationSurface = null;
+        task.parameters.remove(ImageJob.taskKey);
+      }
       if (task.status != TaskStatus.cancelled) {
         task.status = task.isBatch ? TaskStatus.awaitingRemote : TaskStatus.failed;
         if (task.isBatch) {

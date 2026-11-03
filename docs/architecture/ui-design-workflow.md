@@ -171,3 +171,22 @@ explanations use the global `TooltipTheme`. Neither is an unthemed Material defa
 Theme tests cover all eight presets in light/dark, field validation and focus;
 editor renders cover 390/834/1024/1440 widths in both brightnesses. The existing
 mobile usage-harness build-time notification warning remains reproducible.
+
+### Qwen automatic size correction (2026-11-03)
+
+The existing size picker now uses its Auto / Model decides state for modern
+Qwen, matching omission of the request's size field. Explicit 1K/2K and custom
+pixels remain in the same positions. The rules line omits a redundant ×1 grid;
+legacy models still show ×16. No new copy, colours or interaction pattern.
+Baseline size-control renders and the maintained design specification were used,
+not historical design frames. Reviewed the real Qwen workbench at 390, 834,
+1024 and 1440 in light/dark (`workbench_*_qwenEditSize.png`), plus the before/after
+size picker sheet. The phone control remains an inline scrollable sheet.
+
+### 2026-11-03 Wan reference ratio correction
+
+The size picker distinguishes explicit ratio/tier pixels from the provider's
+reference-adaptive tier keywords. Follow reference reuses the existing ratio
+chips and four-language copy; pixel inputs and the synthetic square preview
+are hidden in that mode. Explicit 1:1 sends square pixels. Reviewed the real
+workbench at 390/834/1024/1440 in light/dark with reference images selected.

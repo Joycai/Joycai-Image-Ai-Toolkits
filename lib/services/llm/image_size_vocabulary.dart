@@ -7,10 +7,10 @@ import 'output_spec.dart';
 /// picker says about it (`A1c · 30a`). Not the same thing in every family,
 /// and the copy must not pretend it is.
 enum SizeSentinelMeaning {
-  /// `auto`: the model picks (gpt-image-2).
+  /// The server picks: `auto` on GPT, omitted size on modern Qwen.
   modelDecides,
 
-  /// `not_set` on qwen: the app sends a 1K-area size — a 1024² square for
+  /// `not_set` on legacy qwen: the app sends a 1K-area size — a 1024² square for
   /// text-to-image, the input's proportions fitted into the 1K area for an
   /// edit (`dashscopeQwenDefaultSize`).
   followsInput,
@@ -21,8 +21,8 @@ enum SizeSentinelMeaning {
 
 /// How the picker's tier segments (`1K` / `2K` / `4K`) turn into a value.
 enum SizeTierKind {
-  /// wan: the tier is a keyword the endpoint takes. At 1:1 the keyword itself
-  /// is submitted; at any other ratio the tier's pixels are.
+  /// wan: the endpoint accepts a tier keyword to follow the last reference.
+  /// Explicit ratios submit concrete pixels instead.
   keyword,
 
   /// qwen: an area tier the endpoint bills by — the tier's pixels at the
@@ -189,17 +189,13 @@ int? tierEdge(String tier) {
 int _gcd(int a, int b) => b == 0 ? a : _gcd(b, a % b);
 int _lcm(int a, int b) => a ~/ _gcd(a, b) * b;
 
-/// The value a (ratio, tier) choice submits: the keyword itself for a wan
-/// square, the cell's pixels otherwise.
+/// An explicit ratio always submits pixels, including square edits.
 String tierValue(
   AspectRatioSpec ratio,
   String tier,
   ImageSizeRules rules,
   ImageSizeVocabulary vocab,
 ) {
-  if (vocab.tierKind == SizeTierKind.keyword && (ratio.longOverShort - 1).abs() < 1e-9) {
-    return tier;
-  }
   final (w, h) = tierSize(ratio, tier, rules, vocab);
   return '${w}x$h';
 }
@@ -213,6 +209,17 @@ String? tierOfSize(
   ImageSizeRules rules,
   ImageSizeVocabulary vocab,
 ) {
+  // Official cells are approximate ratios; recognize their exact pixels
+  // before solving a free ratio on the one-pixel grid.
+  for (final tier in vocab.tiers) {
+    for (final cell in (vocab.officialTable[tier] ?? const <String, String>{}).values) {
+      final size = parseWxH(cell);
+      if (size != null &&
+          ((size.width == w && size.height == h) || (size.width == h && size.height == w))) {
+        return tier;
+      }
+    }
+  }
   final r = ratio ?? ratioOf(w, h);
   for (final t in vocab.tiers) {
     final (tw, th) = tierSize(r, t, rules, vocab);

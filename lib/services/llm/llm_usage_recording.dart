@@ -34,7 +34,11 @@ extension _UsageRecording on LLMService {
         taskTag: taskTag,
         options: options,
         imageCount: imageCount,
-        rowId: rowId,
+        rowId:
+            rowId ??
+            (metadata['dashscopeTaskId'] is String
+                ? 'dashscope-image:${config.channelId}:${metadata['dashscopeTaskId']}'
+                : null),
       );
     } catch (e) {
       _emitLog(

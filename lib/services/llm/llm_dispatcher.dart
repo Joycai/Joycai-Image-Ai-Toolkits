@@ -4,6 +4,7 @@ import 'generation/generation_request.dart';
 import 'generation/generation_schema.dart';
 import 'generation/generation_validator.dart';
 import 'gpt_image_timeout.dart';
+import 'image_job.dart';
 import 'llm_types.dart';
 import 'model_capabilities.dart';
 import 'model_descriptor.dart';
@@ -898,6 +899,14 @@ class LLMDispatcher {
     List<LLMTool>? tools,
     LLMLogger? logger,
   }) async {
+    if (options?[ImageJob.resumeKey] case final ImageJob job) {
+      return _dashscopeImagesAsync.resume(
+        resolveTarget(config),
+        job,
+        options: options,
+        logger: logger,
+      );
+    }
     options = await _generationOptions(config, history, options);
     final target = resolveTarget(config);
     switch (target.vendor.family) {

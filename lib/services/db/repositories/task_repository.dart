@@ -141,7 +141,8 @@ class TaskRepository {
       'tasks',
       {'status': 'pending'},
       where:
-          'status = ? AND type = ? AND operation_name IS NOT NULL '
+          "status = ? AND (type = ? OR (type = 'imageProcess' AND "
+          "operation_surface = 'dashscope-images-async')) AND operation_name IS NOT NULL "
           "AND operation_name != ''",
       whereArgs: ['processing', 'videoGenerate'],
     );

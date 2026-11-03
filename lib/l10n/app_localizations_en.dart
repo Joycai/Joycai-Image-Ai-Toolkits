@@ -6408,4 +6408,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get generationAgentTextOnly =>
       'Agent prompt enhancement supports text-to-image only. Choose Direct for image editing.';
+
+  @override
+  String get imageSizeFollowReference => 'Follow reference';
+
+  @override
+  String get imageSizeFollowReferenceHint =>
+      'Uses the last reference ratio; square without references';
 }

@@ -380,6 +380,12 @@ Future<_Catalog> _seedCatalog(DatabaseService db) async {
     // Pinned to the async task route — the card grows the primary-tinted
     // protocol chip (18b) and the editor opens in state ③ (18a).
     LLMModel(
+      modelId: 'qwen-image-2.1-pro',
+      modelName: 'Qwen Image 2.1 Pro',
+      channelId: dashscopeId,
+      tag: 'image',
+    ),
+    LLMModel(
       modelId: 'wan2.7-image',
       modelName: '万相 2.7 图像',
       tag: ModelTag.image.value,

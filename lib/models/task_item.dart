@@ -70,7 +70,7 @@ class TaskItem {
   /// place in the list instead of jumping to the top.
   final DateTime createdAt;
 
-  /// The wire surface that issued a long-running (video) job's operation id
+  /// The wire surface that issued a long-running image or video job's operation id
   /// (a `WireProtocol.id` string), recorded once the submit is accepted. The
   /// poll loop passes it back so routing follows the job's provenance, not the
   /// channel's current wiring — a channel re-pointed at another vendor
@@ -78,7 +78,7 @@ class TaskItem {
   ///
   String? operationSurface;
 
-  /// The upstream id of a long-running (video) job, persisted the moment the
+  /// The upstream id of a long-running image or video job, persisted the moment the
   /// submit is accepted (`tasks.operation_name`, v38).
   ///
   /// A submitted job is billed whether or not anyone polls it, so the id is

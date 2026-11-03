@@ -285,6 +285,86 @@ void main() {
     }
   }
 
+  for (final size in kShotSizes) {
+    for (final brightness in Brightness.values) {
+      testWidgets('Qwen edit size ${size.label} ${brightness.name}', (tester) async {
+        await shoot(
+          tester,
+          env: env,
+          screen: AppScreen.workbench,
+          size: size,
+          brightness: brightness,
+          suffix: 'qwenEditSize',
+          before: (_) async {
+            AppState().setWorkbenchTab(0);
+            AppState().isConsoleExpanded = false;
+            AppState().lastSelectedModelId = 'qwen-image-2.1-pro';
+          },
+          after: (tester) async {
+            AppState().clearImageSelection();
+            seedImageSelection(AppState());
+            final layout = tester
+                .element(find.byType(ImageCard).first)
+                .read<WorkbenchLayoutState>();
+            if (layout.rightPanelDetached) {
+              await actInRealAsync(tester, () async => layout.openRightPanel());
+            }
+            await settle(tester);
+            await tester.tap(find.text('模型选择').last);
+            await settle(tester);
+            await tester.ensureVisible(find.byType(SizeField));
+            await tester.tap(find.byType(SizeField));
+            await settle(tester);
+          },
+        );
+      });
+    }
+  }
+
+  for (final size in kShotSizes) {
+    for (final brightness in Brightness.values) {
+      testWidgets('Wan reference size ${size.label} ${brightness.name}', (tester) async {
+        await shoot(
+          tester,
+          env: env,
+          screen: AppScreen.workbench,
+          size: size,
+          brightness: brightness,
+          suffix: 'wanReferenceSize',
+          before: (_) async {
+            AppState().setWorkbenchTab(0);
+            AppState().isConsoleExpanded = false;
+            AppState().lastSelectedModelId = 'wan2.7-image';
+          },
+          after: (tester) async {
+            AppState().clearImageSelection();
+            seedImageSelection(AppState());
+            final layout = tester
+                .element(find.byType(ImageCard).first)
+                .read<WorkbenchLayoutState>();
+            if (layout.rightPanelDetached) {
+              await actInRealAsync(tester, () async => layout.openRightPanel());
+            }
+            await settle(tester);
+            await tester.tap(find.text('模型选择').last);
+            await settle(tester);
+            await tester.ensureVisible(find.byType(SizeField));
+            await tester.tap(find.byType(SizeField));
+            await settle(tester);
+            await Scrollable.ensureVisible(
+              tester.element(find.text('跟随参考图').last),
+              alignment: 0.35,
+            );
+            await actInRealAsync(tester, () async {
+              await tester.tap(find.text('跟随参考图').last);
+              await settle(tester);
+            });
+          },
+        );
+      });
+    }
+  }
+
   // D1e 3c: the model card on Seedream — each generation grows only the
   // controls its table declares.
   for (final (String modelId, String suffix, Brightness brightness)

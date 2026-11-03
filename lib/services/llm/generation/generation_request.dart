@@ -114,7 +114,8 @@ class GenerationRequest {
       channelType == vendor &&
       protocolId == schema.protocol?.id &&
       (profileId == schema.profileId ||
-          (profileId == 'dashscopeQwenImage' && schema.profileId == 'dashscopeQwenImage3')) &&
+          (profileId == 'dashscopeQwenImage' &&
+              const ['dashscopeQwenImage21', 'dashscopeQwenImage3'].contains(schema.profileId))) &&
       schemaVersion == GenerationSchema.version;
 }
 

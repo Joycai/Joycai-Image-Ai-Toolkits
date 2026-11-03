@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 
 import '../../../core/image_magic.dart';
 import '../image_compression.dart';
+import '../image_job.dart';
 import '../llm_debug_logger.dart';
 import '../llm_types.dart';
 import 'dashscope_images_protocol.dart';
@@ -33,7 +34,7 @@ class DashScopeImagesAsyncProtocol implements ImageGenProtocol {
   static const Duration _overallDeadline = Duration(minutes: 9);
 
   /// Poll pacing: dense at first, relaxed once the task is clearly queued.
-  static const Duration _initialPollInterval = Duration(seconds: 3);
+  static const Duration _initialPollInterval = Duration(seconds: 5);
   static const Duration _relaxedPollInterval = Duration(seconds: 6);
   static const int _densePolls = 10;
 
@@ -46,8 +47,6 @@ class DashScopeImagesAsyncProtocol implements ImageGenProtocol {
   }) async {
     final config = target.config;
     final userMsg = history.lastWhere((m) => m.role == LLMRole.user, orElse: () => history.last);
-
-    final cancelled = cancellationProbeOf(options);
 
     // Reference handling mirrors the synchronous protocol: cap to the
     // model's ceiling, inline as data URLs.
@@ -111,27 +110,91 @@ class DashScopeImagesAsyncProtocol implements ImageGenProtocol {
         );
       }
 
-      // The task id goes into the logs the moment it exists — if the poll
-      // loop dies, this is the only handle left to look the task up with.
+      final job = ImageJob(
+        id: taskId,
+        base: base,
+        model: config.modelId,
+        inputImages: imageRefs.length,
+        sentSize: dashscopeSentSize(payload),
+      );
+      final callback = options?[ImageJob.callbackKey];
+      if (callback is Future<void> Function(ImageJob)) {
+        try {
+          await callback(job);
+        } catch (error) {
+          throw LLMJobAbandoned(
+            taskId,
+            'Could not save accepted image task $taskId.',
+            cause: error,
+          );
+        }
+      }
+      // Recovery information is durable before logging or polling can fail.
       logger?.call('DashScope image task id: $taskId', level: 'INFO');
       if (debugFile != null) {
         await LLMDebugLogger.appendLine(debugFile, 'task_id: $taskId');
       }
 
-      final pollUrl = Uri.parse('$base/tasks/$taskId');
-      var polls = 0;
-
-      // The shared loop owns cancellation, the sliced sleep, transient
-      // tolerance and the deadline. Its exhausted-failure exit is
-      // LLMJobAbandoned, never a 5xx: the old rethrow of the third failed
-      // poll made LLMService.request submit a second paid task.
-      return await pollJobUntilDone<LLMResponse>(
-        job: 'DashScope image task $taskId',
-        jobId: taskId,
-        // One deadline over the whole job, submit included.
+      return await _poll(
+        target,
+        job,
+        client,
+        options: options,
+        logger: logger,
+        debugFile: debugFile,
         deadline: _overallDeadline - DateTime.now().difference(started),
+      );
+    } finally {
+      client.close();
+    }
+  }
+
+  /// Recovery deliberately skips original inputs and POST submission.
+  Future<LLMResponse> resume(
+    LLMTarget target,
+    ImageJob job, {
+    Map<String, dynamic>? options,
+    LLMLogger? logger,
+  }) async {
+    if (dashscopeNativeBase(target.config.endpoint) != job.base ||
+        target.config.modelId != job.model) {
+      throw LLMJobAbandoned(
+        job.id,
+        'The image task endpoint or model changed. Restore its original configuration to resume.',
+      );
+    }
+    final client = target.config.createClient();
+    try {
+      return await _poll(target, job, client, options: options, logger: logger);
+    } finally {
+      client.close();
+    }
+  }
+
+  Future<LLMResponse> _poll(
+    LLMTarget target,
+    ImageJob job,
+    http.Client client, {
+    Map<String, dynamic>? options,
+    LLMLogger? logger,
+    LLMDebugLog? debugFile,
+    Duration deadline = _overallDeadline,
+  }) async {
+    final pollUrl = Uri.parse('${job.base}/tasks/${job.id}');
+    var polls = 0;
+
+    // The shared loop owns cancellation, the sliced sleep, transient
+    // tolerance and the deadline. Its exhausted-failure exit is
+    // LLMJobAbandoned, never a 5xx: the old rethrow of the third failed
+    // poll made LLMService.request submit a second paid task.
+    try {
+      return await pollJobUntilDone<LLMResponse>(
+        job: 'DashScope image task ${job.id}',
+        jobId: job.id,
+        // One deadline over the whole job, submit included.
+        deadline: deadline,
         interval: (n) => n < _densePolls ? _initialPollInterval : _relaxedPollInterval,
-        isCancelled: cancelled,
+        isCancelled: cancellationProbeOf(options),
         logger: logger,
         fetch: () async {
           final pollResponse = await sendJsonRequest(
@@ -152,7 +215,7 @@ class DashScopeImagesAsyncProtocol implements ImageGenProtocol {
           final status = requireJobStatus(
             taskOutput is Map ? taskOutput['task_status'] : null,
             job: 'DashScope image task',
-            jobId: taskId,
+            jobId: job.id,
           ).toUpperCase();
 
           if (debugFile != null) {
@@ -166,27 +229,31 @@ class DashScopeImagesAsyncProtocol implements ImageGenProtocol {
               }
               return _collectResult(
                 data,
-                taskId,
+                job.id,
                 client,
                 logger,
-                sentSize: dashscopeSentSize(payload),
-                inputImages: imageRefs.length,
+                sentSize: job.sentSize,
+                inputImages: job.inputImages,
                 abortTrigger: abortTriggerOf(options),
               );
             case 'FAILED':
             case 'CANCELED':
             case 'UNKNOWN':
-              throw dashscopeTaskFailure('DashScope image task', taskId, status, taskOutput);
+              throw LLMApiException(
+                dashscopeTaskFailure('DashScope image task', job.id, status, taskOutput).toString(),
+                isJobEnded: true,
+              );
             default:
               // PENDING / RUNNING / anything newer — keep waiting under the
               // overall deadline.
-              logger?.call('DashScope image task $taskId: $status', level: 'DEBUG');
+              logger?.call('DashScope image task ${job.id}: $status', level: 'DEBUG');
               return null;
           }
         },
       );
-    } finally {
-      client.close();
+    } catch (error) {
+      if (error is LLMJobAbandoned || (error is LLMApiException && error.isJobEnded)) rethrow;
+      throw LLMJobAbandoned(job.id, 'Image task ${job.id} can be resumed.', cause: error);
     }
   }
 
@@ -236,6 +303,7 @@ class DashScopeImagesAsyncProtocol implements ImageGenProtocol {
       // billing, and an image count so a result without `usage` is still
       // recorded.
       metadata: {
+        'dashscopeTaskId': taskId,
         ...dashscopeImageMetadata(
           data: data,
           imageCount: images.length,

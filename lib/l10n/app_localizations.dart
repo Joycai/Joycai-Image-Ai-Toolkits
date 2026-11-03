@@ -11121,6 +11121,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Agent prompt enhancement supports text-to-image only. Choose Direct for image editing.'**
   String get generationAgentTextOnly;
+
+  /// No description provided for @imageSizeFollowReference.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow reference'**
+  String get imageSizeFollowReference;
+
+  /// No description provided for @imageSizeFollowReferenceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Uses the last reference ratio; square without references'**
+  String get imageSizeFollowReferenceHint;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
