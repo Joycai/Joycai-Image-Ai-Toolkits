@@ -220,3 +220,15 @@ Local HTTP fixtures cover this relay sequence, URL/base64 delivery, invalid imag
 downloads, terminal errors, preview/progress exclusion and held-open connections.
 Queue tests cover exactly-once saving/usage and cancellation after intermediate
 errors. This is response-shape compatibility, not a host or model-name exception.
+
+### URL carriers on typed events (2026-11-04 follow-up)
+
+A captured failing edit response used `image_generation.completed` with a
+**top-level** `url` and `usage`, rather than `b64_json` or `data[]`. Standard
+`image_generation` / `image_edit` preview and completion events therefore accept
+either non-empty `b64_json` or a fallback top-level `url`, using the existing
+validated, cancellable image resolver. Preview URLs remain transient; completion
+URLs deliver the image and original usage. This does not infer completion from
+an arbitrary URL or resubmit a generation. Local HTTP regressions cover both
+namespaces, empty-base64 fallback, preview-before-final ordering and single
+submission/delivery.

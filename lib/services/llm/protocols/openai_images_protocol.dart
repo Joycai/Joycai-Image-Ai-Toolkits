@@ -390,12 +390,16 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
         final done = type == 'image_generation.completed' || type == 'image_edit.completed';
         if (!partial && !done) return const [];
         if (completed) throw LLMApiException('OpenAI Images stream returned duplicate completion.');
+        // Compatible relays also use top-level URL references on standard
+        // typed preview/completion events. Keep their lifecycle semantics;
+        // only the image carrier differs from the official base64 form.
         final encoded = data['b64_json'];
-        if (encoded is! String || encoded.isEmpty) {
+        final ref = encoded is String && encoded.trim().isNotEmpty ? encoded : data['url'];
+        if (ref is! String || ref.trim().isEmpty) {
           throw LLMApiException('OpenAI Images stream returned an empty image.');
         }
         final images = await resolveImageRefs(
-          [encoded],
+          [ref],
           client,
           logger,
           source: 'OpenAI Images stream',
