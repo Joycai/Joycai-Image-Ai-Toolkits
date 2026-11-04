@@ -8,5 +8,22 @@
   "storageLocationDesc": "選取產生的圖片將儲存的位置。",
   "addChannelOptional": "新增您的第一個 AI 供應商通道 (選用)。",
   "configureModelOptional": "為您的新通道設定模型 (選用)。",
-  "filenamePrefix": "檔案名稱前綴詞"
+  "filenamePrefix": "檔案名稱前綴詞",
+  "installationImportTitle": "遷入舊版資料",
+  "installationImportDescription": "遷入渠道、金鑰、提示詞、歷史、助手對話和私有素材。請選擇包含 joycai_workbench.db 的舊資料夾，通常位於 Library/Application Support/cn.joycai.joycaiImageAiToolkits。外部目錄需要重新授權。",
+  "installationImportSelect": "選擇舊資料夾",
+  "installationImportAcknowledge": "我已結束舊版，並會保持關閉。切換到遷入的資料，現有資料另外保留、不合併；繼續進入應用後將恢復遷入的排隊任務。",
+  "installationImportStart": "複製並切換",
+  "installationImportSkip": "繼續使用目前資料",
+  "installationImportContinue": "開啟遷入的應用",
+  "installationImportSuccess": "遷入完成。來源資料和原沙盒資料均已保留。外部目錄需要重新授權；MCP 已關閉，請重新設定後啟用。",
+  "installationImportWorking": "正在複製並校驗資料，請保持視窗開啟。",
+  "installationImportInvalidSource": "請選擇此沙盒之外的舊版資料夾。不支援符號連結或互相包含的目錄。",
+  "installationImportNewerSchema": "此資料庫由更新版本建立，請先更新應用再遷入。",
+  "installationImportSourceChanged": "複製期間來源資料發生變化，請結束舊版後重試。",
+  "installationImportInvalidDatabase": "所選資料庫已損壞，或不是支援的 Joycai 資料庫。",
+  "installationImportIoError": "操作未完成。請檢查目錄存取權限和磁碟空間後重試。來源資料和原有資料均已保留。",
+  "installationImportSchedule": "遷入舊版資料",
+  "installationImportScheduleDescription": "下次啟動時開啟整庫遷入頁面。請先結束舊版；確認遷入前不改變目前資料。",
+  "installationImportScheduled": "已安排遷入頁面。請等待目前任務完成後，結束並重新開啟本應用。"
 }

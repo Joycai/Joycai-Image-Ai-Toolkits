@@ -1,0 +1,8 @@
+// Used only by build_macos.sh --distribution direct via XCODE_XCCONFIG_FILE.
+// No App Store provisioning, sandbox entitlements or developer certificate.
+CODE_SIGN_ENTITLEMENTS =
+ENABLE_APP_SANDBOX = NO
+CODE_SIGN_IDENTITY = -
+CODE_SIGN_STYLE = Manual
+DEVELOPMENT_TEAM =
+PROVISIONING_PROFILE_SPECIFIER =

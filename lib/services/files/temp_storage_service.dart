@@ -8,11 +8,14 @@ import '../../core/app_paths.dart';
 /// The app's own scratch space under the OS temp directory, and the only thing
 /// that reaps it.
 ///
-/// Everything the app writes for itself rather than for the user lands under
-/// `<temp>/joycai`: mask PNGs from the mask editor, crop/resize copies, the
+/// Disposable scratch files land under `<temp>/joycai`: mask PNGs from the
+/// mask editor, crop/resize copies, the
 /// downloader's page cache, video thumbnails. None of it was ever collected.
 /// The OS clears its temp directory eventually, but "eventually" on a desktop
 /// can be never — a machine that is not rebooted keeps every mask ever drawn.
+///
+/// Durable imports, queued media snapshots and result fallback live in
+/// application data via PersistentMediaService and are never collected here.
 ///
 /// [sweep] runs once at startup and takes the files that have gone cold.
 /// [measure] and [clear] back the manual control in Settings, for the user who

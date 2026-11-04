@@ -13,8 +13,18 @@ class _ReferenceFilesSection extends StatelessWidget {
       type: FileType.custom,
       allowedExtensions: audio ? ['wav', 'mp3'] : ['mp4', 'mov'],
     );
-    if (!context.mounted) return;
-    state.addVideoReferenceFiles(result.map((file) => file.path).whereType<String>(), audio: audio);
+    try {
+      for (final file in result) {
+        if (file.path == null) continue;
+        final path = await PersistentMediaService.instance.importFile(file.path!);
+        if (!context.mounted) return;
+        state.addVideoReferenceFiles([path], audio: audio);
+      }
+    } catch (error) {
+      if (context.mounted) {
+        AppSnackBar.error(context, AppLocalizations.of(context)!.importFailed('$error'));
+      }
+    }
   }
 
   @override

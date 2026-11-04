@@ -4356,6 +4356,62 @@ class AppLocalizationsJa extends AppLocalizations {
   String get filenamePrefix => 'ファイル名のプレフィックス';
 
   @override
+  String get installationImportTitle => '旧データを移行';
+
+  @override
+  String get installationImportDescription =>
+      'チャネル、キー、プロンプト、履歴、会話、専用メディアを移行します。joycai_workbench.db がある旧フォルダ（通常は Library/Application Support/cn.joycai.joycaiImageAiToolkits）を選択してください。外部フォルダは再承認が必要です。';
+
+  @override
+  String get installationImportSelect => '旧データフォルダを選択';
+
+  @override
+  String get installationImportAcknowledge =>
+      '旧アプリを終了し、閉じたままにします。移行データに切り替え、現在のデータは統合せず別途保持します。続行すると移行した待機タスクが再開されます。';
+
+  @override
+  String get installationImportStart => 'コピーして切り替え';
+
+  @override
+  String get installationImportSkip => '現在のデータを使用';
+
+  @override
+  String get installationImportContinue => '移行したアプリを開く';
+
+  @override
+  String get installationImportSuccess =>
+      '移行が完了しました。元データと以前のデータは保持されています。外部フォルダを再承認してください。MCP は再設定するまで無効です。';
+
+  @override
+  String get installationImportWorking => 'データをコピーして検証しています。ウィンドウを閉じないでください。';
+
+  @override
+  String get installationImportInvalidSource => 'このサンドボックス外の旧フォルダを選択してください。リンクや重複するディレクトリは使用できません。';
+
+  @override
+  String get installationImportNewerSchema => '新しいバージョンで作成されたデータベースです。更新してから移行してください。';
+
+  @override
+  String get installationImportSourceChanged => 'コピー中に元データが変更されました。旧アプリを終了して再試行してください。';
+
+  @override
+  String get installationImportInvalidDatabase => 'データベースが破損しているか、対応する Joycai データベースではありません。';
+
+  @override
+  String get installationImportIoError =>
+      '完了できませんでした。アクセス権と空き容量を確認して再試行してください。元データと以前のデータは保持されています。';
+
+  @override
+  String get installationImportSchedule => '旧データを移行';
+
+  @override
+  String get installationImportScheduleDescription =>
+      '次回起動時に移行画面を開きます。先に旧アプリを終了してください。確定するまで現在のデータは変更しません。';
+
+  @override
+  String get installationImportScheduled => '次回起動時に移行画面を表示します。タスクが完了したら、このアプリを終了して再度開いてください。';
+
+  @override
   String get workbench => 'ワークベンチ';
 
   @override

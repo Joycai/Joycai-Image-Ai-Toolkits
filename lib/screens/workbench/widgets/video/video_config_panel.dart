@@ -21,6 +21,7 @@ import '../../../../models/llm_model.dart';
 import '../../../../models/prompt.dart';
 import '../../../../models/prompt_history_entry.dart';
 import '../../../../models/tag.dart';
+import '../../../../services/files/persistent_media_service.dart';
 import '../../../../services/llm/generation/generation_schema.dart';
 import '../../../../services/llm/model_capabilities.dart';
 import '../../../../state/app_state.dart';

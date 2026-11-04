@@ -1,9 +1,9 @@
 import 'dart:io';
 
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/app_distribution.dart';
 import '../../../core/app_paths.dart';
 import '../../../core/app_semantic_colors.dart';
 import '../../../core/app_theme.dart';
@@ -14,6 +14,8 @@ import '../../../l10n/app_localizations.dart';
 import '../../../models/llm_model.dart';
 import '../../../services/assistant/knowledge_base_service.dart';
 import '../../../services/assistant/prompt_optimizer_agent.dart';
+import '../../../services/files/directory_access_service.dart';
+import '../../../services/files/installation_migration_service.dart';
 import '../../../services/llm/gpt_image_timeout.dart';
 import '../../../services/llm/llm_debug_logger.dart';
 import '../../../services/system/gpu_info_service.dart';
@@ -23,6 +25,7 @@ import '../../../widgets/ui/app_dialog.dart';
 import '../../../widgets/ui/app_dropdown.dart';
 import '../../../widgets/ui/app_field_size.dart';
 import '../../../widgets/ui/app_setting_row.dart';
+import '../../../widgets/ui/app_snackbar.dart';
 import '../../../widgets/ui/app_switch.dart';
 import '../../../widgets/ui/searchable_picker.dart';
 import 'settings_layout.dart';
@@ -114,7 +117,6 @@ class _ApplicationSectionState extends State<ApplicationSection> {
     final l10n = AppLocalizations.of(context)!;
     final appState = Provider.of<AppState>(context);
     final bool phone = Responsive.isMobile(context);
-    final bool desktopOs = Platform.isWindows || Platform.isLinux || Platform.isMacOS;
 
     // Present whether or not logging is on, so switching it does not move the
     // row; it opens what the switch writes, so it only works while it is on.
@@ -190,7 +192,7 @@ class _ApplicationSectionState extends State<ApplicationSection> {
                       ),
                 footer: phone ? openLogs : null,
               ),
-              if (desktopOs)
+              if (AppPaths.supportsPortableMode)
                 AppSettingRow(
                   framed: false,
                   title: l10n.portableMode,
@@ -217,6 +219,29 @@ class _ApplicationSectionState extends State<ApplicationSection> {
               children: [
                 if (!Platform.isIOS) _buildOutputDirectoryTile(appState, l10n),
                 if (!Platform.isIOS) ...[const SizedBox(height: 8), _buildKnowledgeBaseTile(l10n)],
+                if (Platform.isMacOS && !AppDistribution.direct) ...[
+                  const SizedBox(height: 8),
+                  AppSettingRow(
+                    title: l10n.installationImportSchedule,
+                    description: l10n.installationImportScheduleDescription,
+                    footer: AppButton(
+                      label: l10n.installationImportSchedule,
+                      variant: AppButtonVariant.secondary,
+                      onPressed: () async {
+                        try {
+                          await InstallationMigrationService().requestOnNextLaunch();
+                          if (context.mounted) {
+                            AppSnackBar.info(context, l10n.installationImportScheduled);
+                          }
+                        } catch (_) {
+                          if (context.mounted) {
+                            AppSnackBar.error(context, l10n.installationImportIoError);
+                          }
+                        }
+                      },
+                    ),
+                  ),
+                ],
                 if (_gpuInfo.isSupported) ...[const SizedBox(height: 8), _buildGpuTile(l10n)],
               ],
             ),
@@ -429,7 +454,7 @@ class _ApplicationSectionState extends State<ApplicationSection> {
   }
 
   Future<void> _pickKnowledgeBase() async {
-    final String? path = await FilePicker.getDirectoryPath();
+    final String? path = await DirectoryAccessService.instance.pickDirectory();
     if (path != null) {
       await KnowledgeBaseService().setRoot(path);
       final status = await KnowledgeBaseService().validate(path);
@@ -443,7 +468,7 @@ class _ApplicationSectionState extends State<ApplicationSection> {
   }
 
   Future<void> _pickOutputDirectory(AppState appState) async {
-    final String? path = await FilePicker.getDirectoryPath();
+    final String? path = await DirectoryAccessService.instance.pickDirectory();
     if (path != null) {
       setState(() => _outputDirController.text = path);
       await appState.updateOutputDirectory(path);

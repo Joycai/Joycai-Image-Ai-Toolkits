@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 
 import '../core/constants.dart';
 import '../core/file_utils.dart';
@@ -13,7 +12,9 @@ import '../models/app_image.dart';
 import '../models/image_layer.dart';
 import '../services/db/database_service.dart';
 import '../services/db/repositories/image_layer_repository.dart';
+import '../services/files/directory_access_service.dart';
 import '../services/files/file_permission_service.dart';
+import '../services/files/persistent_media_service.dart';
 import '../services/media/image_metadata_service.dart';
 import 'file_browser_state.dart' show FolderFlash;
 
@@ -111,13 +112,14 @@ class GalleryState extends ChangeNotifier {
 
   String? outputDirectory;
   String? resultCacheDirectory;
+  String? legacyResultCacheDirectory;
   double thumbnailSize = 150.0;
   String imagePrefix = 'result';
 
   /// Root directories of the result tree (dedup, non-empty): the configured
   /// output directory plus the platform result cache when it differs.
   ///
-  /// Memoised against the two paths it is derived from, because the rest of
+  /// Memoised against the three paths it is derived from, because the rest of
   /// this class trades on list *identity* meaning "this changed" — a selector
   /// holding one of these lists has no other way to tell. A getter that
   /// allocated on every read was a value that always compared unequal, so
@@ -125,10 +127,10 @@ class GalleryState extends ChangeNotifier {
   /// selection changes and size drags included. Same list back until one of
   /// the paths moves.
   List<String>? _resultRoots;
-  (String?, String?)? _resultRootsFrom;
+  (String?, String?, String?)? _resultRootsFrom;
 
   List<String> get resultRootDirectories {
-    final from = (outputDirectory, resultCacheDirectory);
+    final from = (outputDirectory, resultCacheDirectory, legacyResultCacheDirectory);
     final cached = _resultRoots;
     if (cached != null && _resultRootsFrom == from) return cached;
 
@@ -141,6 +143,8 @@ class GalleryState extends ChangeNotifier {
         resultCacheDirectory != outputDirectory) {
       roots.add(resultCacheDirectory!);
     }
+    final legacy = legacyResultCacheDirectory;
+    if (legacy != null && legacy.isNotEmpty && !roots.contains(legacy)) roots.add(legacy);
     _resultRootsFrom = from;
     return _resultRoots = roots;
   }
@@ -271,6 +275,7 @@ class GalleryState extends ChangeNotifier {
   }
 
   Future<void> reloadSettings() async {
+    await DirectoryAccessService.instance.restoreAll();
     final savedThumbSize = await _db.getSetting('thumbnail_size');
     if (savedThumbSize != null) {
       thumbnailSize = double.tryParse(savedThumbSize) ?? 150.0;
@@ -281,11 +286,21 @@ class GalleryState extends ChangeNotifier {
 
     // Result Cache initialization (Fallback for sandboxed environments like iOS/macOS)
     if (Platform.isIOS || Platform.isMacOS) {
-      final cacheDir = await getTemporaryDirectory();
-      resultCacheDirectory = p.join(cacheDir.path, 'result_cache');
+      final cacheDir = await PersistentMediaService.instance.resultsDirectory();
+      resultCacheDirectory = cacheDir.path;
       final dir = Directory(resultCacheDirectory!);
       if (!dir.existsSync()) dir.createSync(recursive: true);
 
+      final previous = await _db.getSetting('result_cache_directory');
+      legacyResultCacheDirectory = await _db.getSetting('legacy_result_cache_directory');
+      if (previous != null && previous.isNotEmpty && previous != resultCacheDirectory) {
+        legacyResultCacheDirectory = previous;
+        await _db.saveSetting('legacy_result_cache_directory', previous);
+        if (outputDirectory == previous) {
+          outputDirectory = resultCacheDirectory;
+          await _db.saveSetting('output_directory', outputDirectory!);
+        }
+      }
       await _db.saveSetting('result_cache_directory', resultCacheDirectory!);
 
       // On iOS, we also treat this as the primary output if not set
@@ -568,15 +583,7 @@ class GalleryState extends ChangeNotifier {
 
   Future<void> _scanProcessedImages() async {
     final generation = ++_processedScanGeneration;
-    final List<String> scanPaths = [];
-    if (outputDirectory != null && outputDirectory!.isNotEmpty) {
-      scanPaths.add(outputDirectory!);
-    }
-    if (resultCacheDirectory != null &&
-        resultCacheDirectory!.isNotEmpty &&
-        resultCacheDirectory != outputDirectory) {
-      scanPaths.add(resultCacheDirectory!);
-    }
+    final scanPaths = resultRootDirectories;
 
     if (scanPaths.isEmpty) {
       if (_disposed || generation != _processedScanGeneration) return;

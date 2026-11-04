@@ -10,6 +10,7 @@ import '../core/thumbnail_decode.dart';
 import '../models/browser_file.dart';
 import '../services/db/database_service.dart';
 import '../services/files/browser_file_scanner.dart';
+import '../services/files/directory_access_service.dart';
 import '../services/files/file_permission_service.dart';
 import '../services/media/image_metadata_service.dart';
 
@@ -108,6 +109,7 @@ class FileBrowserState extends ChangeNotifier {
   }
 
   Future<void> reloadSettings() async {
+    await DirectoryAccessService.instance.restoreAll();
     final savedThumbSize = await _db.getSetting('browser_thumbnail_size');
     if (savedThumbSize != null) {
       thumbnailSize = double.tryParse(savedThumbSize) ?? 150.0;

@@ -31,6 +31,9 @@ Required reading before touching the subsystem each one covers.
   old→new path map for reading pre-refactor documents.
 * **[Local MCP image server](architecture/mcp-image-server.md)** — desktop connection,
   agent tools, reference/edit generation, replay protection and result persistence.
+* **[macOS App Sandbox](architecture/macos-sandbox.md)** — entitlement purposes,
+  file authorization boundaries, remaining adaptations and native verification.
+  [Isolated MAS-02 acceptance](testing/mas02-native-acceptance.md) records tested cases and limits.
 * **[Media usage and cost accounting](architecture/media-accounting.md)** — shared
   ordinary/Batch arithmetic, modality prices, submitted video pricing snapshots,
   incomplete evidence, atomic settlement and durable recovery.

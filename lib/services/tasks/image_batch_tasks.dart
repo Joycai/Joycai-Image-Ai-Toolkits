@@ -218,26 +218,28 @@ extension ImageBatchTasks on TaskQueueService {
             }
           }
           if (task.resultPaths.isEmpty) {
+            if ((Platform.isMacOS || Platform.isIOS) &&
+                state['outputDir'] == await _db.getSetting('legacy_result_cache_directory')) {
+              state['outputDir'] = (await _media.resultsDirectory()).path;
+            }
             final result = await session.decodeResult(body, state['inputs'] as int? ?? 0);
             if (result.generatedImages.length != 1) {
               throw LLMApiException('Batch expected exactly one generated image.');
             }
             for (final (i, bytes) in result.generatedImages.indexed) {
-              final file = File(
-                p.join(
-                  state['outputDir'] as String,
-                  'batch_${task.id}_$i${imageExtensionFromBytes(bytes)}',
-                ),
+              final preferredPath = p.join(
+                state['outputDir'] as String,
+                'batch_${task.id}_$i${imageExtensionFromBytes(bytes)}',
               );
-              if (await file.exists()) {
-                final saved = await file.readAsBytes();
-                if (!listEquals(saved, bytes)) {
-                  throw LLMApiException('Batch output path contains a different file.');
-                }
-              } else {
-                final tmp = File('${file.path}.partial');
-                await tmp.writeAsBytes(bytes, flush: true);
-                await tmp.rename(file.path);
+              final file = await _media.saveResult(
+                bytes,
+                preferredPath,
+                allowFallback: Platform.isMacOS || Platform.isIOS,
+              );
+              if (file.path != preferredPath) {
+                task.warnings.add(
+                  'Output became unavailable; the batch result was saved in app storage.',
+                );
               }
               task.resultPaths = [...task.resultPaths, file.path];
               await _db.saveTask(task);

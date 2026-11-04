@@ -20,6 +20,8 @@ import '../db/database_service.dart';
 import '../db/repositories/cookie_repository.dart';
 import '../db/repositories/image_layer_repository.dart';
 import '../db/repositories/usage_repository.dart';
+import '../files/directory_access_service.dart';
+import '../files/persistent_media_service.dart';
 import '../llm/generation/generation_execution_context.dart';
 import '../llm/generation/generation_profile_store.dart';
 import '../llm/image_batch_session.dart';
@@ -35,6 +37,7 @@ import 'ai_rename_agent.dart';
 import 'generation_result_text.dart';
 import 'generation_task_data.dart';
 import 'task_failure.dart';
+import 'task_media_snapshot.dart';
 
 // Re-export the task data model so existing importers of this file keep working.
 export '../../models/task_item.dart';
@@ -140,9 +143,16 @@ class TaskQueueService extends ChangeNotifier {
   int get concurrencyLimit => _concurrencyLimit;
   int get runningCount => _runningCount;
 
-  TaskQueueService({DatabaseService? database, this.batchSessionFactory, this.batchPayloadBuilder})
-    : _db = database ?? DatabaseService(),
-      _llm = LLMService(database: database) {
+  TaskQueueService({
+    DatabaseService? database,
+    this.batchSessionFactory,
+    this.batchPayloadBuilder,
+    PersistentMediaService? mediaStorage,
+    bool? preserveTaskInputs,
+  }) : _db = database ?? DatabaseService(),
+       _media = mediaStorage ?? PersistentMediaService.instance,
+       _preserveTaskInputs = preserveTaskInputs ?? (defaultTargetPlatform == TargetPlatform.macOS),
+       _llm = LLMService(database: database) {
     _loadFuture = _loadRecentTasks();
   }
 
@@ -151,6 +161,8 @@ class TaskQueueService extends ChangeNotifier {
   /// state layer has a single point where the database enters.
   final DatabaseService _db;
   final LLMService _llm;
+  final PersistentMediaService _media;
+  final bool _preserveTaskInputs;
 
   /// How many tasks come back from the database on launch.
   ///
@@ -168,6 +180,39 @@ class TaskQueueService extends ChangeNotifier {
     }
     await _db.cleanupStuckTasks();
     final tasks = await _relabelled(await _db.getRecentTasks(reloadLimit));
+    if (_preserveTaskInputs) {
+      for (var i = 0; i < tasks.length; i++) {
+        final task = tasks[i];
+        if (task.status != TaskStatus.pending ||
+            task.isBatch ||
+            task.operationName != null ||
+            task.parameters['_privateMediaVersion'] == 1 ||
+            task.type == TaskType.aiRename ||
+            task.type == TaskType.imageDownload) {
+          continue;
+        }
+        try {
+          final snapshot = await snapshotTaskMedia(
+            task.imagePaths,
+            task.parameters,
+            task.type,
+            storage: _media,
+          );
+          final row = task.toMap();
+          row['image_path'] = jsonEncode(snapshot.images);
+          row['parameters'] = jsonEncode(snapshot.parameters);
+          final rescued = TaskItem.fromMap(row);
+          await _db.saveTask(rescued);
+          tasks[i] = rescued;
+        } catch (error) {
+          // Never submit/pay for an old queued request whose input could not
+          // be rescued. Preserve the paths for explicit recovery/retry.
+          task.status = TaskStatus.failed;
+          task.error = {'code': 'inputUnavailable', 'message': '$error', 'retrySafe': true};
+          await _db.saveTask(task);
+        }
+      }
+    }
     if (_disposed) return;
     // Newest-first from the query, reversed so the queue itself runs oldest
     // to newest — the order `_attemptNextExecution` walks it in, which is
@@ -264,6 +309,13 @@ class TaskQueueService extends ChangeNotifier {
         }
       }
     }
+
+    if (_preserveTaskInputs) {
+      final snapshot = await snapshotTaskMedia(imagePaths, taskParams, type, storage: _media);
+      imagePaths = snapshot.images;
+      taskParams = snapshot.parameters;
+    }
+    if (_disposed) return;
 
     final task = TaskItem(
       id: id ?? _uuid.v4(),

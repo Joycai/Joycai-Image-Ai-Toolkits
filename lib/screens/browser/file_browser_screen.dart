@@ -142,7 +142,13 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
       path,
       title: 'Authorize Access to: $path',
     );
-    if (newPath != null) unawaited(browser.refresh());
+    if (newPath != null) {
+      if (newPath != path && browser.sourceDirectories.contains(path)) {
+        await browser.removeBaseDirectory(path);
+        await browser.addBaseDirectory(newPath);
+      }
+      unawaited(browser.refresh());
+    }
   }
 
   Future<void> _loadSidebarWidth() async {

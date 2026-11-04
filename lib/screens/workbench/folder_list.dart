@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -10,6 +9,7 @@ import '../../core/app_theme.dart';
 import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/browser_file.dart';
+import '../../services/files/directory_access_service.dart';
 import '../../state/app_state.dart';
 import '../../state/file_browser_state.dart';
 import '../../state/gallery_state.dart';
@@ -79,7 +79,7 @@ class _FolderListState extends State<FolderList> {
   Future<void> _pickDirectory(BuildContext context, AppState appState) async {
     final l10n = AppLocalizations.of(context)!;
     try {
-      final String? selectedDirectory = await FilePicker.getDirectoryPath(
+      final String? selectedDirectory = await DirectoryAccessService.instance.pickDirectory(
         dialogTitle: l10n.selectSourceDirectory,
       );
 

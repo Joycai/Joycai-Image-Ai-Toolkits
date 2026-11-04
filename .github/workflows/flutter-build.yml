@@ -1,4 +1,8 @@
-name: '🔨 Multi-Platform Build'
+name: '🔨 Direct Download Build & Release'
+
+# GitHub downloads only; no App Store upload or MAS signing.
+permissions:
+  contents: read
 
 on:
   workflow_dispatch:
@@ -22,8 +26,8 @@ jobs:
           - platform: macos
             os: macos-latest
             output: build/dist/
-            artifact_name: macos-dmg
-            artifact_path: build/dist/*.dmg
+            artifact_name: macos-direct-dmg
+            artifact_path: build/dist/Joycai-Image-Ai-Toolkits-Direct-Installer.dmg
           - platform: linux
             os: ubuntu-latest
             output: build/linux/x64/release/bundle/
@@ -61,7 +65,9 @@ jobs:
         run: flutter pub get
 
       - name: 'Generate Localization'
-        run: flutter gen-l10n
+        run: |
+          dart tool/merge_l10n.dart
+          flutter gen-l10n
 
       - name: 'Enable Platform Support'
         if: matrix.platform != 'android'
@@ -75,11 +81,11 @@ jobs:
         if: matrix.platform == 'android'
         run: flutter build apk --release
 
-      - name: 'Build & Package (macOS)'
+      - name: 'Build & Package Direct Download (macOS)'
         if: matrix.platform == 'macos'
         run: |
           chmod +x build_script/build_macos.sh
-          ./build_script/build_macos.sh
+          ./build_script/build_macos.sh --distribution direct
 
       - name: 'Package Windows'
         if: matrix.platform == 'windows'
@@ -106,7 +112,7 @@ jobs:
           if-no-files-found: error
 
   release:
-    name: Create GitHub Release
+    name: Create Direct Download GitHub Release
     needs: build
     runs-on: ubuntu-latest
     permissions:
@@ -139,6 +145,9 @@ jobs:
             artifacts/dist/*.exe
             artifacts/windows/x64/runner/Release/*.msix
           fail_on_unmatched_files: true
+          body: |
+            Direct-download builds, distributed outside app stores.
+            The macOS DMG is a non-sandboxed, ad-hoc signed build; it is not a Mac App Store package or a notarized Developer ID release.
           generate_release_notes: true
           draft: false
           prerelease: false

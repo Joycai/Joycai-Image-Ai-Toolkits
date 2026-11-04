@@ -4519,6 +4519,67 @@ class AppLocalizationsEn extends AppLocalizations {
   String get filenamePrefix => 'Filename Prefix';
 
   @override
+  String get installationImportTitle => 'Import an existing installation';
+
+  @override
+  String get installationImportDescription =>
+      'Import channels, keys, prompts, history, conversations and private media. Choose the old data folder containing joycai_workbench.db, usually Library/Application Support/cn.joycai.joycaiImageAiToolkits. External folders need new authorization.';
+
+  @override
+  String get installationImportSelect => 'Choose old data folder';
+
+  @override
+  String get installationImportAcknowledge =>
+      'I have quit the old app and will keep it closed. Switch to the imported data; retain current data separately without merging. Continuing resumes imported queued tasks.';
+
+  @override
+  String get installationImportStart => 'Copy and switch';
+
+  @override
+  String get installationImportSkip => 'Keep current data';
+
+  @override
+  String get installationImportContinue => 'Open imported installation';
+
+  @override
+  String get installationImportSuccess =>
+      'Import complete. Source and previous sandbox data are retained. External folders need authorization again. MCP is disabled until reconfigured.';
+
+  @override
+  String get installationImportWorking => 'Copying and checking data. Keep this window open.';
+
+  @override
+  String get installationImportInvalidSource =>
+      'Choose an old data folder outside this sandbox. Symbolic links and overlapping directories are not supported.';
+
+  @override
+  String get installationImportNewerSchema =>
+      'This database comes from a newer app. Update before importing.';
+
+  @override
+  String get installationImportSourceChanged =>
+      'The source changed during copying. Quit the old app and retry.';
+
+  @override
+  String get installationImportInvalidDatabase =>
+      'The database is damaged or is not a supported Joycai database.';
+
+  @override
+  String get installationImportIoError =>
+      'Could not finish. Check folder access and disk space, then retry. Source and previous data are retained.';
+
+  @override
+  String get installationImportSchedule => 'Import old installation';
+
+  @override
+  String get installationImportScheduleDescription =>
+      'Open the full installation import screen on next launch. Quit the old app first. Current data remains unchanged until you confirm the import.';
+
+  @override
+  String get installationImportScheduled =>
+      'Import screen scheduled. Wait for current tasks to finish, then quit and reopen this app.';
+
+  @override
   String get workbench => 'Workbench';
 
   @override

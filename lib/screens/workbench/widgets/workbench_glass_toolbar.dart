@@ -11,6 +11,7 @@ import '../../../core/design_tokens.dart';
 import '../../../core/thumbnail_fit.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/app_image.dart';
+import '../../../services/files/persistent_media_service.dart';
 import '../../../state/app_state.dart';
 import '../../../state/gallery_state.dart';
 import '../../../widgets/dialogs/thumbnail_size_dialog.dart';
@@ -19,6 +20,7 @@ import '../../../widgets/glass/app_glass.dart';
 import '../../../widgets/glass/glass_controls.dart';
 import '../../../widgets/ui/app_button.dart';
 import '../../../widgets/ui/app_dialog.dart';
+import '../../../widgets/ui/app_snackbar.dart';
 import '../workbench_layout.dart';
 import 'gallery/gallery_selection_bar.dart';
 
@@ -36,19 +38,34 @@ abstract final class WorkbenchTab {
 }
 
 /// Picks images from the system gallery into the temporary workspace.
-Future<void> pickImagesIntoWorkspace(GalleryState galleryState) async {
-  final picked = await ImagePicker().pickMultiImage();
-  if (picked.isEmpty) return;
-  galleryState.addDroppedFiles(picked.map((f) => AppImage(path: f.path, name: f.name)).toList());
-  galleryState.setViewMode(GalleryViewMode.temp);
+Future<void> pickImagesIntoWorkspace(BuildContext context, GalleryState galleryState) async {
+  try {
+    final picked = await ImagePicker().pickMultiImage();
+    for (final file in picked) {
+      final path = await PersistentMediaService.instance.importFile(file.path);
+      galleryState.addDroppedFiles([AppImage(path: path, name: file.name)]);
+      galleryState.setViewMode(GalleryViewMode.temp);
+    }
+  } catch (error) {
+    if (context.mounted) {
+      AppSnackBar.error(context, AppLocalizations.of(context)!.importFailed('$error'));
+    }
+  }
 }
 
-/// Takes a photo into the temporary workspace (touch platforms).
-Future<void> takePhotoIntoWorkspace(GalleryState galleryState) async {
-  final photo = await ImagePicker().pickImage(source: ImageSource.camera);
-  if (photo == null) return;
-  galleryState.addDroppedFiles([AppImage(path: photo.path, name: photo.name)]);
-  galleryState.setViewMode(GalleryViewMode.temp);
+/// Takes a photo into durable app storage (touch platforms).
+Future<void> takePhotoIntoWorkspace(BuildContext context, GalleryState galleryState) async {
+  try {
+    final photo = await ImagePicker().pickImage(source: ImageSource.camera);
+    if (photo == null) return;
+    final path = await PersistentMediaService.instance.importFile(photo.path);
+    galleryState.addDroppedFiles([AppImage(path: path, name: photo.name)]);
+    galleryState.setViewMode(GalleryViewMode.temp);
+  } catch (error) {
+    if (context.mounted) {
+      AppSnackBar.error(context, AppLocalizations.of(context)!.importFailed('$error'));
+    }
+  }
 }
 
 enum _View { sources, results, workspace }
@@ -562,7 +579,7 @@ class _GalleryRow extends StatelessWidget {
         GlassIconButton(
           icon: Icons.add_photo_alternate_outlined,
           tooltip: l10n.importFromGallery,
-          onPressed: () => pickImagesIntoWorkspace(gallery),
+          onPressed: () => pickImagesIntoWorkspace(context, gallery),
         ),
       _GalleryOverflowMenu(folded: folded, phone: phone, size: barIcon),
       if (showTune)
@@ -715,12 +732,12 @@ class _ToolsMenuButton extends StatelessWidget {
           if (isTouch)
             MenuItemButton(
               leadingIcon: const Icon(Icons.photo_camera_outlined, size: AppSize.iconLg),
-              onPressed: () => takePhotoIntoWorkspace(gallery),
+              onPressed: () => takePhotoIntoWorkspace(context, gallery),
               child: Text(l10n.takePhoto),
             ),
           MenuItemButton(
             leadingIcon: const Icon(Icons.add_photo_alternate_outlined, size: AppSize.iconLg),
-            onPressed: () => pickImagesIntoWorkspace(gallery),
+            onPressed: () => pickImagesIntoWorkspace(context, gallery),
             child: Text(l10n.importFromGallery),
           ),
         ],
@@ -909,13 +926,13 @@ class _GalleryOverflowMenu extends StatelessWidget {
         if (folded.contains(_Fold.import) && !phone)
           MenuItemButton(
             leadingIcon: const Icon(Icons.add_photo_alternate_outlined, size: AppSize.iconLg),
-            onPressed: () => pickImagesIntoWorkspace(gallery),
+            onPressed: () => pickImagesIntoWorkspace(context, gallery),
             child: Text(l10n.importFromGallery),
           ),
         if (isTouch && !phone)
           MenuItemButton(
             leadingIcon: const Icon(Icons.photo_camera_outlined, size: AppSize.iconLg),
-            onPressed: () => takePhotoIntoWorkspace(gallery),
+            onPressed: () => takePhotoIntoWorkspace(context, gallery),
             child: Text(l10n.takePhoto),
           ),
         if (phone)

@@ -38,6 +38,7 @@ class _FrameDropTargetState extends State<_FrameDropTarget> {
 
   /// Changed on every accepted drop to flash the slot's ring.
   Object? _confirmToken;
+  int _importGeneration = 0;
   bool _showNote = false;
   Timer? _noteTimer;
 
@@ -55,12 +56,30 @@ class _FrameDropTargetState extends State<_FrameDropTarget> {
   Future<void> _pickFrame() async {
     final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
     if (picked == null || !mounted) return;
-    widget.onDrop(AppImage(path: picked.path, name: picked.name));
+    await _importFrame(picked.path, picked.name);
+  }
+
+  Future<void> _importFrame(String source, String name, {DropItem? drop}) async {
+    final generation = ++_importGeneration;
+    try {
+      final path = await PersistentMediaService.instance.importFile(
+        source,
+        appleBookmark: drop?.extraAppleBookmark,
+      );
+      if (mounted && generation == _importGeneration) {
+        _accept(AppImage(path: path, name: name));
+      }
+    } catch (error) {
+      if (mounted) {
+        AppSnackBar.error(context, AppLocalizations.of(context)!.importFailed('$error'));
+      }
+    }
   }
 
   /// Takes a dropped picture and confirms it where it landed (`00d` 确认):
   /// the slot's ring and a note under it — not a snackbar, and no focus taken.
   void _accept(AppImage image) {
+    _importGeneration++;
     widget.onDrop(image);
     _noteTimer?.cancel();
     setState(() {
@@ -107,7 +126,7 @@ class _FrameDropTargetState extends State<_FrameDropTarget> {
             if (details.files.isNotEmpty) {
               final file = details.files.first;
               if (AppConstants.isImageFile(file.path)) {
-                _accept(AppImage(path: file.path, name: file.name));
+                unawaited(_importFrame(file.path, file.name, drop: file));
               }
             }
           },
@@ -155,7 +174,10 @@ class _FrameDropTargetState extends State<_FrameDropTarget> {
                         : _FilledFrameSlot(
                             image: image,
                             state: state,
-                            onClear: widget.onClear,
+                            onClear: () {
+                              _importGeneration++;
+                              widget.onClear();
+                            },
                             onTap: onTap,
                           ),
                   ),
