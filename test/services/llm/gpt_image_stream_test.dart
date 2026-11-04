@@ -529,6 +529,75 @@ void main() {
     });
   }
 
+  for (final prefix in ['image_generation', 'image_edit']) {
+    test('$prefix URL previews stay transient and URL completion delivers once', () async {
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      addTearDown(() => server.close(force: true));
+      final release = Completer<void>();
+      addTearDown(() {
+        if (!release.isCompleted) release.complete();
+      });
+      var posts = 0;
+      var downloads = 0;
+      server.listen((r) async {
+        if (r.method == 'GET') {
+          downloads++;
+          expect(r.headers.value('authorization'), isNull);
+          r.response.add(png);
+          await r.response.close();
+          return;
+        }
+        posts++;
+        await r.drain<void>();
+        r.response
+          ..bufferOutput = false
+          ..headers.contentType = ContentType('text', 'event-stream');
+        void event(String suffix) => r.response.write(
+          'event: $prefix.$suffix\ndata: ${jsonEncode({
+            'type': '$prefix.$suffix',
+            'created_at': 1793782347,
+            if (prefix == 'image_edit') 'b64_json': '',
+            'url': 'http://127.0.0.1:${server.port}/image',
+            if (suffix == 'completed') 'usage': {'input_tokens': 3451, 'output_tokens': 1054},
+          })}\n\n',
+        );
+        event('partial_image');
+        await r.response.flush();
+        await release.future;
+        event('completed');
+        await r.response.close();
+      });
+      final preview = Completer<void>();
+      final chunks = <LLMResponseChunk>[];
+      final operation = LLMDispatcher()
+          .generateStream(
+            LLMModelConfig(
+              modelId: '[Adobe]gpt-image-2.5-sunburst',
+              channelType: Vendors.openAIRest,
+              endpoint: 'http://127.0.0.1:${server.port}/v1',
+              apiKey: 'test',
+            ),
+            [LLMMessage(role: LLMRole.user, content: 'circle')],
+          )
+          .forEach((chunk) {
+            chunks.add(chunk);
+            if (chunk.imagePreview != null && !preview.isCompleted) preview.complete();
+          });
+      // Await either preview or failure so a regression reports promptly.
+      await Future.any([preview.future, operation]).timeout(const Duration(seconds: 10));
+      expect(chunks.where((c) => c.imagePart != null), isEmpty);
+      expect(chunks.single.imagePreview, png);
+      release.complete();
+      await operation.timeout(const Duration(seconds: 10));
+      final delivered = chunks.where((c) => c.imagePart != null).single;
+      expect(delivered.imagePart, png);
+      expect(delivered.metadata!['output_tokens'], 1054);
+      expect(chunks.where((c) => c.isDone), hasLength(1));
+      expect(posts, 1);
+      expect(downloads, 2);
+    });
+  }
+
   for (final fails in [false, true]) {
     test('non-streaming image logs elapsed time on ${fails ? 'error' : 'success'}', () async {
       final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
