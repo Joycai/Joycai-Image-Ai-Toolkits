@@ -9,9 +9,11 @@ import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'bench/render_bench.dart';
+import 'core/app_distribution.dart';
 import 'core/app_effects.dart';
 import 'core/app_shortcuts.dart';
 import 'core/app_theme.dart';
+import 'core/constants.dart';
 import 'core/design_tokens.dart';
 import 'core/responsive.dart';
 import 'core/theme_accent.dart';
@@ -23,8 +25,12 @@ import 'screens/metrics/token_usage_screen.dart';
 import 'screens/models/models_screen.dart';
 import 'screens/prompts/prompts_screen.dart';
 import 'screens/settings/settings_screen.dart';
+import 'screens/wizard/installation_migration_screen.dart';
 import 'screens/wizard/setup_wizard.dart';
 import 'screens/workbench/workbench_screen.dart';
+import 'services/files/directory_access_service.dart';
+import 'services/files/installation_migration_service.dart';
+import 'services/files/legacy_result_migration.dart';
 import 'services/files/temp_storage_service.dart';
 import 'services/llm/protocols/minimax_h3_base_video_protocol.dart';
 import 'services/media/video_thumbnail_service.dart';
@@ -33,6 +39,7 @@ import 'services/system/notification_service.dart';
 import 'services/system/window_chrome_service.dart';
 import 'services/tasks/task_queue_service.dart';
 import 'state/app_state.dart';
+import 'state/installation_migration_state.dart';
 import 'widgets/shell/app_destinations.dart';
 import 'widgets/shell/app_top_bar.dart';
 import 'widgets/shell/app_window_frame.dart';
@@ -46,12 +53,72 @@ void main() async {
 
   await _hideNativeTitleBar();
 
-  await NotificationService().init();
-
   final packageInfo = await PackageInfo.fromPlatform();
 
+  await DirectoryAccessService.instance.restoreAll();
+
+  if (Platform.isMacOS && !AppDistribution.direct) {
+    final migration = InstallationMigrationService();
+    if (await migration.shouldOffer()) {
+      final done = Completer<void>();
+      final state = InstallationMigrationState(service: migration);
+      runApp(
+        MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: buildAppTheme(
+            accent: AppConstants.presetThemes.values.first,
+            brightness: Brightness.light,
+          ),
+          darkTheme: buildAppTheme(
+            accent: AppConstants.presetThemes.values.first,
+            brightness: Brightness.dark,
+          ),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          builder: (context, child) => Column(
+            children: [
+              DragToMoveArea(
+                child: Material(
+                  color: Theme.of(context).colorScheme.surfaceContainerLow,
+                  child: SizedBox(
+                    height: kTitleBarHeight,
+                    width: double.infinity,
+                    child: Center(child: Text(AppLocalizations.of(context)!.appTitle)),
+                  ),
+                ),
+              ),
+              Expanded(child: child!),
+            ],
+          ),
+          home: InstallationMigrationScreen(
+            state: state,
+            onContinue: () {
+              if (!done.isCompleted) done.complete();
+            },
+          ),
+        ),
+      );
+      await done.future;
+      // Unmount listeners before disposing the bootstrap state. The live app
+      // and its database have not been constructed yet.
+      runApp(const SizedBox.shrink());
+      await WidgetsBinding.instance.endOfFrame;
+      state.dispose();
+    }
+  }
+
+  String? migrationError;
+  if (Platform.isMacOS || Platform.isIOS) {
+    try {
+      await LegacyResultMigration().run();
+    } catch (error) {
+      migrationError = 'Legacy result migration deferred; originals retained. $error';
+    }
+  }
   final appState = AppState();
+  if (migrationError != null) appState.addLog(migrationError, level: 'ERROR');
   await appState.loadSettings();
+  await appState.galleryState.settingsLoaded;
   await appState.taskQueue.resumePendingTasks();
 
   // Prune stale video thumbnails in the background; don't block startup.
@@ -83,6 +150,11 @@ void main() async {
       child: maybeWrapWithBench(MyApp(version: packageInfo.version)),
     ),
   );
+  // A first-run macOS notification permission request can remain unanswered.
+  // Never hold the bootstrap/import UI (or the first app frame) behind it.
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    unawaited(NotificationService().init());
+  });
 }
 
 /// Hands the window's caption over to [AppTitleBar].

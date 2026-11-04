@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/services/db/database_service.dart';
+import 'package:joycai_image_ai_toolkits/services/files/directory_access_service.dart';
 import 'package:joycai_image_ai_toolkits/services/tasks/task_queue_service.dart';
 import 'package:joycai_image_ai_toolkits/state/mcp_server_state.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -26,6 +27,25 @@ void main() {
     state.dispose();
     queue.dispose();
     await closeTestDatabase(db);
+  });
+
+  test('cancelled macOS authorization preserves the existing MCP settings', () async {
+    await state.shutdown();
+    state.dispose();
+    state = McpServerState(
+      queue: queue,
+      database: db,
+      directoryAccess: _CancelledDirectoryAccess(),
+    );
+    await state.load();
+    await state.configure(enable: true, portText: '39288', folders: '/reference/**');
+    expect(state.errorCode, 'folder');
+    expect(state.enabled, isFalse);
+    expect(state.running, isFalse);
+    expect(state.port, 39287);
+    expect(state.roots, isEmpty);
+    expect(await db.getSetting('mcp_roots'), isNull);
+    expect(await db.getSetting('mcp_enabled'), isNull);
   });
 
   test('folder patterns persist their scope and reject unsupported patterns', () async {
@@ -125,4 +145,11 @@ void main() {
       expect(await db.getSetting('mcp_enabled'), 'false');
     },
   );
+}
+
+class _CancelledDirectoryAccess extends DirectoryAccessService {
+  _CancelledDirectoryAccess() : super(useNative: false);
+
+  @override
+  Future<bool> authorizeReadOnly(String path) async => false;
 }

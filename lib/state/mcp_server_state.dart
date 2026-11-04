@@ -5,6 +5,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 
 import '../services/db/database_service.dart';
+import '../services/files/directory_access_service.dart';
 import '../services/mcp/image_mcp_server.dart';
 import '../services/tasks/generation_submission_service.dart';
 import '../services/tasks/reference_folder_rule.dart';
@@ -12,8 +13,12 @@ import '../services/tasks/task_queue_service.dart';
 
 /// Owns desktop server lifecycle and persisted settings; UI only edits a draft.
 class McpServerState extends ChangeNotifier {
-  McpServerState({required TaskQueueService queue, DatabaseService? database})
-    : _db = database ?? DatabaseService() {
+  McpServerState({
+    required TaskQueueService queue,
+    DatabaseService? database,
+    DirectoryAccessService? directoryAccess,
+  }) : _db = database ?? DatabaseService(),
+       _directoryAccess = directoryAccess ?? DirectoryAccessService.instance {
     _server = ImageMcpServer(
       generation: GenerationSubmissionService(
         queue: queue,
@@ -23,6 +28,7 @@ class McpServerState extends ChangeNotifier {
     );
   }
   final DatabaseService _db;
+  final DirectoryAccessService _directoryAccess;
   late final ImageMcpServer _server;
   bool enabled = false;
   bool busy = false;
@@ -39,6 +45,7 @@ class McpServerState extends ChangeNotifier {
     if (busy) return;
     busy = true;
     try {
+      await _directoryAccess.restoreAll();
       await _server.stop();
       enabled = await _db.getSetting('mcp_enabled') == 'true';
       port = int.tryParse(await _db.getSetting('mcp_port') ?? '') ?? 39287;
@@ -56,6 +63,16 @@ class McpServerState extends ChangeNotifier {
         roots = const [];
       }
       errorCode = null;
+      for (final root in roots) {
+        try {
+          if (await _directoryAccess.restore(ReferenceFolderRule.parse(root).directory) !=
+              DirectoryAccessStatus.available) {
+            errorCode = 'folder';
+          }
+        } on FormatException {
+          errorCode = 'folder';
+        }
+      }
       if (enabled && supported) await _server.start(port: port, token: _token);
     } on SocketException {
       errorCode = 'bind';
@@ -87,7 +104,12 @@ class McpServerState extends ChangeNotifier {
       final canonical = <String>[];
       for (final root in folders.split('\n').map((s) => s.trim()).where((s) => s.isNotEmpty)) {
         try {
-          canonical.add(await ReferenceFolderRule.parse(root).canonicalSetting());
+          final rule = ReferenceFolderRule.parse(root);
+          if (!await _directoryAccess.authorizeReadOnly(rule.directory)) {
+            errorCode = 'folder';
+            return;
+          }
+          canonical.add(await rule.canonicalSetting());
         } on FormatException {
           errorCode = 'folder';
           return;

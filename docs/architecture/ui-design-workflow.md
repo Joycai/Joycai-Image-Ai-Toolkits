@@ -79,6 +79,13 @@ cost using the documented probes when a change affects blur, painting or rebuild
 
 ## Handoff and durable decisions
 
+Portable mode is Windows-only. Application settings and the setup wizard use
+`AppPaths.supportsPortableMode` for visibility, matching the data-directory and
+marker read/write guards. macOS, Linux and mobile do not show the row and always
+use system application storage; legacy portable files are not deleted or migrated
+by toggling this platform policy. The remaining settings retain their existing
+layout, controls and translations.
+
 The macOS app icon uses AppKit's native Dock badge to show the number of tasks
 whose status is `processing`. Pending, completed, failed and cancelled tasks do
 not count; zero clears the badge. `DockBadgeService` listens to the application
@@ -190,3 +197,23 @@ reference-adaptive tier keywords. Follow reference reuses the existing ratio
 chips and four-language copy; pixel inputs and the synthetic square preview
 are hidden in that mode. Explicit 1:1 sends square pixels. Reviewed the real
 workbench at 390/834/1024/1440 in light/dark with reference images selected.
+
+### 2026-11-04 installation import
+
+The macOS bootstrap screen lets users select old application data before any live
+queue or database is opened. The hierarchy is explanation → source selection →
+explicit old-app-closed/switch acknowledgement → Copy and switch; Keep current data
+is secondary. Completion explains retained originals and renewed directory grants.
+Errors stay inline; busy state disables actions and shows progress. The 640px content
+column scrolls on narrow/short windows; action buttons wrap. Settings → Application
+only schedules this screen for next launch. Existing AppButton/setting rows, spacing
+tokens and theme roles are reused, with en/zh/zh_Hant/ja copy. The maintained design
+specification and real Flutter renders are the reference, not historical frames.
+
+Validation: the 56-shot installation harness covers four languages, widths 390 /
+834 / 1024 / 1440 and both themes; wizard and settings-entry renders were inspected
+at all four widths in light/dark, alongside long-copy and failure/success states.
+The bootstrap Scaffold explicitly paints `surfaceContainer`, because the main app's
+transparent scaffold normally relies on its surrounding shell. The bootstrap title
+strip supports native window dragging without creating AppState. Native window and
+system-picker interactions remain a signed-app acceptance item.

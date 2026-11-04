@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -27,6 +26,7 @@ import '../../services/assistant/knowledge_base_service.dart';
 import '../../services/assistant/knowledge_base_starter.dart';
 import '../../services/assistant/prompt_optimizer_agent.dart';
 import '../../services/assistant/prompt_provenance.dart';
+import '../../services/files/directory_access_service.dart';
 import '../../services/tasks/task_queue_service.dart';
 import '../../state/app_state.dart';
 import '../../state/gallery_state.dart';

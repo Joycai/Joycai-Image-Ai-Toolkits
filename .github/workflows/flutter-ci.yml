@@ -76,3 +76,10 @@ jobs:
           mapfile -t files < <(find test -name '*_test.dart' | LC_ALL=C sort | awk -v n=3 -v i=${{ matrix.shard }} '(NR - 1) % n == i')
           echo "Shard ${{ matrix.shard }}: ${#files[@]} files"
           flutter test -x screenshots "${files[@]}"
+
+      - name: 'Verify Direct Distribution File Access'
+        if: matrix.shard == 0
+        run: >-
+          flutter test --dart-define=JOYCAI_DIRECT_DISTRIBUTION=true
+          test/services/files/directory_access_service_test.dart
+          test/services/files/persistent_media_service_test.dart

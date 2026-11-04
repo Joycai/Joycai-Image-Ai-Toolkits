@@ -17,11 +17,13 @@ import '../../core/text_editing_focus.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/app_image.dart';
 import '../../services/files/file_permission_service.dart';
+import '../../services/files/persistent_media_service.dart';
 import '../../state/gallery_state.dart';
 import '../../widgets/dialogs/file_rename_dialog.dart';
 import '../../widgets/drag/app_drop_zone.dart';
 import '../../widgets/files/folder_group_header.dart';
 import '../../widgets/files/folder_outline_bar.dart';
+import '../../widgets/ui/app_snackbar.dart';
 import '../../widgets/ui/focus_pane.dart';
 import 'widgets/gallery/gallery_file_actions.dart';
 import 'widgets/gallery/image_card.dart';
@@ -247,14 +249,26 @@ class _GalleryState extends State<Gallery> {
     context.read<GalleryState>().flash(path, expand: true);
   }
 
-  void _handleDrop(DropDoneDetails details, GalleryState galleryState) {
+  Future<void> _handleDrop(DropDoneDetails details, GalleryState galleryState) async {
     setState(() => _isDragging = false);
     final List<AppImage> newFiles = [];
-    for (final file in details.files) {
-      if (AppConstants.isSupportedFile(file.path)) {
-        newFiles.add(AppImage(path: file.path, name: file.name));
+    try {
+      for (final file in details.files) {
+        if (AppConstants.isSupportedFile(file.path)) {
+          final path = await PersistentMediaService.instance.importFile(
+            file.path,
+            appleBookmark: file.extraAppleBookmark,
+          );
+          newFiles.add(AppImage(path: path, name: file.name));
+        }
+      }
+    } catch (error) {
+      if (mounted) {
+        AppSnackBar.error(context, AppLocalizations.of(context)!.importFailed('$error'));
       }
     }
+    if (!mounted) return;
+
     if (newFiles.isEmpty) return;
 
     final existing = {for (final image in galleryState.droppedImages) image.path};
@@ -406,6 +420,10 @@ class _GalleryState extends State<Gallery> {
       if (isResult) {
         await state.updateOutputDirectory(newPath);
       } else {
+        if (newPath != path && state.sourceDirectories.contains(path)) {
+          await state.removeBaseDirectory(path);
+          await state.addBaseDirectory(newPath);
+        }
         state.setViewFolder(newPath);
         unawaited(state.refreshImages());
       }
@@ -697,7 +715,7 @@ class _WorkspaceEmptyState extends StatelessWidget {
             ),
             const SizedBox(height: AppSpace.s4),
             TextButton(
-              onPressed: () => pickImagesIntoWorkspace(gallery),
+              onPressed: () => pickImagesIntoWorkspace(context, gallery),
               child: Text(l10n.importFromGallery),
             ),
           ],

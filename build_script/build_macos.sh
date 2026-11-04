@@ -1,25 +1,38 @@
 #!/bin/bash
 
 # Exit immediately if a command exits with a non-zero status
-set -e
+set -euo pipefail
 
 APP_NAME="Joycai Image AI Toolkits"
 DISPLAY_NAME="Joycai Image AI Toolkits"
-DMG_NAME="Joycai-Image-Ai-Toolkits-Installer"
+DMG_NAME="Joycai-Image-Ai-Toolkits-Direct-Installer"
 BUILD_DIR="build/macos/Build/Products/Release"
 STAGING_DIR="build/macos/dmg_staging"
 OUTPUT_DIR="build/dist"
 
-echo "🚀 Starting macOS Build & Package Script..."
+# This script produces direct-download DMGs only. MAS builds use the default
+# Xcode configuration and a separate future Archive/export workflow.
+if [[ "${1:-}" != "--distribution" || "${2:-}" != "direct" || "$#" != 2 ]]; then
+    echo "Usage: $0 --distribution direct" >&2
+    exit 2
+fi
+
+echo "🚀 Building direct-download macOS package (not Mac App Store)..."
 
 # 1. Build the Flutter App
 echo "🔨 Building macOS release..."
 # Go to project root (assuming script is in build_script/)
 cd "$(dirname "$0")/.."
-flutter clean
+# Clean only macOS products; preserve unrelated local fixtures under build/.
+rm -rf build/macos
 flutter pub get
+dart tool/merge_l10n.dart
 flutter gen-l10n
-flutter build macos --release
+XCODE_XCCONFIG_FILE="$PWD/build_script/macos_direct.xcconfig" \
+    flutter build macos --release --dart-define=JOYCAI_DIRECT_DISTRIBUTION=true
+
+# Fail closed before packaging if native signing differs from the Dart mode.
+python3 build_script/verify_macos_direct.py "$BUILD_DIR/$APP_NAME.app"
 
 # Check if build was successful
 if [ ! -d "$BUILD_DIR/$APP_NAME.app" ]; then

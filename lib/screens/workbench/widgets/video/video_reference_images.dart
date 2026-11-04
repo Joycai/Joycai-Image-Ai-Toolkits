@@ -130,12 +130,29 @@ class _ReferenceImagesSectionState extends State<_ReferenceImagesSection> {
     return DropTarget(
       onDragEntered: (_) => _setOsDragging(true),
       onDragExited: (_) => _setOsDragging(false),
-      onDragDone: (details) {
+      onDragDone: (details) async {
         _setOsDragging(false);
-        _acceptAll([
-          for (final file in details.files)
-            if (AppConstants.isImageFile(file.path)) AppImage(path: file.path, name: file.name),
-        ]);
+        final imported = <AppImage>[];
+        final remaining = widget.maxImages == null
+            ? null
+            : widget.maxImages! - widget.images.length;
+        try {
+          for (final file in details.files) {
+            if (remaining != null && imported.length >= remaining) break;
+            if (!AppConstants.isImageFile(file.path)) continue;
+            final path = await PersistentMediaService.instance.importFile(
+              file.path,
+              appleBookmark: file.extraAppleBookmark,
+            );
+            if (!mounted) return;
+            imported.add(AppImage(path: path, name: file.name));
+          }
+        } catch (error) {
+          if (context.mounted) {
+            AppSnackBar.error(context, AppLocalizations.of(context)!.importFailed('$error'));
+          }
+        }
+        if (mounted) _acceptAll(imported);
       },
       // `00d` 「可放」: an in-app drag this card would take, still elsewhere.
       child: ValueListenableBuilder<Object?>(

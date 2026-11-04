@@ -1,7 +1,8 @@
 import 'dart:io';
 
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
+
+import 'directory_access_service.dart';
 
 bool _probePath(String path) {
   try {
@@ -28,11 +29,16 @@ class FilePermissionService {
     return !Directory(path).existsSync();
   }
 
-  Future<bool> isPathUnreachableAsync(String path) => compute(_probePath, path);
+  Future<bool> isPathUnreachableAsync(String path) async {
+    if (await DirectoryAccessService.instance.restore(path) != DirectoryAccessStatus.available) {
+      return true;
+    }
+    return compute(_probePath, path);
+  }
 
   /// Triggers a system dialog to let the user re-select and authorize a folder.
   Future<String?> reAuthorize(String initialPath, {String? title}) async {
-    return FilePicker.getDirectoryPath(
+    return DirectoryAccessService.instance.pickDirectory(
       initialDirectory: initialPath,
       dialogTitle:
           title ??

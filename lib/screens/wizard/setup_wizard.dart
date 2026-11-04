@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -11,6 +10,7 @@ import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/llm_channel.dart';
 import '../../models/llm_model.dart';
+import '../../services/files/directory_access_service.dart';
 import '../../services/llm/llm_types.dart';
 import '../../services/llm/model_discovery_service.dart';
 import '../../services/llm/model_family.dart';
@@ -431,7 +431,7 @@ class _SetupWizardState extends State<SetupWizard> {
           const SizedBox(height: 8),
           Text(l10n.storageLocationDesc),
           const SizedBox(height: 24),
-          if (Platform.isWindows || Platform.isLinux || Platform.isMacOS)
+          if (AppPaths.supportsPortableMode)
             AppSettingRow(
               title: l10n.portableMode,
               description: l10n.portableModeDesc,
@@ -446,8 +446,7 @@ class _SetupWizardState extends State<SetupWizard> {
                 },
               ),
             ),
-          if (Platform.isWindows || Platform.isLinux || Platform.isMacOS)
-            const SizedBox(height: 16),
+          if (AppPaths.supportsPortableMode) const SizedBox(height: 16),
           TextField(
             controller: _outputDirController,
             readOnly: true,
@@ -456,7 +455,7 @@ class _SetupWizardState extends State<SetupWizard> {
               suffixIcon: const Icon(Icons.folder_open),
             ),
             onTap: () async {
-              final String? path = await FilePicker.getDirectoryPath();
+              final String? path = await DirectoryAccessService.instance.pickDirectory();
               if (path != null) {
                 setState(() => _outputDirController.text = path);
                 unawaited(appState.updateOutputDirectory(path));

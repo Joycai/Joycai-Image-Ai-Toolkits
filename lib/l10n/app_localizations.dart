@@ -7875,6 +7875,108 @@ abstract class AppLocalizations {
   /// **'Filename Prefix'**
   String get filenamePrefix;
 
+  /// No description provided for @installationImportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Import an existing installation'**
+  String get installationImportTitle;
+
+  /// No description provided for @installationImportDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Import channels, keys, prompts, history, conversations and private media. Choose the old data folder containing joycai_workbench.db, usually Library/Application Support/cn.joycai.joycaiImageAiToolkits. External folders need new authorization.'**
+  String get installationImportDescription;
+
+  /// No description provided for @installationImportSelect.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose old data folder'**
+  String get installationImportSelect;
+
+  /// No description provided for @installationImportAcknowledge.
+  ///
+  /// In en, this message translates to:
+  /// **'I have quit the old app and will keep it closed. Switch to the imported data; retain current data separately without merging. Continuing resumes imported queued tasks.'**
+  String get installationImportAcknowledge;
+
+  /// No description provided for @installationImportStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy and switch'**
+  String get installationImportStart;
+
+  /// No description provided for @installationImportSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep current data'**
+  String get installationImportSkip;
+
+  /// No description provided for @installationImportContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Open imported installation'**
+  String get installationImportContinue;
+
+  /// No description provided for @installationImportSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Import complete. Source and previous sandbox data are retained. External folders need authorization again. MCP is disabled until reconfigured.'**
+  String get installationImportSuccess;
+
+  /// No description provided for @installationImportWorking.
+  ///
+  /// In en, this message translates to:
+  /// **'Copying and checking data. Keep this window open.'**
+  String get installationImportWorking;
+
+  /// No description provided for @installationImportInvalidSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an old data folder outside this sandbox. Symbolic links and overlapping directories are not supported.'**
+  String get installationImportInvalidSource;
+
+  /// No description provided for @installationImportNewerSchema.
+  ///
+  /// In en, this message translates to:
+  /// **'This database comes from a newer app. Update before importing.'**
+  String get installationImportNewerSchema;
+
+  /// No description provided for @installationImportSourceChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'The source changed during copying. Quit the old app and retry.'**
+  String get installationImportSourceChanged;
+
+  /// No description provided for @installationImportInvalidDatabase.
+  ///
+  /// In en, this message translates to:
+  /// **'The database is damaged or is not a supported Joycai database.'**
+  String get installationImportInvalidDatabase;
+
+  /// No description provided for @installationImportIoError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not finish. Check folder access and disk space, then retry. Source and previous data are retained.'**
+  String get installationImportIoError;
+
+  /// No description provided for @installationImportSchedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Import old installation'**
+  String get installationImportSchedule;
+
+  /// No description provided for @installationImportScheduleDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the full installation import screen on next launch. Quit the old app first. Current data remains unchanged until you confirm the import.'**
+  String get installationImportScheduleDescription;
+
+  /// No description provided for @installationImportScheduled.
+  ///
+  /// In en, this message translates to:
+  /// **'Import screen scheduled. Wait for current tasks to finish, then quit and reopen this app.'**
+  String get installationImportScheduled;
+
   /// No description provided for @workbench.
   ///
   /// In en, this message translates to:

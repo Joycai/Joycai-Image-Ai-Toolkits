@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 
 import '../db/database_service.dart';
+import '../files/directory_access_service.dart';
 
 /// Validation outcome for the configured knowledge-base folder.
 enum KbStatus { ok, notSet, missingDir, missingEntry }
@@ -360,6 +361,9 @@ class KnowledgeBaseService {
 
   Future<String?> getRoot() async {
     final path = await _db.getSetting(settingKey);
+    if (path != null && path.trim().isNotEmpty) {
+      await DirectoryAccessService.instance.restore(path.trim());
+    }
     return (path == null || path.trim().isEmpty) ? null : path.trim();
   }
 
@@ -368,6 +372,9 @@ class KnowledgeBaseService {
   Future<KbStatus> validate([String? root]) async {
     root ??= await getRoot();
     if (root == null) return KbStatus.notSet;
+    if (await DirectoryAccessService.instance.restore(root) != DirectoryAccessStatus.available) {
+      return KbStatus.missingDir;
+    }
     if (!Directory(root).existsSync()) return KbStatus.missingDir;
     if (!File(p.join(root, entryFileName)).existsSync()) return KbStatus.missingEntry;
     return KbStatus.ok;

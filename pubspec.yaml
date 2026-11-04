@@ -78,6 +78,7 @@ flutter_launcher_icons:
     generate: true
 
 msix_config:
+  store: false # GitHub sideload package; Microsoft Store builds need a separate workflow.
   display_name: Joycai Image AI Toolkits
   publisher_display_name: Joycai
   publisher: CN=76DB0498-B398-4C2F-953A-2D26ADD20625

@@ -171,10 +171,16 @@ extension TaskExecutors on TaskQueueService {
       // carries no type at all — every result used to be written as `.png`
       // regardless.
       final fileName = '${prefix}_${timestamp}_$i${imageExtensionFromBytes(bytes)}';
-      final filePath = p.join(outputDir, fileName);
-
-      final file = File(filePath);
-      await file.writeAsBytes(bytes);
+      final preferredPath = p.join(outputDir, fileName);
+      final file = await _media.saveResult(
+        bytes,
+        preferredPath,
+        allowFallback: Platform.isMacOS || Platform.isIOS,
+      );
+      final filePath = file.path;
+      if (filePath != preferredPath) {
+        task.warnings.add('Output became unavailable; the result was saved in app storage.');
+      }
       task.resultPaths.add(
         task.parameters['origin'] == 'mcp' ? await file.resolveSymbolicLinks() : filePath,
       );
@@ -852,6 +858,10 @@ extension TaskExecutors on TaskQueueService {
       } catch (e) {
         lastError = e;
         task.addLog('Video download attempt $attempt failed: $e');
+        if (e is FileSystemException && (Platform.isMacOS || Platform.isIOS)) {
+          outputDir = (await _media.resultsDirectory()).path;
+          task.warnings.add('Video download will retry in persistent app storage.');
+        }
         if (attempt == 1) {
           await Future<void>.delayed(const Duration(seconds: 2));
         }
@@ -1039,24 +1049,27 @@ extension TaskExecutors on TaskQueueService {
 
   /// Checks if primary output is writable, returns it or falls back to Result Cache.
   Future<String> _getEffectiveOutputDir(TaskItem task) async {
-    final String? primary =
+    String? primary =
         task.parameters['outputDirectory'] as String? ?? await _db.getSetting('output_directory');
+    final legacy = await _db.getSetting('legacy_result_cache_directory');
+    if (legacy != null && primary == legacy) primary = null;
 
-    // Result Cache is always initialized in GalleryState for iOS/macOS
-    String? fallback;
-    try {
-      if (Platform.isIOS || Platform.isMacOS) {
-        final appCache = (await _db.getSetting('result_cache_directory')) ?? '';
-        if (appCache.isNotEmpty) fallback = appCache;
-      }
-    } catch (_) {}
+    // Resolve durable fallback here too: task startup must not depend on a
+    // gallery reload having initialized a database setting.
+    Future<String?> fallback() async =>
+        Platform.isIOS || Platform.isMacOS ? (await _media.resultsDirectory()).path : null;
 
     if (primary == null || primary.isEmpty) {
-      if (fallback != null) return fallback;
+      final path = await fallback();
+      if (path != null) return path;
       throw Exception('Output directory not set!');
     }
 
     try {
+      if (await DirectoryAccessService.instance.restore(primary) !=
+          DirectoryAccessStatus.available) {
+        throw FileSystemException('Output directory requires authorization', primary);
+      }
       final dir = Directory(primary);
       if (!dir.existsSync()) {
         await dir.create(recursive: true);
@@ -1071,7 +1084,8 @@ extension TaskExecutors on TaskQueueService {
       task.addLog(
         'Warning: Primary output directory is unwritable ($e). Falling back to Result Cache.',
       );
-      if (fallback != null) return fallback;
+      final path = await fallback();
+      if (path != null) return path;
       rethrow;
     }
   }

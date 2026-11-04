@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -13,6 +12,7 @@ import '../../core/design_tokens.dart';
 import '../../core/text_editing_focus.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/browser_file.dart';
+import '../../services/files/directory_access_service.dart';
 import '../../services/files/file_permission_service.dart';
 import '../../services/files/file_transfer_service.dart';
 import '../../services/files/folder_operations_service.dart';
@@ -342,7 +342,9 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
 
   Future<void> _moveTo() async {
     final l10n = AppLocalizations.of(context)!;
-    final picked = await FilePicker.getDirectoryPath(dialogTitle: l10n.moveFolderTo);
+    final picked = await DirectoryAccessService.instance.pickDirectory(
+      dialogTitle: l10n.moveFolderTo,
+    );
     if (picked == null || !mounted) return;
     await runFolderTransfer(
       context,

@@ -29,6 +29,17 @@ Local clients must send a Content-Length for POST requests; requests larger than
 1 MiB, browser Origins, invalid hosts and missing/wrong credentials are rejected.
 Only loopback is bound. There is no automatic remote exposure or stdio launcher.
 
+On sandboxed macOS builds, an allowed-folder rule does not grant OS file access.
+Saving an ungranted root opens a system directory picker; select the same folder
+to authorize read-only access. Cancellation or selecting a different folder leaves
+MCP settings unchanged. Grants persist as machine-local security-scoped bookmarks,
+are restored after restart and do not enter JSON backups. A failed root reports a
+folder error; save the settings again to reauthorize it. Reference input requires
+both a restored OS grant and the existing canonical/wildcard rule; text-only work
+can continue when a reference root is unavailable. See
+[macOS App Sandbox](macos-sandbox.md) for lifecycle and validation boundaries. Both network client/server entitlements remain enabled for the listener
+and outgoing generation requests.
+
 ## Agent workflow
 
 1. `list_models` returns model-row IDs, names and readiness diagnostics. IDs select

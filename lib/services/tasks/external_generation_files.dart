@@ -6,6 +6,7 @@ import 'package:image/image.dart' as img;
 import 'package:path/path.dart' as p;
 
 import '../../core/image_magic.dart';
+import '../files/directory_access_service.dart';
 import 'generation_submission_error.dart';
 import 'reference_folder_rule.dart';
 
@@ -84,10 +85,27 @@ class ExternalGenerationFiles {
     int index, {
     bool registeredOutput = false,
   }) async {
+    // Restore grants again for offline volumes returning after startup. A
+    // missing OS grant never becomes an application allowlist grant.
+    final authorizedRoots = <String>[];
+    if (!registeredOutput) {
+      for (final root in roots) {
+        try {
+          if (await DirectoryAccessService.instance.restore(
+                ReferenceFolderRule.parse(root).directory,
+              ) ==
+              DirectoryAccessStatus.available) {
+            authorizedRoots.add(root);
+          }
+        } on FormatException {
+          continue;
+        }
+      }
+    }
     final canonical = await File(path).resolveSymbolicLinks();
     var allowed = registeredOutput;
     if (!registeredOutput) {
-      for (final root in roots) {
+      for (final root in authorizedRoots) {
         try {
           if (await ReferenceFolderRule.parse(root).allows(canonical)) {
             allowed = true;

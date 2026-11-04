@@ -4324,6 +4324,59 @@ class AppLocalizationsZh extends AppLocalizations {
   String get filenamePrefix => '文件名前缀';
 
   @override
+  String get installationImportTitle => '迁入旧版数据';
+
+  @override
+  String get installationImportDescription =>
+      '迁入渠道、密钥、提示词、历史、助手会话和私有素材。请选择包含 joycai_workbench.db 的旧数据文件夹，通常位于 Library/Application Support/cn.joycai.joycaiImageAiToolkits。外部目录需要重新授权。';
+
+  @override
+  String get installationImportSelect => '选择旧数据文件夹';
+
+  @override
+  String get installationImportAcknowledge =>
+      '我已退出旧版，并会保持关闭。切换到迁入的数据，现有数据另行保留、不合并；继续进入应用后将恢复迁入的排队任务。';
+
+  @override
+  String get installationImportStart => '复制并切换';
+
+  @override
+  String get installationImportSkip => '继续使用当前数据';
+
+  @override
+  String get installationImportContinue => '进入迁入的应用';
+
+  @override
+  String get installationImportSuccess => '迁入完成。源数据和原沙盒数据均已保留。外部目录需要重新授权；MCP 已关闭，请重新配置后启用。';
+
+  @override
+  String get installationImportWorking => '正在复制并校验数据，请保持窗口开启。';
+
+  @override
+  String get installationImportInvalidSource => '请选择此沙盒之外的旧版数据文件夹。不支持符号链接或相互包含的目录。';
+
+  @override
+  String get installationImportNewerSchema => '该数据库由更新版本创建，请先更新应用再迁入。';
+
+  @override
+  String get installationImportSourceChanged => '复制期间源数据发生变化，请退出旧版后重试。';
+
+  @override
+  String get installationImportInvalidDatabase => '所选数据库已损坏，或不是支持的 Joycai 数据库。';
+
+  @override
+  String get installationImportIoError => '操作未完成。请检查目录访问权限和磁盘空间后重试。源数据和原有数据均已保留。';
+
+  @override
+  String get installationImportSchedule => '迁入旧版数据';
+
+  @override
+  String get installationImportScheduleDescription => '下次启动时打开整库迁入页面。请先退出旧版；确认迁入前不改变当前数据。';
+
+  @override
+  String get installationImportScheduled => '已安排迁入页面。请等待当前任务完成后，退出并重新打开本应用。';
+
+  @override
   String get workbench => '工作台';
 
   @override
@@ -10478,6 +10531,59 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get filenamePrefix => '檔案名稱前綴詞';
+
+  @override
+  String get installationImportTitle => '遷入舊版資料';
+
+  @override
+  String get installationImportDescription =>
+      '遷入渠道、金鑰、提示詞、歷史、助手對話和私有素材。請選擇包含 joycai_workbench.db 的舊資料夾，通常位於 Library/Application Support/cn.joycai.joycaiImageAiToolkits。外部目錄需要重新授權。';
+
+  @override
+  String get installationImportSelect => '選擇舊資料夾';
+
+  @override
+  String get installationImportAcknowledge =>
+      '我已結束舊版，並會保持關閉。切換到遷入的資料，現有資料另外保留、不合併；繼續進入應用後將恢復遷入的排隊任務。';
+
+  @override
+  String get installationImportStart => '複製並切換';
+
+  @override
+  String get installationImportSkip => '繼續使用目前資料';
+
+  @override
+  String get installationImportContinue => '開啟遷入的應用';
+
+  @override
+  String get installationImportSuccess => '遷入完成。來源資料和原沙盒資料均已保留。外部目錄需要重新授權；MCP 已關閉，請重新設定後啟用。';
+
+  @override
+  String get installationImportWorking => '正在複製並校驗資料，請保持視窗開啟。';
+
+  @override
+  String get installationImportInvalidSource => '請選擇此沙盒之外的舊版資料夾。不支援符號連結或互相包含的目錄。';
+
+  @override
+  String get installationImportNewerSchema => '此資料庫由更新版本建立，請先更新應用再遷入。';
+
+  @override
+  String get installationImportSourceChanged => '複製期間來源資料發生變化，請結束舊版後重試。';
+
+  @override
+  String get installationImportInvalidDatabase => '所選資料庫已損壞，或不是支援的 Joycai 資料庫。';
+
+  @override
+  String get installationImportIoError => '操作未完成。請檢查目錄存取權限和磁碟空間後重試。來源資料和原有資料均已保留。';
+
+  @override
+  String get installationImportSchedule => '遷入舊版資料';
+
+  @override
+  String get installationImportScheduleDescription => '下次啟動時開啟整庫遷入頁面。請先結束舊版；確認遷入前不改變目前資料。';
+
+  @override
+  String get installationImportScheduled => '已安排遷入頁面。請等待目前任務完成後，結束並重新開啟本應用。';
 
   @override
   String get workbench => '工作台';

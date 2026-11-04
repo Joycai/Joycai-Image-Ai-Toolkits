@@ -129,7 +129,7 @@ extension _AssistantActions on _WorkbenchScreenState {
     // No folder yet, or the stored one is gone: ask where to put it rather than
     // silently recreating a directory the user may have deliberately moved.
     if (stored == null || !Directory(stored).existsSync()) {
-      final picked = await FilePicker.getDirectoryPath();
+      final picked = await DirectoryAccessService.instance.pickDirectory();
       if (picked == null) return;
       await kb.setRoot(picked);
       stored = picked;
