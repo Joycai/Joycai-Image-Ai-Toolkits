@@ -175,6 +175,17 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
     // to parse as zero images and report the task as finished with
     // nothing in it.
     final data = decodeJsonBody(response, apiName: 'OpenAI Images API');
+    return _decodeImageResult(data, client, options, logger, sentImages);
+  }
+
+  /// Shared by a JSON response and a complete Images result carried in SSE.
+  Future<LLMResponse> _decodeImageResult(
+    Map<String, dynamic> data,
+    http.Client client,
+    Map<String, dynamic>? options,
+    LLMLogger? logger,
+    int sentImages,
+  ) async {
     final rawItems = data['data'];
     final List<dynamic> items = rawItems is List ? rawItems : const [];
     // Both spellings through the shared resolver: a `url` that is really a
@@ -203,10 +214,10 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
       // response here reads to the task executor as a successful generation
       // that produced nothing, which is indistinguishable from a model
       // refusing — so say what actually came back instead.
-      final body = response.body;
       throw LLMApiException(
-        'OpenAI Images API returned no image: '
-        '${body.length > 500 ? '${body.substring(0, 500)}…' : body}',
+        refs.isEmpty
+            ? 'OpenAI Images API returned no image references.'
+            : 'OpenAI Images API returned image references, but no valid image could be retrieved.',
       );
     }
 
@@ -277,12 +288,17 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
       var eventName = '';
       final dataLines = <String>[];
       var events = 0;
-      Future<LLMResponseChunk?> consume({bool deferInvalid = false}) async {
-        if (dataLines.isEmpty) return null;
+      var reportedComplete = false;
+      var ended = false;
+      String? lastProgressError;
+      String? lastEvent;
+      Future<List<LLMResponseChunk>> consume({bool deferInvalid = false}) async {
+        if (dataLines.isEmpty) return const [];
         final payload = dataLines.join('\n');
         if (payload == '[DONE]') {
+          ended = true;
           dataLines.clear();
-          return null;
+          return const [];
         }
         dynamic decoded;
         try {
@@ -294,7 +310,7 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
           try {
             decoded = jsonDecode(dataLines.join());
           } on FormatException catch (compactError) {
-            if (deferInvalid) return null;
+            if (deferInvalid) return const [];
             final offset = error.offset;
             final detail =
                 'Invalid image stream JSON: ${error.message}; '
@@ -318,18 +334,61 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
           );
         }
         final data = decoded;
-        throwIfEnvelopeError(data);
-        final type = data['type'] ?? eventName;
-        if (type == 'error' || type == 'image_generation.failed' || type == 'image_edit.failed') {
+        final payloadType = data['type'];
+        final type = payloadType == null || payloadType == '' ? eventName : payloadType;
+        final status = data['status'];
+        lastEvent = 'type=$type status=$status';
+        await LLMDebugLogger.appendLine(
+          req.debugFile,
+          'Image event: index=$events $lastEvent keys=${data.keys.join(',')}',
+        );
+        // Both carriers must permit relay interpretation: an empty/conflicting
+        // JSON type must never erase a named SSE error or promote its preview.
+        const failureTypes = {'error', 'image_generation.failed', 'image_edit.failed'};
+        if (failureTypes.contains(eventName) || failureTypes.contains(payloadType)) {
           throw LLMApiException(
             'OpenAI Images stream failed: ${data['message'] ?? data['error'] ?? type}',
             isEnvelope: true,
           );
         }
+        // SSE's default event name is message, whether omitted or explicit.
+        final relayStatus =
+            (eventName.isEmpty || eventName == 'message') &&
+            (payloadType == null || payloadType == '');
+        if (relayStatus && (status == 'failed' || status == 'cancelled')) {
+          throw LLMApiException(
+            'OpenAI Images stream failed: ${data['error'] ?? data['message'] ?? status}',
+            isEnvelope: true,
+          );
+        }
+        if (relayStatus && status == 'in_progress') {
+          if (data['error'] != null) {
+            lastProgressError = data['error'].toString();
+            logger?.call(
+              'Image provider reported an intermediate error; awaiting the current request.',
+              level: 'WARN',
+            );
+          }
+          return const [];
+        }
+        throwIfEnvelopeError(data);
+        if (relayStatus && status == 'completed') reportedComplete = true;
+        // Some relays wrap the normal Images JSON result in an SSE data event.
+        // A status-only completion is not delivery, nor is an unknown typed
+        // event containing a URL (it might be a preview).
+        if (relayStatus && (status == null || status == 'completed') && data['data'] is List) {
+          final whole = await _decodeImageResult(data, client, options, logger, req.sentImages);
+          completed = true;
+          return [
+            for (final image in whole.generatedImages)
+              LLMResponseChunk(imagePart: image, metadata: whole.metadata),
+            if (whole.text.isNotEmpty) LLMResponseChunk(textPart: whole.text),
+          ];
+        }
         final partial =
             type == 'image_generation.partial_image' || type == 'image_edit.partial_image';
         final done = type == 'image_generation.completed' || type == 'image_edit.completed';
-        if (!partial && !done) return null;
+        if (!partial && !done) return const [];
         if (completed) throw LLMApiException('OpenAI Images stream returned duplicate completion.');
         final encoded = data['b64_json'];
         if (encoded is! String || encoded.isEmpty) {
@@ -349,20 +408,22 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
           req.debugFile,
           'Parsed event: index=$events type=$type imageBytes=${images.single.length} final=$done',
         );
-        if (partial) return LLMResponseChunk(imagePreview: images.single);
+        if (partial) return [LLMResponseChunk(imagePreview: images.single)];
         completed = true;
-        return LLMResponseChunk(
-          imagePart: images.single,
-          metadata: {
-            ...upstreamUsage(data['usage']),
-            'image_token_output': true,
-            ...sentInputImages(req.sentImages),
-            if (data['size'] is String) 'output_size': data['size'],
-            if (data['quality'] is String) 'output_quality': data['quality'],
-            if (data['output_format'] is String) 'output_format': data['output_format'],
-            if (data['background'] is String) 'output_background': data['background'],
-          },
-        );
+        return [
+          LLMResponseChunk(
+            imagePart: images.single,
+            metadata: {
+              ...upstreamUsage(data['usage']),
+              'image_token_output': true,
+              ...sentInputImages(req.sentImages),
+              if (data['size'] is String) 'output_size': data['size'],
+              if (data['quality'] is String) 'output_quality': data['quality'],
+              if (data['output_format'] is String) 'output_format': data['output_format'],
+              if (data['background'] is String) 'output_background': data['background'],
+            },
+          ),
+        ];
       }
 
       // Relay compatibility is pinned in gpt_image_stream_test.dart: SSE with
@@ -388,9 +449,9 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
           continue;
         }
         await LLMDebugLogger.appendStreamLine(req.debugFile, line);
-        LLMResponseChunk? chunk;
+        var chunks = const <LLMResponseChunk>[];
         if (line.isEmpty || line.startsWith('event:')) {
-          chunk = await consume();
+          chunks = await consume();
           eventName = line.startsWith('event:') ? line.substring(6).trim() : '';
         } else if (line.startsWith('data:')) {
           final dataLine = line.substring(5).replaceFirst(RegExp(r'^ '), '');
@@ -402,14 +463,17 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
           // Event boundaries and EOF still decode unconditionally for errors.
           final tail = dataLine.trimRight();
           if (tail.endsWith('}') || tail == '[DONE]') {
-            chunk = await consume(deferInvalid: true);
+            chunks = await consume(deferInvalid: true);
           }
         }
-        if (chunk != null) yield chunk;
+        for (final chunk in chunks) {
+          yield chunk;
+        }
         if (completed) {
           yield LLMResponseChunk(isDone: true);
           return;
         }
+        if (ended) break;
       }
       if (isSse == false) {
         final whole = await decodeResult(
@@ -427,8 +491,17 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
         return;
       }
       final tail = await consume();
-      if (tail != null) yield tail;
-      if (!completed) throw LLMApiException('OpenAI Images stream ended before the final image.');
+      for (final chunk in tail) {
+        yield chunk;
+      }
+      if (!completed) {
+        throw LLMApiException(
+          'OpenAI Images stream ended before the final image. '
+          '${reportedComplete ? 'Provider reported completion without an image. ' : ''}'
+          'Events: $events; last event: ${lastEvent ?? 'none'}.'
+          '${lastProgressError == null ? '' : ' Last intermediate error: $lastProgressError'}',
+        );
+      }
       yield LLMResponseChunk(isDone: true);
     } catch (error) {
       await LLMDebugLogger.appendLine(req.debugFile, 'Stream failure: $error');

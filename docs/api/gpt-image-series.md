@@ -43,8 +43,8 @@ transport. The follow-up implementation adds background, output format and compr
   generation and multipart reference edits. Earlier GPT Image models retain the
   single-response adapter.
 - `image_generation.partial_image` / `image_edit.partial_image` replace one
-  transient preview on the running task card, in all responsive layouts. Only
-  `*.completed` yields a deliverable; preview bytes never enter result paths,
+  transient preview on the running task card, in all responsive layouts. A validated
+  `*.completed` image or compatible Images result yields a deliverable; preview bytes never enter result paths,
   the gallery, persistence, MCP output lists, or the billed output-image count.
   Final provider token usage (including upstream preview charges) is retained.
 - Preview state clears on completion, failure and cancellation. A stream ending
@@ -193,3 +193,30 @@ mobile run was performed.
 Sources: [Batch guide](https://developers.openai.com/api/docs/guides/batch),
 [pricing](https://developers.openai.com/api/docs/pricing),
 [JSON image edits](https://developers.openai.com/api/reference/resources/images/methods/edit).
+
+## Images results inside SSE (2026-11-04)
+
+Some compatible relays send untyped `status: in_progress` / `completed` progress
+messages, followed by a normal Images result (`data[].url` or `data[].b64_json`)
+inside an SSE data event. The Images parser consumes that result through the same
+validated downloader/decoder and metadata path as a JSON response. Status-only
+completion is not delivery; unknown typed events and in-progress image references
+are not promoted to final output. Standard partial-image events remain previews.
+The default SSE wrapper is accepted both with no event name and with explicit
+`event: message`. Relay interpretation requires an absent/empty JSON type as well
+as that default wrapper; an empty JSON type cannot erase a named preview. Explicit
+failure types in either the SSE event name or JSON body remain terminal even when
+the other carrier conflicts.
+
+An error on an untyped `in_progress` event describes an intermediate provider
+attempt: retain it for diagnostics and await this same request. Explicit failed /
+cancelled statuses, standard error events and ordinary error envelopes still fail.
+At `[DONE]` or EOF without delivery, report the last event and intermediate error;
+a completed status without an image has a distinct diagnostic. No generation is
+resubmitted or automatically switched to non-streaming. A validated complete
+result ends the stream promptly and is saved/metered once even if repeated.
+
+Local HTTP fixtures cover this relay sequence, URL/base64 delivery, invalid image
+downloads, terminal errors, preview/progress exclusion and held-open connections.
+Queue tests cover exactly-once saving/usage and cancellation after intermediate
+errors. This is response-shape compatibility, not a host or model-name exception.
