@@ -356,6 +356,135 @@ void main() {
     release.complete();
   });
 
+  for (final mode in [
+    'url',
+    'base64',
+    'progressErrorThenSuccess',
+    'statusOnly',
+    'progressErrorOnly',
+    'failed',
+    'cancelled',
+    'genericError',
+    'typedError',
+    'unknownPreview',
+    'progressImage',
+    'invalidDownload',
+    'emptyResult',
+  ]) {
+    test('relay SSE $mode preserves delivery and error boundaries', () async {
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      addTearDown(() => server.close(force: true));
+      final release = Completer<void>();
+      addTearDown(() {
+        if (!release.isCompleted) release.complete();
+      });
+      var posts = 0;
+      var downloads = 0;
+      server.listen((r) async {
+        if (r.uri.path == '/image') {
+          downloads++;
+          expect(r.headers.value('authorization'), isNull);
+          r.response.add(mode == 'invalidDownload' ? utf8.encode('<html>unavailable</html>') : png);
+          await r.response.close();
+          return;
+        }
+        posts++;
+        await r.drain<void>();
+        r.response
+          ..bufferOutput = false
+          ..headers.contentType = ContentType('text', 'event-stream');
+        void event(Map<String, dynamic> data) => r.response.write('data: ${jsonEncode(data)}\n\n');
+        final result = <String, dynamic>{
+          'data': [
+            mode == 'base64'
+                ? {'b64_json': base64Encode(png)}
+                : {'url': 'http://127.0.0.1:${server.port}/image'},
+          ],
+          'usage': {'input_tokens': 12, 'output_tokens': 34, 'reported_cost_usd': 999},
+          'size': '1664x2496',
+          'quality': 'auto',
+          'output_format': 'png',
+        };
+        event({'status': 'in_progress', 'progress': 0});
+        if (mode.startsWith('progressError')) {
+          event({'status': 'in_progress', 'error': 'system under load'});
+        }
+        switch (mode) {
+          case 'failed':
+          case 'cancelled':
+            event({'status': mode, 'error': 'terminal failure'});
+            event(result);
+          case 'genericError':
+            event({'error': 'terminal failure'});
+            event(result);
+          case 'typedError':
+            event({'type': 'error', 'status': 'in_progress', 'error': 'terminal failure'});
+            event(result);
+          case 'unknownPreview':
+            event({'type': 'vendor.preview', ...result});
+          case 'progressImage':
+            event({'status': 'in_progress', ...result});
+          case 'statusOnly':
+            event({'status': 'completed'});
+          case 'progressErrorOnly':
+            break;
+          case 'emptyResult':
+            event({'data': []});
+          default:
+            event({'status': 'completed', 'progress': 100});
+            event(result);
+            event(result); // Duplicate result must not save/count twice.
+        }
+        r.response.write('data: [DONE]\n\n');
+        await r.response.flush();
+        if (['url', 'base64', 'progressErrorThenSuccess', 'statusOnly'].contains(mode)) {
+          await release.future; // Complete without requiring socket EOF.
+        }
+        await r.response.close();
+      });
+      final chunks = <LLMResponseChunk>[];
+      final operation = LLMDispatcher()
+          .generateStream(
+            LLMModelConfig(
+              modelId: '[Adobe]gpt-image-2.5-sunburst',
+              channelType: Vendors.openAIRest,
+              endpoint: 'http://127.0.0.1:${server.port}/v1',
+              apiKey: 'test',
+            ),
+            [LLMMessage(role: LLMRole.user, content: 'circle')],
+          )
+          .forEach(chunks.add)
+          .timeout(const Duration(seconds: 10));
+      if (['url', 'base64', 'progressErrorThenSuccess'].contains(mode)) {
+        await operation;
+        final delivered = chunks.where((c) => c.imagePart != null).single;
+        expect(delivered.imagePart, png);
+        expect(delivered.metadata!['output_tokens'], 34);
+        expect(delivered.metadata!['output_size'], '1664x2496');
+        expect(delivered.metadata!['reported_cost_usd'], isNull);
+        expect(chunks.where((c) => c.isDone), hasLength(1));
+        expect(downloads, mode == 'base64' ? 0 : 1);
+      } else {
+        final detail = switch (mode) {
+          'statusOnly' => 'Provider reported completion without an image',
+          'progressErrorOnly' => 'system under load',
+          'failed' || 'cancelled' || 'genericError' || 'typedError' => 'terminal failure',
+          'invalidDownload' => 'no valid image could be retrieved',
+          'emptyResult' => 'no image references',
+          _ => 'stream ended before the final image',
+        };
+        await expectLater(
+          operation,
+          throwsA(isA<LLMApiException>().having((e) => e.toString(), 'detail', contains(detail))),
+        );
+        expect(chunks.where((c) => c.imagePart != null), isEmpty);
+        if (mode != 'invalidDownload') expect(downloads, 0);
+      }
+      expect(posts, 1);
+      release.complete();
+    });
+  }
+
   for (final fails in [false, true]) {
     test('non-streaming image logs elapsed time on ${fails ? 'error' : 'success'}', () async {
       final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);

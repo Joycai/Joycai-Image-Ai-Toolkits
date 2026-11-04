@@ -19,8 +19,10 @@ final png = base64Decode(
 
 void main() {
   sqfliteFfiInit();
-  for (final mode in ['success', 'failure', 'cancel']) {
+  for (final mode in ['success', 'relaySuccess', 'failure', 'cancel', 'relayCancel']) {
     test('preview is transient through $mode and never saved or counted', () async {
+      final succeeds = mode == 'success' || mode == 'relaySuccess';
+      final cancels = mode == 'cancel' || mode == 'relayCancel';
       final db = await openTestDatabase();
       addTearDown(() => closeTestDatabase(db));
       final dir = Directory.systemTemp.createTempSync('gpt_preview_test');
@@ -42,6 +44,9 @@ void main() {
         r.response.write(
           'data: ${jsonEncode({'type': 'image_generation.partial_image', 'b64_json': base64Encode(png)})}\n\n',
         );
+        if (mode.startsWith('relay')) {
+          r.response.write('data: {"status":"in_progress","error":"system under load"}\n\n');
+        }
         await r.response.flush();
         await release.future;
         if (mode == 'success') {
@@ -52,6 +57,17 @@ void main() {
               'usage': {'input_tokens': 12, 'output_tokens': 34, 'total_tokens': 46},
             })}\n\n',
           );
+        }
+        if (mode == 'relaySuccess') {
+          r.response.write('data: {"status":"completed"}\n\n');
+          final result =
+              'data: ${jsonEncode({
+                'data': [
+                  {'b64_json': base64Encode(png)},
+                ],
+                'usage': {'input_tokens': 12, 'output_tokens': 34, 'total_tokens': 46},
+              })}\n\n';
+          r.response.write('$result$result');
         }
         await r.response.close();
       });
@@ -95,7 +111,7 @@ void main() {
       expect(dir.listSync(recursive: true).whereType<File>(), isEmpty);
       expect(rows, isEmpty);
       expect(jsonEncode(task.toMap()), isNot(contains(base64Encode(png))));
-      if (mode == 'cancel') {
+      if (cancels) {
         await queue.cancelTask(task.id);
         expect(task.imagePreview, isNull);
         // Keep upstream open: cancellation must release the running slot itself.
@@ -105,14 +121,14 @@ void main() {
       await finished.future.timeout(const Duration(seconds: 10));
       expect(task.imagePreview, isNull);
       expect(task.status, switch (mode) {
-        'success' => TaskStatus.completed,
+        'success' || 'relaySuccess' => TaskStatus.completed,
         'failure' => TaskStatus.failed,
         _ => TaskStatus.cancelled,
       });
-      expect(saved, mode == 'success' ? 1 : 0);
-      expect(task.resultPaths.length, mode == 'success' ? 1 : 0);
-      expect(rows.length, mode == 'success' ? 1 : 0);
-      if (mode == 'success') {
+      expect(saved, succeeds ? 1 : 0);
+      expect(task.resultPaths.length, succeeds ? 1 : 0);
+      expect(rows.length, succeeds ? 1 : 0);
+      if (succeeds) {
         expect(rows.single.outputTokens, 34);
         expect(await File(task.resultPaths.single).readAsBytes(), png);
       }
