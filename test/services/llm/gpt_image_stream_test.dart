@@ -358,6 +358,11 @@ void main() {
 
   for (final mode in [
     'url',
+    'messageUrl',
+    'messageProgressError',
+    'namedPreviewEmptyType',
+    'namedErrorEmptyType',
+    'namedErrorConflictingType',
     'base64',
     'progressErrorThenSuccess',
     'statusOnly',
@@ -393,7 +398,13 @@ void main() {
         r.response
           ..bufferOutput = false
           ..headers.contentType = ContentType('text', 'event-stream');
-        void event(Map<String, dynamic> data) => r.response.write('data: ${jsonEncode(data)}\n\n');
+        void event(Map<String, dynamic> data, {String? name}) {
+          if (name != null || mode.startsWith('message')) {
+            r.response.write('event: ${name ?? 'message'}\n');
+          }
+          r.response.write('data: ${jsonEncode(data)}\n\n');
+        }
+
         final result = <String, dynamic>{
           'data': [
             mode == 'base64'
@@ -406,10 +417,25 @@ void main() {
           'output_format': 'png',
         };
         event({'status': 'in_progress', 'progress': 0});
-        if (mode.startsWith('progressError')) {
+        if (mode.startsWith('progressError') || mode == 'messageProgressError') {
           event({'status': 'in_progress', 'error': 'system under load'});
         }
         switch (mode) {
+          case 'namedPreviewEmptyType':
+            event({'type': '', ...result}, name: 'vendor.preview');
+          case 'namedErrorEmptyType':
+            event({
+              'type': '',
+              'status': 'in_progress',
+              'error': 'terminal failure',
+            }, name: 'error');
+            event(result);
+          case 'namedErrorConflictingType':
+            event({
+              'type': 'image_edit.completed',
+              'b64_json': base64Encode(png),
+              'message': 'terminal failure',
+            }, name: 'image_edit.failed');
           case 'failed':
           case 'cancelled':
             event({'status': mode, 'error': 'terminal failure'});
@@ -437,7 +463,14 @@ void main() {
         }
         r.response.write('data: [DONE]\n\n');
         await r.response.flush();
-        if (['url', 'base64', 'progressErrorThenSuccess', 'statusOnly'].contains(mode)) {
+        if ([
+          'url',
+          'messageUrl',
+          'messageProgressError',
+          'base64',
+          'progressErrorThenSuccess',
+          'statusOnly',
+        ].contains(mode)) {
           await release.future; // Complete without requiring socket EOF.
         }
         await r.response.close();
@@ -455,7 +488,13 @@ void main() {
           )
           .forEach(chunks.add)
           .timeout(const Duration(seconds: 10));
-      if (['url', 'base64', 'progressErrorThenSuccess'].contains(mode)) {
+      if ([
+        'url',
+        'messageUrl',
+        'messageProgressError',
+        'base64',
+        'progressErrorThenSuccess',
+      ].contains(mode)) {
         await operation;
         final delivered = chunks.where((c) => c.imagePart != null).single;
         expect(delivered.imagePart, png);
@@ -468,7 +507,12 @@ void main() {
         final detail = switch (mode) {
           'statusOnly' => 'Provider reported completion without an image',
           'progressErrorOnly' => 'system under load',
-          'failed' || 'cancelled' || 'genericError' || 'typedError' => 'terminal failure',
+          'failed' ||
+          'cancelled' ||
+          'genericError' ||
+          'typedError' ||
+          'namedErrorEmptyType' ||
+          'namedErrorConflictingType' => 'terminal failure',
           'invalidDownload' => 'no valid image could be retrieved',
           'emptyResult' => 'no image references',
           _ => 'stream ended before the final image',

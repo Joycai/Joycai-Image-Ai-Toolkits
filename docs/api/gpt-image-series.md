@@ -202,6 +202,11 @@ inside an SSE data event. The Images parser consumes that result through the sam
 validated downloader/decoder and metadata path as a JSON response. Status-only
 completion is not delivery; unknown typed events and in-progress image references
 are not promoted to final output. Standard partial-image events remain previews.
+The default SSE wrapper is accepted both with no event name and with explicit
+`event: message`. Relay interpretation requires an absent/empty JSON type as well
+as that default wrapper; an empty JSON type cannot erase a named preview. Explicit
+failure types in either the SSE event name or JSON body remain terminal even when
+the other carrier conflicts.
 
 An error on an untyped `in_progress` event describes an intermediate provider
 attempt: retain it for diagnostics and await this same request. Explicit failed /

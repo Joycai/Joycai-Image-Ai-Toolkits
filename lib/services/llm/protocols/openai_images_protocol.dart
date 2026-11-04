@@ -334,16 +334,27 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
           );
         }
         final data = decoded;
-        final type = data['type'] ?? eventName;
+        final payloadType = data['type'];
+        final type = payloadType == null || payloadType == '' ? eventName : payloadType;
         final status = data['status'];
         lastEvent = 'type=$type status=$status';
         await LLMDebugLogger.appendLine(
           req.debugFile,
           'Image event: index=$events $lastEvent keys=${data.keys.join(',')}',
         );
-        // Standard typed events retain their original error semantics. Only
-        // untyped relay progress envelopes can report a recoverable attempt.
-        final relayStatus = type == '';
+        // Both carriers must permit relay interpretation: an empty/conflicting
+        // JSON type must never erase a named SSE error or promote its preview.
+        const failureTypes = {'error', 'image_generation.failed', 'image_edit.failed'};
+        if (failureTypes.contains(eventName) || failureTypes.contains(payloadType)) {
+          throw LLMApiException(
+            'OpenAI Images stream failed: ${data['message'] ?? data['error'] ?? type}',
+            isEnvelope: true,
+          );
+        }
+        // SSE's default event name is message, whether omitted or explicit.
+        final relayStatus =
+            (eventName.isEmpty || eventName == 'message') &&
+            (payloadType == null || payloadType == '');
         if (relayStatus && (status == 'failed' || status == 'cancelled')) {
           throw LLMApiException(
             'OpenAI Images stream failed: ${data['error'] ?? data['message'] ?? status}',
@@ -355,7 +366,7 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
             lastProgressError = data['error'].toString();
             logger?.call(
               'Image provider reported an intermediate error; awaiting the current request.',
-              level: 'WARNING',
+              level: 'WARN',
             );
           }
           return const [];
@@ -373,12 +384,6 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
               LLMResponseChunk(imagePart: image, metadata: whole.metadata),
             if (whole.text.isNotEmpty) LLMResponseChunk(textPart: whole.text),
           ];
-        }
-        if (type == 'error' || type == 'image_generation.failed' || type == 'image_edit.failed') {
-          throw LLMApiException(
-            'OpenAI Images stream failed: ${data['message'] ?? data['error'] ?? type}',
-            isEnvelope: true,
-          );
         }
         final partial =
             type == 'image_generation.partial_image' || type == 'image_edit.partial_image';
