@@ -3,6 +3,7 @@ import 'dart:io';
 
 import '../llm/llm_config_resolver.dart';
 import '../llm/llm_errors.dart';
+import '../privacy/ai_consent_service.dart';
 
 class ImageGenerationFailure implements Exception {
   const ImageGenerationFailure(this.message);
@@ -15,6 +16,7 @@ class ImageGenerationFailure implements Exception {
 /// credential, signed URL or filesystem exception to an external client.
 Map<String, dynamic> taskFailure(Object error) {
   final code = switch (error) {
+    AiConsentRequired() => 'consentRequired',
     TimeoutException() => 'timeout',
     SocketException() => 'connectionFailed',
     ImageGenerationFailure() => 'noUsableImage',
@@ -29,6 +31,7 @@ Map<String, dynamic> taskFailure(Object error) {
   return {
     'code': code,
     'message': switch (code) {
+      'consentRequired' => 'AI data sharing permission is required in the application. Review Settings > About before retrying.',
       'timeout' => 'The provider request timed out. It may still have been processed upstream.',
       'connectionFailed' => 'Could not connect to the configured provider.',
       'noUsableImage' => 'The provider returned no usable image. It may have replied with text or refused the request.',

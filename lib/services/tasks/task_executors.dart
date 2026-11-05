@@ -853,6 +853,8 @@ extension TaskExecutors on TaskQueueService {
       if (!DateTime.now().isBefore(deadline)) break;
       try {
         return await _downloadVideoOnce(url, task, outputDir, headers, deadline);
+      } on AiConsentRequired {
+        rethrow;
       } on LLMCancelled {
         rethrow;
       } catch (e) {
@@ -893,12 +895,14 @@ extension TaskExecutors on TaskQueueService {
       return remaining;
     }
 
-    final client = HttpClient()..connectionTimeout = const Duration(seconds: 30);
+    final client = await _llm.downloadClientFor(
+      modelIdentifier: task.modelDbId ?? task.modelId,
+      contextId: task.id,
+    );
     File? part;
     try {
-      final request = await client.getUrl(Uri.parse(url)).timeout(left());
-      headers.forEach(request.headers.add);
-      final response = await request.close().timeout(left());
+      final request = http.Request('GET', Uri.parse(url))..headers.addAll(headers);
+      final response = await client.send(request).timeout(left());
       if (response.statusCode != 200) {
         throw Exception('Failed to download video: HTTP ${response.statusCode}');
       }
@@ -912,7 +916,7 @@ extension TaskExecutors on TaskQueueService {
       final sink = part.openWrite();
       var received = 0;
       try {
-        await for (final chunk in response.timeout(const Duration(seconds: 60))) {
+        await for (final chunk in response.stream.timeout(const Duration(seconds: 60))) {
           if (task.status == TaskStatus.cancelled) throw const LLMCancelled();
           left();
           sink.add(chunk);
@@ -933,7 +937,7 @@ extension TaskExecutors on TaskQueueService {
       if (extension == null) {
         throw Exception(
           'Downloaded body is not a video ($received bytes, content-type '
-          '${response.headers.contentType ?? 'none'}) — most likely an error '
+          '${response.headers['content-type'] ?? 'none'}) — most likely an error '
           'page or an expired link.',
         );
       }
@@ -953,7 +957,7 @@ extension TaskExecutors on TaskQueueService {
       }
       rethrow;
     } finally {
-      client.close(force: true);
+      client.close();
     }
   }
 

@@ -211,5 +211,36 @@
         "type": "int"
       }
     }
-  }
+  },
+  "aiConsentTitle": "AI data sharing",
+  "aiConsentRecipient": "Actual recipient",
+  "aiConsentConfiguredService": "Configured service: {address}",
+  "aiConsentProxy": "Proxy: {address}",
+  "aiConsentData": "Depending on the feature, requests may contain prompts and conversation history, selected images/masks, video/audio, filenames and local paths, knowledge excerpts and tool results. Your API key is sent for authentication; the recipient also sees network metadata such as your IP address.",
+  "aiConsentPurpose": "This service processes generation, assistant, prompt refinement and AI rename requests, including batches, retries, restored tasks and MCP-triggered requests. Model discovery, job status checks and result retrieval also contact it.",
+  "aiConsentConsequences": "Allowing remembers permission for this service and recipient on this installation. Custom endpoints and relays are operated by whoever controls the address, not necessarily the model vendor. Their retention and training policies apply. You can revoke permission in Settings → About; this stops future requests but cannot recall data already sent.",
+  "aiConsentDecline": "Decline",
+  "aiConsentAllow": "Allow sharing",
+  "aiConsentManageNote": "Revoke to block future AI requests to a recipient. Data already sent cannot be recalled. “Ask next time” only enables a new consent prompt; retry stopped tasks manually. Permission is not carried into backups or installation imports.",
+  "aiConsentEmpty": "No AI data sharing decisions yet. Permission will be requested before the first connection.",
+  "aiConsentAllowed": "Allowed",
+  "aiConsentBlocked": "Blocked",
+  "aiConsentRevoke": "Revoke",
+  "aiConsentAskAgain": "Ask next time",
+  "aiConsentSaveFailed": "Could not save the decision. Requests remain blocked in this session. Please retry before quitting.",
+  "@aiConsentConfiguredService": {
+    "placeholders": {
+      "address": {
+        "type": "String"
+      }
+    }
+  },
+  "@aiConsentProxy": {
+    "placeholders": {
+      "address": {
+        "type": "String"
+      }
+    }
+  },
+  "aiConsentBlockedError": "AI data sharing is blocked. Review permission in Settings → About, then retry."
 }

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 
@@ -33,6 +34,7 @@ import '../llm/llm_types.dart';
 import '../llm/model_descriptor.dart';
 import '../llm/output_spec.dart' show reportedCostOf;
 import '../media/web_scraper_service.dart';
+import '../privacy/ai_consent_service.dart';
 import 'ai_rename_agent.dart';
 import 'generation_result_text.dart';
 import 'generation_task_data.dart';

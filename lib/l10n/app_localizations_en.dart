@@ -4099,6 +4099,68 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get aiConsentTitle => 'AI data sharing';
+
+  @override
+  String get aiConsentRecipient => 'Actual recipient';
+
+  @override
+  String aiConsentConfiguredService(String address) {
+    return 'Configured service: $address';
+  }
+
+  @override
+  String aiConsentProxy(String address) {
+    return 'Proxy: $address';
+  }
+
+  @override
+  String get aiConsentData =>
+      'Depending on the feature, requests may contain prompts and conversation history, selected images/masks, video/audio, filenames and local paths, knowledge excerpts and tool results. Your API key is sent for authentication; the recipient also sees network metadata such as your IP address.';
+
+  @override
+  String get aiConsentPurpose =>
+      'This service processes generation, assistant, prompt refinement and AI rename requests, including batches, retries, restored tasks and MCP-triggered requests. Model discovery, job status checks and result retrieval also contact it.';
+
+  @override
+  String get aiConsentConsequences =>
+      'Allowing remembers permission for this service and recipient on this installation. Custom endpoints and relays are operated by whoever controls the address, not necessarily the model vendor. Their retention and training policies apply. You can revoke permission in Settings → About; this stops future requests but cannot recall data already sent.';
+
+  @override
+  String get aiConsentDecline => 'Decline';
+
+  @override
+  String get aiConsentAllow => 'Allow sharing';
+
+  @override
+  String get aiConsentManageNote =>
+      'Revoke to block future AI requests to a recipient. Data already sent cannot be recalled. “Ask next time” only enables a new consent prompt; retry stopped tasks manually. Permission is not carried into backups or installation imports.';
+
+  @override
+  String get aiConsentEmpty =>
+      'No AI data sharing decisions yet. Permission will be requested before the first connection.';
+
+  @override
+  String get aiConsentAllowed => 'Allowed';
+
+  @override
+  String get aiConsentBlocked => 'Blocked';
+
+  @override
+  String get aiConsentRevoke => 'Revoke';
+
+  @override
+  String get aiConsentAskAgain => 'Ask next time';
+
+  @override
+  String get aiConsentSaveFailed =>
+      'Could not save the decision. Requests remain blocked in this session. Please retry before quitting.';
+
+  @override
+  String get aiConsentBlockedError =>
+      'AI data sharing is blocked. Review permission in Settings → About, then retry.';
+
+  @override
   String get shortcutNavigateToDestination => 'Go to page 1–8';
 
   @override

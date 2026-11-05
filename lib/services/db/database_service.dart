@@ -89,6 +89,7 @@ class DatabaseService {
   /// is blank.
   static const Set<String> secretSettingKeys = {
     'proxy_password',
+    'ai_data_sharing_consent_v1',
     'mcp_token',
     'mcp_enabled',
     'mcp_roots',
@@ -713,7 +714,13 @@ class DatabaseService {
       final List<dynamic> settingsRows = data['settings'];
       var filteredSettings = settingsRows
           .where(
-            (row) => !{'mcp_token', 'mcp_enabled', 'mcp_roots', 'mcp_port'}.contains(row['key']),
+            (row) => !{
+              'mcp_token',
+              'mcp_enabled',
+              'mcp_roots',
+              'mcp_port',
+              'ai_data_sharing_consent_v1',
+            }.contains(row['key']),
           )
           .toList();
       if (!includeDirectories) {

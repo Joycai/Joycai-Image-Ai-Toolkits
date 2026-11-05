@@ -10,6 +10,7 @@ import '../billing/media_accounting.dart';
 import '../billing/spec_billing.dart';
 import '../db/database_service.dart';
 import '../db/repositories/usage_repository.dart';
+import '../privacy/ai_consent_service.dart';
 import 'context_budget.dart';
 import 'gpt_image_timeout.dart';
 import 'image_batch_session.dart';
@@ -688,7 +689,7 @@ class LLMService {
     //
     // Not covered by a test: no input distinguishes this line from the
     // fall-through, which is exactly why it is written down here instead.
-    if (e is LLMCancelled) return false;
+    if (e is LLMCancelled || e is AiConsentRequired) return false;
     // Explicit, even though it is not a TimeoutException and so would not
     // reach the branch below: distinguishing these two is the entire reason
     // the type exists. A generation that ran past its deadline will run past
@@ -1392,6 +1393,18 @@ class LLMService {
       cancelWatch?.cancel();
       if (!abort.isCompleted) abort.complete();
     }
+  }
+
+  /// Result retrieval uses the same recipient gate as submissions and polls.
+  Future<http.Client> downloadClientFor({
+    required dynamic modelIdentifier,
+    String? contextId,
+  }) async {
+    final config = await _resolveConfig(
+      modelIdentifier,
+      logger: (msg, {level = 'INFO'}) => _emitLog(msg, level: level, contextId: contextId),
+    );
+    return config.createClient();
   }
 
   /// Credential headers for downloading a generated asset from this model's

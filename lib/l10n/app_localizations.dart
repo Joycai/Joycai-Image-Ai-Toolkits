@@ -7107,6 +7107,108 @@ abstract class AppLocalizations {
   /// **'{minutes} min'**
   String gptImageTimeoutMinutes(int minutes);
 
+  /// No description provided for @aiConsentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'AI data sharing'**
+  String get aiConsentTitle;
+
+  /// No description provided for @aiConsentRecipient.
+  ///
+  /// In en, this message translates to:
+  /// **'Actual recipient'**
+  String get aiConsentRecipient;
+
+  /// No description provided for @aiConsentConfiguredService.
+  ///
+  /// In en, this message translates to:
+  /// **'Configured service: {address}'**
+  String aiConsentConfiguredService(String address);
+
+  /// No description provided for @aiConsentProxy.
+  ///
+  /// In en, this message translates to:
+  /// **'Proxy: {address}'**
+  String aiConsentProxy(String address);
+
+  /// No description provided for @aiConsentData.
+  ///
+  /// In en, this message translates to:
+  /// **'Depending on the feature, requests may contain prompts and conversation history, selected images/masks, video/audio, filenames and local paths, knowledge excerpts and tool results. Your API key is sent for authentication; the recipient also sees network metadata such as your IP address.'**
+  String get aiConsentData;
+
+  /// No description provided for @aiConsentPurpose.
+  ///
+  /// In en, this message translates to:
+  /// **'This service processes generation, assistant, prompt refinement and AI rename requests, including batches, retries, restored tasks and MCP-triggered requests. Model discovery, job status checks and result retrieval also contact it.'**
+  String get aiConsentPurpose;
+
+  /// No description provided for @aiConsentConsequences.
+  ///
+  /// In en, this message translates to:
+  /// **'Allowing remembers permission for this service and recipient on this installation. Custom endpoints and relays are operated by whoever controls the address, not necessarily the model vendor. Their retention and training policies apply. You can revoke permission in Settings → About; this stops future requests but cannot recall data already sent.'**
+  String get aiConsentConsequences;
+
+  /// No description provided for @aiConsentDecline.
+  ///
+  /// In en, this message translates to:
+  /// **'Decline'**
+  String get aiConsentDecline;
+
+  /// No description provided for @aiConsentAllow.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow sharing'**
+  String get aiConsentAllow;
+
+  /// No description provided for @aiConsentManageNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoke to block future AI requests to a recipient. Data already sent cannot be recalled. “Ask next time” only enables a new consent prompt; retry stopped tasks manually. Permission is not carried into backups or installation imports.'**
+  String get aiConsentManageNote;
+
+  /// No description provided for @aiConsentEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No AI data sharing decisions yet. Permission will be requested before the first connection.'**
+  String get aiConsentEmpty;
+
+  /// No description provided for @aiConsentAllowed.
+  ///
+  /// In en, this message translates to:
+  /// **'Allowed'**
+  String get aiConsentAllowed;
+
+  /// No description provided for @aiConsentBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked'**
+  String get aiConsentBlocked;
+
+  /// No description provided for @aiConsentRevoke.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoke'**
+  String get aiConsentRevoke;
+
+  /// No description provided for @aiConsentAskAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask next time'**
+  String get aiConsentAskAgain;
+
+  /// No description provided for @aiConsentSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save the decision. Requests remain blocked in this session. Please retry before quitting.'**
+  String get aiConsentSaveFailed;
+
+  /// No description provided for @aiConsentBlockedError.
+  ///
+  /// In en, this message translates to:
+  /// **'AI data sharing is blocked. Review permission in Settings → About, then retry.'**
+  String get aiConsentBlockedError;
+
   /// No description provided for @shortcutNavigateToDestination.
   ///
   /// In en, this message translates to:

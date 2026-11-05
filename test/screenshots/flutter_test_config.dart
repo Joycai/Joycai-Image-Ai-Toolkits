@@ -23,6 +23,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
+import 'package:joycai_image_ai_toolkits/services/privacy/ai_consent_service.dart';
 import 'package:path/path.dart' as p;
 
 import '../support/fake_async_database_rule.dart';
@@ -40,6 +41,12 @@ Future<void> testExecutable(FutureOr<void> Function() testMain) async {
   await _loadFonts();
   goldenFileComparator = _ScreenshotWriter(Directory(kScreenshotDir));
   // The one thing in this directory that *can* fail a shot: see the rule.
+  // Existing protocol fixtures use local/mock transports. Consent behavior has
+  // its own isolated tests; never read the user's permission database here.
+  AiConsentService.instance = AiConsentService.withStore(
+    read: () async => null,
+    write: (_) async {},
+  )..requestConsent = (_) async => true;
   installFakeAsyncDatabaseRule();
   await testMain();
 }

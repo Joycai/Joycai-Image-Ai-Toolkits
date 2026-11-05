@@ -12,6 +12,7 @@ import '../../../widgets/ui/app_button.dart';
 import '../../../widgets/ui/app_section_label.dart';
 import '../../../widgets/ui/app_setting_row.dart';
 import '../../../widgets/ui/app_snackbar.dart';
+import 'ai_consent_section.dart';
 import 'settings_layout.dart';
 
 const String _githubUrl = 'https://github.com/Joycai/Joycai-Image-Ai-Toolkits';
@@ -68,6 +69,7 @@ class _AboutSectionState extends State<AboutSection> {
       children: [
         _Identity(info: _info),
         _links(context, l10n),
+        const AiConsentSection(),
         _runtime(context, l10n),
         _notices(context, l10n),
       ],

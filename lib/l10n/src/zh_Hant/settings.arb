@@ -211,5 +211,36 @@
         "type": "int"
       }
     }
-  }
+  },
+  "aiConsentTitle": "AI 資料共享",
+  "aiConsentRecipient": "實際接收方",
+  "aiConsentConfiguredService": "設定的服務：{address}",
+  "aiConsentProxy": "代理：{address}",
+  "aiConsentData": "依所用功能，請求可能包含提示詞與對話歷史、選定圖片與遮罩、影片與音訊、檔案名稱與本機路徑、知識庫片段和工具結果。API Key 用於身分驗證；接收方也會取得 IP 位址等網路資訊。",
+  "aiConsentPurpose": "此服務用於生成內容、助手、提示詞最佳化和 AI 重新命名，包括批次、重試、恢復的任務和 MCP 發起的請求。探索模型、查詢任務狀態與取得結果也會連線至此服務。",
+  "aiConsentConsequences": "允許後，本次安裝會記住對此服務及接收方的授權。自訂位址與中轉由位址的實際營運者處理，不一定是模型廠商，並適用其資料保留與訓練政策。可在「設定 → 關於」撤回授權以阻止後續請求；已傳送的資料無法收回。",
+  "aiConsentDecline": "拒絕",
+  "aiConsentAllow": "允許共享",
+  "aiConsentManageNote": "撤回會阻止後續 AI 請求，無法收回已傳送的資料。「下次詢問」僅允許再次顯示授權提示；已停止的任務需手動重試。授權不會隨備份或整庫遷移匯入。",
+  "aiConsentEmpty": "尚無 AI 資料共享決定。首次連線前會請求授權。",
+  "aiConsentAllowed": "已允許",
+  "aiConsentBlocked": "已阻止",
+  "aiConsentRevoke": "撤回",
+  "aiConsentAskAgain": "下次詢問",
+  "aiConsentSaveFailed": "無法儲存決定，本次執行中仍會阻止請求。請在結束前重試。",
+  "@aiConsentConfiguredService": {
+    "placeholders": {
+      "address": {
+        "type": "String"
+      }
+    }
+  },
+  "@aiConsentProxy": {
+    "placeholders": {
+      "address": {
+        "type": "String"
+      }
+    }
+  },
+  "aiConsentBlockedError": "AI 資料共享已阻止。請在「設定 → 關於」檢查授權，再重試。"
 }

@@ -26,6 +26,8 @@ The app does not require a Joycai account. We do not operate a cloud service tha
 
 **AI services.** Requests go to the endpoint configured for the selected channel/model, which may be a provider, a relay, or a local server. The recipient can receive prompts, relevant conversation/knowledge context, attachments, generation parameters and authentication data. Provider names shown in presets do not guarantee that a custom endpoint belongs to that provider. Review the actual endpoint and its privacy terms before sending content. Providers and relays have their own retention, training, deletion and international-processing practices; we do not promise that they retain nothing or never use content for training.
 
+**AI sharing controls.** In versions with the AI data-sharing prompt, the app asks for explicit permission before its first connection to an AI recipient. The prompt identifies the actual recipient, describes the data and purposes, and links to this policy. The local decision covers subsequent requests, including batches, retries, resumed work and MCP-triggered operations. Changing the configured endpoint, service type, recipient or proxy requires a new decision. You can revoke permission in **Settings → About → AI data sharing**, or enable a fresh prompt after declining. Revocation blocks future requests; it cannot recall data or cancel processing already accepted upstream. Decisions are stored locally, excluded from settings backups and cleared when importing another installation. Earlier builds without these controls require stopping tasks and removing credentials to prevent further requests.
+
 **Downloads and external links.** Websites, media hosts and configured proxies receive the requests needed to retrieve content. Optional font downloads contact jsDelivr; the system font does not require that download. Opening GitHub, release notes or other external links contacts the relevant website/browser. Network recipients can see your IP address and ordinary request metadata. Depending on their locations, processing may occur outside your country.
 
 **MCP integrations.** If enabled, the local MCP server accepts authenticated clients on the loopback address. Clients can invoke supported tools, initiate AI requests and receive results within the configured access scope. Treat the MCP token and authorized clients as access to those capabilities. Clients may further process received information under their own policies.
@@ -77,6 +79,8 @@ We update this policy when data practices change and revise the date above. For 
 ### 3. 接收方与网络访问
 
 **AI 服务。** 请求发送至所选通道/模型配置的端点，可能是原厂服务、中转服务或本地服务器。接收方可能收到提示词、相关对话/知识库上下文、附件、生成参数和认证信息。预设中的服务商名称不保证自定义端点属于该服务商。发送前请检查实际端点及其隐私条款。服务商和中转方的数据保留、模型训练、删除及跨境处理规则各不相同；我们不承诺其不保留内容或不将内容用于训练。
+
+**AI 共享控制。** 在包含 AI 数据共享提示的版本中，应用会在首次连接 AI 接收方前请求明确许可。提示会展示实际接收方、数据类型与用途，并提供本政策入口。本地决定适用于后续请求，包括批量、重试、恢复任务及 MCP 发起的操作；配置的端点、服务类型、接收方或代理变化后需重新确认。可在 **设置 → 关于 → AI 数据共享** 撤回授权，或在拒绝后启用下次询问。撤回会阻止后续请求，但无法收回已发送的数据，也无法取消服务商已经受理的处理。决定保存在本机，不随设置备份导出，导入其他安装的数据时会清除。尚无这些控制的旧版本需停止任务并移除凭据以防止后续请求。
 
 **下载与外链。** 网站、媒体托管方及配置的代理会收到获取内容所需的请求。可选字体下载会访问 jsDelivr；使用系统字体无需进行该下载。打开 GitHub、更新日志等外链会访问相应网站/浏览器。网络接收方可以获知您的 IP 地址和常规请求元数据；数据可能在您所在国家或地区以外处理。
 

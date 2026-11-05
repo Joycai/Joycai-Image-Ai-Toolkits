@@ -8,6 +8,7 @@ import 'package:http/io_client.dart';
 import '../../models/media_pricing.dart';
 import '../../models/pricing_group.dart';
 import '../../models/spec_rate.dart';
+import '../privacy/ai_consent_service.dart';
 import 'vendors/vendor_profile.dart';
 
 /// The app's own reasoning-intensity vocabulary (playbook 03: never let one
@@ -288,7 +289,7 @@ class LLMModelConfig {
   /// is what keeps a poll loop's client alive through the sleeps between
   /// requests, and what lets an evicted client actually close once its last
   /// holder leaves.
-  http.Client createClient() => LLMClientPool.take(this);
+  http.Client createClient() => _ConsentClient(LLMClientPool.take(this), this);
 
   /// Everything that determines which connection a request opens.
   ///
@@ -532,5 +533,40 @@ class _SharedClient extends http.BaseClient {
       release();
     }
     _pooled.release();
+  }
+}
+
+/// Per-lease policy: pooled connections must never cache an authorization.
+class _ConsentClient extends http.BaseClient {
+  final http.Client inner;
+  final LLMModelConfig config;
+  bool _closed = false;
+  _ConsentClient(this.inner, this.config);
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    var aborted = false;
+    final abort = request is http.Abortable ? request.abortTrigger : null;
+    if (abort != null) unawaited(abort.then((_) => aborted = true));
+    final scope = AiConsentScope.forRequest(
+      vendor: config.channelType,
+      endpoint: config.endpoint,
+      destination: request.url,
+      proxy: config.proxyEnabled ? config.proxyUrl : null,
+    );
+    final consent = AiConsentService.instance;
+    await consent.require(scope);
+    if (!consent.isAllowed(scope)) throw consent.denied();
+    if (_closed || aborted) throw http.RequestAbortedException(request.url);
+    // An automatic redirect would bypass the recipient check. Require callers
+    // to configure the final endpoint instead of forwarding content silently.
+    request.followRedirects = false;
+    return inner.send(request);
+  }
+
+  @override
+  void close() {
+    _closed = true;
+    inner.close();
   }
 }
