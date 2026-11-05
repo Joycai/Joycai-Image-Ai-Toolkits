@@ -2570,6 +2570,8 @@
   },
   "aboutGithubRepo": "GitHub Repository",
   "aboutViewSource": "View source code and releases",
+  "aboutPrivacyPolicy": "Privacy Policy",
+  "aboutPrivacyPolicyNote": "How your data is used, stored and shared",
   "aboutLicense": "License",
   "aboutCopyright": "Copyright © {year} {holder}. Released under the MIT License.",
   "@aboutCopyright": {

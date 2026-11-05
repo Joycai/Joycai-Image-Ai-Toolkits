@@ -128,6 +128,8 @@
   },
   "aboutGithubRepo": "GitHub 儲存庫",
   "aboutViewSource": "查看原始碼與發行版本",
+  "aboutPrivacyPolicy": "隱私權政策",
+  "aboutPrivacyPolicyNote": "瞭解資料的使用、儲存與分享方式",
   "aboutLicense": "授權條款",
   "aboutCopyright": "版權所有 © {year} {holder}，依 MIT 授權條款發布。",
   "@aboutCopyright": {

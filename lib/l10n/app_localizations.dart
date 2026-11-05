@@ -6717,6 +6717,18 @@ abstract class AppLocalizations {
   /// **'View source code and releases'**
   String get aboutViewSource;
 
+  /// No description provided for @aboutPrivacyPolicy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get aboutPrivacyPolicy;
+
+  /// No description provided for @aboutPrivacyPolicyNote.
+  ///
+  /// In en, this message translates to:
+  /// **'How your data is used, stored and shared'**
+  String get aboutPrivacyPolicyNote;
+
   /// No description provided for @aboutLicense.
   ///
   /// In en, this message translates to:

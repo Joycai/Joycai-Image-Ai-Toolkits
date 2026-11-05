@@ -128,6 +128,8 @@
   },
   "aboutGithubRepo": "GitHub 仓库",
   "aboutViewSource": "查看源代码与发布版本",
+  "aboutPrivacyPolicy": "隐私政策",
+  "aboutPrivacyPolicyNote": "了解数据的使用、存储与共享方式",
   "aboutLicense": "许可协议",
   "aboutCopyright": "版权所有 © {year} {holder}，基于 MIT 许可协议发布。",
   "@aboutCopyright": {

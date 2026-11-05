@@ -128,6 +128,8 @@
   },
   "aboutGithubRepo": "GitHub リポジトリ",
   "aboutViewSource": "ソースコードとリリースを表示",
+  "aboutPrivacyPolicy": "プライバシーポリシー",
+  "aboutPrivacyPolicyNote": "データの利用・保存・共有について",
   "aboutLicense": "ライセンス",
   "aboutCopyright": "Copyright © {year} {holder}. MITライセンスの下で公開されています。",
   "@aboutCopyright": {
