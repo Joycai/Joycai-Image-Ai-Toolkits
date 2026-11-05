@@ -34,6 +34,7 @@ Required reading before touching the subsystem each one covers.
 * **[macOS App Sandbox](architecture/macos-sandbox.md)** — entitlement purposes,
   file authorization boundaries, remaining adaptations and native verification.
   [Isolated MAS-02 acceptance](testing/mas02-native-acceptance.md) records tested cases and limits.
+  [MAS-07 distribution verification](testing/mas07-distribution-verification.md) records local store export and signing checks.
 * **[Media usage and cost accounting](architecture/media-accounting.md)** — shared
   ordinary/Batch arithmetic, modality prices, submitted video pricing snapshots,
   incomplete evidence, atomic settlement and durable recovery.

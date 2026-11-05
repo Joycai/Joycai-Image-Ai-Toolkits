@@ -34,6 +34,21 @@ notarized Developer ID package. Developer ID signing/notarization and MAS Archiv
 Validate and upload are separate future work. Windows MSIX explicitly sets
 `store: false`; the existing ZIP/EXE, Linux archive and Android APK remain direct downloads.
 
+## Store distribution signing
+
+PR #394 uses Apple Development automatic signing for local Debug/Profile/Release
+builds and enables Hardened Runtime. The accepted Xcode recommendations raise the
+Runner deployment target to macOS 14.0 with the current SDK. App Store export
+re-signs an Archive with Apple Distribution and signs its pkg with Mac Installer
+Distribution; these are distinct from the direct-download override above.
+
+The 2026-11-05 local store export passed app/package signature checks and embedded
+profile matching; it removed `get-task-allow` while preserving App Sandbox.
+Archive requires `MACOSX_DEPLOYMENT_TARGET=14.0` to avoid a generated Swift package
+minimum-version conflict. See the [MAS-07 verification record](../testing/mas07-distribution-verification.md)
+for commands, export-only settings and remaining server-side validation.
+Certificates, private keys, provisioning profiles and exported packages remain local.
+
 ## Entitlements
 
 `macos/Runner/DebugProfile.entitlements` is used by Debug and Profile;
