@@ -242,5 +242,15 @@
       }
     }
   },
-  "aiConsentBlockedError": "AI data sharing is blocked. Review permission in Settings → About, then retry."
+  "aiConsentBlockedError": "AI data sharing is blocked. Review permission in Settings → About, then retry.",
+  "safetySettingsStoreDesc": "Only supported Gemini interfaces use these thresholds. This build requires medium or stricter filtering, including old task settings. Veo/Imagen and other services use their own policies; their filtering cannot be verified here.",
+  "safetyUnlockTitle": "Unlock editing",
+  "safetyUnlockWarning": "Reducing filtering can expose you to harmful or explicit content. These controls do not guarantee safe results or change other providers’ policies. Confirm only if you understand the effect. Unlocking does not change a value or retry tasks.",
+  "safetyUnlockConfirm": "I understand — unlock",
+  "contentSafetyReport": "Report a content concern",
+  "contentSafetyReportNote": "Contact Joycai at joycai@joycai.cn about harmful generated content. Describe the issue, app version and service/model. Do not send API keys, private files or illegal imagery. Nothing is attached or sent automatically.",
+  "contentSafetyEmail": "Compose email",
+  "contentSafetyCopyEmail": "Copy email address",
+  "contentSafetyEmailCopied": "Email address copied",
+  "contentSafetyEmailFailed": "Could not open an email app. Copy the address and send your report manually."
 }

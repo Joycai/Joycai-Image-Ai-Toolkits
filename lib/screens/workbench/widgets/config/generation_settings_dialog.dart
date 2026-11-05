@@ -9,7 +9,6 @@ import '../../../../widgets/ui/app_dialog.dart';
 import '../../../../widgets/ui/app_section_label.dart';
 import '../../../../widgets/ui/app_setting_row.dart';
 import '../../../../widgets/ui/app_text_field.dart';
-import 'safety_settings_section.dart';
 
 /// Shared output preferences and execution controls for image/video generation.
 Future<void> showGenerationSettingsDialog(BuildContext context) {
@@ -85,9 +84,6 @@ Future<void> showGenerationSettingsDialog(BuildContext context) {
                   );
                 },
               ),
-              const SizedBox(height: AppSpace.s6),
-              const Divider(height: AppSpace.s10),
-              const SafetySettingsSection(),
             ],
           ),
         );

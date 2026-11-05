@@ -75,11 +75,11 @@ jobs:
 
       - name: 'Build Release (Windows/Linux)'
         if: matrix.platform == 'windows' || matrix.platform == 'linux'
-        run: flutter build ${{ matrix.platform }} --release
+        run: flutter build ${{ matrix.platform }} --release --dart-define=JOYCAI_DIRECT_DISTRIBUTION=true
 
       - name: 'Build Release (Android)'
         if: matrix.platform == 'android'
-        run: flutter build apk --release
+        run: flutter build apk --release --dart-define=JOYCAI_DIRECT_DISTRIBUTION=true
 
       - name: 'Build & Package Direct Download (macOS)'
         if: matrix.platform == 'macos'

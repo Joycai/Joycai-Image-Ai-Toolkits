@@ -3998,6 +3998,39 @@ class AppLocalizationsJa extends AppLocalizations {
   String get aiConsentBlockedError => 'AI データ共有はブロックされています。「設定 → このアプリについて」で許可を確認してから再試行してください。';
 
   @override
+  String get safetySettingsStoreDesc =>
+      '対応する Gemini インターフェースのみに適用されます。このビルドでは中程度以上のフィルタが必須で、過去のタスク設定にも適用されます。Veo/Imagen や他のサービスのフィルタはここでは検証できません。';
+
+  @override
+  String get safetyUnlockTitle => '編集のロックを解除';
+
+  @override
+  String get safetyUnlockWarning =>
+      'フィルタを弱めると有害または露骨な内容に接する可能性があります。この設定は安全な結果を保証せず、他のサービスのポリシーも変更しません。影響を理解してから確認してください。解除だけでは値の変更やタスクの再試行は行いません。';
+
+  @override
+  String get safetyUnlockConfirm => '理解して解除';
+
+  @override
+  String get contentSafetyReport => 'コンテンツの問題を報告';
+
+  @override
+  String get contentSafetyReportNote =>
+      '有害な生成内容については Joycai（joycai@joycai.cn）に、問題の説明、アプリのバージョン、サービス／モデルをお知らせください。API キー、私的なファイル、違法な画像は送信しないでください。自動で添付・送信することはありません。';
+
+  @override
+  String get contentSafetyEmail => 'メールを作成';
+
+  @override
+  String get contentSafetyCopyEmail => 'メールアドレスをコピー';
+
+  @override
+  String get contentSafetyEmailCopied => 'メールアドレスをコピーしました';
+
+  @override
+  String get contentSafetyEmailFailed => 'メールアプリを開けませんでした。アドレスをコピーして手動で報告してください。';
+
+  @override
   String get shortcutNavigateToDestination => '1〜8 番目のページへ';
 
   @override
@@ -5196,10 +5229,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get imageSizeHeight => '高さ';
 
   @override
-  String get safetySettings => 'セーフティ設定';
+  String get safetySettings => 'Gemini 安全フィルタ';
 
   @override
-  String get safetySettingsDesc => 'Gemini コンテンツフィルタのしきい値。各リクエストに適用されます（厳格 → 寛容）。Veo/Imagen は非対応。';
+  String get safetySettingsDesc =>
+      '対応する Gemini インターフェースのみがこのしきい値を使用します（厳格 → 寛容）。Veo/Imagen は非対応です。他のサービスは独自のポリシーに従い、本アプリではそのフィルタを検証できません。保存済みの設定を以下に表示します。';
 
   @override
   String get safetyCategoryHarassment => 'ハラスメント';

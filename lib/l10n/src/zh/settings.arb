@@ -242,5 +242,15 @@
       }
     }
   },
-  "aiConsentBlockedError": "AI 数据共享已阻止。请在“设置 → 关于”检查授权，然后重试。"
+  "aiConsentBlockedError": "AI 数据共享已阻止。请在“设置 → 关于”检查授权，然后重试。",
+  "safetySettingsStoreDesc": "仅支持这些参数的 Gemini 接口会使用下列阈值。此版本最低为中等过滤，旧任务参数也受此下限约束。Veo/Imagen 及其他服务按各自政策处理，无法在此验证其过滤效果。",
+  "safetyUnlockTitle": "解锁调整",
+  "safetyUnlockWarning": "降低过滤强度可能使你接触有害或露骨内容。这些选项不能保证结果安全，也不会改变其他服务的政策。请理解影响后再确认；解锁不会改变当前值或重试任务。",
+  "safetyUnlockConfirm": "我已理解，解锁",
+  "contentSafetyReport": "反馈内容问题",
+  "contentSafetyReportNote": "如生成内容存在有害问题，请联系 Joycai：joycai@joycai.cn，说明问题、应用版本及服务/模型。请勿发送 API Key、私人文件或违法影像。应用不会自动附加或发送任何内容。",
+  "contentSafetyEmail": "撰写邮件",
+  "contentSafetyCopyEmail": "复制邮箱",
+  "contentSafetyEmailCopied": "邮箱已复制",
+  "contentSafetyEmailFailed": "无法打开邮件应用，请复制邮箱后手动发送反馈。"
 }

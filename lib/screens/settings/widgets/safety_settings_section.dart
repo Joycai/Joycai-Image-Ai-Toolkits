@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../core/design_tokens.dart';
-import '../../../../core/safety_settings.dart';
-import '../../../../l10n/app_localizations.dart';
-import '../../../../state/app_state.dart';
-import '../../../../widgets/ui/app_disclosure_chevron.dart';
+import '../../../core/design_tokens.dart';
+import '../../../core/safety_settings.dart';
+import '../../../l10n/app_localizations.dart';
+import '../../../state/app_state.dart';
+import '../../../widgets/ui/app_button.dart';
+import '../../../widgets/ui/app_dialog.dart';
+import 'settings_layout.dart';
 
-/// Per-category Gemini safety-threshold sliders (strict → permissive), shared
-/// by the image and video workbench generation-settings dialogs. Reads and writes
+/// Gemini safety thresholds in Application settings. Editing requires a
+/// session-local warning acknowledgement; reopening the page locks editing. Uses
 /// [AppState.safetyThresholds].
 class SafetySettingsSection extends StatefulWidget {
   const SafetySettingsSection({super.key});
@@ -18,7 +20,37 @@ class SafetySettingsSection extends StatefulWidget {
 }
 
 class _SafetySettingsSectionState extends State<SafetySettingsSection> {
-  bool _expanded = false;
+  bool _unlocked = false;
+
+  Future<void> _unlock() async {
+    final l10n = AppLocalizations.of(context)!;
+    final accepted = await showDialog<bool>(
+      context: context,
+      animationStyle: appDialogAnimation(context),
+      builder: (context) => AppDialog(
+        title: l10n.safetyUnlockTitle,
+        maxHeight: MediaQuery.sizeOf(context).height * .9,
+        scrollable: true,
+        content: Text(l10n.safetyUnlockWarning),
+        actionsOverride: Wrap(
+          spacing: AppSpace.s10,
+          runSpacing: AppSpace.s10,
+          children: [
+            AppButton(
+              label: l10n.cancel,
+              variant: AppButtonVariant.secondary,
+              onPressed: () => Navigator.pop(context, false),
+            ),
+            AppButton(
+              label: l10n.safetyUnlockConfirm,
+              onPressed: () => Navigator.pop(context, true),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (mounted && accepted == true) setState(() => _unlocked = true);
+  }
 
   String _categoryLabel(AppLocalizations l10n, String category) {
     switch (category) {
@@ -58,40 +90,26 @@ class _SafetySettingsSectionState extends State<SafetySettingsSection> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
-    final thresholds = context.select<AppState, Map<String, String>>((s) => s.safetyThresholds);
+    final thresholds = SafetySettings.normalize(
+      context.select<AppState, Map<String, String>>((s) => s.safetyThresholds),
+    );
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Semantics(
-          expanded: _expanded,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(AppRadius.control),
-            onTap: () => setState(() => _expanded = !_expanded),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: AppSize.touch),
-              child: Row(
-                children: [
-                  Icon(Icons.shield_outlined, size: AppSize.iconSm, color: colorScheme.accentText),
-                  const SizedBox(width: AppSpace.s6),
-                  Expanded(child: Text(l10n.safetySettings, style: textTheme.bodyMedium)),
-                  AppDisclosureChevron(
-                    open: _expanded,
-                    size: AppSize.iconSm,
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        if (_expanded) ...[
-          const SizedBox(height: AppSpace.s4),
+    return SettingsBlock(
+      caption: l10n.safetySettings,
+      child: SettingsGroup(
+        ruled: false,
+        children: [
           Text(
-            l10n.safetySettingsDesc,
+            SafetySettings.restricted ? l10n.safetySettingsStoreDesc : l10n.safetySettingsDesc,
             style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
           ),
+          if (!_unlocked)
+            AppButton(
+              label: l10n.safetyUnlockTitle,
+              icon: Icons.lock_outline,
+              variant: AppButtonVariant.secondary,
+              onPressed: _unlock,
+            ),
           for (final category in SafetySettings.categories) ...[
             const SizedBox(height: AppSpace.s10),
             Row(
@@ -116,17 +134,19 @@ class _SafetySettingsSectionState extends State<SafetySettingsSection> {
                 min: 0,
                 max: (SafetySettings.thresholds.length - 1).toDouble(),
                 divisions: SafetySettings.thresholds.length - 1,
-                onChanged: (v) {
-                  Provider.of<AppState>(
-                    context,
-                    listen: false,
-                  ).setSafetyThreshold(category, SafetySettings.thresholds[v.round()]);
-                },
+                onChanged: !_unlocked
+                    ? null
+                    : (v) {
+                        Provider.of<AppState>(
+                          context,
+                          listen: false,
+                        ).setSafetyThreshold(category, SafetySettings.thresholds[v.round()]);
+                      },
               ),
             ),
           ],
         ],
-      ],
+      ),
     );
   }
 }

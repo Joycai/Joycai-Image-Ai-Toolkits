@@ -575,6 +575,7 @@ class AppState extends ChangeNotifier {
       await _db.getSetting(GptImageTimeout.settingKey),
     );
 
+    safetyThresholds = SafetySettings.defaults();
     final savedSafety = await _db.getSetting('safety_thresholds');
     if (savedSafety != null && savedSafety.isNotEmpty) {
       try {
@@ -732,9 +733,9 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> setSafetyThreshold(String category, String threshold) async {
-    safetyThresholds = {...safetyThresholds, category: threshold};
+    safetyThresholds = SafetySettings.normalize({...safetyThresholds, category: threshold});
     await _db.saveSetting('safety_thresholds', jsonEncode(safetyThresholds));
-    addLog('Safety threshold ${category.replaceFirst('HARM_CATEGORY_', '')} set to $threshold');
+    addLog('Safety settings: ${SafetySettings.describe(safetyThresholds)}');
     notifyListeners();
   }
 

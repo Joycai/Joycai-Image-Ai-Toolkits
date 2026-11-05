@@ -242,5 +242,15 @@
       }
     }
   },
-  "aiConsentBlockedError": "AI データ共有はブロックされています。「設定 → このアプリについて」で許可を確認してから再試行してください。"
+  "aiConsentBlockedError": "AI データ共有はブロックされています。「設定 → このアプリについて」で許可を確認してから再試行してください。",
+  "safetySettingsStoreDesc": "対応する Gemini インターフェースのみに適用されます。このビルドでは中程度以上のフィルタが必須で、過去のタスク設定にも適用されます。Veo/Imagen や他のサービスのフィルタはここでは検証できません。",
+  "safetyUnlockTitle": "編集のロックを解除",
+  "safetyUnlockWarning": "フィルタを弱めると有害または露骨な内容に接する可能性があります。この設定は安全な結果を保証せず、他のサービスのポリシーも変更しません。影響を理解してから確認してください。解除だけでは値の変更やタスクの再試行は行いません。",
+  "safetyUnlockConfirm": "理解して解除",
+  "contentSafetyReport": "コンテンツの問題を報告",
+  "contentSafetyReportNote": "有害な生成内容については Joycai（joycai@joycai.cn）に、問題の説明、アプリのバージョン、サービス／モデルをお知らせください。API キー、私的なファイル、違法な画像は送信しないでください。自動で添付・送信することはありません。",
+  "contentSafetyEmail": "メールを作成",
+  "contentSafetyCopyEmail": "メールアドレスをコピー",
+  "contentSafetyEmailCopied": "メールアドレスをコピーしました",
+  "contentSafetyEmailFailed": "メールアプリを開けませんでした。アドレスをコピーして手動で報告してください。"
 }

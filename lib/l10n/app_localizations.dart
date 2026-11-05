@@ -7209,6 +7209,66 @@ abstract class AppLocalizations {
   /// **'AI data sharing is blocked. Review permission in Settings → About, then retry.'**
   String get aiConsentBlockedError;
 
+  /// No description provided for @safetySettingsStoreDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Only supported Gemini interfaces use these thresholds. This build requires medium or stricter filtering, including old task settings. Veo/Imagen and other services use their own policies; their filtering cannot be verified here.'**
+  String get safetySettingsStoreDesc;
+
+  /// No description provided for @safetyUnlockTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock editing'**
+  String get safetyUnlockTitle;
+
+  /// No description provided for @safetyUnlockWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Reducing filtering can expose you to harmful or explicit content. These controls do not guarantee safe results or change other providers’ policies. Confirm only if you understand the effect. Unlocking does not change a value or retry tasks.'**
+  String get safetyUnlockWarning;
+
+  /// No description provided for @safetyUnlockConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'I understand — unlock'**
+  String get safetyUnlockConfirm;
+
+  /// No description provided for @contentSafetyReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Report a content concern'**
+  String get contentSafetyReport;
+
+  /// No description provided for @contentSafetyReportNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact Joycai at joycai@joycai.cn about harmful generated content. Describe the issue, app version and service/model. Do not send API keys, private files or illegal imagery. Nothing is attached or sent automatically.'**
+  String get contentSafetyReportNote;
+
+  /// No description provided for @contentSafetyEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Compose email'**
+  String get contentSafetyEmail;
+
+  /// No description provided for @contentSafetyCopyEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy email address'**
+  String get contentSafetyCopyEmail;
+
+  /// No description provided for @contentSafetyEmailCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Email address copied'**
+  String get contentSafetyEmailCopied;
+
+  /// No description provided for @contentSafetyEmailFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open an email app. Copy the address and send your report manually.'**
+  String get contentSafetyEmailFailed;
+
   /// No description provided for @shortcutNavigateToDestination.
   ///
   /// In en, this message translates to:
@@ -9413,13 +9473,13 @@ abstract class AppLocalizations {
   /// No description provided for @safetySettings.
   ///
   /// In en, this message translates to:
-  /// **'Safety Settings'**
+  /// **'Gemini safety filters'**
   String get safetySettings;
 
   /// No description provided for @safetySettingsDesc.
   ///
   /// In en, this message translates to:
-  /// **'Gemini content-filter thresholds, applied to every request (strict → permissive). Not supported by Veo/Imagen.'**
+  /// **'Only supported Gemini interfaces use these thresholds (strict → permissive); Veo/Imagen do not. Other services use their own policies, whose filtering this app cannot verify. Existing saved choices are shown below.'**
   String get safetySettingsDesc;
 
   /// No description provided for @safetyCategoryHarassment.

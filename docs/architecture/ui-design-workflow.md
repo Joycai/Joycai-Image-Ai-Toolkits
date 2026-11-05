@@ -249,3 +249,14 @@ management renders cover 390/834/1024/1440 in both themes; narrow English,
 Japanese and Traditional Chinese cover longer text. The footer was corrected
 after rendered review to fill the panel width. These are Flutter renders with
 isolated data, not signed macOS/TestFlight acceptance evidence.
+
+### 2026-11-05 Gemini safety settings
+
+Gemini thresholds move from the generation dialog to an opaque Application
+settings group. Saved values remain readable while all four sliders are locked;
+a warning dialog offers Cancel or acknowledgement to enable editing for this
+mounted section only. Store builds expose two strictness values; direct builds
+retain five. Narrow layouts scroll and warning actions wrap. About adds a content
+concern group with user-controlled email and copy actions, without attachments.
+Existing theme roles, spacing and App controls are reused. The maintained specs
+and actual Flutter baseline render, not historical design frames, guide this change.

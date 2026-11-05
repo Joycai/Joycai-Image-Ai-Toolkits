@@ -4161,6 +4161,40 @@ class AppLocalizationsEn extends AppLocalizations {
       'AI data sharing is blocked. Review permission in Settings → About, then retry.';
 
   @override
+  String get safetySettingsStoreDesc =>
+      'Only supported Gemini interfaces use these thresholds. This build requires medium or stricter filtering, including old task settings. Veo/Imagen and other services use their own policies; their filtering cannot be verified here.';
+
+  @override
+  String get safetyUnlockTitle => 'Unlock editing';
+
+  @override
+  String get safetyUnlockWarning =>
+      'Reducing filtering can expose you to harmful or explicit content. These controls do not guarantee safe results or change other providers’ policies. Confirm only if you understand the effect. Unlocking does not change a value or retry tasks.';
+
+  @override
+  String get safetyUnlockConfirm => 'I understand — unlock';
+
+  @override
+  String get contentSafetyReport => 'Report a content concern';
+
+  @override
+  String get contentSafetyReportNote =>
+      'Contact Joycai at joycai@joycai.cn about harmful generated content. Describe the issue, app version and service/model. Do not send API keys, private files or illegal imagery. Nothing is attached or sent automatically.';
+
+  @override
+  String get contentSafetyEmail => 'Compose email';
+
+  @override
+  String get contentSafetyCopyEmail => 'Copy email address';
+
+  @override
+  String get contentSafetyEmailCopied => 'Email address copied';
+
+  @override
+  String get contentSafetyEmailFailed =>
+      'Could not open an email app. Copy the address and send your report manually.';
+
+  @override
   String get shortcutNavigateToDestination => 'Go to page 1–8';
 
   @override
@@ -5372,11 +5406,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get imageSizeHeight => 'Height';
 
   @override
-  String get safetySettings => 'Safety Settings';
+  String get safetySettings => 'Gemini safety filters';
 
   @override
   String get safetySettingsDesc =>
-      'Gemini content-filter thresholds, applied to every request (strict → permissive). Not supported by Veo/Imagen.';
+      'Only supported Gemini interfaces use these thresholds (strict → permissive); Veo/Imagen do not. Other services use their own policies, whose filtering this app cannot verify. Existing saved choices are shown below.';
 
   @override
   String get safetyCategoryHarassment => 'Harassment';

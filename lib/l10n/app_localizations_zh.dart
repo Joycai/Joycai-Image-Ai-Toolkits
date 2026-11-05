@@ -3967,6 +3967,39 @@ class AppLocalizationsZh extends AppLocalizations {
   String get aiConsentBlockedError => 'AI 数据共享已阻止。请在“设置 → 关于”检查授权，然后重试。';
 
   @override
+  String get safetySettingsStoreDesc =>
+      '仅支持这些参数的 Gemini 接口会使用下列阈值。此版本最低为中等过滤，旧任务参数也受此下限约束。Veo/Imagen 及其他服务按各自政策处理，无法在此验证其过滤效果。';
+
+  @override
+  String get safetyUnlockTitle => '解锁调整';
+
+  @override
+  String get safetyUnlockWarning =>
+      '降低过滤强度可能使你接触有害或露骨内容。这些选项不能保证结果安全，也不会改变其他服务的政策。请理解影响后再确认；解锁不会改变当前值或重试任务。';
+
+  @override
+  String get safetyUnlockConfirm => '我已理解，解锁';
+
+  @override
+  String get contentSafetyReport => '反馈内容问题';
+
+  @override
+  String get contentSafetyReportNote =>
+      '如生成内容存在有害问题，请联系 Joycai：joycai@joycai.cn，说明问题、应用版本及服务/模型。请勿发送 API Key、私人文件或违法影像。应用不会自动附加或发送任何内容。';
+
+  @override
+  String get contentSafetyEmail => '撰写邮件';
+
+  @override
+  String get contentSafetyCopyEmail => '复制邮箱';
+
+  @override
+  String get contentSafetyEmailCopied => '邮箱已复制';
+
+  @override
+  String get contentSafetyEmailFailed => '无法打开邮件应用，请复制邮箱后手动发送反馈。';
+
+  @override
   String get shortcutNavigateToDestination => '切到第 1…8 个页面';
 
   @override
@@ -5160,10 +5193,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get imageSizeHeight => '高度';
 
   @override
-  String get safetySettings => '安全设置';
+  String get safetySettings => 'Gemini 安全过滤';
 
   @override
-  String get safetySettingsDesc => 'Gemini 内容过滤阈值，随每个请求发送（从严格到宽松）。Veo/Imagen 不支持。';
+  String get safetySettingsDesc =>
+      '仅支持这些参数的 Gemini 接口会使用下列阈值（从严格到宽松），Veo/Imagen 不支持。其他服务按各自政策处理，本应用无法验证其过滤效果。下方显示当前已保存的选择。';
 
   @override
   String get safetyCategoryHarassment => '骚扰内容';
@@ -10241,6 +10275,39 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get aiConsentBlockedError => 'AI 資料共享已阻止。請在「設定 → 關於」檢查授權，再重試。';
 
   @override
+  String get safetySettingsStoreDesc =>
+      '僅支援這些參數的 Gemini 介面會使用下列閾值。此版本最低為中等過濾，舊任務參數也受此下限約束。Veo/Imagen 及其他服務依各自政策處理，無法在此驗證其過濾效果。';
+
+  @override
+  String get safetyUnlockTitle => '解鎖調整';
+
+  @override
+  String get safetyUnlockWarning =>
+      '降低過濾強度可能使你接觸有害或露骨內容。這些選項無法保證結果安全，也不會改變其他服務的政策。請理解影響後再確認；解鎖不會改變目前值或重試任務。';
+
+  @override
+  String get safetyUnlockConfirm => '我已理解，解鎖';
+
+  @override
+  String get contentSafetyReport => '回報內容問題';
+
+  @override
+  String get contentSafetyReportNote =>
+      '如生成內容存在有害問題，請聯絡 Joycai：joycai@joycai.cn，說明問題、應用版本及服務／模型。請勿傳送 API Key、私人檔案或違法影像。應用不會自動附加或傳送任何內容。';
+
+  @override
+  String get contentSafetyEmail => '撰寫郵件';
+
+  @override
+  String get contentSafetyCopyEmail => '複製信箱';
+
+  @override
+  String get contentSafetyEmailCopied => '信箱已複製';
+
+  @override
+  String get contentSafetyEmailFailed => '無法開啟郵件應用，請複製信箱後手動傳送回報。';
+
+  @override
   String get shortcutNavigateToDestination => '切到第 1…8 個頁面';
 
   @override
@@ -11434,10 +11501,11 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get imageSizeHeight => '高度';
 
   @override
-  String get safetySettings => '安全設定';
+  String get safetySettings => 'Gemini 安全過濾';
 
   @override
-  String get safetySettingsDesc => 'Gemini 內容過濾閾值，隨每個請求送出（由嚴格到寬鬆）。Veo/Imagen 不支援。';
+  String get safetySettingsDesc =>
+      '僅支援這些參數的 Gemini 介面會使用下列閾值（由嚴格到寬鬆），Veo/Imagen 不支援。其他服務依各自政策處理，本應用無法驗證其過濾效果。下方顯示目前已儲存的選擇。';
 
   @override
   String get safetyCategoryHarassment => '騷擾內容';
