@@ -25,5 +25,8 @@
   "installationImportIoError": "操作未完成。請檢查目錄存取權限和磁碟空間後重試。來源資料和原有資料均已保留。",
   "installationImportSchedule": "遷入舊版資料",
   "installationImportScheduleDescription": "下次啟動時開啟整庫遷入頁面。請先結束舊版；確認遷入前不改變目前資料。",
-  "installationImportScheduled": "已安排遷入頁面。請等待目前任務完成後，結束並重新開啟本應用。"
+  "installationImportScheduled": "已安排遷入頁面。請等待目前任務完成後，結束並重新開啟本應用。",
+"credentialRecoveryTitle": "暫時無法讀取憑證",
+"credentialRecoveryBody": "Joycai 無法存取或驗證受保護的憑證。請解鎖 Mac 後重試。若仍然失敗，請恢復原 macOS 使用者帳號及簽署 App 的鑰匙圈存取權限。現有憑證未被清空，請勿透過刪除鑰匙圈項目或重設資料庫解決此問題。",
+"credentialRecoveryRetry": "重試"
 }

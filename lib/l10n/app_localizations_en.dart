@@ -4682,6 +4682,16 @@ class AppLocalizationsEn extends AppLocalizations {
       'Import screen scheduled. Wait for current tasks to finish, then quit and reopen this app.';
 
   @override
+  String get credentialRecoveryTitle => 'Credentials are unavailable';
+
+  @override
+  String get credentialRecoveryBody =>
+      'Joycai could not access or verify protected credentials. Unlock your Mac and try again. If this continues, restore Keychain access for the original macOS user account and signed app. Your stored credentials have not been cleared. Do not delete Keychain items or reset the database to resolve this error.';
+
+  @override
+  String get credentialRecoveryRetry => 'Try again';
+
+  @override
   String get workbench => 'Workbench';
 
   @override

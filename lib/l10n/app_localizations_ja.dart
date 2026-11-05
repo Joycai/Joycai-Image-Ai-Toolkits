@@ -4510,6 +4510,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get installationImportScheduled => '次回起動時に移行画面を表示します。タスクが完了したら、このアプリを終了して再度開いてください。';
 
   @override
+  String get credentialRecoveryTitle => '認証情報を読み込めません';
+
+  @override
+  String get credentialRecoveryBody =>
+      'Joycai は保護された認証情報にアクセスできないか、検証できませんでした。Mac のロックを解除して再試行してください。解決しない場合は、元の macOS ユーザーアカウントと署名済みアプリのキーチェーンへのアクセスを復元してください。保存済みの認証情報は消去されていません。キーチェーン項目の削除やデータベースのリセットは行わないでください。';
+
+  @override
+  String get credentialRecoveryRetry => '再試行';
+
+  @override
   String get workbench => 'ワークベンチ';
 
   @override

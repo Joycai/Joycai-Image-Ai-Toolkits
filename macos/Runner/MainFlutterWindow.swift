@@ -10,6 +10,7 @@ class MainFlutterWindow: NSWindow {
 
     RegisterGeneratedPlugins(registry: flutterViewController)
     DirectoryAccess.shared.register(flutterViewController)
+    CredentialProtection.register(flutterViewController)
     registerTrashChannel(flutterViewController)
     registerDockBadgeChannel(flutterViewController)
 

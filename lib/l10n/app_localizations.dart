@@ -8151,6 +8151,24 @@ abstract class AppLocalizations {
   /// **'Import screen scheduled. Wait for current tasks to finish, then quit and reopen this app.'**
   String get installationImportScheduled;
 
+  /// No description provided for @credentialRecoveryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Credentials are unavailable'**
+  String get credentialRecoveryTitle;
+
+  /// No description provided for @credentialRecoveryBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Joycai could not access or verify protected credentials. Unlock your Mac and try again. If this continues, restore Keychain access for the original macOS user account and signed app. Your stored credentials have not been cleared. Do not delete Keychain items or reset the database to resolve this error.'**
+  String get credentialRecoveryBody;
+
+  /// No description provided for @credentialRecoveryRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get credentialRecoveryRetry;
+
   /// No description provided for @workbench.
   ///
   /// In en, this message translates to:

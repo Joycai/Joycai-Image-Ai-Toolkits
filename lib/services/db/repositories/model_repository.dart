@@ -76,6 +76,21 @@ class ModelRepository {
     );
   }
 
+  Future<Map<String, dynamic>> _protectedChannel(LLMChannel channel) async {
+    final row = normalizedChannel(channel).toMap(includeId: false);
+    row['api_key'] = await _dbService.protectCredential(channel.apiKey);
+    return row;
+  }
+
+  Future<LLMChannel> _revealedChannel(Map<String, Object?> row) async {
+    return normalizedChannel(
+      LLMChannel.fromMap({
+        ...row,
+        'api_key': await _dbService.revealCredential(row['api_key'] as String),
+      }),
+    );
+  }
+
   // LLM Channels Methods
   Future<int> addChannel(LLMChannel channel) async {
     final db = await _db;
@@ -86,7 +101,7 @@ class ModelRepository {
     final maxRow = await db.rawQuery('SELECT MAX(sort_order) AS m FROM llm_channels');
     final maxOrder = maxRow.first['m'] as int?;
     return db.insert('llm_channels', {
-      ...normalizedChannel(channel).toMap(includeId: false),
+      ...await _protectedChannel(channel),
       'sort_order': (maxOrder ?? -1) + 1,
     });
   }
@@ -116,7 +131,7 @@ class ModelRepository {
     }
     await db.update(
       'llm_channels',
-      normalizedChannel(incoming).toMap(includeId: false),
+      await _protectedChannel(incoming),
       where: 'id = ?',
       whereArgs: [id],
     );
@@ -173,7 +188,7 @@ class ModelRepository {
       }
       await txn.update(
         'llm_channels',
-        normalizedChannel(channel).toMap(includeId: false),
+        await _protectedChannel(channel),
         where: 'id = ?',
         whereArgs: [channel.id],
       );
@@ -207,7 +222,7 @@ class ModelRepository {
     // restored from a backup written before the column existed (all zeros)
     // still come back in creation order rather than an arbitrary one.
     final maps = await db.query('llm_channels', orderBy: 'sort_order ASC, id ASC');
-    return maps.map((m) => normalizedChannel(LLMChannel.fromMap(m))).toList();
+    return Future.wait(maps.map(_revealedChannel));
   }
 
   /// Persists the rail's arrangement: [orderedIds] is the full channel list in
@@ -226,7 +241,7 @@ class ModelRepository {
     final db = await _db;
     final maps = await db.query('llm_channels', where: 'id = ?', whereArgs: [id]);
     if (maps.isNotEmpty) {
-      return normalizedChannel(LLMChannel.fromMap(maps.first));
+      return _revealedChannel(maps.first);
     }
     return null;
   }

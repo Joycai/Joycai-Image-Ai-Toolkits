@@ -36,17 +36,18 @@ We do not sell your personal data or use your content for our own advertising or
 
 ### 4. Local storage and security
 
-Settings, credentials, conversations and records are stored in local application files/SQLite. **API keys, proxy credentials and remembered website cookies are not encrypted by the app at rest.** File permissions and the macOS sandbox restrict access where applicable, but do not replace encryption. HTTPS uses transport encryption when the endpoint supports it; a custom HTTP endpoint does not provide that protection.
+Settings, credentials, conversations and records are stored locally. Mac App Store builds with credential protection encrypt channel API keys, proxy passwords and MCP tokens in SQLite using a device-local key held in Apple Keychain. Existing plaintext values are migrated after encryption and read-back verification succeed; a failed migration preserves the original values. Other distributions and older versions retain their existing plaintext credential storage. Remembered website cookies and other database content are not covered by this encryption. File permissions and the macOS sandbox provide additional access restrictions where applicable. HTTPS uses transport encryption when the endpoint supports it; a custom HTTP endpoint does not provide that protection.
 
 The Mac App Store build uses its application container and user-authorized external directories. Imported reference/drop media and queued-task snapshots may be copied into persistent private storage; generated results use the chosen output folder or a persistent application folder when necessary. Other builds use their platform-specific application data location; portable storage is available only on Windows.
 
-An exported settings backup redacts known API-key, cookie and secret-setting fields, but can still contain prompts, paths, usage records or secrets you placed in ordinary text fields. It is not a complete media backup. A direct database copy or installation migration can contain credentials. Migration preserves the source installation's data. Copies you place in cloud-synced folders are also subject to that storage provider's practices.
+An exported settings backup redacts known API-key, cookie and secret-setting fields, but can still contain prompts, paths, usage records or secrets you placed in ordinary text fields. It is not a complete media backup. A direct database copy or installation migration can contain credentials. Migration preserves the source installation's data, including any older plaintext credentials. Encrypted database copies cannot by themselves restore credentials on another device; the device-only Keychain key is not included in settings backups or synced by the app. Copies you place in cloud-synced folders are also subject to that storage provider's practices.
 
 ### 5. Retention, deletion and your choices
 
 - Local settings, histories and persistent media generally remain until you remove them. Clearing a task/history entry, removing a reference from the UI, or clearing temporary cache does **not** necessarily remove persistent media copies, exported files or backups. Uninstalling the app does not guarantee removal of external outputs or remaining application data.
 - Remembered downloader cookies default to 30 days since last use. You can choose no storage, 7 days, 30 days, or retention until cleared. Expired entries are removed when cookie storage is accessed; turning storage off clears remembered entries.
 - API debug logging is optional and off by default. Cleanup runs when new logs are created and the directory exceeds 50 entries; it removes older/excess entries. This is not a guaranteed seven-day deletion deadline. Disabling logging does not erase existing logs.
+- Removing saved encrypted credentials deletes their active database values; the device-local wrapping key may remain in Keychain. This does not erase old database copies, filesystem snapshots or backups. Contact us before deleting a wrapping key, because remaining encrypted credentials would become unreadable.
 - Remove saved credentials or change channel settings to stop using a provider, and stop pending tasks that could still send requests. Revoke exposed API keys at the provider. Disable MCP to stop accepting new client requests. These actions do not undo data already transmitted or processing already accepted by a provider.
 - Remove directories from the relevant feature configuration to stop using them. The current macOS build retains security-scoped directory bookmarks and does not provide a dedicated bookmark-revocation control; removing a configured path is not the same as erasing its stored permission. Contact us for help resetting saved permissions. Copies already imported into the app remain until deleted.
 - Use the available record/file deletion controls for data you no longer need. To remove remaining private copies or the entire local database, close the app and remove the corresponding application data only after preserving anything you want to keep. Separately remove output files, migration sources, exports and backups. Contact us if you need help identifying the appropriate files.
@@ -90,17 +91,18 @@ We update this policy when data practices change and revise the date above. For 
 
 ### 4. 本地存储与安全
 
-设置、凭据、对话和记录存放在本地应用文件/SQLite 中。**应用没有对本地保存的 API Key、代理凭据和网站 Cookie 进行静态加密。** 适用时，文件权限和 macOS 沙盒会限制访问，但不能代替加密。端点支持 HTTPS 时使用传输加密；自定义 HTTP 端点不提供这种保护。
+设置、凭据、对话和记录保存在本地。具备凭据保护功能的 Mac App Store 版使用 Apple 钥匙串保存的本机密钥，对 SQLite 中的通道 API Key、代理密码和 MCP Token 加密。旧明文值在加密及读回校验成功后迁移；迁移失败时保留原值。其他发行版及旧版本保留原有明文凭据存储方式。网站 Cookie 和其他数据库内容不在此加密范围内。适用时，文件权限和 macOS 沙盒提供额外访问限制。端点支持 HTTPS 时使用传输加密；自定义 HTTP 端点不提供这种保护。
 
 Mac App Store 版使用应用容器和用户授权的外部目录。导入的参考图、拖入素材及排队任务快照可能复制到持久化私有目录；生成结果保存在所选输出目录，必要时使用持久化应用目录保底。其他版本使用相应平台的应用数据位置；便携存储仅适用于 Windows。
 
-设置备份导出会清除已知 API Key、Cookie 和秘密设置字段，但仍可能包含提示词、路径、用量记录，或您写入普通文本字段的秘密；它不是完整的媒体备份。直接复制数据库或进行整库迁移可能包含凭据。迁移会保留源安装的数据。您将副本放入云同步目录时，也适用该存储服务商的处理规则。
+设置备份导出会清除已知 API Key、Cookie 和秘密设置字段，但仍可能包含提示词、路径、用量记录，或您写入普通文本字段的秘密；它不是完整的媒体备份。直接复制数据库或进行整库迁移可能包含凭据。迁移会保留源安装的数据，包括原有的明文凭据。仅复制加密数据库无法在另一台设备恢复凭据；仅限本机的钥匙串密钥不包含在设置备份中，应用也不会同步该密钥。您将副本放入云同步目录时，也适用该存储服务商的处理规则。
 
 ### 5. 保留、删除与您的选择
 
 - 本地设置、历史和持久化素材通常保留至您删除。清除任务/历史记录、从界面移除参考图或清理临时缓存，**不一定删除**持久化素材副本、导出文件或备份。卸载应用也不保证删除外部输出或剩余应用数据。
 - 下载器记住的 Cookie 默认保留至最后使用后 30 天；可选择不保存、7 天、30 天或保留至手动清除。访问 Cookie 存储时清理过期条目；关闭保存会清除已记住的条目。
 - API 调试日志为可选项，默认关闭。创建新日志且目录超过 50 个条目时触发清理，移除较旧或超量条目；这不是保证七天内删除的时限。关闭日志不会删除已有日志。
+- 删除已保存的加密凭据会移除当前数据库中的值；本机包装密钥可能仍保留在钥匙串中。这不会清除旧数据库副本、文件系统快照或备份。删除包装密钥前请先联系我们确认，因为剩余加密凭据将无法读取。
 - 可删除保存的凭据或修改通道配置以停止使用服务商，同时停止仍可能发送请求的待处理任务。泄露的 API Key 应在服务商处撤销。关闭 MCP 可停止接受新的客户端请求。这些操作不能撤回已经发送的数据或服务商已接受的处理任务。
 - 可从相应功能配置中移除目录以停止使用。当前 macOS 版本会保留安全作用域目录书签，尚无专门的书签撤销入口；移除配置路径不等于清除已保存的权限。需要重置权限时请联系我们协助。已经导入应用的副本仍需另行删除。
 - 使用已有的记录/文件删除功能清理不需要的数据。若需删除剩余私有副本或整个本地数据库，请先保留所需内容、退出应用，再删除对应应用数据。输出文件、迁移源、导出文件和备份需分别清理；不确定文件位置时可联系我们协助确认。

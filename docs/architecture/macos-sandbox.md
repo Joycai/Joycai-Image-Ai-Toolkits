@@ -56,6 +56,7 @@ Certificates, private keys, provisioning profiles and exported packages remain l
 
 | Entitlement | Purpose |
 |---|---|
+| `keychain-access-groups` | MAS-06: app-specific data-protection Keychain wrapping key; requires a matching provisioning profile even for local development. See [credential protection](credential-protection.md). |
 | `app-sandbox` | Constrain both development and release builds to the macOS sandbox. |
 | `network.client` | AI endpoints, media downloads, fonts and other outgoing connections. |
 | `network.server` | Optional loopback MCP listener; also supports Flutter development tooling. Keep MCP loopback-only and authenticated. |
@@ -66,7 +67,7 @@ Certificates, private keys, provisioning profiles and exported packages remain l
 | `personal-information.photos-library` | Existing Photos integration; the entitlement does not replace system privacy consent. |
 | `cs.allow-jit` (Debug/Profile only) | Flutter development runtime. Not included in Release. |
 
-This change preserves existing permissions and enables the sandbox; it does not
+The original sandbox change preserves existing permissions and enables the sandbox; it does not
 add broad exceptions or a new distribution signing identity. The bookmark
 entitlement accompanies the native directory authorization implementation. App Store signing remains MAS-07.
 
