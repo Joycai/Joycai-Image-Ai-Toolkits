@@ -89,7 +89,8 @@ class DatabaseService {
   /// rows. Existing envelopes are verified, never treated as plaintext or erased.
   Future<void> migrateCredentials(Database db) async {
     if (_credentialProtection == null) return;
-    await db.execute('PRAGMA secure_delete = ON');
+    // Darwin's executeUpdate rejects SQLITE_ROW; this PRAGMA returns a row.
+    await db.rawQuery('PRAGMA secure_delete = ON');
     await db.transaction((txn) async {
       final channels = await txn.query('llm_channels', columns: ['id', 'api_key']);
       final settings = await _querySettings(txn, CredentialProtection.settingKeys);
