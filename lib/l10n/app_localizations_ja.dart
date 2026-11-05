@@ -3939,6 +3939,65 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get aiConsentTitle => 'AI データ共有';
+
+  @override
+  String get aiConsentRecipient => '実際の送信先';
+
+  @override
+  String aiConsentConfiguredService(String address) {
+    return '設定されたサービス：$address';
+  }
+
+  @override
+  String aiConsentProxy(String address) {
+    return 'プロキシ：$address';
+  }
+
+  @override
+  String get aiConsentData =>
+      '利用する機能に応じて、プロンプトと会話履歴、選択した画像とマスク、動画と音声、ファイル名とローカルパス、ナレッジの抜粋、ツールの結果が送信される場合があります。API キーは認証に使用され、送信先には IP アドレスなどの通信情報も伝わります。';
+
+  @override
+  String get aiConsentPurpose =>
+      'このサービスは生成、アシスタント、プロンプト改善、AI 名前変更に使用されます。一括処理、再試行、再開したタスク、MCP からの要求も対象です。モデル取得、処理状況の確認、結果の取得でも接続します。';
+
+  @override
+  String get aiConsentConsequences =>
+      '許可はこのインストールでサービスと送信先ごとに保存されます。カスタム URL や中継サービスの運営者はモデル提供元とは限らず、その運営者のデータ保持・学習ポリシーが適用されます。「設定 → このアプリについて」で許可を撤回すると以後の要求を停止できますが、送信済みデータは取り消せません。';
+
+  @override
+  String get aiConsentDecline => '拒否';
+
+  @override
+  String get aiConsentAllow => '共有を許可';
+
+  @override
+  String get aiConsentManageNote =>
+      '撤回すると以後の AI 要求を停止します。送信済みデータは取り消せません。「次回確認」は同意画面を再び表示する設定です。停止したタスクは手動で再試行してください。許可はバックアップやデータ移行から引き継がれません。';
+
+  @override
+  String get aiConsentEmpty => 'AI データ共有の決定はまだありません。最初の接続前に同意を確認します。';
+
+  @override
+  String get aiConsentAllowed => '許可済み';
+
+  @override
+  String get aiConsentBlocked => 'ブロック中';
+
+  @override
+  String get aiConsentRevoke => '撤回';
+
+  @override
+  String get aiConsentAskAgain => '次回確認';
+
+  @override
+  String get aiConsentSaveFailed => '決定を保存できません。このセッションでは要求をブロックします。終了前に再試行してください。';
+
+  @override
+  String get aiConsentBlockedError => 'AI データ共有はブロックされています。「設定 → このアプリについて」で許可を確認してから再試行してください。';
+
+  @override
   String get shortcutNavigateToDestination => '1〜8 番目のページへ';
 
   @override

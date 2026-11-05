@@ -2096,6 +2096,37 @@
       }
     }
   },
+  "aiConsentTitle": "AI 数据共享",
+  "aiConsentRecipient": "实际接收方",
+  "aiConsentConfiguredService": "配置的服务：{address}",
+  "aiConsentProxy": "代理：{address}",
+  "aiConsentData": "根据所用功能，请求可能包含提示词与对话历史、选定图片与蒙版、视频与音频、文件名与本地路径、知识库片段和工具结果。API Key 用于身份验证；接收方还会获得 IP 地址等网络信息。",
+  "aiConsentPurpose": "该服务用于生成内容、助手、提示词优化和 AI 重命名，包括批量、重试、恢复的任务和 MCP 发起的请求。发现模型、查询任务状态与获取结果也会连接该服务。",
+  "aiConsentConsequences": "允许后，本次安装将记住对该服务及接收方的授权。自定义地址和中转由地址的实际运营者处理，不一定是模型厂商，并适用其数据保留与训练政策。可在“设置 → 关于”撤回授权以阻止后续请求；已经发送的数据无法收回。",
+  "aiConsentDecline": "拒绝",
+  "aiConsentAllow": "允许共享",
+  "aiConsentManageNote": "撤回会阻止后续 AI 请求，无法收回已发送的数据。“下次询问”仅允许再次弹出授权提示；已停止的任务需手动重试。授权不会随备份或整库迁移导入。",
+  "aiConsentEmpty": "尚无 AI 数据共享决定。首次连接前会请求授权。",
+  "aiConsentAllowed": "已允许",
+  "aiConsentBlocked": "已阻止",
+  "aiConsentRevoke": "撤回",
+  "aiConsentAskAgain": "下次询问",
+  "aiConsentSaveFailed": "无法保存决定，本次运行中仍会阻止请求。请在退出前重试。",
+  "@aiConsentConfiguredService": {
+    "placeholders": {
+      "address": {
+        "type": "String"
+      }
+    }
+  },
+  "@aiConsentProxy": {
+    "placeholders": {
+      "address": {
+        "type": "String"
+      }
+    }
+  },
+  "aiConsentBlockedError": "AI 数据共享已阻止。请在“设置 → 关于”检查授权，然后重试。",
   "shortcutNavigateToDestination": "切到第 1…8 个页面",
   "shortcutShowShortcutPanel": "快捷键面板",
   "shortcutOpenSettings": "设置",

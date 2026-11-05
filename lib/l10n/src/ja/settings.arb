@@ -211,5 +211,36 @@
         "type": "int"
       }
     }
-  }
+  },
+  "aiConsentTitle": "AI データ共有",
+  "aiConsentRecipient": "実際の送信先",
+  "aiConsentConfiguredService": "設定されたサービス：{address}",
+  "aiConsentProxy": "プロキシ：{address}",
+  "aiConsentData": "利用する機能に応じて、プロンプトと会話履歴、選択した画像とマスク、動画と音声、ファイル名とローカルパス、ナレッジの抜粋、ツールの結果が送信される場合があります。API キーは認証に使用され、送信先には IP アドレスなどの通信情報も伝わります。",
+  "aiConsentPurpose": "このサービスは生成、アシスタント、プロンプト改善、AI 名前変更に使用されます。一括処理、再試行、再開したタスク、MCP からの要求も対象です。モデル取得、処理状況の確認、結果の取得でも接続します。",
+  "aiConsentConsequences": "許可はこのインストールでサービスと送信先ごとに保存されます。カスタム URL や中継サービスの運営者はモデル提供元とは限らず、その運営者のデータ保持・学習ポリシーが適用されます。「設定 → このアプリについて」で許可を撤回すると以後の要求を停止できますが、送信済みデータは取り消せません。",
+  "aiConsentDecline": "拒否",
+  "aiConsentAllow": "共有を許可",
+  "aiConsentManageNote": "撤回すると以後の AI 要求を停止します。送信済みデータは取り消せません。「次回確認」は同意画面を再び表示する設定です。停止したタスクは手動で再試行してください。許可はバックアップやデータ移行から引き継がれません。",
+  "aiConsentEmpty": "AI データ共有の決定はまだありません。最初の接続前に同意を確認します。",
+  "aiConsentAllowed": "許可済み",
+  "aiConsentBlocked": "ブロック中",
+  "aiConsentRevoke": "撤回",
+  "aiConsentAskAgain": "次回確認",
+  "aiConsentSaveFailed": "決定を保存できません。このセッションでは要求をブロックします。終了前に再試行してください。",
+  "@aiConsentConfiguredService": {
+    "placeholders": {
+      "address": {
+        "type": "String"
+      }
+    }
+  },
+  "@aiConsentProxy": {
+    "placeholders": {
+      "address": {
+        "type": "String"
+      }
+    }
+  },
+  "aiConsentBlockedError": "AI データ共有はブロックされています。「設定 → このアプリについて」で許可を確認してから再試行してください。"
 }

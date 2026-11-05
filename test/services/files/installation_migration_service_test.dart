@@ -95,6 +95,7 @@ void main() {
     for (final entry in {
       'mcp_enabled': 'true',
       'mcp_token': 'secret',
+      'ai_data_sharing_consent_v1': 'must-not-import',
       'mcp_roots': '[]',
       'output_directory': image.parent.path,
       'knowledge_base_path': '/external/kb',
@@ -127,6 +128,7 @@ void main() {
       final settings = {for (final row in await db.query('settings')) row['key']: row['value']};
       expect(settings['mcp_enabled'], 'false');
       expect(settings['mcp_token'], isNull);
+      expect(settings['ai_data_sharing_consent_v1'], isNull);
       expect(settings['proxy_password'], 'password');
       expect(settings['knowledge_base_path'], '/external/kb');
       expect(await File(copied).readAsString(), 'image');

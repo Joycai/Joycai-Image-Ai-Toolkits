@@ -214,7 +214,7 @@ class InstallationMigrationService {
         }
         // OS grants are machine-local. Imported MCP credentials/allowlists must
         // never silently start a server on the new installation.
-        for (final key in ['mcp_roots', 'mcp_token', 'mcp_port']) {
+        for (final key in ['mcp_roots', 'mcp_token', 'mcp_port', 'ai_data_sharing_consent_v1']) {
           await txn.delete('settings', where: 'key = ?', whereArgs: [key]);
         }
         await txn.insert('settings', {

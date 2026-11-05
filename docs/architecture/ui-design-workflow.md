@@ -226,3 +226,26 @@ are localized in all four languages; the linked public document is bilingual
 English/Chinese. The maintained UI specification and baseline renders were used.
 Reviewed four widths in both themes and narrow English/Japanese/Traditional
 Chinese renders. App Store Connect uses the same main-branch policy URL.
+
+
+### AI data sharing (MAS-04, 2026-11-05)
+
+The first AI connection uses an opaque AppDialog with the actual recipient,
+recognized official provider or custom label, configured service/proxy, data
+categories, purposes, consequences and a policy link. Explicit Decline / Allow
+sharing actions stay in a full-width footer; the body scrolls and actions wrap
+on narrow windows. Closing the dialog declines. Use the same flow on every
+platform and distribution, without adding glass or changing theme tokens.
+
+Settings > About places AI data sharing beneath the policy/link group. Decisions
+are grouped by recipient/service/proxy, labelled Allowed or Blocked, and expose
+Revoke or Ask next time. Empty state explains when the first prompt appears.
+State belongs to the consent service; widgets only present decisions/actions.
+All copy is localized in en/zh/zh_Hant/ja. Acceptance details and persistence
+semantics live in [AI data sharing](ai-data-sharing.md).
+
+Baseline About renders were preserved outside build output. New dialog and
+management renders cover 390/834/1024/1440 in both themes; narrow English,
+Japanese and Traditional Chinese cover longer text. The footer was corrected
+after rendered review to fill the panel width. These are Flutter renders with
+isolated data, not signed macOS/TestFlight acceptance evidence.

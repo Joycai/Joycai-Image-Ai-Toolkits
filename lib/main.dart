@@ -34,12 +34,14 @@ import 'services/files/legacy_result_migration.dart';
 import 'services/files/temp_storage_service.dart';
 import 'services/llm/protocols/minimax_h3_base_video_protocol.dart';
 import 'services/media/video_thumbnail_service.dart';
+import 'services/privacy/ai_consent_service.dart';
 import 'services/system/dock_badge_service.dart';
 import 'services/system/notification_service.dart';
 import 'services/system/window_chrome_service.dart';
 import 'services/tasks/task_queue_service.dart';
 import 'state/app_state.dart';
 import 'state/installation_migration_state.dart';
+import 'widgets/privacy/ai_consent_dialog.dart';
 import 'widgets/shell/app_destinations.dart';
 import 'widgets/shell/app_top_bar.dart';
 import 'widgets/shell/app_window_frame.dart';
@@ -115,11 +117,18 @@ void main() async {
       migrationError = 'Legacy result migration deferred; originals retained. $error';
     }
   }
+  String? consentLoadError;
+  try {
+    await AiConsentService.instance.load();
+  } catch (_) {
+    consentLoadError =
+        'AI consent storage unavailable. AI requests remain blocked until it can be read.';
+  }
   final appState = AppState();
   if (migrationError != null) appState.addLog(migrationError, level: 'ERROR');
+  if (consentLoadError != null) appState.addLog(consentLoadError, level: 'ERROR');
   await appState.loadSettings();
   await appState.galleryState.settingsLoaded;
-  await appState.taskQueue.resumePendingTasks();
 
   // Prune stale video thumbnails in the background; don't block startup.
   unawaited(VideoThumbnailService.instance.cleanup());
@@ -147,12 +156,15 @@ void main() async {
         // Separate from AppState on purpose — see LogState.
         ChangeNotifierProvider.value(value: appState.logState),
       ],
-      child: maybeWrapWithBench(MyApp(version: packageInfo.version)),
+      child: maybeWrapWithBench(
+        MyApp(version: packageInfo.version, consentService: AiConsentService.instance),
+      ),
     ),
   );
   // A first-run macOS notification permission request can remain unanswered.
   // Never hold the bootstrap/import UI (or the first app frame) behind it.
   WidgetsBinding.instance.addPostFrameCallback((_) {
+    unawaited(appState.taskQueue.resumePendingTasks());
     unawaited(NotificationService().init());
   });
 }
@@ -177,8 +189,9 @@ Future<void> _hideNativeTitleBar() async {
 
 class MyApp extends StatefulWidget {
   final String version;
+  final AiConsentService? consentService;
 
-  const MyApp({super.key, required this.version});
+  const MyApp({super.key, required this.version, this.consentService});
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -187,15 +200,22 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   final ShellCoverController _shellCover = ShellCoverController();
   late final DockBadgeService _dockBadge;
+  final _navigatorKey = GlobalKey<NavigatorState>();
 
   @override
   void initState() {
     super.initState();
     _dockBadge = DockBadgeService(context.read<AppState>().taskQueue);
+    widget.consentService?.requestConsent = (scope) async {
+      final context = _navigatorKey.currentContext;
+      if (context == null || !mounted) return false;
+      return AiConsentDialog.show(context, scope);
+    };
   }
 
   @override
   void dispose() {
+    widget.consentService?.requestConsent = null;
     _dockBadge.dispose();
     _shellCover.dispose();
     super.dispose();
@@ -210,6 +230,7 @@ class _MyAppState extends State<MyApp> {
     final reduceEffects = context.select<AppState, bool>((s) => s.reduceVisualEffects);
 
     final app = MaterialApp(
+      navigatorKey: _navigatorKey,
       onGenerateTitle: (context) => '${AppLocalizations.of(context)!.appTitle} v${widget.version}',
       themeMode: themeMode,
       locale: locale,
@@ -235,15 +256,18 @@ class _MyAppState extends State<MyApp> {
       // sync both need the theme that actually resolved, and
       // `themeMode.system` is only settled below this point. [AppEffects] sits
       // outermost so the title bar's glass reads it too.
-      builder: (context, child) => AppEffects(
-        reduceVisualEffects: reduceEffects,
-        // Above the Navigator on purpose: a route that covers the shell has to
-        // be able to find this from `navigator.context`. See [ShellCover].
-        child: ShellCover(
-          controller: _shellCover,
-          child: _WindowChromeSync(child: AppWindowFrame(child: child!)),
-        ),
-      ),
+      builder: (context, child) {
+        widget.consentService?.denialMessage = AppLocalizations.of(context)!.aiConsentBlockedError;
+        return AppEffects(
+          reduceVisualEffects: reduceEffects,
+          // Above the Navigator on purpose: a route that covers the shell has to
+          // be able to find this from `navigator.context`. See [ShellCover].
+          child: ShellCover(
+            controller: _shellCover,
+            child: _WindowChromeSync(child: AppWindowFrame(child: child!)),
+          ),
+        );
+      },
       home: const MainNavigationScreen(),
     );
 

@@ -89,6 +89,22 @@ void main() {
   }
 
   group('restore', () {
+    test('AI consent is local and cannot be injected by a backup', () async {
+      final db = await openTestDb();
+      addTearDown(db.close);
+      const key = 'ai_data_sharing_consent_v1';
+      final file = backupFile();
+      (file['settings'] as List).add({'key': key, 'value': 'foreign-grant'});
+      await db.transaction((txn) => DatabaseService().restoreBackupInto(txn, file));
+      expect(await db.query('settings', where: 'key = ?', whereArgs: [key]), isEmpty);
+      await db.insert('settings', {'key': key, 'value': 'local-decision'});
+      await db.transaction((txn) => DatabaseService().restoreBackupInto(txn, file));
+      expect(
+        (await db.query('settings', where: 'key = ?', whereArgs: [key])).single['value'],
+        'local-decision',
+      );
+      expect(DatabaseService.secretSettingKeys, contains(key));
+    });
     test('succeeds when models reference channels', () async {
       final db = await openTestDb();
       await seedChannelWithModel(db);

@@ -3908,6 +3908,65 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get aiConsentTitle => 'AI 数据共享';
+
+  @override
+  String get aiConsentRecipient => '实际接收方';
+
+  @override
+  String aiConsentConfiguredService(String address) {
+    return '配置的服务：$address';
+  }
+
+  @override
+  String aiConsentProxy(String address) {
+    return '代理：$address';
+  }
+
+  @override
+  String get aiConsentData =>
+      '根据所用功能，请求可能包含提示词与对话历史、选定图片与蒙版、视频与音频、文件名与本地路径、知识库片段和工具结果。API Key 用于身份验证；接收方还会获得 IP 地址等网络信息。';
+
+  @override
+  String get aiConsentPurpose =>
+      '该服务用于生成内容、助手、提示词优化和 AI 重命名，包括批量、重试、恢复的任务和 MCP 发起的请求。发现模型、查询任务状态与获取结果也会连接该服务。';
+
+  @override
+  String get aiConsentConsequences =>
+      '允许后，本次安装将记住对该服务及接收方的授权。自定义地址和中转由地址的实际运营者处理，不一定是模型厂商，并适用其数据保留与训练政策。可在“设置 → 关于”撤回授权以阻止后续请求；已经发送的数据无法收回。';
+
+  @override
+  String get aiConsentDecline => '拒绝';
+
+  @override
+  String get aiConsentAllow => '允许共享';
+
+  @override
+  String get aiConsentManageNote =>
+      '撤回会阻止后续 AI 请求，无法收回已发送的数据。“下次询问”仅允许再次弹出授权提示；已停止的任务需手动重试。授权不会随备份或整库迁移导入。';
+
+  @override
+  String get aiConsentEmpty => '尚无 AI 数据共享决定。首次连接前会请求授权。';
+
+  @override
+  String get aiConsentAllowed => '已允许';
+
+  @override
+  String get aiConsentBlocked => '已阻止';
+
+  @override
+  String get aiConsentRevoke => '撤回';
+
+  @override
+  String get aiConsentAskAgain => '下次询问';
+
+  @override
+  String get aiConsentSaveFailed => '无法保存决定，本次运行中仍会阻止请求。请在退出前重试。';
+
+  @override
+  String get aiConsentBlockedError => 'AI 数据共享已阻止。请在“设置 → 关于”检查授权，然后重试。';
+
+  @override
   String get shortcutNavigateToDestination => '切到第 1…8 个页面';
 
   @override
@@ -10121,6 +10180,65 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String gptImageTimeoutMinutes(int minutes) {
     return '$minutes 分鐘';
   }
+
+  @override
+  String get aiConsentTitle => 'AI 資料共享';
+
+  @override
+  String get aiConsentRecipient => '實際接收方';
+
+  @override
+  String aiConsentConfiguredService(String address) {
+    return '設定的服務：$address';
+  }
+
+  @override
+  String aiConsentProxy(String address) {
+    return '代理：$address';
+  }
+
+  @override
+  String get aiConsentData =>
+      '依所用功能，請求可能包含提示詞與對話歷史、選定圖片與遮罩、影片與音訊、檔案名稱與本機路徑、知識庫片段和工具結果。API Key 用於身分驗證；接收方也會取得 IP 位址等網路資訊。';
+
+  @override
+  String get aiConsentPurpose =>
+      '此服務用於生成內容、助手、提示詞最佳化和 AI 重新命名，包括批次、重試、恢復的任務和 MCP 發起的請求。探索模型、查詢任務狀態與取得結果也會連線至此服務。';
+
+  @override
+  String get aiConsentConsequences =>
+      '允許後，本次安裝會記住對此服務及接收方的授權。自訂位址與中轉由位址的實際營運者處理，不一定是模型廠商，並適用其資料保留與訓練政策。可在「設定 → 關於」撤回授權以阻止後續請求；已傳送的資料無法收回。';
+
+  @override
+  String get aiConsentDecline => '拒絕';
+
+  @override
+  String get aiConsentAllow => '允許共享';
+
+  @override
+  String get aiConsentManageNote =>
+      '撤回會阻止後續 AI 請求，無法收回已傳送的資料。「下次詢問」僅允許再次顯示授權提示；已停止的任務需手動重試。授權不會隨備份或整庫遷移匯入。';
+
+  @override
+  String get aiConsentEmpty => '尚無 AI 資料共享決定。首次連線前會請求授權。';
+
+  @override
+  String get aiConsentAllowed => '已允許';
+
+  @override
+  String get aiConsentBlocked => '已阻止';
+
+  @override
+  String get aiConsentRevoke => '撤回';
+
+  @override
+  String get aiConsentAskAgain => '下次詢問';
+
+  @override
+  String get aiConsentSaveFailed => '無法儲存決定，本次執行中仍會阻止請求。請在結束前重試。';
+
+  @override
+  String get aiConsentBlockedError => 'AI 資料共享已阻止。請在「設定 → 關於」檢查授權，再重試。';
 
   @override
   String get shortcutNavigateToDestination => '切到第 1…8 個頁面';
