@@ -8,7 +8,7 @@
 
 Joycai Image AI Toolkits is a powerful, cross-platform desktop & mobile application built with Flutter, designed to streamline AI-powered image and video processing workflows. It provides a unified interface to interact with various Large Language Models (LLMs) and Multimodal models for image generation, analysis, prompt optimization, video generation, and more.
 
-[简体中文](README_CN.md) · [Documentation](docs/README.md) · [Testing](TESTING.md)
+[简体中文](README_CN.md) · [Documentation](docs/README.md) · [Testing](TESTING.md) · [Privacy Policy](PRIVACY_POLICY.md)
 
 ![App Icon](assets/icon/icon.png)
 

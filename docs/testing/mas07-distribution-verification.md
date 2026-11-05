@@ -99,12 +99,42 @@ build number，保留 `4.31.6 (0)`。Xcode 最终显示：
 修复后门禁：format 910 文件无变化；analyze 无问题；非截图测试 3476 通过、10 跳过；
 plist lint、diff 检查通过，Archive 成功。未启动应用或触碰用户数据库。
 
+## 2026-11-05 · 上传处理与出口合规声明
+
+用户授权上传后，通过 Xcode 上传已通过 Validate 的 `4.31.6 (0)`。
+App Store Connect 的构建上传状态为「完成」，元数据的二进制文件状态为「已验证」。
+应用 ID 为 `6830950645`，构建 ID 为 `54beccc1-8dc0-40f1-accb-b129f2946975`。
+最初状态「缺少出口合规证明」，补充下述问卷后变为「准备提交」（90 天后过期）。
+没有提交 App Review / TestFlight 审核，没有创建测试群组或添加测试员。
+
+### 加密使用检查与填写依据
+
+- `LLMModelConfig.buildClient` 使用 `package:http` 的 IOClient / Dart HttpClient；
+  媒体下载、抓取也使用 HttpClient。HTTPS 提供标准 TLS 传输加密。
+- 本机 Dart SDK 的 `secure_socket_patch.dart` 明确使用 BoringSSL；因此不能把
+  Dart HTTPS 描述为「仅使用 Apple 操作系统内置加密」。
+- `package:crypto` 的 SHA-256 用于媒体去重、迁移完整性、任务参数摘要及用量幂等；
+  MD5 用于缩略图缓存键。它们不是文件内容加密功能。
+- MCP 使用 `Random.secure` 生成 bearer token，监听 127.0.0.1 并比较认证值；
+  没有自定义加密隧道。当前业务没有接入 SDK 自带的 OAuth 客户端功能。
+- API 返回的 `encrypted_content` 是服务商生成并由应用保留/回传的数据，不是
+  应用实现的自有加密算法。源码及依赖检查未发现应用提供自定义密码算法、VPN、
+  端到端消息加密、加密数据库或加密文件导出功能。
+
+App Store Connect 当前构建问卷按事实选择「代替在 Apple 操作系统中使用或访问加密，
+或与这些操作同时使用的标准加密算法」。下一题「是否在法国分发」由用户明确选择
+**暂不在法国分发**，随后保存，后台不再要求出口合规信息。
+
+此答案不自动修改商店销售地区：正式发布前必须核对销售范围不包含法国；如以后
+计划法国分发、增加加密功能或更换网络实现，应重新检查声明和文稿要求。
+本轮不修改 `ITSAppUsesNonExemptEncryption`，避免把地域条件或第三方 TLS 实现
+简单归为「完全不使用加密」。声明成功不等于所有地区均已取得合规许可。
+
+依据：[Apple 加密文稿要求](https://developer.apple.com/help/app-store-connect/reference/app-information/export-compliance-documentation-for-encryption)、
+[Apple 构建问卷流程](https://developer.apple.com/help/app-store-connect/manage-app-information/determine-and-upload-app-encryption-documentation/)。
+
 ## 尚未完成
 
-本地签名和本轮 Validate 通过不等于上传处理或审核通过。尚未上传、创建
-TestFlight 构建或验证商店安装后的运行行为。当前 build 0 原样保留，正式上传前
-需核对构建号及商店记录；隐私清单和其他 MAS 台账项仍独立待办。
-MAS-07 因上传处理和 TestFlight 验收未完成而保持未勾选。
-
-参考：[Apple 描述文件说明](https://developer.apple.com/documentation/technotes/tn3125-inside-code-signing-provisioning-profiles)、
-[App Store 描述文件创建](https://developer.apple.com/help/account/provisioning-profiles/create-an-app-store-provisioning-profile)。
+上传处理和当前出口合规问卷已完成；尚未进行 TestFlight 安装验收或提交审核。
+正式发布前仍需核对销售地区、商店版本记录和其他 MAS 台账项目。
+MAS-07 保持未整体勾选，不能将当前构建的「准备提交」状态当作审核通过。

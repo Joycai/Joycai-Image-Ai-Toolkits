@@ -1,75 +1,107 @@
-# Privacy Policy for Joycai Image AI Toolkits
+# Privacy Policy / 隐私政策
 
-**Last Updated:** February 12, 2026
+Last updated: November 5, 2026 · 最后更新：2026 年 11 月 5 日
 
-## Introduction
+## English
 
-Joycai Image AI Toolkits ("we," "our," or "us") respects your privacy. This Privacy Policy explains how we handle your data when you use our desktop application.
+### 1. Scope and operator
 
-## Data We Access
+This policy describes Joycai Image AI Toolkits, maintained by Joycai (the “app”, “we”). Features and file-access permissions vary by platform and distribution channel. It covers the app, not the independent services you configure or websites you visit.
 
-To provide image processing and editing features, our application requires access to:
-*   **Local Images:** We access image files on your device only when you explicitly select them for viewing, editing, or processing.
-*   **File System:** We read and write files to your local storage to save processed results, masks, and configuration logs.
+The app does not require a Joycai account. We do not operate a cloud service that automatically receives your prompts, media, API credentials or local database. The current app does not include advertising, cross-app tracking or an automatic analytics/crash-report upload service. Local usage and cost statistics are for your own records. This does **not** mean the app never sends data over the network: AI features and downloads contact the services described below.
 
-## Data Processing & Sharing
+### 2. Data used and why
 
-*   **Local Processing:** Most operations, such as file management, basic viewing, and local masking, are performed entirely on your device.
-*   **AI Services (Third-Party):** If you use AI-powered features (e.g., AI Smart Mask, Image Analysis, LLM processing), the image data and your text prompts are sent to the AI provider you have configured (e.g., Google Gemini or OpenAI).
-    *   **Google Gemini:** Subject to Google's Privacy Policy.
-    *   **OpenAI:** Subject to OpenAI's Privacy Policy.
-*   **No "Joycai" Cloud Storage:** We do not upload your images, API keys, or personal data to any Joycai-owned servers. Your data flows directly from your device to the chosen third-party API.
+| Data | Purpose and handling |
+| --- | --- |
+| Prompts, conversations, reference images, masks, and supported video/audio inputs | Provide the AI operation you invoke; relevant content is sent to the configured AI endpoint. Responses, task state and history may be saved locally. |
+| Knowledge-base files and assistant context | Read the folders/files you configure and supply relevant content to assistant requests. Conversation history, notes and tool results may become part of the request. |
+| File names, paths and media metadata | Browse, organize, import, export and rename files. AI-assisted operations may include relevant names, metadata or media in requests. Ordinary local browsing does not by itself upload the entire directory to an AI service. |
+| API keys, endpoint addresses, proxy settings and credentials | Authenticate and route requests to your configured service. Stored locally; the relevant endpoint receives its authentication credential. |
+| Task records, model settings, usage and cost estimates | Run queues, restore work, display history and calculate local statistics. Previously queued work may make network requests when resumed or retried. |
+| Website URLs and cookies you supply | Retrieve pages/media using the downloader. Cookies can grant access to your website account; they are used for the requested website operation, not advertising tracking by Joycai. |
+| Local diagnostic logs | Diagnose failures. Optional API debugging can record request/response content, URLs and errors. Known credential fields are masked and large payloads truncated, but logs can still contain personal or sensitive information. |
 
-## Data Storage
+### 3. Recipients and network access
 
-*   **User Data:** Your API keys, application settings, and usage history are stored in a local SQLite database file on your device.
-*   **Images:** Generated or downloaded images are saved to the local output directories you specify.
+**AI services.** Requests go to the endpoint configured for the selected channel/model, which may be a provider, a relay, or a local server. The recipient can receive prompts, relevant conversation/knowledge context, attachments, generation parameters and authentication data. Provider names shown in presets do not guarantee that a custom endpoint belongs to that provider. Review the actual endpoint and its privacy terms before sending content. Providers and relays have their own retention, training, deletion and international-processing practices; we do not promise that they retain nothing or never use content for training.
 
-## User Control
+**Downloads and external links.** Websites, media hosts and configured proxies receive the requests needed to retrieve content. Optional font downloads contact jsDelivr; the system font does not require that download. Opening GitHub, release notes or other external links contacts the relevant website/browser. Network recipients can see your IP address and ordinary request metadata. Depending on their locations, processing may occur outside your country.
 
-You have full control over your data:
-*   You can delete your local history and cache at any time via the application settings.
-*   You manage your own API keys.
+**MCP integrations.** If enabled, the local MCP server accepts authenticated clients on the loopback address. Clients can invoke supported tools, initiate AI requests and receive results within the configured access scope. Treat the MCP token and authorized clients as access to those capabilities. Clients may further process received information under their own policies.
 
-## Contact Us
+We do not sell your personal data or use your content for our own advertising or model training. Information you deliberately send to project support is received by the project and the support platform; send only what is needed to address your request.
 
-If you have questions about this privacy policy, please contact us via our GitHub repository or support channels.
+### 4. Local storage and security
 
----
+Settings, credentials, conversations and records are stored in local application files/SQLite. **API keys, proxy credentials and remembered website cookies are not encrypted by the app at rest.** File permissions and the macOS sandbox restrict access where applicable, but do not replace encryption. HTTPS uses transport encryption when the endpoint supports it; a custom HTTP endpoint does not provide that protection.
 
-# 隐私政策 (Joycai 图像 AI 工具箱)
+The Mac App Store build uses its application container and user-authorized external directories. Imported reference/drop media and queued-task snapshots may be copied into persistent private storage; generated results use the chosen output folder or a persistent application folder when necessary. Other builds use their platform-specific application data location; portable storage is available only on Windows.
 
-**最后更新日期：** 2026年2月12日
+An exported settings backup redacts known API-key, cookie and secret-setting fields, but can still contain prompts, paths, usage records or secrets you placed in ordinary text fields. It is not a complete media backup. A direct database copy or installation migration can contain credentials. Migration preserves the source installation's data. Copies you place in cloud-synced folders are also subject to that storage provider's practices.
 
-## 引言
+### 5. Retention, deletion and your choices
 
-Joycai Image AI Toolkits（“我们”）非常重视您的隐私。本隐私政策说明了您在使用我们的桌面应用程序时，我们如何处理您的数据。
+- Local settings, histories and persistent media generally remain until you remove them. Clearing a task/history entry, removing a reference from the UI, or clearing temporary cache does **not** necessarily remove persistent media copies, exported files or backups. Uninstalling the app does not guarantee removal of external outputs or remaining application data.
+- Remembered downloader cookies default to 30 days since last use. You can choose no storage, 7 days, 30 days, or retention until cleared. Expired entries are removed when cookie storage is accessed; turning storage off clears remembered entries.
+- API debug logging is optional and off by default. Cleanup runs when new logs are created and the directory exceeds 50 entries; it removes older/excess entries. This is not a guaranteed seven-day deletion deadline. Disabling logging does not erase existing logs.
+- Remove saved credentials or change channel settings to stop using a provider, and stop pending tasks that could still send requests. Revoke exposed API keys at the provider. Disable MCP to stop accepting new client requests. These actions do not undo data already transmitted or processing already accepted by a provider.
+- Remove directories from the relevant feature configuration to stop using them. The current macOS build retains security-scoped directory bookmarks and does not provide a dedicated bookmark-revocation control; removing a configured path is not the same as erasing its stored permission. Contact us for help resetting saved permissions. Copies already imported into the app remain until deleted.
+- Use the available record/file deletion controls for data you no longer need. To remove remaining private copies or the entire local database, close the app and remove the corresponding application data only after preserving anything you want to keep. Separately remove output files, migration sources, exports and backups. Contact us if you need help identifying the appropriate files.
+- We cannot remotely erase a database that exists only on your device or delete data held by an independent provider. For access/deletion requests concerning that provider, use its privacy contact. For information you sent to project support, contact us through the channel below.
 
-## 我们访问的数据
+### 6. Changes and contact
 
-为了提供图像处理和编辑功能，本应用需要访问：
-*   **本地图像：** 仅当您明确选择查看、编辑或处理图像文件时，我们会访问您设备上的图像。
-*   **文件系统：** 我们会对您的本地存储进行读写操作，以保存处理结果、蒙版文件和配置日志。
+We update this policy when data practices change and revise the date above. For privacy questions and requests, contact **Joycai** at [joycai@joycai.cn](mailto:joycai@joycai.cn). You may also use [the project’s issue tracker](https://github.com/Joycai/Joycai-Image-Ai-Toolkits/issues) for non-sensitive questions. Issues are public; do not post API keys, cookies, private images, full databases or unreviewed logs. Send only the information needed for your request, including when contacting us by email.
 
-## 数据处理与共享
+## 简体中文
 
-*   **本地处理：** 大多数操作（如文件管理、基础查看、本地绘图）完全在您的设备上本地运行。
-*   **AI 服务（第三方）：** 如果您使用 AI 驱动的功能（例如 AI 智能蒙版、图像分析、LLM 处理），相关的图像数据和文本提示词将被发送至您配置的 AI 提供商（例如 Google Gemini 或 OpenAI）。
-    *   **Google Gemini:** 受 Google 隐私政策约束。
-    *   **OpenAI:** 受 OpenAI 隐私政策约束。
-*   **无“Joycai”云存储：** 我们不会将您的图像、API 密钥或个人数据上传到任何 Joycai 拥有的服务器。您的数据直接从您的设备传输至您选择的第三方 API 接口。
+### 1. 适用范围与维护方
 
-## 数据存储
+本政策适用于由 Joycai 维护的 Joycai Image AI Toolkits（下称“应用”或“我们”）。不同平台和分发渠道的功能及文件权限可能不同。本政策说明应用自身的行为，不代替您配置的独立服务或访问的网站的政策。
 
-*   **用户数据：** 您的 API 密钥、应用设置和使用历史记录存储在您设备上的本地 SQLite 数据库文件中。
-*   **图像：** 生成或下载的图像将保存到您指定的本地输出目录中。
+应用不要求注册 Joycai 账号。我们没有运营自动接收您提示词、素材、API 凭据或本地数据库的云服务。当前应用不包含广告、跨应用追踪或自动上传分析/崩溃报告的服务；本地用量与费用统计供您自己查看。这**不代表应用不联网**：AI 功能和下载会联系下文所述服务。
 
-## 用户控制
+### 2. 使用哪些数据及用途
 
-您对您的数据拥有完全控制权：
-*   您可以随时通过应用设置删除本地历史记录和缓存。
-*   您自行管理您的 API 密钥。
+| 数据 | 用途与处理方式 |
+| --- | --- |
+| 提示词、对话、参考图、蒙版及功能支持的视频/音频输入 | 完成您发起的 AI 操作，相关内容会发送至配置的 AI 端点；响应、任务状态和历史可能保存在本地。 |
+| 知识库文件与助手上下文 | 读取您配置的目录/文件，将相关内容用于助手请求；对话历史、笔记和工具结果也可能成为请求的一部分。 |
+| 文件名、路径与媒体元数据 | 浏览、整理、导入、导出和重命名文件；AI 辅助操作可能发送相关名称、元数据或素材。普通本地浏览本身不会将整个目录上传给 AI 服务。 |
+| API Key、端点地址、代理设置与凭据 | 向您配置的服务认证并路由请求；保存在本地，相应端点会收到其认证凭据。 |
+| 任务记录、模型设置、用量与费用估算 | 执行队列、恢复工作、展示历史及本地统计；已排队任务恢复或重试时可能继续联网。 |
+| 您提供的网站 URL 与 Cookie | 下载器据此获取网页/素材；Cookie 可能允许访问您的网站账号，用于相应网站操作，而非 Joycai 广告追踪。 |
+| 本地诊断日志 | 排查故障；可选 API 调试会记录请求/响应内容、URL 和错误。已知凭据字段会遮蔽，大型载荷会截断，但日志仍可能包含个人或敏感信息。 |
 
-## 联系我们
+### 3. 接收方与网络访问
 
-如果您对本隐私政策有任何疑问，请通过我们的 GitHub 仓库或支持渠道联系我们。
+**AI 服务。** 请求发送至所选通道/模型配置的端点，可能是原厂服务、中转服务或本地服务器。接收方可能收到提示词、相关对话/知识库上下文、附件、生成参数和认证信息。预设中的服务商名称不保证自定义端点属于该服务商。发送前请检查实际端点及其隐私条款。服务商和中转方的数据保留、模型训练、删除及跨境处理规则各不相同；我们不承诺其不保留内容或不将内容用于训练。
+
+**下载与外链。** 网站、媒体托管方及配置的代理会收到获取内容所需的请求。可选字体下载会访问 jsDelivr；使用系统字体无需进行该下载。打开 GitHub、更新日志等外链会访问相应网站/浏览器。网络接收方可以获知您的 IP 地址和常规请求元数据；数据可能在您所在国家或地区以外处理。
+
+**MCP 集成。** 启用后，本地 MCP 服务器在回环地址接受通过认证的客户端。客户端可在配置的访问范围内调用支持的工具、发起 AI 请求并接收结果。请将 MCP 令牌和授权客户端视为能够访问这些功能的主体。客户端可能依据自身政策继续处理收到的信息。
+
+我们不出售您的个人数据，也不将您的内容用于我们自身的广告或模型训练。您主动提供给项目支持的信息由项目及反馈平台接收；请仅提供处理请求所需的信息。
+
+### 4. 本地存储与安全
+
+设置、凭据、对话和记录存放在本地应用文件/SQLite 中。**应用没有对本地保存的 API Key、代理凭据和网站 Cookie 进行静态加密。** 适用时，文件权限和 macOS 沙盒会限制访问，但不能代替加密。端点支持 HTTPS 时使用传输加密；自定义 HTTP 端点不提供这种保护。
+
+Mac App Store 版使用应用容器和用户授权的外部目录。导入的参考图、拖入素材及排队任务快照可能复制到持久化私有目录；生成结果保存在所选输出目录，必要时使用持久化应用目录保底。其他版本使用相应平台的应用数据位置；便携存储仅适用于 Windows。
+
+设置备份导出会清除已知 API Key、Cookie 和秘密设置字段，但仍可能包含提示词、路径、用量记录，或您写入普通文本字段的秘密；它不是完整的媒体备份。直接复制数据库或进行整库迁移可能包含凭据。迁移会保留源安装的数据。您将副本放入云同步目录时，也适用该存储服务商的处理规则。
+
+### 5. 保留、删除与您的选择
+
+- 本地设置、历史和持久化素材通常保留至您删除。清除任务/历史记录、从界面移除参考图或清理临时缓存，**不一定删除**持久化素材副本、导出文件或备份。卸载应用也不保证删除外部输出或剩余应用数据。
+- 下载器记住的 Cookie 默认保留至最后使用后 30 天；可选择不保存、7 天、30 天或保留至手动清除。访问 Cookie 存储时清理过期条目；关闭保存会清除已记住的条目。
+- API 调试日志为可选项，默认关闭。创建新日志且目录超过 50 个条目时触发清理，移除较旧或超量条目；这不是保证七天内删除的时限。关闭日志不会删除已有日志。
+- 可删除保存的凭据或修改通道配置以停止使用服务商，同时停止仍可能发送请求的待处理任务。泄露的 API Key 应在服务商处撤销。关闭 MCP 可停止接受新的客户端请求。这些操作不能撤回已经发送的数据或服务商已接受的处理任务。
+- 可从相应功能配置中移除目录以停止使用。当前 macOS 版本会保留安全作用域目录书签，尚无专门的书签撤销入口；移除配置路径不等于清除已保存的权限。需要重置权限时请联系我们协助。已经导入应用的副本仍需另行删除。
+- 使用已有的记录/文件删除功能清理不需要的数据。若需删除剩余私有副本或整个本地数据库，请先保留所需内容、退出应用，再删除对应应用数据。输出文件、迁移源、导出文件和备份需分别清理；不确定文件位置时可联系我们协助确认。
+- 我们无法远程删除仅存于您设备上的数据库，也无法删除独立服务商持有的数据。有关该服务商的访问/删除请求请联系其隐私联系人；有关您提供给项目支持的信息，请通过下述渠道联系我们。
+
+### 6. 更新与联系
+
+数据处理方式变化时，我们会更新本政策及上方日期。隐私问题和相关请求请联系 **Joycai**：[joycai@joycai.cn](mailto:joycai@joycai.cn)。非敏感问题也可通过[项目问题反馈入口](https://github.com/Joycai/Joycai-Image-Ai-Toolkits/issues)提交。该入口为公开页面，请勿提交 API Key、Cookie、私人图片、完整数据库或未经检查的日志。包括邮件联系在内，请仅提供处理请求所需的信息。
