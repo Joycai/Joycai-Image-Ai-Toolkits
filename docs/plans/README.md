@@ -29,14 +29,15 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 
 目标：先发布 **Mac App Store**，不包含 iPhone / iPad App Store。
 用户已注册 Apple 开发者计划；MAS-01 已启用沙盒，MAS-02 正在分阶段实现与验收；
-MAS-03～MAS-10 尚未进入实现阶段。
+MAS-07 已完成本地商店包导出与签名验证；MAS-03～MAS-06、MAS-08～MAS-10 尚未进入实现阶段。
 后续按下列编号逐项推进，在本节更新状态、验收证据和剩余限制；长期约定落入对应
 架构文档，不把初次审查结论当作永久有效的合规证明。
 
 审查边界：已检查源码、macOS 工程、依赖及现有发布流程，并查阅 Apple 官方规则。
 已使用独立 Bundle ID 与合成数据执行本地签名沙盒实机测试（见 MAS-02）；
-未执行商店签名 Archive、Validate、上传或 TestFlight；未检查
-App Store Connect 后台、证书与 provisioning profile。提交前重新核对规则和最终产物。
+2026-11-05 已完成商店签名 Archive、本地 pkg 导出以及证书与 provisioning profile 匹配验证；
+未执行 App Store Connect 服务端 Validate、上传或 TestFlight，未检查商店后台资料。
+提交前重新核对规则和最终产物。
 
 ### 按依赖顺序处理的问题
 
@@ -198,12 +199,19 @@ App Store Connect 后台、证书与 provisioning profile。提交前重新核�
     未使用 Keychain 本身不应被描述为必然拒审。
   - 验收：凭据不泄漏到备份/日志；迁移失败不丢失原凭据；签名升级后仍可正常读取。
 
-- [ ] **MAS-07 · 商店签名、归档与构建版本（已确认配置缺口）**
-  - `macos/Runner.xcodeproj/project.pbxproj` Release 签名身份仍为 `"-"`；现有
-    `.github/workflows/flutter-build.yml` 主要产出 DMG。已有 Team ID 不代表商店
-    分发签名可用，DMG 也不是已经完成商店提交验证的证据。
-  - 配置商店分发签名和 provisioning，完成 Archive、Validate 与上传；核对最终
-    归档的 Bundle ID、版本、构建号、分类和支持架构，构建号按上传要求递增。
+- [ ] **MAS-07 · 商店签名、归档与构建版本（本地导出验证通过，待服务端验收）**
+  - **2026-11-05**：PR #394 已将 Debug/Profile/Release 改为 Apple Development 自动签名，
+    启用 Hardened Runtime；接受 Xcode 推荐配置后最低系统要求由 13.5 提高到 14.0。
+  - 已完成 Archive 和 `destination=export` 的本地商店 pkg 导出：应用使用 Apple
+    Distribution，安装包使用 Mac Installer Distribution。嵌入 profile 的 Team ID、
+    Bundle ID、证书指纹及有效期均核对通过；应用 deep/strict 签名验证通过，沙盒开启，
+    商店产物不含 `get-task-allow`。完整步骤和边界见
+    [MAS-07 本地分发验证](../testing/mas07-distribution-verification.md)。
+  - 当前验证产物为 4.31.6、build 0、arm64/x86_64、最低 macOS 14.0。
+    归档需显式传入 `MACOSX_DEPLOYMENT_TARGET=14.0`，避免生成插件包的最低系统版本冲突。
+  - 未上传、未安装或启动商店包；未执行 App Store Connect 服务端 Validate 或 TestFlight。
+    后续核对商店记录、版本/构建号、分类及上传要求，构建号按上传要求递增。
+    GitHub 站外打包流程继续独立运行，不把本次导出视为商店审核通过。
   - 验收：归档通过商店验证并成功进入 App Store Connect / TestFlight。
 
 - [ ] **MAS-08 · Privacy Manifest 与 Required Reason APIs（待产物验证）**
