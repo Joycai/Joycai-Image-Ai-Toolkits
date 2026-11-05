@@ -217,3 +217,12 @@ The bootstrap Scaffold explicitly paints `surfaceContainer`, because the main ap
 transparent scaffold normally relies on its surrounding shell. The bootstrap title
 strip supports native window dragging without creating AppState. Native window and
 system-picker interactions remain a signed-app acceptance item.
+
+### 2026-11-05 privacy policy entry
+
+Settings → About places Privacy Policy before License, using the existing link
+row, privacy icon and external Open button. The label and data-use description
+are localized in all four languages; the linked public document is bilingual
+English/Chinese. The maintained UI specification and baseline renders were used.
+Reviewed four widths in both themes and narrow English/Japanese/Traditional
+Chinese renders. App Store Connect uses the same main-branch policy URL.

@@ -3891,6 +3891,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aboutViewSource => 'View source code and releases';
 
   @override
+  String get aboutPrivacyPolicy => 'Privacy Policy';
+
+  @override
+  String get aboutPrivacyPolicyNote => 'How your data is used, stored and shared';
+
+  @override
   String get aboutLicense => 'License';
 
   @override

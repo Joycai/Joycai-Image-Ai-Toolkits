@@ -3736,6 +3736,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get aboutViewSource => 'ソースコードとリリースを表示';
 
   @override
+  String get aboutPrivacyPolicy => 'プライバシーポリシー';
+
+  @override
+  String get aboutPrivacyPolicyNote => 'データの利用・保存・共有について';
+
+  @override
   String get aboutLicense => 'ライセンス';
 
   @override

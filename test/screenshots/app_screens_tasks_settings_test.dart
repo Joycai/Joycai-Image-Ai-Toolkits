@@ -82,10 +82,9 @@ void main() {
   // The About category is a page of its own (`E1 · 2a`) and the default
   // settings shot never opens it. The phone form stacks the identity block
   // (`2b`), which is the only part of the page that changes shape.
-  for (final (ShotSize size, Brightness brightness) in <(ShotSize, Brightness)>[
-    (kShotSizes.last, Brightness.light),
-    (kShotSizes.last, Brightness.dark),
-    (kShotSizes.first, Brightness.light),
+  for (final (ShotSize size, Brightness brightness) in [
+    for (final size in kShotSizes)
+      for (final brightness in Brightness.values) (size, brightness),
   ]) {
     testWidgets('settings · about @ ${size.label} ${brightness.name}', (WidgetTester tester) async {
       await shoot(
@@ -102,6 +101,27 @@ void main() {
           // fake-async zone a widget test runs in never advances — without
           // this the block photographs four blank values.
           await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+          await settle(tester);
+        },
+      );
+    });
+  }
+
+  for (final locale in [
+    const Locale('en'),
+    const Locale('ja'),
+    const Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hant'),
+  ]) {
+    testWidgets('settings · about localized ${locale.toLanguageTag()}', (tester) async {
+      await shoot(
+        tester,
+        env: env,
+        screen: AppScreen.settings,
+        size: kShotSizes.first,
+        locale: locale,
+        suffix: 'about_${locale.toLanguageTag()}',
+        after: (tester) async {
+          await tester.tap(find.text(lookupAppLocalizations(locale).about).first);
           await settle(tester);
         },
       );

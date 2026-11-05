@@ -15,13 +15,14 @@ import '../../../widgets/ui/app_snackbar.dart';
 import 'settings_layout.dart';
 
 const String _githubUrl = 'https://github.com/Joycai/Joycai-Image-Ai-Toolkits';
+const String _privacyUrl = '$_githubUrl/blob/main/PRIVACY_POLICY.md';
 const String _licenseUrl = '$_githubUrl/blob/main/LICENSE';
 const String _releasesUrl = '$_githubUrl/releases';
 const String _issuesUrl = '$_githubUrl/issues/new';
 const String _copyrightHolder = 'BigBaicai';
 
 /// `E1 · 2a` 「关于」 as a category page of its own: the identity block, the
-/// five links, the runtime block a bug report is pasted from, and the notices.
+/// six links, the runtime block a bug report is pasted from, and the notices.
 ///
 /// The design's 「检查更新」 — the button on the identity block, the status line
 /// under the version, and the 「发现新版本」 dialog of `2b` — is deliberately
@@ -73,7 +74,7 @@ class _AboutSectionState extends State<AboutSection> {
     );
   }
 
-  /// The five rows: four that leave the app, and the third-party licences,
+  /// The six rows: five that leave the app, and the third-party licences,
   /// which Flutter draws in a page of its own.
   Widget _links(BuildContext context, AppLocalizations l10n) {
     return SettingsGroup(
@@ -94,6 +95,14 @@ class _AboutSectionState extends State<AboutSection> {
           action: l10n.aboutActionOpen,
           external: true,
           onTap: () => _open(_releasesUrl),
+        ),
+        _LinkRow(
+          icon: Icons.privacy_tip_outlined,
+          title: l10n.aboutPrivacyPolicy,
+          note: l10n.aboutPrivacyPolicyNote,
+          action: l10n.aboutActionOpen,
+          external: true,
+          onTap: () => _open(_privacyUrl),
         ),
         _LinkRow(
           icon: Icons.description_outlined,

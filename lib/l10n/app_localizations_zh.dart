@@ -3707,6 +3707,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get aboutViewSource => '查看源代码与发布版本';
 
   @override
+  String get aboutPrivacyPolicy => '隐私政策';
+
+  @override
+  String get aboutPrivacyPolicyNote => '了解数据的使用、存储与共享方式';
+
+  @override
   String get aboutLicense => '许可协议';
 
   @override
@@ -9914,6 +9920,12 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get aboutViewSource => '查看原始碼與發行版本';
+
+  @override
+  String get aboutPrivacyPolicy => '隱私權政策';
+
+  @override
+  String get aboutPrivacyPolicyNote => '瞭解資料的使用、儲存與分享方式';
 
   @override
   String get aboutLicense => '授權條款';
