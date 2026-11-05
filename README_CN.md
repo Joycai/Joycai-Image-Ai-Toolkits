@@ -2,7 +2,7 @@
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.47.8-%2302569B.svg?style=flat&logo=Flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/dart-%230175C2.svg?style=flat&logo=dart&logoColor=white)](https://dart.dev)
-[![Version](https://img.shields.io/badge/version-4.31.6-blue.svg)](https://github.com/Joycai/Joycai-Image-Ai-Toolkits/releases)
+[![Version](https://img.shields.io/badge/version-4.31.7-blue.svg)](https://github.com/Joycai/Joycai-Image-Ai-Toolkits/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Build Status](https://github.com/Joycai/Joycai-Image-Ai-Toolkits/actions/workflows/flutter-ci.yml/badge.svg)](https://github.com/Joycai/Joycai-Image-Ai-Toolkits/actions)
 
@@ -73,7 +73,7 @@ Joycai Image AI Toolkits 是一个功能强大的跨平台桌面与移动应用�
 
 *   **框架**：[Flutter](https://flutter.dev) (Material 3)，版本 3.47.8
 *   **Dart SDK**：`^3.13.0`
-*   **应用版本**：4.31.6
+*   **应用版本**：4.31.7
 *   **状态管理**：[Provider](https://pub.dev/packages/provider) — `AppState` 协调图库、文件浏览、暂存、下载、模型、工作台、任务、日志及 MCP 等独立状态
 *   **数据库**：[SQLite](https://pub.dev/packages/sqflite)（通过 `sqflite_common_ffi` 支持桌面端）
 *   **本地化**：`flutter_localizations`，使用 `lib/l10n/src/` 中的模块化 ARB 源文件
