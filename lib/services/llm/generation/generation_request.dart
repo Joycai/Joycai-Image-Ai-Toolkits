@@ -114,6 +114,7 @@ class GenerationRequest {
       channelType == vendor &&
       protocolId == schema.protocol?.id &&
       (profileId == schema.profileId ||
+          (profileId == 'openaiImage2' && schema.profileId == 'openaiImage26') ||
           (profileId == 'dashscopeQwenImage' &&
               const ['dashscopeQwenImage21', 'dashscopeQwenImage3'].contains(schema.profileId))) &&
       schemaVersion == GenerationSchema.version;

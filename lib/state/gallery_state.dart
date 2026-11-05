@@ -495,25 +495,29 @@ class GalleryState extends ChangeNotifier {
       await _scanFolder(viewSourcePath!);
     }
 
-    _cleanupSelection();
+    // A reference may belong to a folder no longer displayed. Scans and
+    // generation refreshes must not confuse list membership with file existence.
+    final missing = <String>{};
+    for (final image in List<AppImage>.of(selectedImages)) {
+      try {
+        await File(image.path).length();
+      } on FileSystemException catch (error) {
+        // Only ENOENT confirms deletion; unavailable volumes/permissions retain
+        // the selection so the user can restore access and retry.
+        if (error.osError?.errorCode == 2 && await File(image.path).parent.exists()) {
+          missing.add(image.path);
+        }
+      }
+    }
+    if (_disposed) return;
+    _removeFromSelection(missing);
     isScanning = false;
     notifyListeners();
   }
 
-  void _cleanupSelection() {
-    final validSelection = selectedImages
-        .where(
-          (selected) =>
-              galleryImages.any((img) => img.path == selected.path) ||
-              processedImages.any((img) => img.path == selected.path) ||
-              droppedImages.any((img) => img.path == selected.path) ||
-              folderImages.any((img) => img.path == selected.path),
-        )
-        .toList();
-
-    if (validSelection.length != selectedImages.length) {
-      selectedImages = validSelection;
-    }
+  void _removeFromSelection(Set<String> paths) {
+    final remaining = selectedImages.where((image) => !paths.contains(image.path)).toList();
+    if (remaining.length != selectedImages.length) selectedImages = remaining;
   }
 
   /// `[modifiedMs, size]` per path, as of the last scan that covered it.
@@ -634,7 +638,7 @@ class GalleryState extends ChangeNotifier {
     final remaining = droppedImages.where((img) => !gone.contains(img.path)).toList();
     if (remaining.length == droppedImages.length) return;
     droppedImages = remaining;
-    _cleanupSelection();
+    _removeFromSelection(gone);
     notifyListeners();
   }
 
@@ -647,13 +651,14 @@ class GalleryState extends ChangeNotifier {
     final remaining = droppedImages.where((img) => img.path != path).toList();
     if (remaining.length == droppedImages.length) return;
     droppedImages = remaining;
-    _cleanupSelection();
+    _removeFromSelection({path});
     notifyListeners();
   }
 
   void clearDroppedImages() {
+    final gone = droppedImages.map((image) => image.path).toSet();
     droppedImages = [];
-    _cleanupSelection();
+    _removeFromSelection(gone);
     notifyListeners();
   }
 

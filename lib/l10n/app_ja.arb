@@ -3482,5 +3482,6 @@
   "generationWanEditSize": "Wan の画像編集は最大 2K に対応します。1K、2K、または総画素数が 2048 × 2048 以下のサイズを選択してください。",
   "generationAgentTextOnly": "エージェントによるプロンプト拡張はテキストからの生成専用です。画像編集には直接拡張を選択してください。",
   "imageSizeFollowReference": "参照画像に合わせる",
-  "imageSizeFollowReferenceHint": "最後の参照画像の比率を使用。参照画像なしでは正方形"
+  "imageSizeFollowReferenceHint": "最後の参照画像の比率を使用。参照画像なしでは正方形",
+  "paramImageComplexity": "構図の複雑さ"
 }

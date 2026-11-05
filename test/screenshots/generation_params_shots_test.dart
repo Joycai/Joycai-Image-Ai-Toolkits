@@ -22,6 +22,12 @@ void main() {
   const scenarios = [
     (
       Vendors.openAIRest,
+      'gpt-image-2.6-flare',
+      'image',
+      {'complexity': 'low', 'quality': 'max', 'outputFormat': 'webp', 'outputCompression': '75'},
+    ),
+    (
+      Vendors.openAIRest,
       'gpt-image-2.5-flare',
       'image',
       {'background': 'transparent', 'outputFormat': 'webp', 'outputCompression': '75'},
@@ -75,7 +81,7 @@ void main() {
     required String suffix,
   }) {
     testWidgets('generation parameters $suffix', (tester) async {
-      tester.view.physicalSize = Size(width, width < 600 ? 5200 : 2600);
+      tester.view.physicalSize = Size(width, width < 600 ? 6000 : 3000);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
       const root = ValueKey('generation-specimens');
@@ -119,7 +125,9 @@ void main() {
                                     video: tag == 'video',
                                     valueOf: (spec) => spec.normalize(values[spec.key]),
                                     storedValueOf: (key) =>
-                                        key == 'quality' ? 'retired-value' : values[key],
+                                        key == 'quality' && model != 'gpt-image-2.6-flare'
+                                        ? 'retired-value'
+                                        : values[key],
                                     onChanged: (_, _) {},
                                   ),
                                 ],

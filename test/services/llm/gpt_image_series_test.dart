@@ -13,6 +13,8 @@ import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 
 void main() {
   for (final (id, topQuality) in [
+    ('gpt-image-2.6-flare', 'max'),
+    ('gpt-image-2.6-sunburst', 'max'),
     ('gpt-image-2', 'high'),
     ('gpt-image-2-2026-04-21', 'high'),
     ('gpt-image-2.5-flare', 'max'),
@@ -83,6 +85,24 @@ void main() {
         }, GenerationOperation.textImage)['outputCompression']?.value,
         0,
       );
+      if (id.contains('2.6')) {
+        expect(schema.profileId, 'openaiImage26');
+        expect(schema.readLegacy({})['complexity']?.value, 'high');
+        expect(schema.validate(schema.readLegacy({'complexity': 'max'}), []), isNotEmpty);
+        final restored = GenerationRequest.fromJson(
+          GenerationRequest(
+            prompt: 'tree',
+            operation: GenerationOperation.textImage,
+            values: schema.readLegacy({'complexity': 'medium'}),
+            media: [],
+            modelId: id,
+            channelType: Vendors.openAIRest,
+            protocolId: schema.protocol?.id,
+            profileId: schema.profileId,
+          ).toJson(),
+        );
+        expect(restored.legacyOptions['complexity'], 'medium');
+      }
       if (topQuality == 'high') {
         expect(schema.validate(schema.readLegacy({'quality': 'max'}), []), isNotEmpty);
       }
@@ -134,6 +154,7 @@ void main() {
             'background': background,
             'outputFormat': format,
             'outputCompression': '0',
+            if (id.contains('2.6')) 'complexity': 'low',
           },
         );
         expect(result.generatedImages.single, _png);
@@ -151,6 +172,7 @@ void main() {
             'quality': topQuality,
             'background': background,
             'output_format': format,
+            if (id.contains('2.6')) 'complexity': 'low',
           });
         } else {
           for (final (key, value) in [
@@ -161,6 +183,7 @@ void main() {
             ('background', background),
             ('output_format', format),
             ('output_compression', '0'),
+            if (id.contains('2.6')) ('complexity', 'low'),
           ]) {
             expect(body, contains('name="$key"\r\n\r\n$value\r\n'));
           }
@@ -190,7 +213,8 @@ void main() {
       final values = schema.readLegacy({})
         ..remove('background')
         ..remove('outputFormat')
-        ..remove('outputCompression');
+        ..remove('outputCompression')
+        ..remove('complexity');
       final request = GenerationRequest(
         prompt: 'tree',
         operation: GenerationOperation.textImage,
@@ -199,8 +223,9 @@ void main() {
         modelId: id,
         channelType: Vendors.openAIRest,
         protocolId: schema.protocol?.id,
-        profileId: schema.profileId,
+        profileId: id.contains('2.6') ? 'openaiImage2' : schema.profileId,
       );
+      expect(request.matches(model: id, vendor: Vendors.openAIRest, schema: schema), true);
       final options = {...request.legacyOptions, GenerationRequest.taskKey: request.toJson()};
       final history = [LLMMessage(role: LLMRole.user, content: 'tree')];
       expect(await validateGeneration(schema, history, options), isNotNull);

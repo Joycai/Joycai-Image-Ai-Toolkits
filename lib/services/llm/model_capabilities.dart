@@ -142,6 +142,7 @@ class ModelCapabilities {
   static const List<ModelCapabilities> idRoutedTables = [
     _openaiImage2,
     _openaiImage25,
+    _openaiImage26,
     _geminiImageV2,
     _geminiImageV21,
     _geminiImagePro,
@@ -200,6 +201,7 @@ class ModelCapabilities {
     'midjourney': _midjourney,
     'openaiImage2': _openaiImage2,
     'openaiImage25': _openaiImage25,
+    'openaiImage26': _openaiImage26,
     'minimaxImage': _minimaxImage,
     'minimaxVideo': _minimaxVideo,
     'minimaxHighspeed': _minimaxHighspeed,
@@ -242,6 +244,7 @@ class ModelCapabilities {
     // quality rungs — its id also contains `gpt-image-2`, so it must be
     // checked first.
     if (family == ModelFamily.openaiImage) {
+      if (id.contains('gpt-image-2.6')) return _openaiImage26;
       if (id.contains('gpt-image-2.5')) return _openaiImage25;
       if (id.contains('gpt-image-2')) return _openaiImage2;
     }

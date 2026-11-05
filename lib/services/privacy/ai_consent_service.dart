@@ -15,7 +15,6 @@ class AiConsentScope {
   const AiConsentScope(this.key, this.recipient, this.service, this.proxy);
 
   factory AiConsentScope.forRequest({
-    required String vendor,
     required String endpoint,
     required Uri destination,
     String? proxy,
@@ -26,7 +25,7 @@ class AiConsentScope {
         ? ''
         : origin(Uri.parse(proxy.contains('://') ? proxy : 'http://$proxy'));
     final key = sha256
-        .convert(utf8.encode(jsonEncode([1, vendor, endpoint, recipient, proxy ?? ''])))
+        .convert(utf8.encode(jsonEncode([2, recipient, service, proxyOrigin])))
         .toString();
     return AiConsentScope(key, recipient, service, proxyOrigin);
   }
@@ -87,7 +86,22 @@ class AiConsentService extends ChangeNotifier {
   @visibleForTesting
   AiConsentService.withStore({required this._read, required this._write});
 
-  bool isAllowed(AiConsentScope scope) => _decisions[scope.key]?.allowed == true;
+  // Older records were keyed by route/vendor. Reuse their disclosed recipient
+  // scope too; a remembered refusal takes precedence over an older grant.
+  AiConsentDecision? _decisionFor(AiConsentScope scope) {
+    AiConsentDecision? found;
+    for (final decision in _decisions.values) {
+      if (!_sameRecipient(decision.scope, scope)) continue;
+      if (!decision.allowed) return decision;
+      found = decision;
+    }
+    return found;
+  }
+
+  bool isAllowed(AiConsentScope scope) {
+    final decision = _decisionFor(scope);
+    return decision?.allowed == true && !_pendingGrants.contains(decision!.scope.key);
+  }
 
   List<AiConsentDecision> get decisions => List.unmodifiable(_decisions.values);
 
@@ -100,7 +114,7 @@ class AiConsentService extends ChangeNotifier {
         decision.scope.service,
         decision.scope.proxy,
       ]);
-      if (grouped[key]?.allowed != true) grouped[key] = decision;
+      if (grouped[key]?.allowed != false) grouped[key] = decision;
     }
     return List.unmodifiable(grouped.values);
   }
@@ -135,8 +149,8 @@ class AiConsentService extends ChangeNotifier {
   Future<void> require(AiConsentScope scope) async {
     await load();
     // An unrelated unanswered prompt must not stall already-authorized jobs.
-    final known = _decisions[scope.key];
-    if (known != null && !_pendingGrants.contains(scope.key)) {
+    final known = _decisionFor(scope);
+    if (known != null && !_pendingGrants.contains(known.scope.key)) {
       if (!known.allowed) throw denied();
       return;
     }
@@ -147,7 +161,7 @@ class AiConsentService extends ChangeNotifier {
     try {
       await previous;
       if (revision != _revision) throw denied();
-      var decision = _decisions[scope.key];
+      var decision = _decisionFor(scope);
       if (decision == null) {
         final presenter = requestConsent;
         if (presenter == null) throw denied();

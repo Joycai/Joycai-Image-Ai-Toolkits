@@ -186,3 +186,14 @@ video control switch or provider-specific widget is introduced.
 ### Wan 2.7 recovery and sizes (2026-11-03)
 
 Explicit ratio/tier choices always send pixels, including squares; only Follow reference sends a tier keyword. Integer edges retain the documented area/ratio bounds. Shared validation checks the actual reference bytes. Async image jobs persist ImageJob recovery data before polling, without credentials or media bytes. Recovery bypasses the original inputs and sends GET only, after checking the original endpoint/model. Terminal failures clear recovery; poll/download failures retain it. Usage rows are stable per accepted job.
+
+### GPT Image 2.6 (2026-11-05)
+
+The `openaiImage26` raster profile adds a segmented `complexity` control (low,
+medium, high; default high) to the existing size/quality/output form. All four
+locales use the shared label/option mapper, with no model branches in the UI.
+The same typed choice survives drafts and queued snapshots and is encoded on
+JSON generation and multipart edits. The former `openaiImage2` fallback snapshot
+is compatible only with unchanged existing values and default new complexity.
+See `docs/api/gpt-image-series.md` for source evidence, compatibility assumptions
+and the separate GIF/SVG/Batch limitations.

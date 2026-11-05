@@ -6360,4 +6360,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get imageSizeFollowReferenceHint => '最後の参照画像の比率を使用。参照画像なしでは正方形';
+
+  @override
+  String get paramImageComplexity => '構図の複雑さ';
 }

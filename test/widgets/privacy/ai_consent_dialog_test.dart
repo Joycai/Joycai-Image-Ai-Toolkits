@@ -8,7 +8,6 @@ import 'package:joycai_image_ai_toolkits/widgets/privacy/ai_consent_dialog.dart'
 
 void main() {
   final scope = AiConsentScope.forRequest(
-    vendor: 'custom',
     endpoint: 'https://my-ai.example.test/v1',
     destination: Uri.parse('https://uploads.example.test/files?token=hidden'),
   );

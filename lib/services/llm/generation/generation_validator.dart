@@ -77,6 +77,7 @@ Future<Map<String, dynamic>?> validateGeneration(
                               'background',
                               'outputFormat',
                               'outputCompression',
+                              'complexity',
                             ].contains(entry.key)) ||
                         (schema.capabilities.imageRequestShape != ImageRequestShape.none &&
                             const [

@@ -6321,6 +6321,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get imageSizeFollowReferenceHint => '采用最后一张参考图比例；无参考图时为正方形';
+
+  @override
+  String get paramImageComplexity => '构图复杂度';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -12639,4 +12642,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get imageSizeFollowReferenceHint => '採用最後一張參考圖比例；無參考圖時為正方形';
+
+  @override
+  String get paramImageComplexity => '構圖複雜度';
 }

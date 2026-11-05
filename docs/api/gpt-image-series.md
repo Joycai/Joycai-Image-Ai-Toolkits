@@ -232,3 +232,32 @@ URLs deliver the image and original usage. This does not infer completion from
 an arbitrary URL or resubmit a generation. Local HTTP regressions cover both
 namespaces, empty-base64 fallback, preview-before-final ordering and single
 submission/delivery.
+
+## GPT Image 2.6 raster parameters (2026-11-05)
+
+Official IDs `gpt-image-2.6-flare` and `gpt-image-2.6-sunburst` resolve to
+`openaiImage26`, including namespaced relay IDs. The shared raster controls
+(size, six quality choices, background, PNG/JPEG/WebP and compression) remain
+available. This profile uses the existing 2.5 size/reference limits and quality
+ladder as a compatibility baseline: the current reference still names 2.5 in
+those detailed paragraphs rather than separately enumerating 2.6 limits.
+No paid upstream validation was performed.
+
+The explicitly documented new `complexity` field has `low`, `medium`, `high`
+(default high), independent of quality. Both JSON generation and multipart edit
+requests carry it. Invalid values fail shared validation before transport; older
+model profiles do not acquire this field. Drafts and queued snapshots preserve
+it. Pre-upgrade 2.6 tasks with the old `openaiImage2` profile can continue only
+with unchanged existing values and the new default complexity.
+
+Sources checked on 2026-11-05:
+- https://developers.openai.com/api/docs/guides/image-generation#GPT-Image-2.6
+- https://developers.openai.com/api/reference/resources/images/methods/generate
+- https://developers.openai.com/api/reference/resources/images/methods/edit
+
+Not advertised by this raster profile: SVG generation/author-model selection,
+animated GIF generation/frame controls, markup editing, or 2.6 Batch support.
+SVG requires a vector delivery path and disables streaming; GIF preview access
+and limits need a separate contract (the guide says 2–64 frames while the API
+reference says 2–16). These are not enabled merely by adding output dropdown
+values. Existing PNG/JPEG/WebP delivery and progressive previews are retained.
