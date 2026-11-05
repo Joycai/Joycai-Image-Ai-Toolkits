@@ -896,8 +896,8 @@ void main() {
       },
     );
 
-    test('this build writes schema 52, which a v51 build rejects', () {
-      expect(DatabaseService.dbVersion, 52);
+    test('this build writes schema 53, which pre-Keychain builds reject', () {
+      expect(DatabaseService.dbVersion, 53);
     });
   });
 }

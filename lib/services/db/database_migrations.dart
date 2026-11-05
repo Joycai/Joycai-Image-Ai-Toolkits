@@ -77,6 +77,10 @@ class DatabaseMigration {
     if (oldVersion < 50) await _createV50Tables(db);
     if (oldVersion < 51) await _createV51Columns(db);
     if (oldVersion < 52) await _createV52Columns(db);
+    // v53 changes the credential storage format, not the SQL columns. On both
+    // upgrade and fresh creation DatabaseService migrates/validates protected
+    // values before publishing the connection. The version prevents older apps
+    // from opening a database whose credentials they would mistake for API keys.
   }
 
   static Future<void> onCreate(Database db) async {
@@ -132,6 +136,7 @@ class DatabaseMigration {
     await _createV50Tables(db);
     await _createV51Columns(db);
     await _createV52Columns(db);
+    // v53 credential protection runs in DatabaseService before use (no SQL change).
     // Presets are synchronized in DatabaseService
   }
 

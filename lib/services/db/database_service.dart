@@ -18,6 +18,7 @@ import '../../models/task_item.dart';
 import '../../models/token_usage.dart';
 import '../../models/usage_checkpoint.dart';
 import '../llm/channel_routes.dart';
+import '../security/credential_protection.dart';
 import 'database_migrations.dart';
 import 'repositories/cookie_repository.dart';
 import 'repositories/image_layer_repository.dart';
@@ -55,6 +56,80 @@ class BackupFormatException implements Exception {
 class DatabaseService {
   static final DatabaseService _instance = DatabaseService._internal();
 
+  CredentialProtection? _credentialProtection;
+
+  /// Configure before opening the production database; other distributions retain
+  /// their existing storage. Tests inject a protector without invoking Keychain.
+  void configureCredentialProtection(CredentialProtection protection) {
+    if (_database != null || _databaseFuture != null) {
+      throw StateError('Configure credential protection before opening the database.');
+    }
+    _credentialProtection = protection;
+  }
+
+  Future<String> protectCredential(String value) async {
+    if (value.isEmpty) return value;
+    final protection = _credentialProtection;
+    if (protection == null) return value;
+    final sealed = await protection.seal(value);
+    if (!sealed.startsWith(CredentialProtection.prefix) || await protection.open(sealed) != value) {
+      throw const CredentialProtectionException();
+    }
+    return sealed;
+  }
+
+  Future<String> revealCredential(String value) async {
+    if (!value.startsWith(CredentialProtection.prefix)) return value;
+    final protection = _credentialProtection;
+    if (protection == null) throw const CredentialProtectionException();
+    return protection.open(value);
+  }
+
+  /// Called before publishing a newly opened database. Any failure rolls back all
+  /// rows. Existing envelopes are verified, never treated as plaintext or erased.
+  Future<void> migrateCredentials(Database db) async {
+    if (_credentialProtection == null) return;
+    await db.execute('PRAGMA secure_delete = ON');
+    await db.transaction((txn) async {
+      final channels = await txn.query('llm_channels', columns: ['id', 'api_key']);
+      final settings = await _querySettings(txn, CredentialProtection.settingKeys);
+      final hasEncryptedValues = [
+        ...channels.map((row) => row['api_key'] as String),
+        ...settings.map((row) => row['value'] as String? ?? ''),
+      ].any((value) => value.startsWith(CredentialProtection.prefix));
+      await _credentialProtection!.prepare(allowCreate: !hasEncryptedValues);
+      for (final row in channels) {
+        final value = row['api_key'] as String;
+        if (value.startsWith(CredentialProtection.prefix)) {
+          await revealCredential(value);
+        } else if (value.isNotEmpty) {
+          await txn.update(
+            'llm_channels',
+            {'api_key': await protectCredential(value)},
+            where: 'id = ?',
+            whereArgs: [row['id']],
+          );
+        }
+      }
+      for (final row in settings) {
+        final value = row['value'] as String;
+        if (value.startsWith(CredentialProtection.prefix)) {
+          await revealCredential(value);
+        } else if (value.isNotEmpty) {
+          await txn.update(
+            'settings',
+            {'value': await protectCredential(value)},
+            where: 'key = ?',
+            whereArgs: [row['key']],
+          );
+        }
+      }
+    });
+    // Remove SQLite's obsolete pages/WAL copies, not filesystem snapshots or SSD
+    // remnants. User-created legacy copies remain outside this migration's scope.
+    await db.rawQuery('PRAGMA wal_checkpoint(TRUNCATE)');
+  }
+
   /// Per-instance, not static: the default instance holds the app's one real
   /// database, while a [DatabaseService.forDatabase] holds only what it was
   /// handed. Static fields here would make that seam a no-op.
@@ -63,7 +138,7 @@ class DatabaseService {
 
   /// Schema version of this build. Also stamped into full backups so a file
   /// from a newer app can be rejected instead of failing mid-restore.
-  static const int dbVersion = 52;
+  static const int dbVersion = 53;
 
   /// A separate durable spool, alongside this database. Injected in-memory
   /// databases never touch the user's filesystem.
@@ -128,7 +203,8 @@ class DatabaseService {
   /// [database] is returned as-is and never opened, migrated or closed by this
   /// object — the caller owns its lifetime.
   @visibleForTesting
-  DatabaseService.forDatabase(Database database) : _database = database;
+  DatabaseService.forDatabase(Database database, {this._credentialProtection})
+    : _database = database;
 
   // Each repository is built over *this* service, not over the default one.
   // A facade that built a `ModelRepository()` per call would send every
@@ -159,13 +235,24 @@ class DatabaseService {
     if (_database != null) return _database!;
     _databaseFuture ??= () async {
       final db = await _initDatabase();
+      try {
+        await migrateCredentials(db);
+      } catch (_) {
+        await db.close();
+        rethrow;
+      }
       _database = db;
       await syncPresets();
       await _tasks.scrubStoredCookies();
       await _layers.loadPaths();
       return db;
     }();
-    return _databaseFuture!;
+    try {
+      return await _databaseFuture!;
+    } catch (_) {
+      _databaseFuture = null;
+      rethrow;
+    }
   }
 
   Future<Database> _initDatabase() async {
@@ -221,11 +308,10 @@ class DatabaseService {
   /// Makes the database — and, outside portable mode, the data folder —
   /// readable and writable by the signed-in user only, on macOS and Linux.
   ///
-  /// The API keys and the proxy password in it are not encrypted (an OS
-  /// keychain does not survive this app's ad-hoc macOS signing, a Linux
-  /// desktop without a keyring daemon, or a portable copy), so this is the
-  /// protection the file itself gets: other accounts on the machine cannot
-  /// read it. A default umask leaves both world-readable on Linux. SQLite
+  /// macOS store builds additionally encrypt API keys, proxy passwords and MCP
+  /// tokens using a Keychain-backed key. Other distributions retain plaintext
+  /// storage for portable/ad-hoc compatibility. File permissions protect all
+  /// database content from other accounts on the machine. A default umask leaves both world-readable on Linux. SQLite
   /// creates its journal files with the database's own mode, so they follow.
   /// Windows profiles are already private to their user; mobile apps are
   /// sandboxed. A portable folder sits beside the executable and is the
@@ -385,14 +471,18 @@ class DatabaseService {
     final db = await database;
     await db.insert('settings', {
       'key': key,
-      'value': value,
+      'value': CredentialProtection.settingKeys.contains(key)
+          ? await protectCredential(value)
+          : value,
     }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   Future<String?> getSetting(String key) async {
     final db = await database;
     final maps = await db.query('settings', where: 'key = ?', whereArgs: [key]);
-    return maps.isNotEmpty ? maps.first['value'] as String : null;
+    if (maps.isEmpty) return null;
+    final value = maps.first['value'] as String;
+    return CredentialProtection.settingKeys.contains(key) ? revealCredential(value) : value;
   }
 
   Future<void> resetAllSettings() async {
@@ -728,7 +818,20 @@ class DatabaseService {
             .where((row) => !_directorySettingKeys.contains(row['key']))
             .toList();
       }
-      await _importSimpleTable(txn, 'settings', filteredSettings);
+      final protectedSettings = <Map<String, dynamic>>[];
+      for (final source in filteredSettings) {
+        final row = Map<String, dynamic>.from(source);
+        if (CredentialProtection.settingKeys.contains(row['key'])) {
+          final value = row['value'] as String? ?? '';
+          // Envelopes are device-local, never an interchange format.
+          if (value.startsWith(CredentialProtection.prefix)) {
+            throw const CredentialProtectionException();
+          }
+          row['value'] = await protectCredential(value);
+        }
+        protectedSettings.add(row);
+      }
+      await _importSimpleTable(txn, 'settings', protectedSettings);
     }
     // A redacted credential in the file does not blank the one this machine
     // has — the same rule as the channel keys above.
@@ -1100,6 +1203,12 @@ class DatabaseService {
       // Redacted export: fall back to the key this machine already had.
       if ((row['api_key'] as String? ?? '').isEmpty) {
         row['api_key'] = preservedKeys[_channelIdentity(row)] ?? '';
+      } else {
+        final value = row['api_key'] as String;
+        if (value.startsWith(CredentialProtection.prefix)) {
+          throw const CredentialProtectionException();
+        }
+        row['api_key'] = await protectCredential(value);
       }
       // A group the file does not carry is no default, not a dangling id.
       if (row['default_fee_group_id'] != null) {

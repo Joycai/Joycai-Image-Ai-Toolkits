@@ -38,6 +38,7 @@ Required reading before touching the subsystem each one covers.
   [AI data sharing consent (MAS-04)](architecture/ai-data-sharing.md) defines the transport gate, local decisions, revocation and import boundaries.
   [MAS-04 signed native acceptance](testing/mas04-native-acceptance.md) records isolated consent, restart and MCP checks and their limits.
   [Content safety (MAS-05)](architecture/content-safety.md) records Gemini thresholds, warning-gated editing and reporting limits.
+  [Credential protection (MAS-06)](architecture/credential-protection.md) defines Keychain-backed encryption, migration, failure recovery and signing requirements.
 * **[Media usage and cost accounting](architecture/media-accounting.md)** — shared
   ordinary/Batch arithmetic, modality prices, submitted video pricing snapshots,
   incomplete evidence, atomic settlement and durable recovery.

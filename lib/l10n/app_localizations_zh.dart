@@ -4475,6 +4475,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get installationImportScheduled => '已安排迁入页面。请等待当前任务完成后，退出并重新打开本应用。';
 
   @override
+  String get credentialRecoveryTitle => '暂时无法读取凭据';
+
+  @override
+  String get credentialRecoveryBody =>
+      'Joycai 无法访问或验证受保护的凭据。请解锁 Mac 后重试。若仍然失败，请恢复原 macOS 用户账户及签名应用的钥匙串访问权限。已有凭据未被清空，请勿通过删除钥匙串项目或重置数据库解决此问题。';
+
+  @override
+  String get credentialRecoveryRetry => '重试';
+
+  @override
   String get workbench => '工作台';
 
   @override
@@ -10781,6 +10791,16 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get installationImportScheduled => '已安排遷入頁面。請等待目前任務完成後，結束並重新開啟本應用。';
+
+  @override
+  String get credentialRecoveryTitle => '暫時無法讀取憑證';
+
+  @override
+  String get credentialRecoveryBody =>
+      'Joycai 無法存取或驗證受保護的憑證。請解鎖 Mac 後重試。若仍然失敗，請恢復原 macOS 使用者帳號及簽署 App 的鑰匙圈存取權限。現有憑證未被清空，請勿透過刪除鑰匙圈項目或重設資料庫解決此問題。';
+
+  @override
+  String get credentialRecoveryRetry => '重試';
 
   @override
   String get workbench => '工作台';

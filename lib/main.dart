@@ -25,9 +25,11 @@ import 'screens/metrics/token_usage_screen.dart';
 import 'screens/models/models_screen.dart';
 import 'screens/prompts/prompts_screen.dart';
 import 'screens/settings/settings_screen.dart';
+import 'screens/wizard/credential_recovery_screen.dart';
 import 'screens/wizard/installation_migration_screen.dart';
 import 'screens/wizard/setup_wizard.dart';
 import 'screens/workbench/workbench_screen.dart';
+import 'services/db/database_service.dart';
 import 'services/files/directory_access_service.dart';
 import 'services/files/installation_migration_service.dart';
 import 'services/files/legacy_result_migration.dart';
@@ -35,6 +37,7 @@ import 'services/files/temp_storage_service.dart';
 import 'services/llm/protocols/minimax_h3_base_video_protocol.dart';
 import 'services/media/video_thumbnail_service.dart';
 import 'services/privacy/ai_consent_service.dart';
+import 'services/security/credential_protection.dart';
 import 'services/system/dock_badge_service.dart';
 import 'services/system/notification_service.dart';
 import 'services/system/window_chrome_service.dart';
@@ -52,6 +55,10 @@ import 'widgets/tasks/task_capsule_monitor.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  if (Platform.isMacOS && !AppDistribution.direct) {
+    DatabaseService().configureCredentialProtection(const MacCredentialProtection());
+  }
 
   await _hideNativeTitleBar();
 
@@ -106,6 +113,36 @@ void main() async {
       runApp(const SizedBox.shrink());
       await WidgetsBinding.instance.endOfFrame;
       state.dispose();
+    }
+  }
+
+  if (Platform.isMacOS && !AppDistribution.direct) {
+    try {
+      await DatabaseService().database;
+    } on CredentialProtectionException {
+      final recovered = Completer<void>();
+      runApp(
+        MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: buildAppTheme(
+            accent: AppConstants.presetThemes.values.first,
+            brightness: Brightness.light,
+          ),
+          darkTheme: buildAppTheme(
+            accent: AppConstants.presetThemes.values.first,
+            brightness: Brightness.dark,
+          ),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: CredentialRecoveryScreen(
+            onRetry: () async {
+              await DatabaseService().database;
+              if (!recovered.isCompleted) recovered.complete();
+            },
+          ),
+        ),
+      );
+      await recovered.future;
     }
   }
 
