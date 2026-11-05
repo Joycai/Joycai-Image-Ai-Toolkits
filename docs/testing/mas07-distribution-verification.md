@@ -76,12 +76,35 @@ macOS 12.0，而 fc-native-video-thumbnail-product 要求 13.0，导致归档失
 `export/Joycai Image AI Toolkits.pkg`、`ExportOptions.plist`、`verification.json`。
 这些生成物、证书、私钥及描述文件均不提交到 Git。
 
+## 2026-11-05 · App Store Connect Validate 复验
+
+首次在 Xcode Organizer 使用独立 **Validate App → Custom** 流程时，验证报告
+归档缺少有效的 `LSApplicationCategoryType`。工程虽已设置
+`INFOPLIST_KEY_LSApplicationCategoryType=public.app-category.photography`，但使用
+显式 `Runner/Info.plist` 的实际产物没有该键。修复是在 `macos/Runner/Info.plist`
+直接加入 `LSApplicationCategoryType=public.app-category.photography`。
+
+重新 Archive 至 `build/mas-category-fix-20261105/Joycai.xcarchive`，确认归档内
+Info.plist 已含摄影分类，然后再次使用独立 Validate App 流程。手动选择 Apple
+Distribution 和现有商店描述文件；关闭 Upload symbols 和 Manage version and
+build number，保留 `4.31.6 (0)`。Xcode 最终显示：
+
+> App validation complete: Joycai Image AI Toolkits 4.31.6 (0) validated.
+> Your app successfully passed all validation checks.
+
+本轮 Validate 通过，没有执行 Distribute App / Upload、TestFlight 分发或提交审核。
+命令行 `method=validation,destination=export` 被 Xcode 拒绝（要求 upload 目标），
+因此实际复验通过 Organizer 独立 Validate 入口完成，不把该命令行失败当作应用错误。
+
+修复后门禁：format 910 文件无变化；analyze 无问题；非截图测试 3476 通过、10 跳过；
+plist lint、diff 检查通过，Archive 成功。未启动应用或触碰用户数据库。
+
 ## 尚未完成
 
-本地签名通过不等于 App Store Connect Validate 或审核通过。尚未上传、创建
+本地签名和本轮 Validate 通过不等于上传处理或审核通过。尚未上传、创建
 TestFlight 构建或验证商店安装后的运行行为。当前 build 0 原样保留，正式上传前
 需核对构建号及商店记录；隐私清单和其他 MAS 台账项仍独立待办。
-MAS-07 因服务端和 TestFlight 验收未完成而保持未勾选。
+MAS-07 因上传处理和 TestFlight 验收未完成而保持未勾选。
 
 参考：[Apple 描述文件说明](https://developer.apple.com/documentation/technotes/tn3125-inside-code-signing-provisioning-profiles)、
 [App Store 描述文件创建](https://developer.apple.com/help/account/provisioning-profiles/create-an-app-store-provisioning-profile)。

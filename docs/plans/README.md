@@ -36,7 +36,7 @@ MAS-07 已完成本地商店包导出与签名验证；MAS-03～MAS-06、MAS-08�
 审查边界：已检查源码、macOS 工程、依赖及现有发布流程，并查阅 Apple 官方规则。
 已使用独立 Bundle ID 与合成数据执行本地签名沙盒实机测试（见 MAS-02）；
 2026-11-05 已完成商店签名 Archive、本地 pkg 导出以及证书与 provisioning profile 匹配验证；
-未执行 App Store Connect 服务端 Validate、上传或 TestFlight，未检查商店后台资料。
+随后已修复应用分类缺失并通过 Xcode Organizer Validate；未上传或执行 TestFlight，未全面检查商店后台资料。
 提交前重新核对规则和最终产物。
 
 ### 按依赖顺序处理的问题
@@ -199,7 +199,7 @@ MAS-07 已完成本地商店包导出与签名验证；MAS-03～MAS-06、MAS-08�
     未使用 Keychain 本身不应被描述为必然拒审。
   - 验收：凭据不泄漏到备份/日志；迁移失败不丢失原凭据；签名升级后仍可正常读取。
 
-- [ ] **MAS-07 · 商店签名、归档与构建版本（本地导出验证通过，待服务端验收）**
+- [ ] **MAS-07 · 商店签名、归档与构建版本（本地导出与 Validate 通过，待上传及 TestFlight）**
   - **2026-11-05**：PR #394 已将 Debug/Profile/Release 改为 Apple Development 自动签名，
     启用 Hardened Runtime；接受 Xcode 推荐配置后最低系统要求由 13.5 提高到 14.0。
   - 已完成 Archive 和 `destination=export` 的本地商店 pkg 导出：应用使用 Apple
@@ -209,7 +209,11 @@ MAS-07 已完成本地商店包导出与签名验证；MAS-03～MAS-06、MAS-08�
     [MAS-07 本地分发验证](../testing/mas07-distribution-verification.md)。
   - 当前验证产物为 4.31.6、build 0、arm64/x86_64、最低 macOS 14.0。
     归档需显式传入 `MACOSX_DEPLOYMENT_TARGET=14.0`，避免生成插件包的最低系统版本冲突。
-  - 未上传、未安装或启动商店包；未执行 App Store Connect 服务端 Validate 或 TestFlight。
+  - **Validate 复验通过（2026-11-05）**：首轮发现实际 Info.plist 缺少应用分类；
+    在 Runner/Info.plist 明确写入 `public.app-category.photography`，重新归档确认后，
+    Xcode Organizer 报告 “Your app successfully passed all validation checks”。
+    关闭符号上传和自动构建号管理，保留 4.31.6 (0)。格式、分析及 3476 项测试通过。
+  - 未上传、未安装或启动商店包；未执行 TestFlight 或提交审核。
     后续核对商店记录、版本/构建号、分类及上传要求，构建号按上传要求递增。
     GitHub 站外打包流程继续独立运行，不把本次导出视为商店审核通过。
   - 验收：归档通过商店验证并成功进入 App Store Connect / TestFlight。
