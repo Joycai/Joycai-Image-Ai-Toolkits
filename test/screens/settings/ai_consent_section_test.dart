@@ -8,7 +8,6 @@ void main() {
   late AiConsentService original;
   late AiConsentService service;
   final scope = AiConsentScope.forRequest(
-    vendor: 'test',
     endpoint: 'https://example.test/v1',
     destination: Uri.parse('https://example.test/chat'),
   );

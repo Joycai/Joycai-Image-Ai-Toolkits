@@ -25,6 +25,21 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 |---|---|
 | [`2026-08-assistant-timeout.md`](2026-08-assistant-timeout.md) | 不是施工说明书，是**一次真实故障的取证记录**（`api_logs/` 里七条日志的耗时还原）。`architecture/assistant-context.md` 直接引它作为「为什么要早elide」的证据。 |
 
+## 2026-11-05 · AI 授权、参考图选择与 GPT Image 2.6
+
+- AI Sharing 按实际接收方、服务和代理 origin 复用授权；路由路径、厂商标签或
+  凭据变化不再重复弹窗。兼容旧记录，拒绝优先，撤回和保存失败仍阻止发送。
+- 生图后的画廊刷新不再按当前列表清空参考图；仅确认文件不存在且父目录仍在时
+  移除。移出临时工作区只影响对应图片，不再连带清理其他目录的参考图。
+- GPT Image 2.6 Flare / Sunburst 增加独立静态图配置、四语种复杂度控件，以及
+  JSON / multipart 编码、排队快照兼容。契约和文档未明确项见
+  [GPT Image API 说明](../api/gpt-image-series.md#GPT-Image-2.6-raster-parameters-2026-11-05)。
+- 验证：格式检查 927 文件无变更；静态分析无问题；全量测试 3522 通过、10 跳过。
+  2.6 工作台 8 个宽度/明暗场景和参数面板 48 个场景渲染通过，无打印溢出；
+  已抽查四语言、390/834/1024/1440 参数卡及窄/宽工作台实图。
+- 范围：独立测试数据与本地 mock，无真实付费调用、实际用户数据改写、上传或审核。
+  SVG/GIF、markup 编辑和 2.6 Batch 不在本次静态图参数接入范围。
+
 ## 2026-11-04 · Mac App Store 发布准备（待处理）
 
 目标：先发布 **Mac App Store**，不包含 iPhone / iPad App Store。

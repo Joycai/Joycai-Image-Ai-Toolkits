@@ -3482,5 +3482,6 @@
   "generationWanEditSize": "萬相影像編輯最高支援 2K。請選擇 1K、2K，或總像素不超過 2048 × 2048 的尺寸。",
   "generationAgentTextOnly": "智慧體提示詞增強僅支援文生圖。編輯影像時請選擇直接增強。",
   "imageSizeFollowReference": "跟隨參考圖",
-  "imageSizeFollowReferenceHint": "採用最後一張參考圖比例；無參考圖時為正方形"
+  "imageSizeFollowReferenceHint": "採用最後一張參考圖比例；無參考圖時為正方形",
+  "paramImageComplexity": "構圖複雜度"
 }

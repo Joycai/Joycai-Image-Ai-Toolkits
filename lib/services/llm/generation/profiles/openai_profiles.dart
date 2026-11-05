@@ -133,33 +133,31 @@ const _openaiOutputParams = <ParamSpec>[
 /// dimensions meeting four rules — see [kOpenAIImage2SizeRules] — so the
 /// preset list below is only quick-pick scaffolding; the dialog enforces
 /// the actual constraints.
+const _openaiModernSizeParam = ParamSpec(
+  key: 'imageSize',
+  labelKey: 'resolution',
+  control: ParamControl.customSize,
+  defaultValue: 'auto',
+  options: [
+    ParamOption('auto'),
+    ParamOption('1024x1024'),
+    ParamOption('1536x1024'),
+    ParamOption('1024x1536'),
+    ParamOption('2048x2048'),
+    ParamOption('2048x1152'),
+    ParamOption('3840x2160'),
+    ParamOption('2160x3840'),
+  ],
+  sizeRules: kOpenAIImage2SizeRules,
+  sizeVocabulary: _gptImageSizeVocabulary,
+);
+
 const _openaiImage2 = ModelCapabilities(
   streamsImages: true,
   longRunning: true,
   isImageGenerator: true,
   maxReferenceImages: 16,
-  imageParams: [
-    ParamSpec(
-      key: 'imageSize',
-      labelKey: 'resolution',
-      control: ParamControl.customSize,
-      defaultValue: 'auto',
-      options: [
-        ParamOption('auto'),
-        ParamOption('1024x1024'),
-        ParamOption('1536x1024'),
-        ParamOption('1024x1536'),
-        ParamOption('2048x2048'),
-        ParamOption('2048x1152'),
-        ParamOption('3840x2160'),
-        ParamOption('2160x3840'),
-      ],
-      sizeRules: kOpenAIImage2SizeRules,
-      sizeVocabulary: _gptImageSizeVocabulary,
-    ),
-    _openaiQualityParam,
-    ..._openaiOutputParams,
-  ],
+  imageParams: [_openaiModernSizeParam, _openaiQualityParam, ..._openaiOutputParams],
 );
 
 /// Native OpenAI image v2.5 (`gpt-image-2.5-flare` / `-sunburst`,
@@ -171,26 +169,26 @@ const _openaiImage25 = ModelCapabilities(
   longRunning: true,
   isImageGenerator: true,
   maxReferenceImages: 16,
+  imageParams: [_openaiModernSizeParam, _openaiQuality25Param, ..._openaiOutputParams],
+);
+
+/// GPT Image 2.6 keeps the modern raster controls and adds planning complexity.
+/// GIF/SVG delivery has a separate wire/media contract and is not advertised here.
+const _openaiImage26 = ModelCapabilities(
+  streamsImages: true,
+  longRunning: true,
+  isImageGenerator: true,
+  maxReferenceImages: 16,
   imageParams: [
-    ParamSpec(
-      key: 'imageSize',
-      labelKey: 'resolution',
-      control: ParamControl.customSize,
-      defaultValue: 'auto',
-      options: [
-        ParamOption('auto'),
-        ParamOption('1024x1024'),
-        ParamOption('1536x1024'),
-        ParamOption('1024x1536'),
-        ParamOption('2048x2048'),
-        ParamOption('2048x1152'),
-        ParamOption('3840x2160'),
-        ParamOption('2160x3840'),
-      ],
-      sizeRules: kOpenAIImage2SizeRules,
-      sizeVocabulary: _gptImageSizeVocabulary,
-    ),
+    _openaiModernSizeParam,
     _openaiQuality25Param,
+    ParamSpec(
+      key: 'complexity',
+      labelKey: 'imageComplexity',
+      control: ParamControl.segmented,
+      defaultValue: 'high',
+      options: [ParamOption('low'), ParamOption('medium'), ParamOption('high')],
+    ),
     ..._openaiOutputParams,
   ],
 );

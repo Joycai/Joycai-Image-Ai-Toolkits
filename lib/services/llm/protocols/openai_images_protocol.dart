@@ -519,6 +519,10 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
   /// Keep direct protocol callers under the same cross-field contract as the
   /// shared schema. Compression is never sent for PNG, including parked drafts.
   static Map<String, dynamic> outputOptions(Map<String, dynamic>? options) {
+    final complexity = options?['complexity'];
+    if (complexity != null && !['low', 'medium', 'high'].contains(complexity)) {
+      throw LLMApiException('Invalid image complexity. Nothing was sent.');
+    }
     final background = options?['background'];
     final format = options?['outputFormat'];
     if (background != null && !['auto', 'opaque', 'transparent'].contains(background)) {
@@ -538,6 +542,7 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
       );
     }
     return {
+      'complexity': ?complexity,
       'background': ?background,
       'output_format': ?format,
       if (compression != null && ['jpeg', 'webp'].contains(format))

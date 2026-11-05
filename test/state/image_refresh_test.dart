@@ -58,6 +58,30 @@ void main() {
     }
   });
 
+  test('generation refresh retains references outside current gallery until deleted', () async {
+    final db = await openTestDatabase();
+    addTearDown(() => closeTestDatabase(db));
+    final dir = await Directory.systemTemp.createTemp('joycai_reference_selection');
+    addTearDown(() => dir.delete(recursive: true));
+    final reference = await File(p.join(dir.path, 'reference.png')).writeAsString('reference');
+    final dropped = await File(p.join(dir.path, 'dropped.png')).writeAsString('dropped');
+    final state = GalleryState(database: db);
+    addTearDown(state.dispose);
+    await state.settingsLoaded;
+    state.selectedImages = [AppImage.fromFile(reference), AppImage.fromFile(dropped)];
+    state.addDroppedFiles([AppImage.fromFile(dropped)]);
+    // The reference was selected in a folder that is no longer displayed.
+    state.clearDroppedImages();
+    expect(state.selectedImages.map((image) => image.path), [reference.path]);
+    await state.refreshImages();
+    await state.refreshImages();
+    expect(state.isImageSelected(reference.path), true);
+    expect(state.selectionNumberOf(reference.path), 1);
+    await reference.delete();
+    await state.refreshImages();
+    expect(state.selectedImages, isEmpty);
+  });
+
   test('browser refresh changes provider when size changes with timestamp preserved', () async {
     final db = await openTestDatabase();
     addTearDown(() => closeTestDatabase(db));

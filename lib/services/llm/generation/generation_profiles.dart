@@ -6,7 +6,7 @@ import '../vendors/vendor_profile.dart';
 /// conservative existing descriptor until they have a declared alias contract.
 class GenerationProfiles {
   static const byWire = <WireProtocol, List<String>>{
-    WireProtocol.openaiImages: ['openaiImage', 'openaiImage2', 'openaiImage25'],
+    WireProtocol.openaiImages: ['openaiImage', 'openaiImage2', 'openaiImage25', 'openaiImage26'],
     WireProtocol.xaiImages: ['xaiImage', 'xaiImageLegacy'],
     WireProtocol.geminiImagen: ['imagen'],
     WireProtocol.geminiImage: [

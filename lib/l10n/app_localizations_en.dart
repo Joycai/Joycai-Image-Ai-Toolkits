@@ -6588,4 +6588,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get imageSizeFollowReferenceHint =>
       'Uses the last reference ratio; square without references';
+
+  @override
+  String get paramImageComplexity => 'Planning complexity';
 }

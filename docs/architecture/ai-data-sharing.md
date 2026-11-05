@@ -15,11 +15,14 @@ Connection reuse never reuses an authorization check. All 20 current protocol
 files that construct a client use this entry point. Do not call `buildClient` or
 `LLMClientPool.take` directly from a protocol or feature.
 
-The SHA-256 scope key covers disclosure version 1, configured vendor identity,
-full normalized endpoint, actual request origin (scheme/host/port), and the
-configured proxy URL. The decision stores only this hash and display origins,
-not API keys, request bodies, signed URLs, URL credentials or query parameters.
-A changed endpoint path/vendor/proxy or another recipient needs fresh permission.
+The SHA-256 scope key uses recipient-key format 2: actual request origin,
+configured service origin and proxy origin (scheme/host/port). Routes, vendor
+labels and credentials do not change the disclosed parties and reuse consent.
+Legacy route-keyed records are matched by these same stored origins, with a
+remembered denial taking precedence over a grant. A changed origin requires fresh
+permission. The disclosure and settings namespace remain version 1 because the
+data categories and purposes are unchanged. Records contain no credentials,
+request bodies, signed URLs or query parameters.
 Model names and preset labels never establish the recipient's identity. The UI
 names known official hosts using the existing platform registry; other hosts are
 shown as custom, with their actual origin always visible.
@@ -81,7 +84,7 @@ Decisions live in DatabaseService settings key `ai_data_sharing_consent_v1`.
 Settings exports redact it and restore ignores incoming values, even crafted
 nonempty ones, preserving this installation's existing decisions. Whole-library
 installation migration removes it from the imported database. Keys remain scoped
-to exact endpoints, so an imported channel cannot repurpose a local decision for
+to disclosed origins, so an imported channel cannot repurpose a local decision for
 another address. No database schema version change is needed.
 
 When changing disclosure categories/purposes, increment the version in both the

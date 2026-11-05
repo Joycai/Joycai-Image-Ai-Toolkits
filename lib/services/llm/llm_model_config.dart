@@ -549,7 +549,6 @@ class _ConsentClient extends http.BaseClient {
     final abort = request is http.Abortable ? request.abortTrigger : null;
     if (abort != null) unawaited(abort.then((_) => aborted = true));
     final scope = AiConsentScope.forRequest(
-      vendor: config.channelType,
       endpoint: config.endpoint,
       destination: request.url,
       proxy: config.proxyEnabled ? config.proxyUrl : null,

@@ -14,12 +14,10 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import '../../support/in_memory_database.dart';
 
 AiConsentScope scope({
-  String vendor = 'vendor',
   String endpoint = 'https://example.test/v1',
   String destination = 'https://example.test/chat',
   String? proxy,
 }) => AiConsentScope.forRequest(
-  vendor: vendor,
   endpoint: endpoint,
   destination: Uri.parse(destination),
   proxy: proxy,
@@ -94,28 +92,55 @@ void main() {
     await expectLater(deniedRestart.require(scope()), throwsA(isA<AiConsentRequired>()));
   });
 
-  test(
-    'endpoint path, vendor, actual host, port, scheme and proxy change require consent',
-    () async {
-      var prompts = 0;
-      service.requestConsent = (_) async {
-        prompts++;
-        return true;
-      };
-      await service.require(scope());
-      for (final changed in [
-        scope(endpoint: 'https://example.test/other'),
-        scope(vendor: 'other'),
-        scope(destination: 'https://uploads.test/file'),
-        scope(destination: 'https://example.test:444/chat'),
-        scope(destination: 'http://example.test/chat'),
-        scope(proxy: 'proxy.test:8080'),
-      ]) {
-        await service.require(changed);
-      }
-      expect(prompts, 7);
-    },
-  );
+  test('routes reuse consent while actual host, port, scheme and proxy require consent', () async {
+    var prompts = 0;
+    service.requestConsent = (_) async {
+      prompts++;
+      return true;
+    };
+    await service.require(scope());
+    for (final changed in [
+      scope(endpoint: 'https://example.test/other'),
+      scope(destination: 'https://uploads.test/file'),
+      scope(destination: 'https://example.test:444/chat'),
+      scope(destination: 'http://example.test/chat'),
+      scope(proxy: 'proxy.test:8080'),
+    ]) {
+      await service.require(changed);
+    }
+    expect(prompts, 5);
+  });
+
+  test('legacy grants and refusals apply across routes after restart', () async {
+    final originalScope = scope();
+    stored = jsonEncode([
+      {...originalScope.toJson(), 'key': 'legacy-route-key', 'allowed': true},
+    ]);
+    final other = scope(endpoint: 'https://example.test/images');
+    await service.require(other); // No presenter: reuse the legacy decision.
+    expect(service.isAllowed(other), true);
+    await service.revoke(originalScope);
+    await expectLater(service.require(other), throwsA(isA<AiConsentRequired>()));
+    await service.askAgain(other);
+    var prompts = 0;
+    service.requestConsent = (_) async {
+      prompts++;
+      return true;
+    };
+    await Future.wait([service.require(other), service.require(originalScope)]);
+    expect(prompts, 1);
+  });
+
+  test('conflicting legacy records display and enforce the remembered refusal', () async {
+    stored = jsonEncode([
+      {...scope().toJson(), 'key': 'old-denial', 'allowed': false},
+      {...scope().toJson(), 'key': 'old-grant', 'allowed': true},
+    ]);
+    await service.load();
+    expect(service.recipientDecisions.single.allowed, false);
+    expect(service.isAllowed(scope()), false);
+    await expectLater(service.require(scope()), throwsA(isA<AiConsentRequired>()));
+  });
 
   test('concurrent requests share one prompt; revoke invalidates pending approval', () async {
     var prompts = 0;

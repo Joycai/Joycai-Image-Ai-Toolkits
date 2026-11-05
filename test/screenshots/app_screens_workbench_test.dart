@@ -198,6 +198,7 @@ void main() {
   }
   for (final (modelId, suffix) in [
     ('gpt-image-2.5-flare', 'gptImageOutput'),
+    ('gpt-image-2.6-flare', 'gptImage26'),
     ('gemini-nano-banana-2.1', 'nanoBanana21'),
     ('gemini-3.1-flash-image', 'nanoBanana2'),
     ('gemini-3-pro-image', 'nanoBananaPro'),
@@ -229,7 +230,7 @@ void main() {
               }
               await tester.tap(find.text('模型选择').last);
               await settle(tester);
-              if (modelId == 'gpt-image-2.5-flare') {
+              if (modelId.startsWith('gpt-image-')) {
                 await actInRealAsync(tester, () async {
                   for (final (key, value) in [
                     ('background', 'transparent'),
@@ -249,7 +250,9 @@ void main() {
               await tester.ensureVisible(
                 find
                     .text(
-                      modelId == 'gpt-image-2.5-flare'
+                      modelId == 'gpt-image-2.6-flare'
+                          ? '构图复杂度'
+                          : modelId.startsWith('gpt-image-')
                           ? '输出压缩（0–100）'
                           : modelId == 'gemini-3-pro-image'
                           ? '尺寸'

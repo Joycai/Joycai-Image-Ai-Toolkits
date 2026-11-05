@@ -11427,6 +11427,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Uses the last reference ratio; square without references'**
   String get imageSizeFollowReferenceHint;
+
+  /// No description provided for @paramImageComplexity.
+  ///
+  /// In en, this message translates to:
+  /// **'Planning complexity'**
+  String get paramImageComplexity;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -17,7 +17,6 @@ void main() {
   late FixtureEnv env;
   setUpScreenSuite((e) => env = e);
   final scope = AiConsentScope.forRequest(
-    vendor: 'custom',
     endpoint: 'https://my-ai.example.com/v1',
     destination: Uri.parse('https://uploads.example.com/files'),
     proxy: 'http://localhost:8080',
@@ -55,7 +54,6 @@ void main() {
             await AiConsentService.instance.require(scope);
             await AiConsentService.instance.revoke(
               AiConsentScope.forRequest(
-                vendor: 'custom',
                 endpoint: 'https://blocked.example.com/v1',
                 destination: Uri.parse('https://blocked.example.com/chat'),
               ),

@@ -39,6 +39,8 @@ class GenerationParamTexts {
         return video ? l10n.resolution : l10n.imageSizeLabel;
       case 'imageThinkingLevel':
         return l10n.paramImageThinkingLevel;
+      case 'imageComplexity':
+        return l10n.paramImageComplexity;
       case 'quality':
         return l10n.quality;
       case 'promptExtendMode':
@@ -147,7 +149,7 @@ class GenerationParamTexts {
       }
     }
     if (paramKey == 'outputFormat') return value.toUpperCase();
-    if (paramKey == 'quality') {
+    if (paramKey == 'quality' || paramKey == 'complexity') {
       switch (value) {
         case 'low':
           return l10n.qualityLow;
