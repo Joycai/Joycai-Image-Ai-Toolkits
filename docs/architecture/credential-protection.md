@@ -13,6 +13,8 @@ macOS 商店配置（`Platform.isMacOS && !AppDistribution.direct`）在任何�
 
 - service：`<Bundle ID>.credentials`；account：`wrapping-key-v1`。
 - 不启用 iCloud 同步，使用 `AfterFirstUnlockThisDeviceOnly`，适配后台任务。
+  首次解锁后到设备重启前保持可用，普通锁屏不应被当作 Keychain 不可访问。
+  data-protection Keychain 与登录文件钥匙串不同，不能用锁定后者冒充此项验收。
 - 每次从 Keychain 读取，不在 Dart 或磁盘保存包装密钥副本。
 - 使用应用默认访问组；商店 Debug/Profile/Release 声明
   `$(AppIdentifierPrefix)$(PRODUCT_BUNDLE_IDENTIFIER)`。站外 entitlement 不增加此组。
@@ -29,7 +31,8 @@ macOS 商店配置（`Platform.isMacOS && !AppDistribution.direct`）在任何�
 API Key 发送。升级和新建都在 `DatabaseService` 发布连接之前完成凭据迁移/校验；
 `onUpgrade` / `onCreate` 不在 schema 回调里触发平台通道。
 
-迁移先开启 SQLite `secure_delete`，在一个事务内封装旧明文并逐值读回核对；全部成功
+迁移使用 `rawQuery` 开启 SQLite `secure_delete`（该 PRAGMA 返回结果行，Darwin 的
+`executeUpdate` 会拒绝），在一个事务内封装旧明文并逐值读回核对；全部成功
 才提交。失败回滚原始行、关闭连接、清除打开中的 Future，允许重试。提交后执行 WAL
 checkpoint/truncate，减少 SQLite 中的旧值残留；不承诺清除 APFS 快照、SSD 残留或
 用户原先的站外数据副本。站外整库迁入沙盒后，在首次打开目标库时走同一迁移。
@@ -39,7 +42,8 @@ checkpoint/truncate，减少 SQLite 中的旧值残留；不承诺清除 APFS �
 支持重试；恢复前不启动 AppState、任务队列或 MCP。运行中保存失败保留数据库原值。
 
 渠道新增、编辑、合并，以及代理密码/MCP Token 保存均经过保护层。业务读接口解密。
-轮换写入新的随机密文，数据库提交失败时旧值保留。包装密钥不会随单个凭据轮换。
+轮换写入新的随机密文，数据库提交失败时旧值保留。MCP 先停止监听，保存成功后才
+替换内存令牌；保存失败保持旧连接配置并停止服务，恢复访问后重新加载或轮换。包装密钥不会随单个凭据轮换。
 
 JSON 导出仍将凭据留空，不导出包装密钥或密文。恢复脱敏备份保留本机原有密文；旧备份
 中的非空明文 API Key/代理密码先加密再入库；拒绝把外来密文当作可移植凭据导入。

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/services/db/database_service.dart';
 import 'package:joycai_image_ai_toolkits/services/files/directory_access_service.dart';
+import 'package:joycai_image_ai_toolkits/services/security/credential_protection.dart';
 import 'package:joycai_image_ai_toolkits/services/tasks/task_queue_service.dart';
 import 'package:joycai_image_ai_toolkits/state/mcp_server_state.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -125,6 +126,32 @@ void main() {
     expect(await db.getSetting('mcp_enabled'), 'false');
   });
 
+  test('failed credential rotation preserves the usable persisted configuration', () async {
+    await state.shutdown();
+    state.dispose();
+    final protected = DatabaseService.forDatabase(
+      await db.database,
+      credentialProtection: _UnavailableProtection(),
+    );
+    state = McpServerState(queue: queue, database: protected);
+    await state.load();
+    final probe = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+    final port = probe.port;
+    await probe.close();
+    await state.configure(enable: true, portText: '$port', folders: '');
+    expect(state.running, isTrue);
+    final configuration = state.clientConfiguration;
+    final token = await db.getSetting('mcp_token');
+    await state.rotateToken();
+    expect(state.errorCode, 'settings');
+    expect(state.running, isFalse);
+    expect(await db.getSetting('mcp_token'), token);
+    expect(state.clientConfiguration, configuration);
+    await state.load();
+    expect(state.running, isTrue);
+    expect(state.clientConfiguration, configuration);
+  });
+
   test(
     'port conflicts are visible; rotate persists a new token and disable ignores missing folders',
     () async {
@@ -152,4 +179,15 @@ class _CancelledDirectoryAccess extends DirectoryAccessService {
 
   @override
   Future<bool> authorizeReadOnly(String path) async => false;
+}
+
+class _UnavailableProtection implements CredentialProtection {
+  @override
+  Future<void> prepare({required bool allowCreate}) async {}
+
+  @override
+  Future<String> seal(String plaintext) async => throw const CredentialProtectionException();
+
+  @override
+  Future<String> open(String envelope) async => throw const CredentialProtectionException();
 }

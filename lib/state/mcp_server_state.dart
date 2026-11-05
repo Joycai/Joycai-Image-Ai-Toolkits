@@ -161,8 +161,9 @@ class McpServerState extends ChangeNotifier {
     notifyListeners();
     try {
       await _server.stop();
-      _token = _newToken();
-      await _db.saveSetting('mcp_token', _token);
+      final nextToken = _newToken();
+      await _db.saveSetting('mcp_token', nextToken);
+      _token = nextToken;
       if (enabled && supported) await _server.start(port: port, token: _token);
     } catch (_) {
       errorCode = 'settings';

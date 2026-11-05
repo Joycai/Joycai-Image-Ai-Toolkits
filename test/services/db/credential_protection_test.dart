@@ -60,6 +60,17 @@ void main() {
   });
   tearDown(() => closeTestDatabase(plain));
 
+  test('migration handles PRAGMA result rows on the Darwin database adapter', () async {
+    await plain.addChannel(channel('darwin-original'));
+    await protected.migrateCredentials(_DarwinExecuteDatabase(raw));
+    expect((await protected.getChannels()).single.apiKey, 'darwin-original');
+    expect(
+      (await raw.query('llm_channels')).single['api_key'],
+      startsWith(CredentialProtection.prefix),
+    );
+    expect((await raw.rawQuery('PRAGMA secure_delete')).single.values.single, 1);
+  });
+
   test('migrates all three credentials, verifies on restart, remains idempotent', () async {
     final id = await plain.addChannel(channel('synthetic-api'));
     await plain.saveSetting('proxy_password', 'synthetic-proxy');
@@ -183,4 +194,29 @@ void main() {
     await protected.resetAllSettings();
     expect(await protected.getSetting('mcp_token'), isNull);
   });
+}
+
+/// FMDB's executeUpdate rejects statements yielding SQLITE_ROW; SQLite FFI's
+/// execute accepts them. Model that native boundary while using real SQLite for
+/// the transaction and data so a successful FFI-only migration cannot hide it.
+class _DarwinExecuteDatabase implements Database {
+  _DarwinExecuteDatabase(this.inner);
+  final Database inner;
+
+  @override
+  Future<void> execute(String sql, [List<Object?>? arguments]) async {
+    final rows = await inner.rawQuery(sql, arguments);
+    if (rows.isNotEmpty) throw StateError('Darwin execute received SQLITE_ROW');
+  }
+
+  @override
+  Future<List<Map<String, Object?>>> rawQuery(String sql, [List<Object?>? arguments]) =>
+      inner.rawQuery(sql, arguments);
+
+  @override
+  Future<T> transaction<T>(Future<T> Function(Transaction txn) action, {bool? exclusive}) =>
+      inner.transaction(action, exclusive: exclusive);
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
