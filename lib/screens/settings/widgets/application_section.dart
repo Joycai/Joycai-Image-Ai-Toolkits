@@ -28,6 +28,7 @@ import '../../../widgets/ui/app_setting_row.dart';
 import '../../../widgets/ui/app_snackbar.dart';
 import '../../../widgets/ui/app_switch.dart';
 import '../../../widgets/ui/searchable_picker.dart';
+import 'safety_settings_section.dart';
 import 'settings_layout.dart';
 
 /// `E1 · 1c` left: three groups — notifications and logging, the directories
@@ -131,6 +132,7 @@ class _ApplicationSectionState extends State<ApplicationSection> {
 
     return SettingsSections(
       children: [
+        const SafetySettingsSection(),
         SettingsBlock(
           caption: l10n.gptImageGenerationSettings,
           child: AppSettingRow(

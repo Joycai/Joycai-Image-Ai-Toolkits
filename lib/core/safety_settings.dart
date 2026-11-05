@@ -1,10 +1,12 @@
 /// Gemini per-request safety-filter configuration shared by the state layer,
-/// the workbench UI sliders and the request-payload builders.
+/// the application-settings sliders and the request-payload builders.
 ///
 /// See https://ai.google.dev/gemini-api/docs/safety-settings — four adjustable
 /// harm categories, each with a block threshold ranging from strictest
 /// (BLOCK_LOW_AND_ABOVE) to fully off (OFF).
 library;
+
+import 'app_distribution.dart';
 
 class SafetySettings {
   SafetySettings._();
@@ -18,7 +20,7 @@ class SafetySettings {
   ];
 
   /// Thresholds ordered strict → permissive (slider left → right).
-  static const List<String> thresholds = [
+  static const List<String> _allThresholds = [
     'BLOCK_LOW_AND_ABOVE',
     'BLOCK_MEDIUM_AND_ABOVE',
     'BLOCK_ONLY_HIGH',
@@ -26,8 +28,13 @@ class SafetySettings {
     'OFF',
   ];
 
-  /// Default matches the app's historical hardcoded behaviour.
-  static const String defaultThreshold = 'BLOCK_NONE';
+  /// Store-configured builds never request disabling or weakening these filters.
+  /// Direct builds retain their historical settings. This is not a local classifier.
+  static const bool restricted = !AppDistribution.direct;
+  static const List<String> thresholds = restricted
+      ? ['BLOCK_LOW_AND_ABOVE', 'BLOCK_MEDIUM_AND_ABOVE']
+      : _allThresholds;
+  static const String defaultThreshold = 'BLOCK_MEDIUM_AND_ABOVE';
 
   /// Key used both for the DB setting and for the task-parameter map.
   static const String paramKey = 'safetySettings';
@@ -49,7 +56,8 @@ class SafetySettings {
 
   /// Builds the REST `safetySettings` list from task options. [raw] is the
   /// value of `options['safetySettings']` (a category→threshold map); missing
-  /// or invalid input falls back to the defaults.
+  /// or invalid input falls back to the defaults. This last-mile normalization
+  /// also constrains old queued tasks and imported settings before transmission.
   static List<Map<String, String>> toApiList(dynamic raw) {
     final map = normalize(raw is Map ? raw : null);
     return [

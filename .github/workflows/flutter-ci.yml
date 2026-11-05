@@ -77,9 +77,12 @@ jobs:
           echo "Shard ${{ matrix.shard }}: ${#files[@]} files"
           flutter test -x screenshots "${files[@]}"
 
-      - name: 'Verify Direct Distribution File Access'
+      - name: 'Verify Direct Distribution Policies'
         if: matrix.shard == 0
         run: >-
           flutter test --dart-define=JOYCAI_DIRECT_DISTRIBUTION=true
           test/services/files/directory_access_service_test.dart
           test/services/files/persistent_media_service_test.dart
+          test/core/safety_settings_test.dart
+          test/services/llm/safety_payload_test.dart
+          test/screens/settings/safety_settings_section_test.dart

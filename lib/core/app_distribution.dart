@@ -1,5 +1,5 @@
-/// The direct-download macOS package deliberately runs outside App Sandbox.
-/// Set only together with the native direct-distribution build configuration.
+/// Explicit non-store builds. GitHub artifacts set this on every platform.
+/// On macOS, also select the native direct configuration (outside App Sandbox).
 abstract final class AppDistribution {
   static const direct = bool.fromEnvironment('JOYCAI_DIRECT_DISTRIBUTION');
 }

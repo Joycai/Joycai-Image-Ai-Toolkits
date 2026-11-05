@@ -498,7 +498,7 @@ Iterable<LLMResponseChunk> parseGoogleChunks(
 
 /// Standard `:generateContent` request body: system instruction, multimodal
 /// contents, image-generation config and per-request safety settings (from
-/// `options['safetySettings']`, defaulting to BLOCK_NONE for all categories).
+/// `options['safetySettings']`, normalized with the distribution safety policy).
 ///
 /// Every structural key is spelled **camelCase**. Google accepts snake_case
 /// too, but the relays that host this wire do not — and an unknown key is

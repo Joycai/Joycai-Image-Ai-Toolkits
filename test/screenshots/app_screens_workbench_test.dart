@@ -84,26 +84,6 @@ void main() {
     });
   }
 
-  testWidgets('generation settings expanded safety', (tester) async {
-    await shoot(
-      tester,
-      env: env,
-      screen: AppScreen.workbench,
-      size: kShotSizes.first,
-      locale: const Locale('en'),
-      suffix: 'generationSettings_expanded',
-      after: (tester) async {
-        unawaited(showGenerationSettingsDialog(tester.element(find.byType(ImageCard).first)));
-        await settle(tester);
-        final sliders = find.descendant(of: find.byType(Dialog), matching: find.byType(Slider));
-        expect(sliders, findsNWidgets(2));
-        await tester.tap(find.text('Safety Settings'));
-        await settle(tester);
-        expect(sliders, findsNWidgets(6));
-      },
-    );
-  });
-
   // The image workbench with a selection live (spec A1 16a). Tab 0's own
   // matrix shot only ever catches the empty state, and the right column is a
   // different panel with images picked: the strip of thumbnails, the model
