@@ -26,11 +26,11 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 | [`2026-11-windows-store.md`](2026-11-windows-store.md) | Microsoft Store 发布准备施工计划；按 WIN-01～WIN-06 推进，完成后归档结论并删除正文。 |
 | [`2026-08-assistant-timeout.md`](2026-08-assistant-timeout.md) | 不是施工说明书，是**一次真实故障的取证记录**（`api_logs/` 里七条日志的耗时还原）。`architecture/assistant-context.md` 直接引它作为「为什么要早elide」的证据。 |
 
-## 2026-11-07 · Microsoft Store 发布准备（待实现）
+## 2026-11-07 · Microsoft Store 发布准备（实现中）
 
 目标：Windows x64 MSIX；保留 GitHub 站外分发及现有 Mac App Store 工作。
 详细依赖、实现边界及验收条件见 [Windows Store 计划](2026-11-windows-store.md)。
-已开始 WIN-01 的构建工具实现；未修改应用运行时代码、安装测试包或提交商店。
+WIN-01 构建工具已提交；WIN-02 已开始实现。未安装测试包或提交商店。
 
 - [ ] **WIN-01**：独立 Store 构建、真实产品身份、四语言资源与产物检查。
   - 已新增隔离构建脚本与手动 preparation workflow，显式关闭 direct define，
@@ -51,6 +51,15 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
     应用、未跑 WACK、未进行正式身份打包或提交。上述剩余 WIN-01 验收保留未勾选；
     应用安装验收与 WACK 属于 WIN-06。
 - [ ] **WIN-02**：识别 MSIX 安装、禁用便携模式、验证数据路径与迁移。
+  - 已通过 Windows 原生 API 查询进程包身份；只有确认未打包的 Windows 进程可用便携模式。
+    身份未知时保守禁用；路径选择、marker 读写和现有设置/向导显示共用此边界。
+  - 打包 Windows 不再自动移动 Documents 中的旧数据库；保留站外 Windows 与 macOS 路径。
+    已审计数据库、日志、字体、持久媒体、临时缓存及输出路径来源。
+  - 尚欠安装后的路径重定向/旧数据发现验证，以及显式导入决策和升级/卸载验收；未宣称 WIN-02 完成。
+  - 验证：format 931 文件；analyze `No issues found!`；非截图测试 3536 通过、5 跳过。
+    首轮 wizard 的目录 watcher 出现 Windows access-denied，针对性重跑与完整重跑均通过；
+    direct 模式下新增路径/身份测试及该 wizard 测试共 7 项通过，包含真实 Windows API 调用。
+    本轮未重新打包或安装 MSIX；WIN-01 留存产物不包含这些运行时改动。
 - [ ] **WIN-03**：Windows 凭据保护、事务迁移、恢复与原生验收。
 - [ ] **WIN-04**：跨供应商内容安全、共享授权、报告入口与自定义端点处置。
 - [ ] **WIN-05**：隐私政策、商店材料、能力说明及可用审核账号。

@@ -262,8 +262,11 @@ class DatabaseService {
     final dataDir = await AppPaths.getDataDirectory();
     final newPath = join(dataDir, 'joycai_workbench.db');
 
-    // Legacy migration check (Only for non-portable mode or first transition)
-    if (!await AppPaths.isPortableMode()) {
+    // Packaged Windows must not move an unpackaged installation's database.
+    // Explicit, source-preserving import needs installed MSIX discovery checks.
+    // Unknown Windows identity is treated conservatively as packaged here too.
+    if ((!Platform.isWindows || AppPaths.supportsPortableMode) &&
+        !await AppPaths.isPortableMode()) {
       final docsDir = await getApplicationDocumentsDirectory();
       final oldPath = join(docsDir.path, 'joycai_workbench.db');
 

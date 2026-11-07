@@ -75,3 +75,32 @@ isolation. See [Microsoft's capability guidance](https://learn.microsoft.com/en-
 
 The GitHub `flutter-build.yml` workflow and default sideload `msix_config` continue
 to create direct-distribution packages; this path never reuses their compiled output.
+
+## Packaged storage boundary (WIN-02)
+
+`WindowsPackage` queries the process through
+[`GetCurrentPackageFullName`](https://learn.microsoft.com/en-us/windows/win32/api/appmodel/nf-appmodel-getcurrentpackagefullname).
+Only `APPMODEL_ERROR_NO_PACKAGE` authorizes portable storage. A package identity,
+unexpected result or unavailable API disables it. This covers sideloaded MSIX as
+well as Store builds, independent of `JOYCAI_DIRECT_DISTRIBUTION`.
+
+`PortableStorage` owns marker reads and writes. Packaged processes ignore an existing
+`.portable` and never create or delete it. `AppPaths` uses application support storage
+instead; the existing wizard/settings visibility checks use the same policy. Mac
+active-installation resolution and unpackaged Windows portable behavior are unchanged.
+Packaged/unknown Windows processes also skip the legacy Documents database rename:
+startup must not move another installation's source database.
+
+Source audit: database, debug logs, fonts, durable media and MCP staging derive from
+`AppPaths`/`DatabaseService`; scratch media and thumbnails use OS temporary storage.
+The ordinary console log is in memory. Windows output folders are user-selected saved
+settings. The only executable-relative write found in `lib` was the portable marker.
+These findings do not validate OS redirection or user-selected paths at runtime.
+
+Still pending: inspect the actual application-support path and existing direct-install
+data visibility under installed MSIX on supported Windows versions. Determine whether
+an explicit source-preserving import or separate storage namespace is needed before
+enabling migration. No automatic Windows import was added. Native directory selection,
+file operations, backup/restore, package upgrade and uninstall acceptance remain open;
+WIN-02 is not complete. Keep user output outside package-owned storage during these
+tests and verify uninstall does not remove it.

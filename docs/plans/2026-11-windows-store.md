@@ -1,7 +1,8 @@
 # Microsoft Store release preparation
 
 Created: 2026-11-07. Status: WIN-01 preparation implemented and locally verified;
-production identity and pinned-SDK CI verification pending. WIN-02 through WIN-06 planned.
+production identity and pinned-SDK CI verification pending. WIN-02 portable storage
+boundary implemented; installed-path/migration acceptance pending. WIN-03 through WIN-06 planned.
 
 Prepare Joycai's Flutter Windows desktop application for Microsoft Store distribution
 as an x64 MSIX. Keep the GitHub distribution and ongoing Mac App Store work working.
@@ -60,6 +61,12 @@ Store-mode safety tests pass; GitHub direct artifacts still use their own settin
 ### WIN-02 Packaged storage and portable mode
 
 Dependencies: WIN-01 test packaging path.
+
+Implemented: runtime package identity, conservative portable-mode enforcement shared
+by paths and marker operations, and suppression of the destructive legacy Documents
+database move for packaged Windows. Existing settings/wizard gates consume the policy.
+See the [storage boundary](../architecture/windows-store-build.md#packaged-storage-boundary-win-02)
+for the source audit and installed-package checks still owed.
 
 - Detect Windows package identity at runtime through a small host adapter so all
   packaged installs, including sideloaded MSIX, disable portable mode. A Dart Store
