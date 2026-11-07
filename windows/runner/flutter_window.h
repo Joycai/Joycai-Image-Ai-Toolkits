@@ -26,6 +26,7 @@ class FlutterWindow : public Win32Window {
                          LPARAM const lparam) noexcept override;
 
  private:
+  std::unique_ptr<flutter::MethodChannel<flutter::EncodableValue>> store_channel_;
   void UpdateTaskbarBadge();
   UINT taskbar_created_message_ = 0;
   bool taskbar_ready_ = false;

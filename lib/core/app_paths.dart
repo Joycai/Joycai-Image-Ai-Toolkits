@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'app_distribution.dart';
 import 'portable_storage.dart';
 import 'windows_package_identity.dart';
+import 'windows_package_storage.dart';
 
 class AppPaths {
   static final _portable = PortableStorage(
@@ -18,8 +19,15 @@ class AppPaths {
   static bool get supportsPortableMode => _portable.supported;
 
   /// Bootstrap location stays stable when a complete installation is imported.
-  static Future<String> getSupportDirectory() async =>
-      (await getApplicationSupportDirectory()).path;
+  static bool get usesWindowsPackageStorage =>
+      Platform.isWindows && WindowsPackage.identity != WindowsPackageIdentity.unpackaged;
+
+  static bool get supportsInstallationImport =>
+      usesWindowsPackageStorage || (Platform.isMacOS && !AppDistribution.direct);
+
+  static Future<String> getSupportDirectory() async => usesWindowsPackageStorage
+      ? WindowsPackageStorage.supportDirectory()
+      : (await getApplicationSupportDirectory()).path;
 
   /// A macOS import is activated by one atomic pointer replacement. Older
   /// installations remain intact, including their database WAL and owned media.
@@ -42,7 +50,7 @@ class AppPaths {
   static Future<String> getDataDirectory() async {
     if (!supportsPortableMode) {
       final support = await getSupportDirectory();
-      return Platform.isMacOS && !AppDistribution.direct ? resolveDataDirectory(support) : support;
+      return supportsInstallationImport ? resolveDataDirectory(support) : support;
     }
 
     return _portable.dataDirectory(getSupportDirectory);

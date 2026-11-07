@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/app_distribution.dart';
 import '../../../core/app_paths.dart';
 import '../../../core/app_semantic_colors.dart';
 import '../../../core/app_theme.dart';
@@ -221,7 +220,7 @@ class _ApplicationSectionState extends State<ApplicationSection> {
               children: [
                 if (!Platform.isIOS) _buildOutputDirectoryTile(appState, l10n),
                 if (!Platform.isIOS) ...[const SizedBox(height: 8), _buildKnowledgeBaseTile(l10n)],
-                if (Platform.isMacOS && !AppDistribution.direct) ...[
+                if (AppPaths.supportsInstallationImport) ...[
                   const SizedBox(height: 8),
                   AppSettingRow(
                     title: l10n.installationImportSchedule,

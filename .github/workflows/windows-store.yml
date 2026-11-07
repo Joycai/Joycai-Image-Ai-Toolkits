@@ -32,6 +32,15 @@ jobs:
         run: dart format --output=none --set-exit-if-changed lib test tool
       - name: Analyze
         run: flutter analyze
+      - name: Build native Windows storage tests
+        run: |
+          cmake -S windows/tests -B build/windows-store-native -A x64
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cmake --build build/windows-store-native --config Release
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & build/windows-store-native/Release/windows_store_native_tests.exe
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          "JOYCAI_WINDOWS_NATIVE_TEST_EXE=$((Resolve-Path build/windows-store-native/Release/windows_store_native_tests.exe).Path)" >> $env:GITHUB_ENV
       - name: Test
         run: flutter test -x screenshots
       - name: Verify direct distribution behavior

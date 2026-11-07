@@ -4520,6 +4520,21 @@ class AppLocalizationsJa extends AppLocalizations {
   String get credentialRecoveryRetry => '再試行';
 
   @override
+  String get installationImportWindowsDescription =>
+      'joycai_workbench.db を含む旧データフォルダーを選択してください。Windows の直接配布版では設定画面で場所を確認できます。ポータブルモードでは実行ファイルのフォルダーです。このパッケージへコピーされ、元のデータは保持されます。';
+
+  @override
+  String get credentialRecoveryWindowsBody =>
+      'この Windows ユーザーの保存済み認証情報を検証できません。元の Windows アカウントとユーザープロファイルで再試行してください。暗号化されたデータベースのコピーでは認証情報を移行できません。再試行しても認証情報は消去されません。アクセスを復旧できない場合は、認証情報を消去して設定画面で再入力できます。消去前にデータフォルダー内の credential-recovery にデータベースのスナップショットを保存します。';
+
+  @override
+  String get credentialRecoveryResetConsent =>
+      'すべてのチャンネルキー、プロキシパスワード、MCP トークンを消去します。チャンネル、プロンプト、履歴、メディアは保持します。認証情報を設定で再入力し、MCP は無効のままにします。';
+
+  @override
+  String get credentialRecoveryReset => '認証情報を消去して続行';
+
+  @override
   String get workbench => 'ワークベンチ';
 
   @override

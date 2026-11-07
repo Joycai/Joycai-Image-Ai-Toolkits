@@ -10,6 +10,7 @@ add_executable(${BINARY_NAME} WIN32
   "flutter_window.cpp"
   "gpu_info.cpp"
   "taskbar_badge.cpp"
+  "windows_store_host.cpp"
   "main.cpp"
   "utils.cpp"
   "win32_window.cpp"
@@ -38,6 +39,7 @@ target_link_libraries(${BINARY_NAME} PRIVATE flutter flutter_wrapper_app)
 target_link_libraries(${BINARY_NAME} PRIVATE "dwmapi.lib" "gdiplus.lib" "ole32.lib" "uuid.lib")
 # gpu_info.cpp asks D3D/DXGI which adapter this process renders on.
 target_link_libraries(${BINARY_NAME} PRIVATE "d3d11.lib" "dxgi.lib")
+target_link_libraries(${BINARY_NAME} PRIVATE "crypt32.lib" "shell32.lib")
 target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}")
 
 # Run the Flutter tool portions of the build. This must not be removed.

@@ -11,6 +11,7 @@ import 'package:window_manager/window_manager.dart';
 import 'bench/render_bench.dart';
 import 'core/app_distribution.dart';
 import 'core/app_effects.dart';
+import 'core/app_paths.dart';
 import 'core/app_shortcuts.dart';
 import 'core/app_theme.dart';
 import 'core/constants.dart';
@@ -38,6 +39,8 @@ import 'services/llm/protocols/minimax_h3_base_video_protocol.dart';
 import 'services/media/video_thumbnail_service.dart';
 import 'services/privacy/ai_consent_service.dart';
 import 'services/security/credential_protection.dart';
+import 'services/security/credential_recovery_service.dart';
+import 'services/security/windows_credential_protection.dart';
 import 'services/system/dock_badge_service.dart';
 import 'services/system/notification_service.dart';
 import 'services/system/window_chrome_service.dart';
@@ -58,6 +61,8 @@ void main() async {
 
   if (Platform.isMacOS && !AppDistribution.direct) {
     DatabaseService().configureCredentialProtection(const MacCredentialProtection());
+  } else if (AppPaths.usesWindowsPackageStorage) {
+    DatabaseService().configureCredentialProtection(const WindowsCredentialProtection());
   }
 
   await _hideNativeTitleBar();
@@ -66,7 +71,7 @@ void main() async {
 
   await DirectoryAccessService.instance.restoreAll();
 
-  if (Platform.isMacOS && !AppDistribution.direct) {
+  if (AppPaths.supportsInstallationImport) {
     final migration = InstallationMigrationService();
     if (await migration.shouldOffer()) {
       final done = Completer<void>();
@@ -100,6 +105,7 @@ void main() async {
             ],
           ),
           home: InstallationMigrationScreen(
+            windows: AppPaths.usesWindowsPackageStorage,
             state: state,
             onContinue: () {
               if (!done.isCompleted) done.complete();
@@ -116,7 +122,7 @@ void main() async {
     }
   }
 
-  if (Platform.isMacOS && !AppDistribution.direct) {
+  if (AppPaths.supportsInstallationImport) {
     try {
       await DatabaseService().database;
     } on CredentialProtectionException {
@@ -135,6 +141,16 @@ void main() async {
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           home: CredentialRecoveryScreen(
+            onReset: AppPaths.usesWindowsPackageStorage
+                ? () async {
+                    // Do not discard saved credentials while the OS protector
+                    // itself is unavailable; clearing cannot repair that case.
+                    await const WindowsCredentialProtection().prepare(allowCreate: true);
+                    await CredentialRecoveryService().reset();
+                    await DatabaseService().database;
+                    if (!recovered.isCompleted) recovered.complete();
+                  }
+                : null,
             onRetry: () async {
               await DatabaseService().database;
               if (!recovered.isCompleted) recovered.complete();

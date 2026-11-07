@@ -7,8 +7,9 @@ import '../../widgets/ui/app_button.dart';
 /// Bootstrap only: no AppState, live tasks or credential-dependent services exist
 /// until the caller has successfully reopened the database.
 class CredentialRecoveryScreen extends StatefulWidget {
-  const CredentialRecoveryScreen({super.key, required this.onRetry});
+  const CredentialRecoveryScreen({super.key, required this.onRetry, this.onReset});
   final Future<void> Function() onRetry;
+  final Future<void> Function()? onReset;
 
   @override
   State<CredentialRecoveryScreen> createState() => _CredentialRecoveryScreenState();
@@ -16,11 +17,13 @@ class CredentialRecoveryScreen extends StatefulWidget {
 
 class _CredentialRecoveryScreenState extends State<CredentialRecoveryScreen> {
   bool _busy = false;
+  bool _confirmed = false;
 
-  Future<void> _retry() async {
+  Future<void> _retry({bool reset = false}) async {
+    if (_busy || (reset && !_confirmed)) return;
     setState(() => _busy = true);
     try {
-      await widget.onRetry();
+      await (reset ? widget.onReset!() : widget.onRetry());
     } catch (_) {
       // Keep the recovery instructions visible; never expose native error data.
     } finally {
@@ -48,9 +51,31 @@ class _CredentialRecoveryScreenState extends State<CredentialRecoveryScreen> {
                   const SizedBox(height: AppSpace.s16),
                   Text(l10n.credentialRecoveryTitle, style: theme.textTheme.headlineSmall),
                   const SizedBox(height: AppSpace.s16),
-                  Text(l10n.credentialRecoveryBody, style: theme.textTheme.bodyLarge),
+                  Text(
+                    widget.onReset == null
+                        ? l10n.credentialRecoveryBody
+                        : l10n.credentialRecoveryWindowsBody,
+                    style: theme.textTheme.bodyLarge,
+                  ),
                   const SizedBox(height: AppSpace.s28),
                   AppButton(label: l10n.credentialRecoveryRetry, loading: _busy, onPressed: _retry),
+                  if (widget.onReset != null) ...[
+                    const SizedBox(height: AppSpace.s28),
+                    CheckboxListTile(
+                      contentPadding: EdgeInsets.zero,
+                      value: _confirmed,
+                      onChanged: _busy
+                          ? null
+                          : (value) => setState(() => _confirmed = value ?? false),
+                      title: Text(l10n.credentialRecoveryResetConsent),
+                    ),
+                    const SizedBox(height: AppSpace.s16),
+                    AppButton(
+                      label: l10n.credentialRecoveryReset,
+                      variant: AppButtonVariant.destructiveOutline,
+                      onPressed: !_busy && _confirmed ? () => _retry(reset: true) : null,
+                    ),
+                  ],
                 ],
               ),
             ),

@@ -2,7 +2,8 @@
 
 Created: 2026-11-07. Status: WIN-01 preparation implemented and locally verified;
 production identity and pinned-SDK CI verification pending. WIN-02 portable storage
-boundary implemented; installed-path/migration acceptance pending. WIN-03 through WIN-06 planned.
+boundary and explicit import implemented; installed acceptance pending. WIN-03 DPAPI,
+migration and recovery implemented; packaged/cross-user acceptance pending. WIN-04 through WIN-06 planned.
 
 Prepare Joycai's Flutter Windows desktop application for Microsoft Store distribution
 as an x64 MSIX. Keep the GitHub distribution and ongoing Mac App Store work working.
@@ -67,6 +68,8 @@ by paths and marker operations, and suppression of the destructive legacy Docume
 database move for packaged Windows. Existing settings/wizard gates consume the policy.
 See the [storage boundary](../architecture/windows-store-build.md#packaged-storage-boundary-win-02)
 for the source audit and installed-package checks still owed.
+Follow-up now uses explicit package-local storage and a source-preserving Windows
+import. Native acceptance remains open; see the [validation record](../testing/windows-store-storage-security.md).
 
 - Detect Windows package identity at runtime through a small host adapter so all
   packaged installs, including sideloaded MSIX, disable portable mode. A Dart Store
@@ -88,6 +91,12 @@ does not remove user-owned output folders.
 ### WIN-03 Windows credential protection
 
 Dependencies: WIN-02 storage behavior; can be developed beside WIN-01.
+
+Implemented: user-scoped native DPAPI, distinct versioned envelope, schema 54 and explicit
+downgrade refusal, transactional migration/read-back, early startup gate, redacted backup/foreign
+envelope rejection and explicit Windows credential re-entry recovery with a retained
+snapshot. Mac Keychain behavior and unpackaged Windows storage remain intact. Native
+DPAPI tests use synthetic data; installed/cross-user checks are not yet complete.
 
 - Extend the existing `CredentialProtection` boundary with Windows user-scoped DPAPI
   support. Decide and document a platform-specific versioned envelope before writing

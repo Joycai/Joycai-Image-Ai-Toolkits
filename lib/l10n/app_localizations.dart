@@ -8169,6 +8169,30 @@ abstract class AppLocalizations {
   /// **'Try again'**
   String get credentialRecoveryRetry;
 
+  /// No description provided for @installationImportWindowsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the old data folder containing joycai_workbench.db. For a direct Windows installation, use the data folder shown in its Settings, or the executable folder if portable mode is enabled. Data is copied into this package; the source is retained.'**
+  String get installationImportWindowsDescription;
+
+  /// No description provided for @credentialRecoveryWindowsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Joycai cannot verify saved credentials for this Windows user. Try again using the original Windows account and profile. A copied encrypted database is not a way to transfer credentials. Retry does not clear credentials. If access cannot be restored, you can clear the saved credentials and enter them again in Settings. A database snapshot is kept first in the data folder\'s credential-recovery directory.'**
+  String get credentialRecoveryWindowsBody;
+
+  /// No description provided for @credentialRecoveryResetConsent.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear all saved channel keys, proxy password and MCP token. Keep channels, prompts, history and media. I will re-enter credentials in Settings; MCP will remain disabled.'**
+  String get credentialRecoveryResetConsent;
+
+  /// No description provided for @credentialRecoveryReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear credentials and continue'**
+  String get credentialRecoveryReset;
+
   /// No description provided for @workbench.
   ///
   /// In en, this message translates to:

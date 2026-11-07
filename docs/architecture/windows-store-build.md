@@ -97,10 +97,25 @@ The ordinary console log is in memory. Windows output folders are user-selected 
 settings. The only executable-relative write found in `lib` was the portable marker.
 These findings do not validate OS redirection or user-selected paths at runtime.
 
-Still pending: inspect the actual application-support path and existing direct-install
-data visibility under installed MSIX on supported Windows versions. Determine whether
-an explicit source-preserving import or separate storage namespace is needed before
-enabling migration. No automatic Windows import was added. Native directory selection,
-file operations, backup/restore, package upgrade and uninstall acceptance remain open;
-WIN-02 is not complete. Keep user output outside package-owned storage during these
-tests and verify uninstall does not remove it.
+Packaged Windows now explicitly selects
+`<unredirected LocalAppData>/Packages/<runtime package family>/LocalState/Joycai`.
+The host queries `GetCurrentPackageFamilyName` and `SHGetKnownFolderPath` with
+`KF_FLAG_NO_PACKAGE_REDIRECTION`; it never guesses the family from build metadata.
+No package identity or path-query failure means no fallback to the direct database.
+This avoids the legacy Roaming AppData merged view before credential encryption.
+Package family identity, not the version, owns data across upgrades. See Microsoft's
+[known-folder flags](https://learn.microsoft.com/en-us/windows/win32/api/shlobj_core/ne-shlobj_core-known_folder_flag).
+
+First launch and Settings offer the existing explicit installation importer, with
+Windows instructions. The old app must be closed. SQLite `VACUUM INTO` captures
+committed WAL data into an isolated installation; owned media is copied and checked,
+external output folders remain external, and one active-installation pointer selects
+the copy. Existing source/current installations remain intact; MCP is disabled and
+AI consent cleared. Windows selects the FFI SQLite factory before any app DB opens.
+Native package discovery never automatically imports or encrypts direct-install data.
+
+Installed path checks, directory selection, drag/drop, file operations, backup/restore,
+package upgrade and uninstall acceptance remain open. WIN-02 is not complete. The
+host used for implementation has no Windows Sandbox executable; it was not modified
+to add Sandbox, accounts or certificate trust. The exact remaining procedure and
+recorded checks are in [Windows storage/security validation](../testing/windows-store-storage-security.md).

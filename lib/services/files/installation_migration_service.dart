@@ -30,7 +30,15 @@ class InstallationMigrationService {
 
   final Future<String> Function() _supportDirectory;
   final DatabaseFactory? _injectedFactory;
-  DatabaseFactory get _factory => _injectedFactory ?? databaseFactory;
+  DatabaseFactory get _factory {
+    if (_injectedFactory != null) return _injectedFactory;
+    if (Platform.isWindows || Platform.isLinux) {
+      sqfliteFfiInit();
+      return databaseFactoryFfi;
+    }
+    return databaseFactory;
+  }
+
   bool _running = false;
   static const databaseName = 'joycai_workbench.db';
   static const _ownedDirectories = ['media', 'mcp-inputs', 'fonts', 'usage-journal'];

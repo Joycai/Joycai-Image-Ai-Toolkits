@@ -55,12 +55,32 @@ WIN-01 构建工具已提交；WIN-02 已开始实现。未安装测试包或提
     身份未知时保守禁用；路径选择、marker 读写和现有设置/向导显示共用此边界。
   - 打包 Windows 不再自动移动 Documents 中的旧数据库；保留站外 Windows 与 macOS 路径。
     已审计数据库、日志、字体、持久媒体、临时缓存及输出路径来源。
-  - 尚欠安装后的路径重定向/旧数据发现验证，以及显式导入决策和升级/卸载验收；未宣称 WIN-02 完成。
+  - 后续已改用运行时包家族的 `LocalState/Joycai`，避免 Roaming AppData 合并视图；
+    Windows 启动/设置复用保留源数据的显式导入，初始化 FFI SQLite 后复制 WAL 快照及自有媒体。
+    原数据库及外部输出不自动迁移/加密。尚欠真实安装、升级/卸载及原生文件操作验收。
   - 验证：format 931 文件；analyze `No issues found!`；非截图测试 3536 通过、5 跳过。
     首轮 wizard 的目录 watcher 出现 Windows access-denied，针对性重跑与完整重跑均通过；
     direct 模式下新增路径/身份测试及该 wizard 测试共 7 项通过，包含真实 Windows API 调用。
     本轮未重新打包或安装 MSIX；WIN-01 留存产物不包含这些运行时改动。
 - [ ] **WIN-03**：Windows 凭据保护、事务迁移、恢复与原生验收。
+  - 已实现用户级 DPAPI，独立 Windows envelope、启动前迁移/验证、事务读回、
+    备份脱敏及跨平台/未知密文拒绝。未打包 Windows 保留现有方式，Mac Keychain 格式不变。
+  - schema 54 配合显式降级拒绝；验证发现旧 sqflite 无 handler 时会静默降级，
+    因此不能宣称旧二进制仅靠版本号就安全。加密库禁止交给旧版。
+  - Windows 恢复页支持重试及明确勾选后清除三类凭据；先验证 DPAPI、保存并检查 SQLite 快照，
+    再事务清除凭据、关闭 MCP，保留非秘密数据以便重录。四语言说明及响应式渲染已补齐。
+  - 生产 C++ DPAPI 实现通过 MSVC 原生测试；Dart 集成测试通过 stdin/stdout 调用同一原生实现，
+    验证迁移、重启、轮换、损坏、失败回滚、备份及外来密文；不是已安装应用/跨用户验收。
+  - [验证记录与待验收步骤](../testing/windows-store-storage-security.md)：本机无 Windows Sandbox，
+    未改动用户账户、证书信任或安装包。隔离标准用户、跨用户 DPAPI、升级/卸载仍待验收。
+    下载 Cookie 仍明文并受已有保留策略控制，隐私说明复核保留给 WIN-05。
+  - 本轮最终验证：format 939 文件；analyze `No issues found!`；原生 DPAPI 集成启用时，
+    全量非截图测试以 concurrency=2 通过 3546 项、跳过 5 项；默认并发曾触发既有 wizard watcher
+    access-denied。Windows/Mac 恢复及 Windows 导入截图共 96 项通过，32 张 Mac 基线哈希不变。
+    direct 模式便携/身份/凭据/原生 DPAPI/安全边界专项测试 25 项通过。
+  - 全新 Windows x64 Release 未签名 `4.31.8.0` preparation MSIX 已构建并通过包校验：
+    `build/windows-store/preparation-rll14jpq/artifacts/`，源码哈希与当前实现一致。
+    本机仍为 Flutter 3.47.9 preparation override，CI 固定 3.47.8；未远程运行、安装或提交。
 - [ ] **WIN-04**：跨供应商内容安全、共享授权、报告入口与自定义端点处置。
 - [ ] **WIN-05**：隐私政策、商店材料、能力说明及可用审核账号。
 - [ ] **WIN-06**：WACK、标准用户安装/升级/卸载及最终候选产物验收。

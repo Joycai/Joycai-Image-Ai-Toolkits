@@ -1,10 +1,11 @@
-# MAS-06 · macOS 凭据保护
+# Credential protection · MAS-06 / WIN-03
 
 ## 范围与存储约定
 
 macOS 商店配置（`Platform.isMacOS && !AppDistribution.direct`）在任何实时数据库访问前
 配置 `MacCredentialProtection`。保护渠道 API Key、代理密码和 MCP Token。
-站外配置及其他平台暂保留原有存储方式；文件权限和 JSON 导出脱敏仍适用于所有配置。
+未打包的 Windows 站外配置及其他平台保留原有存储方式；打包 Windows 使用下文 DPAPI。
+文件权限和 JSON 导出脱敏仍适用于所有配置。
 这不是整库加密：提示词、素材路径、下载 Cookie 等不在本次加密范围内。
 
 采用 Apple CryptoKit AES-256-GCM（随机 nonce、认证标签）。SQLite 的原有字段保存
@@ -27,8 +28,9 @@ macOS 商店配置（`Platform.isMacOS && !AppDistribution.direct`）在任何�
 
 ## 迁移、恢复与失败
 
-数据库版本提升到 53，列定义不变。旧版不能直接打开新版本数据库，避免将密文作为
-API Key 发送。升级和新建都在 `DatabaseService` 发布连接之前完成凭据迁移/校验；
+MAS-06 将数据库版本提升到 53，WIN-03 进一步提升到 54，列定义不变。当前版本显式拒绝
+降级；旧版若没有降级处理器，不能仅依赖版本号阻止误读密文，禁止将加密数据库交给旧版。
+升级和新建都在 `DatabaseService` 发布连接之前完成凭据迁移/校验；
 `onUpgrade` / `onCreate` 不在 schema 回调里触发平台通道。
 
 迁移使用 `rawQuery` 开启 SQLite `secure_delete`（该 PRAGMA 返回结果行，Darwin 的
@@ -65,3 +67,51 @@ MCP Token、授权和开关仍不从外部备份导入。跨设备应使用脱�
 Apple 接口依据：[数据保护 Keychain](https://developer.apple.com/documentation/security/ksecusedataprotectionkeychain)、
 [默认访问组](https://developer.apple.com/documentation/security/ksecattraccessgroup)、
 [CryptoKit AES.GCM](https://developer.apple.com/documentation/cryptokit/aes/gcm)。
+
+## WIN-03 · Windows packaged credential protection
+
+Runtime package identity enables `WindowsCredentialProtection` before database,
+AppState, tasks or MCP startup, including sideloaded direct MSIX. Unpackaged Windows
+keeps its prior plaintext/portable behavior. Unknown identity cannot select direct
+storage or plaintext fallback. Mac CryptoKit/Keychain envelopes and signing are unchanged.
+
+The Windows envelope is `joycai-secret:win-dpapi:v1:<base64 DPAPI blob>`. Native
+`CryptProtectData` / `CryptUnprotectData` use user scope, `CRYPTPROTECT_UI_FORBIDDEN`
+and a fixed application/version entropy string for domain separation. No
+`CRYPTPROTECT_LOCAL_MACHINE`, application wrapping-key file, certificate or UI prompt
+is used. DPAPI owns its master keys; `prepare` verifies a synthetic round trip, and
+bootstrap validates every stored envelope. The native adapter returns generic errors.
+See [CryptProtectData](https://learn.microsoft.com/en-us/windows/win32/api/dpapi/nf-dpapi-cryptprotectdata).
+
+Schema **54** records the Windows envelope format; this build explicitly rejects
+database downgrades. The installed sqflite adapter silently downgrades without a
+handler, so an older build cannot be assumed to enforce the version stamp. Never
+open an encrypted database in an older application; package-local isolation and
+source-preserving import keep the existing direct installation's database untouched.
+No SQL columns change; both create and upgrade use the existing post-open migration.
+The transaction verifies ciphertext round trips and reads stored rows back from SQLite
+before committing. All `joycai-secret:` values, including unknown versions and other
+platforms, are treated as encrypted: an unsupported protector, direct reader or foreign
+backup import rejects them. Normal JSON backup stays redacted. Copying encrypted SQLite
+is not a supported credential transfer mechanism. User profile/domain DPAPI recovery
+rules can vary; this is not a promise that every cross-device copy is undecryptable.
+
+Windows failure recovery preserves Retry and adds an explicitly confirmed reset of
+channel keys, proxy password and MCP token. Before resetting, verify DPAPI availability,
+save a WAL-aware `VACUUM INTO` snapshot under `credential-recovery/before-reset-*`, and
+check its SQLite integrity. Then clear only those credential fields transactionally
+and disable MCP. Snapshot failure leaves original credentials unchanged. Other data
+remains; users re-enter credentials in Settings. The retained snapshot may contain
+sensitive data and is not an export for sharing. Mac recovery continues to offer Retry
+without this Windows reset action.
+
+Audit boundary: downloader cookies remain plaintext in `downloader_cookies`, governed
+by the existing retention/off controls; they are not protected by this adapter. Debug
+logs mask named keys, authorization headers and credential URL parameters, but logs
+can still contain user prompts and media metadata. Native errors and recovery errors
+never include ciphertext, keys or OS error details. This is not whole-database encryption
+or protection against another process already controlling the same Windows account.
+Cookie disclosure/retention and public privacy wording must be reviewed in WIN-05.
+
+Automated/native and installed-package limits are recorded in
+[Windows validation](../testing/windows-store-storage-security.md).
