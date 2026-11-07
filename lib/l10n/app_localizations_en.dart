@@ -4692,6 +4692,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get credentialRecoveryRetry => 'Try again';
 
   @override
+  String get installationImportWindowsDescription =>
+      'Choose the old data folder containing joycai_workbench.db. For a direct Windows installation, use the data folder shown in its Settings, or the executable folder if portable mode is enabled. Data is copied into this package; the source is retained.';
+
+  @override
+  String get credentialRecoveryWindowsBody =>
+      'Joycai cannot verify saved credentials for this Windows user. Try again using the original Windows account and profile. A copied encrypted database is not a way to transfer credentials. Retry does not clear credentials. If access cannot be restored, you can clear the saved credentials and enter them again in Settings. A database snapshot is kept first in the data folder\'s credential-recovery directory.';
+
+  @override
+  String get credentialRecoveryResetConsent =>
+      'Clear all saved channel keys, proxy password and MCP token. Keep channels, prompts, history and media. I will re-enter credentials in Settings; MCP will remain disabled.';
+
+  @override
+  String get credentialRecoveryReset => 'Clear credentials and continue';
+
+  @override
   String get workbench => 'Workbench';
 
   @override

@@ -23,7 +23,99 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 
 | 文件 | 为什么留着 |
 |---|---|
+| [`2026-11-windows-store.md`](2026-11-windows-store.md) | Microsoft Store 发布准备施工计划；按 WIN-01～WIN-06 推进，完成后归档结论并删除正文。 |
 | [`2026-08-assistant-timeout.md`](2026-08-assistant-timeout.md) | 不是施工说明书，是**一次真实故障的取证记录**（`api_logs/` 里七条日志的耗时还原）。`architecture/assistant-context.md` 直接引它作为「为什么要早elide」的证据。 |
+
+## 2026-11-07 · Microsoft Store 发布准备（实现中）
+
+目标：Windows x64 MSIX；保留 GitHub 站外分发及现有 Mac App Store 工作。
+详细依赖、实现边界及验收条件见 [Windows Store 计划](2026-11-windows-store.md)。
+WIN-01 构建工具已提交；WIN-02 已开始实现。未安装测试包或提交商店。
+
+- [ ] **WIN-01**：独立 Store 构建、真实产品身份、四语言资源与产物检查。
+  - 已新增隔离构建脚本与手动 preparation workflow，显式关闭 direct define，
+    生成不签名的测试身份 MSIX；正式模式必须传入 Partner Center 元数据。
+  - 检查身份、递增版本、四语言、能力、运行时资源、图标及编译配置，保存产物哈希与来源。
+    包校验回归测试接入现有 CI；GitHub 发布 workflow、默认 sideload 设置及 macOS 工程不变。
+  - 用户尚未注册 Partner Center，本轮仅做 Windows Store 准备，不虚构正式身份。
+    使用与 CI 不同的本机 SDK 必须显式选择 preparation override，正式模式禁止该覆盖。
+  - 构建约定及操作入口见 [Windows Store 构建说明](../architecture/windows-store-build.md)。
+  - **本机准备构建验收通过（2026-11-07）**：全新隔离源码构建 Windows x64 Release，
+    生成 `4.31.8.0` 未签名 preparation MSIX，实际包通过清单/资源检查，保存
+    `AppxManifest.xml` 与 `provenance.json`（含 SHA-256）。本地产物位于
+    `build/windows-store/preparation-6pov79x0/artifacts/`；构建日志为 `build/win01-package-final.log`。
+  - 验证：format 927 文件、0 改动；analyze `No issues found!`；非截图测试
+    3530 通过、5 跳过；Store/direct 安全测试各 7 通过；Python 包校验 4 项通过；
+    两份修改的 workflow YAML 解析及 `git diff --check` 通过。
+  - 边界：本机 Flutter 3.47.9，CI 固定 3.47.8；尚未执行远程 workflow，未安装/启动
+    应用、未跑 WACK、未进行正式身份打包或提交。上述剩余 WIN-01 验收保留未勾选；
+    应用安装验收与 WACK 属于 WIN-06。
+- [ ] **WIN-02**：识别 MSIX 安装、禁用便携模式、验证数据路径与迁移。
+  - 已通过 Windows 原生 API 查询进程包身份；只有确认未打包的 Windows 进程可用便携模式。
+    身份未知时保守禁用；路径选择、marker 读写和现有设置/向导显示共用此边界。
+  - 打包 Windows 不再自动移动 Documents 中的旧数据库；保留站外 Windows 与 macOS 路径。
+    已审计数据库、日志、字体、持久媒体、临时缓存及输出路径来源。
+  - 后续已改用运行时包家族的 `LocalState/Joycai`，避免 Roaming AppData 合并视图；
+    Windows 启动/设置复用保留源数据的显式导入，初始化 FFI SQLite 后复制 WAL 快照及自有媒体。
+    原数据库及外部输出不自动迁移/加密。尚欠真实安装、升级/卸载及原生文件操作验收。
+  - 验证：format 931 文件；analyze `No issues found!`；非截图测试 3536 通过、5 跳过。
+    首轮 wizard 的目录 watcher 出现 Windows access-denied，针对性重跑与完整重跑均通过；
+    direct 模式下新增路径/身份测试及该 wizard 测试共 7 项通过，包含真实 Windows API 调用。
+    本轮未重新打包或安装 MSIX；WIN-01 留存产物不包含这些运行时改动。
+- [ ] **WIN-03**：Windows 凭据保护、事务迁移、恢复与原生验收。
+  - 已实现用户级 DPAPI，独立 Windows envelope、启动前迁移/验证、事务读回、
+    备份脱敏及跨平台/未知密文拒绝。未打包 Windows 保留现有方式，Mac Keychain 格式不变。
+  - schema 54 配合显式降级拒绝；验证发现旧 sqflite 无 handler 时会静默降级，
+    因此不能宣称旧二进制仅靠版本号就安全。加密库禁止交给旧版。
+  - Windows 恢复页支持重试及明确勾选后清除三类凭据；先验证 DPAPI、保存并检查 SQLite 快照，
+    再事务清除凭据、关闭 MCP，保留非秘密数据以便重录。四语言说明及响应式渲染已补齐。
+  - 生产 C++ DPAPI 实现通过 MSVC 原生测试；Dart 集成测试通过 stdin/stdout 调用同一原生实现，
+    验证迁移、重启、轮换、损坏、失败回滚、备份及外来密文；不是已安装应用/跨用户验收。
+  - [验证记录与待验收步骤](../testing/windows-store-storage-security.md)：本机无 Windows Sandbox，
+    未改动用户账户、证书信任或安装包。隔离标准用户、跨用户 DPAPI、升级/卸载仍待验收。
+    下载 Cookie 仍明文并受已有保留策略控制，隐私说明复核保留给 WIN-05。
+  - 本轮最终验证：format 939 文件；analyze `No issues found!`；原生 DPAPI 集成启用时，
+    全量非截图测试以 concurrency=2 通过 3546 项、跳过 5 项；默认并发曾触发既有 wizard watcher
+    access-denied。Windows/Mac 恢复及 Windows 导入截图共 96 项通过，32 张 Mac 基线哈希不变。
+    direct 模式便携/身份/凭据/原生 DPAPI/安全边界专项测试 25 项通过。
+  - 全新 Windows x64 Release 未签名 `4.31.8.0` preparation MSIX 已构建并通过包校验：
+    `build/windows-store/preparation-rll14jpq/artifacts/`，源码哈希与当前实现一致。
+    本机仍为 Flutter 3.47.9 preparation override，CI 固定 3.47.8；未远程运行、安装或提交。
+- [ ] **WIN-04**：跨供应商内容安全、共享授权、报告入口与自定义端点处置。
+  - 已记录全部 21 条 wire 的[安全验收矩阵](../testing/windows-store-ai-safety.md)，
+    枚举覆盖测试避免新增路由漏审。明确流式文本/图片预览可能先于最终状态展示，
+    Gemini 阈值和用户共享授权不能代替输出安全验收。
+  - 所有路由仍待实际端点/模型验收；正式 Windows Store 打包现在由代码阻止，
+    仅 preparation 可用，无命令行绕过。GitHub 和 Mac 打包/运行行为保持不变。
+  - 新增 Gemini 输出模式/旧参数矩阵、上传/轮询/恢复 client/结果获取撤权、
+    邮件成功/无 handler/异常及复制回退测试。远程 HTTP 处置实现与
+    已安装 MSIX 实测仍欠，不能将自动化通过视为完成 WIN-04。
+    维护者于 2026-11-08 确认沿用 `joycai@joycai.cn` 与现有维护者处理流程；未发送测试邮件。
+  - 2026-11-08 验证：format 941 文件零改动；analyze 无问题；原生 DPAPI 启用时全量
+    非截图测试 3552 通过、5 跳过（concurrency=2）；direct 专项 32 通过；Python 打包
+    guard 6 通过，包含 CLI 在读取身份/调用 SDK 前拒绝正式打包。未新增安装/付费调用。
+- [ ] **WIN-05**：隐私政策、商店材料、能力说明及可用审核账号。
+  - 2026-11-08：更新中英隐私政策，说明 Windows DPAPI、包内数据路径、源数据保留、
+    未脱敏恢复快照及 Cookie/日志边界；保留 Mac 与站外分发的准确说明。
+  - 新增[提交材料草稿](../testing/windows-store-submission.md)：四语言描述、能力说明、
+    声明工作表、实际截图采集要求、许可证/素材审查结果和审核步骤。
+  - 公开 main 政策仍为 11 月 5 日版本，需合并并复查匿名访问；实际候选截图、素材/字体
+    权利确认、Partner Center 字段/评级/市场及限额审核账号仍待完成，未虚构验收。
+  - 本轮仅文档变更；核对源代码、现有清单/NOTICES.Z 及官方政策，git diff --check 通过。
+    不重复运行无代码变更的 Flutter gates；此前 WIN-04 的测试结果不冒充本轮执行。
+- [ ] **WIN-06**：WACK、标准用户安装/升级/卸载及最终候选产物验收。
+  - 2026-11-08：全新隔离 Release/preparation MSIX 构建及包校验通过，Store 安全测试
+    8 项、Python 打包测试 6 项、原生 DPAPI helper 通过；24 个 PE 均为 x64。
+    [验收记录](../testing/windows-store-release-validation.md)保留产物哈希与依赖清单。
+  - 静态审计发现 Android 间接依赖带入 dartjni.dll，其 jvm.dll 未随包分发；没有其他
+    PE 静态引用 dartjni，但尚不能证明运行时无用或干净环境一致，发布前需解决。
+  - 本机有 WACK，但没有隔离 VM/Sandbox；用户明确要求暂时跳过依赖该环境的检查。
+    未安装/签名/运行 WACK，未改变证书信任或系统账户；此项保持未完成。
+  - 本轮仅新增验证记录/证据，并单独提交用户删除的 22 个 Dart/Flutter 仓库技能文件。
+    GitHub release、默认 MSIX、Mac App Store 及应用代码不变；git diff --check 通过。
+
+待确认：Partner Center 产品/发布者身份、账号类型、目标市场、商业模式及审核测试预算。
+正式上传与提交审核另行决定；本地测试通过不等于商店批准。
 
 ## 2026-11-05 · AI 授权、参考图选择与 GPT Image 2.6
 

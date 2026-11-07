@@ -896,8 +896,8 @@ void main() {
       },
     );
 
-    test('this build writes schema 53, which pre-Keychain builds reject', () {
-      expect(DatabaseService.dbVersion, 53);
+    test('this build writes schema 54 for Windows credential envelopes', () {
+      expect(DatabaseService.dbVersion, 54);
     });
   });
 }

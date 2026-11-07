@@ -4,6 +4,9 @@ import 'package:flutter/services.dart';
 /// The versioned envelope is private to SQLite, never a portable backup format.
 abstract class CredentialProtection {
   static const prefix = 'joycai-secret:v1:';
+  // Recognize every version/platform, including unknown future envelopes, so
+  // neither direct builds nor imports can accidentally send ciphertext as a key.
+  static bool isEnvelope(String value) => value.startsWith('joycai-secret:');
   static const settingKeys = {'proxy_password', 'mcp_token'};
 
   /// Only bootstrap may create a key, and only if no encrypted rows exist.
@@ -16,7 +19,7 @@ class CredentialProtectionException implements Exception {
   const CredentialProtectionException();
 
   @override
-  String toString() => 'Credential storage unavailable. Check Keychain access and retry.';
+  String toString() => 'Credential storage unavailable. Check operating system access and retry.';
 }
 
 /// Apple CryptoKit encryption backed by the app's data-protection Keychain.

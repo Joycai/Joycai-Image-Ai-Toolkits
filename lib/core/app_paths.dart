@@ -4,14 +4,30 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import 'app_distribution.dart';
+import 'portable_storage.dart';
+import 'windows_package_identity.dart';
+import 'windows_package_storage.dart';
 
 class AppPaths {
-  /// Only Windows may keep app data beside the executable.
-  static bool get supportsPortableMode => Platform.isWindows;
+  static final _portable = PortableStorage(
+    isWindows: Platform.isWindows,
+    identity: WindowsPackage.identity,
+    executableDirectory: File(Platform.resolvedExecutable).parent.path,
+  );
+
+  /// Only confirmed unpackaged Windows processes may write beside the executable.
+  static bool get supportsPortableMode => _portable.supported;
 
   /// Bootstrap location stays stable when a complete installation is imported.
-  static Future<String> getSupportDirectory() async =>
-      (await getApplicationSupportDirectory()).path;
+  static bool get usesWindowsPackageStorage =>
+      Platform.isWindows && WindowsPackage.identity != WindowsPackageIdentity.unpackaged;
+
+  static bool get supportsInstallationImport =>
+      usesWindowsPackageStorage || (Platform.isMacOS && !AppDistribution.direct);
+
+  static Future<String> getSupportDirectory() async => usesWindowsPackageStorage
+      ? WindowsPackageStorage.supportDirectory()
+      : (await getApplicationSupportDirectory()).path;
 
   /// A macOS import is activated by one atomic pointer replacement. Older
   /// installations remain intact, including their database WAL and owned media.
@@ -34,18 +50,10 @@ class AppPaths {
   static Future<String> getDataDirectory() async {
     if (!supportsPortableMode) {
       final support = await getSupportDirectory();
-      return Platform.isMacOS && !AppDistribution.direct ? resolveDataDirectory(support) : support;
+      return supportsInstallationImport ? resolveDataDirectory(support) : support;
     }
 
-    final exeDir = File(Platform.resolvedExecutable).parent.path;
-    final portableMarker = File(p.join(exeDir, '.portable'));
-
-    if (await portableMarker.exists()) {
-      return exeDir;
-    }
-
-    final supportDir = await getApplicationSupportDirectory();
-    return supportDir.path;
+    return _portable.dataDirectory(getSupportDirectory);
   }
 
   static Future<String> getTempDirectory() async {
@@ -53,27 +61,7 @@ class AppPaths {
     return tempDir.path;
   }
 
-  static Future<bool> isPortableMode() async {
-    if (!supportsPortableMode) return false;
+  static Future<bool> isPortableMode() => _portable.isEnabled();
 
-    final exeDir = File(Platform.resolvedExecutable).parent.path;
-    return File(p.join(exeDir, '.portable')).exists();
-  }
-
-  static Future<void> setPortableMode(bool enabled) async {
-    if (!supportsPortableMode) return;
-
-    final exeDir = File(Platform.resolvedExecutable).parent.path;
-    final portableMarker = File(p.join(exeDir, '.portable'));
-
-    if (enabled) {
-      if (!await portableMarker.exists()) {
-        await portableMarker.create();
-      }
-    } else {
-      if (await portableMarker.exists()) {
-        await portableMarker.delete();
-      }
-    }
-  }
+  static Future<void> setPortableMode(bool enabled) => _portable.setEnabled(enabled);
 }

@@ -69,17 +69,18 @@ class DatabaseService {
 
   Future<String> protectCredential(String value) async {
     if (value.isEmpty) return value;
+    if (CredentialProtection.isEnvelope(value)) throw const CredentialProtectionException();
     final protection = _credentialProtection;
     if (protection == null) return value;
     final sealed = await protection.seal(value);
-    if (!sealed.startsWith(CredentialProtection.prefix) || await protection.open(sealed) != value) {
+    if (!CredentialProtection.isEnvelope(sealed) || await protection.open(sealed) != value) {
       throw const CredentialProtectionException();
     }
     return sealed;
   }
 
   Future<String> revealCredential(String value) async {
-    if (!value.startsWith(CredentialProtection.prefix)) return value;
+    if (!CredentialProtection.isEnvelope(value)) return value;
     final protection = _credentialProtection;
     if (protection == null) throw const CredentialProtectionException();
     return protection.open(value);
@@ -97,11 +98,11 @@ class DatabaseService {
       final hasEncryptedValues = [
         ...channels.map((row) => row['api_key'] as String),
         ...settings.map((row) => row['value'] as String? ?? ''),
-      ].any((value) => value.startsWith(CredentialProtection.prefix));
+      ].any(CredentialProtection.isEnvelope);
       await _credentialProtection!.prepare(allowCreate: !hasEncryptedValues);
       for (final row in channels) {
         final value = row['api_key'] as String;
-        if (value.startsWith(CredentialProtection.prefix)) {
+        if (CredentialProtection.isEnvelope(value)) {
           await revealCredential(value);
         } else if (value.isNotEmpty) {
           await txn.update(
@@ -114,7 +115,7 @@ class DatabaseService {
       }
       for (final row in settings) {
         final value = row['value'] as String;
-        if (value.startsWith(CredentialProtection.prefix)) {
+        if (CredentialProtection.isEnvelope(value)) {
           await revealCredential(value);
         } else if (value.isNotEmpty) {
           await txn.update(
@@ -123,6 +124,33 @@ class DatabaseService {
             where: 'key = ?',
             whereArgs: [row['key']],
           );
+        }
+      }
+      // Read back through SQLite before commit, not just through the cipher.
+      for (final row in channels) {
+        final saved =
+            (await txn.query(
+                  'llm_channels',
+                  columns: ['api_key'],
+                  where: 'id = ?',
+                  whereArgs: [row['id']],
+                )).single['api_key']
+                as String;
+        if (await revealCredential(saved) != await revealCredential(row['api_key'] as String)) {
+          throw const CredentialProtectionException();
+        }
+      }
+      for (final row in settings) {
+        final saved =
+            (await txn.query(
+                  'settings',
+                  columns: ['value'],
+                  where: 'key = ?',
+                  whereArgs: [row['key']],
+                )).single['value']
+                as String;
+        if (await revealCredential(saved) != await revealCredential(row['value'] as String)) {
+          throw const CredentialProtectionException();
         }
       }
     });
@@ -139,7 +167,7 @@ class DatabaseService {
 
   /// Schema version of this build. Also stamped into full backups so a file
   /// from a newer app can be rejected instead of failing mid-restore.
-  static const int dbVersion = 53;
+  static const int dbVersion = 54;
 
   /// A separate durable spool, alongside this database. Injected in-memory
   /// databases never touch the user's filesystem.
@@ -262,8 +290,11 @@ class DatabaseService {
     final dataDir = await AppPaths.getDataDirectory();
     final newPath = join(dataDir, 'joycai_workbench.db');
 
-    // Legacy migration check (Only for non-portable mode or first transition)
-    if (!await AppPaths.isPortableMode()) {
+    // Packaged Windows must not move an unpackaged installation's database.
+    // Explicit, source-preserving import needs installed MSIX discovery checks.
+    // Unknown Windows identity is treated conservatively as packaged here too.
+    if ((!Platform.isWindows || AppPaths.supportsPortableMode) &&
+        !await AppPaths.isPortableMode()) {
       final docsDir = await getApplicationDocumentsDirectory();
       final oldPath = join(docsDir.path, 'joycai_workbench.db');
 
@@ -289,6 +320,7 @@ class DatabaseService {
           version: dbVersion,
           onCreate: _onCreate,
           onUpgrade: _onUpgrade,
+          onDowngrade: DatabaseMigration.rejectDowngrade,
         ),
       );
     } else {
@@ -299,6 +331,7 @@ class DatabaseService {
         version: dbVersion,
         onCreate: _onCreate,
         onUpgrade: _onUpgrade,
+        onDowngrade: DatabaseMigration.rejectDowngrade,
       );
     }
     await db.execute('PRAGMA foreign_keys = ON');
@@ -825,7 +858,7 @@ class DatabaseService {
         if (CredentialProtection.settingKeys.contains(row['key'])) {
           final value = row['value'] as String? ?? '';
           // Envelopes are device-local, never an interchange format.
-          if (value.startsWith(CredentialProtection.prefix)) {
+          if (CredentialProtection.isEnvelope(value)) {
             throw const CredentialProtectionException();
           }
           row['value'] = await protectCredential(value);
@@ -1206,7 +1239,7 @@ class DatabaseService {
         row['api_key'] = preservedKeys[_channelIdentity(row)] ?? '';
       } else {
         final value = row['api_key'] as String;
-        if (value.startsWith(CredentialProtection.prefix)) {
+        if (CredentialProtection.isEnvelope(value)) {
           throw const CredentialProtectionException();
         }
         row['api_key'] = await protectCredential(value);

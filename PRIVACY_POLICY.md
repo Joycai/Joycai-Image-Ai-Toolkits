@@ -1,6 +1,6 @@
 # Privacy Policy / 隐私政策
 
-Last updated: November 5, 2026 · 最后更新：2026 年 11 月 5 日
+Last updated: November 8, 2026 · 最后更新：2026 年 11 月 8 日
 
 ## English
 
@@ -36,11 +36,11 @@ We do not sell your personal data or use your content for our own advertising or
 
 ### 4. Local storage and security
 
-Settings, credentials, conversations and records are stored locally. Mac App Store builds with credential protection encrypt channel API keys, proxy passwords and MCP tokens in SQLite using a device-local key held in Apple Keychain. Existing plaintext values are migrated after encryption and read-back verification succeed; a failed migration preserves the original values. Other distributions and older versions retain their existing plaintext credential storage. Remembered website cookies and other database content are not covered by this encryption. File permissions and the macOS sandbox provide additional access restrictions where applicable. HTTPS uses transport encryption when the endpoint supports it; a custom HTTP endpoint does not provide that protection.
+Settings, credentials, conversations and records are stored locally. Mac App Store builds with credential protection encrypt channel API keys, proxy passwords and MCP tokens in SQLite using a device-local key held in Apple Keychain. Existing plaintext values are migrated after encryption and read-back verification succeed; a failed migration preserves the original values. Windows packaged builds with the Windows credential-protection implementation (including sideloaded MSIX) encrypt the same three fields using Windows user-scoped Data Protection API (DPAPI). Windows manages its protection keys; the app does not export them. Failed migration blocks dependent startup. Unpackaged Windows, other unprotected distributions and older versions retain their existing plaintext credential storage. This is not protection against an attacker controlling your signed-in account or the app process. Remembered website cookies and other database content are not covered by this encryption. File permissions and the macOS sandbox provide additional access restrictions where applicable. HTTPS uses transport encryption when the endpoint supports it; a custom HTTP endpoint does not provide that protection, even after you consent to sharing.
 
-The Mac App Store build uses its application container and user-authorized external directories. Imported reference/drop media and queued-task snapshots may be copied into persistent private storage; generated results use the chosen output folder or a persistent application folder when necessary. Other builds use their platform-specific application data location; portable storage is available only on Windows.
+The Mac App Store build uses its application container and user-authorized external directories. Imported reference/drop media and queued-task snapshots may be copied into persistent private storage; generated results use the chosen output folder or a persistent application folder when necessary. Other builds use their platform-specific application data location; portable storage is available only on unpackaged Windows. Windows builds with package-local storage use the package family's LocalState/Joycai directory under the user's local application data, disable portable mode and offer explicit source-preserving import.
 
-An exported settings backup redacts known API-key, cookie and secret-setting fields, but can still contain prompts, paths, usage records or secrets you placed in ordinary text fields. It is not a complete media backup. A direct database copy or installation migration can contain credentials. Migration preserves the source installation's data, including any older plaintext credentials. Encrypted database copies cannot by themselves restore credentials on another device; the device-only Keychain key is not included in settings backups or synced by the app. Copies you place in cloud-synced folders are also subject to that storage provider's practices.
+An exported settings backup redacts known API-key, cookie and secret-setting fields, but can still contain prompts, paths, usage records or secrets you placed in ordinary text fields. It is not a complete media backup. A direct database copy or installation migration can contain credentials. Migration preserves the source installation's data, including any older plaintext credentials. Copying encrypted databases is not a supported credential-transfer method. The Mac device-only Keychain key is not included in settings backups or synced by the app; Windows recovery depends on Windows user/profile protection. Use redacted settings exports and re-enter credentials when moving installations. Do not open encrypted databases with older app versions. On Windows, explicitly choosing credential reset first retains a sensitive recovery database snapshot, then clears channel keys, proxy password and MCP token and disables MCP; other records remain. This snapshot is not redacted and must be deleted separately when no longer needed. Copies you place in cloud-synced folders are also subject to that storage provider's practices.
 
 ### 5. Retention, deletion and your choices
 
@@ -52,6 +52,8 @@ An exported settings backup redacts known API-key, cookie and secret-setting fie
 - Remove directories from the relevant feature configuration to stop using them. The current macOS build retains security-scoped directory bookmarks and does not provide a dedicated bookmark-revocation control; removing a configured path is not the same as erasing its stored permission. Contact us for help resetting saved permissions. Copies already imported into the app remain until deleted.
 - Use the available record/file deletion controls for data you no longer need. To remove remaining private copies or the entire local database, close the app and remove the corresponding application data only after preserving anything you want to keep. Separately remove output files, migration sources, exports and backups. Contact us if you need help identifying the appropriate files.
 - We cannot remotely erase a database that exists only on your device or delete data held by an independent provider. For access/deletion requests concerning that provider, use its privacy contact. For information you sent to project support, contact us through the channel below.
+
+Content-safety reporting opens an email addressed to joycai@joycai.cn, with no automatic prompt, image, log or credential attachment. If no mail handler opens, you can copy the address and contact us separately. Review anything you choose to include.
 
 ### 6. Changes and contact
 
@@ -91,11 +93,11 @@ We update this policy when data practices change and revise the date above. For 
 
 ### 4. 本地存储与安全
 
-设置、凭据、对话和记录保存在本地。具备凭据保护功能的 Mac App Store 版使用 Apple 钥匙串保存的本机密钥，对 SQLite 中的通道 API Key、代理密码和 MCP Token 加密。旧明文值在加密及读回校验成功后迁移；迁移失败时保留原值。其他发行版及旧版本保留原有明文凭据存储方式。网站 Cookie 和其他数据库内容不在此加密范围内。适用时，文件权限和 macOS 沙盒提供额外访问限制。端点支持 HTTPS 时使用传输加密；自定义 HTTP 端点不提供这种保护。
+设置、凭据、对话和记录保存在本地。具备凭据保护功能的 Mac App Store 版使用 Apple 钥匙串保存的本机密钥，对 SQLite 中的通道 API Key、代理密码和 MCP Token 加密。旧明文值在加密及读回校验成功后迁移；迁移失败时保留原值。具备 Windows 凭据保护实现的打包版本（包括旁加载 MSIX）使用 Windows 用户级数据保护 API（DPAPI）加密同样三类字段。保护密钥由 Windows 管理，应用不导出；迁移失败会阻止依赖凭据的启动流程。未打包 Windows、其他未启用保护的发行版及旧版本保留原有明文凭据存储方式。这不能防御已控制当前登录账户或应用进程的攻击者。网站 Cookie 和其他数据库内容不在此加密范围内。适用时，文件权限和 macOS 沙盒提供额外访问限制。端点支持 HTTPS 时使用传输加密；自定义 HTTP 端点即使已获共享授权，也不提供这种保护。
 
-Mac App Store 版使用应用容器和用户授权的外部目录。导入的参考图、拖入素材及排队任务快照可能复制到持久化私有目录；生成结果保存在所选输出目录，必要时使用持久化应用目录保底。其他版本使用相应平台的应用数据位置；便携存储仅适用于 Windows。
+Mac App Store 版使用应用容器和用户授权的外部目录。导入的参考图、拖入素材及排队任务快照可能复制到持久化私有目录；生成结果保存在所选输出目录，必要时使用持久化应用目录保底。其他版本使用相应平台的应用数据位置；便携存储仅适用于未打包 Windows。具备包内独立数据路径实现的 Windows 版本使用用户本地应用数据中所属包家族的 LocalState/Joycai 目录，禁用便携模式，并提供保留源数据的显式导入。
 
-设置备份导出会清除已知 API Key、Cookie 和秘密设置字段，但仍可能包含提示词、路径、用量记录，或您写入普通文本字段的秘密；它不是完整的媒体备份。直接复制数据库或进行整库迁移可能包含凭据。迁移会保留源安装的数据，包括原有的明文凭据。仅复制加密数据库无法在另一台设备恢复凭据；仅限本机的钥匙串密钥不包含在设置备份中，应用也不会同步该密钥。您将副本放入云同步目录时，也适用该存储服务商的处理规则。
+设置备份导出会清除已知 API Key、Cookie 和秘密设置字段，但仍可能包含提示词、路径、用量记录，或您写入普通文本字段的秘密；它不是完整的媒体备份。直接复制数据库或进行整库迁移可能包含凭据。迁移会保留源安装的数据，包括原有的明文凭据。复制加密数据库不是受支持的凭据迁移方式；Mac 仅限本机的钥匙串密钥不包含在设置备份中，应用也不会同步该密钥；Windows 恢复取决于 Windows 用户及配置文件保护机制。迁移安装时应使用脱敏设置导出并重新输入凭据，不要用旧版应用打开加密数据库。在 Windows 上明确选择重置凭据后，应用先保留含敏感信息的恢复数据库快照，再清除通道密钥、代理密码和 MCP Token，并关闭 MCP；其他记录保留。该快照未脱敏，不再需要时应单独删除。您将副本放入云同步目录时，也适用该存储服务商的处理规则。
 
 ### 5. 保留、删除与您的选择
 
@@ -107,6 +109,8 @@ Mac App Store 版使用应用容器和用户授权的外部目录。导入的参
 - 可从相应功能配置中移除目录以停止使用。当前 macOS 版本会保留安全作用域目录书签，尚无专门的书签撤销入口；移除配置路径不等于清除已保存的权限。需要重置权限时请联系我们协助。已经导入应用的副本仍需另行删除。
 - 使用已有的记录/文件删除功能清理不需要的数据。若需删除剩余私有副本或整个本地数据库，请先保留所需内容、退出应用，再删除对应应用数据。输出文件、迁移源、导出文件和备份需分别清理；不确定文件位置时可联系我们协助确认。
 - 我们无法远程删除仅存于您设备上的数据库，也无法删除独立服务商持有的数据。有关该服务商的访问/删除请求请联系其隐私联系人；有关您提供给项目支持的信息，请通过下述渠道联系我们。
+
+内容安全报告会打开收件人为 joycai@joycai.cn 的邮件，不自动附加提示词、图片、日志或凭据。无法打开邮件程序时可复制地址另行联系；请检查您主动附加的内容。
 
 ### 6. 更新与联系
 

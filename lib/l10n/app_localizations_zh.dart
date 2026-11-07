@@ -4485,6 +4485,21 @@ class AppLocalizationsZh extends AppLocalizations {
   String get credentialRecoveryRetry => '重试';
 
   @override
+  String get installationImportWindowsDescription =>
+      '选择包含 joycai_workbench.db 的旧数据目录。Windows 站外安装的数据目录可在其设置中查看；启用便携模式时为程序所在目录。数据将复制到此包中，原数据保留。';
+
+  @override
+  String get credentialRecoveryWindowsBody =>
+      'Joycai 无法验证此 Windows 用户的已保存凭据。请使用原 Windows 账户及用户配置文件重试。复制加密数据库不能用于转移凭据。重试不会清除凭据。如果无法恢复访问，可清除已保存凭据后在设置中重新输入。清除前会在数据目录的 credential-recovery 子目录保存数据库快照。';
+
+  @override
+  String get credentialRecoveryResetConsent =>
+      '清除全部渠道密钥、代理密码及 MCP 令牌，保留渠道、提示词、历史和媒体。我会在设置中重新输入凭据；MCP 将保持关闭。';
+
+  @override
+  String get credentialRecoveryReset => '清除凭据并继续';
+
+  @override
   String get workbench => '工作台';
 
   @override
@@ -10804,6 +10819,21 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get credentialRecoveryRetry => '重試';
+
+  @override
+  String get installationImportWindowsDescription =>
+      '選擇包含 joycai_workbench.db 的舊資料目錄。Windows 站外安裝的資料目錄可在其設定中查看；啟用可攜模式時為程式所在目錄。資料將複製到此套件中，原資料保留。';
+
+  @override
+  String get credentialRecoveryWindowsBody =>
+      'Joycai 無法驗證此 Windows 使用者的已儲存憑證。請使用原 Windows 帳戶及使用者設定檔重試。複製加密資料庫不能用於轉移憑證。重試不會清除憑證。如果無法恢復存取，可清除已儲存憑證後在設定中重新輸入。清除前會在資料目錄的 credential-recovery 子目錄儲存資料庫快照。';
+
+  @override
+  String get credentialRecoveryResetConsent =>
+      '清除全部渠道金鑰、代理密碼及 MCP 權杖，保留渠道、提示詞、歷史和媒體。我會在設定中重新輸入憑證；MCP 將保持關閉。';
+
+  @override
+  String get credentialRecoveryReset => '清除憑證並繼續';
 
   @override
   String get workbench => '工作台';

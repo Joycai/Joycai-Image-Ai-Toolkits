@@ -8,6 +8,7 @@
 #include "flutter/generated_plugin_registrant.h"
 #include "gpu_info.h"
 #include "taskbar_badge.h"
+#include "windows_store_host.h"
 
 namespace {
 
@@ -79,6 +80,38 @@ bool FlutterWindow::OnCreate() {
     return false;
   }
   RegisterPlugins(flutter_controller_->engine());
+
+  store_channel_ =
+      std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
+          flutter_controller_->engine()->messenger(), "joycai/windows_store",
+          &flutter::StandardMethodCodec::GetInstance());
+  store_channel_->SetMethodCallHandler(
+      [](const flutter::MethodCall<flutter::EncodableValue>& call,
+         std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
+        if (call.method_name() == "dataPath") {
+          const auto path = WindowsPackageDataPath();
+          if (path) {
+            result->Success(flutter::EncodableValue(*path));
+          } else {
+            result->Error("storage_unavailable", "Package storage unavailable");
+          }
+          return;
+        }
+        if (call.method_name() != "seal" && call.method_name() != "open") {
+          result->NotImplemented();
+          return;
+        }
+        const auto* input = call.arguments()
+            ? std::get_if<std::vector<uint8_t>>(call.arguments()) : nullptr;
+        const auto output = input
+            ? ProtectWindowsSecret(*input, call.method_name() == "open")
+            : std::nullopt;
+        if (!output) {
+          result->Error("credentials_unavailable", "Credential storage unavailable");
+          return;
+        }
+        result->Success(flutter::EncodableValue(*output));
+      });
 
   HWND view_window = flutter_controller_->view()->GetNativeWindow();
   SetChildContent(view_window);

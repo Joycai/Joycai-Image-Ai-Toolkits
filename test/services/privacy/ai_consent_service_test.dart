@@ -42,6 +42,40 @@ void main() {
   late AiConsentService service;
   late AiConsentService original;
   String? stored;
+  test('upload, poll, resumed client and result fetch recheck consent', () async {
+    final sends = <String>[];
+    final config = TestConfig(
+      MockClient((request) async {
+        sends.add('${request.method} ${request.url.path}');
+        return http.Response('ok', 200);
+      }),
+    );
+    service.requestConsent = (_) async => true;
+    final client = config.createClient();
+    addTearDown(client.close);
+    final upload = http.MultipartRequest('POST', Uri.parse('https://example.test/files'))
+      ..files.add(http.MultipartFile.fromString('file', 'synthetic reference'));
+    await (await client.send(upload)).stream.drain<void>();
+    await client.get(Uri.parse('https://example.test/jobs/one'));
+    expect(sends, ['POST /files', 'GET /jobs/one']);
+    final granted = service.decisions.single.scope;
+    await service.revoke(granted);
+    final resumed = config.createClient();
+    addTearDown(resumed.close);
+    for (final lease in [client, resumed]) {
+      for (final path in ['/jobs/one', '/results/one']) {
+        await expectLater(
+          lease.get(Uri.parse('https://example.test$path')),
+          throwsA(isA<AiConsentRequired>()),
+        );
+      }
+      final blockedUpload = http.MultipartRequest('POST', Uri.parse('https://example.test/files'))
+        ..files.add(http.MultipartFile.fromString('file', 'must not leave'));
+      await expectLater(lease.send(blockedUpload), throwsA(isA<AiConsentRequired>()));
+    }
+    expect(sends, ['POST /files', 'GET /jobs/one']);
+  });
+
   test('dismissing consent blocks this request without remembering a refusal', () async {
     service.requestConsent = (_) async => null;
     await expectLater(

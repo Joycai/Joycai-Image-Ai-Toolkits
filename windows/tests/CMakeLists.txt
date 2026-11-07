@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.14)
+project(windows_store_native_tests LANGUAGES CXX)
+add_executable(windows_store_native_tests windows_store_native_tests.cpp ../runner/windows_store_host.cpp)
+target_compile_features(windows_store_native_tests PRIVATE cxx_std_17)
+target_compile_definitions(windows_store_native_tests PRIVATE UNICODE _UNICODE NOMINMAX)
+target_compile_options(windows_store_native_tests PRIVATE /W4 /WX /EHsc)
+target_link_libraries(windows_store_native_tests PRIVATE crypt32 shell32 ole32 uuid)

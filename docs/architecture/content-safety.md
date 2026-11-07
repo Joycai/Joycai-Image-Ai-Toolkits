@@ -1,5 +1,9 @@
 # Content safety (MAS-05)
 
+Windows Store WIN-04 has a separate [route acceptance matrix](../testing/windows-store-ai-safety.md).
+Its production packaging is blocked pending route/transport/reporting acceptance;
+this does not alter the Mac App Store or direct build behavior described here.
+
 ## Implemented boundary
 
 The Gemini safety controls now live in Settings > Application, not in the

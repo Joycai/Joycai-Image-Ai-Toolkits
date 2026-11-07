@@ -1,6 +1,10 @@
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 class DatabaseMigration {
+  static Future<void> rejectDowngrade(Database db, int oldVersion, int newVersion) async {
+    throw StateError('This database requires a newer application version.');
+  }
+
   static Future<void> migrate(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) await _createV2Tables(db);
     if (oldVersion < 3) await _createV3Tables(db);
@@ -81,6 +85,10 @@ class DatabaseMigration {
     // upgrade and fresh creation DatabaseService migrates/validates protected
     // values before publishing the connection. The version prevents older apps
     // from opening a database whose credentials they would mistake for API keys.
+    // v54 adds Windows DPAPI envelopes. Again there are no SQL changes: the
+    // format stamp enables explicit downgrade refusal in readers that enforce
+    // it. Older readers without a downgrade handler must never receive this DB.
+    // Bootstrap migration/validation remains in DatabaseService.
   }
 
   static Future<void> onCreate(Database db) async {
@@ -137,6 +145,7 @@ class DatabaseMigration {
     await _createV51Columns(db);
     await _createV52Columns(db);
     // v53 credential protection runs in DatabaseService before use (no SQL change).
+    // v54 Windows envelopes use the same bootstrap boundary (no SQL change).
     // Presets are synchronized in DatabaseService
   }
 

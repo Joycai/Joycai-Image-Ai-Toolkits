@@ -104,6 +104,17 @@ void main() {
     expect((await protected.getChannels()).single.apiKey, 'original-api');
   });
 
+  test('SQLite read-back mismatch rolls back the entire migration', () async {
+    await plain.addChannel(channel('original'));
+    await raw.execute('''CREATE TRIGGER corrupt_credential AFTER UPDATE OF api_key ON llm_channels
+      BEGIN UPDATE llm_channels SET api_key = 'corrupt' WHERE id = NEW.id; END''');
+    await expectLater(
+      protected.migrateCredentials(raw),
+      throwsA(isA<CredentialProtectionException>()),
+    );
+    expect((await plain.getChannels()).single.apiKey, 'original');
+  });
+
   test('new writes and rotations store opaque values; failed rotation preserves old key', () async {
     final id = await protected.addChannel(channel('first-api'));
     await protected.saveSetting('mcp_token', 'first-token');
@@ -137,6 +148,26 @@ void main() {
     );
     expect((await raw.query('llm_channels')).single['api_key'], isNotEmpty);
   });
+
+  test(
+    'direct builds reject Windows and future envelopes on reads, writes and backup import',
+    () async {
+      for (final envelope in ['joycai-secret:win-dpapi:v1:foreign', 'joycai-secret:v99:future']) {
+        await expectLater(
+          plain.protectCredential(envelope),
+          throwsA(isA<CredentialProtectionException>()),
+        );
+        await expectLater(
+          plain.revealCredential(envelope),
+          throwsA(isA<CredentialProtectionException>()),
+        );
+        await expectLater(
+          protected.revealCredential(envelope),
+          throwsA(isA<CredentialProtectionException>()),
+        );
+      }
+    },
+  );
 
   test('backup redacts ciphertext and restores existing credentials despite renumbering', () async {
     await protected.addChannel(channel('backup-api'));

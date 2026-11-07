@@ -8,10 +8,16 @@ import '../../widgets/ui/app_button.dart';
 
 /// Rendered before the application's database, watchers or queue are opened.
 class InstallationMigrationScreen extends StatelessWidget {
-  const InstallationMigrationScreen({super.key, required this.state, required this.onContinue});
+  const InstallationMigrationScreen({
+    super.key,
+    required this.state,
+    required this.onContinue,
+    this.windows = false,
+  });
 
   final InstallationMigrationState state;
   final VoidCallback onContinue;
+  final bool windows;
 
   @override
   Widget build(BuildContext context) {
@@ -38,6 +44,8 @@ class InstallationMigrationScreen extends StatelessWidget {
                     Text(
                       state.imported
                           ? l10n.installationImportSuccess
+                          : windows
+                          ? l10n.installationImportWindowsDescription
                           : l10n.installationImportDescription,
                     ),
                     const SizedBox(height: AppSpace.s16),
