@@ -175,7 +175,7 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
     // to parse as zero images and report the task as finished with
     // nothing in it.
     final data = decodeJsonBody(response, apiName: 'OpenAI Images API');
-    return _decodeImageResult(data, client, options, logger, sentImages);
+    return _decodeImageResult(data, client, options, logger, sentImages, debugFile);
   }
 
   /// Shared by a JSON response and a complete Images result carried in SSE.
@@ -185,6 +185,7 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
     Map<String, dynamic>? options,
     LLMLogger? logger,
     int sentImages,
+    LLMDebugLog? debugFile,
   ) async {
     final rawItems = data['data'];
     final List<dynamic> items = rawItems is List ? rawItems : const [];
@@ -206,6 +207,7 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
       client,
       logger,
       source: 'OpenAI Images API',
+      debugLog: debugFile,
       abortTrigger: abortTriggerOf(options),
     );
 
@@ -377,7 +379,14 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
         // A status-only completion is not delivery, nor is an unknown typed
         // event containing a URL (it might be a preview).
         if (relayStatus && (status == null || status == 'completed') && data['data'] is List) {
-          final whole = await _decodeImageResult(data, client, options, logger, req.sentImages);
+          final whole = await _decodeImageResult(
+            data,
+            client,
+            options,
+            logger,
+            req.sentImages,
+            req.debugFile,
+          );
           completed = true;
           return [
             for (final image in whole.generatedImages)
@@ -395,6 +404,12 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
         // only the image carrier differs from the official base64 form.
         final encoded = data['b64_json'];
         final ref = encoded is String && encoded.trim().isNotEmpty ? encoded : data['url'];
+        await LLMDebugLogger.appendLine(
+          req.debugFile,
+          'Image retrieval starting: event=$events type=$type final=$done '
+          'carrier=${encoded is String && encoded.trim().isNotEmpty ? 'b64_json' : 'url'} '
+          'proxyEnabled=${target.config.proxyEnabled}',
+        );
         if (ref is! String || ref.trim().isEmpty) {
           throw LLMApiException('OpenAI Images stream returned an empty image.');
         }
@@ -403,10 +418,15 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
           client,
           logger,
           source: 'OpenAI Images stream',
+          debugLog: req.debugFile,
           abortTrigger: abortTriggerOf(options),
         );
         if (images.isEmpty) {
-          throw LLMApiException('OpenAI Images stream returned an invalid image.');
+          throw LLMApiException(
+            'OpenAI Images stream returned an invalid image. '
+            'event=$type; image retrieval failed after receiving '
+            '${done ? 'provider completion' : 'a preview'}; see image retrieval logs.',
+          );
         }
         await LLMDebugLogger.appendLine(
           req.debugFile,

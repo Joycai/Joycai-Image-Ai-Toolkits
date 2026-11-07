@@ -555,7 +555,9 @@ class _ConsentClient extends http.BaseClient {
     );
     final consent = AiConsentService.instance;
     await consent.require(scope);
-    if (!consent.isAllowed(scope)) throw consent.denied();
+    if (!consent.isAllowed(scope)) {
+      throw consent.denied(scope: scope, reason: 'revoked-before-send');
+    }
     if (_closed || aborted) throw http.RequestAbortedException(request.url);
     // An automatic redirect would bypass the recipient check. Require callers
     // to configure the final endpoint instead of forwarding content silently.

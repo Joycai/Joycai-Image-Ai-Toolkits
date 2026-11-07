@@ -7,6 +7,8 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 
 import '../../../core/image_magic.dart';
+import '../../privacy/ai_consent_service.dart';
+import '../llm_debug_logger.dart';
 import '../llm_types.dart';
 import '../model_descriptor.dart';
 import '../output_spec.dart'
@@ -472,40 +474,91 @@ Future<Uint8List?> resolveImageRef(
   LLMLogger? logger, {
   Duration retryDelay = const Duration(seconds: 1),
   Future<void>? abortTrigger,
+  LLMDebugLog? debugLog,
 }) async {
+  Future<void> record(String message, {String level = 'DEBUG'}) async {
+    await LLMDebugLogger.appendLine(debugLog, 'Image retrieval [$level]: $message');
+    logger?.call(message, level: level);
+  }
+
   final trimmed = ref.trim();
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    // Signed query strings and user-info are credentials, not diagnostics.
+    final uri = Uri.tryParse(trimmed);
+    final safeUrl = uri == null
+        ? '(invalid URL)'
+        : uri.replace(userInfo: '', query: '', fragment: '').toString();
     const attempts = 2;
     for (var attempt = 1; attempt <= attempts; attempt++) {
+      final timer = Stopwatch()..start();
+      var stage = 'send';
+      await record('GET $safeUrl attempt=$attempt/$attempts');
       try {
         final request = http.AbortableRequest(
           'GET',
           Uri.parse(trimmed),
           abortTrigger: abortTrigger,
         );
-        final resp = await http.Response.fromStream(await client.send(request));
+        final response = await client.send(request);
+        stage = 'read-body';
+        await record(
+          'Download headers: attempt=$attempt status=${response.statusCode} '
+          'content-type=${response.headers['content-type'] ?? '(missing)'} '
+          'content-length=${response.headers['content-length'] ?? '(missing)'} '
+          'content-encoding=${response.headers['content-encoding'] ?? '(missing)'} '
+          'elapsedMs=${timer.elapsedMilliseconds}',
+        );
+        final resp = await http.Response.fromStream(response);
+        final mime = imageMimeFromBytes(resp.bodyBytes);
+        await record(
+          'Download body: attempt=$attempt bytes=${resp.bodyBytes.length} '
+          'detectedMime=${mime ?? '(unknown)'} elapsedMs=${timer.elapsedMilliseconds}',
+        );
         if (resp.statusCode == 200) {
           final bytes = resp.bodyBytes;
-          if (imageMimeFromBytes(bytes) != null) return bytes;
-          logger?.call(
+          if (mime != null) return bytes;
+          await record(
             'Image URL answered 200 but the body is not an image '
             '(${resp.headers['content-type'] ?? 'no content-type'}, '
-            '${bytes.length} bytes): $trimmed',
+            '${bytes.length} bytes): $safeUrl',
             level: 'WARN',
           );
         } else {
-          logger?.call('Image URL returned ${resp.statusCode}: $trimmed', level: 'WARN');
+          await record('Image URL returned ${resp.statusCode}: $safeUrl', level: 'WARN');
         }
+      } on AiConsentRequired catch (error) {
+        await record(
+          'Image download blocked by consent: reason=${error.reason} '
+          'recipient=${error.scope?.recipient ?? safeUrl} '
+          'service=${error.scope?.service ?? '(unknown)'} '
+          'attempt=$attempt stage=$stage; no retry. $error',
+          level: 'WARN',
+        );
+        rethrow;
       } on http.RequestAbortedException {
+        await record('Download aborted: attempt=$attempt stage=$stage', level: 'WARN');
         rethrow;
       } catch (e) {
-        logger?.call('Failed to fetch image URL: $e', level: 'WARN');
+        // HTTP exceptions may embed the original signed URL.
+        final detail = e.toString().replaceAll(trimmed, safeUrl).replaceAllMapped(
+          RegExp(r'https?://[^\s)]+'),
+          (match) {
+            final url = Uri.tryParse(match[0]!);
+            return url?.replace(userInfo: '', query: '', fragment: '').toString() ?? '(URL)';
+          },
+        );
+        await record(
+          'Failed to fetch image URL: attempt=$attempt stage=$stage '
+          'elapsedMs=${timer.elapsedMilliseconds} exception=${e.runtimeType} $detail',
+          level: 'WARN',
+        );
       }
       if (attempt < attempts) {
-        logger?.call('Retrying the image download once.', level: 'INFO');
+        await record('Retrying the image download once.', level: 'INFO');
         await Future<void>.delayed(retryDelay);
       }
     }
+    await record('Image download exhausted $attempts attempts: $safeUrl', level: 'WARN');
     return null;
   }
 
@@ -517,7 +570,7 @@ Future<Uint8List?> resolveImageRef(
       // a RangeError out of the *log line* would abort the generation this
       // path exists to skip past.
       final excerpt = trimmed.length > 32 ? '${trimmed.substring(0, 32)}…' : trimmed;
-      logger?.call('Malformed data URI (no comma): $excerpt', level: 'WARN');
+      await record('Malformed data URI (no comma): $excerpt', level: 'WARN');
       return null;
     }
     payload = trimmed.substring(comma + 1);
@@ -527,17 +580,23 @@ Future<Uint8List?> resolveImageRef(
     // Line-wrapped and URL-safe base64 both occur in relay output.
     bytes = base64Decode(base64.normalize(payload.replaceAll(RegExp(r'\s'), '')));
   } catch (e) {
-    logger?.call('Failed to decode inline image: $e', level: 'WARN');
+    await record(
+      'Failed to decode inline image: exception=${e.runtimeType} chars=${payload.length}',
+      level: 'WARN',
+    );
     return null;
   }
   if (imageMimeFromBytes(bytes) == null) {
-    logger?.call(
+    await record(
       'Inline image data is not a recognisable image (${bytes.length} '
       'bytes); skipped.',
       level: 'WARN',
     );
     return null;
   }
+  await record(
+    'Inline image decoded: bytes=${bytes.length} detectedMime=${imageMimeFromBytes(bytes)}',
+  );
   return bytes;
 }
 
@@ -554,6 +613,7 @@ Future<List<Uint8List>> resolveImageRefs(
   required String source,
   Duration retryDelay = const Duration(seconds: 1),
   Future<void>? abortTrigger,
+  LLMDebugLog? debugLog,
 }) async {
   final all = refs.toList();
   final images = <Uint8List>[];
@@ -564,6 +624,7 @@ Future<List<Uint8List>> resolveImageRefs(
       logger,
       retryDelay: retryDelay,
       abortTrigger: abortTrigger,
+      debugLog: debugLog,
     );
     if (bytes != null) images.add(bytes);
   }

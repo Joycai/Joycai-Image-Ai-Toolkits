@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_model_config.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_service.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/protocols/protocol.dart';
 import 'package:joycai_image_ai_toolkits/services/privacy/ai_consent_service.dart';
 import 'package:joycai_image_ai_toolkits/services/tasks/task_failure.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -41,6 +42,54 @@ void main() {
   late AiConsentService service;
   late AiConsentService original;
   String? stored;
+  test('dismissing consent blocks this request without remembering a refusal', () async {
+    service.requestConsent = (_) async => null;
+    await expectLater(
+      service.require(scope()),
+      throwsA(isA<AiConsentRequired>().having((e) => e.reason, 'reason', 'no-decision')),
+    );
+    expect(service.decisions, isEmpty);
+    expect(stored, isNull);
+    service.requestConsent = (_) async => true;
+    await service.require(scope());
+    expect(service.isAllowed(scope()), isTrue);
+  });
+
+  test('image CDN denial stays a consent error and does not retry or transmit', () async {
+    var sends = 0;
+    final config = TestConfig(
+      MockClient((_) async {
+        sends++;
+        return http.Response('ok', 200);
+      }),
+    );
+    service.requestConsent = (recipient) async => recipient.recipient == 'https://example.test';
+    final client = config.createClient();
+    addTearDown(client.close);
+    await client.post(Uri.parse('https://example.test/images'));
+    final logs = <String>[];
+    try {
+      await resolveImageRef(
+        'https://cdn.test/image?token=secret',
+        client,
+        (message, {level = 'INFO'}) => logs.add(message),
+        retryDelay: Duration.zero,
+      );
+      fail('CDN download must require its own consent');
+    } on AiConsentRequired catch (error) {
+      expect(error.scope!.recipient, 'https://cdn.test');
+      expect(error.toString(), contains('https://cdn.test'));
+      expect(taskFailure(error)['code'], 'consentRequired');
+    }
+    expect(sends, 1);
+    expect(logs.where((line) => line.startsWith('GET ')), hasLength(1));
+    expect(logs.join('\n'), contains('reason=declined'));
+    expect(logs.join('\n'), isNot(contains('Retrying')));
+    await service.askAgain(scope(destination: 'https://cdn.test/image'));
+    service.requestConsent = (_) async => true;
+    await client.get(Uri.parse('https://cdn.test/image'));
+    expect(sends, 2);
+  });
   setUp(() {
     stored = null;
     original = AiConsentService.instance;
