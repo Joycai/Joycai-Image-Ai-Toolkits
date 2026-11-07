@@ -5,7 +5,8 @@ production identity and pinned-SDK CI verification pending. WIN-02 portable stor
 boundary and explicit import implemented; installed acceptance pending. WIN-03 DPAPI,
 migration and recovery implemented; packaged/cross-user acceptance pending. WIN-04
 route audit and release guard implemented; safety/installed acceptance remains open.
-WIN-05 and WIN-06 planned.
+WIN-05 privacy and submission drafts prepared; publisher/candidate acceptance pending.
+WIN-06 planned.
 
 Prepare Joycai's Flutter Windows desktop application for Microsoft Store distribution
 as an x64 MSIX. Keep the GitHub distribution and ongoing Mac App Store work working.
@@ -156,6 +157,14 @@ packaged app. Any live paid test requires an agreed test account and budget.
 ### WIN-05 Privacy and submission materials
 
 Dependencies: final WIN-02 through WIN-04 behavior; draft materials can begin earlier.
+
+Prepared 2026-11-08: bilingual privacy policy now describes packaged Windows DPAPI,
+storage/imports, retained recovery snapshots and remaining plaintext data. The
+[submission materials](../testing/windows-store-submission.md) include four-language
+listing drafts, capability explanations, declarations worksheet, screenshot capture
+specification, rights-review findings and reviewer steps. Main's public policy remains
+the older revision until merge. No actual Store screenshots, assigned rating or tested
+reviewer credentials are claimed; final acceptance remains open.
 
 - Update `PRIVACY_POLICY.md` to accurately cover Windows protection, remaining
   plaintext data, storage, backups, imports, endpoints and reporting. Verify its

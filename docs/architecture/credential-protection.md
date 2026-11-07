@@ -111,7 +111,9 @@ logs mask named keys, authorization headers and credential URL parameters, but l
 can still contain user prompts and media metadata. Native errors and recovery errors
 never include ciphertext, keys or OS error details. This is not whole-database encryption
 or protection against another process already controlling the same Windows account.
-Cookie disclosure/retention and public privacy wording must be reviewed in WIN-05.
+WIN-05 updated the bilingual privacy policy to disclose cookie retention, plaintext
+logs/data and retained recovery snapshots; public main needs the change merged.
+Remaining submission acceptance is tracked in the [materials](../testing/windows-store-submission.md).
 
 Automated/native and installed-package limits are recorded in
 [Windows validation](../testing/windows-store-storage-security.md).

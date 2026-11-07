@@ -37,6 +37,8 @@ Required reading before touching the subsystem each one covers.
   WIN-02/WIN-03 native tests and outstanding installed-package acceptance.
   [AI safety acceptance](testing/windows-store-ai-safety.md) records WIN-04 route
   dispositions, sharing/reporting checks and the production packaging blocker.
+  [Submission materials](testing/windows-store-submission.md) contain WIN-05 listing
+  drafts, privacy review, capability/reviewer notes and outstanding publisher inputs.
 * **[macOS App Sandbox](architecture/macos-sandbox.md)** — entitlement purposes,
   file authorization boundaries, remaining adaptations and native verification.
   [Isolated MAS-02 acceptance](testing/mas02-native-acceptance.md) records tested cases and limits.
