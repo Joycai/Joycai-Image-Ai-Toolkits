@@ -35,6 +35,8 @@ Required reading before touching the subsystem each one covers.
   preparation, Partner Center identity inputs, package guards and provenance.
   [Storage/security validation](testing/windows-store-storage-security.md) records
   WIN-02/WIN-03 native tests and outstanding installed-package acceptance.
+  [AI safety acceptance](testing/windows-store-ai-safety.md) records WIN-04 route
+  dispositions, sharing/reporting checks and the production packaging blocker.
 * **[macOS App Sandbox](architecture/macos-sandbox.md)** — entitlement purposes,
   file authorization boundaries, remaining adaptations and native verification.
   [Isolated MAS-02 acceptance](testing/mas02-native-acceptance.md) records tested cases and limits.

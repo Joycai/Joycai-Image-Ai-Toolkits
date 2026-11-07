@@ -33,6 +33,15 @@ def require(condition, message):
         raise ValueError(message)
 
 
+def require_safety_acceptance(preparation):
+    # WIN-04: no route has completed content-safety acceptance yet. Keep this
+    # reviewed-code gate until docs/testing/windows-store-ai-safety.md has evidence
+    # for the final enabled routes. Identity alone cannot authorize a candidate.
+    require(preparation,
+            "WIN-04 content-safety acceptance is incomplete; only --preparation is available. "
+            "See docs/testing/windows-store-ai-safety.md")
+
+
 def version_tuple(value):
     require(isinstance(value, str) and re.fullmatch(r"\d+\.\d+\.\d+\.\d+", value),
             "Version must have four numeric components")
@@ -168,6 +177,7 @@ def main():
     parser.add_argument("--allow-sdk-mismatch", action="store_true",
                         help="Preparation only; record local SDK instead of enforcing CI pin")
     args = parser.parse_args()
+    require_safety_acceptance(args.preparation)
     require(os.name == "nt", "Windows build host required")
     require(platform.machine().lower() in ("amd64", "x86_64"), "Use an x64 Windows build host")
     require(not args.allow_sdk_mismatch or args.preparation,

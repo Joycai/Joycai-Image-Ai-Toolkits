@@ -82,6 +82,17 @@ WIN-01 构建工具已提交；WIN-02 已开始实现。未安装测试包或提
     `build/windows-store/preparation-rll14jpq/artifacts/`，源码哈希与当前实现一致。
     本机仍为 Flutter 3.47.9 preparation override，CI 固定 3.47.8；未远程运行、安装或提交。
 - [ ] **WIN-04**：跨供应商内容安全、共享授权、报告入口与自定义端点处置。
+  - 已记录全部 21 条 wire 的[安全验收矩阵](../testing/windows-store-ai-safety.md)，
+    枚举覆盖测试避免新增路由漏审。明确流式文本/图片预览可能先于最终状态展示，
+    Gemini 阈值和用户共享授权不能代替输出安全验收。
+  - 所有路由仍待实际端点/模型验收；正式 Windows Store 打包现在由代码阻止，
+    仅 preparation 可用，无命令行绕过。GitHub 和 Mac 打包/运行行为保持不变。
+  - 新增 Gemini 输出模式/旧参数矩阵、上传/轮询/恢复 client/结果获取撤权、
+    邮件成功/无 handler/异常及复制回退测试。远程 HTTP 处置实现、报告邮箱负责人与
+    已安装 MSIX 实测仍欠，不能将自动化通过视为完成 WIN-04。
+  - 2026-11-08 验证：format 941 文件零改动；analyze 无问题；原生 DPAPI 启用时全量
+    非截图测试 3552 通过、5 跳过（concurrency=2）；direct 专项 32 通过；Python 打包
+    guard 6 通过，包含 CLI 在读取身份/调用 SDK 前拒绝正式打包。未新增安装/付费调用。
 - [ ] **WIN-05**：隐私政策、商店材料、能力说明及可用审核账号。
 - [ ] **WIN-06**：WACK、标准用户安装/升级/卸载及最终候选产物验收。
 

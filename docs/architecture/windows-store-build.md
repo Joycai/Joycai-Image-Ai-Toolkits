@@ -38,6 +38,11 @@ The preparation identity and artifact filename explicitly prohibit submission.
 
 ## Future Partner Center configuration
 
+WIN-04 currently blocks this production path before any staging/build. Only
+`--preparation` is available until the [AI safety acceptance record](../testing/windows-store-ai-safety.md)
+is resolved in a reviewed change. Supplying a real identity does not bypass that
+gate; the following configuration describes the future candidate path.
+
 After registration and product reservation, supply a local JSON file with exact
 `identity_name`, `publisher`, `publisher_display_name`, `display_name` and
 `previous_version` values. Use `first` for the previous version only for the first

@@ -3,6 +3,8 @@ import base64
 import copy
 import io
 import json
+import subprocess
+import sys
 import unittest
 import zipfile
 
@@ -10,6 +12,19 @@ import build_windows_store as store
 
 
 class StoreValidationTest(unittest.TestCase):
+    def test_unresolved_safety_blocks_candidate_but_not_preparation(self):
+        store.require_safety_acceptance(True)
+        with self.assertRaisesRegex(ValueError, "WIN-04"):
+            store.require_safety_acceptance(False)
+
+    def test_candidate_cli_stops_before_reading_identity_or_invoking_sdk(self):
+        result = subprocess.run(
+            [sys.executable, store.__file__, "--config", "missing-identity.json"],
+            capture_output=True, text=True, check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("WIN-04 content-safety acceptance is incomplete", result.stderr)
+        self.assertNotIn("Running:", result.stdout)
+
     def test_temporary_config_preserves_other_yaml_sections(self):
         source = 'name: joycai\nmsix_config:\n  store: false\n  publisher: old\n\nnext_section:\n  keep: true\n'
         settings = {"store": True, "publisher": 'CN=Name & "Co"'}

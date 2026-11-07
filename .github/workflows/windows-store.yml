@@ -49,6 +49,8 @@ jobs:
           test/core/safety_settings_test.dart
           test/services/llm/safety_payload_test.dart
           test/screens/settings/safety_settings_section_test.dart
+          test/services/privacy/ai_consent_service_test.dart
+          test/screens/settings/content_safety_section_test.dart
       - name: Build and verify isolated preparation package
         run: python build_script/build_windows_store.py --preparation
       - uses: actions/upload-artifact@v4

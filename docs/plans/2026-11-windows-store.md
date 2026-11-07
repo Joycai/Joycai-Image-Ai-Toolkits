@@ -3,7 +3,9 @@
 Created: 2026-11-07. Status: WIN-01 preparation implemented and locally verified;
 production identity and pinned-SDK CI verification pending. WIN-02 portable storage
 boundary and explicit import implemented; installed acceptance pending. WIN-03 DPAPI,
-migration and recovery implemented; packaged/cross-user acceptance pending. WIN-04 through WIN-06 planned.
+migration and recovery implemented; packaged/cross-user acceptance pending. WIN-04
+route audit and release guard implemented; safety/installed acceptance remains open.
+WIN-05 and WIN-06 planned.
 
 Prepare Joycai's Flutter Windows desktop application for Microsoft Store distribution
 as an x64 MSIX. Keep the GitHub distribution and ongoing Mac App Store work working.
@@ -123,6 +125,14 @@ under the standard Windows user account, without exposing secrets in logs or bac
 ### WIN-04 AI safety and sharing acceptance
 
 Dependencies: WIN-01 Store build; reuse MAS-04/MAS-05 mechanisms and findings.
+
+Source audit and synthetic checks are recorded in the
+[route acceptance matrix](../testing/windows-store-ai-safety.md). Every current
+wire has a disposition, checked against the enum by a test. No route has completed
+content-safety acceptance; production Windows Store packaging is now blocked in
+code while preparation remains available. Remote HTTP policy, provider/custom-route
+controls, reporting ownership and installed behavior remain release prerequisites.
+This does not change the GitHub or Mac App Store runtime/build paths.
 
 - Verify Store Gemini constraints across saved settings, imports, old queued tasks,
   retries, Batch and MCP. Keep direct-mode tests to detect accidental regressions.
