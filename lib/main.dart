@@ -245,7 +245,7 @@ class _MyAppState extends State<MyApp> {
     _dockBadge = DockBadgeService(context.read<AppState>().taskQueue);
     widget.consentService?.requestConsent = (scope) async {
       final context = _navigatorKey.currentContext;
-      if (context == null || !mounted) return false;
+      if (context == null || !mounted) return null;
       return AiConsentDialog.show(context, scope);
     };
   }

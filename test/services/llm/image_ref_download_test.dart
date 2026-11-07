@@ -1,9 +1,11 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/llm_debug_logger.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/gemini_imagen_protocol.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/protocol.dart';
 
@@ -28,6 +30,33 @@ void main() {
     2,
   ]);
   const noDelay = Duration.zero;
+
+  test('download failures persist stages and retry diagnostics without credentials', () async {
+    final dir = await Directory.systemTemp.createTemp('image_retrieval_log');
+    addTearDown(() => dir.delete(recursive: true));
+    final log = LLMDebugLog(File('${dir.path}/request.txt'), DateTime.now());
+    const url = 'https://user:password@cdn.example/image?signature=secret#private';
+    var attempts = 0;
+    final client = MockClient((request) async {
+      expect(request.url.toString(), url);
+      attempts++;
+      if (attempts == 1) throw http.ClientException('Connection reset', request.url);
+      return http.Response('<html>unavailable</html>', 200, headers: {'content-type': 'text/html'});
+    });
+    expect(await resolveImageRef(url, client, null, retryDelay: noDelay, debugLog: log), isNull);
+    final text = await log.file.readAsString();
+    expect(attempts, 2);
+    expect(text, contains('stage=send'));
+    expect(text, contains('exception=ClientException'));
+    expect(text, contains('Connection reset'));
+    expect(text, contains('attempt=2 status=200'));
+    expect(text, contains('content-type=text/html'));
+    expect(text, contains('detectedMime=(unknown)'));
+    expect(text, contains('exhausted 2 attempts'));
+    for (final secret in ['password', 'signature', 'secret', 'private', '<html>']) {
+      expect(text, isNot(contains(secret)));
+    }
+  });
 
   test('a failed link is retried once and the second answer used', () async {
     var calls = 0;

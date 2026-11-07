@@ -46,7 +46,7 @@ void main() {
     });
   }
   testWidgets('dismissing consent does not grant permission', (tester) async {
-    bool? result;
+    bool? result = true;
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -67,6 +67,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tapAt(const Offset(5, 5));
     await tester.pumpAndSettle();
-    expect(result, false);
+    expect(find.byType(AiConsentDialog), findsNothing);
+    expect(result, isNull);
   });
 }

@@ -40,7 +40,7 @@ void main() {
   });
 
   Future<File> asset(String relative, String bytes) async {
-    final file = File(p.join(old.path, relative));
+    final file = File(p.joinAll([old.path, ...p.posix.split(relative)]));
     await file.parent.create(recursive: true);
     return file.writeAsString(bytes);
   }
@@ -111,7 +111,7 @@ void main() {
     final db = await databaseFactoryFfi.openDatabase(p.join(destination, 'joycai_workbench.db'));
     try {
       final task = (await db.query('tasks')).single;
-      final copied = p.join(destination, 'media/results/a.png');
+      final copied = p.join(destination, 'media', 'results', 'a.png');
       expect(task['status'], 'pending');
       expect(task['operation_name'], 'paid-operation');
       expect(jsonDecode(task['parameters'] as String)['prompt'], image.path);

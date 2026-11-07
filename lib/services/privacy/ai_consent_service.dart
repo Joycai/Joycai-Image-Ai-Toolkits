@@ -55,10 +55,14 @@ class AiConsentDecision {
 class AiConsentRequired implements Exception {
   const AiConsentRequired([
     this.message = 'AI data sharing is blocked. Review permission in Settings > About, then retry.',
-  ]);
+  ]) : scope = null,
+       reason = 'unspecified';
+  const AiConsentRequired.forScope(this.message, {required this.scope, required this.reason});
   final String message;
+  final AiConsentScope? scope;
+  final String reason;
   @override
-  String toString() => message;
+  String toString() => scope == null ? message : '$message (${scope!.recipient})';
 }
 
 /// Only the local UI can supply [requestConsent]. Missing UI/storage fails closed.
@@ -69,9 +73,10 @@ class AiConsentService extends ChangeNotifier {
 
   final Future<String?> Function() _read;
   final Future<void> Function(String) _write;
-  Future<bool> Function(AiConsentScope)? requestConsent;
+  Future<bool?> Function(AiConsentScope)? requestConsent;
   String denialMessage = const AiConsentRequired().message;
-  AiConsentRequired denied() => AiConsentRequired(denialMessage);
+  AiConsentRequired denied({AiConsentScope? scope, String reason = 'unspecified'}) =>
+      AiConsentRequired.forScope(denialMessage, scope: scope, reason: reason);
   Map<String, AiConsentDecision> _decisions = {};
   Future<void>? _loading;
   Future<void> _writes = Future.value();
@@ -151,7 +156,7 @@ class AiConsentService extends ChangeNotifier {
     // An unrelated unanswered prompt must not stall already-authorized jobs.
     final known = _decisionFor(scope);
     if (known != null && !_pendingGrants.contains(known.scope.key)) {
-      if (!known.allowed) throw denied();
+      if (!known.allowed) throw denied(scope: scope, reason: 'remembered-denial');
       return;
     }
     final revision = _revision;
@@ -160,17 +165,21 @@ class AiConsentService extends ChangeNotifier {
     _prompts = done.future;
     try {
       await previous;
-      if (revision != _revision) throw denied();
+      if (revision != _revision) throw denied(scope: scope, reason: 'decision-changed');
       var decision = _decisionFor(scope);
       if (decision == null) {
         final presenter = requestConsent;
-        if (presenter == null) throw denied();
+        if (presenter == null) throw denied(scope: scope, reason: 'presenter-unavailable');
         final allowed = await presenter(scope);
-        if (revision != _revision) throw denied();
+        if (revision != _revision) throw denied(scope: scope, reason: 'decision-changed');
+        // Dismissal or an unavailable host blocks this send, but is not a
+        // remembered refusal. Only an explicit button choice is persisted.
+        if (allowed == null) throw denied(scope: scope, reason: 'no-decision');
         decision = AiConsentDecision(scope, allowed);
         await _store(decision);
       }
-      if (revision != _revision || !decision.allowed) throw denied();
+      if (revision != _revision) throw denied(scope: scope, reason: 'decision-changed');
+      if (!decision.allowed) throw denied(scope: scope, reason: 'declined');
     } finally {
       done.complete();
     }

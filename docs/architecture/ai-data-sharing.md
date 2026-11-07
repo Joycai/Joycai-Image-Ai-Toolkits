@@ -62,6 +62,14 @@ protocol fixtures, while consent tests replace it with isolated real decisions.
 Unknown recipients queue dialogs; simultaneous requests for a scope share the
 first persisted decision. Already authorized recipients continue independently
 of an unrelated unanswered dialog. Grants cannot be used until storage succeeds.
+Only explicit allow/decline choices are persisted. Dismissing a dialog or a
+missing presentation context blocks the current send without remembering a
+refusal, so a later request can prompt again. Existing remembered refusals still
+require the settings action before another prompt.
+Image result resolution preserves `AiConsentRequired` instead of retrying it or
+turning it into an invalid-image error. The localized denial identifies the
+recipient origin; API diagnostics distinguish remembered denial, dismissal,
+missing presenter and changed decisions without recording credentials.
 A generation counter invalidates waiting requests when the user revokes/resets
 permission; the client checks the current decision again immediately before send.
 Closed/aborted client requests cannot transmit after a delayed acceptance.

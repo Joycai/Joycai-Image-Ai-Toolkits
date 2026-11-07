@@ -85,8 +85,12 @@ void main() {
     expect(jsonDecode(row['parameters'] as String)['prompt'], image.path);
     expect(jsonDecode(row['batch_state'] as String)['requestId'], 'paid-batch');
     expect((await db.query('image_layers')).single['path'], copied);
-    expect((await db.query('assistant_messages')).single['message'], contains(copied));
-    expect((await db.query('assistant_sessions')).single['ref_images'], contains(copied));
+    final message = jsonDecode((await db.query('assistant_messages')).single['message'] as String);
+    expect(message['images'], [copied]);
+    expect(message['content'], 'look at ${image.path}');
+    expect(jsonDecode((await db.query('assistant_sessions')).single['ref_images'] as String), [
+      copied,
+    ]);
     expect(await image.exists(), isTrue);
     expect(await text.exists(), isTrue);
     expect(await database.getSetting('legacy_result_cache_directory'), isNull);

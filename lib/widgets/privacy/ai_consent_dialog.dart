@@ -16,13 +16,11 @@ class AiConsentDialog extends StatelessWidget {
   final AiConsentScope scope;
   const AiConsentDialog({super.key, required this.scope});
 
-  static Future<bool> show(BuildContext context, AiConsentScope scope) async =>
-      await showDialog<bool>(
-        context: context,
-        animationStyle: appDialogAnimation(context),
-        builder: (_) => AiConsentDialog(scope: scope),
-      ) ??
-      false;
+  static Future<bool?> show(BuildContext context, AiConsentScope scope) => showDialog<bool>(
+    context: context,
+    animationStyle: appDialogAnimation(context),
+    builder: (_) => AiConsentDialog(scope: scope),
+  );
 
   @override
   Widget build(BuildContext context) {

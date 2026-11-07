@@ -531,6 +531,9 @@ void main() {
 
   for (final prefix in ['image_generation', 'image_edit']) {
     test('$prefix URL previews stay transient and URL completion delivers once', () async {
+      LLMDebugLogger.enabled = true;
+      addTearDown(() => LLMDebugLogger.enabled = false);
+      final correlation = LLMLogCorrelation(contextId: 'download', request: 1, leg: 0, attempt: 0);
       final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
       addTearDown(() => server.close(force: true));
       final release = Completer<void>();
@@ -569,17 +572,19 @@ void main() {
       });
       final preview = Completer<void>();
       final chunks = <LLMResponseChunk>[];
-      final operation = LLMDispatcher()
-          .generateStream(
-            LLMModelConfig(
-              modelId: '[Adobe]gpt-image-2.5-sunburst',
-              channelType: Vendors.openAIRest,
-              endpoint: 'http://127.0.0.1:${server.port}/v1',
-              apiKey: 'test',
+      final operation =
+          LLMDebugLogger.correlatedStream(
+            correlation,
+            () => LLMDispatcher().generateStream(
+              LLMModelConfig(
+                modelId: '[Adobe]gpt-image-2.5-sunburst',
+                channelType: Vendors.openAIRest,
+                endpoint: 'http://127.0.0.1:${server.port}/v1',
+                apiKey: 'test',
+              ),
+              [LLMMessage(role: LLMRole.user, content: 'circle')],
             ),
-            [LLMMessage(role: LLMRole.user, content: 'circle')],
-          )
-          .forEach((chunk) {
+          ).forEach((chunk) {
             chunks.add(chunk);
             if (chunk.imagePreview != null && !preview.isCompleted) preview.complete();
           });
@@ -595,6 +600,11 @@ void main() {
       expect(chunks.where((c) => c.isDone), hasLength(1));
       expect(posts, 1);
       expect(downloads, 2);
+      final log = await correlation.opened.single.file.readAsString();
+      expect(log, contains('Image retrieval starting:'));
+      expect(log, contains('final=true carrier=url'));
+      expect(log, contains('Download headers: attempt=1 status=200'));
+      expect(log, contains('detectedMime=image/png'));
     });
   }
 
