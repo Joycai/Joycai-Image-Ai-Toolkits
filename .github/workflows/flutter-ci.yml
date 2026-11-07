@@ -20,6 +20,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: 'Verify Windows Store packaging guards'
+        run: python3 -m unittest discover -s build_script -p test_windows_store.py
+
       - name: 'Install Flutter'
         uses: subosito/flutter-action@v2
         with:

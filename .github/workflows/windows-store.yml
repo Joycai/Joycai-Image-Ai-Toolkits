@@ -1,0 +1,49 @@
+name: Windows Store Preparation
+
+# Builds an unsigned test-identity artifact only. No Store or GitHub release upload.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    runs-on: windows-2022
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.47.8'
+          cache: true
+      - name: Test package rejection checks
+        run: python -m unittest discover -s build_script -p test_windows_store.py
+      - name: Install dependencies
+        run: flutter pub get --enforce-lockfile
+      - name: Check formatting
+        run: dart format --output=none --set-exit-if-changed lib test tool
+      - name: Analyze
+        run: flutter analyze
+      - name: Test
+        run: flutter test -x screenshots
+      - name: Verify direct distribution behavior
+        run: >-
+          flutter test --dart-define=JOYCAI_DIRECT_DISTRIBUTION=true
+          test/core/safety_settings_test.dart
+          test/services/llm/safety_payload_test.dart
+          test/screens/settings/safety_settings_section_test.dart
+      - name: Build and verify isolated preparation package
+        run: python build_script/build_windows_store.py --preparation
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-store-preparation-NOT-FOR-SUBMISSION
+          path: build/windows-store/preparation-*/artifacts/*
+          if-no-files-found: error

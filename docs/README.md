@@ -31,6 +31,8 @@ Required reading before touching the subsystem each one covers.
   old→new path map for reading pre-refactor documents.
 * **[Local MCP image server](architecture/mcp-image-server.md)** — desktop connection,
   agent tools, reference/edit generation, replay protection and result persistence.
+* **[Windows Store build](architecture/windows-store-build.md)** — isolated MSIX
+  preparation, Partner Center identity inputs, package guards and provenance.
 * **[macOS App Sandbox](architecture/macos-sandbox.md)** — entitlement purposes,
   file authorization boundaries, remaining adaptations and native verification.
   [Isolated MAS-02 acceptance](testing/mas02-native-acceptance.md) records tested cases and limits.

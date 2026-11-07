@@ -23,7 +23,41 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 
 | 文件 | 为什么留着 |
 |---|---|
+| [`2026-11-windows-store.md`](2026-11-windows-store.md) | Microsoft Store 发布准备施工计划；按 WIN-01～WIN-06 推进，完成后归档结论并删除正文。 |
 | [`2026-08-assistant-timeout.md`](2026-08-assistant-timeout.md) | 不是施工说明书，是**一次真实故障的取证记录**（`api_logs/` 里七条日志的耗时还原）。`architecture/assistant-context.md` 直接引它作为「为什么要早elide」的证据。 |
+
+## 2026-11-07 · Microsoft Store 发布准备（待实现）
+
+目标：Windows x64 MSIX；保留 GitHub 站外分发及现有 Mac App Store 工作。
+详细依赖、实现边界及验收条件见 [Windows Store 计划](2026-11-windows-store.md)。
+已开始 WIN-01 的构建工具实现；未修改应用运行时代码、安装测试包或提交商店。
+
+- [ ] **WIN-01**：独立 Store 构建、真实产品身份、四语言资源与产物检查。
+  - 已新增隔离构建脚本与手动 preparation workflow，显式关闭 direct define，
+    生成不签名的测试身份 MSIX；正式模式必须传入 Partner Center 元数据。
+  - 检查身份、递增版本、四语言、能力、运行时资源、图标及编译配置，保存产物哈希与来源。
+    包校验回归测试接入现有 CI；GitHub 发布 workflow、默认 sideload 设置及 macOS 工程不变。
+  - 用户尚未注册 Partner Center，本轮仅做 Windows Store 准备，不虚构正式身份。
+    使用与 CI 不同的本机 SDK 必须显式选择 preparation override，正式模式禁止该覆盖。
+  - 构建约定及操作入口见 [Windows Store 构建说明](../architecture/windows-store-build.md)。
+  - **本机准备构建验收通过（2026-11-07）**：全新隔离源码构建 Windows x64 Release，
+    生成 `4.31.8.0` 未签名 preparation MSIX，实际包通过清单/资源检查，保存
+    `AppxManifest.xml` 与 `provenance.json`（含 SHA-256）。本地产物位于
+    `build/windows-store/preparation-6pov79x0/artifacts/`；构建日志为 `build/win01-package-final.log`。
+  - 验证：format 927 文件、0 改动；analyze `No issues found!`；非截图测试
+    3530 通过、5 跳过；Store/direct 安全测试各 7 通过；Python 包校验 4 项通过；
+    两份修改的 workflow YAML 解析及 `git diff --check` 通过。
+  - 边界：本机 Flutter 3.47.9，CI 固定 3.47.8；尚未执行远程 workflow，未安装/启动
+    应用、未跑 WACK、未进行正式身份打包或提交。上述剩余 WIN-01 验收保留未勾选；
+    应用安装验收与 WACK 属于 WIN-06。
+- [ ] **WIN-02**：识别 MSIX 安装、禁用便携模式、验证数据路径与迁移。
+- [ ] **WIN-03**：Windows 凭据保护、事务迁移、恢复与原生验收。
+- [ ] **WIN-04**：跨供应商内容安全、共享授权、报告入口与自定义端点处置。
+- [ ] **WIN-05**：隐私政策、商店材料、能力说明及可用审核账号。
+- [ ] **WIN-06**：WACK、标准用户安装/升级/卸载及最终候选产物验收。
+
+待确认：Partner Center 产品/发布者身份、账号类型、目标市场、商业模式及审核测试预算。
+正式上传与提交审核另行决定；本地测试通过不等于商店批准。
 
 ## 2026-11-05 · AI 授权、参考图选择与 GPT Image 2.6
 
