@@ -6,6 +6,7 @@ import '../../../../l10n/app_localizations.dart';
 import '../../../../state/workbench_ui_state.dart';
 import '../../../../widgets/glass/app_glass.dart';
 import '../../../../widgets/glass/glass_controls.dart';
+import '../../../../widgets/ui/app_menu_anchor.dart';
 import '../../../../widgets/ui/app_switch.dart';
 import '../../workbench_layout.dart';
 
@@ -273,7 +274,7 @@ class _ComparatorOverflowMenu extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final scheme = Theme.of(context).colorScheme;
 
-    return MenuAnchor(
+    return AppMenuAnchor(
       menuChildren: [
         MenuItemButton(
           leadingIcon: Icon(

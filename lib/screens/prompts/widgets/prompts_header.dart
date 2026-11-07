@@ -5,6 +5,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../widgets/glass/glass_controls.dart';
 import '../../../widgets/ui/app_button.dart';
 import '../../../widgets/ui/app_icon_button.dart';
+import '../../../widgets/ui/app_menu_anchor.dart';
 import '../../../widgets/ui/app_search_field.dart';
 import '../../../widgets/ui/app_segmented_control.dart';
 import 'prompt_library_parts.dart';
@@ -85,7 +86,7 @@ class PromptImportExportMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return MenuAnchor(
+    return AppMenuAnchor(
       menuChildren: [
         MenuItemButton(
           leadingIcon: const Icon(Icons.file_upload_outlined, size: AppSize.iconMd),

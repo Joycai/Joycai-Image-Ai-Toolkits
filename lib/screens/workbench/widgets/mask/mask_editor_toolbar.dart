@@ -10,6 +10,7 @@ import '../../../../services/media/image_metadata_service.dart';
 import '../../../../state/workbench_ui_state.dart';
 import '../../../../widgets/glass/app_glass.dart';
 import '../../../../widgets/glass/glass_controls.dart';
+import '../../../../widgets/ui/app_menu_anchor.dart';
 
 /// The mask editor's controls in the workbench's floating glass toolbar
 /// (`A4A6 · 1e`, `1f`): brush size, mask opacity, colour, the mask's real
@@ -435,7 +436,7 @@ class _MaskEditorToolbarState extends State<MaskEditorToolbar> {
       ),
     );
 
-    return MenuAnchor(
+    return AppMenuAnchor(
       menuChildren: [
         if (p.foldSliders) ...[
           sliderSubmenu(

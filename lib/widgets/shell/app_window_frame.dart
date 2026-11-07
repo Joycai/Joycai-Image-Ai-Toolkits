@@ -86,7 +86,10 @@ class _AppWindowFrameState extends State<AppWindowFrame> {
             Column(
               children: [
                 const AppTitleBar(),
-                Expanded(child: widget.child),
+                // Route barriers block earlier semantics siblings. Keep the
+                // Navigator in its own boundary so they cannot also erase the
+                // title bar/navigation that lives outside that Navigator.
+                Expanded(child: Semantics(container: true, child: widget.child)),
               ],
             )
           else

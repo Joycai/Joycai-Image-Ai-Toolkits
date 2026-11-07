@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import '../../core/app_theme.dart';
 import '../../core/design_tokens.dart';
 import '../../services/catalogue/context_window_scale.dart';
+import '../ui/app_menu_anchor.dart';
 
 /// The context window's Specify slider (`D1c · 1a`): nine equidistant stops
 /// in two ranks, a magnet that pulls a drag onto a stop, and tick labels
@@ -400,7 +401,7 @@ class ContextWindowPresetMenu extends StatelessWidget {
       color: scheme.onAccentTint,
     );
 
-    return MenuAnchor(
+    return AppMenuAnchor(
       alignmentOffset: const Offset(0, AppSpace.s4),
       style: MenuStyle(
         padding: const WidgetStatePropertyAll(EdgeInsets.all(AppSpace.s4)),

@@ -7,6 +7,14 @@ typography and motion scales. Changing the design tool does not change that stan
 
 ## Sources and continuity
 
+Windows accessibility: use `AppMenuAnchor` for anchored menus. Its semantics
+boundary keeps nested tooltip traversal anchors distinct; removing it reproduces
+AXTree corruption on Flutter 3.47.9. Keep the Navigator in its own semantics
+container inside `AppWindowFrame` so route barriers do not hide the title bar.
+These are semantic boundaries, not new visual containers. See the
+[native validation record](../windows-accessibility-validation.md) for the
+reproduction and remaining screen-reader acceptance.
+
 - [Design tokens](design-tokens.md) defines the visual contract and accepted
   departures from the original designs. Its linked core files and contract tests
   provide the implemented values; use existing shared components under
