@@ -6,6 +6,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../widgets/glass/app_glass.dart';
 import '../../../widgets/glass/glass_controls.dart';
 import '../../../widgets/ui/app_breathing_dot.dart';
+import '../../../widgets/ui/app_menu_anchor.dart';
 
 /// The prompt assistant's controls in the workbench's floating glass toolbar
 /// (`A3a · 1a`, `A3b · 1a`): which brain is answering, whether it is running,
@@ -183,7 +184,7 @@ class PromptOptimizerToolbar extends StatelessWidget {
         ),
       ),
       if (sessionInMenu)
-        MenuAnchor(
+        AppMenuAnchor(
           menuChildren: [
             MenuItemButton(
               leadingIcon: const Icon(Icons.history, size: AppSize.iconLg),

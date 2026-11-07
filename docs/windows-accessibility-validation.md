@@ -1,0 +1,92 @@
+# Windows 无障碍恢复验证记录
+
+2026-11-08，PR #409，DESK-01 首批实现；完整验收未完成。
+
+## 实现边界
+
+- `lib/main.dart` 不再用 Windows 全局 `ExcludeSemantics` 隐藏应用。
+- Windows runner 不再替换 Flutter view 的 WndProc，也不拦截顶层 `WM_GETOBJECT`；
+  由 Flutter 原生桥接处理请求。
+- `AppWindowFrame` 为 Navigator 内容建立独立 `Semantics(container: true)` 边界。
+  在实际根节点测试中，仅解除全局屏蔽仍找不到设置导航；增加边界后导航按钮出现在树中。
+  标题栏在视觉上本来就位于 Navigator 外，语义边界应与之匹配。
+- `test/app/widget_test.dart` 检查真实应用根语义树中的设置按钮，防止只验证可见布局。
+- `AppMenuAnchor` 在菜单 builder 与内层 tooltip 之间建立局部语义边界，避免两个
+  overlay 的 traversal parent 标识合并。应用内 14 个菜单锚点统一使用它。
+  `app_menu_anchor_test.dart` 验证每个 overlay 恰有一个语义父节点、菜单标签仍存在，
+  并覆盖退场中间帧与重复开关。负对照临时移除边界时该测试失败，恢复后通过。
+- `tool/windows_accessibility_probe.dart` 使用生产 runner，但不初始化业务状态、数据库或网络。
+  它用于复现引擎问题，不打包进正常 `lib/main.dart` 入口。
+
+本批没有修改 SDK、主题、文案或键盘绑定，也没有声称全部自绘控件已经完成语义审计。
+
+## 工程门禁
+
+- `dart format lib test tool`：944 个文件。
+- `flutter analyze`：No issues found。
+- `flutter build windows --release`：成功（43.7 秒），构建正常 `lib/main.dart` 入口。
+- `flutter test -x screenshots --concurrency=2 --reporter expanded`：最终菜单修复版本
+  **3552 通过、6 跳过**（4 分 28 秒）。
+  首轮默认并发有一个目录 watcher 的 Windows SocketException（拒绝访问）；降低并发后
+  完整重跑通过，并非只跳过失败文件。并行原生构建/截图曾因测试占用 `sqlite3.dll` 失败，
+  后续这些操作按顺序执行。该环境问题没有通过修改业务逻辑掩盖。
+- 五组受影响屏幕截图文件共 **266 项**完成；查看了工作台四宽度浅色、桌面深色，
+  窄屏任务菜单、桌面模型编辑及上下文菜单，未见这些已检查画面的新增布局问题。
+  截图 harness 会吞掉异常，不能把退出码当作完整视觉通过：用量页 390px 报告
+  `ListenableBuilder` 在 build 中更新；模型编辑 390px 的 harness 实际拍到了任务页。
+  两项分别串行重跑，并临时使用 `HEAD`（计划提交 `2fb6dfee`）的原始 Dart 源码对照，
+  均可复现；对照结束逐字节恢复当前源码。这两项是既有问题，本批保留为待修项，
+  不把这些截图列为有效的用量页/窄屏编辑器验收证据。
+
+## 上游与本机
+
+- 本机 Flutter **3.47.9**，framework `c197ca5199e9ee5661e865596c9c07294dfab51c`，
+  engine `89c39edfdfae2949f6806e4a315c0c08522238b7`，Dart **3.13.7**。
+- Windows 内核版本 **10.0.26300.0**；下述原生探针使用 **Release**。
+- CI 仍固定 Flutter **3.47.8**；本机结果不能代替该版本的原生验证。
+- [#100610](https://github.com/flutter/flutter/issues/100610) 已关闭并标记 solved；
+  [#182444](https://github.com/flutter/flutter/issues/182444) 仍开放，包含 Release 崩溃报告。
+  [#190344](https://github.com/flutter/flutter/pull/190344) 页面显示 Closed，不能据此推断已合入。
+  因此本记录只陈述实际观察，不宣称引擎问题已被上游修复。
+
+## 原生探针复现步骤
+
+```text
+flutter run -d windows --release -t tool/windows_accessibility_probe.dart
+```
+
+1. 先用原生无障碍检查器或 Narrator 连接窗口，确认树中出现 Run probe、Target 0/1。
+2. 点击 Run probe，等待 Completed cycles 60。循环交替显示 ListView 的两个 tooltip 与
+   MenuAnchor 内嵌 tooltip，在退场时调整窗口，交替主题，每五轮开关一次带输入框的对话框。
+3. 检查进程仍存活、树仍能读取；检查运行日志中的 `AXTree`、异常和崩溃。
+4. Tab 到下拉菜单，Enter 打开，检查两个选项；Escape 关闭并检查焦点。
+
+负对照命令是在上述命令后加 `--dart-define=PROBE_RAW_MENU=true`，仅该隔离工具有此选项，
+正常应用没有关闭无障碍或切回损坏语义树的开关。
+
+观察结果：Windows Computer Use 的原生无障碍接口能读取按钮名称/角色和 tooltip。
+首轮仅 ListView tooltip 的 60 轮没有 AXTree 错误。加入原始 MenuAnchor 后出现连续
+`Failed to update ui::AXTree`，随后原生树只剩空组，证明本机 3.47.9 仍受影响。
+加入 AppMenuAnchor 边界后，相同菜单场景 60 轮完成，循环结束仍能读取完整树，未出现
+AXTree 错误；该次有一条 frame-time clamping 日志，不将其隐瞒为“零错误日志”。
+首轮下拉菜单可用 Tab/Enter
+打开，树显示 First option/Second option，Escape 返回 First option 焦点。
+这是自动化接口的验证，**不是 Narrator 的语音与完整操作验收**。
+计数到 60 本身也不是通过条件，必须同时核对桥接已激活、语义树及日志。
+
+真实应用 Release 另复制至独立 `.portable` 目录启动，未读取现有用户数据库。
+原生接口可读取欢迎向导、八个标题栏导航、工作台提示词编辑框、复选框和菜单；
+展开工作台菜单后仍能读取内容，鼠标切换至任务页后仍能读取任务计数和空状态。
+这只证明桥接和基础页面切换，不包含任务执行或 Narrator 操作。
+实际树中仍可见某些控件的名称与 tooltip 重复，任务过滤项角色也需进一步审计，
+不将“树能读取”写成全部控件语义完善。
+
+## 尚需完成
+
+- CI 固定 Flutter 3.47.8 的同样原生复现；若选择升级，另行同步 CI 并补版本证据。
+- 真实应用 Release + Narrator 的导航、输入、菜单、对话框、任务状态及屏幕/主题切换。
+- 更长时间的 hover/overlay、窗口缩放与 ReorderableList 场景；出现错误时保留最小复现，
+  优先修复局部生命周期或引擎，不以再次全局关闭语义作为验收。
+- 自绘控件的名称、角色、值、选择/禁用状态及重复朗读审计。
+
+上述项目完成前，DESK-01 保持未勾选；本 PR 不应作为无障碍发布验收通过的依据。

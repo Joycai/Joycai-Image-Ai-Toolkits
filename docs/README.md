@@ -130,6 +130,10 @@ re-sync; the checked-in playbook remains readable without installing them.
 
 ## Tooling
 
+* **[Windows accessibility validation](windows-accessibility-validation.md)** —
+  production-runner probe, semantics regression evidence and outstanding native
+  screen-reader acceptance for DESK-01.
+
 * **[UI screenshot harness](ui-screenshot-harness.md)** — renders the real
   screens headlessly at four widths in light and dark, so a layout can be
   looked at instead of inferred. Not a regression gate.

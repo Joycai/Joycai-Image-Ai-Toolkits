@@ -112,7 +112,7 @@ extension _WideHeader on _TaskQueueScreenState {
               ),
               const SizedBox(width: buttonGap),
             ],
-            MenuAnchor(
+            AppMenuAnchor(
               menuChildren: [
                 if (fit == _HeaderFit.folded) ...[
                   MenuItemButton(

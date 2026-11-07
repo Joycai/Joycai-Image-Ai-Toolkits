@@ -70,7 +70,7 @@ extension _WideRow on _CropResizeToolbarState {
       if (_customRatioMode) _buildCustomRatioFields(context),
       _buildSizeGroup(context, l10n, uiState),
       if (!f.folded)
-        MenuAnchor(
+        AppMenuAnchor(
           menuChildren: _samplingMenuItems(context, uiState),
           builder: (context, controller, _) => _GlassMenuButton(
             label: f.samplingName ? samplingLabel : null,
@@ -198,7 +198,7 @@ extension _WideRow on _CropResizeToolbarState {
     bool busy,
   ) {
     final scheme = Theme.of(context).colorScheme;
-    return MenuAnchor(
+    return AppMenuAnchor(
       menuChildren: [
         SubmenuButton(
           leadingIcon: const Icon(Icons.grain, size: AppSize.iconLg),

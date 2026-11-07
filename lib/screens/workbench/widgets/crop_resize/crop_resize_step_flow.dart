@@ -43,7 +43,7 @@ extension _StepFlow on _CropResizeToolbarState {
           onPressed: () => _showResizeDialog(context, l10n, uiState),
         ),
         const Expanded(child: SizedBox()),
-        MenuAnchor(
+        AppMenuAnchor(
           menuChildren: [
             MenuItemButton(
               leadingIcon: const Icon(Icons.save_alt, size: AppSize.iconLg),

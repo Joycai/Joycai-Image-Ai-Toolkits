@@ -20,6 +20,7 @@ import '../../../widgets/glass/app_glass.dart';
 import '../../../widgets/glass/glass_controls.dart';
 import '../../../widgets/ui/app_button.dart';
 import '../../../widgets/ui/app_dialog.dart';
+import '../../../widgets/ui/app_menu_anchor.dart';
 import '../../../widgets/ui/app_snackbar.dart';
 import '../workbench_layout.dart';
 import 'gallery/gallery_selection_bar.dart';
@@ -715,7 +716,7 @@ class _ToolsMenuButton extends StatelessWidget {
     final activeTool = tools.where((t) => t.index == activeIndex).firstOrNull;
     final isTouch = Platform.isAndroid || Platform.isIOS;
 
-    return MenuAnchor(
+    return AppMenuAnchor(
       menuChildren: [
         for (final t in tools)
           MenuItemButton(
@@ -801,7 +802,7 @@ class _ThumbnailSizeButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return MenuAnchor(
+    return AppMenuAnchor(
       menuChildren: [
         Consumer<GalleryState>(
           builder: (context, gallery, _) {
@@ -888,7 +889,7 @@ class _GalleryOverflowMenu extends StatelessWidget {
       (s) => s.viewMode == GalleryViewMode.temp && s.droppedImages.isNotEmpty,
     );
 
-    return MenuAnchor(
+    return AppMenuAnchor(
       menuChildren: [
         MenuItemButton(
           leadingIcon: const Icon(Icons.select_all, size: AppSize.iconLg),

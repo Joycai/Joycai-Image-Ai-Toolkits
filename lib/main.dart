@@ -324,15 +324,6 @@ class _MyAppState extends State<MyApp> {
       home: const MainNavigationScreen(),
     );
 
-    // Windows only: the engine's accessibility bridge desyncs its AXTree when
-    // overlay routes tear down mid-animation and can take the process down
-    // (flutter/flutter#182444, #100610). Keeping the semantics tree empty
-    // removes the updates that desync it; the runner also blocks
-    // WM_GETOBJECT. Remove both once upstream is fixed. Not applied on
-    // Android/iOS, where TalkBack and VoiceOver need the tree.
-    if (Platform.isWindows) {
-      return ExcludeSemantics(child: app);
-    }
     return app;
   }
 }

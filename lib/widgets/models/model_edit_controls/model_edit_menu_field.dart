@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
+import '../../ui/app_menu_anchor.dart';
 import 'model_edit_metrics.dart';
 
 /// The stroke a [ModelEditMenuField] wears.
@@ -128,7 +129,7 @@ class _ModelEditMenuFieldState<T> extends State<ModelEditMenuField<T>> {
             2 * AppSpace.s6 -
             2 * AppSpace.s10;
 
-        return MenuAnchor(
+        return AppMenuAnchor(
           controller: _controller,
           alignmentOffset: const Offset(0, AppSpace.s4),
           menuChildren: [
