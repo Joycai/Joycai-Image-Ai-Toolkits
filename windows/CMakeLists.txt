@@ -55,7 +55,16 @@ add_subdirectory("runner")
 
 # Generated plugin build rules, which manage building the plugins and adding
 # them to the application.
+# path_provider_android brings JNI transitively, but Windows uses
+# path_provider_windows and has no JVM runtime. Do not let an installed JDK
+# change our Windows payload. Override a previously cached JNI_FOUND as well
+# so incremental builds stop producing dartjni.dll after this change.
+set(CMAKE_DISABLE_FIND_PACKAGE_JNI TRUE)
+set(JNI_FOUND FALSE)
 include(flutter/generated_plugins.cmake)
+if(TARGET jni)
+  message(FATAL_ERROR "Unexpected JNI target in the Windows application")
+endif()
 
 
 # === Installation ===
@@ -71,6 +80,11 @@ endif()
 
 set(INSTALL_BUNDLE_DATA_DIR "${CMAKE_INSTALL_PREFIX}/data")
 set(INSTALL_BUNDLE_LIB_DIR "${CMAKE_INSTALL_PREFIX}")
+
+# An incremental build may still contain the DLL from earlier JNI discovery.
+# Remove only that obsolete build output; do not touch Java or user data.
+install(CODE "file(REMOVE \"${INSTALL_BUNDLE_LIB_DIR}/dartjni.dll\")"
+  COMPONENT Runtime)
 
 install(TARGETS ${BINARY_NAME} RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}"
   COMPONENT Runtime)

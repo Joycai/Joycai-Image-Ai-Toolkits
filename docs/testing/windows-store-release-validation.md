@@ -51,7 +51,7 @@ present. Files shared with the Release directory matched byte-for-byte. The reta
 [dependency inventory](windows-store-native-dependencies.json) includes per-file
 hashes/imports and the package hash. It is evidence for this artifact only.
 
-**Open dependency finding:** `dartjni.dll` imports `jvm.dll`, which is not bundled
+**Original dependency finding (fixed by the follow-up below):** `dartjni.dll` imports `jvm.dll`, which is not bundled
 or present in this host's System32. The dependency graph introduces JNI through
 `path_provider_android`; no inspected PE statically imports `dartjni.dll`. JNI's
 CMake conditionally builds the library when it discovers a host JVM. This suggests
@@ -65,6 +65,43 @@ Other imports are bundled, Windows API-set contracts, or DLLs found in the devel
 host's System32. Host presence does **not** prove clean-OS availability, minimum-OS
 export support, dynamic LoadLibrary behavior or codec availability. Therefore native
 dependency acceptance remains open even though the package verifier passed.
+
+## JNI packaging follow-up (2026-11-08)
+
+Windows now disables the Android-transitive JNI plugin's optional Java discovery,
+including a previously cached found result, before generated plugin configuration.
+Incremental installation removes the old build-bundle `dartjni.dll`. The MSIX verifier
+rejects JNI/JVM library names at any depth/case. No Android/macOS project, dependency
+lock, GitHub release workflow or default MSIX setting changed. The build policy is
+documented in [Windows build architecture](../architecture/windows-store-build.md#windows-native-dependencies-jni-exclusion).
+
+Fresh preparation artifact:
+`build/windows-store/preparation-ilgytml3/artifacts/joycai-store-preparation.msix`.
+SHA-256: `b6de3564e4281c9fa0e198afbdb9200445d63ae4a17013b1db4b4e93e2e45663`.
+Still unsigned, 4.31.8.0, **NOT FOR SUBMISSION**. Provenance records base revision
+`5179a712` plus working-source hashes for the fix; those source hashes match the
+implementation reviewed here. Local SDK remains 3.47.9 with the preparation override.
+
+- Fresh Release/MSIX passed the package verifier and all 8 Store safety tests.
+- All 23 packaged native PE files are x64. No JNI/JVM DLL or static import remains.
+  Other imports are bundled, Windows API sets, or present in host System32; this
+  remains a static audit, not proof of clean/minimum-OS runtime compatibility.
+  Full hashes/imports are retained in that artifact directory's `native-dependencies.json`.
+- Incrementally rebuilt the previous JNI-containing staging tree with the new CMake
+  file and explicit direct=true. Its JDK discovery cache remained present. The build
+  succeeded, the stale DLL disappeared, and ALL_BUILD no longer references the JNI
+  project. All 13 EXE/DLL files in its Release output have no JNI/JVM imports (the
+  MSIX packager adds the extra VC runtime DLLs separately).
+- Seven Python guard tests passed, including mixed-case and nested JNI/JVM paths.
+  The actual pre-fix MSIX was rejected by the new guard with the expected diagnostic.
+- Required gates: format 941 files, zero changes; analyzer `No issues found!`;
+  full non-screenshot regression with native DPAPI enabled: **3552 passed, 5 skipped**
+  (`--concurrency=2`). Logs: `build/no-jni-format.log`, `build/no-jni-analyze.log`,
+  `build/no-jni-tests.log`. No Dart/Flutter application code changed.
+
+Logs: `build/no-jni-package.log`, `build/no-jni-direct-build.log`. No application was
+launched, no package installed and no certificate changed. This resolves the specific
+JNI/JVM packaging defect; the following installed/WACK acceptance remains deferred.
 
 ## Installed acceptance matrix
 

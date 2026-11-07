@@ -109,6 +109,9 @@ WIN-01 构建工具已提交；WIN-02 已开始实现。未安装测试包或提
     [验收记录](../testing/windows-store-release-validation.md)保留产物哈希与依赖清单。
   - 静态审计发现 Android 间接依赖带入 dartjni.dll，其 jvm.dll 未随包分发；没有其他
     PE 静态引用 dartjni，但尚不能证明运行时无用或干净环境一致，发布前需解决。
+    后续已修复该 JNI 打包问题：Windows 禁止可选 Java 发现并清理旧构建 DLL，
+    MSIX verifier 拒绝 JNI/JVM；全新包与 direct=true 增量构建均验证不再含相关 DLL/import。
+    具体产物哈希及验证范围见上述验收记录；干净系统运行/WACK 仍待完成。
   - 本机有 WACK，但没有隔离 VM/Sandbox；用户明确要求暂时跳过依赖该环境的检查。
     未安装/签名/运行 WACK，未改变证书信任或系统账户；此项保持未完成。
   - 本轮仅新增验证记录/证据，并单独提交用户删除的 22 个 Dart/Flutter 仓库技能文件。

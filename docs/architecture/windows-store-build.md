@@ -81,6 +81,28 @@ isolation. See [Microsoft's capability guidance](https://learn.microsoft.com/en-
 The GitHub `flutter-build.yml` workflow and default sideload `msix_config` continue
 to create direct-distribution packages; this path never reuses their compiled output.
 
+## Windows native dependencies: JNI exclusion
+
+`path_provider_android` pulls the JNI package into the shared dependency graph;
+Windows uses `path_provider_windows` and does not use a JVM. The JNI plugin's optional
+Java discovery previously made Windows output depend on whether the build host had
+a JDK: it could bundle `dartjni.dll` with an unsatisfied `jvm.dll` import.
+
+The Windows CMake project disables optional JNI discovery before generated plugin
+rules run, shadows a previously cached `JNI_FOUND`, and fails if a JNI target is
+nevertheless created. Its install step removes only a stale `dartjni.dll` from the
+build bundle, covering incremental builds as well as fresh builds. This applies to
+both GitHub/direct Windows builds and Store preparation. It changes no Android,
+macOS, Mac App Store, dependency version or generated plugin file.
+
+The Store verifier rejects `dartjni.dll` and `jvm.dll` anywhere in an MSIX,
+case-insensitively, rather than silently removing files after packaging. A future
+intentional Windows Java integration must revisit this policy, its runtime delivery
+and licensing together. CMake's
+[optional package-discovery switch](https://cmake.org/cmake/help/latest/variable/CMAKE_DISABLE_FIND_PACKAGE_PackageName.html)
+is used only in the Windows project; the explicit `JNI_FOUND` override prevents an
+earlier configure's cached result from enabling the optional JNI target.
+
 ## Packaged storage boundary (WIN-02)
 
 `WindowsPackage` queries the process through

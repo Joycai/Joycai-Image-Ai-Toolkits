@@ -113,6 +113,13 @@ class StoreValidationTest(unittest.TestCase):
             with self.subTest(forbidden=forbidden), self.assertRaises(ValueError):
                 self.verify(files)
 
+    def test_rejects_jni_and_jvm_even_in_nested_or_mixed_case_paths(self):
+        for name in ("dartjni.dll", "jvm.dll", "plugins/DartJNI.DLL", "runtime\\JVM.dll"):
+            files = self.fixture()
+            files[name] = b"fixture"
+            with self.subTest(name=name), self.assertRaisesRegex(ValueError, "JNI/JVM"):
+                self.verify(files)
+
 
 if __name__ == "__main__":
     unittest.main()
