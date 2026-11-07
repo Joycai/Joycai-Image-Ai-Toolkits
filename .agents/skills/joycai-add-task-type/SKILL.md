@@ -16,6 +16,8 @@ copying old API signatures or relying on line numbers.
 | `lib/models/task_item.dart` | `TaskType`, `TaskItem`, `TaskEvent`, serialization |
 | `lib/services/tasks/task_queue_service.dart` | `_executeTask()` dispatch, lifecycle, concurrency, persistence |
 | `lib/services/tasks/task_executors.dart` | `_executeXxxTask()` methods; a `part of` the queue service |
+| `lib/services/tasks/generation_task_data.dart` | Typed generation snapshot creation and legacy-compatible reads |
+| `lib/services/tasks/task_media_snapshot.dart` | Persistent copies of task input media |
 | `lib/widgets/tasks/task_type_glyph.dart` | Shared task-type icons |
 | `lib/screens/batch/task_card/task_card_cells.dart` | Task-type semantic colours |
 | `lib/l10n/src/<lang>/tasks.arb` | Localized labels/status strings for all four languages |
@@ -29,8 +31,12 @@ copying old API signatures or relying on line numbers.
    executor. Leave common completion, failure, cancellation, running-count updates,
    and persistence in that lifecycle wrapper.
 3. Implement the executor in `task_executors.dart`, following the closest existing
-   task. `addTask()` already handles creation generically and normally needs no
-   task-specific branch. Keep new inputs serializable in `task.parameters`.
+   task. Common task creation is reusable, but inspect `addTask()` and
+   `snapshotGenerationTask()` for type-specific behavior: generation snapshots
+   currently cover only `imageProcess` and `videoGenerate`. A new generation type
+   needs deliberate integration with model-row resolution and snapshot creation.
+   Keep new inputs serializable in `task.parameters`; follow the generation
+   contract below for image/video operations.
 4. For streaming, call `_shouldUseStream(task)` before choosing the path. Check
    `TaskStatus.cancelled` inside streaming/polling loops and after awaited work before
    storing results. Use `_emit()` for live output and `_notify()` for queue changes;
@@ -51,3 +57,31 @@ copying old API signatures or relying on line numbers.
 9. Run all three gates: `dart format lib test tool`, `flutter analyze`, and
    `flutter test -x screenshots`. For UI changes, render and inspect the relevant
    screenshot harness as required by `AGENTS.md`.
+
+## Generation and accepted-job contracts
+
+For image/video work, read `docs/architecture/generation-parameters.md` and
+`docs/architecture/media-accounting.md` before extending the executor.
+
+- Persist typed intent in `parameters.generation`: prompt, operation, values,
+  role-tagged media, model/channel row identities, effective protocol, profile
+  and schema version. Keep application metadata outside it. Runtime cancellation
+  and abort controls belong in `GenerationExecutionContext`, never serialized.
+- Read through `generationTaskOptions` / `task.generationOptions` and
+  `task.generationImagePaths`; preserve the legacy flat-task read path. Do not
+  persist a second flat copy of the snapshot's prompt, media or parameter values.
+- Integrate new media roles with `snapshotTaskMedia` so authoritative and legacy
+  paths refer to the same persistent copies when input preservation is enabled.
+  Preserve original paths for rename operations and URLs for downloads.
+- Before initial paid submission, validate model/channel, vendor, protocol,
+  profile and schema compatibility. Resolve current credentials at execution.
+  Resume accepted video jobs from their persisted operation/surface identity;
+  do not apply initial-submission revalidation or submit a replacement generation.
+  For Batch work, follow `image_batch_tasks.dart` and `image_batch_session.dart`
+  under their respective task/LLM service folders, including durable submission
+  intent and reconciliation of ambiguous submissions.
+- Preserve submitted prices, usage scope and remote operation identity. Use the
+  shared accounting and durable settlement path for terminal evidence; missing
+  evidence remains incomplete and cancellation does not establish a refund.
+  Test snapshot round trips, legacy reads, preserved media, configuration drift,
+  accepted-job recovery and duplicate settlement where applicable.

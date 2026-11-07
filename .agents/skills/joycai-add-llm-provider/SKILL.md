@@ -64,8 +64,17 @@ a new vendor.
       `VendorProfile` — that alone relaxes the required-key check in both the
       wizard and the editor.
 - [ ] 4. Models with new parameters? Extend layer 3:
-      `model_capabilities.dart` (ParamSpec tables) and, if a new family is
-      needed, `model_family.dart` + the dispatcher routing.
+      read `docs/architecture/generation-parameters.md`. Image/video declarations
+      live in `lib/services/llm/generation/profiles/*_profiles.dart`, parts of
+      `model_capabilities.dart`; register stable identities in
+      `ModelCapabilities.profiles`. `idRoutedTables` is not the complete registry.
+      Keep ID matching in `model_family.dart` / `model_descriptor.dart`.
+      For native aliases, update `GenerationProfiles.byWire` compatibility;
+      declare wire restrictions in `protocols/generation_contract.dart`.
+      Resolve schemas through `LLMDispatcher.generationSchemaFor` and pass the
+      same serving capabilities to encoders. Reuse typed parameters and encoding;
+      change the encoder only when the wire differs. Test defaults, incompatible
+      profiles, route compatibility, payloads and billing output.
 - [ ] 5. `dart format lib test tool`, then `flutter analyze` — must report **"No issues found!"**
 - [ ] 6. `flutter test -x screenshots` — the vendor auth tests live in
       `test/services/llm/google_auth_headers_test.dart`; add cases for a new auth scheme.
@@ -87,10 +96,17 @@ a new vendor.
       `llm_dispatcher.dart` (generate / generateStream / startLongRunning /
       checkOperation / discoverModels).
 - [ ] 4. Add the vendor profile(s) serving the protocol (Checklist A).
-- [ ] 5. Token usage: yield/return `metadata` carrying the upstream usage
-      payload — `LLMService._recordUsage` understands OpenAI
-      (`prompt_tokens`/`completion_tokens`) and Google
-      (`promptTokenCount`/`candidatesTokenCount`) keys.
+- [ ] 5. Preserve upstream usage in response/chunk metadata and verify the
+      existing usage parser handles the new dialect. For image/video protocols,
+      read `docs/architecture/media-accounting.md`: ordinary requests and Batch
+      share normalized, disjoint modality components; raw token totals alone
+      are insufficient. Supply actual sent input counts/durations and terminal
+      billing evidence through the current submission/poll contracts. Missing
+      evidence stays unknown/incomplete, distinct from explicit zero.
+      Reuse submitted pricing snapshots and the durable, atomic usage settlement
+      path; never reprice accepted jobs from current settings or infer refunds
+      from cancellation/failure. Cover incomplete evidence, reported zero,
+      restart recovery and duplicate settlement as relevant to the new protocol.
 - [ ] 6. `dart format lib test tool`, `flutter analyze`, then `flutter test -x screenshots`.
 
 ## Key types
