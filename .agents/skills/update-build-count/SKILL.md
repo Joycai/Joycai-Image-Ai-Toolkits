@@ -7,6 +7,13 @@ description: Automatically increment the build number in pubspec.yaml and synchr
 
 This skill provides a streamlined workflow to increment the build number (the `+B` part of `X.Y.Z+B`) across the Joycai Image AI Toolkits project.
 
+The checked-in `msix_config` is for direct distribution and uses `X.Y.Z.B`.
+Windows Store preparation derives `X.Y.Z.0` from the semantic version in its
+isolated staging copy, so a build-only bump does not increase the Store package
+version. For Store work, read `docs/architecture/windows-store-build.md`; use
+`bump-version` when a higher Store package version is required. Preserve the
+Store script's production gate and isolated configuration.
+
 ## Workflow
 
 1.  **Read Current Version**:

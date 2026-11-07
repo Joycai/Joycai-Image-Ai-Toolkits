@@ -32,10 +32,12 @@ Match the string to the right category file. When in doubt, use `common.arb`.
 | `browser.arb` | File Browser screen |
 | `common.arb` | Shared labels — buttons, status words, generic messages |
 | `downloader.arb` | Image Downloader screen |
+| `generation.arb` | Shared image/video generation parameters and diagnostics |
 | `metrics.arb` | Token Usage / cost metrics screen |
 | `models.arb` | Models & Channels management screen |
 | `prompts.arb` | Prompt Library screen |
 | `settings.arb` | Settings screen |
+| `shortcuts.arb` | Keyboard shortcut labels and help |
 | `tasks.arb` | Task Queue screen |
 | `wizard.arb` | Setup Wizard |
 | `workbench.arb` | Workbench / gallery screen |
@@ -59,8 +61,12 @@ Work through these in order — every step is required:
 - [ ] 4. Add the same key to `lib/l10n/src/zh_Hant/<module>.arb` (Traditional Chinese)
 - [ ] 5. Add the same key to `lib/l10n/src/ja/<module>.arb` (Japanese)
 - [ ] 6. If the string uses `{placeholder}` values, add the `@keyName` metadata block in **all 4** language files (see ARB format below)
-- [ ] 7. Run: `dart tool/merge_l10n.dart`
-- [ ] 8. Run: `flutter gen-l10n`
+- [ ] 7. Check source ARBs before merging: compare non-metadata key sets across
+      all four languages, and detect duplicate keys within each file and across
+      modules in each language (including duplicate `@keyName` metadata).
+      Reject duplicates rather than relying on merge order; fix missing or extra
+      translations. Then run: `dart tool/merge_l10n.dart`.
+- [ ] 8. Only after the merge succeeds, run: `flutter gen-l10n`
 - [ ] 9. Use the key in Dart via `l10n.myKey` or `AppLocalizations.of(context)!.myKey`
 - [ ] 10. Run: `dart format lib test tool` — gate 0 (page width 100, from `analysis_options.yaml`)
 - [ ] 11. Run: `flutter analyze` — must report **"No issues found!"**
@@ -114,8 +120,14 @@ Text(AppLocalizations.of(context)!.cancelTask)
 ## Common Pitfalls
 
 **Missing a language** — All 4 languages must have identical key sets. A missing key
-causes `merge_l10n.dart` to fail silently or leaves untranslated strings at runtime.
-After editing, always verify all 4 files have the new key before running the merge.
+is not rejected by `merge_l10n.dart`: it merges each existing language directory
+independently and skips absent directories. Verify key parity explicitly; a
+successful merge does not prove translation completeness.
+
+**Duplicate keys** — The merge sorts module filenames and calls `addAll`, so a
+later module silently overwrites an earlier module's value or metadata. Check
+uniqueness before merging, including duplicates inside a JSON object (use a
+duplicate-aware parser; decoding directly into a map loses that evidence).
 
 **Skipping the merge** — New keys added to `src/` are invisible to Flutter until
 `dart tool/merge_l10n.dart` runs. `flutter gen-l10n` alone is not enough.
