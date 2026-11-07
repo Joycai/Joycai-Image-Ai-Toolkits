@@ -95,6 +95,8 @@ def store_pubspec(pubspec, settings):
 def verify_package(package, config, version):
     with zipfile.ZipFile(package) as archive:
         names = {n.replace("\\", "/").lower() for n in archive.namelist()}
+        require(not any(n.rsplit("/", 1)[-1] in {"dartjni.dll", "jvm.dll"} for n in names),
+                "Windows package must not contain JNI/JVM libraries")
         require(not any(n.endswith((".pfx", ".p12", ".cer")) for n in names),
                 "Package contains a certificate")
         require("appxsignature.p7x" not in names, "Store candidate must be unsigned")

@@ -191,8 +191,8 @@ Dependencies: WIN-01 through WIN-05.
 
 2026-11-08: fresh preparation MSIX built and verified; 24 native PE files audited.
 The [release-validation record](../testing/windows-store-release-validation.md)
-retains the exact hash, native-import evidence, an unresolved JNI/JVM dependency
-finding and the installed acceptance matrix. The maintainer explicitly deferred
+retains the exact hash, native-import evidence, the JNI/JVM dependency finding and
+its verified packaging fix, and the installed acceptance matrix. The maintainer explicitly deferred
 VM-dependent checks because no isolated environment is available. WACK is installed
 but has not been run. WIN-06 remains incomplete; no production readiness is claimed.
 
