@@ -98,8 +98,9 @@ tests cover saved values/reload and the acknowledgement-only editing control.
 Reporting uses `mailto:joycai@joycai.cn` with no subject/body/attachments. Widget
 tests exercise launch success, false return, exception, and clipboard fallback.
 No report is sent by the tests. Actual Windows mail-handler/clipboard behavior
-still needs installed testing. Mailbox monitoring and ownership require the
-maintainer's confirmation; the response procedure is recorded in
+still needs installed testing. On 2026-11-08 the maintainer confirmed use of this
+address and the existing maintainer review/response procedure. Mail delivery and
+ongoing monitoring were not independently tested; the procedure is recorded in
 [content safety](../architecture/content-safety.md#content-concerns).
 
 ## Release evidence still required
@@ -110,7 +111,8 @@ maintainer's confirmation; the response procedure is recorded in
    streaming before completion, not just final responses.
 2. Implement and test the remote transport requirement and deliberate loopback
    exception without changing direct/Mac behavior unintentionally.
-3. Confirm the monitored reporting destination and response owner/process.
+3. Maintain monitoring of the confirmed reporting destination using the existing
+   maintainer procedure; verify mail-handler behavior during installed acceptance.
 4. In an isolated installed MSIX, exercise first use, changed recipients, revoked
    queued/retried/resumed jobs, Batch and MCP, and reporting with/without a mail
    handler. Record artifact hash, Windows version and results.

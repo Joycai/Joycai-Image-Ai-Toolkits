@@ -131,7 +131,8 @@ Source audit and synthetic checks are recorded in the
 wire has a disposition, checked against the enum by a test. No route has completed
 content-safety acceptance; production Windows Store packaging is now blocked in
 code while preparation remains available. Remote HTTP policy, provider/custom-route
-controls, reporting ownership and installed behavior remain release prerequisites.
+controls and installed behavior remain release prerequisites. The maintainer
+confirmed the existing reporting address/procedure on 2026-11-08.
 This does not change the GitHub or Mac App Store runtime/build paths.
 
 - Verify Store Gemini constraints across saved settings, imports, old queued tasks,
