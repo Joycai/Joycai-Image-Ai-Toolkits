@@ -1,0 +1,475 @@
+{
+  "purpose": "static-preparation-audit-not-installed-acceptance",
+  "package_sha256": "04a9bb512e592df511bea5c897e6670d22305c64d726e2cc8690512e48b05710",
+  "source_revision": "0c91703ac5e1514fc113f07680cc76cb55ab47a6",
+  "current_source_hashes_match": true,
+  "pe_files": [
+    {
+      "file": "concrt140.dll",
+      "sha256": "2405355f0a58067b258f8df33c327e3a3d716eaac5a3a5aebb757842d85bd376",
+      "machine": "x64",
+      "imports": {
+        "api-ms-win-crt-heap-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-math-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-runtime-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-stdio-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-string-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "KERNEL32.dll": "present-on-development-host; verify clean OS",
+        "MSVCP140.dll": "bundled-root",
+        "VCRUNTIME140.dll": "bundled-root",
+        "VCRUNTIME140_1.dll": "bundled-root"
+      }
+    },
+    {
+      "file": "dartjni.dll",
+      "sha256": "4cb11eb885b15f865f186d66b4394a55c04370b42d08fec1cc5fca1933bd650a",
+      "machine": "x64",
+      "imports": {
+        "api-ms-win-crt-heap-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-runtime-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-stdio-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-string-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "jvm.dll": "UNRESOLVED",
+        "KERNEL32.dll": "present-on-development-host; verify clean OS",
+        "ole32.dll": "present-on-development-host; verify clean OS",
+        "VCRUNTIME140.dll": "bundled-root"
+      }
+    },
+    {
+      "file": "desktop_drop_plugin.dll",
+      "sha256": "900d9193620a6b328a6c891d5c1417b2687947def655f7d05261f75b951820b3",
+      "machine": "x64",
+      "imports": {
+        "api-ms-win-crt-heap-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-runtime-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-string-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "flutter_windows.dll": "bundled-root",
+        "KERNEL32.dll": "present-on-development-host; verify clean OS",
+        "MSVCP140.dll": "bundled-root",
+        "ole32.dll": "present-on-development-host; verify clean OS",
+        "SHELL32.dll": "present-on-development-host; verify clean OS",
+        "USER32.dll": "present-on-development-host; verify clean OS",
+        "VCRUNTIME140.dll": "bundled-root",
+        "VCRUNTIME140_1.dll": "bundled-root"
+      }
+    },
+    {
+      "file": "fc_native_video_thumbnail_plugin.dll",
+      "sha256": "4fd9ce7b6bf4f2b808fb309316e3777f145d9cfa038010ff787dfbd89efa628f",
+      "machine": "x64",
+      "imports": {
+        "api-ms-win-crt-heap-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-runtime-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-stdio-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-string-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "flutter_windows.dll": "bundled-root",
+        "GDI32.dll": "present-on-development-host; verify clean OS",
+        "gdiplus.dll": "present-on-development-host; verify clean OS",
+        "KERNEL32.dll": "present-on-development-host; verify clean OS",
+        "MSVCP140.dll": "bundled-root",
+        "ole32.dll": "present-on-development-host; verify clean OS",
+        "SHELL32.dll": "present-on-development-host; verify clean OS",
+        "SHLWAPI.dll": "present-on-development-host; verify clean OS",
+        "VCRUNTIME140.dll": "bundled-root",
+        "VCRUNTIME140_1.dll": "bundled-root"
+      }
+    },
+    {
+      "file": "file_selector_windows_plugin.dll",
+      "sha256": "6e0f9fd48f27f9413d0d19887632ba9339fd7c0bb2b8c4c61ba6941800e11547",
+      "machine": "x64",
+      "imports": {
+        "api-ms-win-crt-heap-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-runtime-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-string-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "flutter_windows.dll": "bundled-root",
+        "KERNEL32.dll": "present-on-development-host; verify clean OS",
+        "MSVCP140.dll": "bundled-root",
+        "ole32.dll": "present-on-development-host; verify clean OS",
+        "SHELL32.dll": "present-on-development-host; verify clean OS",
+        "USER32.dll": "present-on-development-host; verify clean OS",
+        "VCRUNTIME140.dll": "bundled-root",
+        "VCRUNTIME140_1.dll": "bundled-root"
+      }
+    },
+    {
+      "file": "flutter_local_notifications_windows.dll",
+      "sha256": "e313531d92733dbf340341808649b70617c66ef6ac1f63e494f0906e55078dad",
+      "machine": "x64",
+      "imports": {
+        "ADVAPI32.dll": "present-on-development-host; verify clean OS",
+        "api-ms-win-core-winrt-error-l1-1-1.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-core-winrt-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-convert-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-heap-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-runtime-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-string-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "KERNEL32.dll": "present-on-development-host; verify clean OS",
+        "MSVCP140.dll": "bundled-root",
+        "ole32.dll": "present-on-development-host; verify clean OS",
+        "OLEAUT32.dll": "present-on-development-host; verify clean OS",
+        "VCRUNTIME140.dll": "bundled-root",
+        "VCRUNTIME140_1.dll": "bundled-root"
+      }
+    },
+    {
+      "file": "flutter_windows.dll",
+      "sha256": "30494fb08f9f101a8fbe42568110aaa160efbd7341f3cfe877dc14214be3a233",
+      "machine": "x64",
+      "imports": {
+        "ADVAPI32.dll": "present-on-development-host; verify clean OS",
+        "api-ms-win-core-path-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-core-synch-l1-2-0.dll": "Windows-API-set; verify OS floor",
+        "bcrypt.dll": "present-on-development-host; verify clean OS",
+        "CRYPT32.dll": "present-on-development-host; verify clean OS",
+        "d3d9.dll": "present-on-development-host; verify clean OS",
+        "dbghelp.dll": "present-on-development-host; verify clean OS",
+        "dwmapi.dll": "present-on-development-host; verify clean OS",
+        "dxgi.dll": "present-on-development-host; verify clean OS",
+        "GDI32.dll": "present-on-development-host; verify clean OS",
+        "IMM32.dll": "present-on-development-host; verify clean OS",
+        "KERNEL32.dll": "present-on-development-host; verify clean OS",
+        "ntdll.dll": "present-on-development-host; verify clean OS",
+        "ole32.dll": "present-on-development-host; verify clean OS",
+        "OLEACC.dll": "present-on-development-host; verify clean OS",
+        "OLEAUT32.dll": "present-on-development-host; verify clean OS",
+        "OPENGL32.dll": "present-on-development-host; verify clean OS",
+        "PROPSYS.dll": "present-on-development-host; verify clean OS",
+        "RPCRT4.dll": "present-on-development-host; verify clean OS",
+        "SHLWAPI.dll": "present-on-development-host; verify clean OS",
+        "USER32.dll": "present-on-development-host; verify clean OS",
+        "WINMM.dll": "present-on-development-host; verify clean OS",
+        "WS2_32.dll": "present-on-development-host; verify clean OS"
+      }
+    },
+    {
+      "file": "gal_plugin.dll",
+      "sha256": "8e88917dd2f39cd70dc4456beaa049b4c2dde67551b5408112a1251e49bb73f7",
+      "machine": "x64",
+      "imports": {
+        "api-ms-win-core-com-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-core-com-l1-1-1.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-core-debug-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-core-errorhandling-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-core-handle-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-core-heap-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-core-interlocked-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-core-libraryloader-l1-2-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-core-localization-l1-2-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-core-processthreads-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-core-processthreads-l1-1-1.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-core-profile-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-core-rtlsupport-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-core-string-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-core-synch-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-core-synch-l1-2-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-core-sysinfo-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-core-threadpool-l1-2-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-core-winrt-error-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-core-winrt-error-l1-1-1.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-core-winrt-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-heap-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-math-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-runtime-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-string-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "flutter_windows.dll": "bundled-root",
+        "MSVCP140.dll": "bundled-root",
+        "OLEAUT32.dll": "present-on-development-host; verify clean OS",
+        "VCRUNTIME140.dll": "bundled-root",
+        "VCRUNTIME140_1.dll": "bundled-root"
+      }
+    },
+    {
+      "file": "joycai_image_ai_toolkits.exe",
+      "sha256": "9f71dd573a6900b1aae1dfc3af667af71236a570f69826a29af5dd81d02c02bb",
+      "machine": "x64",
+      "imports": {
+        "ADVAPI32.dll": "present-on-development-host; verify clean OS",
+        "api-ms-win-crt-heap-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-locale-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-math-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-runtime-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-stdio-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-string-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "CRYPT32.dll": "present-on-development-host; verify clean OS",
+        "d3d11.dll": "present-on-development-host; verify clean OS",
+        "desktop_drop_plugin.dll": "bundled-root",
+        "dwmapi.dll": "present-on-development-host; verify clean OS",
+        "fc_native_video_thumbnail_plugin.dll": "bundled-root",
+        "file_selector_windows_plugin.dll": "bundled-root",
+        "flutter_windows.dll": "bundled-root",
+        "gal_plugin.dll": "bundled-root",
+        "gdiplus.dll": "present-on-development-host; verify clean OS",
+        "KERNEL32.dll": "present-on-development-host; verify clean OS",
+        "MSVCP140.dll": "bundled-root",
+        "ole32.dll": "present-on-development-host; verify clean OS",
+        "screen_retriever_windows_plugin.dll": "bundled-root",
+        "share_plus_plugin.dll": "bundled-root",
+        "SHELL32.dll": "present-on-development-host; verify clean OS",
+        "url_launcher_windows_plugin.dll": "bundled-root",
+        "USER32.dll": "present-on-development-host; verify clean OS",
+        "VCRUNTIME140.dll": "bundled-root",
+        "VCRUNTIME140_1.dll": "bundled-root",
+        "video_player_win_plugin.dll": "bundled-root",
+        "window_manager_plugin.dll": "bundled-root"
+      }
+    },
+    {
+      "file": "msvcp140.dll",
+      "sha256": "0f885b509a685d2bbfa652fed26b5fb31d88fbdab0a978c641d1c7b8aa460aa9",
+      "machine": "x64",
+      "imports": {
+        "api-ms-win-crt-convert-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-environment-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-filesystem-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-heap-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-locale-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-math-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-runtime-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-stdio-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-string-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-time-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-utility-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "KERNEL32.dll": "present-on-development-host; verify clean OS",
+        "VCRUNTIME140.dll": "bundled-root",
+        "VCRUNTIME140_1.dll": "bundled-root"
+      }
+    },
+    {
+      "file": "msvcp140_1.dll",
+      "sha256": "bfad5aef4c63a669e3c140655cdfdf395b6c979b400a447bd5dcb65ed8826c3d",
+      "machine": "x64",
+      "imports": {
+        "api-ms-win-crt-heap-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-runtime-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "KERNEL32.dll": "present-on-development-host; verify clean OS",
+        "MSVCP140.dll": "bundled-root",
+        "VCRUNTIME140.dll": "bundled-root"
+      }
+    },
+    {
+      "file": "msvcp140_2.dll",
+      "sha256": "3ea06f0ee098b4823cb79599df3780e7f23cce52c19aac31d2a0d47efe33a5e9",
+      "machine": "x64",
+      "imports": {
+        "api-ms-win-crt-heap-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-locale-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-math-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-runtime-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-stdio-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-string-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "KERNEL32.dll": "present-on-development-host; verify clean OS",
+        "MSVCP140.dll": "bundled-root",
+        "VCRUNTIME140.dll": "bundled-root",
+        "VCRUNTIME140_1.dll": "bundled-root"
+      }
+    },
+    {
+      "file": "msvcp140_atomic_wait.dll",
+      "sha256": "640b2aefced484d0368eea5bdd06addd0658a3a70a49256e560d6923b404a479",
+      "machine": "x64",
+      "imports": {
+        "ADVAPI32.dll": "present-on-development-host; verify clean OS",
+        "api-ms-win-crt-heap-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-locale-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-runtime-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "KERNEL32.dll": "present-on-development-host; verify clean OS",
+        "MSVCP140.dll": "bundled-root",
+        "VCRUNTIME140.dll": "bundled-root",
+        "VCRUNTIME140_1.dll": "bundled-root"
+      }
+    },
+    {
+      "file": "msvcp140_codecvt_ids.dll",
+      "sha256": "f2069a52880ec885ee7f0511186100eb7fada0411a2b4948fafea7735b878a18",
+      "machine": "x64",
+      "imports": {
+        "api-ms-win-crt-runtime-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "KERNEL32.dll": "present-on-development-host; verify clean OS",
+        "VCRUNTIME140.dll": "bundled-root"
+      }
+    },
+    {
+      "file": "screen_retriever_windows_plugin.dll",
+      "sha256": "e7f03807cd2c92876fe87b3379e5cbc5a2edaaeef77818f3ff04c8194f3f0993",
+      "machine": "x64",
+      "imports": {
+        "api-ms-win-crt-heap-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-math-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-runtime-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-string-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "flutter_windows.dll": "bundled-root",
+        "KERNEL32.dll": "present-on-development-host; verify clean OS",
+        "MSVCP140.dll": "bundled-root",
+        "USER32.dll": "present-on-development-host; verify clean OS",
+        "VCRUNTIME140.dll": "bundled-root",
+        "VCRUNTIME140_1.dll": "bundled-root"
+      }
+    },
+    {
+      "file": "share_plus_plugin.dll",
+      "sha256": "685156fa3e467f4d919f63844313cc69cf37f7ebf3c742a5d60138d7e2cca480",
+      "machine": "x64",
+      "imports": {
+        "api-ms-win-core-winrt-error-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-core-winrt-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-core-winrt-string-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-heap-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-runtime-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-string-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "flutter_windows.dll": "bundled-root",
+        "KERNEL32.dll": "present-on-development-host; verify clean OS",
+        "MSVCP140.dll": "bundled-root",
+        "ole32.dll": "present-on-development-host; verify clean OS",
+        "USER32.dll": "present-on-development-host; verify clean OS",
+        "VCRUNTIME140.dll": "bundled-root",
+        "VCRUNTIME140_1.dll": "bundled-root"
+      }
+    },
+    {
+      "file": "sqlite3.dll",
+      "sha256": "3a29878d0936510af0f563dfc7668c561c92f7ebe1d9fef95975f721dc01b590",
+      "machine": "x64",
+      "imports": {
+        "KERNEL32.dll": "present-on-development-host; verify clean OS"
+      }
+    },
+    {
+      "file": "url_launcher_windows_plugin.dll",
+      "sha256": "56e3d096aa30a88c6166ee7d007cb4f7615594ebbf74508ed3f94da4296c65fa",
+      "machine": "x64",
+      "imports": {
+        "ADVAPI32.dll": "present-on-development-host; verify clean OS",
+        "api-ms-win-crt-heap-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-runtime-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-string-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "flutter_windows.dll": "bundled-root",
+        "KERNEL32.dll": "present-on-development-host; verify clean OS",
+        "MSVCP140.dll": "bundled-root",
+        "SHELL32.dll": "present-on-development-host; verify clean OS",
+        "SHLWAPI.dll": "present-on-development-host; verify clean OS",
+        "VCRUNTIME140.dll": "bundled-root",
+        "VCRUNTIME140_1.dll": "bundled-root"
+      }
+    },
+    {
+      "file": "vccorlib140.dll",
+      "sha256": "19839407c3fdbc824e5bce189bf68ddf8097f12ec28b757797ffa0415c144ddd",
+      "machine": "x64",
+      "imports": {
+        "api-ms-win-core-winrt-error-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-core-winrt-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-core-winrt-string-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-heap-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-math-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-runtime-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-stdio-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-string-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "KERNEL32.dll": "present-on-development-host; verify clean OS",
+        "MSVCP140.dll": "bundled-root",
+        "ole32.dll": "present-on-development-host; verify clean OS",
+        "OLEAUT32.dll": "present-on-development-host; verify clean OS",
+        "VCRUNTIME140.dll": "bundled-root",
+        "VCRUNTIME140_1.dll": "bundled-root"
+      }
+    },
+    {
+      "file": "vcruntime140.dll",
+      "sha256": "d5e4d9a3e835fa679450145d6a7d94e36573a509317111904d9b3712c30d9066",
+      "machine": "x64",
+      "imports": {
+        "api-ms-win-crt-convert-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-heap-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-runtime-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-stdio-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-string-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "KERNEL32.dll": "present-on-development-host; verify clean OS"
+      }
+    },
+    {
+      "file": "vcruntime140_1.dll",
+      "sha256": "1f2d41c4aa5db0bc33ebf7b66d72943a817d7ce6cbe880502a9403823633093f",
+      "machine": "x64",
+      "imports": {
+        "api-ms-win-crt-heap-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-runtime-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-string-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "KERNEL32.dll": "present-on-development-host; verify clean OS",
+        "VCRUNTIME140.dll": "bundled-root"
+      }
+    },
+    {
+      "file": "vcruntime140_threads.dll",
+      "sha256": "219915cf20822f34d5e7c1fdd4e21ae7f3396881096c51036225fb8f84b47afa",
+      "machine": "x64",
+      "imports": {
+        "api-ms-win-crt-heap-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-runtime-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-time-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "KERNEL32.dll": "present-on-development-host; verify clean OS",
+        "VCRUNTIME140.dll": "bundled-root"
+      }
+    },
+    {
+      "file": "video_player_win_plugin.dll",
+      "sha256": "ff1af99da4c5e57b59c43893074b2cd6eb0d95b313de2d8b0a72541dc8ac710c",
+      "machine": "x64",
+      "imports": {
+        "api-ms-win-crt-heap-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-runtime-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-stdio-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-string-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "d3d11.dll": "present-on-development-host; verify clean OS",
+        "flutter_windows.dll": "bundled-root",
+        "KERNEL32.dll": "present-on-development-host; verify clean OS",
+        "MSVCP140.dll": "bundled-root",
+        "ole32.dll": "present-on-development-host; verify clean OS",
+        "USER32.dll": "present-on-development-host; verify clean OS",
+        "VCRUNTIME140.dll": "bundled-root",
+        "VCRUNTIME140_1.dll": "bundled-root",
+        "WINHTTP.dll": "present-on-development-host; verify clean OS"
+      }
+    },
+    {
+      "file": "window_manager_plugin.dll",
+      "sha256": "7aad0a3b2e21721cf59ccb3f9035731ec6064e36c5a9f732cd3a702bf929d3e6",
+      "machine": "x64",
+      "imports": {
+        "ADVAPI32.dll": "present-on-development-host; verify clean OS",
+        "api-ms-win-crt-heap-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-runtime-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "api-ms-win-crt-string-l1-1-0.dll": "Windows-API-set; verify OS floor",
+        "dwmapi.dll": "present-on-development-host; verify clean OS",
+        "flutter_windows.dll": "bundled-root",
+        "KERNEL32.dll": "present-on-development-host; verify clean OS",
+        "MSVCP140.dll": "bundled-root",
+        "ole32.dll": "present-on-development-host; verify clean OS",
+        "SHELL32.dll": "present-on-development-host; verify clean OS",
+        "USER32.dll": "present-on-development-host; verify clean OS",
+        "VCRUNTIME140.dll": "bundled-root",
+        "VCRUNTIME140_1.dll": "bundled-root"
+      }
+    }
+  ],
+  "native_assets": {
+    "format-version": [
+      1,
+      0,
+      0
+    ],
+    "native-assets": {
+      "windows_x64": {
+        "package:sqlite3/src/ffi/libsqlite3.g.dart": [
+          "absolute",
+          "sqlite3.dll"
+        ]
+      }
+    }
+  },
+  "limits": [
+    "No app launch or installation",
+    "System32 presence does not establish clean-OS availability",
+    "Dynamic LoadLibrary imports and codecs require runtime tests",
+    "No WACK result"
+  ]
+}

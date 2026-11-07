@@ -104,6 +104,15 @@ WIN-01 构建工具已提交；WIN-02 已开始实现。未安装测试包或提
   - 本轮仅文档变更；核对源代码、现有清单/NOTICES.Z 及官方政策，git diff --check 通过。
     不重复运行无代码变更的 Flutter gates；此前 WIN-04 的测试结果不冒充本轮执行。
 - [ ] **WIN-06**：WACK、标准用户安装/升级/卸载及最终候选产物验收。
+  - 2026-11-08：全新隔离 Release/preparation MSIX 构建及包校验通过，Store 安全测试
+    8 项、Python 打包测试 6 项、原生 DPAPI helper 通过；24 个 PE 均为 x64。
+    [验收记录](../testing/windows-store-release-validation.md)保留产物哈希与依赖清单。
+  - 静态审计发现 Android 间接依赖带入 dartjni.dll，其 jvm.dll 未随包分发；没有其他
+    PE 静态引用 dartjni，但尚不能证明运行时无用或干净环境一致，发布前需解决。
+  - 本机有 WACK，但没有隔离 VM/Sandbox；用户明确要求暂时跳过依赖该环境的检查。
+    未安装/签名/运行 WACK，未改变证书信任或系统账户；此项保持未完成。
+  - 本轮仅新增验证记录/证据，并单独提交用户删除的 22 个 Dart/Flutter 仓库技能文件。
+    GitHub release、默认 MSIX、Mac App Store 及应用代码不变；git diff --check 通过。
 
 待确认：Partner Center 产品/发布者身份、账号类型、目标市场、商业模式及审核测试预算。
 正式上传与提交审核另行决定；本地测试通过不等于商店批准。

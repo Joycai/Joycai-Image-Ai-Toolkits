@@ -6,7 +6,8 @@ boundary and explicit import implemented; installed acceptance pending. WIN-03 D
 migration and recovery implemented; packaged/cross-user acceptance pending. WIN-04
 route audit and release guard implemented; safety/installed acceptance remains open.
 WIN-05 privacy and submission drafts prepared; publisher/candidate acceptance pending.
-WIN-06 planned.
+WIN-06 preparation package/static audit recorded; installed/WACK checks deferred by
+the maintainer until an isolated Windows environment is available.
 
 Prepare Joycai's Flutter Windows desktop application for Microsoft Store distribution
 as an x64 MSIX. Keep the GitHub distribution and ongoing Mac App Store work working.
@@ -187,6 +188,13 @@ preparing these materials.
 ### WIN-06 Installed release validation
 
 Dependencies: WIN-01 through WIN-05.
+
+2026-11-08: fresh preparation MSIX built and verified; 24 native PE files audited.
+The [release-validation record](../testing/windows-store-release-validation.md)
+retains the exact hash, native-import evidence, an unresolved JNI/JVM dependency
+finding and the installed acceptance matrix. The maintainer explicitly deferred
+VM-dependent checks because no isolated environment is available. WACK is installed
+but has not been run. WIN-06 remains incomplete; no production readiness is claimed.
 
 - Run Windows App Certification Kit on the exact candidate; investigate failures
   and warnings and retain the report with the candidate's hash and manifest.

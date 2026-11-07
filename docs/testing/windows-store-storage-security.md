@@ -33,9 +33,11 @@ real credentials, paid service calls or publication are needed for the automated
 
 ## Reproduce native checks
 
-Latest local preparation artifact: `build/windows-store/preparation-rll14jpq/artifacts/`
+Historical WIN-03 preparation artifact: `build/windows-store/preparation-rll14jpq/artifacts/`
 (`4.31.8.0`, unsigned, NOT FOR SUBMISSION). SHA-256:
 `255fde3b41b1ef1d1ffdd6a2927888a1e284e4100d19be74ce2cd6a8fea71e9e`.
+The newer WIN-06 artifact and dependency findings are recorded in
+[release validation](windows-store-release-validation.md).
 The manifest/resource verifier passed after a fresh isolated Windows Release compile;
 `provenance.json` records the staged working-source hashes (before the final commit).
 Local Flutter is 3.47.9 with the explicit preparation override; CI remains pinned to
