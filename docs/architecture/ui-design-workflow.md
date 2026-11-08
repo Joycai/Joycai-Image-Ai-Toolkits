@@ -22,6 +22,13 @@ decorative text/icons and visual tooltip do not duplicate that accessible name.
 Shell navigation likewise owns its name and exposes the shortcut as a hint;
 its visual tooltip must not repeat the name in semantics.
 
+Task status filter capsules expose the localized label once, the count as the
+semantic value, and explicit button/selected/enabled states. Selected options
+remain Tab stops; activating one again does not reapply the filter. Keep their
+existing InkWell keyboard highlight and horizontally scrolling strip. The task
+pin preference has one named native Switch focus/action; its surrounding label
+remains pointer-clickable but does not add another keyboard or semantic action.
+
 - [Design tokens](design-tokens.md) defines the visual contract and accepted
   departures from the original designs. Its linked core files and contract tests
   provide the implemented values; use existing shared components under
