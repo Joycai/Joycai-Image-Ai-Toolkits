@@ -513,9 +513,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get moveFolderTo => '移動先…';
 
   @override
-  String get removeFromList => 'リストから削除';
-
-  @override
   String get rootCannotMove => 'ルートフォルダーは移動できません';
 
   @override
@@ -557,9 +554,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String trashFolderCount(int count) {
     return '$count 項目をゴミ箱へ';
   }
-
-  @override
-  String get moveToTrash => 'ゴミ箱に移動';
 
   @override
   String get trashFileTitle => 'ゴミ箱に移動しますか？';
@@ -3343,9 +3337,6 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get filterAll => 'すべて';
-
-  @override
   String get newTemplate => '新しいテンプレート';
 
   @override
@@ -4031,6 +4022,18 @@ class AppLocalizationsJa extends AppLocalizations {
   String get contentSafetyEmailFailed => 'メールアプリを開けませんでした。アドレスをコピーして手動で報告してください。';
 
   @override
+  String get shortcutGridMove => 'ギャラリー項目を移動して選択';
+
+  @override
+  String get shortcutGridExtend => 'ギャラリーの選択範囲を拡張';
+
+  @override
+  String get shortcutGridFocus => '選択せずにギャラリーのフォーカスを移動';
+
+  @override
+  String get shortcutGridToggle => 'フォーカス画像の選択を切り替え';
+
+  @override
   String get shortcutNavigateToDestination => '1〜8 番目のページへ';
 
   @override
@@ -4180,6 +4183,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get cancelTask => 'タスクをキャンセル';
 
   @override
+  String get removeFromList => 'リストから削除';
+
+  @override
   String get images => '画像';
 
   @override
@@ -4225,6 +4231,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String taskTotalCount(int count) {
     return '全 $count 件';
   }
+
+  @override
+  String get filterAll => 'すべて';
 
   @override
   String get retryTask => '再試行';
@@ -4636,6 +4645,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get thumbnailFitCover => 'フィル（切り抜き）';
+
+  @override
+  String get moveToTrash => 'ゴミ箱に移動';
 
   @override
   String deleteFailed(String error) {

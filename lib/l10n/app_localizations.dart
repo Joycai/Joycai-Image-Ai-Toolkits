@@ -957,12 +957,6 @@ abstract class AppLocalizations {
   /// **'Move to…'**
   String get moveFolderTo;
 
-  /// No description provided for @removeFromList.
-  ///
-  /// In en, this message translates to:
-  /// **'Remove from list'**
-  String get removeFromList;
-
   /// No description provided for @rootCannotMove.
   ///
   /// In en, this message translates to:
@@ -1040,12 +1034,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Move {count} items to trash'**
   String trashFolderCount(int count);
-
-  /// No description provided for @moveToTrash.
-  ///
-  /// In en, this message translates to:
-  /// **'Move to Trash'**
-  String get moveToTrash;
 
   /// No description provided for @trashFileTitle.
   ///
@@ -5985,12 +5973,6 @@ abstract class AppLocalizations {
   /// **'Import failed: {error}'**
   String importFailed(String error);
 
-  /// No description provided for @filterAll.
-  ///
-  /// In en, this message translates to:
-  /// **'All'**
-  String get filterAll;
-
   /// No description provided for @newTemplate.
   ///
   /// In en, this message translates to:
@@ -7269,6 +7251,30 @@ abstract class AppLocalizations {
   /// **'Could not open an email app. Copy the address and send your report manually.'**
   String get contentSafetyEmailFailed;
 
+  /// No description provided for @shortcutGridMove.
+  ///
+  /// In en, this message translates to:
+  /// **'Move and select a gallery item'**
+  String get shortcutGridMove;
+
+  /// No description provided for @shortcutGridExtend.
+  ///
+  /// In en, this message translates to:
+  /// **'Extend gallery selection'**
+  String get shortcutGridExtend;
+
+  /// No description provided for @shortcutGridFocus.
+  ///
+  /// In en, this message translates to:
+  /// **'Move gallery focus without selecting'**
+  String get shortcutGridFocus;
+
+  /// No description provided for @shortcutGridToggle.
+  ///
+  /// In en, this message translates to:
+  /// **'Toggle focused image selection'**
+  String get shortcutGridToggle;
+
   /// No description provided for @shortcutNavigateToDestination.
   ///
   /// In en, this message translates to:
@@ -7557,6 +7563,12 @@ abstract class AppLocalizations {
   /// **'Cancel Task'**
   String get cancelTask;
 
+  /// No description provided for @removeFromList.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from list'**
+  String get removeFromList;
+
   /// No description provided for @images.
   ///
   /// In en, this message translates to:
@@ -7622,6 +7634,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} total'**
   String taskTotalCount(int count);
+
+  /// No description provided for @filterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get filterAll;
 
   /// No description provided for @retryTask.
   ///
@@ -8390,6 +8408,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Fill (cropped)'**
   String get thumbnailFitCover;
+
+  /// No description provided for @moveToTrash.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to Trash'**
+  String get moveToTrash;
 
   /// No description provided for @deleteFailed.
   ///

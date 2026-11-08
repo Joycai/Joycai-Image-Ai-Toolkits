@@ -60,7 +60,6 @@
       "error": { "type": "String" }
     }
   },
-  "filterAll": "全部",
   "newTemplate": "新建模板",
   "reorderDisabledWhileFiltered": "筛选或搜索时无法拖动排序",
   "matchModeLabel": "匹配",

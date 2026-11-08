@@ -104,8 +104,8 @@ class ShortcutKey {
   /// On macOS a held `⌃` always disqualifies: `⌃A`/`⌃E`/`⌃F`/`⌃D` are text
   /// editing there, and this table uses `⌘` on macOS precisely so it never
   /// has to fight them.
-  bool matches(KeyEvent event, {bool? macOS, HardwareKeyboard? keyboard}) {
-    if (event is! KeyDownEvent) return false;
+  bool matches(KeyEvent event, {bool? macOS, HardwareKeyboard? keyboard, bool repeats = false}) {
+    if (event is! KeyDownEvent && !(repeats && event is KeyRepeatEvent)) return false;
     if (event.logicalKey != key) return false;
 
     final hw = keyboard ?? HardwareKeyboard.instance;
@@ -152,6 +152,7 @@ class AppShortcut {
     required this.labelKey,
     this.screens = const <ShortcutScreen>{},
     this.panes = const <ShortcutPane>{},
+    this.repeats = false,
   });
 
   /// Stable identity, used by [AppShortcutIds] and by the tests. Never shown
@@ -159,6 +160,7 @@ class AppShortcut {
   final String id;
 
   final ShortcutLayer layer;
+  final bool repeats;
 
   /// Every combination that triggers the action: `F5` and `⌘R` both refresh,
   /// `Delete` and `⌫` both delete (on a Mac keyboard the main-block key is
@@ -193,7 +195,7 @@ class AppShortcut {
 
   /// Whether [event] triggers this action right now.
   bool matches(KeyEvent event, {bool? macOS, HardwareKeyboard? keyboard}) =>
-      keys.any((k) => k.matches(event, macOS: macOS, keyboard: keyboard));
+      keys.any((k) => k.matches(event, macOS: macOS, keyboard: keyboard, repeats: repeats));
 
   /// The scopes this row occupies. Two rows may share a combination only if
   /// they share no scope — `Esc` exits the search at screen level and clears
@@ -231,6 +233,10 @@ abstract final class AppShortcutIds {
   static const exitSearch = 'exitSearch';
   static const selectWorkbenchTool = 'selectWorkbenchTool';
 
+  static const gridMove = 'gridMove';
+  static const gridExtend = 'gridExtend';
+  static const gridFocus = 'gridFocus';
+  static const gridToggle = 'gridToggle';
   static const preview = 'preview';
   static const rename = 'rename';
   static const delete = 'delete';
@@ -258,6 +264,10 @@ abstract final class AppShortcutIds {
     toggleConfigPanel,
     exitSearch,
     selectWorkbenchTool,
+    gridMove,
+    gridExtend,
+    gridFocus,
+    gridToggle,
     preview,
     rename,
     delete,
@@ -423,6 +433,56 @@ abstract final class AppShortcuts {
       ],
     ),
 
+    AppShortcut(
+      id: AppShortcutIds.gridMove,
+      repeats: true,
+      layer: ShortcutLayer.pane,
+      labelKey: 'shortcutGridMove',
+      screens: {ShortcutScreen.workbench},
+      panes: {ShortcutPane.grid},
+      keys: [
+        ShortcutKey(LogicalKeyboardKey.arrowLeft),
+        ShortcutKey(LogicalKeyboardKey.arrowRight),
+        ShortcutKey(LogicalKeyboardKey.arrowUp),
+        ShortcutKey(LogicalKeyboardKey.arrowDown),
+      ],
+    ),
+    AppShortcut(
+      id: AppShortcutIds.gridExtend,
+      repeats: true,
+      layer: ShortcutLayer.pane,
+      labelKey: 'shortcutGridExtend',
+      screens: {ShortcutScreen.workbench},
+      panes: {ShortcutPane.grid},
+      keys: [
+        ShortcutKey(LogicalKeyboardKey.arrowLeft, shift: true),
+        ShortcutKey(LogicalKeyboardKey.arrowRight, shift: true),
+        ShortcutKey(LogicalKeyboardKey.arrowUp, shift: true),
+        ShortcutKey(LogicalKeyboardKey.arrowDown, shift: true),
+      ],
+    ),
+    AppShortcut(
+      id: AppShortcutIds.gridFocus,
+      repeats: true,
+      layer: ShortcutLayer.pane,
+      labelKey: 'shortcutGridFocus',
+      screens: {ShortcutScreen.workbench},
+      panes: {ShortcutPane.grid},
+      keys: [
+        ShortcutKey(LogicalKeyboardKey.arrowLeft, primary: true),
+        ShortcutKey(LogicalKeyboardKey.arrowRight, primary: true),
+        ShortcutKey(LogicalKeyboardKey.arrowUp, primary: true),
+        ShortcutKey(LogicalKeyboardKey.arrowDown, primary: true),
+      ],
+    ),
+    AppShortcut(
+      id: AppShortcutIds.gridToggle,
+      layer: ShortcutLayer.pane,
+      labelKey: 'shortcutGridToggle',
+      screens: {ShortcutScreen.workbench},
+      panes: {ShortcutPane.grid},
+      keys: [ShortcutKey(LogicalKeyboardKey.space)],
+    ),
     // ── L2 · focus region · the same keys on both screens ───────────────
     AppShortcut(
       id: AppShortcutIds.preview,

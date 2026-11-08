@@ -53,7 +53,6 @@
       "error": { "type": "String" }
     }
   },
-  "filterAll": "すべて",
   "newTemplate": "新しいテンプレート",
   "reorderDisabledWhileFiltered": "フィルターまたは検索中は並べ替えできません",
   "matchModeLabel": "一致",

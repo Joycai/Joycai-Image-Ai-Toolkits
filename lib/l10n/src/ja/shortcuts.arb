@@ -1,4 +1,8 @@
 {
+  "shortcutGridMove": "ギャラリー項目を移動して選択",
+  "shortcutGridExtend": "ギャラリーの選択範囲を拡張",
+  "shortcutGridFocus": "選択せずにギャラリーのフォーカスを移動",
+  "shortcutGridToggle": "フォーカス画像の選択を切り替え",
   "shortcutNavigateToDestination": "1〜8 番目のページへ",
   "shortcutShowShortcutPanel": "キーボードショートカット",
   "shortcutOpenSettings": "設定",

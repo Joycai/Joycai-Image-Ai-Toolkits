@@ -1,4 +1,8 @@
 {
+  "shortcutGridMove": "Move and select a gallery item",
+  "shortcutGridExtend": "Extend gallery selection",
+  "shortcutGridFocus": "Move gallery focus without selecting",
+  "shortcutGridToggle": "Toggle focused image selection",
   "shortcutNavigateToDestination": "Go to page 1–8",
   "shortcutShowShortcutPanel": "Keyboard shortcuts",
   "shortcutOpenSettings": "Settings",

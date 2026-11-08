@@ -517,9 +517,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get moveFolderTo => 'Move to…';
 
   @override
-  String get removeFromList => 'Remove from list';
-
-  @override
   String get rootCannotMove => 'Root folders cannot be moved';
 
   @override
@@ -562,9 +559,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String trashFolderCount(int count) {
     return 'Move $count items to trash';
   }
-
-  @override
-  String get moveToTrash => 'Move to Trash';
 
   @override
   String get trashFileTitle => 'Move to trash?';
@@ -3484,9 +3478,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get filterAll => 'All';
-
-  @override
   String get newTemplate => 'New Template';
 
   @override
@@ -4195,6 +4186,18 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not open an email app. Copy the address and send your report manually.';
 
   @override
+  String get shortcutGridMove => 'Move and select a gallery item';
+
+  @override
+  String get shortcutGridExtend => 'Extend gallery selection';
+
+  @override
+  String get shortcutGridFocus => 'Move gallery focus without selecting';
+
+  @override
+  String get shortcutGridToggle => 'Toggle focused image selection';
+
+  @override
   String get shortcutNavigateToDestination => 'Go to page 1–8';
 
   @override
@@ -4344,6 +4347,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cancelTask => 'Cancel Task';
 
   @override
+  String get removeFromList => 'Remove from list';
+
+  @override
   String get images => 'Images';
 
   @override
@@ -4389,6 +4395,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String taskTotalCount(int count) {
     return '$count total';
   }
+
+  @override
+  String get filterAll => 'All';
 
   @override
   String get retryTask => 'Retry';
@@ -4808,6 +4817,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get thumbnailFitCover => 'Fill (cropped)';
+
+  @override
+  String get moveToTrash => 'Move to Trash';
 
   @override
   String deleteFailed(String error) {

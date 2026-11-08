@@ -418,7 +418,6 @@
   "newSubfolder": "新しいサブフォルダー",
   "newFolderDefaultName": "新しいフォルダー",
   "moveFolderTo": "移動先…",
-  "removeFromList": "リストから削除",
   "rootCannotMove": "ルートフォルダーは移動できません",
   "deleteFolderTitle": "フォルダーを削除しますか？",
   "trashFolderTitle": "ゴミ箱に移動しますか？",
@@ -446,7 +445,6 @@
       }
     }
   },
-  "moveToTrash": "ゴミ箱に移動",
   "trashFileTitle": "ゴミ箱に移動しますか？",
   "trashFilesTitle": "{count} 件のファイルをゴミ箱に移動しますか？",
   "@trashFilesTitle": {
@@ -1728,7 +1726,6 @@
       }
     }
   },
-  "filterAll": "すべて",
   "newTemplate": "新しいテンプレート",
   "reorderDisabledWhileFiltered": "フィルターまたは検索中は並べ替えできません",
   "matchModeLabel": "一致",
@@ -2004,6 +2001,10 @@
   "contentSafetyCopyEmail": "メールアドレスをコピー",
   "contentSafetyEmailCopied": "メールアドレスをコピーしました",
   "contentSafetyEmailFailed": "メールアプリを開けませんでした。アドレスをコピーして手動で報告してください。",
+  "shortcutGridMove": "ギャラリー項目を移動して選択",
+  "shortcutGridExtend": "ギャラリーの選択範囲を拡張",
+  "shortcutGridFocus": "選択せずにギャラリーのフォーカスを移動",
+  "shortcutGridToggle": "フォーカス画像の選択を切り替え",
   "shortcutNavigateToDestination": "1〜8 番目のページへ",
   "shortcutShowShortcutPanel": "キーボードショートカット",
   "shortcutOpenSettings": "設定",
@@ -2066,6 +2067,7 @@
   "clearAll": "すべてクリア",
   "cancelAllPending": "すべての保留中をキャンセル",
   "cancelTask": "タスクをキャンセル",
+  "removeFromList": "リストから削除",
   "images": "画像",
   "filesCount": "{count} 個のファイル",
   "@filesCount": {
@@ -2126,6 +2128,7 @@
       }
     }
   },
+  "filterAll": "すべて",
   "retryTask": "再試行",
   "resumeVideoJob": "元のジョブを再開",
   "queuedPosition": "待機 {position} 番目",
@@ -2310,6 +2313,7 @@
   "thumbnailDisplay": "サムネイル表示",
   "thumbnailFitContain": "フィット（全体表示）",
   "thumbnailFitCover": "フィル（切り抜き）",
+  "moveToTrash": "ゴミ箱に移動",
   "deleteFailed": "削除に失敗しました: {error}",
   "@deleteFailed": {
     "placeholders": {

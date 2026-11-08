@@ -53,7 +53,6 @@
       "error": { "type": "String" }
     }
   },
-  "filterAll": "全部",
   "newTemplate": "新增範本",
   "reorderDisabledWhileFiltered": "篩選或搜尋時無法拖曳排序",
   "matchModeLabel": "符合",

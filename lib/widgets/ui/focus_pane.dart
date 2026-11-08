@@ -13,10 +13,8 @@ import '../../core/design_tokens.dart';
 /// which is how `Delete` came to delete a folder clicked minutes earlier while
 /// three files sat selected in the grid.
 ///
-/// Deliberately one node per pane, never one per card: a few hundred
-/// `FocusNode`s cost real memory and pollute the Tab order, and the only
-/// feature that would need per-card focus — arrow-key navigation — is phase
-/// two.
+/// One node per pane, never one per card. A keyboard-enabled grid keeps its
+/// logical active item separately, so virtualized cards need no focus nodes.
 ///
 /// The active pane is drawn as a 2px accent rule along its top edge. It is a
 /// quiet mark on purpose: the loud half of the signal is the selection itself,
@@ -63,11 +61,10 @@ class FocusPane extends StatefulWidget {
   /// The rule's thickness (`00f` 规格).
   static const double activeEdgeThickness = 2;
 
-  /// A node shaped for a pane: kept out of the Tab order, because pane focus
-  /// follows the pointer and the keys that matter here are not reachable by
-  /// tabbing anyway. Phase two's keyboard navigation revisits this.
-  static FocusNode newNode(String debugLabel) =>
-      FocusNode(debugLabel: debugLabel, skipTraversal: true);
+  /// Pointer-only regions retain the default. Grids with logical keyboard
+  /// navigation opt into traversal as one stop with `skipTraversal: false`.
+  static FocusNode newNode(String debugLabel, {bool skipTraversal = true}) =>
+      FocusNode(debugLabel: debugLabel, skipTraversal: skipTraversal);
 
   /// The region that owns the keyboard right now, or null when none does —
   /// a legal state (just after a screen opens, or after a click on the

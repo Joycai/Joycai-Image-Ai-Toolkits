@@ -432,7 +432,6 @@
   "newSubfolder": "New subfolder",
   "newFolderDefaultName": "New folder",
   "moveFolderTo": "Move to…",
-  "removeFromList": "Remove from list",
   "rootCannotMove": "Root folders cannot be moved",
   "deleteFolderTitle": "Delete folder?",
   "trashFolderTitle": "Move to trash?",
@@ -460,7 +459,6 @@
       }
     }
   },
-  "moveToTrash": "Move to Trash",
   "trashFileTitle": "Move to trash?",
   "trashFilesTitle": "Move {count} files to trash?",
   "@trashFilesTitle": {
@@ -2375,7 +2373,6 @@
       }
     }
   },
-  "filterAll": "All",
   "newTemplate": "New Template",
   "reorderDisabledWhileFiltered": "Reordering is unavailable while a filter or search is active",
   "matchModeLabel": "Match",
@@ -2695,6 +2692,10 @@
   "contentSafetyCopyEmail": "Copy email address",
   "contentSafetyEmailCopied": "Email address copied",
   "contentSafetyEmailFailed": "Could not open an email app. Copy the address and send your report manually.",
+  "shortcutGridMove": "Move and select a gallery item",
+  "shortcutGridExtend": "Extend gallery selection",
+  "shortcutGridFocus": "Move gallery focus without selecting",
+  "shortcutGridToggle": "Toggle focused image selection",
   "shortcutNavigateToDestination": "Go to page 1–8",
   "shortcutShowShortcutPanel": "Keyboard shortcuts",
   "shortcutOpenSettings": "Settings",
@@ -2757,6 +2758,7 @@
   "clearAll": "Clear All",
   "cancelAllPending": "Cancel All Pending",
   "cancelTask": "Cancel Task",
+  "removeFromList": "Remove from list",
   "images": "Images",
   "filesCount": "{count} files",
   "@filesCount": {
@@ -2817,6 +2819,7 @@
       }
     }
   },
+  "filterAll": "All",
   "retryTask": "Retry",
   "resumeVideoJob": "Resume job",
   "queuedPosition": "#{position} in queue",
@@ -3008,6 +3011,7 @@
   "thumbnailDisplay": "Thumbnail Display",
   "thumbnailFitContain": "Fit (whole image)",
   "thumbnailFitCover": "Fill (cropped)",
+  "moveToTrash": "Move to Trash",
   "deleteFailed": "Failed to delete: {error}",
   "@deleteFailed": {
     "placeholders": {

@@ -1,4 +1,8 @@
 {
+  "shortcutGridMove": "移动并选中画廊项目",
+  "shortcutGridExtend": "扩展画廊选区",
+  "shortcutGridFocus": "仅移动画廊焦点",
+  "shortcutGridToggle": "切换焦点图片的选择状态",
   "shortcutNavigateToDestination": "切到第 1…8 个页面",
   "shortcutShowShortcutPanel": "快捷键面板",
   "shortcutOpenSettings": "设置",
