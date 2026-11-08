@@ -4163,6 +4163,162 @@ class AppLocalizationsJa extends AppLocalizations {
   String get shortcutPreviousPane => '前の表示中のペインにフォーカス';
 
   @override
+  String get nativeMenuApp => 'Joycai Image AI Toolkits';
+
+  @override
+  String get nativeMenuAbout => 'Joycai Image AI Toolkits について';
+
+  @override
+  String get nativeMenuSettings => '設定…';
+
+  @override
+  String get nativeMenuServices => 'サービス';
+
+  @override
+  String get nativeMenuHide => 'Joycai Image AI Toolkits を隠す';
+
+  @override
+  String get nativeMenuHideOthers => 'ほかを隠す';
+
+  @override
+  String get nativeMenuShowAll => 'すべてを表示';
+
+  @override
+  String get nativeMenuQuit => 'Joycai Image AI Toolkits を終了';
+
+  @override
+  String get nativeMenuEdit => '編集';
+
+  @override
+  String get nativeMenuUndo => '取り消す';
+
+  @override
+  String get nativeMenuRedo => 'やり直す';
+
+  @override
+  String get nativeMenuCut => 'カット';
+
+  @override
+  String get nativeMenuCopy => 'コピー';
+
+  @override
+  String get nativeMenuPaste => 'ペースト';
+
+  @override
+  String get nativeMenuPasteStyle => 'ペーストしてスタイルを合わせる';
+
+  @override
+  String get nativeMenuDelete => '削除';
+
+  @override
+  String get nativeMenuSelectAll => 'すべてを選択';
+
+  @override
+  String get nativeMenuFind => '検索';
+
+  @override
+  String get nativeMenuFindPanel => '検索…';
+
+  @override
+  String get nativeMenuReplace => '検索と置換…';
+
+  @override
+  String get nativeMenuFindNext => '次を検索';
+
+  @override
+  String get nativeMenuFindPrevious => '前を検索';
+
+  @override
+  String get nativeMenuFindSelection => '選択部分を検索に使用';
+
+  @override
+  String get nativeMenuJumpSelection => '選択部分にジャンプ';
+
+  @override
+  String get nativeMenuSpelling => 'スペルと文法';
+
+  @override
+  String get nativeMenuShowSpelling => 'スペルと文法を表示';
+
+  @override
+  String get nativeMenuCheckDocument => '今すぐ書類をチェック';
+
+  @override
+  String get nativeMenuCheckTyping => '入力中にスペルチェック';
+
+  @override
+  String get nativeMenuCheckGrammar => 'スペルと一緒に文法をチェック';
+
+  @override
+  String get nativeMenuCorrectSpelling => 'スペルを自動的に修正';
+
+  @override
+  String get nativeMenuSubstitutions => '自動置換';
+
+  @override
+  String get nativeMenuShowSubstitutions => '自動置換を表示';
+
+  @override
+  String get nativeMenuSmartCopy => 'スマートコピー／ペースト';
+
+  @override
+  String get nativeMenuSmartQuotes => 'スマート引用符';
+
+  @override
+  String get nativeMenuSmartDashes => 'スマートダッシュ';
+
+  @override
+  String get nativeMenuSmartLinks => 'スマートリンク';
+
+  @override
+  String get nativeMenuDataDetectors => 'データ検出';
+
+  @override
+  String get nativeMenuTextReplacement => 'テキスト置換';
+
+  @override
+  String get nativeMenuTransformations => '変換';
+
+  @override
+  String get nativeMenuUpperCase => '大文字にする';
+
+  @override
+  String get nativeMenuLowerCase => '小文字にする';
+
+  @override
+  String get nativeMenuCapitalize => '語頭を大文字にする';
+
+  @override
+  String get nativeMenuSpeech => 'スピーチ';
+
+  @override
+  String get nativeMenuStartSpeaking => '読み上げを開始';
+
+  @override
+  String get nativeMenuStopSpeaking => '読み上げを停止';
+
+  @override
+  String get nativeMenuView => '表示';
+
+  @override
+  String get nativeMenuFullScreen => 'フルスクリーンにする';
+
+  @override
+  String get nativeMenuWindow => 'ウインドウ';
+
+  @override
+  String get nativeMenuMinimize => 'しまう';
+
+  @override
+  String get nativeMenuZoom => '拡大／縮小';
+
+  @override
+  String get nativeMenuBringFront => 'すべてを手前に移動';
+
+  @override
+  String get nativeMenuHelp => 'ヘルプ';
+
+  @override
   String get tasks => 'タスク';
 
   @override

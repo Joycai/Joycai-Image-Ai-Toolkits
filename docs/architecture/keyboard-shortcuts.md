@@ -1,5 +1,17 @@
 # 键盘快捷键：三层模型与三条纪律
 
+macOS 原生菜单由 `AppNativeMenu` 从同一 `AppShortcuts` 表发布 Settings、导航和
+快捷键帮助。`NativeMenuService` 与 AppKit 适配器只传递动作，不在 Swift 重建业务。
+命令同时受 Flutter 当前路由及原生 key window 约束，回调再次检查，避免旧菜单
+在对话框后面切屏。全局菜单不加入选区操作。
+
+XIB 编辑命令继续走 First Responder；Undo/Redo 例外：当前 SDK 只在 iOS 同步
+系统 undo manager，因此原生菜单查询 Flutter 当前 `UndoManager.client` 并把
+动作交回该客户端。原生主菜单独占 ⌘Z/⇧⌘Z，同一次按键不再交给 Flutter。
+失焦后不持有旧文本历史；模态文本框仍可编辑。AppKit 自行增加的 Services、
+tab/full-screen 等动态菜单文字服从系统语言。范围及未完成验收见
+[macOS 菜单验证记录](../macos-menu-validation.md)。
+
 一个键归谁，看它在哪一层。**认领顺序是从下往上**：焦点区先答，屏幕后答，应用层最后。
 
 | 层 | 何时生效 | 注册在哪 | 例子 |

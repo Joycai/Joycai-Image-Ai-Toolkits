@@ -19,11 +19,38 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 留在这份文件里的，是**不随代码走的那部分**：哪一轮做了什么、结论现在住在哪、
 以及还欠什么。
 
+## 2026-11-08 · DESK-03 macOS 原生菜单（阶段实现）
+
+- Settings、八个目的地与快捷键帮助接入原生菜单，复用 `AppShortcuts`；
+  四语言 XIB 标签随应用语言更新，路由和原生窗口焦点限制后台导航。
+- 保留 AppKit 系统菜单与 First Responder 编辑命令；补齐 Flutter 当前文本历史的
+  Undo/Redo 原生入口及 ⌘Z/⇧⌘Z，涵盖模态文本框，失焦后不再修改旧字段。
+- 验证：format 967 文件；analyze `No issues found!`；非截图测试
+  **3586 通过、12 skip**；4 个菜单行为测试覆盖模态、失焦、语言切换与平台隔离。
+  Settings harness 35 项通过，无打印异常或溢出；已查看 About 在
+  390/834/1024/1440 浅深色的 8 张实际渲染。
+- macOS 27.2、Flutter 3.47.9 Release 隔离探针验证了导航、禁用态、四语言、
+  About 4.31.8 (1)、原生 Undo/Redo 和 Quit；未打开生产数据库或发起网络请求。
+- 独立 Flutter 3.47.8 SDK 三项门禁通过（3586 通过、12 skip），完整应用隔离
+  Release 验证了 Settings、Help 菜单、模态禁用态及同字段撤销/重做。
+- 解锁后用户实键确认 ⌘/ 与跨字段复制粘贴均正常；完整应用四语言菜单、隐藏恢复、
+  Zoom/恢复、最小化恢复、About 版本和 ⌘Q 已验。VoiceOver 临时开启后恢复关闭，
+  隔离应用与测试工具均已退出。
+- 后续用户实键确认 ⇧⌘/ 打开及 ⌘/ 重复关闭均通过；Services Settings 正确打开
+  系统服务快捷键设置，全屏进入/退出通过。经用户授权尝试的 AppleScript 菜单控制
+  被 macOS 拒绝（osascript 无辅助访问，-1719），未改系统权限。
+- DESK-03 **尚未完成**：完整应用导航分发次数、原生菜单截图、VoiceOver 导览
+  与非美式键盘布局继续跟进。
+  原生菜单截图工具不可用时仅记录
+  accessibility tree，不把 Flutter PNG 当作原生菜单截图。
+  详见 [验收记录](../macos-menu-validation.md) 和
+  [桌面标准计划](2026-11-desktop-standards.md)。
+
 ## 还在这个目录里的
 
 | 文件 | 为什么留着 |
 |---|---|
-| [`2026-11-desktop-standards.md`](2026-11-desktop-standards.md) | Flutter 与 macOS/Windows 桌面体验修复；DESK-01 已恢复桥接、隔离菜单语义，完成分段、任务筛选/置顶、导航及[剩余自绘控件源码审计与修复](../custom-controls-accessibility-audit.md)；DESK-02 已实现工作台画廊、浏览器网格/列表及跨栏键盘焦点，3.47.8 Windows 原生验证发现的导航 tooltip 与浏览器滑块 AXTree 边界已修复，五页及主题切换复测通过；完整 Narrator/原生验收仍待完成；DESK-03～06 待实施。证据见 [Windows 无障碍记录](../windows-accessibility-validation.md)、[画廊键盘验证](../gallery-keyboard-validation.md)、[浏览器键盘验证](../browser-keyboard-validation.md)。 |
+| [`2026-11-desktop-standards.md`](2026-11-desktop-standards.md) | Flutter 与 macOS/Windows 桌面体验修复；DESK-01 已恢复桥接、隔离菜单语义，完成分段、任务筛选/置顶、导航及[剩余自绘控件源码审计与修复](../custom-controls-accessibility-audit.md)；DESK-02 已实现工作台画廊、浏览器网格/列表及跨栏键盘焦点，3.47.8 Windows 原生验证发现的导航 tooltip 与浏览器滑块 AXTree 边界已修复，五页及主题切换复测通过；完整 Narrator/原生验收仍待完成；DESK-03 原生菜单已实现并继续验收，DESK-04～06 待实施。证据见 [Windows 无障碍记录](../windows-accessibility-validation.md)、[画廊键盘验证](../gallery-keyboard-validation.md)、[浏览器键盘验证](../browser-keyboard-validation.md)。 |
 | [`2026-11-windows-store.md`](2026-11-windows-store.md) | Microsoft Store 发布准备施工计划；按 WIN-01～WIN-06 推进，完成后归档结论并删除正文。 |
 | [`2026-08-assistant-timeout.md`](2026-08-assistant-timeout.md) | 不是施工说明书，是**一次真实故障的取证记录**（`api_logs/` 里七条日志的耗时还原）。`architecture/assistant-context.md` 直接引它作为「为什么要早elide」的证据。 |
 
