@@ -4131,6 +4131,162 @@ class AppLocalizationsZh extends AppLocalizations {
   String get shortcutPreviousPane => '聚焦上一个可见栏';
 
   @override
+  String get nativeMenuApp => 'Joycai Image AI Toolkits';
+
+  @override
+  String get nativeMenuAbout => '关于 Joycai Image AI Toolkits';
+
+  @override
+  String get nativeMenuSettings => '设置…';
+
+  @override
+  String get nativeMenuServices => '服务';
+
+  @override
+  String get nativeMenuHide => '隐藏 Joycai Image AI Toolkits';
+
+  @override
+  String get nativeMenuHideOthers => '隐藏其他';
+
+  @override
+  String get nativeMenuShowAll => '全部显示';
+
+  @override
+  String get nativeMenuQuit => '退出 Joycai Image AI Toolkits';
+
+  @override
+  String get nativeMenuEdit => '编辑';
+
+  @override
+  String get nativeMenuUndo => '撤销';
+
+  @override
+  String get nativeMenuRedo => '重做';
+
+  @override
+  String get nativeMenuCut => '剪切';
+
+  @override
+  String get nativeMenuCopy => '复制';
+
+  @override
+  String get nativeMenuPaste => '粘贴';
+
+  @override
+  String get nativeMenuPasteStyle => '粘贴并匹配样式';
+
+  @override
+  String get nativeMenuDelete => '删除';
+
+  @override
+  String get nativeMenuSelectAll => '全选';
+
+  @override
+  String get nativeMenuFind => '查找';
+
+  @override
+  String get nativeMenuFindPanel => '查找…';
+
+  @override
+  String get nativeMenuReplace => '查找并替换…';
+
+  @override
+  String get nativeMenuFindNext => '查找下一个';
+
+  @override
+  String get nativeMenuFindPrevious => '查找上一个';
+
+  @override
+  String get nativeMenuFindSelection => '使用所选内容查找';
+
+  @override
+  String get nativeMenuJumpSelection => '跳到所选内容';
+
+  @override
+  String get nativeMenuSpelling => '拼写和语法';
+
+  @override
+  String get nativeMenuShowSpelling => '显示拼写和语法';
+
+  @override
+  String get nativeMenuCheckDocument => '立即检查文稿';
+
+  @override
+  String get nativeMenuCheckTyping => '键入时检查拼写';
+
+  @override
+  String get nativeMenuCheckGrammar => '随拼写检查语法';
+
+  @override
+  String get nativeMenuCorrectSpelling => '自动纠正拼写';
+
+  @override
+  String get nativeMenuSubstitutions => '替换';
+
+  @override
+  String get nativeMenuShowSubstitutions => '显示替换';
+
+  @override
+  String get nativeMenuSmartCopy => '智能拷贝/粘贴';
+
+  @override
+  String get nativeMenuSmartQuotes => '智能引号';
+
+  @override
+  String get nativeMenuSmartDashes => '智能破折号';
+
+  @override
+  String get nativeMenuSmartLinks => '智能链接';
+
+  @override
+  String get nativeMenuDataDetectors => '数据检测器';
+
+  @override
+  String get nativeMenuTextReplacement => '文本替换';
+
+  @override
+  String get nativeMenuTransformations => '转换';
+
+  @override
+  String get nativeMenuUpperCase => '转换为大写';
+
+  @override
+  String get nativeMenuLowerCase => '转换为小写';
+
+  @override
+  String get nativeMenuCapitalize => '首字母大写';
+
+  @override
+  String get nativeMenuSpeech => '语音';
+
+  @override
+  String get nativeMenuStartSpeaking => '开始朗读';
+
+  @override
+  String get nativeMenuStopSpeaking => '停止朗读';
+
+  @override
+  String get nativeMenuView => '显示';
+
+  @override
+  String get nativeMenuFullScreen => '进入全屏幕';
+
+  @override
+  String get nativeMenuWindow => '窗口';
+
+  @override
+  String get nativeMenuMinimize => '最小化';
+
+  @override
+  String get nativeMenuZoom => '缩放';
+
+  @override
+  String get nativeMenuBringFront => '前置全部窗口';
+
+  @override
+  String get nativeMenuHelp => '帮助';
+
+  @override
   String get tasks => '任务';
 
   @override
@@ -10498,6 +10654,162 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get shortcutPreviousPane => '聚焦上一個可見欄';
+
+  @override
+  String get nativeMenuApp => 'Joycai Image AI Toolkits';
+
+  @override
+  String get nativeMenuAbout => '關於 Joycai Image AI Toolkits';
+
+  @override
+  String get nativeMenuSettings => '設定…';
+
+  @override
+  String get nativeMenuServices => '服務';
+
+  @override
+  String get nativeMenuHide => '隱藏 Joycai Image AI Toolkits';
+
+  @override
+  String get nativeMenuHideOthers => '隱藏其他';
+
+  @override
+  String get nativeMenuShowAll => '全部顯示';
+
+  @override
+  String get nativeMenuQuit => '結束 Joycai Image AI Toolkits';
+
+  @override
+  String get nativeMenuEdit => '編輯';
+
+  @override
+  String get nativeMenuUndo => '還原';
+
+  @override
+  String get nativeMenuRedo => '重做';
+
+  @override
+  String get nativeMenuCut => '剪下';
+
+  @override
+  String get nativeMenuCopy => '拷貝';
+
+  @override
+  String get nativeMenuPaste => '貼上';
+
+  @override
+  String get nativeMenuPasteStyle => '貼上並符合樣式';
+
+  @override
+  String get nativeMenuDelete => '刪除';
+
+  @override
+  String get nativeMenuSelectAll => '全選';
+
+  @override
+  String get nativeMenuFind => '尋找';
+
+  @override
+  String get nativeMenuFindPanel => '尋找…';
+
+  @override
+  String get nativeMenuReplace => '尋找並取代…';
+
+  @override
+  String get nativeMenuFindNext => '尋找下一個';
+
+  @override
+  String get nativeMenuFindPrevious => '尋找上一個';
+
+  @override
+  String get nativeMenuFindSelection => '使用所選範圍來尋找';
+
+  @override
+  String get nativeMenuJumpSelection => '跳至所選範圍';
+
+  @override
+  String get nativeMenuSpelling => '拼字與文法';
+
+  @override
+  String get nativeMenuShowSpelling => '顯示拼字與文法';
+
+  @override
+  String get nativeMenuCheckDocument => '立即檢查文件';
+
+  @override
+  String get nativeMenuCheckTyping => '輸入時檢查拼字';
+
+  @override
+  String get nativeMenuCheckGrammar => '隨拼字檢查文法';
+
+  @override
+  String get nativeMenuCorrectSpelling => '自動修正拼字';
+
+  @override
+  String get nativeMenuSubstitutions => '替代';
+
+  @override
+  String get nativeMenuShowSubstitutions => '顯示替代';
+
+  @override
+  String get nativeMenuSmartCopy => '智慧型拷貝/貼上';
+
+  @override
+  String get nativeMenuSmartQuotes => '智慧型引號';
+
+  @override
+  String get nativeMenuSmartDashes => '智慧型破折號';
+
+  @override
+  String get nativeMenuSmartLinks => '智慧型連結';
+
+  @override
+  String get nativeMenuDataDetectors => '資料偵測器';
+
+  @override
+  String get nativeMenuTextReplacement => '文字替代';
+
+  @override
+  String get nativeMenuTransformations => '轉換';
+
+  @override
+  String get nativeMenuUpperCase => '轉換為大寫';
+
+  @override
+  String get nativeMenuLowerCase => '轉換為小寫';
+
+  @override
+  String get nativeMenuCapitalize => '字首大寫';
+
+  @override
+  String get nativeMenuSpeech => '語音';
+
+  @override
+  String get nativeMenuStartSpeaking => '開始朗讀';
+
+  @override
+  String get nativeMenuStopSpeaking => '停止朗讀';
+
+  @override
+  String get nativeMenuView => '顯示';
+
+  @override
+  String get nativeMenuFullScreen => '進入全螢幕';
+
+  @override
+  String get nativeMenuWindow => '視窗';
+
+  @override
+  String get nativeMenuMinimize => '縮小';
+
+  @override
+  String get nativeMenuZoom => '縮放';
+
+  @override
+  String get nativeMenuBringFront => '將所有視窗移至最前';
+
+  @override
+  String get nativeMenuHelp => '輔助說明';
 
   @override
   String get tasks => '任務';

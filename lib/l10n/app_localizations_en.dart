@@ -4327,6 +4327,162 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shortcutPreviousPane => 'Focus previous visible pane';
 
   @override
+  String get nativeMenuApp => 'Joycai Image AI Toolkits';
+
+  @override
+  String get nativeMenuAbout => 'About Joycai Image AI Toolkits';
+
+  @override
+  String get nativeMenuSettings => 'Settings…';
+
+  @override
+  String get nativeMenuServices => 'Services';
+
+  @override
+  String get nativeMenuHide => 'Hide Joycai Image AI Toolkits';
+
+  @override
+  String get nativeMenuHideOthers => 'Hide Others';
+
+  @override
+  String get nativeMenuShowAll => 'Show All';
+
+  @override
+  String get nativeMenuQuit => 'Quit Joycai Image AI Toolkits';
+
+  @override
+  String get nativeMenuEdit => 'Edit';
+
+  @override
+  String get nativeMenuUndo => 'Undo';
+
+  @override
+  String get nativeMenuRedo => 'Redo';
+
+  @override
+  String get nativeMenuCut => 'Cut';
+
+  @override
+  String get nativeMenuCopy => 'Copy';
+
+  @override
+  String get nativeMenuPaste => 'Paste';
+
+  @override
+  String get nativeMenuPasteStyle => 'Paste and Match Style';
+
+  @override
+  String get nativeMenuDelete => 'Delete';
+
+  @override
+  String get nativeMenuSelectAll => 'Select All';
+
+  @override
+  String get nativeMenuFind => 'Find';
+
+  @override
+  String get nativeMenuFindPanel => 'Find…';
+
+  @override
+  String get nativeMenuReplace => 'Find and Replace…';
+
+  @override
+  String get nativeMenuFindNext => 'Find Next';
+
+  @override
+  String get nativeMenuFindPrevious => 'Find Previous';
+
+  @override
+  String get nativeMenuFindSelection => 'Use Selection for Find';
+
+  @override
+  String get nativeMenuJumpSelection => 'Jump to Selection';
+
+  @override
+  String get nativeMenuSpelling => 'Spelling and Grammar';
+
+  @override
+  String get nativeMenuShowSpelling => 'Show Spelling and Grammar';
+
+  @override
+  String get nativeMenuCheckDocument => 'Check Document Now';
+
+  @override
+  String get nativeMenuCheckTyping => 'Check Spelling While Typing';
+
+  @override
+  String get nativeMenuCheckGrammar => 'Check Grammar With Spelling';
+
+  @override
+  String get nativeMenuCorrectSpelling => 'Correct Spelling Automatically';
+
+  @override
+  String get nativeMenuSubstitutions => 'Substitutions';
+
+  @override
+  String get nativeMenuShowSubstitutions => 'Show Substitutions';
+
+  @override
+  String get nativeMenuSmartCopy => 'Smart Copy/Paste';
+
+  @override
+  String get nativeMenuSmartQuotes => 'Smart Quotes';
+
+  @override
+  String get nativeMenuSmartDashes => 'Smart Dashes';
+
+  @override
+  String get nativeMenuSmartLinks => 'Smart Links';
+
+  @override
+  String get nativeMenuDataDetectors => 'Data Detectors';
+
+  @override
+  String get nativeMenuTextReplacement => 'Text Replacement';
+
+  @override
+  String get nativeMenuTransformations => 'Transformations';
+
+  @override
+  String get nativeMenuUpperCase => 'Make Upper Case';
+
+  @override
+  String get nativeMenuLowerCase => 'Make Lower Case';
+
+  @override
+  String get nativeMenuCapitalize => 'Capitalize';
+
+  @override
+  String get nativeMenuSpeech => 'Speech';
+
+  @override
+  String get nativeMenuStartSpeaking => 'Start Speaking';
+
+  @override
+  String get nativeMenuStopSpeaking => 'Stop Speaking';
+
+  @override
+  String get nativeMenuView => 'View';
+
+  @override
+  String get nativeMenuFullScreen => 'Enter Full Screen';
+
+  @override
+  String get nativeMenuWindow => 'Window';
+
+  @override
+  String get nativeMenuMinimize => 'Minimize';
+
+  @override
+  String get nativeMenuZoom => 'Zoom';
+
+  @override
+  String get nativeMenuBringFront => 'Bring All to Front';
+
+  @override
+  String get nativeMenuHelp => 'Help';
+
+  @override
   String get tasks => 'Tasks';
 
   @override

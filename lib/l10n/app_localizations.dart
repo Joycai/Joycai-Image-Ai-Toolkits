@@ -7527,6 +7527,318 @@ abstract class AppLocalizations {
   /// **'Focus previous visible pane'**
   String get shortcutPreviousPane;
 
+  /// No description provided for @nativeMenuApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Joycai Image AI Toolkits'**
+  String get nativeMenuApp;
+
+  /// No description provided for @nativeMenuAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'About Joycai Image AI Toolkits'**
+  String get nativeMenuAbout;
+
+  /// No description provided for @nativeMenuSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings…'**
+  String get nativeMenuSettings;
+
+  /// No description provided for @nativeMenuServices.
+  ///
+  /// In en, this message translates to:
+  /// **'Services'**
+  String get nativeMenuServices;
+
+  /// No description provided for @nativeMenuHide.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide Joycai Image AI Toolkits'**
+  String get nativeMenuHide;
+
+  /// No description provided for @nativeMenuHideOthers.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide Others'**
+  String get nativeMenuHideOthers;
+
+  /// No description provided for @nativeMenuShowAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Show All'**
+  String get nativeMenuShowAll;
+
+  /// No description provided for @nativeMenuQuit.
+  ///
+  /// In en, this message translates to:
+  /// **'Quit Joycai Image AI Toolkits'**
+  String get nativeMenuQuit;
+
+  /// No description provided for @nativeMenuEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get nativeMenuEdit;
+
+  /// No description provided for @nativeMenuUndo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get nativeMenuUndo;
+
+  /// No description provided for @nativeMenuRedo.
+  ///
+  /// In en, this message translates to:
+  /// **'Redo'**
+  String get nativeMenuRedo;
+
+  /// No description provided for @nativeMenuCut.
+  ///
+  /// In en, this message translates to:
+  /// **'Cut'**
+  String get nativeMenuCut;
+
+  /// No description provided for @nativeMenuCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get nativeMenuCopy;
+
+  /// No description provided for @nativeMenuPaste.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste'**
+  String get nativeMenuPaste;
+
+  /// No description provided for @nativeMenuPasteStyle.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste and Match Style'**
+  String get nativeMenuPasteStyle;
+
+  /// No description provided for @nativeMenuDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get nativeMenuDelete;
+
+  /// No description provided for @nativeMenuSelectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Select All'**
+  String get nativeMenuSelectAll;
+
+  /// No description provided for @nativeMenuFind.
+  ///
+  /// In en, this message translates to:
+  /// **'Find'**
+  String get nativeMenuFind;
+
+  /// No description provided for @nativeMenuFindPanel.
+  ///
+  /// In en, this message translates to:
+  /// **'Find…'**
+  String get nativeMenuFindPanel;
+
+  /// No description provided for @nativeMenuReplace.
+  ///
+  /// In en, this message translates to:
+  /// **'Find and Replace…'**
+  String get nativeMenuReplace;
+
+  /// No description provided for @nativeMenuFindNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Find Next'**
+  String get nativeMenuFindNext;
+
+  /// No description provided for @nativeMenuFindPrevious.
+  ///
+  /// In en, this message translates to:
+  /// **'Find Previous'**
+  String get nativeMenuFindPrevious;
+
+  /// No description provided for @nativeMenuFindSelection.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Selection for Find'**
+  String get nativeMenuFindSelection;
+
+  /// No description provided for @nativeMenuJumpSelection.
+  ///
+  /// In en, this message translates to:
+  /// **'Jump to Selection'**
+  String get nativeMenuJumpSelection;
+
+  /// No description provided for @nativeMenuSpelling.
+  ///
+  /// In en, this message translates to:
+  /// **'Spelling and Grammar'**
+  String get nativeMenuSpelling;
+
+  /// No description provided for @nativeMenuShowSpelling.
+  ///
+  /// In en, this message translates to:
+  /// **'Show Spelling and Grammar'**
+  String get nativeMenuShowSpelling;
+
+  /// No description provided for @nativeMenuCheckDocument.
+  ///
+  /// In en, this message translates to:
+  /// **'Check Document Now'**
+  String get nativeMenuCheckDocument;
+
+  /// No description provided for @nativeMenuCheckTyping.
+  ///
+  /// In en, this message translates to:
+  /// **'Check Spelling While Typing'**
+  String get nativeMenuCheckTyping;
+
+  /// No description provided for @nativeMenuCheckGrammar.
+  ///
+  /// In en, this message translates to:
+  /// **'Check Grammar With Spelling'**
+  String get nativeMenuCheckGrammar;
+
+  /// No description provided for @nativeMenuCorrectSpelling.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct Spelling Automatically'**
+  String get nativeMenuCorrectSpelling;
+
+  /// No description provided for @nativeMenuSubstitutions.
+  ///
+  /// In en, this message translates to:
+  /// **'Substitutions'**
+  String get nativeMenuSubstitutions;
+
+  /// No description provided for @nativeMenuShowSubstitutions.
+  ///
+  /// In en, this message translates to:
+  /// **'Show Substitutions'**
+  String get nativeMenuShowSubstitutions;
+
+  /// No description provided for @nativeMenuSmartCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Smart Copy/Paste'**
+  String get nativeMenuSmartCopy;
+
+  /// No description provided for @nativeMenuSmartQuotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Smart Quotes'**
+  String get nativeMenuSmartQuotes;
+
+  /// No description provided for @nativeMenuSmartDashes.
+  ///
+  /// In en, this message translates to:
+  /// **'Smart Dashes'**
+  String get nativeMenuSmartDashes;
+
+  /// No description provided for @nativeMenuSmartLinks.
+  ///
+  /// In en, this message translates to:
+  /// **'Smart Links'**
+  String get nativeMenuSmartLinks;
+
+  /// No description provided for @nativeMenuDataDetectors.
+  ///
+  /// In en, this message translates to:
+  /// **'Data Detectors'**
+  String get nativeMenuDataDetectors;
+
+  /// No description provided for @nativeMenuTextReplacement.
+  ///
+  /// In en, this message translates to:
+  /// **'Text Replacement'**
+  String get nativeMenuTextReplacement;
+
+  /// No description provided for @nativeMenuTransformations.
+  ///
+  /// In en, this message translates to:
+  /// **'Transformations'**
+  String get nativeMenuTransformations;
+
+  /// No description provided for @nativeMenuUpperCase.
+  ///
+  /// In en, this message translates to:
+  /// **'Make Upper Case'**
+  String get nativeMenuUpperCase;
+
+  /// No description provided for @nativeMenuLowerCase.
+  ///
+  /// In en, this message translates to:
+  /// **'Make Lower Case'**
+  String get nativeMenuLowerCase;
+
+  /// No description provided for @nativeMenuCapitalize.
+  ///
+  /// In en, this message translates to:
+  /// **'Capitalize'**
+  String get nativeMenuCapitalize;
+
+  /// No description provided for @nativeMenuSpeech.
+  ///
+  /// In en, this message translates to:
+  /// **'Speech'**
+  String get nativeMenuSpeech;
+
+  /// No description provided for @nativeMenuStartSpeaking.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Speaking'**
+  String get nativeMenuStartSpeaking;
+
+  /// No description provided for @nativeMenuStopSpeaking.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop Speaking'**
+  String get nativeMenuStopSpeaking;
+
+  /// No description provided for @nativeMenuView.
+  ///
+  /// In en, this message translates to:
+  /// **'View'**
+  String get nativeMenuView;
+
+  /// No description provided for @nativeMenuFullScreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter Full Screen'**
+  String get nativeMenuFullScreen;
+
+  /// No description provided for @nativeMenuWindow.
+  ///
+  /// In en, this message translates to:
+  /// **'Window'**
+  String get nativeMenuWindow;
+
+  /// No description provided for @nativeMenuMinimize.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimize'**
+  String get nativeMenuMinimize;
+
+  /// No description provided for @nativeMenuZoom.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoom'**
+  String get nativeMenuZoom;
+
+  /// No description provided for @nativeMenuBringFront.
+  ///
+  /// In en, this message translates to:
+  /// **'Bring All to Front'**
+  String get nativeMenuBringFront;
+
+  /// No description provided for @nativeMenuHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Help'**
+  String get nativeMenuHelp;
+
   /// No description provided for @tasks.
   ///
   /// In en, this message translates to:

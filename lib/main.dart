@@ -49,6 +49,7 @@ import 'state/app_state.dart';
 import 'state/installation_migration_state.dart';
 import 'widgets/privacy/ai_consent_dialog.dart';
 import 'widgets/shell/app_destinations.dart';
+import 'widgets/shell/app_native_menu.dart';
 import 'widgets/shell/app_top_bar.dart';
 import 'widgets/shell/app_window_frame.dart';
 import 'widgets/shell/phone_dock.dart';
@@ -505,30 +506,35 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       child: _screenFor(current),
     );
 
-    return Stack(
-      children: [
-        Scaffold(
-          backgroundColor: Colors.transparent,
-          body: showTopBar
-              ? Column(
-                  children: [
-                    const AppTopBar(),
-                    Expanded(
-                      child: MediaQuery.removePadding(
-                        context: context,
-                        removeTop: true,
-                        child: screen,
+    return AppNativeMenu(
+      onNavigate: context.read<AppState>().navigateToScreen,
+      onShortcuts: () =>
+          toggleShortcutPanel(context, screen: _shortcutScreen(context.read<AppState>())),
+      child: Stack(
+        children: [
+          Scaffold(
+            backgroundColor: Colors.transparent,
+            body: showTopBar
+                ? Column(
+                    children: [
+                      const AppTopBar(),
+                      Expanded(
+                        child: MediaQuery.removePadding(
+                          context: context,
+                          removeTop: true,
+                          child: screen,
+                        ),
                       ),
-                    ),
-                  ],
-                )
-              : SafeArea(top: isTouchOs, bottom: false, left: false, right: false, child: screen),
-        ),
-        if (isPhone) const Positioned(left: 0, right: 0, bottom: 0, child: PhoneDock()),
-        // Unconditional: the capsule governs its own visibility so it can
-        // fade out instead of unmounting between two frames.
-        const TaskCapsuleMonitor(),
-      ],
+                    ],
+                  )
+                : SafeArea(top: isTouchOs, bottom: false, left: false, right: false, child: screen),
+          ),
+          if (isPhone) const Positioned(left: 0, right: 0, bottom: 0, child: PhoneDock()),
+          // Unconditional: the capsule governs its own visibility so it can
+          // fade out instead of unmounting between two frames.
+          const TaskCapsuleMonitor(),
+        ],
+      ),
     );
   }
 }
