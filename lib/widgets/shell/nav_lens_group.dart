@@ -197,24 +197,29 @@ class _NavLensState extends State<_NavLens> {
     }
 
     final isDesktop = Platform.isWindows || Platform.isMacOS || Platform.isLinux;
-    return MergeSemantics(
-      child: Semantics(
-        button: true,
-        selected: widget.selected,
-        label: label,
-        value: widget.badge > 0 ? '${widget.badge}' : null,
-        hint: isDesktop ? d.shortcutHint : null,
-        child: Tooltip(
-          excludeFromSemantics: true,
-          message: isDesktop ? '$label · ${d.shortcutHint}' : label,
-          child: MouseRegion(
-            cursor: SystemMouseCursors.click,
-            onEnter: (_) => setState(() => _hovering = true),
-            onExit: (_) => setState(() => _hovering = false),
-            child: AppActionTarget(
-              excludeChildSemantics: true,
-              onTap: () => context.read<AppState>().navigateToScreen(d.index),
-              child: box,
+    // Keep the tooltip anchor stable and separate from the merged action.
+    // Sibling anchors must not collapse into the title bar's semantics node.
+    return Semantics(
+      container: true,
+      child: Tooltip(
+        excludeFromSemantics: true,
+        message: isDesktop ? '$label · ${d.shortcutHint}' : label,
+        child: MergeSemantics(
+          child: Semantics(
+            button: true,
+            selected: widget.selected,
+            label: label,
+            value: widget.badge > 0 ? '${widget.badge}' : null,
+            hint: isDesktop ? d.shortcutHint : null,
+            child: MouseRegion(
+              cursor: SystemMouseCursors.click,
+              onEnter: (_) => setState(() => _hovering = true),
+              onExit: (_) => setState(() => _hovering = false),
+              child: AppActionTarget(
+                excludeChildSemantics: true,
+                onTap: () => context.read<AppState>().navigateToScreen(d.index),
+                child: box,
+              ),
             ),
           ),
         ),

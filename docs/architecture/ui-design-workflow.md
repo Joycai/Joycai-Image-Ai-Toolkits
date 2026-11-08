@@ -21,6 +21,12 @@ remains keyboard reachable; activating it does not repeat `onChanged`. Its
 decorative text/icons and visual tooltip do not duplicate that accessible name.
 Shell navigation likewise owns its name and exposes the shortcut as a hint;
 its visual tooltip must not repeat the name in semantics.
+Keep navigation Tooltip outside MergeSemantics with a separate semantics
+container. An overlay's raw traversal parent must survive as its own serialized
+node. The browser thumbnail Slider also needs an isolated container: Flutter
+keeps its value-indicator OverlayPortal mounted even with the indicator hidden.
+Real-screen tests cover these anchors through navigation and tooltip teardown;
+see the Windows validation record for the fixed-SDK native reproduction.
 
 Task status filter capsules expose the localized label once, the count as the
 semantic value, and explicit button/selected/enabled states. Selected options

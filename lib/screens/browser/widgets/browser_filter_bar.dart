@@ -461,13 +461,18 @@ class _ThumbnailSizeSlider extends StatelessWidget {
               tickMarkShape: SliderTickMarkShape.noTickMark,
               showValueIndicator: ShowValueIndicator.never,
             ),
-            child: Slider(
-              value: value,
-              min: _min,
-              max: _max,
-              semanticFormatterCallback: (v) => '${l10n.thumbnailSize} ${v.round()}',
-              onChanged: state.setThumbnailSize,
-              onChangeEnd: (_) => state.persistThumbnailSize(),
+            // Slider keeps a value-indicator OverlayPortal even when hidden.
+            // Isolate its anchor from sibling tooltips for native traversal.
+            child: Semantics(
+              container: true,
+              child: Slider(
+                value: value,
+                min: _min,
+                max: _max,
+                semanticFormatterCallback: (v) => '${l10n.thumbnailSize} ${v.round()}',
+                onChanged: state.setThumbnailSize,
+                onChangeEnd: (_) => state.persistThumbnailSize(),
+              ),
             ),
           ),
         ),

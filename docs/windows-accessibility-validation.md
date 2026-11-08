@@ -2,9 +2,9 @@
 
 2026-11-08，PR #409，DESK-01 分批实现；完整验收未完成。
 
-**最新结论：Windows 原生验收未通过。** 当前代码 `64190dca` 在 CI 固定的 Flutter 3.47.8
-Release 下，标题栏导航 tooltip 可触发 AXTree 更新失败，随后控件树可能停留在旧页面。
-隔离菜单探针通过不代表真实应用通过；详见本文「固定 SDK 原生验收」及后续修复顺序。
+**最新结论：已修复本轮复现的导航 tooltip 与浏览器滑块 AXTree 阻塞，完整验收仍未完成。**
+同一 Flutter 3.47.8 Windows Release 中复测导航提示开关、五个页面及主题切换，原生树
+持续更新，没有 AXTree 错误。下文保留 `64190dca` 的失败证据；修复与证据边界见末节。
 
 ## 实现边界
 
@@ -238,10 +238,52 @@ Windows **Debug** 隔离探针构建成功（50 秒），热重启成功（1099m
 真实视频播放也未验证。没有应用代码变更，因此未重跑 Dart 门禁；前批 3587 项测试通过
 仍只代表 Flutter 层回归，**不抵消此次原生验收失败**。
 
+## 2026-11-08：导航提示框与浏览器滑块修复
+
+最终只修改两处生产语义边界，不升级 SDK、不关闭无障碍：
+
+- `NavLensGroup` 将 Tooltip 放到 MergeSemantics 外，并给每个入口独立的语义容器。
+  按钮名称、快捷键 hint、选择状态及键盘动作仍合并到一个操作节点。
+- 浏览器缩略图 Slider 增加独立语义容器。Flutter 3.47.8 的 Slider 即使设置
+  `ShowValueIndicator.never`，也会持续挂载 ValueIndicator OverlayPortal；其遍历锚点
+  被附近 tooltip 的语义吸收后，出现没有有效父节点的浮层。诊断树定位到该 Slider，
+  而非仅凭易变的原生节点编号猜测。初步尝试的共用玻璃控件改动已撤回。
+
+真实应用 `nav_lens_group_stability_test` 现在启用语义，覆盖文件浏览器、提示词、设置、
+任务页面切换，以及导航 tooltip 显示、退场中间帧和关闭。每个浮层必须有且只有一个
+未被合并的原始遍历父节点；只检查合并后的标签不够。缺少滑块边界时该测试失败；
+单独恢复旧导航实现的负对照也失败，恢复两处修复后通过。
+
+原生复测仍使用前节记录的 Flutter **3.47.8**、Windows **10.0.26300.0**，正常
+`lib/main.dart` Release 构建用时 **41.6 秒**。运行于独立 `.portable` 副本，未访问
+现有用户数据库或执行 API 任务。最终 `data/app.so` SHA256：
+`64FB21E6881365137FE7ECFC255511DD881D51B02CEC2E45AEC5DE4046A10AB7`。
+
+原生接口连接期间，欢迎向导导航提示、跳过向导后的工作台“更多”提示、工作台 →
+文件浏览器 → 任务 → 设置 → 提示词 → 文件浏览器均可读取与画面对应的树；设置由
+深色切到浅色后，导航提示显示和关闭正常。浏览器滑块鼠标操作后原生值从 150 更新为
+240，再次进入仍可读取搜索框与滑块。日志 **0 条 AXTree 错误、6 条 frame-time clamping**。
+一次自动化 Ctrl+2 未切页，未将其记为快捷键验收通过；原因尚未定位。没有运行 Narrator、
+完整焦点顺序、真实媒体播放或长时间压力测试，也未重跑旧探针的 60 轮。
+
+本地证据位于忽略的 `build/`：`desk01-tooltip-final-build.log`、
+`desk01-tooltip-final-runtime.log`、`desk01-tooltip-final-browser.txt`、
+`desk01-tooltip-final-browser-return.txt`、`desk01-tooltip-final-hover.txt`、
+`desk01-tooltip-final-dismissed.txt`；回归及负对照为 `desk01-tooltip-nav-final.log`、
+`desk01-tooltip-nav-negative.log`。诊断入口仅存在于 build 中，不属于应用发布代码。
+
+最终工程门禁：格式检查 **962 文件、零改动**，`flutter analyze` 输出
+**No issues found!**；完整 `flutter test -x screenshots --concurrency=2` 为
+**3587 通过、6 跳过**（4 分 35 秒），日志 `desk01-tooltip-final-analyze.log`、
+`desk01-tooltip-final-tests.log`。这些结果属于最终两处生产修复，不引用中途试验版本。
+截图 harness 与组件图 **72 项通过**（46 秒），日志 `desk01-tooltip-final-render.log`
+没有 overflow / EXCEPTION CAUGHT；已查看工作台和浏览器四宽度明暗原图、其他三页矩阵
+及八主题明暗组件总览，未见新增布局变化。基线保存在 `build/desk01-tooltip-baseline/`。
+测试视频缩略图仍提示 MissingPluginException，属于 fixture 无原生插件，不能算视频验收。
+
 ## 尚需完成
 
-- 修复上述已在 CI 固定 Flutter 3.47.8 复现的导航 tooltip / AXTree 阻塞，再重新验收；
-  若选择升级，另行同步 CI 并补版本证据。
+- 已修复的导航 tooltip / 滑块边界继续纳入固定 SDK 的回归；另查原生 Ctrl+2 未切页现象。
 - 真实应用 Release + Narrator 的导航、输入、菜单、对话框、任务状态及屏幕/主题切换。
 - 更长时间的 hover/overlay、窗口缩放与 ReorderableList 场景；出现错误时保留最小复现，
   优先修复局部生命周期或引擎，不以再次全局关闭语义作为验收。
