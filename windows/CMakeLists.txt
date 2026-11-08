@@ -103,11 +103,12 @@ endif()
 
 # Copy the native assets provided by the build.dart from all packages.
 set(NATIVE_ASSETS_DIR "${PROJECT_BUILD_DIR}native_assets/windows/")
-if(EXISTS "${NATIVE_ASSETS_DIR}")
-  install(DIRECTORY "${NATIVE_ASSETS_DIR}"
-     DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
-     COMPONENT Runtime)
-endif()
+# Native assets are produced by flutter_assemble AFTER CMake configuration.
+# Always register this install rule: a configure-time EXISTS check silently
+# omits sqlite3.dll from clean builds, leaving startup unable to open the DB.
+install(DIRECTORY "${NATIVE_ASSETS_DIR}"
+   DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
+   COMPONENT Runtime)
 
 # Fully re-copy the assets directory on each build to avoid having stale files
 # from a previous install.

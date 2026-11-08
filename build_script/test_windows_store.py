@@ -75,7 +75,7 @@ class StoreValidationTest(unittest.TestCase):
           <Applications><Application Executable="joycai_image_ai_toolkits.exe"
             EntryPoint="Windows.FullTrustApplication"/></Applications></Package>'''
         files = {name: b"fixture" for name in (
-            "joycai_image_ai_toolkits.exe", "flutter_windows.dll", "data/app.so", "data/icudtl.dat",
+            "joycai_image_ai_toolkits.exe", "flutter_windows.dll", "sqlite3.dll", "data/app.so", "data/icudtl.dat",
             "resources.pri", "msvcp140.dll", "vcruntime140.dll", "Images/StoreLogo.png")}
         files["AppxManifest.xml"] = manifest.encode()
         return files
@@ -102,7 +102,7 @@ class StoreValidationTest(unittest.TestCase):
             files["AppxManifest.xml"] = files["AppxManifest.xml"].replace(old, new)
             with self.subTest(old=old), self.assertRaises(ValueError):
                 self.verify(files)
-        for missing in ("flutter_windows.dll", "Images/StoreLogo.png", "data/app.so"):
+        for missing in ("flutter_windows.dll", "sqlite3.dll", "Images/StoreLogo.png", "data/app.so"):
             files = copy.copy(original)
             del files[missing]
             with self.subTest(missing=missing), self.assertRaises(ValueError):
@@ -119,6 +119,12 @@ class StoreValidationTest(unittest.TestCase):
             files[name] = b"fixture"
             with self.subTest(name=name), self.assertRaisesRegex(ValueError, "JNI/JVM"):
                 self.verify(files)
+
+    def test_sqlite_must_be_beside_the_executable(self):
+        files = self.fixture()
+        files["native_assets/sqlite3.dll"] = files.pop("sqlite3.dll")
+        with self.assertRaisesRegex(ValueError, "Missing runtime resource: sqlite3.dll"):
+            self.verify(files)
 
 
 if __name__ == "__main__":

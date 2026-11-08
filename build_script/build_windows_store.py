@@ -124,7 +124,7 @@ def verify_package(package, config, version):
                 "Expected one full-trust desktop application")
         executable = apps[0].get("Executable", "").replace("\\", "/").lower()
         require(executable == "joycai_image_ai_toolkits.exe", "Unexpected executable")
-        for name in (executable, "flutter_windows.dll", "data/app.so", "data/icudtl.dat",
+        for name in (executable, "flutter_windows.dll", "sqlite3.dll", "data/app.so", "data/icudtl.dat",
                      "resources.pri", "msvcp140.dll", "vcruntime140.dll"):
             require(name in names, f"Missing runtime resource: {name}")
         logos = [root.findtext("p:Properties/p:Logo", namespaces=NS)]

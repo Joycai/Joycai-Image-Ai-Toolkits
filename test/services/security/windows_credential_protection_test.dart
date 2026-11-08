@@ -15,7 +15,23 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
   const protection = WindowsCredentialProtection();
-  tearDown(() => messenger.setMockMethodCallHandler(WindowsPackageStorage.channel, null));
+  tearDown(() => messenger.setMockMessageHandler(WindowsPackageStorage.channel.name, null));
+
+  test('read-only platform response buffers support startup and credential round trips', () async {
+    const codec = StandardMethodCodec();
+    messenger.setMockMessageHandler(WindowsPackageStorage.channel.name, (message) async {
+      final call = codec.decodeMethodCall(message);
+      // Engine-delivered platform messages can be unmodifiable. Mocking only
+      // the method handler normally gives the decoder a writable buffer.
+      return codec.encodeSuccessEnvelope(call.arguments as Uint8List).asUnmodifiableView();
+    });
+
+    await protection.prepare(allowCreate: true);
+    final sealed = await protection.seal('synthetic credential');
+    expect(await protection.open(sealed), 'synthetic credential');
+    final malformed = '${WindowsCredentialProtection.prefix}${base64Encode([255])}';
+    await expectLater(protection.open(malformed), throwsA(isA<CredentialProtectionException>()));
+  });
 
   test('foreign/unknown envelopes and malformed bytes fail closed', () async {
     for (final value in [

@@ -10,7 +10,7 @@ through WIN-06 remain prerequisites for release readiness.
 Use Python 3.12 and Flutter 3.47.8 on Windows with the Visual Studio C++ build tools:
 
 ```powershell
-python -m unittest discover -s build_script -p test_windows_store.py
+python -m unittest discover -s build_script -p 'test_windows*.py'
 python build_script/build_windows_store.py --preparation
 ```
 
@@ -30,6 +30,25 @@ Store safety tests and compiles a fresh release with the explicit false distribu
 define. It checks generated CMake defines before packaging. The installed `msix`
 tool's Store mode uses the supplied identity without invoking local certificate
 installation/signing; the script also explicitly disables signing.
+
+Native assets must be registered for installation even when their directory does
+not yet exist during CMake configuration. Flutter's build hooks generate
+`build/native_assets/windows/sqlite3.dll` later, during `flutter_assemble`.
+A configure-time `if(EXISTS ...)` around that install rule omitted SQLite from
+clean Windows builds: the import prompt could render, but continuing or skipping
+it failed when bootstrap first opened the database, leaving a blank window.
+The install rule is unconditional and the Store verifier requires `sqlite3.dll`
+beside the executable. `test_windows_native_assets.py` exercises configuration
+before asset generation followed by installation; run it with CMake on PATH
+or the `CMAKE` environment variable pointing to its executable.
+
+Packaged startup also probes DPAPI before publishing the database. Platform
+messages can decode to unmodifiable `Uint8List` views; credential protection
+must copy those bytes before clearing temporary plaintext. Otherwise the
+cleanup throws `Unsupported operation: Cannot modify an unmodifiable list`
+after successful decryption and aborts bootstrap. The credential regression
+test supplies a read-only encoded platform response, including malformed UTF-8,
+so normal writable mock messages cannot hide this installed-only failure.
 
 Only verified packages receive `AppxManifest.xml` and `provenance.json` in `artifacts`.
 Provenance records source hashes/revision/status, SDK, build flags, package settings
