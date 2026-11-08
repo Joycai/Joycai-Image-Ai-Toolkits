@@ -517,9 +517,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get moveFolderTo => 'Move to…';
 
   @override
-  String get removeFromList => 'Remove from list';
-
-  @override
   String get rootCannotMove => 'Root folders cannot be moved';
 
   @override
@@ -562,9 +559,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String trashFolderCount(int count) {
     return 'Move $count items to trash';
   }
-
-  @override
-  String get moveToTrash => 'Move to Trash';
 
   @override
   String get trashFileTitle => 'Move to trash?';
@@ -1193,6 +1187,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String folderOutlineFilesCount(int count) {
     return '$count files';
   }
+
+  @override
+  String get resizePane => 'Resize pane';
+
+  @override
+  String get moveDividerLeft => 'Move divider left';
+
+  @override
+  String get moveDividerRight => 'Move divider right';
+
+  @override
+  String get moveDividerUp => 'Move divider up';
+
+  @override
+  String get moveDividerDown => 'Move divider down';
 
   @override
   String get downloader => 'Downloader';
@@ -3484,9 +3493,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get filterAll => 'All';
-
-  @override
   String get newTemplate => 'New Template';
 
   @override
@@ -4195,6 +4201,18 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not open an email app. Copy the address and send your report manually.';
 
   @override
+  String get shortcutGridMove => 'Move and select an item';
+
+  @override
+  String get shortcutGridExtend => 'Extend item selection';
+
+  @override
+  String get shortcutGridFocus => 'Move item focus without selecting';
+
+  @override
+  String get shortcutGridToggle => 'Toggle focused item selection';
+
+  @override
   String get shortcutNavigateToDestination => 'Go to page 1–8';
 
   @override
@@ -4303,6 +4321,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shortcutsCustomiseLater => 'a later round';
 
   @override
+  String get shortcutNextPane => 'Focus next visible pane';
+
+  @override
+  String get shortcutPreviousPane => 'Focus previous visible pane';
+
+  @override
   String get tasks => 'Tasks';
 
   @override
@@ -4342,6 +4366,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cancelTask => 'Cancel Task';
+
+  @override
+  String get removeFromList => 'Remove from list';
 
   @override
   String get images => 'Images';
@@ -4389,6 +4416,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String taskTotalCount(int count) {
     return '$count total';
   }
+
+  @override
+  String get filterAll => 'All';
 
   @override
   String get retryTask => 'Retry';
@@ -4808,6 +4838,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get thumbnailFitCover => 'Fill (cropped)';
+
+  @override
+  String get moveToTrash => 'Move to Trash';
 
   @override
   String deleteFailed(String error) {

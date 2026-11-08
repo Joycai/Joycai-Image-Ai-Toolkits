@@ -1,4 +1,8 @@
 {
+  "shortcutGridMove": "Move and select an item",
+  "shortcutGridExtend": "Extend item selection",
+  "shortcutGridFocus": "Move item focus without selecting",
+  "shortcutGridToggle": "Toggle focused item selection",
   "shortcutNavigateToDestination": "Go to page 1–8",
   "shortcutShowShortcutPanel": "Keyboard shortcuts",
   "shortcutOpenSettings": "Settings",
@@ -40,5 +44,7 @@
   "shortcutsActiveRegionNote": "These act on the active region, the one named above. Click a region to move the keyboard there — whichever region is listening draws its selection in the accent colour.",
   "shortcutsClose": "Close",
   "shortcutsCustomise": "Custom key bindings",
-  "shortcutsCustomiseLater": "a later round"
+  "shortcutsCustomiseLater": "a later round",
+  "shortcutNextPane": "Focus next visible pane",
+  "shortcutPreviousPane": "Focus previous visible pane"
 }

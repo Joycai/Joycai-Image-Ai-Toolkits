@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
@@ -53,6 +54,7 @@ void main() {
   }
 
   testWidgets('switching screens moves no icon in the title bar', (WidgetTester tester) async {
+    final semantics = tester.ensureSemantics();
     await mountApp(
       tester,
       env: env,
@@ -76,6 +78,43 @@ void main() {
         // Real async: each screen reads the database as it mounts.
         await inRealAsync(tester, () => AppState().navigateToScreen(screen.index));
         await settle(tester);
+
+        void checkOverlayAnchors() {
+          final nodes = <SemanticsNode>[];
+          void collect(SemanticsNode node) {
+            nodes.add(node);
+            node.visitChildren((child) {
+              collect(child);
+              return true;
+            });
+          }
+
+          collect(tester.binding.renderViews.single.owner!.semanticsOwner!.rootSemanticsNode!);
+          for (final node in nodes) {
+            final anchor = node.traversalChildIdentifier;
+            if (anchor == null) continue;
+            expect(
+              nodes.where(
+                (parent) =>
+                    parent.traversalParentIdentifier == anchor && !parent.isMergedIntoParent,
+              ),
+              hasLength(1),
+              reason:
+                  '${screen.name}: every overlay needs one independently serialized traversal parent',
+            );
+          }
+        }
+
+        checkOverlayAnchors();
+        final tooltip = tester.state<TooltipState>(inGroup(find.byType(Tooltip)).first);
+        tooltip.ensureTooltipVisible();
+        await tester.pumpAndSettle();
+        checkOverlayAnchors();
+        Tooltip.dismissAllToolTips();
+        await tester.pump(const Duration(milliseconds: 20));
+        checkOverlayAnchors();
+        await tester.pumpAndSettle();
+        checkOverlayAnchors();
 
         expect(
           tester.getRect(find.byType(NavLensGroup)),
@@ -109,6 +148,7 @@ void main() {
       // The screens visited start debounces and scans of their own; let
       // them run out before the binding checks for pending timers.
       await tester.pump(const Duration(seconds: 10));
+      semantics.dispose();
       for (Object? e = tester.takeException(); e != null; e = tester.takeException()) {}
     }
   });

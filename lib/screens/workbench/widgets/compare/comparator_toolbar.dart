@@ -6,6 +6,7 @@ import '../../../../l10n/app_localizations.dart';
 import '../../../../state/workbench_ui_state.dart';
 import '../../../../widgets/glass/app_glass.dart';
 import '../../../../widgets/glass/glass_controls.dart';
+import '../../../../widgets/ui/app_menu_anchor.dart';
 import '../../../../widgets/ui/app_switch.dart';
 import '../../workbench_layout.dart';
 
@@ -211,43 +212,44 @@ class _SyncSwitchState extends State<_SyncSwitch> {
     final ink2 = glass?.ink2 ?? scheme.onSurfaceVariant;
     final enabled = widget.onToggle != null;
 
-    return Semantics(
-      toggled: widget.value,
-      enabled: enabled,
-      label: widget.label,
-      onTap: widget.onToggle,
-      excludeSemantics: true,
-      child: MouseRegion(
-        cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
-        onEnter: (_) => setState(() => _hovering = true),
-        onExit: (_) => setState(() => _hovering = false),
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: widget.onToggle,
-          child: AnimatedContainer(
-            duration: AppMotion.durationOf(context, AppMotion.hover),
-            curve: AppMotion.quick,
-            height: AppSize.control,
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            decoration: BoxDecoration(
-              color: _hovering && enabled ? ink.withValues(alpha: 0.08) : Colors.transparent,
-              borderRadius: BorderRadius.circular(AppRadius.control),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  widget.label,
-                  maxLines: 1,
-                  style: GlassIconButton.labelStyle(context)
-                      .copyWith(color: enabled ? ink : ink2.withValues(alpha: ink2.a * 0.6)),
-                ),
-                const SizedBox(width: 6),
-                AppSwitch(
-                  value: widget.value,
-                  onChanged: enabled ? (_) => widget.onToggle!() : null,
-                ),
-              ],
+    return MergeSemantics(
+      child: Semantics(
+        label: widget.label,
+        child: MouseRegion(
+          cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
+          onEnter: (_) => setState(() => _hovering = true),
+          onExit: (_) => setState(() => _hovering = false),
+          child: GestureDetector(
+            excludeFromSemantics: true,
+            behavior: HitTestBehavior.opaque,
+            onTap: widget.onToggle,
+            child: AnimatedContainer(
+              duration: AppMotion.durationOf(context, AppMotion.hover),
+              curve: AppMotion.quick,
+              height: AppSize.control,
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              decoration: BoxDecoration(
+                color: _hovering && enabled ? ink.withValues(alpha: 0.08) : Colors.transparent,
+                borderRadius: BorderRadius.circular(AppRadius.control),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ExcludeSemantics(
+                    child: Text(
+                      widget.label,
+                      maxLines: 1,
+                      style: GlassIconButton.labelStyle(context)
+                          .copyWith(color: enabled ? ink : ink2.withValues(alpha: ink2.a * 0.6)),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  AppSwitch(
+                    value: widget.value,
+                    onChanged: enabled ? (_) => widget.onToggle!() : null,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -273,7 +275,7 @@ class _ComparatorOverflowMenu extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final scheme = Theme.of(context).colorScheme;
 
-    return MenuAnchor(
+    return AppMenuAnchor(
       menuChildren: [
         MenuItemButton(
           leadingIcon: Icon(

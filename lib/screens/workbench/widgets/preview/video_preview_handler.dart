@@ -7,6 +7,8 @@ import 'package:video_player/video_player.dart';
 
 import '../../../../core/constants.dart';
 import '../../../../core/design_tokens.dart';
+import '../../../../l10n/app_localizations.dart';
+import '../../../../widgets/ui/app_control_label.dart';
 import 'preview_handler.dart';
 import 'video_thumbnail.dart';
 
@@ -44,6 +46,7 @@ class _VideoPreviewContentState extends State<_VideoPreviewContent> {
   bool _hasError = false;
   String? _errorMessage;
   bool _showOverlay = true;
+  bool _controlsFocused = false;
   Timer? _hideTimer;
   bool _wasPlaying = false;
 
@@ -72,7 +75,9 @@ class _VideoPreviewContentState extends State<_VideoPreviewContent> {
   }
 
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
-    if (event is! KeyDownEvent || event.logicalKey != LogicalKeyboardKey.space) {
+    if (!_focusNode.hasPrimaryFocus ||
+        event is! KeyDownEvent ||
+        event.logicalKey != LogicalKeyboardKey.space) {
       return KeyEventResult.ignored;
     }
     final controller = _controller;
@@ -107,7 +112,11 @@ class _VideoPreviewContentState extends State<_VideoPreviewContent> {
   void _startHideTimer() {
     _hideTimer?.cancel();
     _hideTimer = Timer(const Duration(seconds: 3), () {
-      if (mounted && _controller != null && _controller!.value.isPlaying) {
+      if (mounted &&
+          !_controlsFocused &&
+          !MediaQuery.accessibleNavigationOf(context) &&
+          _controller != null &&
+          _controller!.value.isPlaying) {
         setState(() {
           _showOverlay = false;
         });
@@ -259,12 +268,17 @@ class _VideoPreviewContentState extends State<_VideoPreviewContent> {
               left: 0,
               right: 0,
               child: AnimatedOpacity(
-                opacity: _showOverlay ? 1.0 : 0.0,
+                opacity: _showOverlay || MediaQuery.accessibleNavigationOf(context) ? 1.0 : 0.0,
                 duration: AppMotion.durationOf(context, AppMotion.reveal),
                 curve: AppMotion.enter,
-                child: ExcludeSemantics(
+                child: Focus(
+                  skipTraversal: true,
+                  onFocusChange: (focused) {
+                    _controlsFocused = focused;
+                    if (focused) _onUserInteraction();
+                  },
                   child: IgnorePointer(
-                    ignoring: !_showOverlay,
+                    ignoring: !_showOverlay && !MediaQuery.accessibleNavigationOf(context),
                     child: _VideoControlBar(controller: _controller!),
                   ),
                 ),
@@ -343,6 +357,7 @@ class _VideoControlBarState extends State<_VideoControlBar> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return GestureDetector(
+      excludeFromSemantics: true,
       onTap: () {}, // Consume tap to prevent triggering play/pause of main video area
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -395,18 +410,23 @@ class _VideoControlBarState extends State<_VideoControlBar> {
                 ),
                 Row(
                   children: [
-                    IconButton(
-                      icon: Icon(
-                        value.isPlaying ? Icons.pause : Icons.play_arrow,
-                        color: Colors.white,
+                    AppControlLabel(
+                      label: value.isPlaying
+                          ? AppLocalizations.of(context)!.videoPause
+                          : AppLocalizations.of(context)!.videoPlay,
+                      child: IconButton(
+                        icon: Icon(
+                          value.isPlaying ? Icons.pause : Icons.play_arrow,
+                          color: Colors.white,
+                        ),
+                        onPressed: () {
+                          if (value.isPlaying) {
+                            widget.controller.pause();
+                          } else {
+                            widget.controller.play();
+                          }
+                        },
                       ),
-                      onPressed: () {
-                        if (value.isPlaying) {
-                          widget.controller.pause();
-                        } else {
-                          widget.controller.play();
-                        }
-                      },
                     ),
                     const SizedBox(width: 8),
                     Text(
@@ -414,12 +434,17 @@ class _VideoControlBarState extends State<_VideoControlBar> {
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white),
                     ),
                     const Spacer(),
-                    IconButton(
-                      icon: Icon(
-                        _isMuted || _volume == 0 ? Icons.volume_off : Icons.volume_up,
-                        color: Colors.white,
+                    AppControlLabel(
+                      label: _isMuted || _volume == 0
+                          ? AppLocalizations.of(context)!.videoUnmute
+                          : AppLocalizations.of(context)!.videoMute,
+                      child: IconButton(
+                        icon: Icon(
+                          _isMuted || _volume == 0 ? Icons.volume_off : Icons.volume_up,
+                          color: Colors.white,
+                        ),
+                        onPressed: _toggleMute,
                       ),
-                      onPressed: _toggleMute,
                     ),
                   ],
                 ),

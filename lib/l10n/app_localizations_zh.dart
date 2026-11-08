@@ -509,9 +509,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get moveFolderTo => '移动到…';
 
   @override
-  String get removeFromList => '从列表中移除';
-
-  @override
   String get rootCannotMove => '根目录不能移动';
 
   @override
@@ -553,9 +550,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String trashFolderCount(int count) {
     return '移到回收站 · $count 项';
   }
-
-  @override
-  String get moveToTrash => '移至回收站';
 
   @override
   String get trashFileTitle => '移到回收站？';
@@ -1149,6 +1143,21 @@ class AppLocalizationsZh extends AppLocalizations {
   String folderOutlineFilesCount(int count) {
     return '$count 个文件';
   }
+
+  @override
+  String get resizePane => '调整面板大小';
+
+  @override
+  String get moveDividerLeft => '向左移动分隔条';
+
+  @override
+  String get moveDividerRight => '向右移动分隔条';
+
+  @override
+  String get moveDividerUp => '向上移动分隔条';
+
+  @override
+  String get moveDividerDown => '向下移动分隔条';
 
   @override
   String get downloader => '下载器';
@@ -3322,9 +3331,6 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get filterAll => '全部';
-
-  @override
   String get newTemplate => '新建模板';
 
   @override
@@ -4000,6 +4006,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get contentSafetyEmailFailed => '无法打开邮件应用，请复制邮箱后手动发送反馈。';
 
   @override
+  String get shortcutGridMove => '移动并选中项目';
+
+  @override
+  String get shortcutGridExtend => '扩展项目选区';
+
+  @override
+  String get shortcutGridFocus => '仅移动项目焦点';
+
+  @override
+  String get shortcutGridToggle => '切换焦点项目的选择状态';
+
+  @override
   String get shortcutNavigateToDestination => '切到第 1…8 个页面';
 
   @override
@@ -4107,6 +4125,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get shortcutsCustomiseLater => '第二期';
 
   @override
+  String get shortcutNextPane => '聚焦下一个可见栏';
+
+  @override
+  String get shortcutPreviousPane => '聚焦上一个可见栏';
+
+  @override
   String get tasks => '任务';
 
   @override
@@ -4146,6 +4170,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get cancelTask => '取消任务';
+
+  @override
+  String get removeFromList => '从列表中移除';
 
   @override
   String get images => '图像';
@@ -4193,6 +4220,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String taskTotalCount(int count) {
     return '共 $count 个任务';
   }
+
+  @override
+  String get filterAll => '全部';
 
   @override
   String get retryTask => '重试';
@@ -4601,6 +4631,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get thumbnailFitCover => '填充（裁切铺满）';
+
+  @override
+  String get moveToTrash => '移至回收站';
 
   @override
   String deleteFailed(String error) {
@@ -6845,9 +6878,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get moveFolderTo => '移動到…';
 
   @override
-  String get removeFromList => '從清單中移除';
-
-  @override
   String get rootCannotMove => '根目錄無法移動';
 
   @override
@@ -6889,9 +6919,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String trashFolderCount(int count) {
     return '移到垃圾桶 · $count 項';
   }
-
-  @override
-  String get moveToTrash => '移至資源回收筒';
 
   @override
   String get trashFileTitle => '移到垃圾桶？';
@@ -7485,6 +7512,21 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String folderOutlineFilesCount(int count) {
     return '$count 個檔案';
   }
+
+  @override
+  String get resizePane => '調整面板大小';
+
+  @override
+  String get moveDividerLeft => '向左移動分隔條';
+
+  @override
+  String get moveDividerRight => '向右移動分隔條';
+
+  @override
+  String get moveDividerUp => '向上移動分隔條';
+
+  @override
+  String get moveDividerDown => '向下移動分隔條';
 
   @override
   String get downloader => '下載器';
@@ -9658,9 +9700,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   }
 
   @override
-  String get filterAll => '全部';
-
-  @override
   String get newTemplate => '新增範本';
 
   @override
@@ -10336,6 +10375,18 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get contentSafetyEmailFailed => '無法開啟郵件應用，請複製信箱後手動傳送回報。';
 
   @override
+  String get shortcutGridMove => '移動並選取項目';
+
+  @override
+  String get shortcutGridExtend => '擴展項目選取範圍';
+
+  @override
+  String get shortcutGridFocus => '僅移動項目焦點';
+
+  @override
+  String get shortcutGridToggle => '切換焦點項目的選取狀態';
+
+  @override
   String get shortcutNavigateToDestination => '切到第 1…8 個頁面';
 
   @override
@@ -10443,6 +10494,12 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get shortcutsCustomiseLater => '第二期';
 
   @override
+  String get shortcutNextPane => '聚焦下一個可見欄';
+
+  @override
+  String get shortcutPreviousPane => '聚焦上一個可見欄';
+
+  @override
   String get tasks => '任務';
 
   @override
@@ -10482,6 +10539,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get cancelTask => '取消任務';
+
+  @override
+  String get removeFromList => '從清單中移除';
 
   @override
   String get images => '圖片';
@@ -10529,6 +10589,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String taskTotalCount(int count) {
     return '共 $count 個任務';
   }
+
+  @override
+  String get filterAll => '全部';
 
   @override
   String get retryTask => '重試';
@@ -10937,6 +11000,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get thumbnailFitCover => '填滿（裁切鋪滿）';
+
+  @override
+  String get moveToTrash => '移至資源回收筒';
 
   @override
   String deleteFailed(String error) {

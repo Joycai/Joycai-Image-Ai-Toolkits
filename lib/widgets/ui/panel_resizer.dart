@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/design_tokens.dart';
+import 'app_resize_target.dart';
 
 /// The shape a [PanelCard] and its neighbouring [PanelResizer] take.
 ///
@@ -143,42 +144,49 @@ class _PanelResizerState extends State<PanelResizer> {
       ),
     );
 
-    return MouseRegion(
-      cursor: _isHorizontalDrag ? SystemMouseCursors.resizeColumn : SystemMouseCursors.resizeRow,
-      onEnter: (_) => setState(() => _hovering = true),
-      onExit: (_) => setState(() => _hovering = false),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onHorizontalDragStart: _isHorizontalDrag ? (_) => setState(() => _dragging = true) : null,
-        onHorizontalDragUpdate: _isHorizontalDrag ? (d) => widget.onDrag(d.delta.dx) : null,
-        onHorizontalDragEnd: _isHorizontalDrag ? (_) => _endDrag() : null,
-        onHorizontalDragCancel: _isHorizontalDrag ? () => setState(() => _dragging = false) : null,
-        onVerticalDragStart: _isHorizontalDrag ? null : (_) => setState(() => _dragging = true),
-        onVerticalDragUpdate: _isHorizontalDrag ? null : (d) => widget.onDrag(d.delta.dy),
-        onVerticalDragEnd: _isHorizontalDrag ? null : (_) => _endDrag(),
-        onVerticalDragCancel: _isHorizontalDrag ? null : () => setState(() => _dragging = false),
-        child: SizedBox(
-          width: _isHorizontalDrag ? thickness : null,
-          height: _isHorizontalDrag ? null : thickness,
-          // A card gutter is canvas the grip floats in; a column boundary is
-          // two panel grounds meeting at a rule, so it has to carry them.
-          child: isColumn
-              ? Flex(
-                  direction: widget.axis,
-                  // Stretch, not the default centre: a [ColoredBox] with no
-                  // child takes `constraints.smallest`, so under the loose
-                  // cross-axis constraint a centred row hands out the ground
-                  // would size to zero and paint nothing at all.
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (widget.ruleSide == PanelRuleSide.leading) grip,
-                    Expanded(
-                      child: ColoredBox(color: widget.ground ?? colorScheme.surfaceContainerLow),
-                    ),
-                    if (widget.ruleSide == PanelRuleSide.trailing) grip,
-                  ],
-                )
-              : Center(child: grip),
+    return AppResizeTarget(
+      axis: widget.axis,
+      onDrag: widget.onDrag,
+      onDragEnd: widget.onDragEnd,
+      child: MouseRegion(
+        cursor: _isHorizontalDrag ? SystemMouseCursors.resizeColumn : SystemMouseCursors.resizeRow,
+        onEnter: (_) => setState(() => _hovering = true),
+        onExit: (_) => setState(() => _hovering = false),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onHorizontalDragStart: _isHorizontalDrag ? (_) => setState(() => _dragging = true) : null,
+          onHorizontalDragUpdate: _isHorizontalDrag ? (d) => widget.onDrag(d.delta.dx) : null,
+          onHorizontalDragEnd: _isHorizontalDrag ? (_) => _endDrag() : null,
+          onHorizontalDragCancel: _isHorizontalDrag
+              ? () => setState(() => _dragging = false)
+              : null,
+          onVerticalDragStart: _isHorizontalDrag ? null : (_) => setState(() => _dragging = true),
+          onVerticalDragUpdate: _isHorizontalDrag ? null : (d) => widget.onDrag(d.delta.dy),
+          onVerticalDragEnd: _isHorizontalDrag ? null : (_) => _endDrag(),
+          onVerticalDragCancel: _isHorizontalDrag ? null : () => setState(() => _dragging = false),
+          child: SizedBox(
+            width: _isHorizontalDrag ? thickness : null,
+            height: _isHorizontalDrag ? null : thickness,
+            // A card gutter is canvas the grip floats in; a column boundary is
+            // two panel grounds meeting at a rule, so it has to carry them.
+            child: isColumn
+                ? Flex(
+                    direction: widget.axis,
+                    // Stretch, not the default centre: a [ColoredBox] with no
+                    // child takes `constraints.smallest`, so under the loose
+                    // cross-axis constraint a centred row hands out the ground
+                    // would size to zero and paint nothing at all.
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (widget.ruleSide == PanelRuleSide.leading) grip,
+                      Expanded(
+                        child: ColoredBox(color: widget.ground ?? colorScheme.surfaceContainerLow),
+                      ),
+                      if (widget.ruleSide == PanelRuleSide.trailing) grip,
+                    ],
+                  )
+                : Center(child: grip),
+          ),
         ),
       ),
     );

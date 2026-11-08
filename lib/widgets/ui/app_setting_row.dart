@@ -82,6 +82,9 @@ class AppSettingRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    // Only a single switch can safely share the row's name. A generic trailing
+    // widget may contain several independently actionable controls.
+    Widget nameSwitch(Widget child) => trailing is AppSwitch ? MergeSemantics(child: child) : child;
 
     final Widget body = ConstrainedBox(
       constraints: const BoxConstraints(minHeight: 48),
@@ -91,49 +94,52 @@ class AppSettingRow extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Row(
-              children: [
-                if (leading != null) ...[leading!, const SizedBox(width: 12)],
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 2,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        children: [
-                          Text(
-                            title,
-                            style: textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w500,
-                              color: enabled ? null : colorScheme.outline,
-                            ),
-                          ),
-                          ?badge,
-                        ],
-                      ),
-                      if (description != null) ...[
-                        const SizedBox(height: 2),
-                        Text(
-                          description!,
-                          style: (monoDescription ? textTheme.bodySmall?.mono : textTheme.bodySmall)
-                              ?.copyWith(
-                                color: !enabled
-                                    ? colorScheme.outline
-                                    : descriptionColor ?? colorScheme.onSurfaceVariant,
-                                height: monoDescription ? null : AppType.proseHeight,
+            child: nameSwitch(
+              Row(
+                children: [
+                  if (leading != null) ...[leading!, const SizedBox(width: 12)],
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 2,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            Text(
+                              title,
+                              style: textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w500,
+                                color: enabled ? null : colorScheme.outline,
                               ),
-                          maxLines: monoDescription ? 1 : null,
-                          overflow: monoDescription ? TextOverflow.ellipsis : null,
+                            ),
+                            ?badge,
+                          ],
                         ),
+                        if (description != null) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            description!,
+                            style:
+                                (monoDescription ? textTheme.bodySmall?.mono : textTheme.bodySmall)
+                                    ?.copyWith(
+                                      color: !enabled
+                                          ? colorScheme.outline
+                                          : descriptionColor ?? colorScheme.onSurfaceVariant,
+                                      height: monoDescription ? null : AppType.proseHeight,
+                                    ),
+                            maxLines: monoDescription ? 1 : null,
+                            overflow: monoDescription ? TextOverflow.ellipsis : null,
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
-                ),
-                if (trailing != null) ...[const SizedBox(width: 12), trailing!],
-              ],
+                  if (trailing != null) ...[const SizedBox(width: 12), trailing!],
+                ],
+              ),
             ),
           ),
           if (footer != null)
@@ -154,7 +160,7 @@ class AppSettingRow extends StatelessWidget {
             )
           : null,
       clipBehavior: framed ? Clip.antiAlias : Clip.none,
-      child: onTap == null ? body : InkWell(onTap: onTap, child: body),
+      child: onTap == null ? body : InkWell(onTap: enabled ? onTap : null, child: body),
     );
   }
 }
@@ -188,33 +194,35 @@ class AppToggleRow extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          if (icon != null) ...[
-            Icon(icon, size: AppSize.iconMd, color: colorScheme.onSurfaceVariant),
-            const SizedBox(width: 10),
-          ],
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(title, style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500)),
-                if (description != null) ...[
-                  const SizedBox(height: 1),
-                  Text(
-                    description!,
-                    style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
-                  ),
+    return MergeSemantics(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Row(
+          children: [
+            if (icon != null) ...[
+              Icon(icon, size: AppSize.iconMd, color: colorScheme.onSurfaceVariant),
+              const SizedBox(width: 10),
+            ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(title, style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500)),
+                  if (description != null) ...[
+                    const SizedBox(height: 1),
+                    Text(
+                      description!,
+                      style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
-          const SizedBox(width: 8),
-          AppSwitch(value: value, onChanged: onChanged),
-        ],
+            const SizedBox(width: 8),
+            AppSwitch(value: value, onChanged: onChanged),
+          ],
+        ),
       ),
     );
   }

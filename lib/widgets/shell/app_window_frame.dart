@@ -11,6 +11,7 @@ import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../state/app_state.dart';
 import '../glass/app_glass.dart';
+import '../ui/app_action_target.dart';
 import 'app_destinations.dart';
 import 'baked_backdrop.dart';
 import 'nav_lens_group.dart';
@@ -86,7 +87,10 @@ class _AppWindowFrameState extends State<AppWindowFrame> {
             Column(
               children: [
                 const AppTitleBar(),
-                Expanded(child: widget.child),
+                // Route barriers block earlier semantics siblings. Keep the
+                // Navigator in its own boundary so they cannot also erase the
+                // title bar/navigation that lives outside that Navigator.
+                Expanded(child: Semantics(container: true, child: widget.child)),
               ],
             )
           else
@@ -502,21 +506,22 @@ class _WindowButtonState extends State<_WindowButton> {
         : ink.withValues(alpha: 0.08);
     final foreground = _hovering && widget.danger ? Colors.white : ink;
 
-    return Semantics(
-      button: true,
-      label: widget.label,
-      child: MouseRegion(
-        onEnter: (_) => setState(() => _hovering = true),
-        onExit: (_) => setState(() => _hovering = false),
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: widget.onPressed,
-          child: AnimatedContainer(
-            duration: AppMotion.durationOf(context, AppMotion.hover),
-            width: 46,
-            height: kTitleBarHeight,
-            color: background,
-            child: Icon(widget.icon, size: AppSize.iconMd, color: foreground),
+    return MergeSemantics(
+      child: Semantics(
+        button: true,
+        label: widget.label,
+        child: MouseRegion(
+          onEnter: (_) => setState(() => _hovering = true),
+          onExit: (_) => setState(() => _hovering = false),
+          child: AppActionTarget(
+            onTap: widget.onPressed,
+            child: AnimatedContainer(
+              duration: AppMotion.durationOf(context, AppMotion.hover),
+              width: 46,
+              height: kTitleBarHeight,
+              color: background,
+              child: Icon(widget.icon, size: AppSize.iconMd, color: foreground),
+            ),
           ),
         ),
       ),

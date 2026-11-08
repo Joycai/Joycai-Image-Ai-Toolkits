@@ -65,35 +65,41 @@ class _DotGrid extends StatelessWidget {
             decoration: BoxDecoration(
               border: Border(top: BorderSide(color: colorScheme.outlineVariant)),
             ),
-            child: InkWell(
-              onTap: () => picker._openCustom(context),
-              borderRadius: BorderRadius.circular(AppRadius.control),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Row(
-                  children: [
-                    _HueDot(selected: picker._customActive),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        l10n.themeColorCustom,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: picker._customActive ? FontWeight.w600 : FontWeight.w400,
-                          color: picker._customActive
-                              ? colorScheme.onAccentTint
-                              : colorScheme.onSurface,
+            child: MergeSemantics(
+              child: Semantics(
+                button: true,
+                selected: picker._customActive,
+                child: InkWell(
+                  onTap: () => picker._openCustom(context),
+                  borderRadius: BorderRadius.circular(AppRadius.control),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Row(
+                      children: [
+                        _HueDot(selected: picker._customActive),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            l10n.themeColorCustom,
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              fontWeight: picker._customActive ? FontWeight.w600 : FontWeight.w400,
+                              color: picker._customActive
+                                  ? colorScheme.onAccentTint
+                                  : colorScheme.onSurface,
+                            ),
+                          ),
                         ),
-                      ),
+                        if (picker.customSeed != null && picker._customActive)
+                          Text(
+                            _hex(picker.customSeed!),
+                            style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
+                              fontWeight: FontWeight.w400,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                      ],
                     ),
-                    if (picker.customSeed != null && picker._customActive)
-                      Text(
-                        _hex(picker.customSeed!),
-                        style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
-                          fontWeight: FontWeight.w400,
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                  ],
+                  ),
                 ),
               ),
             ),

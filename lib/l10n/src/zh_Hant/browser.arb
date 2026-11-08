@@ -418,7 +418,6 @@
   "newSubfolder": "新增子資料夾",
   "newFolderDefaultName": "新增資料夾",
   "moveFolderTo": "移動到…",
-  "removeFromList": "從清單移除",
   "rootCannotMove": "根目錄無法移動",
   "deleteFolderTitle": "刪除資料夾？",
   "trashFolderTitle": "移到垃圾桶？",
@@ -446,7 +445,6 @@
       }
     }
   },
-  "moveToTrash": "移到垃圾桶",
   "trashFileTitle": "移到垃圾桶？",
   "trashFilesTitle": "將 {count} 個檔案移到垃圾桶？",
   "@trashFilesTitle": {

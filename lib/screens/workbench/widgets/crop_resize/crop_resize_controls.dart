@@ -186,19 +186,22 @@ class _GlassMenuButtonState extends State<_GlassMenuButton> {
             child: content,
           );
 
-    return Semantics(
-      button: true,
-      label: widget.tooltip,
-      child: Tooltip(
-        message: widget.tooltip,
-        child: MouseRegion(
-          cursor: SystemMouseCursors.click,
-          onEnter: (_) => setState(() => _hovering = true),
-          onExit: (_) => setState(() => _hovering = false),
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: widget.onPressed,
-            child: box,
+    return MergeSemantics(
+      child: Semantics(
+        button: true,
+        label: widget.tooltip,
+        child: Tooltip(
+          excludeFromSemantics: true,
+          message: widget.tooltip,
+          child: MouseRegion(
+            cursor: SystemMouseCursors.click,
+            onEnter: (_) => setState(() => _hovering = true),
+            onExit: (_) => setState(() => _hovering = false),
+            child: AppActionTarget(
+              excludeChildSemantics: true,
+              onTap: widget.onPressed,
+              child: box,
+            ),
           ),
         ),
       ),
@@ -288,7 +291,8 @@ class _TintedButton extends StatelessWidget {
 
     Widget button = MouseRegion(
       cursor: onPressed != null ? SystemMouseCursors.click : SystemMouseCursors.basic,
-      child: GestureDetector(
+      child: AppActionTarget(
+        excludeChildSemantics: true,
         onTap: onPressed,
         child: AppTintedGlass(
           enabled: lit,
@@ -302,7 +306,9 @@ class _TintedButton extends StatelessWidget {
         ),
       ),
     );
-    if (tooltip != null) button = Tooltip(message: tooltip!, child: button);
+    if (tooltip != null) {
+      button = Tooltip(excludeFromSemantics: true, message: tooltip!, child: button);
+    }
     return Semantics(
       button: true,
       enabled: onPressed != null,

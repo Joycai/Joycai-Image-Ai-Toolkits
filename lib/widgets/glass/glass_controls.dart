@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/app_theme.dart';
 import '../../core/design_tokens.dart';
+import '../ui/app_action_target.dart';
 import 'app_glass.dart';
 
 /// Controls drawn *on* a glass bar (`A1 · 1a` floating toolbar, `A4–A6` tool
@@ -150,7 +151,9 @@ class GlassSegmented<T> extends StatelessWidget {
               accent: accent,
               dense: dense,
               height: segmentHeight,
-              onTap: () => onChanged(segments[i].value),
+              onTap: () {
+                if (segments[i].value != value) onChanged(segments[i].value);
+              },
             ),
           ],
         ],
@@ -260,12 +263,18 @@ class _GlassSegmentItemState<T> extends State<_GlassSegmentItem<T>> {
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hovering = true),
       onExit: (_) => setState(() => _hovering = false),
-      child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: widget.onTap, child: box),
+      child: AppActionTarget(
+        label: s.label,
+        selected: selected,
+        borderRadius: radius,
+        onTap: widget.onTap,
+        child: box,
+      ),
     );
     if (!widget.showLabel) {
-      result = Tooltip(message: s.tooltip ?? s.label, child: result);
+      result = Tooltip(excludeFromSemantics: true, message: s.tooltip ?? s.label, child: result);
     }
-    return Semantics(button: true, selected: selected, label: s.label, child: result);
+    return result;
   }
 }
 
@@ -396,18 +405,17 @@ class _GlassIconButtonState extends State<GlassIconButton> {
       cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
       onEnter: (_) => setState(() => _hovering = true),
       onExit: (_) => setState(() => _hovering = false),
-      child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: widget.onPressed, child: box),
+      child: AppActionTarget(
+        label: widget.tooltip ?? widget.label,
+        selected: widget.active,
+        onTap: widget.onPressed,
+        child: box,
+      ),
     );
     if (widget.tooltip != null) {
-      result = Tooltip(message: widget.tooltip!, child: result);
+      result = Tooltip(excludeFromSemantics: true, message: widget.tooltip!, child: result);
     }
-    return Semantics(
-      button: true,
-      enabled: enabled,
-      selected: widget.active,
-      label: widget.tooltip ?? widget.label,
-      child: result,
-    );
+    return result;
   }
 }
 
@@ -422,18 +430,16 @@ class GlassFab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget fab = Semantics(
-      button: true,
+    Widget fab = AppActionTarget(
       label: tooltip,
-      child: GestureDetector(
-        onTap: onPressed,
-        child: AppTintedGlass(
-          borderRadius: BorderRadius.circular(AppRadius.dialog),
-          child: SizedBox(width: 56, height: 56, child: Icon(icon, size: 24)),
-        ),
+      onTap: onPressed,
+      borderRadius: BorderRadius.circular(AppRadius.dialog),
+      child: AppTintedGlass(
+        borderRadius: BorderRadius.circular(AppRadius.dialog),
+        child: SizedBox(width: 56, height: 56, child: Icon(icon, size: 24)),
       ),
     );
-    if (tooltip != null) fab = Tooltip(message: tooltip!, child: fab);
+    if (tooltip != null) fab = Tooltip(excludeFromSemantics: true, message: tooltip!, child: fab);
     return fab;
   }
 }

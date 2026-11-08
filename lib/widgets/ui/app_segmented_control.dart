@@ -288,8 +288,14 @@ class _AppSegmentedControlState<T> extends State<AppSegmentedControl<T>> {
     // selection itself so the control is never rendered with nothing chosen.
     final ownsSkin = selected && _indicator == null;
 
+    void activate() {
+      if (!selected) widget.onChanged(segment.value);
+    }
+
     final Widget chip = InkWell(
-      onTap: selected || !segment.enabled ? null : () => widget.onChanged(segment.value),
+      // A selected option remains enabled and keyboard reachable. Activating it
+      // is idempotent, rather than making selection look like a disabled state.
+      onTap: segment.enabled ? activate : null,
       borderRadius: BorderRadius.circular(AppRadius.control),
       child: Container(
         // See [tightLabels]: 4 keeps the label off the chip's edge and
@@ -303,40 +309,51 @@ class _AppSegmentedControlState<T> extends State<AppSegmentedControl<T>> {
         // the same duration the pill travels, so the two read as one movement.
         // A hard colour swap under a sliding pill is the seam this avoids: the
         // text would change before the fill arrived under it.
-        child: TweenAnimationBuilder<Color?>(
-          tween: ColorTween(end: color),
-          duration: AppMotion.durationOf(context, AppMotion.state),
-          curve: AppMotion.enter,
-          builder: (context, tint, _) => Row(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (segment.icon != null) ...[
-                Icon(segment.icon, size: widget.compact ? 14 : 17, color: tint),
-                if (!bareIcon) const SizedBox(width: 7),
-              ],
-              if (!bareIcon)
-                Flexible(
-                  child: Text(
-                    segment.label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style:
-                        (widget.compact
-                                ? Theme.of(context).textTheme.labelMedium
-                                : Theme.of(context).textTheme.bodySmall)
-                            ?.copyWith(
-                              fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                              color: tint,
-                            ),
+        child: ExcludeSemantics(
+          child: TweenAnimationBuilder<Color?>(
+            tween: ColorTween(end: color),
+            duration: AppMotion.durationOf(context, AppMotion.state),
+            curve: AppMotion.enter,
+            builder: (context, tint, _) => Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (segment.icon != null) ...[
+                  Icon(segment.icon, size: widget.compact ? 14 : 17, color: tint),
+                  if (!bareIcon) const SizedBox(width: 7),
+                ],
+                if (!bareIcon)
+                  Flexible(
+                    child: Text(
+                      segment.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style:
+                          (widget.compact
+                                  ? Theme.of(context).textTheme.labelMedium
+                                  : Theme.of(context).textTheme.bodySmall)
+                              ?.copyWith(
+                                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                                color: tint,
+                              ),
+                    ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
 
-    return bareIcon ? Tooltip(message: segment.label, child: chip) : chip;
+    return Semantics(
+      container: true,
+      label: segment.label,
+      button: true,
+      selected: selected,
+      enabled: segment.enabled,
+      child: bareIcon
+          ? Tooltip(message: segment.label, excludeFromSemantics: true, child: chip)
+          : chip,
+    );
   }
 }

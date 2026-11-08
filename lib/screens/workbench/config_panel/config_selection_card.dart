@@ -287,7 +287,8 @@ class _SelectionThumb extends StatelessWidget {
           Positioned(
             top: _kThumbInset,
             right: _kThumbInset,
-            child: GestureDetector(
+            child: AppActionTarget(
+              label: AppLocalizations.of(context)!.remove,
               onTap: onRemove,
               child: Container(
                 width: _kThumbBadge,

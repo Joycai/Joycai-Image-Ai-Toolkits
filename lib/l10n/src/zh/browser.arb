@@ -432,7 +432,6 @@
   "newSubfolder": "新建子文件夹",
   "newFolderDefaultName": "新建文件夹",
   "moveFolderTo": "移动到…",
-  "removeFromList": "从列表移除",
   "rootCannotMove": "根目录不能移动",
   "deleteFolderTitle": "删除文件夹？",
   "trashFolderTitle": "移到回收站？",
@@ -460,7 +459,6 @@
       }
     }
   },
-  "moveToTrash": "移到回收站",
   "trashFileTitle": "移到回收站？",
   "trashFilesTitle": "将 {count} 个文件移到回收站？",
   "@trashFilesTitle": {

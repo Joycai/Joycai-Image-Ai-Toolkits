@@ -293,25 +293,27 @@ extension _Layouts on _ModelEditDialogState {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Semantics(
-                      button: true,
-                      enabled: enabled,
-                      label: l10n.save,
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: enabled ? _save : null,
-                        child: AppTintedGlass(
-                          enabled: enabled,
-                          child: SizedBox(
-                            height: AppSize.control,
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 14),
-                              child: Center(
-                                child: Text(
-                                  l10n.save,
-                                  style: textTheme.labelLarge?.metricsOnly.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    color: enabled ? scheme.onPrimary : scheme.onSurfaceVariant,
+                    MergeSemantics(
+                      child: Semantics(
+                        button: true,
+                        enabled: enabled,
+                        label: l10n.save,
+                        child: AppActionTarget(
+                          excludeChildSemantics: true,
+                          onTap: enabled ? _save : null,
+                          child: AppTintedGlass(
+                            enabled: enabled,
+                            child: SizedBox(
+                              height: AppSize.control,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 14),
+                                child: Center(
+                                  child: Text(
+                                    l10n.save,
+                                    style: textTheme.labelLarge?.metricsOnly.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      color: enabled ? scheme.onPrimary : scheme.onSurfaceVariant,
+                                    ),
                                   ),
                                 ),
                               ),

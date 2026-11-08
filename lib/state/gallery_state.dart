@@ -679,6 +679,18 @@ class GalleryState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Replaces the keyboard range in display order, preserving the image-only
+  /// reference-input contract. Video focus is independent of this selection.
+  void selectImagePaths(Iterable<String> paths) {
+    final byPath = {for (final image in currentViewImages) image.path: image};
+    selectedImages = [
+      for (final path in paths)
+        if (byPath.containsKey(path) && !AppConstants.isVideoFile(path)) byPath[path]!,
+    ];
+    _selectionAnchorPath = selectedImages.firstOrNull?.path;
+    notifyListeners();
+  }
+
   /// Selects everything from the anchor (the last plain click) to [image]
   /// inclusive, in the order the grid is showing — the Shift-click range the
   /// file browser has had all along ([FileBrowserState.selectRangeTo]).

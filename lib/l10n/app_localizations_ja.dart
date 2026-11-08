@@ -513,9 +513,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get moveFolderTo => '移動先…';
 
   @override
-  String get removeFromList => 'リストから削除';
-
-  @override
   String get rootCannotMove => 'ルートフォルダーは移動できません';
 
   @override
@@ -557,9 +554,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String trashFolderCount(int count) {
     return '$count 項目をゴミ箱へ';
   }
-
-  @override
-  String get moveToTrash => 'ゴミ箱に移動';
 
   @override
   String get trashFileTitle => 'ゴミ箱に移動しますか？';
@@ -1154,6 +1148,21 @@ class AppLocalizationsJa extends AppLocalizations {
   String folderOutlineFilesCount(int count) {
     return '$count 件のファイル';
   }
+
+  @override
+  String get resizePane => 'パネルのサイズを変更';
+
+  @override
+  String get moveDividerLeft => '仕切りを左に移動';
+
+  @override
+  String get moveDividerRight => '仕切りを右に移動';
+
+  @override
+  String get moveDividerUp => '仕切りを上に移動';
+
+  @override
+  String get moveDividerDown => '仕切りを下に移動';
 
   @override
   String get downloader => 'ダウンローダー';
@@ -3343,9 +3352,6 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get filterAll => 'すべて';
-
-  @override
   String get newTemplate => '新しいテンプレート';
 
   @override
@@ -4031,6 +4037,18 @@ class AppLocalizationsJa extends AppLocalizations {
   String get contentSafetyEmailFailed => 'メールアプリを開けませんでした。アドレスをコピーして手動で報告してください。';
 
   @override
+  String get shortcutGridMove => '項目を移動して選択';
+
+  @override
+  String get shortcutGridExtend => '項目の選択範囲を拡張';
+
+  @override
+  String get shortcutGridFocus => '選択せずに項目のフォーカスを移動';
+
+  @override
+  String get shortcutGridToggle => 'フォーカス項目の選択を切り替え';
+
+  @override
   String get shortcutNavigateToDestination => '1〜8 番目のページへ';
 
   @override
@@ -4139,6 +4157,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get shortcutsCustomiseLater => '次のフェーズで';
 
   @override
+  String get shortcutNextPane => '次の表示中のペインにフォーカス';
+
+  @override
+  String get shortcutPreviousPane => '前の表示中のペインにフォーカス';
+
+  @override
   String get tasks => 'タスク';
 
   @override
@@ -4178,6 +4202,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get cancelTask => 'タスクをキャンセル';
+
+  @override
+  String get removeFromList => 'リストから削除';
 
   @override
   String get images => '画像';
@@ -4225,6 +4252,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String taskTotalCount(int count) {
     return '全 $count 件';
   }
+
+  @override
+  String get filterAll => 'すべて';
 
   @override
   String get retryTask => '再試行';
@@ -4636,6 +4666,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get thumbnailFitCover => 'フィル（切り抜き）';
+
+  @override
+  String get moveToTrash => 'ゴミ箱に移動';
 
   @override
   String deleteFailed(String error) {

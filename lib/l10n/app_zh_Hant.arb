@@ -418,7 +418,6 @@
   "newSubfolder": "新增子資料夾",
   "newFolderDefaultName": "新增資料夾",
   "moveFolderTo": "移動到…",
-  "removeFromList": "從清單中移除",
   "rootCannotMove": "根目錄無法移動",
   "deleteFolderTitle": "刪除資料夾？",
   "trashFolderTitle": "移到垃圾桶？",
@@ -446,7 +445,6 @@
       }
     }
   },
-  "moveToTrash": "移至資源回收筒",
   "trashFileTitle": "移到垃圾桶？",
   "trashFilesTitle": "將 {count} 個檔案移到垃圾桶？",
   "@trashFilesTitle": {
@@ -840,6 +838,11 @@
       }
     }
   },
+  "resizePane": "調整面板大小",
+  "moveDividerLeft": "向左移動分隔條",
+  "moveDividerRight": "向右移動分隔條",
+  "moveDividerUp": "向上移動分隔條",
+  "moveDividerDown": "向下移動分隔條",
   "downloader": "下載器",
   "imageDownloader": "圖片下載器",
   "url": "網址",
@@ -1728,7 +1731,6 @@
       }
     }
   },
-  "filterAll": "全部",
   "newTemplate": "新增範本",
   "reorderDisabledWhileFiltered": "篩選或搜尋時無法拖曳排序",
   "matchModeLabel": "符合",
@@ -2004,6 +2006,10 @@
   "contentSafetyCopyEmail": "複製信箱",
   "contentSafetyEmailCopied": "信箱已複製",
   "contentSafetyEmailFailed": "無法開啟郵件應用，請複製信箱後手動傳送回報。",
+  "shortcutGridMove": "移動並選取項目",
+  "shortcutGridExtend": "擴展項目選取範圍",
+  "shortcutGridFocus": "僅移動項目焦點",
+  "shortcutGridToggle": "切換焦點項目的選取狀態",
   "shortcutNavigateToDestination": "切到第 1…8 個頁面",
   "shortcutShowShortcutPanel": "快捷鍵面板",
   "shortcutOpenSettings": "設定",
@@ -2046,6 +2052,8 @@
   "shortcutsClose": "關閉",
   "shortcutsCustomise": "自訂鍵位",
   "shortcutsCustomiseLater": "第二期",
+  "shortcutNextPane": "聚焦下一個可見欄",
+  "shortcutPreviousPane": "聚焦上一個可見欄",
   "tasks": "任務",
   "taskQueueManager": "任務佇列管理員",
   "noTasksInQueue": "佇列中沒有任務",
@@ -2066,6 +2074,7 @@
   "clearAll": "清除全部",
   "cancelAllPending": "取消所有待處理",
   "cancelTask": "取消任務",
+  "removeFromList": "從清單中移除",
   "images": "圖片",
   "filesCount": "{count} 個檔案",
   "@filesCount": {
@@ -2126,6 +2135,7 @@
       }
     }
   },
+  "filterAll": "全部",
   "retryTask": "重試",
   "resumeVideoJob": "繼續原任務",
   "queuedPosition": "排隊第 {position} 位",
@@ -2310,6 +2320,7 @@
   "thumbnailDisplay": "縮圖顯示",
   "thumbnailFitContain": "適應（完整顯示）",
   "thumbnailFitCover": "填滿（裁切鋪滿）",
+  "moveToTrash": "移至資源回收筒",
   "deleteFailed": "刪除失敗：{error}",
   "@deleteFailed": {
     "placeholders": {

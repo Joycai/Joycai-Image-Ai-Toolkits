@@ -957,12 +957,6 @@ abstract class AppLocalizations {
   /// **'Move to…'**
   String get moveFolderTo;
 
-  /// No description provided for @removeFromList.
-  ///
-  /// In en, this message translates to:
-  /// **'Remove from list'**
-  String get removeFromList;
-
   /// No description provided for @rootCannotMove.
   ///
   /// In en, this message translates to:
@@ -1040,12 +1034,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Move {count} items to trash'**
   String trashFolderCount(int count);
-
-  /// No description provided for @moveToTrash.
-  ///
-  /// In en, this message translates to:
-  /// **'Move to Trash'**
-  String get moveToTrash;
 
   /// No description provided for @trashFileTitle.
   ///
@@ -2036,6 +2024,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} files'**
   String folderOutlineFilesCount(int count);
+
+  /// No description provided for @resizePane.
+  ///
+  /// In en, this message translates to:
+  /// **'Resize pane'**
+  String get resizePane;
+
+  /// No description provided for @moveDividerLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Move divider left'**
+  String get moveDividerLeft;
+
+  /// No description provided for @moveDividerRight.
+  ///
+  /// In en, this message translates to:
+  /// **'Move divider right'**
+  String get moveDividerRight;
+
+  /// No description provided for @moveDividerUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Move divider up'**
+  String get moveDividerUp;
+
+  /// No description provided for @moveDividerDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Move divider down'**
+  String get moveDividerDown;
 
   /// No description provided for @downloader.
   ///
@@ -5985,12 +6003,6 @@ abstract class AppLocalizations {
   /// **'Import failed: {error}'**
   String importFailed(String error);
 
-  /// No description provided for @filterAll.
-  ///
-  /// In en, this message translates to:
-  /// **'All'**
-  String get filterAll;
-
   /// No description provided for @newTemplate.
   ///
   /// In en, this message translates to:
@@ -7269,6 +7281,30 @@ abstract class AppLocalizations {
   /// **'Could not open an email app. Copy the address and send your report manually.'**
   String get contentSafetyEmailFailed;
 
+  /// No description provided for @shortcutGridMove.
+  ///
+  /// In en, this message translates to:
+  /// **'Move and select an item'**
+  String get shortcutGridMove;
+
+  /// No description provided for @shortcutGridExtend.
+  ///
+  /// In en, this message translates to:
+  /// **'Extend item selection'**
+  String get shortcutGridExtend;
+
+  /// No description provided for @shortcutGridFocus.
+  ///
+  /// In en, this message translates to:
+  /// **'Move item focus without selecting'**
+  String get shortcutGridFocus;
+
+  /// No description provided for @shortcutGridToggle.
+  ///
+  /// In en, this message translates to:
+  /// **'Toggle focused item selection'**
+  String get shortcutGridToggle;
+
   /// No description provided for @shortcutNavigateToDestination.
   ///
   /// In en, this message translates to:
@@ -7479,6 +7515,18 @@ abstract class AppLocalizations {
   /// **'a later round'**
   String get shortcutsCustomiseLater;
 
+  /// No description provided for @shortcutNextPane.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus next visible pane'**
+  String get shortcutNextPane;
+
+  /// No description provided for @shortcutPreviousPane.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus previous visible pane'**
+  String get shortcutPreviousPane;
+
   /// No description provided for @tasks.
   ///
   /// In en, this message translates to:
@@ -7557,6 +7605,12 @@ abstract class AppLocalizations {
   /// **'Cancel Task'**
   String get cancelTask;
 
+  /// No description provided for @removeFromList.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from list'**
+  String get removeFromList;
+
   /// No description provided for @images.
   ///
   /// In en, this message translates to:
@@ -7622,6 +7676,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} total'**
   String taskTotalCount(int count);
+
+  /// No description provided for @filterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get filterAll;
 
   /// No description provided for @retryTask.
   ///
@@ -8390,6 +8450,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Fill (cropped)'**
   String get thumbnailFitCover;
+
+  /// No description provided for @moveToTrash.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to Trash'**
+  String get moveToTrash;
 
   /// No description provided for @deleteFailed.
   ///

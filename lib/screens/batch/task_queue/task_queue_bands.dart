@@ -174,35 +174,48 @@ class _FilterChip extends StatelessWidget {
         ? (scheme.errorContainer, scheme.onErrorContainer)
         : (scheme.accentTint, scheme.onAccentTint);
 
-    return Material(
-      color: fill,
-      borderRadius: radius,
-      child: InkWell(
-        onTap: selected ? null : onTap,
+    return Semantics(
+      container: true,
+      label: label,
+      value: '$count',
+      button: true,
+      selected: selected,
+      enabled: true,
+      child: Material(
+        color: fill,
         borderRadius: radius,
-        child: Container(
-          height: height,
-          padding: const EdgeInsets.symmetric(horizontal: padX),
-          decoration: BoxDecoration(
-            borderRadius: radius,
-            border: selected ? null : Border.all(color: scheme.outlineVariant),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                label,
-                style: textTheme.bodySmall?.copyWith(
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                  color: ink,
-                ),
+        child: InkWell(
+          // Keep the selected option reachable without reapplying its filter.
+          onTap: () {
+            if (!selected) onTap();
+          },
+          borderRadius: radius,
+          child: Container(
+            height: height,
+            padding: const EdgeInsets.symmetric(horizontal: padX),
+            decoration: BoxDecoration(
+              borderRadius: radius,
+              border: selected ? null : Border.all(color: scheme.outlineVariant),
+            ),
+            child: ExcludeSemantics(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    label,
+                    style: textTheme.bodySmall?.copyWith(
+                      fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                      color: ink,
+                    ),
+                  ),
+                  const SizedBox(width: countGap),
+                  Opacity(
+                    opacity: 0.8,
+                    child: Text('$count', style: textTheme.bodySmall?.mono.copyWith(color: ink)),
+                  ),
+                ],
               ),
-              const SizedBox(width: countGap),
-              Opacity(
-                opacity: 0.8,
-                child: Text('$count', style: textTheme.bodySmall?.mono.copyWith(color: ink)),
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -228,29 +241,38 @@ class _PinToggle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final toggle = InkWell(
-      borderRadius: BorderRadius.circular(AppRadius.sm),
-      onTap: () => onChanged(!value),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (showLabel) ...[
-              Text(
-                label,
-                maxLines: 1,
-                style: Theme.of(context).textTheme.bodySmall
-                    ?.copyWith(fontWeight: FontWeight.w500, color: scheme.onSurfaceVariant),
-              ),
-              const SizedBox(width: 8),
+    final toggle = Semantics(
+      label: label,
+      child: InkWell(
+        // The native Switch owns focus, state and the accessible action. Keep
+        // the surrounding label clickable without a second keyboard stop.
+        canRequestFocus: false,
+        excludeFromSemantics: true,
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        onTap: () => onChanged(!value),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (showLabel) ...[
+                ExcludeSemantics(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    style: Theme.of(context).textTheme.bodySmall
+                        ?.copyWith(fontWeight: FontWeight.w500, color: scheme.onSurfaceVariant),
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
+              AppSwitch(value: value, onChanged: onChanged),
             ],
-            AppSwitch(value: value, onChanged: onChanged),
-          ],
+          ),
         ),
       ),
     );
-    return showLabel ? toggle : Tooltip(message: label, child: toggle);
+    return showLabel ? toggle : Tooltip(message: label, excludeFromSemantics: true, child: toggle);
   }
 }
 

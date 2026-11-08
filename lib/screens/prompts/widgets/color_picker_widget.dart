@@ -90,20 +90,27 @@ class _ColorPickerWidgetState extends State<ColorPickerWidget> {
           runSpacing: AppSpace.s6,
           children: AppConstants.tagColors.map((color) {
             final isSelected = widget.selectedColor == color.toARGB32();
-            return InkWell(
-              onTap: () => widget.onColorChanged(color.toARGB32()),
-              customBorder: const CircleBorder(),
-              child: Container(
-                width: 24,
-                height: 24,
-                decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    // `onSurface`, not black: this ring marks the chosen
-                    // swatch, and black on a near-black canvas marked nothing.
-                    color: isSelected ? scheme.onSurface : Colors.transparent,
-                    width: 2,
+            return MergeSemantics(
+              child: Semantics(
+                button: true,
+                selected: isSelected,
+                label: '#${color.toARGB32().toRadixString(16).substring(2).toUpperCase()}',
+                child: InkWell(
+                  onTap: () => widget.onColorChanged(color.toARGB32()),
+                  customBorder: const CircleBorder(),
+                  child: Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        // `onSurface`, not black: this ring marks the chosen
+                        // swatch, and black on a near-black canvas marked nothing.
+                        color: isSelected ? scheme.onSurface : Colors.transparent,
+                        width: 2,
+                      ),
+                    ),
                   ),
                 ),
               ),

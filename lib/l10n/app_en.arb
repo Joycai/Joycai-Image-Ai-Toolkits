@@ -432,7 +432,6 @@
   "newSubfolder": "New subfolder",
   "newFolderDefaultName": "New folder",
   "moveFolderTo": "Move to…",
-  "removeFromList": "Remove from list",
   "rootCannotMove": "Root folders cannot be moved",
   "deleteFolderTitle": "Delete folder?",
   "trashFolderTitle": "Move to trash?",
@@ -460,7 +459,6 @@
       }
     }
   },
-  "moveToTrash": "Move to Trash",
   "trashFileTitle": "Move to trash?",
   "trashFilesTitle": "Move {count} files to trash?",
   "@trashFilesTitle": {
@@ -996,6 +994,11 @@
       }
     }
   },
+  "resizePane": "Resize pane",
+  "moveDividerLeft": "Move divider left",
+  "moveDividerRight": "Move divider right",
+  "moveDividerUp": "Move divider up",
+  "moveDividerDown": "Move divider down",
   "downloader": "Downloader",
   "imageDownloader": "Image Downloader",
   "url": "URL",
@@ -2375,7 +2378,6 @@
       }
     }
   },
-  "filterAll": "All",
   "newTemplate": "New Template",
   "reorderDisabledWhileFiltered": "Reordering is unavailable while a filter or search is active",
   "matchModeLabel": "Match",
@@ -2695,6 +2697,10 @@
   "contentSafetyCopyEmail": "Copy email address",
   "contentSafetyEmailCopied": "Email address copied",
   "contentSafetyEmailFailed": "Could not open an email app. Copy the address and send your report manually.",
+  "shortcutGridMove": "Move and select an item",
+  "shortcutGridExtend": "Extend item selection",
+  "shortcutGridFocus": "Move item focus without selecting",
+  "shortcutGridToggle": "Toggle focused item selection",
   "shortcutNavigateToDestination": "Go to page 1–8",
   "shortcutShowShortcutPanel": "Keyboard shortcuts",
   "shortcutOpenSettings": "Settings",
@@ -2737,6 +2743,8 @@
   "shortcutsClose": "Close",
   "shortcutsCustomise": "Custom key bindings",
   "shortcutsCustomiseLater": "a later round",
+  "shortcutNextPane": "Focus next visible pane",
+  "shortcutPreviousPane": "Focus previous visible pane",
   "tasks": "Tasks",
   "taskQueueManager": "Task Queue Manager",
   "noTasksInQueue": "No tasks in queue",
@@ -2757,6 +2765,7 @@
   "clearAll": "Clear All",
   "cancelAllPending": "Cancel All Pending",
   "cancelTask": "Cancel Task",
+  "removeFromList": "Remove from list",
   "images": "Images",
   "filesCount": "{count} files",
   "@filesCount": {
@@ -2817,6 +2826,7 @@
       }
     }
   },
+  "filterAll": "All",
   "retryTask": "Retry",
   "resumeVideoJob": "Resume job",
   "queuedPosition": "#{position} in queue",
@@ -3008,6 +3018,7 @@
   "thumbnailDisplay": "Thumbnail Display",
   "thumbnailFitContain": "Fit (whole image)",
   "thumbnailFitCover": "Fill (cropped)",
+  "moveToTrash": "Move to Trash",
   "deleteFailed": "Failed to delete: {error}",
   "@deleteFailed": {
     "placeholders": {

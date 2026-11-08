@@ -45,42 +45,45 @@ class AppCard extends StatelessWidget {
     // Material, not a decorated Container: a plain Container swallows the ink
     // response of any ListTile/InkWell inside it — the same reason PanelCard
     // uses one.
-    return Material(
-      // `surfaceContainerLowest`, not `surface`. The spec fills these with 55%
-      // white over the panel, which lands a hair *above* the panel's own tone;
-      // white is the nearest step on the ramp. It was `surface` while the
-      // right column was too, and the column moving up to
-      // `surfaceContainerLow` left this a step darker than the thing it sits
-      // on — a recessed card, which is the exact inversion [outlined] exists
-      // to avoid.
-      color: outlined ? colorScheme.surfaceContainerLowest : colorScheme.surfaceContainerHigh,
-      clipBehavior: Clip.antiAlias,
-      // shape, never borderRadius: Material asserts if given both, and the
-      // outlined tone needs a side.
-      shape: RoundedRectangleBorder(
-        // 10, a step under a panel's 12. `10c` draws every card inside the
-        // right column at this, which is what keeps a stack of them from
-        // reading as rounder than the column holding them.
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        // The panel-edge tone, not `outlineVariant`. Same reasoning as the
-        // column hairlines: the spec draws an edge *between surfaces* softer
-        // than one inside a control.
-        side: outlined ? BorderSide(color: colorScheme.surfaceContainerHigh) : BorderSide.none,
-      ),
-      child: InkWell(
-        onTap: onTap,
-        // Spans its parent rather than hugging its content. A card in a
-        // column is a band across that column; left to shrink-wrap, one whose
-        // body happens to be a short line comes out a stub beside its
-        // neighbours, and whether any given card looked right became an
-        // accident of whether something inside it was full-width already.
-        //
-        // Requires a bounded width, which every column and list gives. An
-        // AppCard directly inside a Row needs an Expanded around it, as any
-        // full-width child there would.
-        child: SizedBox(
-          width: double.infinity,
-          child: Padding(padding: padding, child: child),
+    return Semantics(
+      button: onTap != null ? true : null,
+      child: Material(
+        // `surfaceContainerLowest`, not `surface`. The spec fills these with 55%
+        // white over the panel, which lands a hair *above* the panel's own tone;
+        // white is the nearest step on the ramp. It was `surface` while the
+        // right column was too, and the column moving up to
+        // `surfaceContainerLow` left this a step darker than the thing it sits
+        // on — a recessed card, which is the exact inversion [outlined] exists
+        // to avoid.
+        color: outlined ? colorScheme.surfaceContainerLowest : colorScheme.surfaceContainerHigh,
+        clipBehavior: Clip.antiAlias,
+        // shape, never borderRadius: Material asserts if given both, and the
+        // outlined tone needs a side.
+        shape: RoundedRectangleBorder(
+          // 10, a step under a panel's 12. `10c` draws every card inside the
+          // right column at this, which is what keeps a stack of them from
+          // reading as rounder than the column holding them.
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          // The panel-edge tone, not `outlineVariant`. Same reasoning as the
+          // column hairlines: the spec draws an edge *between surfaces* softer
+          // than one inside a control.
+          side: outlined ? BorderSide(color: colorScheme.surfaceContainerHigh) : BorderSide.none,
+        ),
+        child: InkWell(
+          onTap: onTap,
+          // Spans its parent rather than hugging its content. A card in a
+          // column is a band across that column; left to shrink-wrap, one whose
+          // body happens to be a short line comes out a stub beside its
+          // neighbours, and whether any given card looked right became an
+          // accident of whether something inside it was full-width already.
+          //
+          // Requires a bounded width, which every column and list gives. An
+          // AppCard directly inside a Row needs an Expanded around it, as any
+          // full-width child there would.
+          child: SizedBox(
+            width: double.infinity,
+            child: Padding(padding: padding, child: child),
+          ),
         ),
       ),
     );

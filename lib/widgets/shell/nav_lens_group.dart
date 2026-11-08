@@ -9,6 +9,7 @@ import '../../l10n/app_localizations.dart';
 import '../../services/tasks/task_queue_service.dart';
 import '../../state/app_state.dart';
 import '../glass/app_glass.dart';
+import '../ui/app_action_target.dart';
 import 'app_destinations.dart';
 
 /// Item geometry for the two bars the lens group sits in.
@@ -196,20 +197,30 @@ class _NavLensState extends State<_NavLens> {
     }
 
     final isDesktop = Platform.isWindows || Platform.isMacOS || Platform.isLinux;
+    // Keep the tooltip anchor stable and separate from the merged action.
+    // Sibling anchors must not collapse into the title bar's semantics node.
     return Semantics(
-      button: true,
-      selected: widget.selected,
-      label: label,
+      container: true,
       child: Tooltip(
+        excludeFromSemantics: true,
         message: isDesktop ? '$label · ${d.shortcutHint}' : label,
-        child: MouseRegion(
-          cursor: SystemMouseCursors.click,
-          onEnter: (_) => setState(() => _hovering = true),
-          onExit: (_) => setState(() => _hovering = false),
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () => context.read<AppState>().navigateToScreen(d.index),
-            child: box,
+        child: MergeSemantics(
+          child: Semantics(
+            button: true,
+            selected: widget.selected,
+            label: label,
+            value: widget.badge > 0 ? '${widget.badge}' : null,
+            hint: isDesktop ? d.shortcutHint : null,
+            child: MouseRegion(
+              cursor: SystemMouseCursors.click,
+              onEnter: (_) => setState(() => _hovering = true),
+              onExit: (_) => setState(() => _hovering = false),
+              child: AppActionTarget(
+                excludeChildSemantics: true,
+                onTap: () => context.read<AppState>().navigateToScreen(d.index),
+                child: box,
+              ),
+            ),
           ),
         ),
       ),

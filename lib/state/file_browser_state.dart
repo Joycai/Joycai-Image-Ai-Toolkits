@@ -503,6 +503,17 @@ class FileBrowserState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Replaces the keyboard range in current display order, dropping hidden paths.
+  void selectPaths(Iterable<String> paths) {
+    final wanted = paths.toSet();
+    selectedFiles = {
+      for (final file in filteredFiles)
+        if (wanted.contains(file.path)) file,
+    };
+    _selectionAnchorPath = selectedFiles.firstOrNull?.path;
+    notifyListeners();
+  }
+
   void selectAll() {
     selectedFiles = Set<BrowserFile>.of(selectedFiles)..addAll(filteredFiles);
     notifyListeners();

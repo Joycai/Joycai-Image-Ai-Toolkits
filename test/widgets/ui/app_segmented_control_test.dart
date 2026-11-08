@@ -1,5 +1,8 @@
+import 'dart:ui' show Tristate;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/core/design_tokens.dart';
@@ -21,6 +24,90 @@ void main() {
     theme: buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light),
     home: Scaffold(body: Center(child: child)),
   );
+
+  for (final iconOnly in [false, true]) {
+    testWidgets('segments expose state and support accessible activation (icons: $iconOnly)', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      try {
+        var value = 0;
+        var changes = 0;
+        await tester.pumpWidget(
+          host(
+            StatefulBuilder(
+              builder: (context, setState) {
+                return AppSegmentedControl<int>(
+                  iconOnly: iconOnly,
+                  value: value,
+                  segments: const [
+                    AppSegment(value: 0, label: 'All', icon: Icons.list),
+                    AppSegment(value: 1, label: 'Running', icon: Icons.play_arrow),
+                    AppSegment(value: 2, label: 'Unavailable', icon: Icons.block, enabled: false),
+                  ],
+                  onChanged: (next) => setState(() {
+                    value = next;
+                    changes++;
+                  }),
+                );
+              },
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        void expectOption(String label, {required bool selected, bool enabled = true}) {
+          expect(find.bySemanticsLabel(label), findsOneWidget);
+          expect(
+            tester.getSemantics(find.bySemanticsLabel(label)),
+            matchesSemantics(
+              label: label,
+              isButton: true,
+              hasSelectedState: true,
+              isSelected: selected,
+              hasEnabledState: true,
+              isEnabled: enabled,
+              isFocusable: enabled,
+              hasTapAction: enabled,
+              hasFocusAction: enabled,
+            ),
+          );
+        }
+
+        expectOption('All', selected: true);
+        expectOption('Running', selected: false);
+        expectOption('Unavailable', selected: false, enabled: false);
+        final running = tester.getSemantics(find.bySemanticsLabel('Running'));
+        tester.binding.renderViews.single.owner!.semanticsOwner!.performAction(
+          running.id,
+          SemanticsAction.tap,
+        );
+        await tester.pumpAndSettle();
+        expect(value, 1);
+        expect(changes, 1);
+        expectOption('All', selected: false);
+        expectOption('Running', selected: true);
+
+        // Selected remains a Tab stop; Enter is idempotent and focus survives.
+        await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+        await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+        await tester.pumpAndSettle();
+        expect(
+          tester.getSemantics(find.bySemanticsLabel('Running')).flagsCollection.isFocused,
+          Tristate.isTrue,
+        );
+        await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+        await tester.pumpAndSettle();
+        expect(changes, 1);
+        expect(
+          tester.getSemantics(find.bySemanticsLabel('Running')).flagsCollection.isFocused,
+          Tristate.isTrue,
+        );
+      } finally {
+        semantics.dispose();
+      }
+    });
+  }
 
   /// Segments with deliberately unequal label widths — the case an
   /// index-fraction indicator would get wrong and only this can catch.

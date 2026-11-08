@@ -432,7 +432,6 @@
   "newSubfolder": "新建子文件夹",
   "newFolderDefaultName": "新建文件夹",
   "moveFolderTo": "移动到…",
-  "removeFromList": "从列表中移除",
   "rootCannotMove": "根目录不能移动",
   "deleteFolderTitle": "删除文件夹？",
   "trashFolderTitle": "移到回收站？",
@@ -460,7 +459,6 @@
       }
     }
   },
-  "moveToTrash": "移至回收站",
   "trashFileTitle": "移到回收站？",
   "trashFilesTitle": "将 {count} 个文件移到回收站？",
   "@trashFilesTitle": {
@@ -882,6 +880,11 @@
       }
     }
   },
+  "resizePane": "调整面板大小",
+  "moveDividerLeft": "向左移动分隔条",
+  "moveDividerRight": "向右移动分隔条",
+  "moveDividerUp": "向上移动分隔条",
+  "moveDividerDown": "向下移动分隔条",
   "downloader": "下载器",
   "imageDownloader": "图像下载器",
   "url": "地址",
@@ -1861,7 +1864,6 @@
       }
     }
   },
-  "filterAll": "全部",
   "newTemplate": "新建模板",
   "reorderDisabledWhileFiltered": "筛选或搜索时无法拖动排序",
   "matchModeLabel": "匹配",
@@ -2137,6 +2139,10 @@
   "contentSafetyCopyEmail": "复制邮箱",
   "contentSafetyEmailCopied": "邮箱已复制",
   "contentSafetyEmailFailed": "无法打开邮件应用，请复制邮箱后手动发送反馈。",
+  "shortcutGridMove": "移动并选中项目",
+  "shortcutGridExtend": "扩展项目选区",
+  "shortcutGridFocus": "仅移动项目焦点",
+  "shortcutGridToggle": "切换焦点项目的选择状态",
   "shortcutNavigateToDestination": "切到第 1…8 个页面",
   "shortcutShowShortcutPanel": "快捷键面板",
   "shortcutOpenSettings": "设置",
@@ -2179,6 +2185,8 @@
   "shortcutsClose": "关闭",
   "shortcutsCustomise": "自定义键位",
   "shortcutsCustomiseLater": "第二期",
+  "shortcutNextPane": "聚焦下一个可见栏",
+  "shortcutPreviousPane": "聚焦上一个可见栏",
   "tasks": "任务",
   "taskQueueManager": "任务队列管理",
   "noTasksInQueue": "队列中没有任务",
@@ -2199,6 +2207,7 @@
   "clearAll": "清除全部",
   "cancelAllPending": "取消所有等待中",
   "cancelTask": "取消任务",
+  "removeFromList": "从列表中移除",
   "images": "图像",
   "filesCount": "{count} 个文件",
   "@filesCount": {
@@ -2259,6 +2268,7 @@
       }
     }
   },
+  "filterAll": "全部",
   "retryTask": "重试",
   "resumeVideoJob": "继续原任务",
   "queuedPosition": "排队第 {position} 位",
@@ -2443,6 +2453,7 @@
   "thumbnailDisplay": "缩略图展示",
   "thumbnailFitContain": "适应（完整显示）",
   "thumbnailFitCover": "填充（裁切铺满）",
+  "moveToTrash": "移至回收站",
   "deleteFailed": "删除失败: {error}",
   "@deleteFailed": {
     "placeholders": {

@@ -312,6 +312,8 @@ class _MarkdownSwitch extends StatelessWidget {
     final control = AppSwitch(value: value, onChanged: onChanged);
     return MergeSemantics(
       child: InkWell(
+        canRequestFocus: false,
+        excludeFromSemantics: true,
         borderRadius: BorderRadius.circular(AppRadius.control),
         onTap: () => onChanged(!value),
         child: Padding(

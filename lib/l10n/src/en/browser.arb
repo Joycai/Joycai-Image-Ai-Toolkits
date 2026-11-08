@@ -432,7 +432,6 @@
   "newSubfolder": "New subfolder",
   "newFolderDefaultName": "New folder",
   "moveFolderTo": "Move to…",
-  "removeFromList": "Remove from list",
   "rootCannotMove": "Root folders cannot be moved",
   "deleteFolderTitle": "Delete folder?",
   "trashFolderTitle": "Move to trash?",
@@ -460,7 +459,6 @@
       }
     }
   },
-  "moveToTrash": "Move to trash",
   "trashFileTitle": "Move to trash?",
   "trashFilesTitle": "Move {count} files to trash?",
   "@trashFilesTitle": {

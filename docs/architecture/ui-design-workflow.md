@@ -7,6 +7,44 @@ typography and motion scales. Changing the design tool does not change that stan
 
 ## Sources and continuity
 
+Windows accessibility: use `AppMenuAnchor` for anchored menus. Its semantics
+boundary keeps nested tooltip traversal anchors distinct; removing it reproduces
+AXTree corruption on Flutter 3.47.9. Keep the Navigator in its own semantics
+container inside `AppWindowFrame` so route barriers do not hide the title bar.
+These are semantic boundaries, not new visual containers. See the
+[native validation record](../windows-accessibility-validation.md) for the
+reproduction and remaining screen-reader acceptance.
+
+`AppSegmentedControl` exposes each option as a named button with selected and
+enabled states, in both labelled and icon-only layouts. The selected option
+remains keyboard reachable; activating it does not repeat `onChanged`. Its
+decorative text/icons and visual tooltip do not duplicate that accessible name.
+Shell navigation likewise owns its name and exposes the shortcut as a hint;
+its visual tooltip must not repeat the name in semantics.
+Keep navigation Tooltip outside MergeSemantics with a separate semantics
+container. An overlay's raw traversal parent must survive as its own serialized
+node. The browser thumbnail Slider also needs an isolated container: Flutter
+keeps its value-indicator OverlayPortal mounted even with the indicator hidden.
+Real-screen tests cover these anchors through navigation and tooltip teardown;
+see the Windows validation record for the fixed-SDK native reproduction.
+
+Task status filter capsules expose the localized label once, the count as the
+semantic value, and explicit button/selected/enabled states. Selected options
+remain Tab stops; activating one again does not reapply the filter. Keep their
+existing InkWell keyboard highlight and horizontally scrolling strip. The task
+pin preference has one named native Switch focus/action; its surrounding label
+remains pointer-clickable but does not add another keyboard or semantic action.
+
+Custom single-action surfaces use `AppActionTarget` for Tab, activation, disabled
+state and an inset keyboard focus outline. Supply one accessible name; exclude
+decorative text and visual tooltips from repeating it. `AppControlLabel` merges a
+standard icon action with its name and supplies the visual tooltip explicitly.
+Never merge an entire container with multiple independent controls: setting rows
+merge only a single Switch, keeping footers separate. Media previews must expose
+their controls; focused controls remain visible when the pointer leaves. Splitters
+use `AppResizeTarget`, retaining the original bounded delta/persistence callbacks.
+See the [custom-control audit](../custom-controls-accessibility-audit.md) for scope.
+
 - [Design tokens](design-tokens.md) defines the visual contract and accepted
   departures from the original designs. Its linked core files and contract tests
   provide the implemented values; use existing shared components under

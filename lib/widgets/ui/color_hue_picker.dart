@@ -3,6 +3,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../core/design_tokens.dart';
+import '../../l10n/app_localizations.dart';
+import 'app_adjustable_target.dart';
 
 /// Saturation and value every picked hue is drawn at, shared by the bar and
 /// the wheel so a category keeps its colour whichever one chose it.
@@ -39,9 +41,12 @@ class ColorHueBar extends StatelessWidget {
           );
         }
 
-        return Semantics(
-          slider: true,
-          value: '${hue.round()}',
+        return AppAdjustableTarget(
+          label: AppLocalizations.of(context)!.customColor,
+          value: hue,
+          onChanged: (next) => onColorChanged(
+            HSVColor.fromAHSV(1, next, _kPickSaturation, _kPickValue).toColor().toARGB32(),
+          ),
           child: MouseRegion(
             cursor: SystemMouseCursors.click,
             child: GestureDetector(
@@ -148,12 +153,20 @@ class _ColorHuePickerState extends State<ColorHuePicker> {
   @override
   Widget build(BuildContext context) {
     const size = Size(160, 160);
-    return GestureDetector(
-      onPanUpdate: (details) => _handleGesture(details.localPosition, size),
-      onPanDown: (details) => _handleGesture(details.localPosition, size),
-      child: CustomPaint(
-        size: size,
-        painter: _ColorWheelPainter(hue: _hue),
+    return AppAdjustableTarget(
+      label: AppLocalizations.of(context)!.customColor,
+      value: _hue,
+      onChanged: (next) {
+        setState(() => _hue = next);
+        widget.onColorChanged(HSVColor.fromAHSV(1, next, 0.8, 0.9).toColor().toARGB32());
+      },
+      child: GestureDetector(
+        onPanUpdate: (details) => _handleGesture(details.localPosition, size),
+        onPanDown: (details) => _handleGesture(details.localPosition, size),
+        child: CustomPaint(
+          size: size,
+          painter: _ColorWheelPainter(hue: _hue),
+        ),
       ),
     );
   }

@@ -13,6 +13,7 @@ import '../../core/file_utils.dart';
 import '../../core/folder_outline_geometry.dart';
 import '../../core/folder_outline_labels.dart';
 import '../../core/folder_outline_spy.dart';
+import '../../core/grid_cursor.dart';
 import '../../core/text_editing_focus.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/app_image.dart';
@@ -25,6 +26,7 @@ import '../../widgets/files/folder_group_header.dart';
 import '../../widgets/files/folder_outline_bar.dart';
 import '../../widgets/ui/app_snackbar.dart';
 import '../../widgets/ui/focus_pane.dart';
+import '../../widgets/ui/listenable_selector.dart';
 import 'widgets/gallery/gallery_file_actions.dart';
 import 'widgets/gallery/image_card.dart';
 import 'widgets/gallery/permission_placeholder.dart';
@@ -129,18 +131,52 @@ class _GalleryState extends State<Gallery> {
   /// `Delete` / `F2` / `Enter` / `⌘A` act on *its* selection. Click the folder
   /// tree and the tree's row takes the keyboard, so those keys stop pointing
   /// here — the same guarantee the file browser gained.
-  final FocusNode _pane = FocusPane.newNode('workbench-pane-grid');
+  final FocusNode _pane = FocusPane.newNode('workbench-pane-grid', skipTraversal: false);
+  final GridCursor _cursor = GridCursor();
+  final ValueNotifier<String?> _activePath = ValueNotifier(null);
+  final Map<String, double> _tileOffsets = {};
+  double _tileExtent = 0;
+  EdgeInsets _visibleInsets = EdgeInsets.zero;
+  List<AppImage>? _laidOutImages;
+  int _laidOutColumns = 0;
+
+  void _onPaneFocus() {
+    if (!_pane.hasFocus) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _pane.hasFocus) _revealActive();
+    });
+  }
+
+  void _revealActive() {
+    final top = _tileOffsets[_cursor.active];
+    if (top == null || !_scroll.hasClients) return;
+    final position = _scroll.position;
+    final visibleTop = position.pixels + _visibleInsets.top;
+    final visibleBottom = position.pixels + position.viewportDimension - _visibleInsets.bottom;
+    final target = top < visibleTop
+        ? top - _visibleInsets.top
+        : top + _tileExtent > visibleBottom
+        ? top + _tileExtent - position.viewportDimension + _visibleInsets.bottom
+        : position.pixels;
+    _scroll.jumpTo(target.clamp(position.minScrollExtent, position.maxScrollExtent));
+  }
+
+  void _point(String path) {
+    _cursor.point(path);
+    _activePath.value = _cursor.active;
+  }
 
   @override
   void initState() {
     super.initState();
     _outline.attach(_scroll);
+    _pane.addListener(_onPaneFocus);
   }
 
   /// The gallery's keys (L2), read off the one registry so this screen and the
   /// file browser cannot drift apart on what `Delete` means.
   KeyEventResult _handleKeys(FocusNode node, KeyEvent event) {
-    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) return KeyEventResult.ignored;
     // See `WorkbenchScreen._handleKeys`: the workbench is the one screen a
     // phone or tablet also shows, and a platform that registers no shortcuts
     // must not answer them here either — least of all `Delete`.
@@ -151,6 +187,34 @@ class _GalleryState extends State<Gallery> {
     final selected = state.selectedImages;
     bool bound(String id) => AppShortcuts.byId(id).matches(event);
 
+    final extend = bound(AppShortcutIds.gridExtend);
+    final preserve = bound(AppShortcutIds.gridFocus);
+    if (node.hasPrimaryFocus && (bound(AppShortcutIds.gridMove) || extend || preserve)) {
+      final key = event.logicalKey;
+      final path = _cursor.move(
+        horizontal: key == LogicalKeyboardKey.arrowLeft
+            ? -1
+            : key == LogicalKeyboardKey.arrowRight
+            ? 1
+            : 0,
+        vertical: key == LogicalKeyboardKey.arrowUp
+            ? -1
+            : key == LogicalKeyboardKey.arrowDown
+            ? 1
+            : 0,
+        extend: extend,
+      );
+      _activePath.value = path;
+      if (path != null && !preserve) state.selectImagePaths(extend ? _cursor.range : [path]);
+      _revealActive();
+      return KeyEventResult.handled;
+    }
+    if (node.hasPrimaryFocus && bound(AppShortcutIds.gridToggle)) {
+      final image = state.currentViewImages.where((i) => i.path == _cursor.active).firstOrNull;
+      if (image != null) state.toggleImageSelection(image);
+      return KeyEventResult.handled;
+    }
+
     if (bound(AppShortcutIds.selectAll)) {
       state.selectAllImages();
       return KeyEventResult.handled;
@@ -159,10 +223,10 @@ class _GalleryState extends State<Gallery> {
       state.clearImageSelection();
       return KeyEventResult.handled;
     }
-    if (bound(AppShortcutIds.preview) && selected.isNotEmpty) {
+    if (node.hasPrimaryFocus && bound(AppShortcutIds.preview) && _cursor.active != null) {
       // The view the grid is showing — see `GalleryState.currentViewImages`.
       final images = state.currentViewImages;
-      final index = images.indexWhere((i) => i.path == selected.first.path);
+      final index = images.indexWhere((i) => i.path == _cursor.active);
       if (index >= 0) {
         showMediaPreview(
           context,
@@ -208,6 +272,7 @@ class _GalleryState extends State<Gallery> {
   /// Single click picks one picture; Shift+click extends from the last plain
   /// click to this one — the browser's rule, now the gallery's too.
   void _handleSelectionTap(GalleryState state, AppImage image) {
+    _point(image.path);
     if (HardwareKeyboard.instance.isShiftPressed) {
       state.selectImageRangeTo(image);
     } else {
@@ -218,6 +283,7 @@ class _GalleryState extends State<Gallery> {
   @override
   void dispose() {
     _pane.dispose();
+    _activePath.dispose();
     _confirmTimer?.cancel();
     _outline.dispose();
     _scroll.dispose();
@@ -348,7 +414,7 @@ class _GalleryState extends State<Gallery> {
       // The gallery fills the centre column under a floating toolbar, so its
       // top edge is behind that glass. The active mark rides the selection
       // instead (`00f` 帧 3), which is the half that matters here.
-      showActiveEdge: false,
+      showActiveEdge: grid.images.isEmpty,
       child: DropTarget(
         onDragDone: (details) => _handleDrop(details, galleryState),
         onDragEntered: (details) => setState(() => _isDragging = true),
@@ -477,6 +543,8 @@ class _GalleryState extends State<Gallery> {
     final isTemp = grid.isTemp;
 
     if (images.isEmpty) {
+      _cursor.layout(const [], 1);
+      _tileOffsets.clear();
       final Widget empty;
       if (grid.isUnreachable) {
         // macOS permission trouble, as of the last scan.
@@ -530,8 +598,37 @@ class _GalleryState extends State<Gallery> {
           spacing: _gap,
         );
         final counts = [for (final path in sortedPaths) grouped[path]!.length];
+        final relayout = !identical(_laidOutImages, images) || _laidOutColumns != columns;
+        _laidOutImages = images;
+        _laidOutColumns = columns;
+        _cursor.layout([
+          for (final path in sortedPaths) [for (final image in grouped[path]!) image.path],
+        ], columns);
+        _tileExtent = cell;
+        _visibleInsets = insets;
+        final offsets = FolderOutlineGeometry.sectionOffsets(
+          counts: counts,
+          columns: columns,
+          cellExtent: cell,
+          headerExtent: showHeaders ? _headerExtent : 0,
+          spacing: _gap,
+          topInset: insets.top,
+        );
+        _tileOffsets.clear();
+        for (var group = 0; group < sortedPaths.length; group++) {
+          final members = grouped[sortedPaths[group]]!;
+          for (var i = 0; i < members.length; i++) {
+            _tileOffsets[members[i].path] =
+                offsets[group] +
+                (showHeaders ? _headerExtent : 0) +
+                _gap +
+                (i ~/ columns) * (cell + _gap);
+          }
+        }
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
+          _activePath.value = _cursor.active;
+          if (relayout && _pane.hasFocus) _revealActive();
           _outline.layout(
             counts: counts,
             columns: columns,
@@ -543,10 +640,13 @@ class _GalleryState extends State<Gallery> {
           );
         });
 
-        return ExcludeSemantics(
+        return Semantics(
+          container: true,
+          label: AppLocalizations.of(context)!.shortcutsPaneGallery,
           child: CustomScrollView(
             controller: _scroll,
             primary: false,
+            semanticChildCount: images.length,
             slivers: [
               SliverToBoxAdapter(
                 child: AnimatedContainer(
@@ -581,35 +681,66 @@ class _GalleryState extends State<Gallery> {
                         // `00d` 确认: a card an OS drop just added rings once.
                         // Always wrapped, so the ring sees its trigger change
                         // rather than being mounted with it.
-                        return AppDropConfirmRing(
-                          trigger: _confirmedPaths.contains(imageFile.path) ? _confirmToken : null,
-                          child: SizedBox.expand(
-                            // The ordinal, not a bool: a card also has to
-                            // repaint when its *place* in the selection shifts.
-                            child: Selector<GalleryState, int>(
-                              selector: (_, state) => state.selectionNumberOf(imageFile.path),
-                              builder: (context, selectionNumber, _) {
-                                final isVideo = AppConstants.isVideoFile(imageFile.path);
-                                return ImageCard(
-                                  imageFile: imageFile,
-                                  selectionNumber: selectionNumber,
-                                  thumbnailSize: grid.thumbnailSize,
-                                  heroScope: kWorkbenchPreviewHeroScope,
-                                  onTap: () {
-                                    if (isVideo) {
-                                      showMediaPreview(
-                                        context,
-                                        galleryImages: images,
-                                        initialIndex: globalIndex,
-                                        heroScope: kWorkbenchPreviewHeroScope,
-                                      );
-                                    } else {
-                                      _handleSelectionTap(state, imageFile);
-                                    }
-                                  },
-                                  onDoubleTap: isVideo
-                                      ? null
-                                      : () {
+                        return IndexedSemantics(
+                          index: _cursor.items.indexOf(imageFile.path),
+                          child: AppDropConfirmRing(
+                            trigger: _confirmedPaths.contains(imageFile.path)
+                                ? _confirmToken
+                                : null,
+                            child: SizedBox.expand(
+                              // The ordinal, not a bool: a card also has to
+                              // repaint when its *place* in the selection shifts.
+                              child: Selector<GalleryState, int>(
+                                selector: (_, state) => state.selectionNumberOf(imageFile.path),
+                                builder: (context, selectionNumber, _) {
+                                  final isVideo = AppConstants.isVideoFile(imageFile.path);
+                                  final card = ImageCard(
+                                    imageFile: imageFile,
+                                    selectionNumber: selectionNumber,
+                                    thumbnailSize: grid.thumbnailSize,
+                                    heroScope: kWorkbenchPreviewHeroScope,
+                                    onTap: () {
+                                      _point(imageFile.path);
+                                      if (isVideo) {
+                                        showMediaPreview(
+                                          context,
+                                          galleryImages: images,
+                                          initialIndex: globalIndex,
+                                          heroScope: kWorkbenchPreviewHeroScope,
+                                        );
+                                      } else {
+                                        _handleSelectionTap(state, imageFile);
+                                      }
+                                    },
+                                    onDoubleTap: isVideo
+                                        ? null
+                                        : () {
+                                            _point(imageFile.path);
+                                            showMediaPreview(
+                                              context,
+                                              galleryImages: images,
+                                              initialIndex: globalIndex,
+                                              heroScope: kWorkbenchPreviewHeroScope,
+                                            );
+                                          },
+                                  );
+                                  return ListenableSelector<bool>(
+                                    listenable: Listenable.merge([_activePath, _pane]),
+                                    selector: () =>
+                                        _pane.hasFocus && _cursor.active == imageFile.path,
+                                    builder: (context) {
+                                      final focused =
+                                          _pane.hasFocus && _cursor.active == imageFile.path;
+                                      return Semantics(
+                                        container: true,
+                                        label: imageFile.name,
+                                        button: true,
+                                        selected: selectionNumber > 0,
+                                        focusable: true,
+                                        focused: focused,
+                                        onTap: () {
+                                          _pane.requestFocus();
+                                          _point(imageFile.path);
                                           showMediaPreview(
                                             context,
                                             galleryImages: images,
@@ -617,8 +748,28 @@ class _GalleryState extends State<Gallery> {
                                             heroScope: kWorkbenchPreviewHeroScope,
                                           );
                                         },
-                                );
-                              },
+                                        child: ExcludeFocus(
+                                          child: DecoratedBox(
+                                            position: DecorationPosition.foreground,
+                                            decoration: BoxDecoration(
+                                              borderRadius: BorderRadius.circular(
+                                                AppRadius.control,
+                                              ),
+                                              border: focused
+                                                  ? Border.all(
+                                                      color: Theme.of(context).colorScheme.primary,
+                                                      width: 2,
+                                                    )
+                                                  : null,
+                                            ),
+                                            child: card,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  );
+                                },
+                              ),
                             ),
                           ),
                         );
@@ -632,8 +783,7 @@ class _GalleryState extends State<Gallery> {
                       // rebuild. The repaint boundaries stay: those are what
                       // keep one card's hover out of its neighbours.
                       addAutomaticKeepAlives: false,
-                      // The whole grid is already inside an ExcludeSemantics,
-                      // so an index on each cell describes nothing.
+                      // Indices restart in each folder; the named item owns its semantics.
                       addSemanticIndexes: false,
                     ),
                   ),

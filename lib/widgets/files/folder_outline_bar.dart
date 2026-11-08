@@ -9,6 +9,7 @@ import '../../l10n/app_localizations.dart';
 import '../glass/app_glass.dart';
 import '../glass/app_glass_menu.dart';
 import '../glass/glass_controls.dart' show measureGlassText;
+import '../ui/app_action_target.dart';
 import '../ui/scroll_edge_fade.dart';
 
 /// One folder of the outline: the chip's text, the folder it stands for,
@@ -543,12 +544,14 @@ class _OutlineChipState extends State<_OutlineChip> {
     }
 
     return Tooltip(
+      excludeFromSemantics: true,
       message: entry.path,
       waitDuration: const Duration(milliseconds: 600),
       child: Semantics(
         button: true,
         selected: lit,
         label: entry.path,
+        value: widget.withCount && !unreachable ? '${entry.count}' : null,
         child: Focus(
           onKeyEvent: _onKey,
           onFocusChange: (focused) => setState(() => _focused = focused),
@@ -565,7 +568,7 @@ class _OutlineChipState extends State<_OutlineChip> {
                 onTap: widget.onTap,
                 onSecondaryTapUp: (details) => widget.onMenu(details.globalPosition),
                 onLongPress: _menuHere,
-                child: face,
+                child: ExcludeSemantics(child: face),
               ),
             ),
           ),
@@ -590,45 +593,47 @@ class _CollapsedChip extends StatelessWidget {
     final index = current.clamp(0, entries.length - 1);
     final entry = entries[index];
     return Builder(
-      builder: (anchor) => Semantics(
-        button: true,
-        label: entry.path,
-        child: MouseRegion(
-          cursor: SystemMouseCursors.click,
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () => onOpen(anchor),
-            child: Container(
-              height: FolderOutlineBar.chipHeight,
-              padding: const EdgeInsets.symmetric(horizontal: _ChipLayout.padLeft),
-              decoration: BoxDecoration(
-                color: scheme.accentTint,
-                borderRadius: BorderRadius.circular(AppRadius.control),
-              ),
-              // The label gives way first; below what even the glyph, the
-              // count and the chevron need, the chip is clipped rather than
-              // thrown — a column that narrow is not a layout to design for.
-              clipBehavior: Clip.hardEdge,
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  const fixed =
-                      AppSize.iconMd + AppSpace.s6 + AppSpace.s6 + AppSpace.s4 + AppSize.iconSm;
-                  final countWidth = measureGlassText(
-                    context,
-                    '${index + 1}/${entries.length}',
-                    FolderOutlineBar.countStyle(context),
-                  );
-                  final tight = constraints.maxWidth < fixed + countWidth;
-                  final row = _row(context, scheme, entry, index);
-                  return tight
-                      ? OverflowBox(
-                          alignment: Alignment.centerLeft,
-                          minWidth: 0,
-                          maxWidth: double.infinity,
-                          child: row,
-                        )
-                      : row;
-                },
+      builder: (anchor) => MergeSemantics(
+        child: Semantics(
+          button: true,
+          label: entry.path,
+          child: MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: AppActionTarget(
+              excludeChildSemantics: true,
+              onTap: () => onOpen(anchor),
+              child: Container(
+                height: FolderOutlineBar.chipHeight,
+                padding: const EdgeInsets.symmetric(horizontal: _ChipLayout.padLeft),
+                decoration: BoxDecoration(
+                  color: scheme.accentTint,
+                  borderRadius: BorderRadius.circular(AppRadius.control),
+                ),
+                // The label gives way first; below what even the glyph, the
+                // count and the chevron need, the chip is clipped rather than
+                // thrown — a column that narrow is not a layout to design for.
+                clipBehavior: Clip.hardEdge,
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    const fixed =
+                        AppSize.iconMd + AppSpace.s6 + AppSpace.s6 + AppSpace.s4 + AppSize.iconSm;
+                    final countWidth = measureGlassText(
+                      context,
+                      '${index + 1}/${entries.length}',
+                      FolderOutlineBar.countStyle(context),
+                    );
+                    final tight = constraints.maxWidth < fixed + countWidth;
+                    final row = _row(context, scheme, entry, index);
+                    return tight
+                        ? OverflowBox(
+                            alignment: Alignment.centerLeft,
+                            minWidth: 0,
+                            maxWidth: double.infinity,
+                            child: row,
+                          )
+                        : row;
+                  },
+                ),
               ),
             ),
           ),

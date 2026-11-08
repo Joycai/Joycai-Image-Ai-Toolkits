@@ -11,6 +11,7 @@ import '../../services/tasks/task_queue_service.dart';
 import '../../state/app_state.dart';
 import '../../state/log_state.dart';
 import '../ui/app_breathing_dot.dart';
+import '../ui/app_resize_target.dart';
 import 'log_console.dart';
 
 /// Shared run-status console: status dot, running/planned task summary, the
@@ -396,36 +397,41 @@ class _ConsoleResizeHandleState extends State<_ConsoleResizeHandle> {
     final colorScheme = Theme.of(context).colorScheme;
     final active = _hovering || _dragging;
 
-    return MouseRegion(
-      cursor: SystemMouseCursors.resizeRow,
-      onEnter: (_) => setState(() => _hovering = true),
-      onExit: (_) => setState(() => _hovering = false),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onVerticalDragStart: (_) => setState(() => _dragging = true),
-        onVerticalDragUpdate: (d) => widget.onDrag(d.delta.dy),
-        onVerticalDragEnd: (_) {
-          setState(() => _dragging = false);
-          widget.onDragEnd();
-        },
-        onVerticalDragCancel: () => setState(() => _dragging = false),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerLow,
-            border: Border(top: BorderSide(color: colorScheme.outlineVariant)),
-          ),
-          child: SizedBox(
-            height: _ConsoleResizeHandle._kHeight,
-            width: double.infinity,
-            child: Center(
-              child: AnimatedContainer(
-                duration: AppMotion.durationOf(context, AppMotion.hover),
-                curve: AppMotion.quick,
-                width: 32,
-                height: 3,
-                decoration: BoxDecoration(
-                  color: active ? colorScheme.primary : colorScheme.outlineVariant,
-                  borderRadius: BorderRadius.circular(AppRadius.pill),
+    return AppResizeTarget(
+      axis: Axis.vertical,
+      onDrag: widget.onDrag,
+      onDragEnd: widget.onDragEnd,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.resizeRow,
+        onEnter: (_) => setState(() => _hovering = true),
+        onExit: (_) => setState(() => _hovering = false),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onVerticalDragStart: (_) => setState(() => _dragging = true),
+          onVerticalDragUpdate: (d) => widget.onDrag(d.delta.dy),
+          onVerticalDragEnd: (_) {
+            setState(() => _dragging = false);
+            widget.onDragEnd();
+          },
+          onVerticalDragCancel: () => setState(() => _dragging = false),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerLow,
+              border: Border(top: BorderSide(color: colorScheme.outlineVariant)),
+            ),
+            child: SizedBox(
+              height: _ConsoleResizeHandle._kHeight,
+              width: double.infinity,
+              child: Center(
+                child: AnimatedContainer(
+                  duration: AppMotion.durationOf(context, AppMotion.hover),
+                  curve: AppMotion.quick,
+                  width: 32,
+                  height: 3,
+                  decoration: BoxDecoration(
+                    color: active ? colorScheme.primary : colorScheme.outlineVariant,
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                  ),
                 ),
               ),
             ),

@@ -102,56 +102,66 @@ class _CardShellState extends State<_CardShell> {
       if (selected) BoxShadow(color: colorScheme.primary, spreadRadius: 2),
     ];
 
-    return InkWell(
-      onTap: widget.onTap,
-      onHover: (v) => setState(() => _hovered = v),
-      onFocusChange: (v) => setState(() => _focused = v),
-      borderRadius: BorderRadius.circular(AppRadius.control),
-      child: AnimatedContainer(
-        duration: AppMotion.durationOf(context, AppMotion.hover),
-        curve: AppMotion.quick,
-        width: widget.width,
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: selected
-              ? Color.alphaBlend(colorScheme.accentTint, colorScheme.surfaceContainerLow)
-              : colorScheme.surfaceContainerLow,
+    return MergeSemantics(
+      child: Semantics(
+        button: true,
+        selected: selected,
+        child: InkWell(
+          onTap: widget.onTap,
+          onHover: (v) => setState(() => _hovered = v),
+          onFocusChange: (v) => setState(() => _focused = v),
           borderRadius: BorderRadius.circular(AppRadius.control),
-          border: Border.all(
-            color: selected
-                ? colorScheme.primary
-                : _hovered
-                ? colorScheme.accentRing
-                : colorScheme.outlineVariant,
-          ),
-          boxShadow: rings,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(AppRadius.sm),
-              child: SizedBox(height: ThemeAccentPreviewCard.previewHeight, child: widget.preview),
+          child: AnimatedContainer(
+            duration: AppMotion.durationOf(context, AppMotion.hover),
+            curve: AppMotion.quick,
+            width: widget.width,
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: selected
+                  ? Color.alphaBlend(colorScheme.accentTint, colorScheme.surfaceContainerLow)
+                  : colorScheme.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(AppRadius.control),
+              border: Border.all(
+                color: selected
+                    ? colorScheme.primary
+                    : _hovered
+                    ? colorScheme.accentRing
+                    : colorScheme.outlineVariant,
+              ),
+              boxShadow: rings,
             ),
-            const SizedBox(height: AppSpace.s6),
-            Row(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Text(
-                    widget.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                      color: selected ? colorScheme.onAccentTint : colorScheme.onSurface,
-                    ),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                  child: SizedBox(
+                    height: ThemeAccentPreviewCard.previewHeight,
+                    child: ExcludeSemantics(child: widget.preview),
                   ),
                 ),
-                if (selected) Icon(Icons.check, size: AppSize.iconSm, color: colorScheme.primary),
+                const SizedBox(height: AppSpace.s6),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        widget.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                          color: selected ? colorScheme.onAccentTint : colorScheme.onSurface,
+                        ),
+                      ),
+                    ),
+                    if (selected)
+                      Icon(Icons.check, size: AppSize.iconSm, color: colorScheme.primary),
+                  ],
+                ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );

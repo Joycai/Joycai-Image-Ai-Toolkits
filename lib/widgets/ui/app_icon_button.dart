@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/design_tokens.dart';
+import 'app_control_label.dart';
 
 /// An icon action in a box of its own.
 ///
@@ -53,38 +54,43 @@ class AppIconButton extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final accent = color ?? colorScheme.primary;
 
-    return SizedBox(
-      width: size,
-      height: size,
-      child: IconButton(
-        // Half the box, per the spec's 16-in-32. The old 0.47 predates the box
-        // being 32 and came out a pixel light once it shrank.
-        icon: Icon(icon, size: iconSize ?? size * 0.5),
-        color: selected ? accent : color,
-        padding: EdgeInsets.zero,
-        style: IconButton.styleFrom(
-          // `color` when the caller named one — a destructive action's box
-          // should wash in its own red, not in the accent.
-          backgroundColor: selected ? accent.withValues(alpha: AppAlpha.tint) : backgroundColor,
-          disabledForegroundColor: colorScheme.outline,
-          fixedSize: Size.square(size),
-          minimumSize: Size.square(size),
-          maximumSize: Size.square(size),
-          visualDensity: VisualDensity.standard,
-          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.control),
-            side: !outlined
-                ? BorderSide.none
-                : BorderSide(
-                    color: selected
-                        ? accent.withValues(alpha: AppAlpha.ring)
-                        : colorScheme.outlineVariant,
-                  ),
+    return AppControlLabel(
+      label: tooltip,
+      child: Semantics(
+        selected: selected,
+        child: SizedBox(
+          width: size,
+          height: size,
+          child: IconButton(
+            // Half the box, per the spec's 16-in-32. The old 0.47 predates the box
+            // being 32 and came out a pixel light once it shrank.
+            icon: Icon(icon, size: iconSize ?? size * 0.5),
+            color: selected ? accent : color,
+            padding: EdgeInsets.zero,
+            style: IconButton.styleFrom(
+              // `color` when the caller named one — a destructive action's box
+              // should wash in its own red, not in the accent.
+              backgroundColor: selected ? accent.withValues(alpha: AppAlpha.tint) : backgroundColor,
+              disabledForegroundColor: colorScheme.outline,
+              fixedSize: Size.square(size),
+              minimumSize: Size.square(size),
+              maximumSize: Size.square(size),
+              visualDensity: VisualDensity.standard,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadius.control),
+                side: !outlined
+                    ? BorderSide.none
+                    : BorderSide(
+                        color: selected
+                            ? accent.withValues(alpha: AppAlpha.ring)
+                            : colorScheme.outlineVariant,
+                      ),
+              ),
+            ),
+            onPressed: onPressed,
           ),
         ),
-        onPressed: onPressed,
-        tooltip: tooltip,
       ),
     );
   }

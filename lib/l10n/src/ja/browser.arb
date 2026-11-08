@@ -418,7 +418,6 @@
   "newSubfolder": "新しいサブフォルダー",
   "newFolderDefaultName": "新しいフォルダー",
   "moveFolderTo": "移動先…",
-  "removeFromList": "リストから削除",
   "rootCannotMove": "ルートフォルダーは移動できません",
   "deleteFolderTitle": "フォルダーを削除しますか？",
   "trashFolderTitle": "ゴミ箱に移動しますか？",
@@ -446,7 +445,6 @@
       }
     }
   },
-  "moveToTrash": "ゴミ箱に移動",
   "trashFileTitle": "ゴミ箱に移動しますか？",
   "trashFilesTitle": "{count} 件のファイルをゴミ箱に移動しますか？",
   "@trashFilesTitle": {

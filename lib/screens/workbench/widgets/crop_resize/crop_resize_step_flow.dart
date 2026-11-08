@@ -43,7 +43,7 @@ extension _StepFlow on _CropResizeToolbarState {
           onPressed: () => _showResizeDialog(context, l10n, uiState),
         ),
         const Expanded(child: SizedBox()),
-        MenuAnchor(
+        AppMenuAnchor(
           menuChildren: [
             MenuItemButton(
               leadingIcon: const Icon(Icons.save_alt, size: AppSize.iconLg),
@@ -171,25 +171,27 @@ extension _StepFlow on _CropResizeToolbarState {
                   const SizedBox(width: AppSpace.s6),
                   Tooltip(
                     message: l10n.maintainAspectRatio,
-                    child: Semantics(
-                      button: true,
-                      toggled: maintain,
-                      label: l10n.maintainAspectRatio,
-                      child: MouseRegion(
-                        cursor: SystemMouseCursors.click,
-                        child: GestureDetector(
-                          onTap: () => uiState.setMaintainAspectRatio(!maintain),
-                          child: Container(
-                            width: AppSize.large,
-                            height: AppSize.large,
-                            decoration: BoxDecoration(
-                              color: maintain ? scheme.accentTint : Colors.transparent,
-                              borderRadius: BorderRadius.circular(AppRadius.control),
-                            ),
-                            child: Icon(
-                              maintain ? Icons.link : Icons.link_off,
-                              size: AppSize.iconMd,
-                              color: maintain ? scheme.primary : scheme.onSurfaceVariant,
+                    child: MergeSemantics(
+                      child: Semantics(
+                        button: true,
+                        toggled: maintain,
+                        label: l10n.maintainAspectRatio,
+                        child: MouseRegion(
+                          cursor: SystemMouseCursors.click,
+                          child: AppActionTarget(
+                            onTap: () => uiState.setMaintainAspectRatio(!maintain),
+                            child: Container(
+                              width: AppSize.large,
+                              height: AppSize.large,
+                              decoration: BoxDecoration(
+                                color: maintain ? scheme.accentTint : Colors.transparent,
+                                borderRadius: BorderRadius.circular(AppRadius.control),
+                              ),
+                              child: Icon(
+                                maintain ? Icons.link : Icons.link_off,
+                                size: AppSize.iconMd,
+                                color: maintain ? scheme.primary : scheme.onSurfaceVariant,
+                              ),
                             ),
                           ),
                         ),

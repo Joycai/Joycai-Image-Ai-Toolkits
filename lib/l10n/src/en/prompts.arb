@@ -60,7 +60,6 @@
       "error": { "type": "String" }
     }
   },
-  "filterAll": "All",
   "newTemplate": "New Template",
   "reorderDisabledWhileFiltered": "Reordering is unavailable while a filter or search is active",
   "matchModeLabel": "Match",

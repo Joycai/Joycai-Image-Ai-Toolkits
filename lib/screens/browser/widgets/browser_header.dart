@@ -9,6 +9,7 @@ import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../state/file_browser_state.dart';
 import '../../../widgets/glass/glass_controls.dart' show measureGlassText;
+import '../../../widgets/ui/app_action_target.dart';
 
 /// The file area's 72px header — `B1a · 1a`.
 ///
@@ -654,36 +655,41 @@ class _ViewSegmentState extends State<_ViewSegment> {
     final scheme = Theme.of(context).colorScheme;
     final selected = widget.selected;
 
-    return Semantics(
-      button: true,
-      selected: selected,
-      child: Tooltip(
-        message: widget.tooltip,
-        child: MouseRegion(
-          cursor: selected ? SystemMouseCursors.basic : SystemMouseCursors.click,
-          onEnter: (_) => setState(() => _hovered = true),
-          onExit: (_) => setState(() => _hovered = false),
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: selected ? null : widget.onTap,
-            child: AnimatedContainer(
-              duration: AppMotion.durationOf(context, AppMotion.state),
-              curve: AppMotion.enter,
-              width: AppSize.compact,
-              height: AppSize.compact,
-              decoration: BoxDecoration(
-                color: selected
-                    ? scheme.surface
-                    : (_hovered
-                          ? scheme.onSurface.withValues(alpha: 0.06)
-                          : scheme.onSurface.withValues(alpha: 0)),
-                borderRadius: BorderRadius.circular(AppRadius.sm),
-                boxShadow: selected ? scheme.shadowRaised : null,
-              ),
-              child: Icon(
-                widget.icon,
-                size: AppSize.iconMd,
-                color: selected ? scheme.onSurface : scheme.onSurfaceVariant,
+    return MergeSemantics(
+      child: Semantics(
+        button: true,
+        selected: selected,
+        child: Tooltip(
+          excludeFromSemantics: true,
+          message: widget.tooltip,
+          child: MouseRegion(
+            cursor: selected ? SystemMouseCursors.basic : SystemMouseCursors.click,
+            onEnter: (_) => setState(() => _hovered = true),
+            onExit: (_) => setState(() => _hovered = false),
+            child: AppActionTarget(
+              label: widget.tooltip,
+              onTap: () {
+                if (!selected) widget.onTap();
+              },
+              child: AnimatedContainer(
+                duration: AppMotion.durationOf(context, AppMotion.state),
+                curve: AppMotion.enter,
+                width: AppSize.compact,
+                height: AppSize.compact,
+                decoration: BoxDecoration(
+                  color: selected
+                      ? scheme.surface
+                      : (_hovered
+                            ? scheme.onSurface.withValues(alpha: 0.06)
+                            : scheme.onSurface.withValues(alpha: 0)),
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                  boxShadow: selected ? scheme.shadowRaised : null,
+                ),
+                child: Icon(
+                  widget.icon,
+                  size: AppSize.iconMd,
+                  color: selected ? scheme.onSurface : scheme.onSurfaceVariant,
+                ),
               ),
             ),
           ),

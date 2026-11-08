@@ -9,6 +9,7 @@ import '../../l10n/app_localizations.dart';
 import '../../services/tasks/task_queue_service.dart';
 import '../../state/app_state.dart';
 import '../glass/app_glass.dart';
+import '../ui/app_action_target.dart';
 import 'app_destinations.dart';
 import 'app_window_frame.dart';
 
@@ -169,11 +170,14 @@ class _DockCell extends StatelessWidget {
       );
     }
 
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: label,
-      child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: onTap, child: cell),
+    return MergeSemantics(
+      child: Semantics(
+        button: true,
+        selected: selected,
+        label: label,
+        value: badge > 0 ? '$badge' : null,
+        child: AppActionTarget(excludeChildSemantics: true, onTap: onTap, child: cell),
+      ),
     );
   }
 }
@@ -318,8 +322,7 @@ class _MoreRow extends StatelessWidget {
     final glassInk = GlassInk.maybeOf(context);
     final ink = glassInk?.ink ?? scheme.onSurface;
     final ink2 = glassInk?.ink2 ?? scheme.onSurfaceVariant;
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
+    return AppActionTarget(
       onTap: onTap,
       child: Container(
         height: 52,
