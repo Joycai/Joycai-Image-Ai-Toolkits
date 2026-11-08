@@ -4022,16 +4022,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get contentSafetyEmailFailed => 'メールアプリを開けませんでした。アドレスをコピーして手動で報告してください。';
 
   @override
-  String get shortcutGridMove => 'ギャラリー項目を移動して選択';
+  String get shortcutGridMove => '項目を移動して選択';
 
   @override
-  String get shortcutGridExtend => 'ギャラリーの選択範囲を拡張';
+  String get shortcutGridExtend => '項目の選択範囲を拡張';
 
   @override
-  String get shortcutGridFocus => '選択せずにギャラリーのフォーカスを移動';
+  String get shortcutGridFocus => '選択せずに項目のフォーカスを移動';
 
   @override
-  String get shortcutGridToggle => 'フォーカス画像の選択を切り替え';
+  String get shortcutGridToggle => 'フォーカス項目の選択を切り替え';
 
   @override
   String get shortcutNavigateToDestination => '1〜8 番目のページへ';
@@ -4140,6 +4140,12 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get shortcutsCustomiseLater => '次のフェーズで';
+
+  @override
+  String get shortcutNextPane => '次の表示中のペインにフォーカス';
+
+  @override
+  String get shortcutPreviousPane => '前の表示中のペインにフォーカス';
 
   @override
   String get tasks => 'タスク';

@@ -3991,16 +3991,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get contentSafetyEmailFailed => '无法打开邮件应用，请复制邮箱后手动发送反馈。';
 
   @override
-  String get shortcutGridMove => '移动并选中画廊项目';
+  String get shortcutGridMove => '移动并选中项目';
 
   @override
-  String get shortcutGridExtend => '扩展画廊选区';
+  String get shortcutGridExtend => '扩展项目选区';
 
   @override
-  String get shortcutGridFocus => '仅移动画廊焦点';
+  String get shortcutGridFocus => '仅移动项目焦点';
 
   @override
-  String get shortcutGridToggle => '切换焦点图片的选择状态';
+  String get shortcutGridToggle => '切换焦点项目的选择状态';
 
   @override
   String get shortcutNavigateToDestination => '切到第 1…8 个页面';
@@ -4108,6 +4108,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get shortcutsCustomiseLater => '第二期';
+
+  @override
+  String get shortcutNextPane => '聚焦下一个可见栏';
+
+  @override
+  String get shortcutPreviousPane => '聚焦上一个可见栏';
 
   @override
   String get tasks => '任务';
@@ -10339,16 +10345,16 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get contentSafetyEmailFailed => '無法開啟郵件應用，請複製信箱後手動傳送回報。';
 
   @override
-  String get shortcutGridMove => '移動並選取圖庫項目';
+  String get shortcutGridMove => '移動並選取項目';
 
   @override
-  String get shortcutGridExtend => '延伸圖庫選取範圍';
+  String get shortcutGridExtend => '擴展項目選取範圍';
 
   @override
-  String get shortcutGridFocus => '僅移動圖庫焦點';
+  String get shortcutGridFocus => '僅移動項目焦點';
 
   @override
-  String get shortcutGridToggle => '切換焦點圖片的選取狀態';
+  String get shortcutGridToggle => '切換焦點項目的選取狀態';
 
   @override
   String get shortcutNavigateToDestination => '切到第 1…8 個頁面';
@@ -10456,6 +10462,12 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get shortcutsCustomiseLater => '第二期';
+
+  @override
+  String get shortcutNextPane => '聚焦下一個可見欄';
+
+  @override
+  String get shortcutPreviousPane => '聚焦上一個可見欄';
 
   @override
   String get tasks => '任務';

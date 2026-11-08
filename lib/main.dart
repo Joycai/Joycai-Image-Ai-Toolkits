@@ -488,8 +488,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     final isTouchOs = Platform.isAndroid || Platform.isIOS;
     final showTopBar = isTouchOs && !isPhone;
 
-    Widget screen = _screenFor(current);
-    if (isPhone) {
+    final mq = MediaQuery.of(context);
+    // Keep the wrapper at every width: inserting it only below 600px
+    // unmounts the screen and loses its logical cursor and pane focus.
+    final screen = MediaQuery(
       // The dock floats over the bottom of the screen; the screen keeps its
       // content clear of it the same way it keeps clear of a home indicator.
       //
@@ -497,13 +499,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       // what [AppDock.clearanceOf] measures from: overriding it too made
       // the clearance count itself, and anything computing it from a screen's
       // context — a snackbar's bottom margin — cleared the dock twice.
-      final mq = MediaQuery.of(context);
-      final clearance = AppDock.clearanceOf(context);
-      screen = MediaQuery(
-        data: mq.copyWith(padding: mq.padding.copyWith(bottom: clearance)),
-        child: screen,
-      );
-    }
+      data: isPhone
+          ? mq.copyWith(padding: mq.padding.copyWith(bottom: AppDock.clearanceOf(context)))
+          : mq,
+      child: _screenFor(current),
+    );
 
     return Stack(
       children: [

@@ -7254,25 +7254,25 @@ abstract class AppLocalizations {
   /// No description provided for @shortcutGridMove.
   ///
   /// In en, this message translates to:
-  /// **'Move and select a gallery item'**
+  /// **'Move and select an item'**
   String get shortcutGridMove;
 
   /// No description provided for @shortcutGridExtend.
   ///
   /// In en, this message translates to:
-  /// **'Extend gallery selection'**
+  /// **'Extend item selection'**
   String get shortcutGridExtend;
 
   /// No description provided for @shortcutGridFocus.
   ///
   /// In en, this message translates to:
-  /// **'Move gallery focus without selecting'**
+  /// **'Move item focus without selecting'**
   String get shortcutGridFocus;
 
   /// No description provided for @shortcutGridToggle.
   ///
   /// In en, this message translates to:
-  /// **'Toggle focused image selection'**
+  /// **'Toggle focused item selection'**
   String get shortcutGridToggle;
 
   /// No description provided for @shortcutNavigateToDestination.
@@ -7484,6 +7484,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'a later round'**
   String get shortcutsCustomiseLater;
+
+  /// No description provided for @shortcutNextPane.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus next visible pane'**
+  String get shortcutNextPane;
+
+  /// No description provided for @shortcutPreviousPane.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus previous visible pane'**
+  String get shortcutPreviousPane;
 
   /// No description provided for @tasks.
   ///

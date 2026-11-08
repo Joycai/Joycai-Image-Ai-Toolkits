@@ -4186,16 +4186,16 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not open an email app. Copy the address and send your report manually.';
 
   @override
-  String get shortcutGridMove => 'Move and select a gallery item';
+  String get shortcutGridMove => 'Move and select an item';
 
   @override
-  String get shortcutGridExtend => 'Extend gallery selection';
+  String get shortcutGridExtend => 'Extend item selection';
 
   @override
-  String get shortcutGridFocus => 'Move gallery focus without selecting';
+  String get shortcutGridFocus => 'Move item focus without selecting';
 
   @override
-  String get shortcutGridToggle => 'Toggle focused image selection';
+  String get shortcutGridToggle => 'Toggle focused item selection';
 
   @override
   String get shortcutNavigateToDestination => 'Go to page 1–8';
@@ -4304,6 +4304,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get shortcutsCustomiseLater => 'a later round';
+
+  @override
+  String get shortcutNextPane => 'Focus next visible pane';
+
+  @override
+  String get shortcutPreviousPane => 'Focus previous visible pane';
 
   @override
   String get tasks => 'Tasks';

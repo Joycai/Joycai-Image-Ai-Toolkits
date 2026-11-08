@@ -32,11 +32,13 @@ import '../../widgets/shell/app_destinations.dart';
 import '../../widgets/shell/app_window_frame.dart';
 import '../../widgets/tasks/app_run_console.dart';
 import '../../widgets/ui/focus_pane.dart';
+import '../../widgets/ui/listenable_selector.dart';
 import '../../widgets/ui/panel_resizer.dart';
 import '../batch/task_queue_screen.dart';
 import '../workbench/unified_sidebar.dart';
 import '../workbench/widgets/preview/media_preview_dialog.dart';
 import 'ai_rename_dialog.dart';
+import 'browser_grid_navigation.dart';
 import 'staging_paste_flow.dart';
 import 'widgets/browser_file_area_states.dart';
 import 'widgets/browser_file_list_row.dart';
@@ -83,9 +85,9 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
   /// one `Delete` / `F2` / `Enter` / `⌘A` act on — one question, one answer,
   /// which is what the old split (the tree claiming those keys per row, the
   /// grid claiming them at screen level) could not give.
-  final FocusNode _treePane = FocusPane.newNode('browser-pane-tree');
-  final FocusNode _gridPane = FocusPane.newNode('browser-pane-grid');
-  final FocusNode _stagingPane = FocusPane.newNode('browser-pane-staging');
+  final FocusNode _treePane = FocusPane.newNode('browser-pane-tree', skipTraversal: false);
+  final FocusNode _gridPane = FocusPane.newNode('browser-pane-grid', skipTraversal: false);
+  final FocusNode _stagingPane = FocusPane.newNode('browser-pane-staging', skipTraversal: false);
 
   /// `1a`: 240 at rest; a width the user dragged to wins once loaded.
   double _sidebarWidth = 240;
@@ -112,6 +114,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
   /// filter row reads its one integer.
   final ScrollController _scroll = ScrollController();
   final FolderOutlineSpy _outline = FolderOutlineSpy();
+  late final BrowserGridNavigation _navigation = BrowserGridNavigation(_gridPane, _scroll);
 
   /// Drag accumulator, allowed [_kDragSlack] past the limits so the handle
   /// re-engages where the pointer actually is after a drag past the end,
@@ -165,6 +168,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
     _searchFocusNode.removeListener(_onSearchFocusChanged);
     _searchController.dispose();
     _searchFocusNode.dispose();
+    _navigation.dispose();
     _treePane.dispose();
     _gridPane.dispose();
     _stagingPane.dispose();
@@ -210,6 +214,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
   /// a screen-level `Delete` has no way to know which of the three regions
   /// the user means.
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    if (!AppShortcuts.registersShortcuts) return KeyEventResult.ignored;
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
 
     // The gate comes first, with no exceptions above it. A key a text field
@@ -227,7 +232,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
         final state = Provider.of<AppState>(context, listen: false).fileBrowserState;
         _searchController.clear();
         state.setSearchQuery('');
-        _searchFocusNode.unfocus();
+        _gridPane.requestFocus();
         return KeyEventResult.handled;
       }
       return KeyEventResult.ignored;
@@ -236,6 +241,30 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
     final state = Provider.of<AppState>(context, listen: false).fileBrowserState;
     bool bound(String id) => AppShortcuts.byId(id).matches(event);
 
+    if (bound(AppShortcutIds.nextPane) || bound(AppShortcutIds.previousPane)) {
+      final narrow = Responsive.isNarrow(context);
+      final panes = <FocusNode>[
+        if (!narrow && context.read<AppState>().isSidebarExpanded ||
+            narrow && (_scaffoldKey.currentState?.isDrawerOpen ?? false))
+          _treePane,
+        _gridPane,
+        if (!narrow && _stagingOpen ||
+            narrow && (_scaffoldKey.currentState?.isEndDrawerOpen ?? false))
+          _stagingPane,
+      ];
+      final index = panes.indexWhere((pane) => pane.hasFocus);
+      final backwards = bound(AppShortcutIds.previousPane);
+      final next =
+          panes[index < 0
+              ? (backwards ? panes.length - 1 : 0)
+              : (index + (backwards ? -1 : 1)) % panes.length];
+      if (narrow && next == _gridPane) {
+        _scaffoldKey.currentState?.closeDrawer();
+        _scaffoldKey.currentState?.closeEndDrawer();
+      }
+      next.requestFocus();
+      return KeyEventResult.handled;
+    }
     if (bound(AppShortcutIds.focusSearch)) {
       _focusSearch();
       return KeyEventResult.handled;
@@ -274,6 +303,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
       return;
     }
     final appState = Provider.of<AppState>(context, listen: false);
+    if (appState.isSidebarExpanded && _treePane.hasFocus) _gridPane.requestFocus();
     appState.setSidebarExpanded(!appState.isSidebarExpanded);
   }
 
@@ -285,6 +315,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
       scaffold.isEndDrawerOpen ? scaffold.closeEndDrawer() : scaffold.openEndDrawer();
       return;
     }
+    if (_stagingOpen && _stagingPane.hasFocus) _gridPane.requestFocus();
     setState(() => _stagingOpen = !_stagingOpen);
   }
 
@@ -292,12 +323,48 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
   /// active pane — click the folder tree and the tree answers instead, which
   /// is the point.
   KeyEventResult _handleGridKeys(FocusNode node, KeyEvent event) {
-    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    if (!AppShortcuts.registersShortcuts) return KeyEventResult.ignored;
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) return KeyEventResult.ignored;
     if (isTextEditingFocused()) return KeyEventResult.ignored;
 
     final state = Provider.of<AppState>(context, listen: false).fileBrowserState;
     bool bound(String id) => AppShortcuts.byId(id).matches(event);
 
+    if (node.hasPrimaryFocus) {
+      final extend = bound(AppShortcutIds.gridExtend);
+      if (bound(AppShortcutIds.gridMove) || extend || bound(AppShortcutIds.gridFocus)) {
+        final key = event.logicalKey;
+        final path = _navigation.cursor.move(
+          horizontal: key == LogicalKeyboardKey.arrowLeft
+              ? -1
+              : key == LogicalKeyboardKey.arrowRight
+              ? 1
+              : 0,
+          vertical: key == LogicalKeyboardKey.arrowUp
+              ? -1
+              : key == LogicalKeyboardKey.arrowDown
+              ? 1
+              : 0,
+          extend: extend,
+        );
+        if (path != null && !bound(AppShortcutIds.gridFocus)) {
+          state.selectPaths(extend ? _navigation.cursor.range : [path]);
+        }
+        _navigation.moved();
+        return KeyEventResult.handled;
+      }
+      final active = state.filteredFiles
+          .where((f) => f.path == _navigation.cursor.active)
+          .firstOrNull;
+      if (active != null && bound(AppShortcutIds.gridToggle)) {
+        state.toggleSelection(active);
+        return KeyEventResult.handled;
+      }
+      if (active != null && bound(AppShortcutIds.preview)) {
+        _openWithPreview(context, active, state);
+        return KeyEventResult.handled;
+      }
+    }
     if (bound(AppShortcutIds.selectAll)) {
       state.selectAll();
       return KeyEventResult.handled;
@@ -306,10 +373,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
       state.clearSelection();
       return KeyEventResult.handled;
     }
-    if (bound(AppShortcutIds.preview) && state.selectedFiles.isNotEmpty) {
-      _openWithPreview(context, state.selectedFiles.first, state);
-      return KeyEventResult.handled;
-    }
+
     if (bound(AppShortcutIds.delete) && state.selectedFiles.isNotEmpty) {
       _deleteSelection(context, state);
       return KeyEventResult.handled;
@@ -451,6 +515,11 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
       _stagingAutoOpened = true;
       _stagingOpen = true;
     } else if (staging.count == 0 && _stagingAutoOpened) {
+      if (_stagingPane.hasFocus) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _gridPane.requestFocus();
+        });
+      }
       _stagingAutoOpened = false;
       _stagingOpen = false;
     }
@@ -505,130 +574,150 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
         // Opened from the header only: an edge-swipe zone on a desktop window
         // would sit over the grid's scrollbar.
         endDrawerEnableOpenDragGesture: false,
+        onDrawerChanged: (open) {
+          if (!open) _gridPane.requestFocus();
+        },
         onEndDrawerChanged: (open) {
+          if (!open) _gridPane.requestFocus();
           if (open != _stagingDrawerOpen) setState(() => _stagingDrawerOpen = open);
         },
         bottomNavigationBar: const AppRunConsole(onExpand: showTaskQueueSheet),
-        body: Row(
-          children: [
-            if (!isNarrow && showFolderColumn) ...[
-              PanelCard(
-                width: _sidebarWidth,
-                shape: PanelShape.column,
-                child: FocusPane(
-                  node: _treePane,
-                  pane: ShortcutPane.tree,
-                  child: const UnifiedSidebar(useFileBrowserState: true),
+        body: Padding(
+          // The narrow desktop dock must not cover keyboard-reachable actions
+          // or the active file. The shell supplies its clearance as padding.
+          padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
+          child: Row(
+            children: [
+              if (!isNarrow && showFolderColumn) ...[
+                PanelCard(
+                  width: _sidebarWidth,
+                  shape: PanelShape.column,
+                  child: FocusPane(
+                    node: _treePane,
+                    pane: ShortcutPane.tree,
+                    child: const UnifiedSidebar(useFileBrowserState: true),
+                  ),
                 ),
-              ),
-              PanelResizer(
-                shape: PanelShape.column,
-                onDrag: (dx) => setState(() {
-                  _dragSidebarWidth = ((_dragSidebarWidth ?? _sidebarWidth) + dx).clamp(
-                    _minSidebarWidth - _kDragSlack,
-                    _maxSidebarWidth + _kDragSlack,
-                  );
-                  _sidebarWidth = _dragSidebarWidth!.clamp(_minSidebarWidth, _maxSidebarWidth);
-                }),
-                onDragEnd: () {
-                  _dragSidebarWidth = null;
-                  context.read<AppState>().uiPrefs.savePanelWidth(
-                    UiPanel.browserSidebar,
-                    _sidebarWidth,
-                  );
-                },
-              ),
-            ],
-            Expanded(
-              child: PanelCard(
-                shape: PanelShape.column,
-                // The centre column paints nothing; its header and filter bar
-                // carry their own opaque grounds and the grid below them is
-                // bare.
-                ground: Colors.transparent,
-                child: Column(
-                  children: [
-                    BrowserHeader(
-                      state: browser,
-                      stagingCount: staging.count,
-                      stagingOpen: isNarrow ? _stagingDrawerOpen : _stagingOpen,
-                      onStagingPressed: () {
-                        if (isNarrow) {
-                          _scaffoldKey.currentState?.openEndDrawer();
-                        } else {
-                          setState(() => _stagingOpen = !_stagingOpen);
-                        }
-                      },
-                      searchController: _searchController,
-                      searchFocusNode: _searchFocusNode,
-                      searchOpen: _searchOpen,
-                      onSearchOpen: _focusSearch,
-                      onSearchChanged: browser.setSearchQuery,
-                      onRefresh: () => _refresh(browser),
-                      onOpenDrawer: isNarrow ? () => _scaffoldKey.currentState?.openDrawer() : null,
-                      folderPanelOpen: showFolderColumn,
-                      onToggleFolderPanel: isNarrow ? null : _toggleFolderPanel,
-                    ),
-                    BrowserFilterBar(state: browser),
-                    _BrowserOutline(
-                      spy: _outline,
-                      onJump: _jumpToSection,
-                      onShowOnly: browser.setExclusiveDirectory,
-                      onRemove: browser.toggleDirectory,
-                      onReveal: (path) => _revealFolder(browser, path),
-                      onReAuthorize: (path) => _reAuthorizeFolder(browser, path),
-                    ),
-                    Expanded(
-                      child: Stack(
-                        children: [
-                          Positioned.fill(
-                            child: FocusPane(
-                              node: _gridPane,
-                              pane: ShortcutPane.grid,
-                              autofocus: true,
-                              onKeyEvent: _handleGridKeys,
-                              child: _FileArea(
-                                pendingRefreshes: _pendingRefreshes,
-                                scrollController: _scroll,
-                                outline: _outline,
-                                onTap: (file) => _handleSelectionTap(browser, file),
-                                onDoubleTap: (file) => _openWithPreview(context, file, browser),
-                                onSecondaryTap: (file, pos) => _showContextMenu(context, file, pos),
-                              ),
-                            ),
-                          ),
-                          Positioned(
-                            left: AppSpace.s16,
-                            right: AppSpace.s16,
-                            bottom: BrowserSelectionBar.bottomInset,
-                            child: Center(
-                              child: BrowserSelectionBar(
-                                onAiRename: () => _showAiRenameDialog(context),
-                                onAddToStaging: () => _addSelectionToStaging(
-                                  browser,
-                                  Provider.of<FileStagingState>(context, listen: false),
-                                ),
-                                onDelete: () => _deleteSelection(context, browser),
-                              ),
-                            ),
-                          ),
-                        ],
+                PanelResizer(
+                  shape: PanelShape.column,
+                  onDrag: (dx) => setState(() {
+                    _dragSidebarWidth = ((_dragSidebarWidth ?? _sidebarWidth) + dx).clamp(
+                      _minSidebarWidth - _kDragSlack,
+                      _maxSidebarWidth + _kDragSlack,
+                    );
+                    _sidebarWidth = _dragSidebarWidth!.clamp(_minSidebarWidth, _maxSidebarWidth);
+                  }),
+                  onDragEnd: () {
+                    _dragSidebarWidth = null;
+                    context.read<AppState>().uiPrefs.savePanelWidth(
+                      UiPanel.browserSidebar,
+                      _sidebarWidth,
+                    );
+                  },
+                ),
+              ],
+              Expanded(
+                child: PanelCard(
+                  shape: PanelShape.column,
+                  // The centre column paints nothing; its header and filter bar
+                  // carry their own opaque grounds and the grid below them is
+                  // bare.
+                  ground: Colors.transparent,
+                  child: Column(
+                    children: [
+                      BrowserHeader(
+                        state: browser,
+                        stagingCount: staging.count,
+                        stagingOpen: isNarrow ? _stagingDrawerOpen : _stagingOpen,
+                        onStagingPressed: () {
+                          if (isNarrow) {
+                            _scaffoldKey.currentState?.openEndDrawer();
+                          } else {
+                            _toggleStagingPanel();
+                          }
+                        },
+                        searchController: _searchController,
+                        searchFocusNode: _searchFocusNode,
+                        searchOpen: _searchOpen,
+                        onSearchOpen: _focusSearch,
+                        onSearchChanged: browser.setSearchQuery,
+                        onRefresh: () => _refresh(browser),
+                        onOpenDrawer: isNarrow
+                            ? () => _scaffoldKey.currentState?.openDrawer()
+                            : null,
+                        folderPanelOpen: showFolderColumn,
+                        onToggleFolderPanel: isNarrow ? null : _toggleFolderPanel,
                       ),
-                    ),
-                  ],
+                      BrowserFilterBar(state: browser),
+                      _BrowserOutline(
+                        spy: _outline,
+                        onJump: _jumpToSection,
+                        onShowOnly: browser.setExclusiveDirectory,
+                        onRemove: browser.toggleDirectory,
+                        onReveal: (path) => _revealFolder(browser, path),
+                        onReAuthorize: (path) => _reAuthorizeFolder(browser, path),
+                      ),
+                      Expanded(
+                        child: Stack(
+                          children: [
+                            Positioned.fill(
+                              child: FocusPane(
+                                node: _gridPane,
+                                pane: ShortcutPane.grid,
+                                autofocus: true,
+                                onKeyEvent: _handleGridKeys,
+                                child: _FileArea(
+                                  navigation: _navigation,
+                                  pendingRefreshes: _pendingRefreshes,
+                                  scrollController: _scroll,
+                                  outline: _outline,
+                                  onTap: (file) => _handleSelectionTap(browser, file),
+                                  onDoubleTap: (file) {
+                                    _navigation.point(file.path);
+                                    _gridPane.requestFocus();
+                                    _openWithPreview(context, file, browser);
+                                  },
+                                  onSecondaryTap: (file, pos) {
+                                    _navigation.point(file.path);
+                                    _gridPane.requestFocus();
+                                    _showContextMenu(context, file, pos);
+                                  },
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              left: AppSpace.s16,
+                              right: AppSpace.s16,
+                              bottom: BrowserSelectionBar.bottomInset,
+                              child: Center(
+                                child: BrowserSelectionBar(
+                                  onAiRename: () => _showAiRenameDialog(context),
+                                  onAddToStaging: () => _addSelectionToStaging(
+                                    browser,
+                                    Provider.of<FileStagingState>(context, listen: false),
+                                  ),
+                                  onDelete: () => _deleteSelection(context, browser),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            if (showStagingColumn)
-              FocusPane(
-                node: _stagingPane,
-                pane: ShortcutPane.staging,
-                child: BrowserStagingPanel(
-                  destination: staging.destination,
-                  onPaste: (mode) => runStagingPaste(context, mode: mode),
+              if (showStagingColumn)
+                FocusPane(
+                  node: _stagingPane,
+                  pane: ShortcutPane.staging,
+                  child: BrowserStagingPanel(
+                    destination: staging.destination,
+                    onPaste: (mode) => runStagingPaste(context, mode: mode),
+                  ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -661,6 +750,8 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
   /// Single click toggles one file; Shift+click extends the selection from the
   /// last plain click to this one (see [FileBrowserState.selectRangeTo]).
   void _handleSelectionTap(FileBrowserState state, BrowserFile file) {
+    _navigation.point(file.path);
+    _gridPane.requestFocus();
     if (HardwareKeyboard.instance.isShiftPressed) {
       state.selectRangeTo(file);
     } else {
@@ -822,6 +913,7 @@ typedef _TileFlags = ({bool selected, bool staged, int payloadCount});
 /// The grid or the list of files (`B1a · 1a`).
 class _FileArea extends StatelessWidget {
   const _FileArea({
+    required this.navigation,
     required this.pendingRefreshes,
     required this.scrollController,
     required this.outline,
@@ -830,6 +922,7 @@ class _FileArea extends StatelessWidget {
     required this.onSecondaryTap,
   });
 
+  final BrowserGridNavigation navigation;
   final int pendingRefreshes;
   final ScrollController scrollController;
   final FolderOutlineSpy outline;
@@ -874,6 +967,15 @@ class _FileArea extends StatelessWidget {
     final _AreaInputs area = context.select<FileBrowserState, _AreaInputs>(_areaInputs);
 
     if (area.files.isEmpty) {
+      navigation.layout(
+        area.files,
+        area.sections,
+        columns: 1,
+        extent: 0,
+        header: 0,
+        gap: 0,
+        viewport: 0,
+      );
       if (pendingRefreshes > 0 || area.isScanning) {
         return BrowserScanningState(
           progress: Provider.of<FileBrowserState>(context, listen: false).scanProgress,
@@ -883,7 +985,20 @@ class _FileArea extends StatelessWidget {
     }
     return area.viewMode == BrowserViewMode.grid
         ? _buildGrid(context, area)
-        : _buildList(context, area);
+        : LayoutBuilder(
+            builder: (context, constraints) {
+              navigation.layout(
+                area.files,
+                area.sections,
+                columns: 1,
+                extent: BrowserFileListRow.height,
+                header: FolderGroupHeader.height32,
+                gap: 0,
+                viewport: constraints.maxHeight,
+              );
+              return _buildList(context, area);
+            },
+          );
   }
 
   /// Wraps one tile in the subscription that is allowed to rebuild it.
@@ -911,7 +1026,35 @@ class _FileArea extends StatelessWidget {
         final List<BrowserFile> payload = flags.selected
             ? Provider.of<FileBrowserState>(context, listen: false).selectionPayload
             : <BrowserFile>[file];
-        return build(context, flags, payload);
+        final child = ExcludeFocus(child: build(context, flags, payload));
+        return ListenableSelector<bool>(
+          listenable: navigation,
+          selector: () => navigation.node.hasPrimaryFocus && navigation.cursor.active == file.path,
+          builder: (context) {
+            final focused =
+                navigation.node.hasPrimaryFocus && navigation.cursor.active == file.path;
+            return Semantics(
+              container: true,
+              excludeSemantics: true,
+              label: file.name,
+              button: true,
+              selected: flags.selected,
+              focusable: true,
+              focused: focused,
+              onTap: () => onDoubleTap(file),
+              child: DecoratedBox(
+                position: DecorationPosition.foreground,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(AppRadius.control),
+                  border: focused
+                      ? Border.all(color: Theme.of(context).colorScheme.primary, width: 2)
+                      : null,
+                ),
+                child: child,
+              ),
+            );
+          },
+        );
       },
     );
   }
@@ -938,6 +1081,15 @@ class _FileArea extends StatelessWidget {
           ),
         );
         final double cardHeight = FileCard.mainAxisExtentFor(context, cardWidth);
+        navigation.layout(
+          area.files,
+          area.sections,
+          columns: columns,
+          extent: cardHeight,
+          header: _gridHeaderExtent,
+          gap: _gap,
+          viewport: constraints.maxHeight,
+        );
         final gridDelegate = SliverGridDelegateWithMaxCrossAxisExtent(
           maxCrossAxisExtent: area.thumbnailSize,
           mainAxisSpacing: _gap,
@@ -991,6 +1143,7 @@ class _FileArea extends StatelessWidget {
         // run of the same grid. The geometry is what the spy was told above.
         return CustomScrollView(
           controller: scrollController,
+          semanticChildCount: area.files.length,
           slivers: [
             for (final section in area.sections) ...[
               SliverToBoxAdapter(
@@ -1006,6 +1159,7 @@ class _FileArea extends StatelessWidget {
                   delegate: SliverChildBuilderDelegate(
                     (context, index) => card(area.files[section.start + index]),
                     childCount: section.count,
+                    semanticIndexOffset: section.start,
                     addAutomaticKeepAlives: false,
                   ),
                 ),
@@ -1055,6 +1209,7 @@ class _FileArea extends StatelessWidget {
     // on the rows' icon column (left 20).
     return CustomScrollView(
       controller: scrollController,
+      semanticChildCount: area.files.length,
       slivers: [
         for (final section in area.sections) ...[
           SliverToBoxAdapter(
@@ -1070,6 +1225,7 @@ class _FileArea extends StatelessWidget {
             delegate: SliverChildBuilderDelegate(
               (context, index) => row(area.files[section.start + index]),
               childCount: section.count,
+              semanticIndexOffset: section.start,
               addAutomaticKeepAlives: false,
             ),
           ),

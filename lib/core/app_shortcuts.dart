@@ -233,6 +233,8 @@ abstract final class AppShortcutIds {
   static const exitSearch = 'exitSearch';
   static const selectWorkbenchTool = 'selectWorkbenchTool';
 
+  static const nextPane = 'nextPane';
+  static const previousPane = 'previousPane';
   static const gridMove = 'gridMove';
   static const gridExtend = 'gridExtend';
   static const gridFocus = 'gridFocus';
@@ -264,6 +266,8 @@ abstract final class AppShortcutIds {
     toggleConfigPanel,
     exitSearch,
     selectWorkbenchTool,
+    nextPane,
+    previousPane,
     gridMove,
     gridExtend,
     gridFocus,
@@ -434,11 +438,25 @@ abstract final class AppShortcuts {
     ),
 
     AppShortcut(
+      id: AppShortcutIds.nextPane,
+      layer: ShortcutLayer.screen,
+      labelKey: 'shortcutNextPane',
+      screens: {ShortcutScreen.fileBrowser},
+      keys: [ShortcutKey(LogicalKeyboardKey.f6)],
+    ),
+    AppShortcut(
+      id: AppShortcutIds.previousPane,
+      layer: ShortcutLayer.screen,
+      labelKey: 'shortcutPreviousPane',
+      screens: {ShortcutScreen.fileBrowser},
+      keys: [ShortcutKey(LogicalKeyboardKey.f6, shift: true)],
+    ),
+    AppShortcut(
       id: AppShortcutIds.gridMove,
       repeats: true,
       layer: ShortcutLayer.pane,
       labelKey: 'shortcutGridMove',
-      screens: {ShortcutScreen.workbench},
+      screens: _bothFileScreens,
       panes: {ShortcutPane.grid},
       keys: [
         ShortcutKey(LogicalKeyboardKey.arrowLeft),
@@ -452,7 +470,7 @@ abstract final class AppShortcuts {
       repeats: true,
       layer: ShortcutLayer.pane,
       labelKey: 'shortcutGridExtend',
-      screens: {ShortcutScreen.workbench},
+      screens: _bothFileScreens,
       panes: {ShortcutPane.grid},
       keys: [
         ShortcutKey(LogicalKeyboardKey.arrowLeft, shift: true),
@@ -466,7 +484,7 @@ abstract final class AppShortcuts {
       repeats: true,
       layer: ShortcutLayer.pane,
       labelKey: 'shortcutGridFocus',
-      screens: {ShortcutScreen.workbench},
+      screens: _bothFileScreens,
       panes: {ShortcutPane.grid},
       keys: [
         ShortcutKey(LogicalKeyboardKey.arrowLeft, primary: true),
@@ -479,7 +497,7 @@ abstract final class AppShortcuts {
       id: AppShortcutIds.gridToggle,
       layer: ShortcutLayer.pane,
       labelKey: 'shortcutGridToggle',
-      screens: {ShortcutScreen.workbench},
+      screens: _bothFileScreens,
       panes: {ShortcutPane.grid},
       keys: [ShortcutKey(LogicalKeyboardKey.space)],
     ),
