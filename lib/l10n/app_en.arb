@@ -994,6 +994,11 @@
       }
     }
   },
+  "resizePane": "Resize pane",
+  "moveDividerLeft": "Move divider left",
+  "moveDividerRight": "Move divider right",
+  "moveDividerUp": "Move divider up",
+  "moveDividerDown": "Move divider down",
   "downloader": "Downloader",
   "imageDownloader": "Image Downloader",
   "url": "URL",

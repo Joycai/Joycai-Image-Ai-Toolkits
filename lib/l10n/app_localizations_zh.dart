@@ -1145,6 +1145,21 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get resizePane => '调整面板大小';
+
+  @override
+  String get moveDividerLeft => '向左移动分隔条';
+
+  @override
+  String get moveDividerRight => '向右移动分隔条';
+
+  @override
+  String get moveDividerUp => '向上移动分隔条';
+
+  @override
+  String get moveDividerDown => '向下移动分隔条';
+
+  @override
   String get downloader => '下载器';
 
   @override
@@ -7497,6 +7512,21 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String folderOutlineFilesCount(int count) {
     return '$count 個檔案';
   }
+
+  @override
+  String get resizePane => '調整面板大小';
+
+  @override
+  String get moveDividerLeft => '向左移動分隔條';
+
+  @override
+  String get moveDividerRight => '向右移動分隔條';
+
+  @override
+  String get moveDividerUp => '向上移動分隔條';
+
+  @override
+  String get moveDividerDown => '向下移動分隔條';
 
   @override
   String get downloader => '下載器';

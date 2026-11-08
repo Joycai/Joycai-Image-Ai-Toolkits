@@ -1189,6 +1189,21 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get resizePane => 'Resize pane';
+
+  @override
+  String get moveDividerLeft => 'Move divider left';
+
+  @override
+  String get moveDividerRight => 'Move divider right';
+
+  @override
+  String get moveDividerUp => 'Move divider up';
+
+  @override
+  String get moveDividerDown => 'Move divider down';
+
+  @override
   String get downloader => 'Downloader';
 
   @override

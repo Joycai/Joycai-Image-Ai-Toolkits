@@ -8,6 +8,7 @@ import '../../core/app_theme.dart';
 import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
 import '../../widgets/glass/glass_controls.dart' show measureGlassText;
+import '../../widgets/ui/app_action_target.dart';
 import '../../widgets/ui/app_disclosure_chevron.dart';
 
 /// What a folder row shows while something is dragged over it (`00d · 1d`).
@@ -242,6 +243,7 @@ class FolderTreeRow extends StatefulWidget {
 
 class _FolderTreeRowState extends State<FolderTreeRow> {
   bool _hovered = false;
+  bool _focusWithin = false;
 
   void _setHovered(bool value) {
     if (_hovered != value) setState(() => _hovered = value);
@@ -302,7 +304,13 @@ class _FolderTreeRowState extends State<FolderTreeRow> {
     final Color countColor = selected ? colorScheme.onAccentTint : colorScheme.onSurfaceVariant;
 
     final bool showAction =
-        _hovered || selected || metrics.touch || Platform.isIOS || Platform.isAndroid;
+        _hovered ||
+        _focusWithin ||
+        widget.focused ||
+        selected ||
+        metrics.touch ||
+        Platform.isIOS ||
+        Platform.isAndroid;
 
     final children = <Widget>[
       if (widget.disclosure != null) _disclosure(colorScheme, band, gap),
@@ -400,18 +408,22 @@ class _FolderTreeRowState extends State<FolderTreeRow> {
       ),
     );
 
-    return MouseRegion(
-      cursor: widget.onTap != null ? SystemMouseCursors.click : MouseCursor.defer,
-      onEnter: (_) => _setHovered(true),
-      onExit: (_) => _setHovered(false),
-      child: Semantics(
-        button: widget.onTap != null,
-        selected: selected,
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: widget.onTap,
-          onSecondaryTapDown: widget.onSecondaryTapDown,
-          child: body,
+    return Focus(
+      skipTraversal: true,
+      onFocusChange: (focused) => setState(() => _focusWithin = focused),
+      child: MouseRegion(
+        cursor: widget.onTap != null ? SystemMouseCursors.click : MouseCursor.defer,
+        onEnter: (_) => _setHovered(true),
+        onExit: (_) => _setHovered(false),
+        child: Semantics(
+          button: widget.onTap != null,
+          selected: selected,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: widget.onTap,
+            onSecondaryTapDown: widget.onSecondaryTapDown,
+            child: body,
+          ),
         ),
       ),
     );
@@ -452,7 +464,12 @@ class _FolderTreeRowState extends State<FolderTreeRow> {
     if (!interactive) return slot;
     return MouseRegion(
       cursor: SystemMouseCursors.click,
-      child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: widget.onToggle, child: slot),
+      child: MergeSemantics(
+        child: Semantics(
+          expanded: disclosure == TreeDisclosure.expanded,
+          child: AppActionTarget(label: widget.label, onTap: widget.onToggle, child: slot),
+        ),
+      ),
     );
   }
 }
@@ -486,24 +503,26 @@ class _FolderTreeRowActionState extends State<FolderTreeRowAction> {
     final colorScheme = Theme.of(context).colorScheme;
     final metrics = FolderTreeMetrics.of(context);
     return Tooltip(
+      excludeFromSemantics: true,
       message: widget.tooltip,
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
         onEnter: (_) => setState(() => _hovered = true),
         onExit: (_) => setState(() => _hovered = false),
-        child: Semantics(
-          button: true,
-          label: widget.tooltip,
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: widget.onPressed,
-            child: SizedBox.square(
-              dimension: metrics.touch ? AppSize.control : 20,
-              child: Center(
-                child: Icon(
-                  widget.icon,
-                  size: AppSize.iconSm,
-                  color: _hovered ? colorScheme.onSurface : colorScheme.outline,
+        child: MergeSemantics(
+          child: Semantics(
+            button: true,
+            label: widget.tooltip,
+            child: AppActionTarget(
+              onTap: widget.onPressed,
+              child: SizedBox.square(
+                dimension: metrics.touch ? AppSize.control : 20,
+                child: Center(
+                  child: Icon(
+                    widget.icon,
+                    size: AppSize.iconSm,
+                    color: _hovered ? colorScheme.onSurface : colorScheme.outline,
+                  ),
                 ),
               ),
             ),

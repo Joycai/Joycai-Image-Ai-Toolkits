@@ -235,95 +235,97 @@ class _SearchablePickerFieldState<T> extends State<SearchablePickerField<T>> {
         ? colorScheme.outline
         : colorScheme.outline.withValues(alpha: AppAlpha.disabled);
 
-    return Semantics(
-      button: true,
-      enabled: enabled,
-      value: value?.label ?? widget.hint,
-      child: InkWell(
-        onTap: enabled ? _open : null,
-        onFocusChange: (v) => setState(() => _focused = v),
-        onHover: (v) => setState(() => _hovered = v),
-        borderRadius: BorderRadius.circular(AppRadius.control),
-        child: SizedBox(
-          height: pinned,
-          child: InputDecorator(
-            // Border and radius are the caller's decoration or, by default, the
-            // theme's; the insets and the trailing glyph are the size's.
-            decoration: widget.decoration.copyWith(
-              enabled: enabled,
-              contentPadding: contentPadding,
-              // expand_more, not unfold_more: the design draws a single
-              // downward chevron on every select-like field, and this is the one
-              // widget behind all of them. It brings the gap before it and the
-              // inset after it, so both are exactly the size's.
-              suffixIcon: Padding(
-                padding: EdgeInsetsDirectional.only(start: size.chevronGap, end: size.inset),
-                child: Icon(Icons.expand_more, size: size.chevron, color: outline),
+    return MergeSemantics(
+      child: Semantics(
+        button: true,
+        enabled: enabled,
+        value: value?.label ?? widget.hint,
+        child: InkWell(
+          onTap: enabled ? _open : null,
+          onFocusChange: (v) => setState(() => _focused = v),
+          onHover: (v) => setState(() => _hovered = v),
+          borderRadius: BorderRadius.circular(AppRadius.control),
+          child: SizedBox(
+            height: pinned,
+            child: InputDecorator(
+              // Border and radius are the caller's decoration or, by default, the
+              // theme's; the insets and the trailing glyph are the size's.
+              decoration: widget.decoration.copyWith(
+                enabled: enabled,
+                contentPadding: contentPadding,
+                // expand_more, not unfold_more: the design draws a single
+                // downward chevron on every select-like field, and this is the one
+                // widget behind all of them. It brings the gap before it and the
+                // inset after it, so both are exactly the size's.
+                suffixIcon: Padding(
+                  padding: EdgeInsetsDirectional.only(start: size.chevronGap, end: size.inset),
+                  child: Icon(Icons.expand_more, size: size.chevron, color: outline),
+                ),
+                suffixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
               ),
-              suffixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
-            ),
-            isFocused: _focused,
-            isHovering: _hovered,
-            // A pinned box is filled and the value centred in it; an unpinned
-            // one is sized by its line of type, as an AppTextField is.
-            expands: pinned != null,
-            textAlignVertical: pinned != null ? TextAlignVertical.center : null,
-            // Never "empty", even with nothing selected: this field always draws
-            // something in its content area — the value or [hint] — so a
-            // decoration that carries a `labelText` must float it rather than
-            // lay it over the top.
-            isEmpty: false,
-            child: value == null
-                ? Text(
-                    widget.hint,
-                    style: valueStyle?.copyWith(color: outline),
-                    overflow: TextOverflow.ellipsis,
-                  )
-                : LayoutBuilder(
-                    builder: (context, constraints) => Row(
-                      children: [
-                        if (value.badge != null) ...[
-                          if (widget.badgeStyle == PickerBadge.dot)
-                            // No cap needed: a dot is a dot.
-                            Container(
-                              width: 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                color: value.badgeColor ?? colorScheme.primary,
-                                shape: BoxShape.circle,
+              isFocused: _focused,
+              isHovering: _hovered,
+              // A pinned box is filled and the value centred in it; an unpinned
+              // one is sized by its line of type, as an AppTextField is.
+              expands: pinned != null,
+              textAlignVertical: pinned != null ? TextAlignVertical.center : null,
+              // Never "empty", even with nothing selected: this field always draws
+              // something in its content area — the value or [hint] — so a
+              // decoration that carries a `labelText` must float it rather than
+              // lay it over the top.
+              isEmpty: false,
+              child: value == null
+                  ? Text(
+                      widget.hint,
+                      style: valueStyle?.copyWith(color: outline),
+                      overflow: TextOverflow.ellipsis,
+                    )
+                  : LayoutBuilder(
+                      builder: (context, constraints) => Row(
+                        children: [
+                          if (value.badge != null) ...[
+                            if (widget.badgeStyle == PickerBadge.dot)
+                              // No cap needed: a dot is a dot.
+                              Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: value.badgeColor ?? colorScheme.primary,
+                                  shape: BoxShape.circle,
+                                ),
+                              )
+                            else if (widget.badgeStyle == PickerBadge.avatar)
+                              // Fixed-size, so the free-text cap below does not
+                              // apply: a disc shows one letter no matter how long
+                              // the tag is.
+                              TagAvatar(value.badge!, color: value.badgeColor, size: 20)
+                            else
+                              ConstrainedBox(
+                                // A third of the field, at most. The channel tag is
+                                // free text with no length limit, and unbounded it
+                                // took the whole row at mobile width and left
+                                // `Expanded` nothing — a RenderFlex overflow with
+                                // the name ellipsized away to start with.
+                                constraints: BoxConstraints(maxWidth: constraints.maxWidth / 3),
+                                child: ModelTagChip(
+                                  value.badge!,
+                                  color: value.badgeColor,
+                                  uppercase: false,
+                                ),
                               ),
-                            )
-                          else if (widget.badgeStyle == PickerBadge.avatar)
-                            // Fixed-size, so the free-text cap below does not
-                            // apply: a disc shows one letter no matter how long
-                            // the tag is.
-                            TagAvatar(value.badge!, color: value.badgeColor, size: 20)
-                          else
-                            ConstrainedBox(
-                              // A third of the field, at most. The channel tag is
-                              // free text with no length limit, and unbounded it
-                              // took the whole row at mobile width and left
-                              // `Expanded` nothing — a RenderFlex overflow with
-                              // the name ellipsized away to start with.
-                              constraints: BoxConstraints(maxWidth: constraints.maxWidth / 3),
-                              child: ModelTagChip(
-                                value.badge!,
-                                color: value.badgeColor,
-                                uppercase: false,
-                              ),
+                            const SizedBox(width: 8),
+                          ],
+                          Expanded(
+                            child: Text(
+                              value.label,
+                              style: valueStyle,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                          const SizedBox(width: 8),
-                        ],
-                        Expanded(
-                          child: Text(
-                            value.label,
-                            style: valueStyle,
-                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
+            ),
           ),
         ),
       ),
@@ -629,81 +631,89 @@ class _PickerRow<T> extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final secondary = option.secondary;
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 2),
-      child: Material(
-        type: MaterialType.transparency,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(AppRadius.control),
-          child: Ink(
-            decoration: BoxDecoration(
-              // The accent ladder: a selected thing is a wash with a ring, and
-              // its label is the accent's own readable tone. See AppAccent.
-              color: selected ? colorScheme.accentTint : null,
+    return MergeSemantics(
+      child: Semantics(
+        button: true,
+        selected: selected,
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 2),
+          child: Material(
+            type: MaterialType.transparency,
+            child: InkWell(
+              onTap: onTap,
               borderRadius: BorderRadius.circular(AppRadius.control),
-              border: selected ? Border.all(color: colorScheme.accentRing) : null,
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              child: Row(
-                children: [
-                  if (option.badge != null) ...[
-                    ConstrainedBox(
-                      // Bounded for the same reason as the collapsed field's:
-                      // a long channel tag would otherwise take the row and
-                      // leave `Expanded` nothing to put the name in.
-                      constraints: const BoxConstraints(maxWidth: 120),
-                      child: ModelTagChip(
-                        option.badge!,
-                        color: option.badgeColor,
-                        uppercase: false,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                  ],
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          option.label,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: textTheme.bodySmall?.copyWith(
-                            color: selected ? colorScheme.onAccentTint : colorScheme.onSurface,
-                            fontWeight: selected ? FontWeight.w600 : null,
+              child: Ink(
+                decoration: BoxDecoration(
+                  // The accent ladder: a selected thing is a wash with a ring, and
+                  // its label is the accent's own readable tone. See AppAccent.
+                  color: selected ? colorScheme.accentTint : null,
+                  borderRadius: BorderRadius.circular(AppRadius.control),
+                  border: selected ? Border.all(color: colorScheme.accentRing) : null,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  child: Row(
+                    children: [
+                      if (option.badge != null) ...[
+                        ConstrainedBox(
+                          // Bounded for the same reason as the collapsed field's:
+                          // a long channel tag would otherwise take the row and
+                          // leave `Expanded` nothing to put the name in.
+                          constraints: const BoxConstraints(maxWidth: 120),
+                          child: ModelTagChip(
+                            option.badge!,
+                            color: option.badgeColor,
+                            uppercase: false,
                           ),
                         ),
-                        if (secondary != null && secondary.isNotEmpty)
-                          Text(
-                            secondary,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            // An identifier, not prose — mono so it reads as
-                            // the thing you would paste into a config.
-                            style: textTheme.labelSmall?.mono.copyWith(color: colorScheme.outline),
-                          ),
+                        const SizedBox(width: 8),
                       ],
-                    ),
-                  ),
-                  if (option.marker != null && option.marker!.isNotEmpty) ...[
-                    const SizedBox(width: 8),
-                    ConstrainedBox(
-                      // Bounded like the badge: the name keeps the row.
-                      constraints: const BoxConstraints(maxWidth: 96),
-                      child: AppNeutralMarker(
-                        icon: option.markerIcon ?? Icons.label_outline,
-                        label: option.marker!,
+                      Expanded(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              option.label,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: textTheme.bodySmall?.copyWith(
+                                color: selected ? colorScheme.onAccentTint : colorScheme.onSurface,
+                                fontWeight: selected ? FontWeight.w600 : null,
+                              ),
+                            ),
+                            if (secondary != null && secondary.isNotEmpty)
+                              Text(
+                                secondary,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                // An identifier, not prose — mono so it reads as
+                                // the thing you would paste into a config.
+                                style: textTheme.labelSmall?.mono.copyWith(
+                                  color: colorScheme.outline,
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                  if (selected) ...[
-                    const SizedBox(width: 8),
-                    Icon(Icons.check, size: AppSize.iconSm, color: colorScheme.onAccentTint),
-                  ],
-                ],
+                      if (option.marker != null && option.marker!.isNotEmpty) ...[
+                        const SizedBox(width: 8),
+                        ConstrainedBox(
+                          // Bounded like the badge: the name keeps the row.
+                          constraints: const BoxConstraints(maxWidth: 96),
+                          child: AppNeutralMarker(
+                            icon: option.markerIcon ?? Icons.label_outline,
+                            label: option.marker!,
+                          ),
+                        ),
+                      ],
+                      if (selected) ...[
+                        const SizedBox(width: 8),
+                        Icon(Icons.check, size: AppSize.iconSm, color: colorScheme.onAccentTint),
+                      ],
+                    ],
+                  ),
+                ),
               ),
             ),
           ),

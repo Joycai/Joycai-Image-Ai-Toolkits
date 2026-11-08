@@ -156,5 +156,10 @@
         "type": "int"
       }
     }
-  }
+  },
+  "resizePane": "调整面板大小",
+  "moveDividerLeft": "向左移动分隔条",
+  "moveDividerRight": "向右移动分隔条",
+  "moveDividerUp": "向上移动分隔条",
+  "moveDividerDown": "向下移动分隔条"
 }

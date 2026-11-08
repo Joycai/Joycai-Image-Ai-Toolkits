@@ -9,6 +9,7 @@ import '../../../state/file_browser_state.dart';
 import '../../../state/file_staging_state.dart';
 import '../../../widgets/glass/app_glass.dart';
 import '../../../widgets/glass/glass_controls.dart';
+import '../../../widgets/ui/app_action_target.dart';
 
 /// The floating bar shown at the bottom centre of the file area while files
 /// are selected — `B1a · 1a`.
@@ -248,8 +249,8 @@ class _AiRenameButton extends StatelessWidget {
 
     Widget result = MouseRegion(
       cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
+      child: AppActionTarget(
+        excludeChildSemantics: true,
         onTap: onPressed,
         child: AppTintedGlass(
           borderRadius: BorderRadius.circular(AppRadius.control),
@@ -257,7 +258,7 @@ class _AiRenameButton extends StatelessWidget {
         ),
       ),
     );
-    if (compact) result = Tooltip(message: label, child: result);
+    if (compact) result = Tooltip(excludeFromSemantics: true, message: label, child: result);
     return Semantics(button: true, label: label, child: result);
   }
 }

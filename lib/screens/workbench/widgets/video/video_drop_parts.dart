@@ -271,8 +271,7 @@ class _PlateCloseButton extends StatelessWidget {
         button: true,
         child: MouseRegion(
           cursor: SystemMouseCursors.click,
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
+          child: AppActionTarget(
             onTap: onPressed,
             child: Container(
               width: size,

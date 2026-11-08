@@ -29,6 +29,16 @@ existing InkWell keyboard highlight and horizontally scrolling strip. The task
 pin preference has one named native Switch focus/action; its surrounding label
 remains pointer-clickable but does not add another keyboard or semantic action.
 
+Custom single-action surfaces use `AppActionTarget` for Tab, activation, disabled
+state and an inset keyboard focus outline. Supply one accessible name; exclude
+decorative text and visual tooltips from repeating it. `AppControlLabel` merges a
+standard icon action with its name and supplies the visual tooltip explicitly.
+Never merge an entire container with multiple independent controls: setting rows
+merge only a single Switch, keeping footers separate. Media previews must expose
+their controls; focused controls remain visible when the pointer leaves. Splitters
+use `AppResizeTarget`, retaining the original bounded delta/persistence callbacks.
+See the [custom-control audit](../custom-controls-accessibility-audit.md) for scope.
+
 - [Design tokens](design-tokens.md) defines the visual contract and accepted
   departures from the original designs. Its linked core files and contract tests
   provide the implemented values; use existing shared components under

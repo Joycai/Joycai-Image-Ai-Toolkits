@@ -36,40 +36,43 @@ class _HueRingState extends State<_HueRing> {
     final l10n = AppLocalizations.of(context)!;
     final ColorScheme colorScheme = Theme.of(context).colorScheme;
 
-    return Semantics(
-      label: l10n.customColor,
-      value: '${widget.hue.round()}°',
-      increasedValue: '${((widget.hue + 5) % 360).round()}°',
-      decreasedValue: '${((widget.hue - 5 + 360) % 360).round()}°',
-      onIncrease: () => _step(5),
-      onDecrease: () => _step(-5),
-      child: Focus(
-        onFocusChange: (v) => setState(() => _focused = v),
-        onKeyEvent: (node, event) {
-          if (event is! KeyDownEvent && event is! KeyRepeatEvent) return KeyEventResult.ignored;
-          if (event.logicalKey == LogicalKeyboardKey.arrowRight ||
-              event.logicalKey == LogicalKeyboardKey.arrowUp) {
-            _step(5);
-            return KeyEventResult.handled;
-          }
-          if (event.logicalKey == LogicalKeyboardKey.arrowLeft ||
-              event.logicalKey == LogicalKeyboardKey.arrowDown) {
-            _step(-5);
-            return KeyEventResult.handled;
-          }
-          return KeyEventResult.ignored;
-        },
-        child: GestureDetector(
-          onPanDown: (d) => _fromPosition(d.localPosition),
-          onPanUpdate: (d) => _fromPosition(d.localPosition),
-          child: SizedBox.square(
-            dimension: _HueRing.size,
-            child: CustomPaint(
-              painter: _HueRingPainter(
-                hue: widget.hue,
-                seed: widget.seed,
-                focusRing: _focused ? colorScheme.accentRing : null,
-                stops: _hueStops,
+    return MergeSemantics(
+      child: Semantics(
+        slider: true,
+        label: l10n.customColor,
+        value: '${widget.hue.round()}°',
+        increasedValue: '${((widget.hue + 5) % 360).round()}°',
+        decreasedValue: '${((widget.hue - 5 + 360) % 360).round()}°',
+        onIncrease: () => _step(5),
+        onDecrease: () => _step(-5),
+        child: Focus(
+          onFocusChange: (v) => setState(() => _focused = v),
+          onKeyEvent: (node, event) {
+            if (event is! KeyDownEvent && event is! KeyRepeatEvent) return KeyEventResult.ignored;
+            if (event.logicalKey == LogicalKeyboardKey.arrowRight ||
+                event.logicalKey == LogicalKeyboardKey.arrowUp) {
+              _step(5);
+              return KeyEventResult.handled;
+            }
+            if (event.logicalKey == LogicalKeyboardKey.arrowLeft ||
+                event.logicalKey == LogicalKeyboardKey.arrowDown) {
+              _step(-5);
+              return KeyEventResult.handled;
+            }
+            return KeyEventResult.ignored;
+          },
+          child: GestureDetector(
+            onPanDown: (d) => _fromPosition(d.localPosition),
+            onPanUpdate: (d) => _fromPosition(d.localPosition),
+            child: SizedBox.square(
+              dimension: _HueRing.size,
+              child: CustomPaint(
+                painter: _HueRingPainter(
+                  hue: widget.hue,
+                  seed: widget.seed,
+                  focusRing: _focused ? colorScheme.accentRing : null,
+                  stops: _hueStops,
+                ),
               ),
             ),
           ),

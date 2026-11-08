@@ -13,6 +13,7 @@ import '../../services/tasks/task_queue_service.dart';
 import '../../state/app_state.dart';
 import '../glass/app_glass.dart';
 import '../shell/app_destinations.dart';
+import '../ui/app_action_target.dart';
 import '../ui/app_breathing_dot.dart';
 import 'smooth_progress.dart';
 import 'task_type_glyph.dart';
@@ -209,204 +210,224 @@ class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor>
       headline = l10n.plannedCount(pendingCount);
     }
 
-    final Widget capsule = IgnorePointer(
-      ignoring: !visible,
-      child: Listener(
-        onPointerDown: (_) => setState(() => _pressed = true),
-        onPointerUp: (_) => setState(() => _pressed = false),
-        onPointerCancel: (_) => setState(() => _pressed = false),
-        child: GestureDetector(
-          onPanStart: (_) => setState(() {
-            // Grab it where it is: a capsule caught mid-flight must not jump
-            // to its target under the finger.
-            _offset = _renderOffset;
-            _settle.stop();
-            _settleFrom = null;
-            _settleTo = null;
-            _dragOffset = _offset;
-          }),
-          onPanUpdate: (details) {
-            setState(() {
-              final raw = Offset(
-                _dragOffset!.dx + details.delta.dx,
-                _dragOffset!.dy - details.delta.dy,
+    final Widget capsule = ExcludeFocus(
+      excluding: !visible,
+      child: IgnorePointer(
+        ignoring: !visible,
+        child: Listener(
+          onPointerDown: (_) => setState(() => _pressed = true),
+          onPointerUp: (_) => setState(() => _pressed = false),
+          onPointerCancel: (_) => setState(() => _pressed = false),
+          child: GestureDetector(
+            excludeFromSemantics: true,
+            onPanStart: (_) => setState(() {
+              // Grab it where it is: a capsule caught mid-flight must not jump
+              // to its target under the finger.
+              _offset = _renderOffset;
+              _settle.stop();
+              _settleFrom = null;
+              _settleTo = null;
+              _dragOffset = _offset;
+            }),
+            onPanUpdate: (details) {
+              setState(() {
+                final raw = Offset(
+                  _dragOffset!.dx + details.delta.dx,
+                  _dragOffset!.dy - details.delta.dy,
+                );
+                _dragOffset = Offset(
+                  raw.dx.clamp(0.0 - _kDragSlack, maxX + _kDragSlack),
+                  raw.dy.clamp(0.0 - _kDragSlack, maxY + _kDragSlack),
+                );
+                _offset = Offset(
+                  _dragOffset!.dx.clamp(0.0, maxX),
+                  _dragOffset!.dy.clamp(0.0, maxY),
+                );
+              });
+            },
+            onPanEnd: (details) {
+              final v = details.velocity.pixelsPerSecond;
+              final projected = Offset(_offset!.dx + _project(v.dx), _offset!.dy - _project(v.dy));
+              final double snapX = (projected.dx + capsuleWidth / 2) < screenSize.width / 2
+                  ? _kEdgeInset
+                  : maxX - _kEdgeInset;
+              final Offset target = Offset(
+                v.distance < 100 ? _offset!.dx : snapX,
+                projected.dy.clamp(_kEdgeInset, maxY),
               );
-              _dragOffset = Offset(
-                raw.dx.clamp(0.0 - _kDragSlack, maxX + _kDragSlack),
-                raw.dy.clamp(0.0 - _kDragSlack, maxY + _kDragSlack),
-              );
-              _offset = Offset(_dragOffset!.dx.clamp(0.0, maxX), _dragOffset!.dy.clamp(0.0, maxY));
-            });
-          },
-          onPanEnd: (details) {
-            final v = details.velocity.pixelsPerSecond;
-            final projected = Offset(_offset!.dx + _project(v.dx), _offset!.dy - _project(v.dy));
-            final double snapX = (projected.dx + capsuleWidth / 2) < screenSize.width / 2
-                ? _kEdgeInset
-                : maxX - _kEdgeInset;
-            final Offset target = Offset(
-              v.distance < 100 ? _offset!.dx : snapX,
-              projected.dy.clamp(_kEdgeInset, maxY),
-            );
-            setState(() => _dragOffset = null);
-            _settleAt(target, v);
-          },
-          onPanCancel: () => setState(() => _dragOffset = null),
-          onTap: () => _setExpanded(!_isExpanded),
-          child: AnimatedOpacity(
-            opacity: visible ? 1.0 : 0.0,
-            duration: AppMotion.sceneOf(context),
-            curve: AppMotion.emphasized,
-            child: AnimatedSlide(
-              // `00 · 1e` M3: floating pieces enter from 12px below.
-              offset: visible ? Offset.zero : const Offset(0, 0.25),
+              setState(() => _dragOffset = null);
+              _settleAt(target, v);
+            },
+            onPanCancel: () => setState(() => _dragOffset = null),
+            onTap: () => _setExpanded(!_isExpanded),
+            child: AnimatedOpacity(
+              opacity: visible ? 1.0 : 0.0,
               duration: AppMotion.sceneOf(context),
               curve: AppMotion.emphasized,
-              child: Material(
-                type: MaterialType.transparency,
-                child: AnimatedContainer(
-                  duration: AppMotion.sceneOf(context),
-                  curve: AppMotion.emphasized,
-                  width: capsuleWidth,
-                  child: AppGlass(
-                    grade: GlassGrade.float,
-                    pressed: _pressed,
-                    borderRadius: BorderRadius.circular(
-                      _isExpanded ? AppRadius.dialog : AppRadius.lg,
-                    ),
-                    padding: EdgeInsets.fromLTRB(isPhone ? 12 : 10, 8, isPhone ? 12 : 10, 6),
-                    child: Builder(
-                      builder: (context) {
-                        final glass = GlassInk.maybeOf(context);
-                        final ink = glass?.ink ?? scheme.onSurface;
-                        final ink2 = glass?.ink2 ?? scheme.onSurfaceVariant;
-                        final edge = glass?.edge ?? scheme.outlineVariant;
-                        final track = (glass?.reduced ?? false)
-                            ? scheme.surfaceContainerHighest
-                            : ink.withValues(alpha: 0.14);
-                        final headStyle = (isPhone ? textTheme.bodyMedium! : textTheme.bodySmall!)
-                            .metricsOnly
-                            .copyWith(fontWeight: FontWeight.w600);
-                        final numberStyle = (isPhone ? textTheme.bodySmall! : textTheme.labelSmall!)
-                            .mono
-                            .copyWith(color: ink2, fontWeight: FontWeight.w400);
+              child: AnimatedSlide(
+                // `00 · 1e` M3: floating pieces enter from 12px below.
+                offset: visible ? Offset.zero : const Offset(0, 0.25),
+                duration: AppMotion.sceneOf(context),
+                curve: AppMotion.emphasized,
+                child: Material(
+                  type: MaterialType.transparency,
+                  child: AnimatedContainer(
+                    duration: AppMotion.sceneOf(context),
+                    curve: AppMotion.emphasized,
+                    width: capsuleWidth,
+                    child: AppGlass(
+                      grade: GlassGrade.float,
+                      pressed: _pressed,
+                      borderRadius: BorderRadius.circular(
+                        _isExpanded ? AppRadius.dialog : AppRadius.lg,
+                      ),
+                      padding: EdgeInsets.fromLTRB(isPhone ? 12 : 10, 8, isPhone ? 12 : 10, 6),
+                      child: Builder(
+                        builder: (context) {
+                          final glass = GlassInk.maybeOf(context);
+                          final ink = glass?.ink ?? scheme.onSurface;
+                          final ink2 = glass?.ink2 ?? scheme.onSurfaceVariant;
+                          final edge = glass?.edge ?? scheme.outlineVariant;
+                          final track = (glass?.reduced ?? false)
+                              ? scheme.surfaceContainerHighest
+                              : ink.withValues(alpha: 0.14);
+                          final headStyle = (isPhone ? textTheme.bodyMedium! : textTheme.bodySmall!)
+                              .metricsOnly
+                              .copyWith(fontWeight: FontWeight.w600);
+                          final numberStyle =
+                              (isPhone ? textTheme.bodySmall! : textTheme.labelSmall!).mono
+                                  .copyWith(color: ink2, fontWeight: FontWeight.w400);
 
-                        final bool userResize = _userResizing;
-                        return AnimatedSize(
-                          duration: userResize
-                              ? AppMotion.sceneOf(context)
-                              : AppMotion.durationOf(context, AppMotion.state),
-                          curve: userResize ? AppMotion.emphasized : AppMotion.enter,
-                          alignment: Alignment.bottomCenter,
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Row(
-                                children: [
-                                  AppBreathingDot(
-                                    color: runningCount > 0 ? scheme.primary : ink2,
-                                    breathing: runningCount > 0,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      headline,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: headStyle,
+                          final bool userResize = _userResizing;
+                          return AnimatedSize(
+                            duration: userResize
+                                ? AppMotion.sceneOf(context)
+                                : AppMotion.durationOf(context, AppMotion.state),
+                            curve: userResize ? AppMotion.emphasized : AppMotion.enter,
+                            alignment: Alignment.bottomCenter,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                MergeSemantics(
+                                  child: Semantics(
+                                    expanded: _isExpanded,
+                                    child: AppActionTarget(
+                                      onTap: visible ? () => _setExpanded(!_isExpanded) : null,
+                                      child: Row(
+                                        children: [
+                                          AppBreathingDot(
+                                            color: runningCount > 0 ? scheme.primary : ink2,
+                                            breathing: runningCount > 0,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              headline,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: headStyle,
+                                            ),
+                                          ),
+                                          if (runningCount > 0)
+                                            Text(
+                                              '${(avgProgress * 100).toInt()}%',
+                                              style: numberStyle,
+                                            ),
+                                          const SizedBox(width: 4),
+                                          Icon(
+                                            _isExpanded ? Icons.expand_more : Icons.expand_less,
+                                            size: AppSize.iconMd,
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
-                                  if (runningCount > 0)
-                                    Text('${(avgProgress * 100).toInt()}%', style: numberStyle),
-                                  const SizedBox(width: 4),
-                                  Icon(
-                                    _isExpanded ? Icons.expand_more : Icons.expand_less,
-                                    size: AppSize.iconMd,
+                                ),
+                                if (runningCount > 0) ...[
+                                  const SizedBox(height: 6),
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(2),
+                                    child: SmoothProgress(
+                                      value: avgProgress,
+                                      builder: (context, v) => LinearProgressIndicator(
+                                        value: v,
+                                        minHeight: 3,
+                                        backgroundColor: track,
+                                        valueColor: AlwaysStoppedAnimation<Color>(scheme.primary),
+                                      ),
+                                    ),
                                   ),
                                 ],
-                              ),
-                              if (runningCount > 0) ...[
-                                const SizedBox(height: 6),
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(2),
-                                  child: SmoothProgress(
-                                    value: avgProgress,
-                                    builder: (context, v) => LinearProgressIndicator(
-                                      value: v,
-                                      minHeight: 3,
-                                      backgroundColor: track,
-                                      valueColor: AlwaysStoppedAnimation<Color>(scheme.primary),
-                                    ),
+                                if (_isExpanded) ...[
+                                  Container(
+                                    height: 1,
+                                    margin: const EdgeInsets.symmetric(vertical: 8),
+                                    color: edge,
                                   ),
-                                ),
-                              ],
-                              if (_isExpanded) ...[
-                                Container(
-                                  height: 1,
-                                  margin: const EdgeInsets.symmetric(vertical: 8),
-                                  color: edge,
-                                ),
-                                if (pendingCount > 0 && runningCount > 0 && !isPhone)
-                                  Padding(
-                                    padding: const EdgeInsets.only(bottom: 4),
-                                    child: Text(
-                                      l10n.plannedCount(pendingCount),
-                                      style: textTheme.bodySmall!.metricsOnly.copyWith(color: ink2),
+                                  if (pendingCount > 0 && runningCount > 0 && !isPhone)
+                                    Padding(
+                                      padding: const EdgeInsets.only(bottom: 4),
+                                      child: Text(
+                                        l10n.plannedCount(pendingCount),
+                                        style: textTheme.bodySmall!.metricsOnly.copyWith(
+                                          color: ink2,
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                for (final t in activeTasks.take(3))
-                                  SizedBox(
-                                    height: 28,
-                                    child: Row(
-                                      children: [
-                                        Icon(t.type.glyph, size: AppSize.iconSm, color: ink2),
-                                        const SizedBox(width: 8),
-                                        Expanded(
-                                          child: Text(
-                                            t.modelId,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: textTheme.labelSmall!.mono.copyWith(
-                                              color: ink,
-                                              fontWeight: FontWeight.w400,
+                                  for (final t in activeTasks.take(3))
+                                    SizedBox(
+                                      height: 28,
+                                      child: Row(
+                                        children: [
+                                          Icon(t.type.glyph, size: AppSize.iconSm, color: ink2),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              t.modelId,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: textTheme.labelSmall!.mono.copyWith(
+                                                color: ink,
+                                                fontWeight: FontWeight.w400,
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        SizedBox(
-                                          width: 14,
-                                          height: 14,
-                                          child: SmoothProgress(
-                                            value: t.progress,
-                                            builder: (context, v) => CircularProgressIndicator(
-                                              value: v,
-                                              strokeWidth: 2,
-                                              color: scheme.primary,
-                                              backgroundColor: track,
+                                          const SizedBox(width: 8),
+                                          SizedBox(
+                                            width: 14,
+                                            height: 14,
+                                            child: SmoothProgress(
+                                              value: t.progress,
+                                              builder: (context, v) => CircularProgressIndicator(
+                                                value: v,
+                                                strokeWidth: 2,
+                                                color: scheme.primary,
+                                                backgroundColor: track,
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
+                                    ),
+                                  Align(
+                                    alignment: Alignment.centerRight,
+                                    child: TextButton(
+                                      onPressed: () {
+                                        context.read<AppState>().navigateToScreen(
+                                          AppDestination.tasks.index,
+                                        );
+                                        _setExpanded(false);
+                                      },
+                                      child: Text(l10n.viewAll),
                                     ),
                                   ),
-                                Align(
-                                  alignment: Alignment.centerRight,
-                                  child: TextButton(
-                                    onPressed: () {
-                                      context.read<AppState>().navigateToScreen(
-                                        AppDestination.tasks.index,
-                                      );
-                                      _setExpanded(false);
-                                    },
-                                    child: Text(l10n.viewAll),
-                                  ),
-                                ),
+                                ],
                               ],
-                            ],
-                          ),
-                        );
-                      },
+                            ),
+                          );
+                        },
+                      ),
                     ),
                   ),
                 ),

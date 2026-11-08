@@ -12,6 +12,7 @@ import '../../../../core/design_tokens.dart';
 import '../../../../core/responsive.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../state/workbench_ui_state.dart';
+import '../../../../widgets/ui/app_action_target.dart';
 import '../../../../widgets/ui/app_button.dart';
 import '../../../../widgets/ui/app_icon_button.dart';
 
@@ -619,6 +620,7 @@ class _VideoSurface extends StatefulWidget {
 
 class _VideoSurfaceState extends State<_VideoSurface> {
   bool _hovering = false;
+  bool _focused = false;
 
   void _setHovering(bool value) {
     if (_hovering != value) setState(() => _hovering = value);
@@ -627,42 +629,46 @@ class _VideoSurfaceState extends State<_VideoSurface> {
   @override
   Widget build(BuildContext context) {
     final controller = widget.controller;
-    return MouseRegion(
-      onEnter: (_) => _setHovering(true),
-      onExit: (_) => _setHovering(false),
-      child: GestureDetector(
-        onTap: () => _togglePlay(controller),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            // The letterbox behind a video whose shape is not the box's.
-            const ColoredBox(color: AppOverlay.ink),
-            Center(
-              child: AspectRatio(
-                aspectRatio: controller.value.aspectRatio,
-                child: VideoPlayer(controller),
+    return Focus(
+      skipTraversal: true,
+      onFocusChange: (value) => setState(() => _focused = value),
+      child: MouseRegion(
+        onEnter: (_) => _setHovering(true),
+        onExit: (_) => _setHovering(false),
+        child: GestureDetector(
+          onTap: () => _togglePlay(controller),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // The letterbox behind a video whose shape is not the box's.
+              const ColoredBox(color: AppOverlay.ink),
+              Center(
+                child: AspectRatio(
+                  aspectRatio: controller.value.aspectRatio,
+                  child: VideoPlayer(controller),
+                ),
               ),
-            ),
-            _CentrePlayButton(
-              controller: controller,
-              hovering: _hovering,
-              iconSize: widget.playIcon,
-            ),
-            if (widget.compact)
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: _ProgressTrack(controller: controller),
-              )
-            else
-              Positioned(
-                left: AppSpace.s6,
-                right: AppSpace.s6,
-                bottom: AppSpace.s6,
-                child: _TransportBar(controller: controller),
+              _CentrePlayButton(
+                controller: controller,
+                hovering: _hovering || _focused,
+                iconSize: widget.playIcon,
               ),
-          ],
+              if (widget.compact)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: _ProgressTrack(controller: controller),
+                )
+              else
+                Positioned(
+                  left: AppSpace.s6,
+                  right: AppSpace.s6,
+                  bottom: AppSpace.s6,
+                  child: _TransportBar(controller: controller),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -713,7 +719,7 @@ class _CentrePlayButton extends StatelessWidget {
                       : AppLocalizations.of(context)!.videoPlay,
                   child: MouseRegion(
                     cursor: SystemMouseCursors.click,
-                    child: GestureDetector(
+                    child: AppActionTarget(
                       onTap: () => _togglePlay(controller),
                       child: Container(
                         width: iconSize + 12,
@@ -783,7 +789,7 @@ class _TransportBar extends StatelessWidget {
                 message: muted ? l10n.videoUnmute : l10n.videoMute,
                 child: MouseRegion(
                   cursor: SystemMouseCursors.click,
-                  child: GestureDetector(
+                  child: AppActionTarget(
                     onTap: () => controller.setVolume(muted ? 1 : 0),
                     child: Icon(
                       muted ? Icons.volume_off : Icons.volume_up,

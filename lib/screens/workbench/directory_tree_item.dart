@@ -490,6 +490,7 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
       marker = SizedBox.square(
         dimension: metrics.markerBox,
         child: Checkbox(
+          semanticLabel: widget.path,
           value: isSelected,
           onChanged: (_) {
             if (widget.useFileBrowserState) {

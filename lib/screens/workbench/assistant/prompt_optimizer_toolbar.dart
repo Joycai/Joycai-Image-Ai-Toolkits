@@ -5,6 +5,7 @@ import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../widgets/glass/app_glass.dart';
 import '../../../widgets/glass/glass_controls.dart';
+import '../../../widgets/ui/app_action_target.dart';
 import '../../../widgets/ui/app_breathing_dot.dart';
 import '../../../widgets/ui/app_menu_anchor.dart';
 
@@ -300,7 +301,9 @@ class _Chip extends StatelessWidget {
         ],
       ),
     );
-    if (tooltip != null && label == null) chip = Tooltip(message: tooltip!, child: chip);
+    if (tooltip != null && label == null) {
+      chip = Tooltip(excludeFromSemantics: true, message: tooltip!, child: chip);
+    }
     return chip;
   }
 }
@@ -327,7 +330,8 @@ class _TintedAction extends StatelessWidget {
     final enabled = onPressed != null;
     Widget button = MouseRegion(
       cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
-      child: GestureDetector(
+      child: AppActionTarget(
+        excludeChildSemantics: true,
         onTap: onPressed,
         child: AppTintedGlass(
           enabled: enabled,
@@ -348,7 +352,9 @@ class _TintedAction extends StatelessWidget {
         ),
       ),
     );
-    if (tooltip != null) button = Tooltip(message: tooltip!, child: button);
+    if (tooltip != null) {
+      button = Tooltip(excludeFromSemantics: true, message: tooltip!, child: button);
+    }
     return Semantics(button: true, enabled: enabled, label: tooltip ?? label, child: button);
   }
 }

@@ -138,29 +138,32 @@ class ChannelColorSwatch extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return Semantics(
-      button: true,
-      selected: selected,
-      child: InkWell(
-        onTap: onTap,
-        customBorder: const CircleBorder(),
-        child: SizedBox(
-          width: size,
-          height: size,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: selected ? null : color,
-              border: selected ? Border.all(color: colorScheme.primary, width: 2) : null,
+    return MergeSemantics(
+      child: Semantics(
+        button: true,
+        label: '#${color.toARGB32().toRadixString(16).substring(2).toUpperCase()}',
+        selected: selected,
+        child: InkWell(
+          onTap: onTap,
+          customBorder: const CircleBorder(),
+          child: SizedBox(
+            width: size,
+            height: size,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: selected ? null : color,
+                border: selected ? Border.all(color: colorScheme.primary, width: 2) : null,
+              ),
+              child: selected
+                  ? Padding(
+                      padding: const EdgeInsets.all(AppSpace.s4),
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+                      ),
+                    )
+                  : null,
             ),
-            child: selected
-                ? Padding(
-                    padding: const EdgeInsets.all(AppSpace.s4),
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-                    ),
-                  )
-                : null,
           ),
         ),
       ),

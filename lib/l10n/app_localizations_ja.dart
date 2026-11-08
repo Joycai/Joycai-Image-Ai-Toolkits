@@ -1150,6 +1150,21 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get resizePane => 'パネルのサイズを変更';
+
+  @override
+  String get moveDividerLeft => '仕切りを左に移動';
+
+  @override
+  String get moveDividerRight => '仕切りを右に移動';
+
+  @override
+  String get moveDividerUp => '仕切りを上に移動';
+
+  @override
+  String get moveDividerDown => '仕切りを下に移動';
+
+  @override
   String get downloader => 'ダウンローダー';
 
   @override

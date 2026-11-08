@@ -128,5 +128,10 @@
         "type": "int"
       }
     }
-  }
+  },
+  "resizePane": "パネルのサイズを変更",
+  "moveDividerLeft": "仕切りを左に移動",
+  "moveDividerRight": "仕切りを右に移動",
+  "moveDividerUp": "仕切りを上に移動",
+  "moveDividerDown": "仕切りを下に移動"
 }

@@ -8,6 +8,7 @@ import '../../models/pricing_group.dart';
 import '../../state/app_state.dart';
 import '../glass/app_glass.dart';
 import '../glass/glass_controls.dart';
+import '../ui/app_action_target.dart';
 import 'fee_group_dialogs.dart';
 import 'fee_group_draft.dart';
 import 'fee_group_editor_fields.dart';
@@ -177,29 +178,32 @@ class _FeeGroupEditPageState extends State<FeeGroupEditPage> {
                       ),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: Semantics(
-                          button: true,
-                          enabled: canSave,
-                          label: l10n.save,
-                          child: GestureDetector(
-                            onTap: canSave ? () => _save(appState) : null,
-                            child: AppTintedGlass(
-                              enabled: canSave,
-                              child: SizedBox(
-                                height: AppSize.touch,
-                                child: Center(
-                                  child: _saving
-                                      ? const SizedBox(
-                                          width: 18,
-                                          height: 18,
-                                          child: CircularProgressIndicator(strokeWidth: 2),
-                                        )
-                                      : Text(
-                                          l10n.save,
-                                          style: textTheme.bodyMedium?.copyWith(
-                                            fontWeight: FontWeight.w600,
+                        child: MergeSemantics(
+                          child: Semantics(
+                            button: true,
+                            enabled: canSave,
+                            label: l10n.save,
+                            child: AppActionTarget(
+                              excludeChildSemantics: true,
+                              onTap: canSave ? () => _save(appState) : null,
+                              child: AppTintedGlass(
+                                enabled: canSave,
+                                child: SizedBox(
+                                  height: AppSize.touch,
+                                  child: Center(
+                                    child: _saving
+                                        ? const SizedBox(
+                                            width: 18,
+                                            height: 18,
+                                            child: CircularProgressIndicator(strokeWidth: 2),
+                                          )
+                                        : Text(
+                                            l10n.save,
+                                            style: textTheme.bodyMedium?.copyWith(
+                                              fontWeight: FontWeight.w600,
+                                            ),
                                           ),
-                                        ),
+                                  ),
                                 ),
                               ),
                             ),

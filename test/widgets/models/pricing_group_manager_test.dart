@@ -11,6 +11,7 @@ import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/widgets/models/fee_group_row.dart';
 import 'package:joycai_image_ai_toolkits/widgets/models/pricing_group_manager.dart';
 import 'package:joycai_image_ai_toolkits/widgets/models/spec_rate_table.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_icon_button.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
@@ -468,8 +469,8 @@ void main() {
       find.text('Reordering is off while filtering; the order saves on release.'),
       findsOneWidget,
     );
-    final sort = tester.widget<IconButton>(
-      find.ancestor(of: find.byTooltip('Reorder'), matching: find.byType(IconButton)),
+    final sort = tester.widget<AppIconButton>(
+      find.ancestor(of: find.byTooltip('Reorder'), matching: find.byType(AppIconButton)),
     );
     expect(sort.onPressed, isNull);
   });

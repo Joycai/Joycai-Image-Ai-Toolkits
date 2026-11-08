@@ -2025,6 +2025,36 @@ abstract class AppLocalizations {
   /// **'{count} files'**
   String folderOutlineFilesCount(int count);
 
+  /// No description provided for @resizePane.
+  ///
+  /// In en, this message translates to:
+  /// **'Resize pane'**
+  String get resizePane;
+
+  /// No description provided for @moveDividerLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Move divider left'**
+  String get moveDividerLeft;
+
+  /// No description provided for @moveDividerRight.
+  ///
+  /// In en, this message translates to:
+  /// **'Move divider right'**
+  String get moveDividerRight;
+
+  /// No description provided for @moveDividerUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Move divider up'**
+  String get moveDividerUp;
+
+  /// No description provided for @moveDividerDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Move divider down'**
+  String get moveDividerDown;
+
   /// No description provided for @downloader.
   ///
   /// In en, this message translates to:

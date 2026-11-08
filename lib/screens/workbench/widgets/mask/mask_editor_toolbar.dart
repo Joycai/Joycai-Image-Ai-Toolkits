@@ -10,6 +10,7 @@ import '../../../../services/media/image_metadata_service.dart';
 import '../../../../state/workbench_ui_state.dart';
 import '../../../../widgets/glass/app_glass.dart';
 import '../../../../widgets/glass/glass_controls.dart';
+import '../../../../widgets/ui/app_action_target.dart';
 import '../../../../widgets/ui/app_menu_anchor.dart';
 
 /// The mask editor's controls in the workbench's floating glass toolbar
@@ -730,29 +731,32 @@ class _Swatches extends StatelessWidget {
   Widget _swatch(Color color, String name, ColorScheme scheme, Color ink) {
     final isSelected = selected == color;
     return Tooltip(
+      excludeFromSemantics: true,
       message: name,
-      child: Semantics(
-        button: true,
-        selected: isSelected,
-        label: name,
-        child: MouseRegion(
-          cursor: SystemMouseCursors.click,
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () => onSelected(color),
-            child: SizedBox(
-              width: _dot,
-              height: _dot,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
-                  // A faint inner edge so white reads on light glass and
-                  // black on dark.
-                  border: Border.all(color: ink.withValues(alpha: 0.15)),
-                  boxShadow: isSelected
-                      ? [BoxShadow(color: scheme.primary, spreadRadius: 2)]
-                      : null,
+      child: MergeSemantics(
+        child: Semantics(
+          button: true,
+          selected: isSelected,
+          label: name,
+          child: MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: AppActionTarget(
+              excludeChildSemantics: true,
+              onTap: () => onSelected(color),
+              child: SizedBox(
+                width: _dot,
+                height: _dot,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: color,
+                    shape: BoxShape.circle,
+                    // A faint inner edge so white reads on light glass and
+                    // black on dark.
+                    border: Border.all(color: ink.withValues(alpha: 0.15)),
+                    boxShadow: isSelected
+                        ? [BoxShadow(color: scheme.primary, spreadRadius: 2)]
+                        : null,
+                  ),
                 ),
               ),
             ),
@@ -806,8 +810,8 @@ class _OutlinedSaveButtonState extends State<_OutlinedSaveButton> {
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hovering = true),
       onExit: (_) => setState(() => _hovering = false),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
+      child: AppActionTarget(
+        excludeChildSemantics: true,
         onTap: widget.onPressed,
         child: AnimatedContainer(
           duration: AppMotion.durationOf(context, AppMotion.hover),
@@ -845,7 +849,9 @@ class _OutlinedSaveButtonState extends State<_OutlinedSaveButton> {
         ),
       ),
     );
-    if (label == null) result = Tooltip(message: widget.tooltip, child: result);
+    if (label == null) {
+      result = Tooltip(excludeFromSemantics: true, message: widget.tooltip, child: result);
+    }
     return Semantics(button: true, label: widget.tooltip, child: result);
   }
 }
@@ -884,8 +890,8 @@ class _TintedSaveButton extends StatelessWidget {
 
     Widget button = MouseRegion(
       cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
+      child: AppActionTarget(
+        excludeChildSemantics: true,
         onTap: onPressed,
         child: AppTintedGlass(
           child: SizedBox(
@@ -915,7 +921,9 @@ class _TintedSaveButton extends StatelessWidget {
         ),
       ),
     );
-    if (label == null) button = Tooltip(message: tooltip, child: button);
+    if (label == null) {
+      button = Tooltip(excludeFromSemantics: true, message: tooltip, child: button);
+    }
     return Semantics(button: true, label: tooltip, child: button);
   }
 }

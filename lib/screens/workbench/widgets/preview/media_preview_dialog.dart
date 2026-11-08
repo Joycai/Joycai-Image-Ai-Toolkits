@@ -15,6 +15,8 @@ import '../../../../l10n/app_localizations.dart';
 import '../../../../models/app_image.dart';
 import '../../../../state/workbench_ui_state.dart';
 import '../../../../widgets/shell/shell_cover.dart';
+import '../../../../widgets/ui/app_action_target.dart';
+import '../../../../widgets/ui/app_control_label.dart';
 import '../../../../widgets/ui/app_snackbar.dart';
 import 'preview_handler.dart';
 
@@ -176,7 +178,8 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
         },
         child: Focus(
           autofocus: true,
-          child: ExcludeSemantics(
+          child: Semantics(
+            container: true,
             child: Stack(
               children: [
                 // PageView for Main Content
@@ -233,9 +236,12 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
                       child: SafeArea(
                         child: Row(
                           children: [
-                            IconButton(
-                              icon: const Icon(Icons.arrow_back, color: Colors.white),
-                              onPressed: () => Navigator.pop(context),
+                            AppControlLabel(
+                              label: l10n.close,
+                              child: IconButton(
+                                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                                onPressed: () => Navigator.pop(context),
+                              ),
                             ),
                             const SizedBox(width: 8),
                             // `12h` sets both on one line: the name in mono,
@@ -259,15 +265,19 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
                                   .copyWith(color: Colors.white54),
                             ),
                             const Spacer(),
-                            IconButton(
-                              icon: const Icon(Icons.save_alt, color: Colors.white),
-                              tooltip: l10n.save,
-                              onPressed: () => _saveFile(activeFile.path, activeFile.name, l10n),
+                            AppControlLabel(
+                              label: l10n.save,
+                              child: IconButton(
+                                icon: const Icon(Icons.save_alt, color: Colors.white),
+                                onPressed: () => _saveFile(activeFile.path, activeFile.name, l10n),
+                              ),
                             ),
-                            IconButton(
-                              icon: const Icon(Icons.share_outlined, color: Colors.white),
-                              tooltip: l10n.share,
-                              onPressed: () => _shareFile(activeFile, l10n),
+                            AppControlLabel(
+                              label: l10n.share,
+                              child: IconButton(
+                                icon: const Icon(Icons.share_outlined, color: Colors.white),
+                                onPressed: () => _shareFile(activeFile, l10n),
+                              ),
                             ),
                           ],
                         ),
@@ -330,7 +340,9 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
                           itemBuilder: (context, index) {
                             final isSelected = index == activeIndex;
                             final path = images[index].path;
-                            return GestureDetector(
+                            return AppActionTarget(
+                              label: images[index].name,
+                              selected: isSelected,
                               onTap: () => _jumpToPage(index),
                               child: Container(
                                 width: 60,
@@ -364,13 +376,20 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
   /// [_showControls], and inert the moment it starts leaving — an overlay
   /// mid-fade-out should not swallow the tap that was aimed at the picture.
   Widget _controlsLayer(Widget child) {
-    return IgnorePointer(
-      ignoring: !_showControls,
-      child: AnimatedOpacity(
-        opacity: _showControls ? 1.0 : 0.0,
-        duration: AppMotion.durationOf(context, AppMotion.reveal),
-        curve: AppMotion.enter,
-        child: child,
+    final visible = _showControls || MediaQuery.accessibleNavigationOf(context);
+    return Focus(
+      skipTraversal: true,
+      onFocusChange: (focused) {
+        if (focused && !_showControls) setState(() => _showControls = true);
+      },
+      child: IgnorePointer(
+        ignoring: !visible,
+        child: AnimatedOpacity(
+          opacity: visible ? 1.0 : 0.0,
+          duration: AppMotion.durationOf(context, AppMotion.reveal),
+          curve: AppMotion.enter,
+          child: child,
+        ),
       ),
     );
   }
@@ -407,15 +426,20 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
     return SizedBox(
       width: 34,
       height: 34,
-      child: IconButton(
-        icon: Icon(icon, color: Colors.white70, size: AppSize.iconSm),
-        padding: EdgeInsets.zero,
-        style: IconButton.styleFrom(
-          backgroundColor: Colors.white.withValues(alpha: 0.08),
-          shape: const CircleBorder(),
-          minimumSize: const Size.square(34),
+      child: AppControlLabel(
+        label: icon == Icons.chevron_left
+            ? MaterialLocalizations.of(context).previousPageTooltip
+            : MaterialLocalizations.of(context).nextPageTooltip,
+        child: IconButton(
+          icon: Icon(icon, color: Colors.white70, size: AppSize.iconSm),
+          padding: EdgeInsets.zero,
+          style: IconButton.styleFrom(
+            backgroundColor: Colors.white.withValues(alpha: 0.08),
+            shape: const CircleBorder(),
+            minimumSize: const Size.square(34),
+          ),
+          onPressed: onPressed,
         ),
-        onPressed: onPressed,
       ),
     );
   }

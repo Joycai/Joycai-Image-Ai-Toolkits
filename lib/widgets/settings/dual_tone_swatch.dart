@@ -110,25 +110,34 @@ class _DualToneSwatchState extends State<DualToneSwatch> {
       ),
     );
 
-    return Tooltip(
-      richMessage: TextSpan(
-        text: widget.name,
-        style: tipStyle,
-        children: [
-          if (widget.pairLabel != null)
-            TextSpan(
-              text: '\n${widget.pairLabel}',
-              // The values in mono, a step quieter than the name, on the
-              // tooltip's fixed ink ground.
-              style: (tipStyle ?? const TextStyle()).mono.copyWith(
-                fontSize: 12,
-                fontWeight: FontWeight.w400,
-                color: AppOverlay.onInk.withValues(alpha: 0.72),
-              ),
-            ),
-        ],
+    return MergeSemantics(
+      child: Semantics(
+        button: true,
+        selected: widget.selected,
+        label: widget.name,
+        value: widget.pairLabel,
+        child: Tooltip(
+          excludeFromSemantics: true,
+          richMessage: TextSpan(
+            text: widget.name,
+            style: tipStyle,
+            children: [
+              if (widget.pairLabel != null)
+                TextSpan(
+                  text: '\n${widget.pairLabel}',
+                  // The values in mono, a step quieter than the name, on the
+                  // tooltip's fixed ink ground.
+                  style: (tipStyle ?? const TextStyle()).mono.copyWith(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                    color: AppOverlay.onInk.withValues(alpha: 0.72),
+                  ),
+                ),
+            ],
+          ),
+          child: dot,
+        ),
       ),
-      child: dot,
     );
   }
 }

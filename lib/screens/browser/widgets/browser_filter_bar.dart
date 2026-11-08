@@ -10,6 +10,7 @@ import '../../../widgets/dialogs/thumbnail_size_dialog.dart';
 import '../../../widgets/files/thumbnail_fit_toggle.dart';
 import '../../../widgets/glass/app_glass_menu.dart';
 import '../../../widgets/glass/glass_controls.dart' show measureGlassText;
+import '../../../widgets/ui/app_action_target.dart';
 
 /// The 40px control row under the header — `B1a · 1a`.
 ///
@@ -219,37 +220,40 @@ class _CategoryChipState extends State<_CategoryChip> {
     final scheme = Theme.of(context).colorScheme;
     final selected = widget.selected;
 
-    return Semantics(
-      button: true,
-      selected: selected,
-      child: MouseRegion(
-        cursor: selected ? SystemMouseCursors.basic : SystemMouseCursors.click,
-        onEnter: (_) => setState(() => _hovered = true),
-        onExit: (_) => setState(() => _hovered = false),
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: selected ? null : widget.onTap,
-          child: AnimatedContainer(
-            duration: AppMotion.durationOf(context, AppMotion.hover),
-            curve: AppMotion.quick,
-            height: _CategoryChip._height,
-            padding: const EdgeInsets.symmetric(horizontal: _CategoryChip._padding),
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: selected
-                  ? scheme.accentTint
-                  : (_hovered
-                        ? scheme.onSurface.withValues(alpha: 0.06)
-                        : scheme.onSurface.withValues(alpha: 0)),
-              borderRadius: BorderRadius.circular(AppRadius.sm),
-            ),
-            child: Text(
-              widget.label,
-              maxLines: 1,
-              style: _CategoryChip._style(
-                context,
-                selected: selected,
-              ).copyWith(color: selected ? scheme.onAccentTint : scheme.onSurfaceVariant),
+    return MergeSemantics(
+      child: Semantics(
+        button: true,
+        selected: selected,
+        child: MouseRegion(
+          cursor: selected ? SystemMouseCursors.basic : SystemMouseCursors.click,
+          onEnter: (_) => setState(() => _hovered = true),
+          onExit: (_) => setState(() => _hovered = false),
+          child: AppActionTarget(
+            onTap: () {
+              if (!selected) widget.onTap();
+            },
+            child: AnimatedContainer(
+              duration: AppMotion.durationOf(context, AppMotion.hover),
+              curve: AppMotion.quick,
+              height: _CategoryChip._height,
+              padding: const EdgeInsets.symmetric(horizontal: _CategoryChip._padding),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: selected
+                    ? scheme.accentTint
+                    : (_hovered
+                          ? scheme.onSurface.withValues(alpha: 0.06)
+                          : scheme.onSurface.withValues(alpha: 0)),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+              ),
+              child: Text(
+                widget.label,
+                maxLines: 1,
+                style: _CategoryChip._style(
+                  context,
+                  selected: selected,
+                ).copyWith(color: selected ? scheme.onAccentTint : scheme.onSurfaceVariant),
+              ),
             ),
           ),
         ),
@@ -333,18 +337,19 @@ class _SortButtonState extends State<_SortButton> {
     final l10n = AppLocalizations.of(context)!;
     return Tooltip(
       message: l10n.sortBy,
-      child: Semantics(
-        button: true,
-        expanded: _open,
-        child: MouseRegion(
-          cursor: SystemMouseCursors.click,
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: _openMenu,
-            child: _SortChip(
-              label: BrowserFilterBar._sortFieldLabel(widget.inputs.sortField, l10n),
-              ascending: widget.inputs.sortAscending,
-              open: _open,
+      child: MergeSemantics(
+        child: Semantics(
+          button: true,
+          expanded: _open,
+          child: MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: AppActionTarget(
+              onTap: _openMenu,
+              child: _SortChip(
+                label: BrowserFilterBar._sortFieldLabel(widget.inputs.sortField, l10n),
+                ascending: widget.inputs.sortAscending,
+                open: _open,
+              ),
             ),
           ),
         ),

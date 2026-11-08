@@ -18,6 +18,7 @@ import '../../../widgets/dialogs/thumbnail_size_dialog.dart';
 import '../../../widgets/files/thumbnail_fit_toggle.dart';
 import '../../../widgets/glass/app_glass.dart';
 import '../../../widgets/glass/glass_controls.dart';
+import '../../../widgets/ui/app_action_target.dart';
 import '../../../widgets/ui/app_button.dart';
 import '../../../widgets/ui/app_dialog.dart';
 import '../../../widgets/ui/app_menu_anchor.dart';
@@ -747,7 +748,8 @@ class _ToolsMenuButton extends StatelessWidget {
         final glass = GlassInk.maybeOf(context);
         final ink = glass?.ink ?? scheme.onSurface;
         final isActive = activeTool != null;
-        return GestureDetector(
+        return AppActionTarget(
+          label: activeTool?.fullLabel ?? l10n.wbTools,
           onTap: () => controller.isOpen ? controller.close() : controller.open(),
           child: MouseRegion(
             cursor: SystemMouseCursors.click,
