@@ -13,7 +13,9 @@ class WindowsCredentialProtection implements CredentialProtection {
     try {
       final result = await WindowsPackageStorage.channel.invokeMethod<Uint8List>(method, bytes);
       if (result == null || result.isEmpty) throw const CredentialProtectionException();
-      return result;
+      // Engine platform-message buffers can be read-only. Own a writable copy
+      // so open() can clear its temporary plaintext without failing in finally.
+      return Uint8List.fromList(result);
     } catch (_) {
       throw const CredentialProtectionException();
     }
