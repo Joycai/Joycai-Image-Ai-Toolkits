@@ -99,6 +99,10 @@ isolation. See [Microsoft's capability guidance](https://learn.microsoft.com/en-
 
 The GitHub `flutter-build.yml` workflow and default sideload `msix_config` continue
 to create direct-distribution packages; this path never reuses their compiled output.
+The default sideload configuration also sets `windows_build_args` to pass the
+direct-distribution Dart define when `dart run msix:create` rebuilds Windows.
+The isolated Store script replaces the entire `msix_config` and explicitly builds
+with `JOYCAI_DIRECT_DISTRIBUTION=false`, so it does not inherit that sideload flag.
 
 ## Windows native dependencies: JNI exclusion
 

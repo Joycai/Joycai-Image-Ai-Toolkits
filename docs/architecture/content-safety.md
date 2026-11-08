@@ -29,6 +29,23 @@ warning, not an authentication/authorization boundary or a retroactive task edit
 A direct task snapshot can retain its earlier choices. Changing the setting does
 not rewrite existing tasks or restart failed work.
 
+### Building direct packages
+
+`store: false` in `msix_config` controls packaging, not Dart's distribution mode.
+The default `dart run msix:create` rebuilds Windows, so `windows_build_args` in
+`pubspec.yaml` also passes `--dart-define=JOYCAI_DIRECT_DISTRIBUTION=true`.
+Without that argument a sideload MSIX still uses the Store safety policy.
+When using `--build-windows false`, first compile with that same Dart define;
+packaging cannot change the policy already compiled into an executable.
+
+For macOS direct packages, run
+`bash build_script/build_macos.sh --distribution direct`. This pairs the Dart
+define with the native non-sandbox configuration. A plain `flutter build macos`
+uses the default sandbox/Store configuration and keeps the two-value policy.
+Rebuild and reinstall old packages to apply the correct distribution mode.
+Previously saved permissive values that were already overwritten by a Store-mode
+edit must be selected again; the build flag cannot restore overwritten values.
+
 ## What these settings do not prove
 
 These four thresholds are Gemini request parameters, not an application-level

@@ -79,6 +79,8 @@ flutter_launcher_icons:
 
 msix_config:
   store: false # GitHub sideload package; Microsoft Store builds need a separate workflow.
+  # msix:create rebuilds Windows by default; keep that build in direct mode too.
+  windows_build_args: --dart-define=JOYCAI_DIRECT_DISTRIBUTION=true
   display_name: Joycai Image AI Toolkits
   publisher_display_name: Joycai
   publisher: CN=76DB0498-B398-4C2F-953A-2D26ADD20625
