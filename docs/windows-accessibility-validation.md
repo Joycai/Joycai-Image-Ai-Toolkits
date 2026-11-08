@@ -1,6 +1,10 @@
 # Windows 无障碍恢复验证记录
 
-2026-11-08，PR #409，DESK-01 首批实现；完整验收未完成。
+2026-11-08，PR #409，DESK-01 分批实现；完整验收未完成。
+
+**最新结论：Windows 原生验收未通过。** 当前代码 `64190dca` 在 CI 固定的 Flutter 3.47.8
+Release 下，标题栏导航 tooltip 可触发 AXTree 更新失败，随后控件树可能停留在旧页面。
+隔离菜单探针通过不代表真实应用通过；详见本文「固定 SDK 原生验收」及后续修复顺序。
 
 ## 实现边界
 
@@ -161,9 +165,83 @@ Windows **Debug** 隔离探针构建成功（50 秒），热重启成功（1099m
   已逐张复查最终工作台八张焦点图；其他四屏及八强调色组件使用矩阵图审阅。未测性能改进，
   既有重建范围测试随完整回归通过。
 
+## 2026-11-08 固定 SDK 原生验收：未通过
+
+### 环境与产物
+
+- 被测提交：`64190dca6343c95a647c90939b727b750183665e`；本轮仅记录验证结果，没有修改应用代码。
+- Windows `10.0.26300.0`，Flutter **3.47.8**，framework
+  `737ba8f885dc774b53b442759999a312c9461e4e`，engine
+  `cf636b1dfb818dd6a3ff16e390e93b1a036969c8`，Dart **3.13.7**。
+  SDK 从本机 Flutter 仓库的 3.47.8 标签建立独立 checkout，位于 `build/sdk/flutter-3.47.8/`；
+  下载对应引擎产物，未替换日常 3.47.9 SDK，也未修改 CI。
+- 探针 Release 构建成功（49.9 秒），真实 `lib/main.dart` Release 构建成功（42.4 秒）。
+  真实应用完整复制到 `build/desk01-win-3478-app/`，启动前创建 `.portable`，确认在该目录
+  生成独立 `joycai_workbench.db`。没有读取现有用户数据库、添加 API 凭据或调用生成服务。
+- 真实应用 `data/app.so` SHA-256：
+  `0663EE1AA07FE5195DC4CB87CDC19362ABF5C1062657B4008FEE81B3CA0CB022`；
+  `flutter_windows.dll` SHA-256：
+  `ECA1F8C9B1537BD585BBBCC62362DF9CA7E69FAA7D4E895688108AF63CCEA157`。
+
+### 已观察到的通过项
+
+- 使用 Windows Computer Use 原生接口连接后，隔离探针完成 **60 轮** tooltip、菜单、对话框、
+  主题交替与窗口缩放。结束时仍可读取 Completed cycles 60、分段按钮和菜单；日志没有 AXTree
+  错误或崩溃，有 **2 条 frame-time clamping** 提示，不能称为无错误日志。
+- 循环后下拉菜单可打开，Escape 退场后焦点返回 First option，Enter 再次打开，Down
+  将原生焦点移至 Second option。
+- 真实应用初始原生树可读取欢迎向导、标题栏导航，以及跳过向导后的工作台按钮、开关、
+  输入框和“调整面板大小”名称。一次 Tab 后裁剪按钮获得可见焦点轮廓。
+  这些是有限入口检查，不是整个键盘顺序、开关状态或分隔条动作验收。
+
+### 阻塞：标题栏导航 tooltip 使原生树失效
+
+首轮跳过向导、检查工作台后切换到文件浏览器：视觉界面已进入文件浏览器，原生树仍显示
+工作台控件和裁剪焦点；运行日志出现多条 AXTree 错误。重启时鼠标仍停在标题栏导航上，
+仅显示该导航的 tooltip、尚未进入文件浏览器就再次报错。
+
+进一步对照复现步骤（无需点击导航或切换页面）：
+
+1. 关闭隔离应用，把鼠标移到窗口内容区空白位置，再启动同一 Release 产物。
+2. 用原生无障碍接口读取欢迎向导；此时日志没有 AXTree 错误。
+3. 把鼠标移到标题栏“文件浏览器”图标，等待 `文件浏览器 · Ctrl+2` tooltip 出现。
+4. 日志新增两条同类错误：
+
+   ```text
+   Failed to update ui::AXTree, error: 99 will not be in the tree and is not the new root
+   ```
+
+节点编号随运行变化，首轮也出现 101、138、133；不能把编号当作稳定定位依据。
+该对照将触发范围缩小到真实 shell 的导航 tooltip 生命周期。`NavLensGroup` 的
+`MergeSemantics → Semantics → Tooltip → AppActionTarget` 与外层 Overlay 的交互是下一步
+调查对象；**尚未用最小组件对照证明根因，也未证明是本批引入还是固定 SDK 的既有问题**。
+不以升级 SDK、隐藏全部语义或忽略日志绕过验收。
+
+本机证据（均在忽略的 build 目录，测试窗口已关闭）：
+
+- `desk01-win-sdk.log`、`desk01-win-3478-app-build.log`：版本与构建。
+- `desk01-win-3478-probe.log`、`desk01-win-3478-probe-cycle60.txt`、
+  `desk01-win-3478-probe-menu.txt`：探针、完整树及键盘焦点。
+- `desk01-win-3478-app-runtime.log`、`desk01-win-3478-app-stale-tree.txt`：首轮失败。
+- `desk01-win-3478-app-repro.log`：重启时已有导航悬浮提示的复现。
+- `desk01-win-3478-app-clean.log`、`desk01-win-3478-clean-before.txt`、
+  `desk01-win-3478-clean-hover.txt`：鼠标移开启动与仅悬浮的对照。
+
+### 后续顺序与未验收项
+
+先为真实 shell 的导航 tooltip 建立组件/原生最小复现，修复合并语义与 overlay 的边界，
+再在同一 3.47.8 Release 中重复以上对照及完整应用导航。随后继续开关、颜色调整、分隔条、
+预览关闭焦点、重排和窄窗测试。必要时补前一提交的同 SDK 对照以判断回归来源。
+
+本轮没有启动 Narrator，工具只提供控件树、焦点和画面，未验证实际语音、朗读顺序及
+完整读屏工作流；原生树失效后的其他控件检查无效，未继续记为通过。macOS/VoiceOver、
+真实视频播放也未验证。没有应用代码变更，因此未重跑 Dart 门禁；前批 3587 项测试通过
+仍只代表 Flutter 层回归，**不抵消此次原生验收失败**。
+
 ## 尚需完成
 
-- CI 固定 Flutter 3.47.8 的同样原生复现；若选择升级，另行同步 CI 并补版本证据。
+- 修复上述已在 CI 固定 Flutter 3.47.8 复现的导航 tooltip / AXTree 阻塞，再重新验收；
+  若选择升级，另行同步 CI 并补版本证据。
 - 真实应用 Release + Narrator 的导航、输入、菜单、对话框、任务状态及屏幕/主题切换。
 - 更长时间的 hover/overlay、窗口缩放与 ReorderableList 场景；出现错误时保留最小复现，
   优先修复局部生命周期或引擎，不以再次全局关闭语义作为验收。

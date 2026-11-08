@@ -48,7 +48,10 @@ WACK、发布身份或安全验收。该计划通过不代表商店发布就绪�
 涵盖玻璃控件、shell、工具栏、设置/颜色控件、分隔条及媒体预览；详见
 [自绘控件审计](../custom-controls-accessibility-audit.md)。完整 Narrator 流程仍待验收。
 该改动尚不能视为本阶段完成或允许发布：上游问题仍开放，
-需要在 CI 固定的 SDK 上补原生验收，并完成 Narrator 的真实应用工作流检查。
+CI 固定 Flutter 3.47.8 的原生验收现已执行但未通过：`64190dca` 的真实 Release 应用
+仅悬浮标题栏导航 tooltip 即出现 AXTree 错误，页面切换后原生树可停留在旧页。
+下一步优先建立导航 tooltip / 合并语义的最小复现并修复，再重跑原生验收和 Narrator 工作流。
+隔离菜单探针 60 轮通过不替代真实应用失败，详细步骤与产物见上述验证记录。
 
 先建立最小原生复现：读屏启用时反复打开/关闭 dropdown、tooltip、dialog，调整窗口大小，
 切换屏幕和主题，覆盖原注释提到的 overlay 退场和 AXTree 更新。记录实际 SDK、Windows
