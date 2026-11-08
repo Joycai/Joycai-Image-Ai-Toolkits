@@ -200,7 +200,9 @@ class _NavLensState extends State<_NavLens> {
       button: true,
       selected: widget.selected,
       label: label,
+      hint: isDesktop ? d.shortcutHint : null,
       child: Tooltip(
+        excludeFromSemantics: true,
         message: isDesktop ? '$label · ${d.shortcutHint}' : label,
         child: MouseRegion(
           cursor: SystemMouseCursors.click,

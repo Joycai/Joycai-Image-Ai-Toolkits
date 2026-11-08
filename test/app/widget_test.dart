@@ -75,6 +75,11 @@ void main() {
       isNotEmpty,
       reason: 'The shell navigation must remain accessible outside the Navigator.',
     );
+    final settings = nodes
+        .singleWhere((node) => node.label == l10n.settings && node.flagsCollection.isButton)
+        .getSemanticsData();
+    expect(settings.tooltip, isEmpty, reason: 'Navigation must not repeat its name as a tooltip.');
+    expect(settings.hint, isNotEmpty, reason: 'Keep the keyboard shortcut available to readers.');
     semantics.dispose();
   });
 }

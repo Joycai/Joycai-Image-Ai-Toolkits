@@ -23,7 +23,7 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 
 | 文件 | 为什么留着 |
 |---|---|
-| [`2026-11-desktop-standards.md`](2026-11-desktop-standards.md) | Flutter 与 macOS/Windows 桌面体验修复；DESK-01 首批桥接/标题栏语义实现中，完整原生验收待完成；DESK-02～06 待实施。证据见 [Windows 无障碍记录](../windows-accessibility-validation.md)，复用本台账既有键盘与架构欠项。 |
+| [`2026-11-desktop-standards.md`](2026-11-desktop-standards.md) | Flutter 与 macOS/Windows 桌面体验修复；DESK-01 已恢复桥接、隔离菜单语义，并补分段控件状态/导航名称，完整原生验收待完成；DESK-02～06 待实施。证据见 [Windows 无障碍记录](../windows-accessibility-validation.md)，复用本台账既有键盘与架构欠项。 |
 | [`2026-11-windows-store.md`](2026-11-windows-store.md) | Microsoft Store 发布准备施工计划；按 WIN-01～WIN-06 推进，完成后归档结论并删除正文。 |
 | [`2026-08-assistant-timeout.md`](2026-08-assistant-timeout.md) | 不是施工说明书，是**一次真实故障的取证记录**（`api_logs/` 里七条日志的耗时还原）。`architecture/assistant-context.md` 直接引它作为「为什么要早elide」的证据。 |
 

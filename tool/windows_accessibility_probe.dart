@@ -7,6 +7,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_menu_anchor.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_segmented_control.dart';
 import 'package:window_manager/window_manager.dart';
 
 void main() async {
@@ -27,6 +28,7 @@ class _ProbeState extends State<_Probe> {
   final _menu = MenuController();
   final _navigator = GlobalKey<NavigatorState>();
   int _cycle = 0;
+  int _selection = 0;
   bool _running = false;
 
   Future<void> _run() async {
@@ -73,6 +75,19 @@ class _ProbeState extends State<_Probe> {
         children: [
           Text('Completed cycles: $_cycle / 60', semanticsLabel: 'Completed cycles $_cycle'),
           FilledButton(onPressed: _running ? null : _run, child: const Text('Run probe')),
+          for (final iconOnly in [false, true])
+            Center(
+              child: AppSegmentedControl<int>(
+                iconOnly: iconOnly,
+                value: _selection,
+                onChanged: (value) => setState(() => _selection = value),
+                segments: const [
+                  AppSegment(value: 0, label: 'All', icon: Icons.list),
+                  AppSegment(value: 1, label: 'Running', icon: Icons.play_arrow),
+                  AppSegment(value: 2, label: 'Unavailable', icon: Icons.block, enabled: false),
+                ],
+              ),
+            ),
           for (var i = 0; i < 2; i++)
             Tooltip(
               key: _tooltips[i],

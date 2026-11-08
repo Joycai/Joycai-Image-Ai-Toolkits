@@ -15,6 +15,13 @@ These are semantic boundaries, not new visual containers. See the
 [native validation record](../windows-accessibility-validation.md) for the
 reproduction and remaining screen-reader acceptance.
 
+`AppSegmentedControl` exposes each option as a named button with selected and
+enabled states, in both labelled and icon-only layouts. The selected option
+remains keyboard reachable; activating it does not repeat `onChanged`. Its
+decorative text/icons and visual tooltip do not duplicate that accessible name.
+Shell navigation likewise owns its name and exposes the shortcut as a hint;
+its visual tooltip must not repeat the name in semantics.
+
 - [Design tokens](design-tokens.md) defines the visual contract and accepted
   departures from the original designs. Its linked core files and contract tests
   provide the implemented values; use existing shared components under
