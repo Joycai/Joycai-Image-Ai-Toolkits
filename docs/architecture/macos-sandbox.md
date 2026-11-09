@@ -5,6 +5,24 @@ that sandbox to work around an MAS file-access failure; fix authorization instea
 
 ## Direct-download distribution
 
+The two macOS distributions are separate apps and never automatically share data:
+
+| Distribution | Installed app name | Bundle ID |
+|---|---|---|
+| Store / default signed build | Joycai Image AI Toolkits | `cn.joycai.joycaiImageAiToolkits` |
+| Direct download | Joycai Image AI Toolkits Direct | `cn.joycai.joycaiImageAiToolkits.direct` |
+
+The distinct identifiers separate sandbox containers, application support/cache
+paths, native preferences and directory-bookmark stores. The distinct app names
+allow side-by-side installation in Applications. Runner-only build variables
+select the identity without renaming or reidentifying embedded plugin frameworks.
+The packaging verifier rejects the Store identity or name in a direct package.
+Existing Store and older shared-identity direct data is retained in the original
+container. There is no automatic copy, link, shared App Group, or keychain access.
+Migration remains an explicit user-selected import; encrypted credentials require
+the original signed app and cannot be unlocked by the ad-hoc download. Bootstrap
+rejects such credentials before creating AppState and displays recovery guidance.
+
 GitHub Actions `flutter-build.yml` is explicitly a **direct-download** build/release
 workflow, not an App Store pipeline. macOS calls:
 
@@ -20,6 +38,17 @@ Sandbox. The direct override uses `Runner/Direct.entitlements`, retains network,
 user-selected files, Pictures/Downloads, Photos and app-scoped bookmarks, and
 uses ad-hoc signing without App Store provisioning. It omits the Store-only
 Keychain access group; the existing direct credential policy is unchanged.
+Direct builds retain Hardened Runtime but set
+`com.apple.security.cs.disable-library-validation`: ad-hoc signatures have no
+Team ID, so the default library validation rejects FlutterMacOS at launch even
+when `codesign --verify --deep --strict` passes. This exception is direct-only;
+Store entitlements retain library validation. App Sandbox remains enabled.
+The packaging verifier requires this exception for the current ad-hoc pipeline.
+The direct xcconfig also pins `MACOSX_DEPLOYMENT_TARGET=14.0` across generated
+Swift packages, matching the documented Runner floor and avoiding generated
+package targets falling back to 12.0.
+If switching to Developer ID signing, reassess it after signing all embedded
+frameworks with the same team. See [Apple library validation](https://developer.apple.com/documentation/bundleresources/entitlements/com.apple.security.cs.disable-library-validation).
 
 The Dart distribution flag controls non-store product policy, not sandbox file
 access. Both macOS distributions use container storage, the installation-import

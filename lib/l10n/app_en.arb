@@ -3029,6 +3029,7 @@
   "credentialRecoveryWindowsBody": "Joycai cannot verify saved credentials for this Windows user. Try again using the original Windows account and profile. A copied encrypted database is not a way to transfer credentials. Retry does not clear credentials. If access cannot be restored, you can clear the saved credentials and enter them again in Settings. A database snapshot is kept first in the data folder's credential-recovery directory.",
   "credentialRecoveryResetConsent": "Clear all saved channel keys, proxy password and MCP token. Keep channels, prompts, history and media. I will re-enter credentials in Settings; MCP will remain disabled.",
   "credentialRecoveryReset": "Clear credentials and continue",
+  "credentialRecoveryDirectMacBody": "This download build cannot unlock credentials encrypted by the signed Mac version. Your data and keys have not been changed. Reopen the version signed with the original developer identity to continue using this data. To migrate, export a settings backup from that version and re-enter API keys in a separate installation. Full Disk Access does not grant Keychain access. Do not delete Keychain items or reset this database.",
   "workbench": "Workbench",
   "wbModeImage": "Image",
   "wbModeVideo": "Video",

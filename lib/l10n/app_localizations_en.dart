@@ -4914,6 +4914,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get credentialRecoveryReset => 'Clear credentials and continue';
 
   @override
+  String get credentialRecoveryDirectMacBody =>
+      'This download build cannot unlock credentials encrypted by the signed Mac version. Your data and keys have not been changed. Reopen the version signed with the original developer identity to continue using this data. To migrate, export a settings backup from that version and re-enter API keys in a separate installation. Full Disk Access does not grant Keychain access. Do not delete Keychain items or reset this database.';
+
+  @override
   String get workbench => 'Workbench';
 
   @override

@@ -298,6 +298,31 @@ MAS-05 已收紧 Gemini 安全设置并补充内容反馈；MAS-06 已实现 Key
     显式添加私有目录后可显示。临时工作区列表按既有语义不持久化。测试进程已停止、
     镜像已卸载；未覆盖 file promise/云端占位文件、视频槽位和真实外接硬件。
     `git diff --check` 通过；文档变更不重复代码门禁。详见实机验收记录。
+  - **下载版与商店版彻底隔离（2026-11-09，用户明确选择）**：下载版使用
+    `Joycai Image AI Toolkits Direct` 与 `cn.joycai.joycaiImageAiToolkits.direct`，
+    商店版保持原名称和 ID；两版独立容器、数据库、设置和目录授权，可并存安装。
+    不自动复制或共享旧数据。打包验证新增 ID/名称约束；AppInfo 的 Runner 专用
+    变量避免污染插件框架身份。此前 shared-identity 下载版黑屏日志确认为
+    `DatabaseService.revealCredential → ModelRepository.getChannels → AppState.loadSettings`：
+    ad-hoc 版本读到原签名版密文但无 protector。现在启动前预检所有凭据字段，
+    若用户手动迁入密文则显示四语言恢复说明，保留数据；不再进入黑屏或启动任务。
+    实机验证：从实际 direct Release 启动，原生窗口/菜单名含 Direct，不选旧库并
+    继续后进入欢迎向导；lsof 确认打开的数据库位于 `.direct` 容器，没有读取原库。
+    完整构建脚本成功生成独立 Direct Installer DMG，签名及 ID/名称门禁通过；
+    四语言恢复页 32 张截图通过并检查代表图，17 项凭据/界面专项通过。
+    最终 format / analyze 通过，构建结束后串行完整非截图测试 3595 通过、11 skip；
+    打包 Python 正反向校验通过。Xcode 默认配置解析确认商店版名称、Bundle ID 和
+    Release.entitlements 保持原值。构建与测试共用 native assets，首次并行运行
+    因产物被重建产生 SQLite 动态库缺失；最终串行运行已消除此干扰。
+  - **下载版启动修复（2026-11-09）**：用户实机崩溃报告为 DYLD Library missing，
+    具体原因是 ad-hoc + Hardened Runtime 的 Team ID 库校验拒绝 FlutterMacOS。
+    direct 专用 entitlements 增加 disable-library-validation，保留沙盒与其余
+    Hardened Runtime 保护，商店权限不变；包装校验新增必需项及五种正反向用例。
+    direct xcconfig 统一 macOS 14.0，避免生成的 Swift package 回退到 12.0 导致构建失败。
+    format / analyze 通过，非截图测试 3590 通过、11 skip；Release 构建、最终签名
+    检查通过。将故障应用复制到临时目录，替换为独立 Bundle ID 并使用修复后的
+    entitlements 重新签名，真实启动进入欢迎设置向导（已读取原生窗口确认），测试
+    进程已停止。未更改已安装应用或其数据。已生成本地 Sandbox-Fix DMG，未发布。
   - **下载版统一沙盒（2026-11-09）**：取代下述 11-04 的无沙盒策略，direct
     DMG 改用独立沙盒 entitlements（保留 ad-hoc 签名，不引入商店 profile 或
     Keychain group）。目录书签、Finder 拖放授权、容器数据及旧数据迁入流程统一启用。

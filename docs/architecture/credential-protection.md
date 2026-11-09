@@ -117,3 +117,12 @@ Remaining submission acceptance is tracked in the [materials](../testing/windows
 
 Automated/native and installed-package limits are recorded in
 [Windows validation](../testing/windows-store-storage-security.md).
+
+## 下载版隔离与启动预检（2026-11-09）
+
+macOS 下载版使用 `.direct` Bundle ID 和独立沙盒，不再自动读取商店版容器。
+商店版保持原 Bundle ID、Keychain group 和包装密钥，已有数据不迁移、不清空。
+下载版没有原签名版的 data-protection Keychain 权限；即使用户显式迁入带密文的
+数据库，也必须在 DatabaseService 发布连接前拒绝，不等到 AppState 加载渠道时报错。
+无 protector 时预检渠道 API Key、代理密码和 MCP Token 的所有版本 envelope；
+发现密文显示下载版专用恢复说明，保留原值，不提供自动清空或明文降级。

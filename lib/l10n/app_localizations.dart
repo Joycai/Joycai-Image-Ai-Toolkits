@@ -8601,6 +8601,12 @@ abstract class AppLocalizations {
   /// **'Clear credentials and continue'**
   String get credentialRecoveryReset;
 
+  /// No description provided for @credentialRecoveryDirectMacBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This download build cannot unlock credentials encrypted by the signed Mac version. Your data and keys have not been changed. Reopen the version signed with the original developer identity to continue using this data. To migrate, export a settings backup from that version and re-enter API keys in a separate installation. Full Disk Access does not grant Keychain access. Do not delete Keychain items or reset this database.'**
+  String get credentialRecoveryDirectMacBody;
+
   /// No description provided for @workbench.
   ///
   /// In en, this message translates to:

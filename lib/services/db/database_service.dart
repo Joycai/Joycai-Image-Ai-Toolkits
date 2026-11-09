@@ -89,7 +89,20 @@ class DatabaseService {
   /// Called before publishing a newly opened database. Any failure rolls back all
   /// rows. Existing envelopes are verified, never treated as plaintext or erased.
   Future<void> migrateCredentials(Database db) async {
-    if (_credentialProtection == null) return;
+    if (_credentialProtection == null) {
+      // An explicit import can contain credentials from a signed build.
+      // Reject encrypted credentials before AppState/queues are constructed so
+      // bootstrap can show recovery instead of failing after the first frame.
+      final channels = await db.query('llm_channels', columns: ['api_key']);
+      final settings = await _querySettings(db, CredentialProtection.settingKeys);
+      if ([
+        ...channels.map((row) => row['api_key']),
+        ...settings.map((row) => row['value']),
+      ].whereType<String>().any(CredentialProtection.isEnvelope)) {
+        throw const CredentialProtectionException();
+      }
+      return;
+    }
     // Darwin's executeUpdate rejects SQLITE_ROW; this PRAGMA returns a row.
     await db.rawQuery('PRAGMA secure_delete = ON');
     await db.transaction((txn) async {
