@@ -6,7 +6,6 @@ import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 
-import '../../core/app_distribution.dart';
 import '../../core/app_paths.dart';
 
 /// Durable inputs/results are never part of TempStorageService's scratch tree.
@@ -117,10 +116,7 @@ class PersistentMediaService {
     await dir.create(recursive: true);
     final destination = p.join(dir.path, p.basename(source));
     final partial = '$destination.partial';
-    if (Platform.isMacOS &&
-        !AppDistribution.direct &&
-        appleBookmark != null &&
-        appleBookmark.isNotEmpty) {
+    if (Platform.isMacOS && appleBookmark != null && appleBookmark.isNotEmpty) {
       // Native code retains the exact resolved URL until the copy completes.
       await _channel.invokeMethod<void>('copyDrop', {
         'bookmark': appleBookmark,

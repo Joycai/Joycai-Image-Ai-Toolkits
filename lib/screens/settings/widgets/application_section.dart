@@ -18,6 +18,7 @@ import '../../../services/files/installation_migration_service.dart';
 import '../../../services/llm/gpt_image_timeout.dart';
 import '../../../services/llm/llm_debug_logger.dart';
 import '../../../services/system/gpu_info_service.dart';
+import '../../../services/system/macos_privacy_settings.dart';
 import '../../../state/app_state.dart';
 import '../../../widgets/ui/app_button.dart';
 import '../../../widgets/ui/app_dialog.dart';
@@ -240,6 +241,18 @@ class _ApplicationSectionState extends State<ApplicationSection> {
                           }
                         }
                       },
+                    ),
+                  ),
+                ],
+                if (Platform.isMacOS) ...[
+                  const SizedBox(height: AppSpace.s10),
+                  AppSettingRow(
+                    title: l10n.macFullDiskAccess,
+                    description: l10n.macFullDiskAccessDescription,
+                    footer: AppButton(
+                      label: l10n.macFullDiskAccessHelp,
+                      variant: AppButtonVariant.secondary,
+                      onPressed: () => _showDiskAccessHelp(l10n),
                     ),
                   ),
                 ],
@@ -537,6 +550,28 @@ class _ApplicationSectionState extends State<ApplicationSection> {
       ),
       onTap: () => _pickOutputDirectory(appState),
     );
+  }
+
+  Future<void> _showDiskAccessHelp(AppLocalizations l10n) async {
+    final open = await AppDialog.show<bool>(
+      context,
+      icon: Icons.privacy_tip_outlined,
+      title: l10n.macFullDiskAccess,
+      content: Text(l10n.macFullDiskAccessInstructions),
+      actions: [
+        AppButton(
+          label: l10n.cancel,
+          variant: AppButtonVariant.secondary,
+          onPressed: () => Navigator.pop(context, false),
+        ),
+        AppButton(label: l10n.macOpenSystemSettings, onPressed: () => Navigator.pop(context, true)),
+      ],
+    );
+    if (open != true) return;
+    final opened = await MacOSPrivacySettings.openFullDiskAccess();
+    if (!opened && mounted) {
+      AppSnackBar.error(context, l10n.macPrivacySettingsOpenFailed);
+    }
   }
 
   void _showRestartDialog(AppLocalizations l10n) {

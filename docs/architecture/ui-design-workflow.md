@@ -298,3 +298,14 @@ retain five. Narrow layouts scroll and warning actions wrap. About adds a conten
 concern group with user-controlled email and copy actions, without attachments.
 Existing theme roles, spacing and App controls are reused. The maintained specs
 and actual Flutter baseline render, not historical design frames, guide this change.
+
+### macOS file privacy help (2026-11-09)
+
+Application settings places optional Full Disk Access help after installation
+import in the directories group on macOS. It reuses AppSettingRow, AppButton
+and AppDialog, with footer actions that remain reachable in narrow windows.
+The dialog explains manual authorization, possible restart, and that App Sandbox
+and directory grants still apply. Opening settings is explicit; failure shows
+the manual navigation path. There is no permission-status switch or automatic
+prompt. All four languages are maintained. Review uses repository specifications
+and Flutter renders, not unavailable historical design frames.

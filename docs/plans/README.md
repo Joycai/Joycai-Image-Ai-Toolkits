@@ -298,6 +298,19 @@ MAS-05 已收紧 Gemini 安全设置并补充内容反馈；MAS-06 已实现 Key
     显式添加私有目录后可显示。临时工作区列表按既有语义不持久化。测试进程已停止、
     镜像已卸载；未覆盖 file promise/云端占位文件、视频槽位和真实外接硬件。
     `git diff --check` 通过；文档变更不重复代码门禁。详见实机验收记录。
+  - **下载版统一沙盒（2026-11-09）**：取代下述 11-04 的无沙盒策略，direct
+    DMG 改用独立沙盒 entitlements（保留 ad-hoc 签名，不引入商店 profile 或
+    Keychain group）。目录书签、Finder 拖放授权、容器数据及旧数据迁入流程统一启用。
+    应用设置提供可选的完全磁盘访问说明弹窗与系统设置链接，明确不能解除沙盒或
+    代替目录授权。旧版数据须显式迁入，原数据保留；真实系统授权、重启及迁入验收
+    仍需单独执行，不由 mock 测试代替。
+    验证：format / analyze 通过，完整非截图测试 3587 通过、11 skip；direct
+    文件授权专项 13 通过，系统设置跳转成功/失败/异常 3 项通过；权限设置与弹窗
+    四宽度明暗及日语窄屏共 20 张截图渲染通过并检查代表图，无溢出日志。
+    direct macOS Release 构建成功（81.5 MB），deep/strict 签名检查通过，实际
+    app-sandbox / bookmarks.app-scope 均为 true、无 provisioning profile；打包
+    校验拒绝缺少沙盒/书签以及携带商店 profile 的反向用例通过。未启动正式应用，
+    未修改真实用户数据或系统隐私授权；未重新生成 DMG 或发布。
   - **GitHub 站外发布隔离（2026-11-04）**：打包 workflow 明确使用 direct 模式，
     macOS DMG 以无沙盒、本地签名构建，保留站外 Application Support 路径；不显示
     沙盒整库迁入入口，不强制 security-scoped 目录授权。默认 Runner 仍启用 MAS 沙盒。

@@ -4006,6 +4006,25 @@ class AppLocalizationsZh extends AppLocalizations {
   String get contentSafetyEmailFailed => '无法打开邮件应用，请复制邮箱后手动发送反馈。';
 
   @override
+  String get macFullDiskAccess => '完全磁盘访问';
+
+  @override
+  String get macFullDiskAccessDescription => '访问目录仍需通过系统选择框授权。如果已授权目录被 macOS 隐私保护拦截，可按需开启完全磁盘访问。';
+
+  @override
+  String get macFullDiskAccessHelp => '查看授权说明';
+
+  @override
+  String get macFullDiskAccessInstructions =>
+      '在「系统设置 → 隐私与安全性 → 完全磁盘访问权限」中添加本应用并开启，按系统提示重新打开应用。此权限允许访问隐私保护的数据，但不会关闭 App Sandbox，也不能代替目录授权。';
+
+  @override
+  String get macOpenSystemSettings => '打开系统设置';
+
+  @override
+  String get macPrivacySettingsOpenFailed => '无法打开系统设置，请手动前往「隐私与安全性 → 完全磁盘访问权限」。';
+
+  @override
   String get shortcutGridMove => '移动并选中项目';
 
   @override
@@ -10529,6 +10548,26 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get contentSafetyEmailFailed => '無法開啟郵件應用，請複製信箱後手動傳送回報。';
+
+  @override
+  String get macFullDiskAccess => '完整磁碟存取';
+
+  @override
+  String get macFullDiskAccessDescription =>
+      '存取資料夾仍需透過系統選擇器授權。如果已授權資料夾遭 macOS 隱私保護阻擋，可視需要開啟完整磁碟存取。';
+
+  @override
+  String get macFullDiskAccessHelp => '查看授權說明';
+
+  @override
+  String get macFullDiskAccessInstructions =>
+      '在「系統設定 → 隱私權與安全性 → 完整磁碟存取權」中加入本應用程式並開啟，依系統提示重新開啟應用程式。此權限允許存取隱私保護的資料，但不會關閉 App Sandbox，也不能取代資料夾授權。';
+
+  @override
+  String get macOpenSystemSettings => '開啟系統設定';
+
+  @override
+  String get macPrivacySettingsOpenFailed => '無法開啟系統設定，請手動前往「隱私權與安全性 → 完整磁碟存取權」。';
 
   @override
   String get shortcutGridMove => '移動並選取項目';

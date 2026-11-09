@@ -4201,6 +4201,27 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not open an email app. Copy the address and send your report manually.';
 
   @override
+  String get macFullDiskAccess => 'Full Disk Access';
+
+  @override
+  String get macFullDiskAccessDescription =>
+      'Folder access still requires selecting a folder. If macOS privacy protection blocks an authorized folder, you can optionally grant Full Disk Access.';
+
+  @override
+  String get macFullDiskAccessHelp => 'View authorization instructions';
+
+  @override
+  String get macFullDiskAccessInstructions =>
+      'In System Settings → Privacy & Security → Full Disk Access, add this app and turn it on. Follow any restart prompt. This grants access to privacy-protected data; it does not disable App Sandbox or replace folder authorization.';
+
+  @override
+  String get macOpenSystemSettings => 'Open System Settings';
+
+  @override
+  String get macPrivacySettingsOpenFailed =>
+      'Could not open System Settings. Open Privacy & Security → Full Disk Access manually.';
+
+  @override
   String get shortcutGridMove => 'Move and select an item';
 
   @override

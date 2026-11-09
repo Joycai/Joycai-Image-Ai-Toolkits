@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
-import 'app_distribution.dart';
 import 'portable_storage.dart';
 import 'windows_package_identity.dart';
 import 'windows_package_storage.dart';
@@ -22,8 +21,7 @@ class AppPaths {
   static bool get usesWindowsPackageStorage =>
       Platform.isWindows && WindowsPackage.identity != WindowsPackageIdentity.unpackaged;
 
-  static bool get supportsInstallationImport =>
-      usesWindowsPackageStorage || (Platform.isMacOS && !AppDistribution.direct);
+  static bool get supportsInstallationImport => usesWindowsPackageStorage || Platform.isMacOS;
 
   static Future<String> getSupportDirectory() async => usesWindowsPackageStorage
       ? WindowsPackageStorage.supportDirectory()

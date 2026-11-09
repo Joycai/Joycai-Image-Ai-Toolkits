@@ -147,7 +147,7 @@ jobs:
           fail_on_unmatched_files: true
           body: |
             Direct-download builds, distributed outside app stores.
-            The macOS DMG is a non-sandboxed, ad-hoc signed build; it is not a Mac App Store package or a notarized Developer ID release.
+            The macOS DMG is a sandboxed, ad-hoc signed build; it is not a Mac App Store package or a notarized Developer ID release.
           generate_release_notes: true
           draft: false
           prerelease: false
