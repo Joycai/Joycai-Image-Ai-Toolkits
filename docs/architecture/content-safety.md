@@ -40,8 +40,8 @@ packaging cannot change the policy already compiled into an executable.
 
 For macOS direct packages, run
 `bash build_script/build_macos.sh --distribution direct`. This pairs the Dart
-define with the native non-sandbox configuration. A plain `flutter build macos`
-uses the default sandbox/Store configuration and keeps the two-value policy.
+define with the native direct-distribution configuration. A plain `flutter build macos`
+uses the default Store configuration and keeps the two-value policy.
 Rebuild and reinstall old packages to apply the correct distribution mode.
 Previously saved permissive values that were already overwritten by a Store-mode
 edit must be selected again; the build flag cannot restore overwritten values.

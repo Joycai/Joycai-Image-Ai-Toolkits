@@ -13,26 +13,32 @@ bash build_script/build_macos.sh --distribution direct
 ```
 
 The script cleans only `build/macos`, combines
-`--dart-define=JOYCAI_DIRECT_DISTRIBUTION=true` with the native
-`build_script/macos_direct.xcconfig` override via `XCODE_XCCONFIG_FILE`, and emits
-`Joycai-Image-Ai-Toolkits-Direct-Installer.dmg`. The override removes sandbox
-entitlements/provisioning and uses ad-hoc signing; it applies only to that build
-process, leaving the checked-in Runner sandbox configuration intact. Xcode's local
-`man xcodebuild` documents this environment override's precedence.
+`--dart-define=JOYCAI_DIRECT_DISTRIBUTION=true` with
+`build_script/macos_direct.xcconfig` via `XCODE_XCCONFIG_FILE`, and emits
+`Joycai-Image-Ai-Toolkits-Direct-Installer.dmg`. Both distributions enable App
+Sandbox. The direct override uses `Runner/Direct.entitlements`, retains network,
+user-selected files, Pictures/Downloads, Photos and app-scoped bookmarks, and
+uses ad-hoc signing without App Store provisioning. It omits the Store-only
+Keychain access group; the existing direct credential policy is unchanged.
 
-`AppDistribution.direct` keeps the normal non-container Application Support root,
-skips the sandbox installation-import bootstrap, and uses normal OS file access
-instead of requiring sandbox bookmarks. Finder imports still receive durable private
-copies, but use ordinary file reads in this mode. MCP's application allowlist and
-normal OS privacy/access restrictions remain in force. Portable mode stays Windows-only.
-Do not use the Dart define independently of its native configuration.
+The Dart distribution flag controls non-store product policy, not sandbox file
+access. Both macOS distributions use container storage, the installation-import
+bootstrap, native directory grants and security-scoped Finder-drop copies.
+Existing non-sandbox installations need the explicit old-data import flow;
+original data is not deleted. MCP allowlists remain additional restrictions.
 
-Before packaging, `verify_macos_direct.py` requires deep/strict signature validation,
-rejects sandbox/app-scope bookmark entitlements and embedded provisioning profiles.
-GitHub Release text identifies this as an ad-hoc signed non-store DMG, **not** a
-notarized Developer ID package. Developer ID signing/notarization and MAS Archive,
-Validate and upload are separate future work. Windows MSIX explicitly sets
-`store: false`; the existing ZIP/EXE, Linux archive and Android APK remain direct downloads.
+Before packaging, `verify_macos_direct.py` requires deep/strict signature
+validation, sandbox and bookmark entitlements, and no embedded provisioning
+profile. This remains an ad-hoc signed package, not a notarized Developer ID
+release. Developer ID signing/notarization remains separate work.
+
+Application settings offers an optional Full Disk Access help dialog and a
+System Settings link. Users grant that permission themselves. It only addresses
+macOS privacy restrictions: it does not disable App Sandbox, replace directory
+selection/bookmarks, or grant root privileges. No automatic permission probing
+or launch-time prompt is performed. If opening the settings URL fails, the UI
+shows the manual path. Native settings navigation and grant/restart behavior
+must be verified on a real Mac; widget tests cannot grant OS permissions.
 
 ## Store distribution signing
 

@@ -1,12 +1,12 @@
 import 'dart:io';
-import 'dart:typed_data';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:joycai_image_ai_toolkits/core/app_distribution.dart';
 import 'package:joycai_image_ai_toolkits/services/files/persistent_media_service.dart';
 import 'package:path/path.dart' as p;
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   late Directory root;
   late PersistentMediaService storage;
   setUp(() async {
@@ -15,11 +15,24 @@ void main() {
   });
   tearDown(() => root.delete(recursive: true));
 
-  test('direct build copies dropped bytes without a security-scope channel', () async {
-    final source = await File(p.join(root.path, 'direct.png')).writeAsBytes([4, 5, 6]);
-    final imported = await storage.importFile(source.path, appleBookmark: Uint8List.fromList([1]));
+  test('macOS imports Finder drops through the security-scoped native copy', () async {
+    const channel = MethodChannel('joycai/directory_access');
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    final calls = <MethodCall>[];
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      calls.add(call);
+      await File(call.arguments['destination'] as String).writeAsBytes([4, 5, 6]);
+      return null;
+    });
+    addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+    final imported = await storage.importFile(
+      '/not-readable-without-bookmark/photo.png',
+      appleBookmark: Uint8List.fromList([1]),
+    );
     expect(await File(imported).readAsBytes(), [4, 5, 6]);
-  }, skip: !AppDistribution.direct);
+    expect(calls.single.method, 'copyDrop');
+    expect(calls.single.arguments['bookmark'], [1]);
+  }, skip: !Platform.isMacOS);
 
   test('import survives original deletion and a fresh service instance', () async {
     final source = await File(p.join(root.path, 'photo.png')).writeAsBytes([1, 2, 3]);

@@ -1,7 +1,7 @@
 // Used only by build_macos.sh --distribution direct via XCODE_XCCONFIG_FILE.
-// No App Store provisioning, sandbox entitlements or developer certificate.
-CODE_SIGN_ENTITLEMENTS =
-ENABLE_APP_SANDBOX = NO
+// Sandbox enabled; no App Store provisioning or developer certificate.
+JOYCAI_RELEASE_ENTITLEMENTS = Runner/Direct.entitlements
+ENABLE_APP_SANDBOX = YES
 CODE_SIGN_IDENTITY = -
 CODE_SIGN_STYLE = Manual
 DEVELOPMENT_TEAM =

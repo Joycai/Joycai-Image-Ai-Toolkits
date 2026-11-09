@@ -252,5 +252,11 @@
   "contentSafetyEmail": "撰寫郵件",
   "contentSafetyCopyEmail": "複製信箱",
   "contentSafetyEmailCopied": "信箱已複製",
-  "contentSafetyEmailFailed": "無法開啟郵件應用，請複製信箱後手動傳送回報。"
+  "contentSafetyEmailFailed": "無法開啟郵件應用，請複製信箱後手動傳送回報。",
+  "macFullDiskAccess": "完整磁碟存取",
+  "macFullDiskAccessDescription": "存取資料夾仍需透過系統選擇器授權。如果已授權資料夾遭 macOS 隱私保護阻擋，可視需要開啟完整磁碟存取。",
+  "macFullDiskAccessHelp": "查看授權說明",
+  "macFullDiskAccessInstructions": "在「系統設定 → 隱私權與安全性 → 完整磁碟存取權」中加入本應用程式並開啟，依系統提示重新開啟應用程式。此權限允許存取隱私保護的資料，但不會關閉 App Sandbox，也不能取代資料夾授權。",
+  "macOpenSystemSettings": "開啟系統設定",
+  "macPrivacySettingsOpenFailed": "無法開啟系統設定，請手動前往「隱私權與安全性 → 完整磁碟存取權」。"
 }

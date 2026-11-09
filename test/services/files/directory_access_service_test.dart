@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:joycai_image_ai_toolkits/core/app_distribution.dart';
 import 'package:joycai_image_ai_toolkits/services/files/directory_access_service.dart';
 
 void main() {
@@ -17,7 +16,7 @@ void main() {
   });
   tearDown(() => messenger.setMockMethodCallHandler(channel, null));
 
-  test('macOS direct build does not require sandbox bookmarks', () async {
+  test('all macOS distributions require sandbox bookmarks', () async {
     debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
     addTearDown(() => debugDefaultTargetPlatformOverride = null);
     messenger.setMockMethodCallHandler(channel, (call) async {
@@ -25,13 +24,8 @@ void main() {
       return 'needsAuthorization';
     });
     final configured = DirectoryAccessService(channel: channel);
-    expect(
-      await configured.restore('/outside-home'),
-      AppDistribution.direct
-          ? DirectoryAccessStatus.available
-          : DirectoryAccessStatus.needsAuthorization,
-    );
-    expect(calls.length, AppDistribution.direct ? 0 : 1);
+    expect(await configured.restore('/outside-home'), DirectoryAccessStatus.needsAuthorization);
+    expect(calls.length, 1);
   });
 
   test('restores per-root outcomes without discarding inaccessible locations', () async {

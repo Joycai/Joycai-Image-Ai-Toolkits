@@ -252,5 +252,11 @@
   "contentSafetyEmail": "Compose email",
   "contentSafetyCopyEmail": "Copy email address",
   "contentSafetyEmailCopied": "Email address copied",
-  "contentSafetyEmailFailed": "Could not open an email app. Copy the address and send your report manually."
+  "contentSafetyEmailFailed": "Could not open an email app. Copy the address and send your report manually.",
+  "macFullDiskAccess": "Full Disk Access",
+  "macFullDiskAccessDescription": "Folder access still requires selecting a folder. If macOS privacy protection blocks an authorized folder, you can optionally grant Full Disk Access.",
+  "macFullDiskAccessHelp": "View authorization instructions",
+  "macFullDiskAccessInstructions": "In System Settings → Privacy & Security → Full Disk Access, add this app and turn it on. Follow any restart prompt. This grants access to privacy-protected data; it does not disable App Sandbox or replace folder authorization.",
+  "macOpenSystemSettings": "Open System Settings",
+  "macPrivacySettingsOpenFailed": "Could not open System Settings. Open Privacy & Security → Full Disk Access manually."
 }

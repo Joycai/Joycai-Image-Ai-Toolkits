@@ -3,7 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:joycai_image_ai_toolkits/core/app_distribution.dart';
+import 'package:joycai_image_ai_toolkits/core/app_paths.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/core/constants.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
@@ -37,11 +37,11 @@ void main() {
           screen: AppScreen.settings,
           size: size,
           brightness: brightness,
-          suffix: AppDistribution.direct ? 'directDistribution' : 'installationEntry',
+          suffix: 'installationEntry',
           after: (tester) async {
             final l10n = lookupAppLocalizations(const Locale('zh'));
             await actInRealAsync(tester, () => tester.tap(find.text(l10n.application).first));
-            if (!AppDistribution.direct) {
+            if (AppPaths.supportsInstallationImport) {
               await tester.ensureVisible(find.text(l10n.installationImportSchedule).last);
             }
             await settle(tester, 6);

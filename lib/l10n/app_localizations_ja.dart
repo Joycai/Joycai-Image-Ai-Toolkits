@@ -4037,6 +4037,27 @@ class AppLocalizationsJa extends AppLocalizations {
   String get contentSafetyEmailFailed => 'メールアプリを開けませんでした。アドレスをコピーして手動で報告してください。';
 
   @override
+  String get macFullDiskAccess => 'フルディスクアクセス';
+
+  @override
+  String get macFullDiskAccessDescription =>
+      'フォルダへのアクセスにはシステムの選択画面での許可が必要です。許可済みのフォルダが macOS のプライバシー保護で制限される場合は、必要に応じてフルディスクアクセスを有効にできます。';
+
+  @override
+  String get macFullDiskAccessHelp => '許可の手順を表示';
+
+  @override
+  String get macFullDiskAccessInstructions =>
+      '「システム設定 → プライバシーとセキュリティ → フルディスクアクセス」でこのアプリを追加し、有効にしてください。再起動を求められた場合は従ってください。この権限は保護されたデータへのアクセスを許可しますが、App Sandbox を解除したり、フォルダの許可を代替したりするものではありません。';
+
+  @override
+  String get macOpenSystemSettings => 'システム設定を開く';
+
+  @override
+  String get macPrivacySettingsOpenFailed =>
+      'システム設定を開けませんでした。「プライバシーとセキュリティ → フルディスクアクセス」を手動で開いてください。';
+
+  @override
   String get shortcutGridMove => '項目を移動して選択';
 
   @override

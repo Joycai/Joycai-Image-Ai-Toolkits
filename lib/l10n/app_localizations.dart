@@ -7281,6 +7281,42 @@ abstract class AppLocalizations {
   /// **'Could not open an email app. Copy the address and send your report manually.'**
   String get contentSafetyEmailFailed;
 
+  /// No description provided for @macFullDiskAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Full Disk Access'**
+  String get macFullDiskAccess;
+
+  /// No description provided for @macFullDiskAccessDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder access still requires selecting a folder. If macOS privacy protection blocks an authorized folder, you can optionally grant Full Disk Access.'**
+  String get macFullDiskAccessDescription;
+
+  /// No description provided for @macFullDiskAccessHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'View authorization instructions'**
+  String get macFullDiskAccessHelp;
+
+  /// No description provided for @macFullDiskAccessInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'In System Settings → Privacy & Security → Full Disk Access, add this app and turn it on. Follow any restart prompt. This grants access to privacy-protected data; it does not disable App Sandbox or replace folder authorization.'**
+  String get macFullDiskAccessInstructions;
+
+  /// No description provided for @macOpenSystemSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open System Settings'**
+  String get macOpenSystemSettings;
+
+  /// No description provided for @macPrivacySettingsOpenFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open System Settings. Open Privacy & Security → Full Disk Access manually.'**
+  String get macPrivacySettingsOpenFailed;
+
   /// No description provided for @shortcutGridMove.
   ///
   /// In en, this message translates to:
