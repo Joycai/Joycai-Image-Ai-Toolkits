@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:joycai_image_ai_toolkits/core/app_distribution.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/core/constants.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
@@ -19,7 +20,9 @@ void main() {
         const Locale('ja'),
         const Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hant'),
       ]) {
-        final name = 'credential_recovery_${size.label}_${brightness.name}_${locale.toString()}';
+        const variant = AppDistribution.direct ? 'direct' : 'signed';
+        final name =
+            'credential_recovery_${variant}_${size.label}_${brightness.name}_${locale.toString()}';
         testWidgets(name, (tester) async {
           tester.view.devicePixelRatio = 1;
           tester.view.physicalSize = size.size;
@@ -35,7 +38,10 @@ void main() {
                 brightness: brightness,
                 fontFamily: 'NotoSansSC',
               ),
-              home: CredentialRecoveryScreen(onRetry: () async {}),
+              home: CredentialRecoveryScreen(
+                requiresSignedMacBuild: AppDistribution.direct,
+                onRetry: () async {},
+              ),
             ),
           );
           await tester.pumpAndSettle();

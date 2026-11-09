@@ -4705,6 +4705,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get credentialRecoveryReset => '清除凭据并继续';
 
   @override
+  String get credentialRecoveryDirectMacBody =>
+      '此下载版无法解锁由签名版加密的凭据。你的数据和密钥未被修改。请使用原开发者身份签名的版本重新打开，以继续使用现有数据。如需迁移，请从原版本导出设置备份，并在独立安装中重新填写 API 密钥。完全磁盘访问不能授予钥匙串权限，请勿删除钥匙串项目或重置此数据库。';
+
+  @override
   String get workbench => '工作台';
 
   @override
@@ -11248,6 +11252,10 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get credentialRecoveryReset => '清除憑證並繼續';
+
+  @override
+  String get credentialRecoveryDirectMacBody =>
+      '此下載版無法解鎖由簽署版本加密的憑證。你的資料和金鑰未被修改。請使用原開發者身分簽署的版本重新開啟，以繼續使用現有資料。如需移轉，請從原版本匯出設定備份，並在獨立安裝中重新輸入 API 金鑰。完整磁碟存取不能授予鑰匙圈權限，請勿刪除鑰匙圈項目或重設此資料庫。';
 
   @override
   String get workbench => '工作台';

@@ -3,8 +3,8 @@
 # Exit immediately if a command exits with a non-zero status
 set -euo pipefail
 
-APP_NAME="Joycai Image AI Toolkits"
-DISPLAY_NAME="Joycai Image AI Toolkits"
+APP_NAME="Joycai Image AI Toolkits Direct"
+DISPLAY_NAME="Joycai Image AI Toolkits Direct"
 DMG_NAME="Joycai-Image-Ai-Toolkits-Direct-Installer"
 BUILD_DIR="build/macos/Build/Products/Release"
 STAGING_DIR="build/macos/dmg_staging"

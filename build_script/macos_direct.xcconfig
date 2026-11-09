@@ -6,3 +6,8 @@ CODE_SIGN_IDENTITY = -
 CODE_SIGN_STYLE = Manual
 DEVELOPMENT_TEAM =
 PROVISIONING_PROFILE_SPECIFIER =
+// Match Runner and generated Swift-package dependency deployment targets.
+MACOSX_DEPLOYMENT_TARGET = 14.0
+// Runner-only indirection keeps plugin framework names and identities intact.
+JOYCAI_APP_PRODUCT_NAME = Joycai Image AI Toolkits Direct
+JOYCAI_APP_BUNDLE_IDENTIFIER = cn.joycai.joycaiImageAiToolkits.direct

@@ -142,6 +142,7 @@ void main() async {
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           home: CredentialRecoveryScreen(
+            requiresSignedMacBuild: Platform.isMacOS && AppDistribution.direct,
             onReset: AppPaths.usesWindowsPackageStorage
                 ? () async {
                     // Do not discard saved credentials while the OS protector

@@ -7,7 +7,13 @@ import '../../widgets/ui/app_button.dart';
 /// Bootstrap only: no AppState, live tasks or credential-dependent services exist
 /// until the caller has successfully reopened the database.
 class CredentialRecoveryScreen extends StatefulWidget {
-  const CredentialRecoveryScreen({super.key, required this.onRetry, this.onReset});
+  const CredentialRecoveryScreen({
+    super.key,
+    required this.onRetry,
+    this.onReset,
+    this.requiresSignedMacBuild = false,
+  });
+  final bool requiresSignedMacBuild;
   final Future<void> Function() onRetry;
   final Future<void> Function()? onReset;
 
@@ -52,7 +58,9 @@ class _CredentialRecoveryScreenState extends State<CredentialRecoveryScreen> {
                   Text(l10n.credentialRecoveryTitle, style: theme.textTheme.headlineSmall),
                   const SizedBox(height: AppSpace.s16),
                   Text(
-                    widget.onReset == null
+                    widget.requiresSignedMacBuild
+                        ? l10n.credentialRecoveryDirectMacBody
+                        : widget.onReset == null
                         ? l10n.credentialRecoveryBody
                         : l10n.credentialRecoveryWindowsBody,
                     style: theme.textTheme.bodyLarge,

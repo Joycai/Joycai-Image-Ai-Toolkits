@@ -32,5 +32,6 @@
 "installationImportWindowsDescription": "選擇包含 joycai_workbench.db 的舊資料目錄。Windows 站外安裝的資料目錄可在其設定中查看；啟用可攜模式時為程式所在目錄。資料將複製到此套件中，原資料保留。",
 "credentialRecoveryWindowsBody": "Joycai 無法驗證此 Windows 使用者的已儲存憑證。請使用原 Windows 帳戶及使用者設定檔重試。複製加密資料庫不能用於轉移憑證。重試不會清除憑證。如果無法恢復存取，可清除已儲存憑證後在設定中重新輸入。清除前會在資料目錄的 credential-recovery 子目錄儲存資料庫快照。",
 "credentialRecoveryResetConsent": "清除全部渠道金鑰、代理密碼及 MCP 權杖，保留渠道、提示詞、歷史和媒體。我會在設定中重新輸入憑證；MCP 將保持關閉。",
-"credentialRecoveryReset": "清除憑證並繼續"
+"credentialRecoveryReset": "清除憑證並繼續",
+"credentialRecoveryDirectMacBody": "此下載版無法解鎖由簽署版本加密的憑證。你的資料和金鑰未被修改。請使用原開發者身分簽署的版本重新開啟，以繼續使用現有資料。如需移轉，請從原版本匯出設定備份，並在獨立安裝中重新輸入 API 金鑰。完整磁碟存取不能授予鑰匙圈權限，請勿刪除鑰匙圈項目或重設此資料庫。"
 }

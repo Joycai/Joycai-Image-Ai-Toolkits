@@ -4742,6 +4742,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get credentialRecoveryReset => '認証情報を消去して続行';
 
   @override
+  String get credentialRecoveryDirectMacBody =>
+      'このダウンロード版では、署名済みの Mac 版で暗号化された認証情報を解除できません。データと鍵は変更されていません。元の開発者 ID で署名された版を再度開くと、既存のデータを引き続き使用できます。移行する場合は、元の版から設定のバックアップをエクスポートし、別のインストール先で API キーを再入力してください。フルディスクアクセスではキーチェーンへのアクセスは許可されません。キーチェーン項目の削除やこのデータベースのリセットは行わないでください。';
+
+  @override
   String get workbench => 'ワークベンチ';
 
   @override

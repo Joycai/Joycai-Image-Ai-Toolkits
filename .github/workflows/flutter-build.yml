@@ -147,7 +147,7 @@ jobs:
           fail_on_unmatched_files: true
           body: |
             Direct-download builds, distributed outside app stores.
-            The macOS DMG is a sandboxed, ad-hoc signed build; it is not a Mac App Store package or a notarized Developer ID release.
+            The macOS DMG installs Joycai Image AI Toolkits Direct with a separate data container. It is a sandboxed, ad-hoc signed build; it is not a Mac App Store package or a notarized Developer ID release.
           generate_release_notes: true
           draft: false
           prerelease: false

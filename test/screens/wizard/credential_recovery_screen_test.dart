@@ -7,6 +7,24 @@ import 'package:joycai_image_ai_toolkits/screens/wizard/credential_recovery_scre
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_button.dart';
 
 void main() {
+  testWidgets('direct Mac recovery explains signature mismatch without offering data reset', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: CredentialRecoveryScreen(requiresSignedMacBuild: true, onRetry: () async {}),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Full Disk Access does not grant Keychain access'), findsOneWidget);
+    expect(find.byType(CheckboxListTile), findsNothing);
+    expect(find.byType(AppButton), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('Windows credential reset requires explicit consent and stays serialized', (
     tester,
   ) async {

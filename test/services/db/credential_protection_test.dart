@@ -60,6 +60,34 @@ void main() {
   });
   tearDown(() => closeTestDatabase(plain));
 
+  for (final field in ['api_key', 'proxy_password', 'mcp_token']) {
+    test('unprotected startup rejects encrypted $field without changing stored data', () async {
+      const envelope = 'joycai-secret:future:synthetic';
+      if (field == 'api_key') {
+        await plain.addChannel(channel('original'));
+        await raw.update('llm_channels', {'api_key': envelope});
+      } else {
+        await raw.insert('settings', {'key': field, 'value': envelope});
+      }
+      final beforeChannels = await raw.query('llm_channels');
+      final beforeSettings = await raw.query('settings');
+      await expectLater(
+        plain.migrateCredentials(raw),
+        throwsA(isA<CredentialProtectionException>()),
+      );
+      expect(await raw.query('llm_channels'), beforeChannels);
+      expect(await raw.query('settings'), beforeSettings);
+    });
+  }
+
+  test('unprotected startup accepts plaintext credentials without rewriting them', () async {
+    await plain.addChannel(channel('original'));
+    await plain.saveSetting('proxy_password', 'original-proxy');
+    await plain.migrateCredentials(raw);
+    expect((await plain.getChannels()).single.apiKey, 'original');
+    expect(await plain.getSetting('proxy_password'), 'original-proxy');
+  });
+
   test('migration handles PRAGMA result rows on the Darwin database adapter', () async {
     await plain.addChannel(channel('darwin-original'));
     await protected.migrateCredentials(_DarwinExecuteDatabase(raw));

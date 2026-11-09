@@ -309,3 +309,13 @@ and directory grants still apply. Opening settings is explicit; failure shows
 the manual navigation path. There is no permission-status switch or automatic
 prompt. All four languages are maintained. Review uses repository specifications
 and Flutter renders, not unavailable historical design frames.
+
+### Direct macOS credential recovery (2026-11-09)
+
+The existing bootstrap recovery screen adds a direct-build explanation for an
+explicitly imported encrypted database: the original signed app is needed,
+Full Disk Access cannot grant Keychain access, and data remains intact. It keeps
+the existing theme roles, constrained scrolling layout and retry action; it adds
+no destructive reset. All four locales are rendered at four widths in light/dark.
+Normal direct first launch uses its own empty container and the existing optional
+import/setup screens.
