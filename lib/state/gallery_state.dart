@@ -112,14 +112,13 @@ class GalleryState extends ChangeNotifier {
 
   String? outputDirectory;
   String? resultCacheDirectory;
-  String? legacyResultCacheDirectory;
   double thumbnailSize = 150.0;
   String imagePrefix = 'result';
 
   /// Root directories of the result tree (dedup, non-empty): the configured
   /// output directory plus the platform result cache when it differs.
   ///
-  /// Memoised against the three paths it is derived from, because the rest of
+  /// Memoised against the two paths it is derived from, because the rest of
   /// this class trades on list *identity* meaning "this changed" — a selector
   /// holding one of these lists has no other way to tell. A getter that
   /// allocated on every read was a value that always compared unequal, so
@@ -127,10 +126,10 @@ class GalleryState extends ChangeNotifier {
   /// selection changes and size drags included. Same list back until one of
   /// the paths moves.
   List<String>? _resultRoots;
-  (String?, String?, String?)? _resultRootsFrom;
+  (String?, String?)? _resultRootsFrom;
 
   List<String> get resultRootDirectories {
-    final from = (outputDirectory, resultCacheDirectory, legacyResultCacheDirectory);
+    final from = (outputDirectory, resultCacheDirectory);
     final cached = _resultRoots;
     if (cached != null && _resultRootsFrom == from) return cached;
 
@@ -143,8 +142,6 @@ class GalleryState extends ChangeNotifier {
         resultCacheDirectory != outputDirectory) {
       roots.add(resultCacheDirectory!);
     }
-    final legacy = legacyResultCacheDirectory;
-    if (legacy != null && legacy.isNotEmpty && !roots.contains(legacy)) roots.add(legacy);
     _resultRootsFrom = from;
     return _resultRoots = roots;
   }
@@ -292,9 +289,8 @@ class GalleryState extends ChangeNotifier {
       if (!dir.existsSync()) dir.createSync(recursive: true);
 
       final previous = await _db.getSetting('result_cache_directory');
-      legacyResultCacheDirectory = await _db.getSetting('legacy_result_cache_directory');
       if (previous != null && previous.isNotEmpty && previous != resultCacheDirectory) {
-        legacyResultCacheDirectory = previous;
+        // Keep recovery metadata for migration/task recovery, not gallery roots.
         await _db.saveSetting('legacy_result_cache_directory', previous);
         if (outputDirectory == previous) {
           outputDirectory = resultCacheDirectory;

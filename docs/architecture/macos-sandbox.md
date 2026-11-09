@@ -198,8 +198,10 @@ published only after a flushed partial file is renamed. A video filesystem failu
 switches its existing download retry to durable storage, not a new generation request.
 Results remain reachable through the existing result tree and export controls.
 
-Legacy `result_cache` files are not deleted or silently hidden: the old root is kept
-as `legacy_result_cache_directory` and shown alongside the new root. Old configured
+The result tree and aggregate scan contain only the configured output directory
+and the current app-owned `media/results` directory, deduplicated when equal.
+Legacy `result_cache` files are not deleted: the old root is kept as
+`legacy_result_cache_directory` for recovery, but is not an extra gallery root. Old configured
 output paths that pointed at this cache are redirected for future writes. Phase 3
 below copies accessible old results and rewrites their history. Files whose migration
 fails remain at risk of OS temporary-storage eviction until recovery. Workspace
@@ -235,8 +237,8 @@ The layer index is refreshed after commit. No schema version change is needed.
 
 On copy/authorization/database failure, startup reports an error in the run console
 and continues using retained legacy history/settings. Copies already completed remain
-safe in persistent storage and are reused on retry; they can temporarily appear beside
-legacy originals in the result gallery. No partial migration is marked complete. A
+safe in persistent storage and are reused on retry; only the current result and output
+roots are scanned by the gallery. No partial migration is marked complete. A
 later launch retries; missing/offline/external roots need recovery or explicit directory
 authorization through the existing directory picker before restarting. Old Batch jobs
 also redirect a retained legacy output root before saving newly received results.
