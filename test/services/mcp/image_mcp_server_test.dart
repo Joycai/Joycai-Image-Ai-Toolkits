@@ -202,10 +202,32 @@ void main() {
       expect(await File(output['path'] as String).readAsBytes(), png);
       final read = await call('read_generation_image', {'taskId': id, 'outputId': 0});
       expect(read.content.whereType<ImageContent>().single.mimeType, 'image/jpeg');
+      Future<void> checkOriginal() async {
+        final original = await call('read_generation_image', {
+          'taskId': id,
+          'outputId': 0,
+          'preview': false,
+        });
+        expect(original.isError, false);
+        final image = original.content.whereType<ImageContent>().single;
+        expect(image.mimeType, 'image/png');
+        expect(base64Decode(image.data), png);
+        expect(original.structuredContent, {
+          'taskId': id,
+          'outputId': 0,
+          'width': 3,
+          'height': 2,
+          'mimeType': 'image/png',
+          'preview': false,
+        });
+      }
+
+      await checkOriginal();
       final resource = await client.readResource(ReadResourceRequest(uri: output['uri'] as String));
       expect(base64Decode((resource.contents.single as BlobResourceContents).blob), png);
       await client.close();
       client = await connect(protocol: McpProtocol.legacy);
+      await checkOriginal();
       final duplicate = await call('generate_image', args);
       expect(duplicate.structuredContent!['taskId'], id);
       expect(calls.length, 1);
@@ -215,6 +237,43 @@ void main() {
       final removed = await call('generate_image', args);
       expect(removed.isError, true);
       expect(calls.length, 1, reason: 'Deleting history must not buy another generation');
+    },
+  );
+
+  test(
+    'multi-megabyte originals survive tool and resource serialization in both protocols',
+    () async {
+      final submitted = await call('generate_image', {
+        'requestId': 'large-original',
+        'modelId': modelId,
+        'prompt': 'A blue bird',
+      });
+      final id = submitted.structuredContent!['taskId'] as String;
+      final result = await finish(id);
+      final output = (result['outputs'] as List).single as Map;
+      // Uncompressed PNG keeps this deterministic and large without a binary fixture.
+      // mcp_dart 2.4.3 overflowed its base64-validation regexp on real 6.65 MiB PNGs.
+      final largePng = img.encodePng(img.Image(width: 1536, height: 1536), level: 0);
+      expect(largePng.length, greaterThan(6 * 1024 * 1024));
+      await File(output['path'] as String).writeAsBytes(largePng);
+      final encoded = base64Encode(largePng);
+      for (final protocol in [McpProtocol.stable, McpProtocol.legacy]) {
+        await client.close();
+        client = await connect(protocol: protocol);
+        final original = await call('read_generation_image', {
+          'taskId': id,
+          'outputId': 0,
+          'preview': false,
+        });
+        expect(original.isError, false);
+        final image = original.content.whereType<ImageContent>().single;
+        expect(image.mimeType, 'image/png');
+        expect(image.data == encoded, isTrue, reason: 'Original bytes must be preserved');
+        final resource = await client.readResource(
+          ReadResourceRequest(uri: output['uri'] as String),
+        );
+        expect((resource.contents.single as BlobResourceContents).blob == encoded, isTrue);
+      }
     },
   );
 
