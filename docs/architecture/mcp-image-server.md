@@ -126,6 +126,14 @@ a string redactor cannot reliably remove. Raw details remain in local task logs.
 
 ## Verification
 
+The minimum `mcp_dart` version is 2.4.4. Version 2.4.3 used a base64-validation
+regular expression that overflowed the Dart stack when serializing multi-megabyte
+images or resource blobs, returning a JSON-RPC error after generation had succeeded.
+A real 6.65 MiB PNG reproduced this on Windows. Keep the large-original regression
+for both protocol profiles and both tool/resource reads; tiny preview fixtures do
+not exercise this failure. Original bytes must remain unchanged, not downscaled to
+hide a transport failure.
+
 `test/services/mcp/image_mcp_server_test.dart` connects the real Dart SDK client to
 the listener and a local fake provider. It covers both protocol generations,
 text/image-edit requests, resource reads, reconnect/replay, invalid inputs,
