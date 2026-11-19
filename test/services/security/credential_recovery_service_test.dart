@@ -20,7 +20,7 @@ void main() {
     );
     await db.setVersion(DatabaseService.dbVersion);
     await db.execute(
-      'CREATE TABLE llm_channels (id INTEGER PRIMARY KEY, api_key TEXT, display_name TEXT)',
+      'CREATE TABLE llm_channels (id INTEGER PRIMARY KEY, api_key TEXT, display_name TEXT, routes TEXT)',
     );
     await db.execute('CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT)');
     await db.execute('CREATE TABLE prompts (id INTEGER PRIMARY KEY, text TEXT)');
@@ -28,6 +28,7 @@ void main() {
       'id': 1,
       'api_key': 'joycai-secret:win-dpapi:v1:lost',
       'display_name': 'Keep channel',
+      'routes': '{"mediaUpload":{"apiKey":"lost-upload"}}',
     });
     await db.insert('prompts', {'id': 1, 'text': 'Keep prompt'});
     for (final key in ['proxy_password', 'mcp_token', 'output_directory']) {
@@ -50,6 +51,7 @@ void main() {
       'id': 1,
       'api_key': '',
       'display_name': 'Keep channel',
+      'routes': '{"mediaUpload":{"apiKey":""}}',
     });
     expect((await db.query('prompts')).single['text'], 'Keep prompt');
     final settings = {for (final row in await db.query('settings')) row['key']: row['value']};
@@ -67,6 +69,7 @@ void main() {
         (await saved.query('llm_channels')).single['api_key'],
         'joycai-secret:win-dpapi:v1:lost',
       );
+      expect((await saved.query('llm_channels')).single['routes'], contains('lost-upload'));
       expect(await saved.query('prompts'), await db.query('prompts'));
     } finally {
       await saved.close();

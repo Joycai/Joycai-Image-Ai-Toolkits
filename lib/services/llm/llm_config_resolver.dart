@@ -196,6 +196,7 @@ class LLMConfigResolver {
       channelType: channelType,
       endpoint: endpoint,
       apiKey: apiKey,
+      uploadConfig: RoutedChannel.routesOf(channelData).uploadConfig,
       enableThinking: modelData.enableThinking,
       reasoningEffort: ReasoningEffort.tryParse(modelData.reasoningEffort),
       enableWebSearch: modelData.enableWebSearch,

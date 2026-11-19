@@ -3465,6 +3465,27 @@ class AppLocalizationsEn extends AppLocalizations {
       'Match input video rates using the output resolution and quality. Missing rates remain incomplete.';
 
   @override
+  String get channelTokenPlan => 'Use Token Plan';
+
+  @override
+  String get channelTokenPlanHint =>
+      'Generation and polling use the channel key. Local media uses separate upload credentials.';
+
+  @override
+  String get channelUploadEndpoint => 'Media upload endpoint';
+
+  @override
+  String get channelUploadKey => 'Media upload API key';
+
+  @override
+  String get channelUploadAccountHint =>
+      'Use a regular Beijing Model Studio key for file uploads. Existing files are reused by content; download links are refreshed. Uploaded files remain in your account for reuse and can be deleted in file management after tasks finish.';
+
+  @override
+  String get channelUploadRequired =>
+      'Enter a separate upload API key and a valid non-Token Plan HTTPS endpoint.';
+
+  @override
   String get prompts => 'Prompts';
 
   @override

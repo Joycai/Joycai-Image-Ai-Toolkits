@@ -5944,6 +5944,42 @@ abstract class AppLocalizations {
   /// **'Match input video rates using the output resolution and quality. Missing rates remain incomplete.'**
   String get mediaVideoPriceHint;
 
+  /// No description provided for @channelTokenPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Token Plan'**
+  String get channelTokenPlan;
+
+  /// No description provided for @channelTokenPlanHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Generation and polling use the channel key. Local media uses separate upload credentials.'**
+  String get channelTokenPlanHint;
+
+  /// No description provided for @channelUploadEndpoint.
+  ///
+  /// In en, this message translates to:
+  /// **'Media upload endpoint'**
+  String get channelUploadEndpoint;
+
+  /// No description provided for @channelUploadKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Media upload API key'**
+  String get channelUploadKey;
+
+  /// No description provided for @channelUploadAccountHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a regular Beijing Model Studio key for file uploads. Existing files are reused by content; download links are refreshed. Uploaded files remain in your account for reuse and can be deleted in file management after tasks finish.'**
+  String get channelUploadAccountHint;
+
+  /// No description provided for @channelUploadRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a separate upload API key and a valid non-Token Plan HTTPS endpoint.'**
+  String get channelUploadRequired;
+
   /// No description provided for @prompts.
   ///
   /// In en, this message translates to:

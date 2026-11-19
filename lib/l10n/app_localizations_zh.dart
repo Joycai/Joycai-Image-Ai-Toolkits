@@ -3299,6 +3299,25 @@ class AppLocalizationsZh extends AppLocalizations {
   String get mediaVideoPriceHint => '输入视频按输出分辨率和质量匹配单价；未配置的档位标记为费用不完整。';
 
   @override
+  String get channelTokenPlan => '使用 Token Plan';
+
+  @override
+  String get channelTokenPlanHint => '生成与轮询使用渠道密钥，本地素材使用独立的上传凭证。';
+
+  @override
+  String get channelUploadEndpoint => '素材上传地址';
+
+  @override
+  String get channelUploadKey => '素材上传 API 密钥';
+
+  @override
+  String get channelUploadAccountHint =>
+      '请使用北京地域的普通百炼密钥上传文件。相同内容会复用已有文件，并刷新下载链接。上传文件保留在你的账号中供复用，任务完成后可在文件管理中删除。';
+
+  @override
+  String get channelUploadRequired => '请填写独立上传 API 密钥及有效的非 Token Plan HTTPS 地址。';
+
+  @override
   String get prompts => '提示词';
 
   @override
@@ -10007,6 +10026,25 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get mediaVideoPriceHint => '輸入影片按輸出解析度和品質匹配單價；未設定的檔位標記為費用不完整。';
+
+  @override
+  String get channelTokenPlan => '使用 Token Plan';
+
+  @override
+  String get channelTokenPlanHint => '生成與輪詢使用渠道金鑰，本機素材使用獨立的上傳憑證。';
+
+  @override
+  String get channelUploadEndpoint => '素材上傳位址';
+
+  @override
+  String get channelUploadKey => '素材上傳 API 金鑰';
+
+  @override
+  String get channelUploadAccountHint =>
+      '請使用北京地域的一般百煉金鑰上傳檔案。相同內容會重用已有檔案，並更新下載連結。上傳檔案保留在你的帳號中供重用，任務完成後可在檔案管理中刪除。';
+
+  @override
+  String get channelUploadRequired => '請填寫獨立上傳 API 金鑰及有效的非 Token Plan HTTPS 位址。';
 
   @override
   String get prompts => '提示';

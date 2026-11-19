@@ -4,6 +4,7 @@ import '../../../models/llm_channel.dart';
 import '../../../models/llm_model.dart';
 import '../../../models/pricing_group.dart';
 import '../../llm/channel_routes.dart';
+import '../../llm/channel_upload_config.dart';
 import '../database_service.dart';
 
 class ModelRepository {
@@ -79,13 +80,21 @@ class ModelRepository {
   Future<Map<String, dynamic>> _protectedChannel(LLMChannel channel) async {
     final row = normalizedChannel(channel).toMap(includeId: false);
     row['api_key'] = await _dbService.protectCredential(channel.apiKey);
+    final secret = await _dbService.protectCredential(
+      ChannelUploadConfig.documentKey(row['routes'] as String?),
+    );
+    row['routes'] = ChannelUploadConfig.mapDocumentKey(row['routes'] as String?, (_) => secret);
     return row;
   }
 
   Future<LLMChannel> _revealedChannel(Map<String, Object?> row) async {
+    final uploadKey = await _dbService.revealCredential(
+      ChannelUploadConfig.documentKey(row['routes'] as String?),
+    );
     return normalizedChannel(
       LLMChannel.fromMap({
         ...row,
+        'routes': ChannelUploadConfig.mapDocumentKey(row['routes'] as String?, (_) => uploadKey),
         'api_key': await _dbService.revealCredential(row['api_key'] as String),
       }),
     );

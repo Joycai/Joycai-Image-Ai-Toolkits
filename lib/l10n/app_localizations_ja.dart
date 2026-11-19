@@ -3321,6 +3321,25 @@ class AppLocalizationsJa extends AppLocalizations {
   String get mediaVideoPriceHint => '入力動画の単価は出力解像度と品質で選択します。未設定の料金は不完全として表示します。';
 
   @override
+  String get channelTokenPlan => 'Token Plan を使用';
+
+  @override
+  String get channelTokenPlanHint => '生成とポーリングにはチャネルのキーを、ローカル素材には専用のアップロード認証情報を使います。';
+
+  @override
+  String get channelUploadEndpoint => '素材アップロード URL';
+
+  @override
+  String get channelUploadKey => '素材アップロード API キー';
+
+  @override
+  String get channelUploadAccountHint =>
+      'ファイルのアップロードには北京リージョンの通常の Model Studio キーを使用します。同じ内容のファイルを再利用し、ダウンロードリンクを更新します。ファイルはアカウントに保持され、タスク完了後にファイル管理で削除できます。';
+
+  @override
+  String get channelUploadRequired => '専用アップロード API キーと、Token Plan 以外の有効な HTTPS URL を入力してください。';
+
+  @override
   String get prompts => 'プロンプト';
 
   @override
