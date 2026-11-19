@@ -9,12 +9,11 @@ part of '../../model_capabilities.dart';
 ///  * `seconds` — 2–30 s (`-1` smart mode is not exposed; upstream
 ///    default 5).
 ///  * `videoAudio` — whether the model also generates audio. Upstream
-///    defaults to **on** and bills for it, which is why it is a visible
-///    control instead of an inherited server-side default; the protocol
-///    always sends the field explicitly.
+///    defaults to **on**; disabling audio does not change the price.
+///    The protocol always sends the field explicitly.
 const _dashscopeWanVideo = ModelCapabilities(
   isVideoGenerator: true,
-  maxReferenceImages: 9,
+  maxReferenceImages: 10,
   videoParams: [
     ParamSpec(
       key: 'aspectRatio',
@@ -23,6 +22,7 @@ const _dashscopeWanVideo = ModelCapabilities(
       defaultValue: 'adaptive',
       options: [
         ParamOption('adaptive'),
+        ParamOption('21:9'),
         ParamOption('16:9'),
         ParamOption('4:3'),
         ParamOption('1:1'),
@@ -55,6 +55,7 @@ const _dashscopeWanVideo = ModelCapabilities(
       options: [ParamOption('on'), ParamOption('off')],
     ),
     _dashscopePromptExtend,
+    _dashscopeWatermark,
   ],
 );
 
@@ -122,7 +123,7 @@ const _dashscopeQwenImage3 = ModelCapabilities(
       options: [ParamOption('not_set'), ParamOption('direct'), ParamOption('agent')],
     ),
     _dashscopeImageThinking,
-    _dashscopeImageWatermark,
+    _dashscopeWatermark,
   ],
 );
 
@@ -134,7 +135,7 @@ const _dashscopeImageThinking = ParamSpec(
   options: [ParamOption('not_set'), ParamOption('on'), ParamOption('off')],
 );
 
-const _dashscopeImageWatermark = ParamSpec(
+const _dashscopeWatermark = ParamSpec(
   key: 'watermark',
   labelKey: 'watermark',
   control: ParamControl.segmented,
@@ -306,7 +307,7 @@ const _dashscopeWanImage = ModelCapabilities(
       sizeVocabulary: _dashscopeWanSizeVocabulary,
     ),
     _dashscopeImageThinking,
-    _dashscopeImageWatermark,
+    _dashscopeWatermark,
   ],
 );
 
@@ -330,6 +331,6 @@ const _dashscopeWanImagePro = ModelCapabilities(
       sizeVocabulary: _dashscopeWanProSizeVocabulary,
     ),
     _dashscopeImageThinking,
-    _dashscopeImageWatermark,
+    _dashscopeWatermark,
   ],
 );

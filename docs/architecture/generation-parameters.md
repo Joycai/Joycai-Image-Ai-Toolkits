@@ -197,3 +197,20 @@ JSON generation and multipart edits. The former `openaiImage2` fallback snapshot
 is compatible only with unchanged existing values and default new complexity.
 See `docs/api/gpt-image-series.md` for source evidence, compatibility assumptions
 and the separate GIF/SVG/Batch limitations.
+
+### Wan 3.0 video contract (2026-11-19)
+
+The native DashScope video wire makes frames and reference images exclusive;
+a last frame requires a first frame. The shared validator applies Wan's 20 MB,
+JPEG/PNG/BMP/WebP, 240–8000 pixel edges, 1:8–8:1 ratio and no-PNG-alpha rules
+to every image, including frames. The profile permits ten references and 21:9.
+The IO-free video payload builder retains defensive media checks and encodes
+watermark on/off as booleans, omitting the default not_set. Audio is explicit;
+disabling it does not change the upstream price.
+
+Version-1 queued DashScope video snapshots may omit the additive watermark key
+only when its effective value remains the declared default. Explicit mismatches
+still fail before submission. Accepted jobs retain their existing resume path.
+MaaS workspace hosts infer DashScope with native paths derived independently of
+the host. No schema migration is needed. Phase 2/3 prompt, smart-duration, seed
+and multimodal extensions remain out of scope; see the plan ledger and API §6.

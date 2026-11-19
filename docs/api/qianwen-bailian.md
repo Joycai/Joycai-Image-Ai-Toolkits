@@ -169,8 +169,14 @@
   `{type: first_frame|last_frame|reference_image|reference_video|reference_audio|file|link, url}`
   （URL 或 Base64）。`prompt` 与 `media` 至少一个。
 - `parameters`：`resolution`（`480P|720P|1080P`，默认 1080P）、`ratio`
-  （`adaptive|16:9|4:3|1:1|3:4|9:16`）、`duration`（2–30s，默认 5，`-1` 智能）、
-  `audio`（默认 **true**，生成音频）、`prompt_extend`、`watermark`、`seed`。
+  （`adaptive|21:9|16:9|4:3|1:1|3:4|9:16`）、`duration`（2–30s，默认 5，`-1` 智能）、
+  `audio`（默认 **true**，生成音频；**false 不影响价格**）、`prompt_extend`、
+  `watermark`（boolean，默认 false）、`seed`。
+- 首尾帧与参考图严格互斥；`last_frame` 必须配 `first_frame`。参考图最多 **10 张**，
+  每张 ≤20 MB，单边 240–8000 px，比例 1:8–8:1；接受 JPEG/PNG/BMP/WEBP，
+  PNG 不得包含 alpha 通道。
+- 业务空间专属入口：`https://{WorkspaceId}.{region}.maas.aliyuncs.com/api/v1`；
+  原有 `dashscope.aliyuncs.com` 入口仍兼容。原生路径推导保留 host。
 - 回执与轮询同 I2（同一个 `GET /tasks/{task_id}`、同一套状态枚举）。
 - **成功结果是顶层扁平字段 `output.video_url`**（不是 choices 结构），
   另带 `orig_prompt`。失败时 `output.code`/`output.message`。
@@ -213,7 +219,7 @@
 7. usage 三套命名并存（C1 是 prompt/completion_tokens、C2/C3 是
    input/output_tokens、图片视频按张/按秒）—— 统一计量的客户端要自己翻译。
 8. 与计费相关的默认值：wan2.7 普通图片 `n` 默认 **1**（组图默认 12）、V1 `audio` 默认
-   true、`prompt_extend` 默认 true —— 不想吃服务端默认就得显式下发。
+   true（关闭音频不影响价格）、`prompt_extend` 默认 true —— 不想吃服务端默认就得显式下发。
    **`size` 的历史实测与当前契约分开看**：2026-09-04 外部实测
    qwen-image-3.0-pro / wan2.7-image-pro 省略尺寸时曾得到 2K 输出。
    2026-11-03 对照[当前千问图像编辑文档](https://platform.qianwenai.com/docs/api-reference/image-generation/qwen-image-editing)：
@@ -290,3 +296,12 @@ bounding-box editing require additional task/editor contracts and remain
 unimplemented. Reference byte/dimension limits are documented above; this
 change does not add full image preprocessing validation. Verification uses
 local tests and renders, not paid upstream calls.
+
+### 2026-11-19 · Wan 3.0 video Phase 1 复核
+
+按 `2026-11-wan3-video-audit` 的规范核查结论对齐 §6：互斥与尾帧依赖、
+10 张参考图、图像字节硬校验、21:9、水印及 MaaS host 识别均纳入本地回归。
+水印默认 `not_set` 省略字段，显式 on/off 发送布尔值；关闭音频不降低价格。
+本轮仅做本地测试及渲染，未调用付费上游。智能时长 -1、seed、prompt 策略、
+固定首帧比例行为及音视频/file/link 素材仍属于 Phase 2/3，未宣称已支持；
+尤其音视频 Base64 与请求体限制尚待实测。

@@ -29,6 +29,7 @@ class GenerationProtocolContract {
 
   static const standard = GenerationProtocolContract();
   static const declarations = <WireProtocol, GenerationProtocolContract>{
+    WireProtocol.dashscopeVideo: GenerationProtocolContract(exclusiveFrames: true),
     WireProtocol.xaiVideos: GenerationProtocolContract(lastFrame: false, exclusiveFrames: true),
     WireProtocol.openaiVideos: GenerationProtocolContract(lastFrame: false),
     WireProtocol.minimaxVideo: GenerationProtocolContract(

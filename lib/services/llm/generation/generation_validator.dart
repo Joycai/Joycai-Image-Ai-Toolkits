@@ -6,6 +6,7 @@ import 'package:image/image.dart' as img;
 import '../llm_types.dart';
 import '../model_capabilities.dart' show ImageRequestShape;
 import '../protocols/protocol.dart' show readAttachmentBytes;
+import '../vendors/vendor_profile.dart';
 import 'generation_request.dart';
 import 'generation_schema.dart';
 import 'generation_value.dart';
@@ -84,7 +85,9 @@ Future<Map<String, dynamic>?> validateGeneration(
                               'promptExtendMode',
                               'imageThinking',
                               'watermark',
-                            ].contains(entry.key))) &&
+                            ].contains(entry.key)) ||
+                        (schema.protocol == WireProtocol.dashscopeVideo &&
+                            entry.key == 'watermark')) &&
                     schema.params.firstWhere((p) => p.key == entry.key).defaultValue ==
                         entry.value),
           ))) {
@@ -101,11 +104,14 @@ Future<Map<String, dynamic>?> validateGeneration(
       'Generation input invalid: ${diagnostics.map((d) => d.code).join(', ')}. Nothing was sent.',
     );
   }
+  final needsWanReferenceValidation =
+      schema.capabilities.imageRequestShape == ImageRequestShape.dashscopeWan ||
+      schema.protocol == WireProtocol.dashscopeVideo;
   for (final attachment in attachments) {
     // The multimodal video wire owns bounded stat/read/probe/encode. Reading
     // it here first would allocate an arbitrarily large file before its cap.
     if (schema.contract.referenceAudioVideo) continue;
-    if (schema.capabilities.imageRequestShape == ImageRequestShape.dashscopeWan &&
+    if (needsWanReferenceValidation &&
         attachment.bytes == null &&
         attachment.path != null &&
         await File(attachment.path!).length() > 20 * 1024 * 1024) {
@@ -115,7 +121,7 @@ Future<Map<String, dynamic>?> validateGeneration(
     if (bytes == null || bytes.isEmpty) {
       throw LLMApiException('Generation input invalid: unreadableMedia. Nothing was sent.');
     }
-    if (schema.capabilities.imageRequestShape == ImageRequestShape.dashscopeWan) {
+    if (needsWanReferenceValidation) {
       await validateWanReference(bytes);
     }
     if (operation == GenerationOperation.transparent) {

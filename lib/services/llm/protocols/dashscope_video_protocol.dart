@@ -45,41 +45,12 @@ class DashScopeVideoProtocol implements VideoJobProtocol {
       media.add({'type': role, 'url': imageDataUrl(bytes, att.mimeType)});
     }
 
-    final parameters = <String, dynamic>{
-      // Billing-relevant defaults are sent explicitly rather than inherited:
-      // upstream defaults audio to *on* and bills for it.
-      'audio': readStringOption(options, 'videoAudio') != 'off',
-    };
-
-    final resolution = readStringOption(options, 'resolution');
-    if (resolution != null) {
-      // Shared spelling is lowercase (480p); DashScope wants 480P/720P/1080P.
-      // The legacy Veo "4k" option has no upstream equivalent — clamp to the
-      // documented maximum instead of sending a field the endpoint rejects.
-      final tier = resolution.toLowerCase();
-      parameters['resolution'] = tier.contains('480')
-          ? '480P'
-          : tier.contains('720')
-          ? '720P'
-          : '1080P';
-    }
-
-    final aspect = readStringOption(options, 'aspectRatio');
-    if (aspect != null && aspect != 'not_set') {
-      parameters['ratio'] = aspect; // `adaptive` is upstream's own default.
-    }
-
-    final seconds = int.tryParse(resolveVideoSeconds(options) ?? '');
-    if (seconds != null) parameters['duration'] = seconds.clamp(2, 30);
-
-    final promptExtend = dashscopePromptExtend(options);
-    if (promptExtend != null) parameters['prompt_extend'] = promptExtend;
-
-    final payload = <String, dynamic>{
-      'model': config.modelId,
-      'input': {'prompt': userMsg.content, if (media.isNotEmpty) 'media': media},
-      'parameters': parameters,
-    };
+    final payload = buildDashScopeVideoPayload(
+      modelId: config.modelId,
+      prompt: userMsg.content,
+      media: media,
+      options: options,
+    );
 
     final base = dashscopeNativeBase(config.endpoint);
     final url = Uri.parse('$base/services/aigc/video-generation/video-synthesis');

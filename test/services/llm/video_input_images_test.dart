@@ -96,8 +96,16 @@ void main() {
     final wan = config(Vendors.dashscopeNative, 'wan3.0-video', path: '/api/v1');
 
     final ticket = await submit(wan, [
-      frame(LLMReferenceType.firstFrame),
-      frame(LLMReferenceType.lastFrame),
+      LLMAttachment.fromBytes(
+        Uint8List.fromList(img.encodePng(img.Image(width: 256, height: 256))),
+        'image/png',
+        referenceType: LLMReferenceType.firstFrame,
+      ),
+      LLMAttachment.fromBytes(
+        Uint8List.fromList(img.encodePng(img.Image(width: 256, height: 256))),
+        'image/png',
+        referenceType: LLMReferenceType.lastFrame,
+      ),
     ]);
     expect(ticket.inputImages, 2);
   });
