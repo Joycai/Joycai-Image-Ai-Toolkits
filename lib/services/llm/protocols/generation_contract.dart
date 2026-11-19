@@ -1,9 +1,79 @@
 import '../vendors/vendor_profile.dart';
 
+enum VideoSourceKind { localFile, remoteHandle, either }
+
+enum VideoExtendDirection { backward, forward, bidirectional }
+
+enum VideoExtendDurationSemantics { totalOutputSeconds, addedSeconds, fixedIncrement }
+
+enum VideoAspectPolicy { recommendedAdaptive, fixedAdaptive, inherited, mustMatchSource }
+
+class VideoEditContract {
+  const VideoEditContract({
+    this.sourceKind = VideoSourceKind.localFile,
+    this.allowsReferenceImages = false,
+    this.allowsReferenceAudio = false,
+    this.allowsExtraReferenceVideos = false,
+    this.promptRequired = true,
+    this.defaultDuration,
+    this.aspectPolicy = VideoAspectPolicy.recommendedAdaptive,
+    this.minSourceSeconds = 1,
+    this.maxSourceSeconds = 15,
+    this.maxCombinedSeconds,
+    this.promptRouted = false,
+    this.durationEditable = true,
+  });
+  final VideoSourceKind sourceKind;
+  final bool allowsReferenceImages;
+  final bool allowsReferenceAudio;
+  final bool allowsExtraReferenceVideos;
+  final bool promptRequired;
+  final String? defaultDuration;
+  final VideoAspectPolicy aspectPolicy;
+  final double minSourceSeconds;
+  final double maxSourceSeconds;
+  final double? maxCombinedSeconds;
+  final bool promptRouted;
+  final bool durationEditable;
+}
+
+class VideoExtendContract {
+  const VideoExtendContract({
+    this.sourceKind = VideoSourceKind.localFile,
+    this.allowsReferenceImages = false,
+    this.allowsReferenceAudio = false,
+    this.allowsExtraReferenceVideos = false,
+    this.promptRequired = true,
+    this.defaultDuration,
+    this.aspectPolicy = VideoAspectPolicy.recommendedAdaptive,
+    this.minSourceSeconds = 1,
+    this.maxSourceSeconds = 15,
+    this.maxCombinedSeconds,
+    this.promptRouted = false,
+    this.directions = const [VideoExtendDirection.backward],
+    this.durationSemantics = VideoExtendDurationSemantics.totalOutputSeconds,
+  });
+  final VideoSourceKind sourceKind;
+  final bool allowsReferenceImages;
+  final bool allowsReferenceAudio;
+  final bool allowsExtraReferenceVideos;
+  final bool promptRequired;
+  final String? defaultDuration;
+  final VideoAspectPolicy aspectPolicy;
+  final double minSourceSeconds;
+  final double maxSourceSeconds;
+  final double? maxCombinedSeconds;
+  final bool promptRouted;
+  final List<VideoExtendDirection> directions;
+  final VideoExtendDurationSemantics durationSemantics;
+}
+
 /// Input restrictions of a wire surface. This declaration never selects a
 /// route; the dispatcher supplies the effective wire to schema composition.
 class GenerationProtocolContract {
   const GenerationProtocolContract({
+    this.videoEdit,
+    this.videoExtend,
     this.lastFrame = true,
     this.referenceMaxSeconds,
     this.referenceMaxResolution,
@@ -24,6 +94,8 @@ class GenerationProtocolContract {
     this.promptOptionalWithMedia = false,
   });
 
+  final VideoEditContract? videoEdit;
+  final VideoExtendContract? videoExtend;
   final int? referenceMaxSeconds;
   final String? referenceMaxResolution;
   final bool lastFrame;
@@ -46,6 +118,23 @@ class GenerationProtocolContract {
   static const standard = GenerationProtocolContract();
   static const declarations = <WireProtocol, GenerationProtocolContract>{
     WireProtocol.dashscopeVideo: GenerationProtocolContract(
+      videoEdit: VideoEditContract(
+        allowsReferenceImages: true,
+        allowsReferenceAudio: true,
+        allowsExtraReferenceVideos: true,
+        defaultDuration: '-1',
+        maxCombinedSeconds: 30,
+        promptRouted: true,
+      ),
+      videoExtend: VideoExtendContract(
+        allowsReferenceImages: true,
+        allowsReferenceAudio: true,
+        allowsExtraReferenceVideos: true,
+        defaultDuration: '-1',
+        maxCombinedSeconds: 30,
+        promptRouted: true,
+        directions: VideoExtendDirection.values,
+      ),
       exclusiveFrames: true,
       referenceAudioVideo: true,
       referenceUpload: true,

@@ -33,6 +33,15 @@ String dashscopeUploadBase(String endpoint) {
   return native;
 }
 
+bool dashscopeSupportsTemporaryUpload(String endpoint) {
+  try {
+    dashscopeUploadBase(endpoint);
+    return true;
+  } on LLMApiException {
+    return false;
+  }
+}
+
 /// Uploads one already validated private snapshot. URLs and policies are
 /// attempt-local, never logged or persisted; retries obtain fresh credentials.
 /// The caller owns the consent/proxy-aware client and its lifetime.

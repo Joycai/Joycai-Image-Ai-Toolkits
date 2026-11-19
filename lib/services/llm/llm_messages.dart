@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 enum LLMRole { system, user, assistant, tool }
 
 enum LLMReferenceType {
+  sourceVideo,
   media,
   asset,
   firstFrame,

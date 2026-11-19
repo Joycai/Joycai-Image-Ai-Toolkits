@@ -47,6 +47,55 @@ void main() {
   setUp(LLMClientPool.disposeAll);
   tearDown(LLMClientPool.disposeAll);
 
+  test('source video is uploaded first and counted as seconds, never images', () async {
+    var uploads = 0;
+    final urls = <String>[];
+    await http.runWithClient(
+      () async {
+        final ticket = await dispatcher.startLongRunning(
+          config,
+          [
+            LLMMessage(
+              role: LLMRole.user,
+              content: 'sunrise',
+              attachments: [
+                clip('mp4'),
+                LLMAttachment.fromFile(
+                  File('test/support/reference_media/three_seconds.mp4'),
+                  'video/mp4',
+                  referenceType: LLMReferenceType.sourceVideo,
+                ),
+              ],
+            ),
+          ],
+          options: {'videoTask': 'extend'},
+        );
+        expect(ticket.inputImages, 0);
+        expect(ticket.inputVideoSeconds, closeTo(6, .01));
+      },
+      () => MockClient((r) async {
+        if (r.url.path.endsWith('/uploads')) {
+          return http.Response(jsonEncode({'data': policy()}), 200);
+        }
+        if (r.url.host == 'storage.example.test') {
+          uploads++;
+          urls.add(
+            'oss://${RegExp(r'name="key"\r\n\r\n([^\r]+)').firstMatch(latin1.decode(r.bodyBytes))!.group(1)!}',
+          );
+          return http.Response('', 200);
+        }
+        final input = jsonDecode(r.body)['input'] as Map;
+        expect(input['media'], [
+          for (final url in urls) {'type': 'reference_video', 'url': url},
+        ]);
+        expect(input['prompt'], startsWith('Extend Video 1 backward'));
+        expect(jsonDecode(r.body)['parameters']['duration'], -1);
+        return http.Response('{"output":{"task_id":"edited"}}', 200);
+      }),
+    );
+    expect(uploads, 2);
+  });
+
   test('region routing preserves gateways and refuses unsupported official regions', () {
     expect(dashscopeUploadBase(config.endpoint), 'https://dashscope.aliyuncs.com/api/v1');
     expect(

@@ -167,7 +167,8 @@ void main() {
   test('v1 snapshots may omit only default watermark and seed, explicit tampering fails', () async {
     final oldValues = schema.effective(schema.readLegacy({}), GenerationOperation.textVideo)
       ..remove('watermark')
-      ..remove('seed');
+      ..remove('seed')
+      ..remove('videoTask');
     final request = GenerationRequest(
       prompt: 'a cat',
       operation: GenerationOperation.textVideo,
@@ -255,7 +256,10 @@ void main() {
 
   test('smart duration and seed survive schema, JSON snapshot and wire encoding', () async {
     for (final seed in ['not_set', '-1', '0', '2147483647']) {
-      final values = schema.readLegacy({'seconds': '-1', 'seed': seed});
+      final values = schema.effective(
+        schema.readLegacy({'seconds': '-1', 'seed': seed}),
+        GenerationOperation.textVideo,
+      );
       expect(schema.validate(values, []), isEmpty);
       final request = GenerationRequest(
         prompt: 'a cat',
