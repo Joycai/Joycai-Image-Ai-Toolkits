@@ -1425,6 +1425,23 @@ class AppLocalizationsZh extends AppLocalizations {
   String get promptExpansionQuality => '质量优先';
 
   @override
+  String get generationPromptRequired => '请输入提示词或添加支持的参考素材。';
+
+  @override
+  String generationPromptTooLong(int count) {
+    return '提示词最多允许 $count 个字符。';
+  }
+
+  @override
+  String get generationSeed => '随机种子';
+
+  @override
+  String get generationRandomSeed => '随机（留空）';
+
+  @override
+  String get generationSmartDuration => '智能时长';
+
+  @override
   String get usageTokenBreakdown => 'Token 构成';
 
   @override
@@ -7971,6 +7988,23 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get promptExpansionQuality => '品質優先';
+
+  @override
+  String get generationPromptRequired => '請輸入提示詞或新增支援的參考素材。';
+
+  @override
+  String generationPromptTooLong(int count) {
+    return '提示詞最多允許 $count 個字元。';
+  }
+
+  @override
+  String get generationSeed => '隨機種子';
+
+  @override
+  String get generationRandomSeed => '隨機（留空）';
+
+  @override
+  String get generationSmartDuration => '智慧時長';
 
   @override
   String get usageTokenBreakdown => 'Token 組成';

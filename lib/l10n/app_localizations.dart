@@ -2559,6 +2559,36 @@ abstract class AppLocalizations {
   /// **'Quality priority'**
   String get promptExpansionQuality;
 
+  /// No description provided for @generationPromptRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a prompt or add supported reference media.'**
+  String get generationPromptRequired;
+
+  /// No description provided for @generationPromptTooLong.
+  ///
+  /// In en, this message translates to:
+  /// **'The prompt must contain at most {count} characters.'**
+  String generationPromptTooLong(int count);
+
+  /// No description provided for @generationSeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Seed'**
+  String get generationSeed;
+
+  /// No description provided for @generationRandomSeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Random (leave empty)'**
+  String get generationRandomSeed;
+
+  /// No description provided for @generationSmartDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Smart duration'**
+  String get generationSmartDuration;
+
   /// No description provided for @usageTokenBreakdown.
   ///
   /// In en, this message translates to:

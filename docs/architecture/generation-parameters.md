@@ -208,9 +208,28 @@ The IO-free video payload builder retains defensive media checks and encodes
 watermark on/off as booleans, omitting the default not_set. Audio is explicit;
 disabling it does not change the upstream price.
 
-Version-1 queued DashScope video snapshots may omit the additive watermark key
-only when its effective value remains the declared default. Explicit mismatches
-still fail before submission. Accepted jobs retain their existing resume path.
+Version-1 queued DashScope video snapshots may omit additive watermark and seed
+keys only when their effective values remain the declared defaults (`not_set`).
+Explicit mismatches still fail before submission. Accepted jobs retain their existing resume path.
 MaaS workspace hosts infer DashScope with native paths derived independently of
-the host. No schema migration is needed. Phase 2/3 prompt, smart-duration, seed
-and multimodal extensions remain out of scope; see the plan ledger and API §6.
+the host. No schema migration is needed.
+
+Phase 2 splits prompt presence from maximum length in the wire contract.
+Native Wan accepts up to 20,000 Unicode code points and permits an empty prompt
+with media; the shared validator still enforces supported media and image rules.
+MiniMax keeps its required prompt and 7,000-code-point limit. The workbench uses
+the same contract for media-only availability and checks length on submission,
+showing a localized diagnostic instead of silently truncating the user's text.
+
+The duration dropdown keeps the 5-second default and adds smart duration (-1)
+to 2–30 seconds; the wire preserves -1. A bounded integer seed editor uses the
+existing form controls: clearing restores not_set (omitted), while -1 or
+0–2147483647 is sent as an integer. Values survive preferences and v1 snapshots;
+explicit changes to queued intent still fail. These controls are declared only
+on the native video profile, never inferred by the UI or imposed on relays.
+OutputSpec already treats -1 as unknown duration; reported output seconds settle
+usage normally. It never represents a negative billable duration.
+
+WAN-09 remains unverified: frame ratio defaults to adaptive but stays editable
+until a separately authorized live test establishes fixed-ratio behavior.
+Phase 3 multimodal inputs are still out of scope. See the plan ledger and API §6.

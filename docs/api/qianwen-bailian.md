@@ -171,7 +171,7 @@
 - `parameters`：`resolution`（`480P|720P|1080P`，默认 1080P）、`ratio`
   （`adaptive|21:9|16:9|4:3|1:1|3:4|9:16`）、`duration`（2–30s，默认 5，`-1` 智能）、
   `audio`（默认 **true**，生成音频；**false 不影响价格**）、`prompt_extend`、
-  `watermark`（boolean，默认 false）、`seed`。
+  `watermark`（boolean，默认 false）、`seed`（-1 或 0–2147483647；省略/-1 随机）。
 - 首尾帧与参考图严格互斥；`last_frame` 必须配 `first_frame`。参考图最多 **10 张**，
   每张 ≤20 MB，单边 240–8000 px，比例 1:8–8:1；接受 JPEG/PNG/BMP/WEBP，
   PNG 不得包含 alpha 通道。
@@ -305,3 +305,14 @@ local tests and renders, not paid upstream calls.
 本轮仅做本地测试及渲染，未调用付费上游。智能时长 -1、seed、prompt 策略、
 固定首帧比例行为及音视频/file/link 素材仍属于 Phase 2/3，未宣称已支持；
 尤其音视频 Base64 与请求体限制尚待实测。
+
+
+### 2026-11-19 · Wan 3.0 video Phase 2 复核
+
+依据：[官方 API 参考](https://help.aliyun.com/zh/model-studio/wan3-video-generation-api-reference)。
+新增本地 20,000 Unicode 码点上限（超长拒绝而非上游截断），首帧/参考图存在时
+允许空提示词；素材合法性仍独立校验。时长控件支持 -1 智能时长并保留默认 5 秒。
+seed 留空省略，显式 -1 或 0–2147483647 以整数下发；相同 seed 不保证结果完全一致。
+历史排队快照允许缺少默认 seed，不放行显式值篡改。仅本地验证，无付费上游调用。
+WAN-09 未做真实首帧+固定 ratio 实测，继续保留 adaptive 默认与可编辑比例，
+不启用 frameRatioAdaptive 强制锁定。Phase 3 音视频/file/link 输入仍未接入。

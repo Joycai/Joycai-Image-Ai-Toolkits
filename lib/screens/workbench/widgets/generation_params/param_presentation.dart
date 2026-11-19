@@ -11,7 +11,9 @@ class ParamPresentation {
   bool fullRowFor(ParamSpec spec) =>
       fullRow ??
       (spec.key == 'background' ||
+          (spec.key == 'seconds' && spec.options.any((o) => o.value == '-1')) ||
           editorFor(spec) == ParamControl.customSize ||
           editorFor(spec) == ParamControl.slider ||
+          editorFor(spec) == ParamControl.integer ||
           editorFor(spec) == ParamControl.segmented && spec.options.length > 2);
 }

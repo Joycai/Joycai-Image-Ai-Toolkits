@@ -27,5 +27,17 @@
   "paramPromptExpansionMode": "Prompt expansion",
   "promptExpansionDisabled": "Disabled",
   "promptExpansionBalanced": "Balanced",
-  "promptExpansionQuality": "Quality priority"
+  "promptExpansionQuality": "Quality priority",
+  "generationPromptRequired": "Enter a prompt or add supported reference media.",
+  "generationPromptTooLong": "The prompt must contain at most {count} characters.",
+  "generationSeed": "Seed",
+  "generationRandomSeed": "Random (leave empty)",
+  "generationSmartDuration": "Smart duration",
+  "@generationPromptTooLong": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

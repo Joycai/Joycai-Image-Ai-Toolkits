@@ -12,7 +12,8 @@ import 'image_size_vocabulary.dart';
 /// `slider` is a continuous-range integer control bounded by [ParamSpec.min]
 /// / [ParamSpec.max] rather than a discrete [ParamSpec.options] list. Used by
 /// grok-imagine-video's duration parameter (1–15s).
-enum ParamControl { dropdown, segmented, customSize, slider }
+/// `integer` uses the same bounds with a text editor and optional unset value.
+enum ParamControl { dropdown, segmented, customSize, slider, integer }
 
 /// Semantic representation independent of the UI control and wire string.
 enum ParamValueType { choice, boolean, integer, decimal, size }
@@ -56,8 +57,7 @@ class ParamSpec {
   /// their computed default. Independent of the picker's display vocabulary.
   final bool omitSizeWhenUnset;
 
-  /// Inclusive bounds for [ParamControl.slider]. Unused by every other
-  /// control.
+  /// Inclusive bounds for slider and integer-entry controls.
   final int? min;
   final int? max;
 
@@ -89,7 +89,7 @@ class ParamSpec {
     // The bounds fall back to the same 1/15 the panel clamps with, so a value
     // this accepts is always one the control can actually render — the two
     // must not be able to disagree about what is in range.
-    if (control == ParamControl.slider) {
+    if (control == ParamControl.slider || control == ParamControl.integer) {
       final n = int.tryParse(value);
       if (n == null) return false;
       return n >= (min ?? 1) && n <= (max ?? 15);

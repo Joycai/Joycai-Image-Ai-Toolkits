@@ -5,8 +5,9 @@ import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/generation_pa
 import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/generation_params/param_editor_registry.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/generation_params/param_presentation.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/generation/generation_schema.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/llm_dispatcher.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/model_capabilities.dart';
-import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendor_profile.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_dropdown.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_segmented_control.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_slider.dart';
@@ -103,6 +104,65 @@ void main() {
     await show(const []);
     expect(find.text('9:16'), findsOneWidget);
     expect(find.text('The frame image determines the output aspect ratio.'), findsNothing);
+  });
+
+  testWidgets('Wan smart duration and bounded seed edit, clear and restore values', (tester) async {
+    final schema = LLMDispatcher.generationSchemaFor(
+      channelType: Vendors.dashscopeNative,
+      modelId: 'wan3.0-video',
+      tag: 'video',
+    );
+    final values = <String, String>{};
+    late StateSetter update;
+    await tester.pumpWidget(
+      host(
+        StatefulBuilder(
+          builder: (context, setState) {
+            update = setState;
+            return GenerationParamPanel(
+              specs: schema.capabilities.videoParams,
+              video: true,
+              schema: schema,
+              valueOf: (spec) => spec.normalize(values[spec.key]),
+              onChanged: (key, value) => setState(() => values[key] = value),
+            );
+          },
+        ),
+      ),
+    );
+    final seconds = find.descendant(
+      of: find.byKey(const ValueKey('seconds')),
+      matching: find.byType(AppDropdown<String>),
+    );
+    tester.widget<AppDropdown<String>>(seconds).onChanged!('-1');
+    await tester.pump();
+    expect(values['seconds'], '-1');
+    expect(find.text('Smart duration'), findsOneWidget);
+    final seed = find.descendant(
+      of: find.byKey(const ValueKey('seed')),
+      matching: find.byType(TextField),
+    );
+    await tester.enterText(seed, '2147483647');
+    await tester.pump();
+    expect(values['seed'], '2147483647');
+    await tester.enterText(seed, '2147483648');
+    await tester.pump();
+    expect(values['seed'], '2147483647');
+    expect(tester.widget<TextField>(seed).controller!.text, '2147483647');
+    await tester.enterText(seed, '-1');
+    await tester.pump();
+    expect(values['seed'], '-1');
+    await tester.enterText(seed, '0');
+    await tester.pump();
+    expect(values['seed'], '0');
+    await tester.enterText(seed, '');
+    await tester.pump();
+    expect(values['seed'], 'not_set');
+    expect(find.text('Random (leave empty)'), findsOneWidget);
+    update(() => values['seed'] = '42');
+    await tester.pump();
+    expect(tester.widget<TextField>(seed).controller!.text, '42');
+    expect(tester.takeException(), isNull);
   });
 
   test('registry covers every declared editor', () {

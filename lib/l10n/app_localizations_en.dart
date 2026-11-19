@@ -1480,6 +1480,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get promptExpansionQuality => 'Quality priority';
 
   @override
+  String get generationPromptRequired => 'Enter a prompt or add supported reference media.';
+
+  @override
+  String generationPromptTooLong(int count) {
+    return 'The prompt must contain at most $count characters.';
+  }
+
+  @override
+  String get generationSeed => 'Seed';
+
+  @override
+  String get generationRandomSeed => 'Random (leave empty)';
+
+  @override
+  String get generationSmartDuration => 'Smart duration';
+
+  @override
   String get usageTokenBreakdown => 'Token breakdown';
 
   @override

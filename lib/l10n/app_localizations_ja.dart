@@ -1431,6 +1431,23 @@ class AppLocalizationsJa extends AppLocalizations {
   String get promptExpansionQuality => '品質優先';
 
   @override
+  String get generationPromptRequired => 'プロンプトを入力するか、対応する参照素材を追加してください。';
+
+  @override
+  String generationPromptTooLong(int count) {
+    return 'プロンプトは $count 文字以内で入力してください。';
+  }
+
+  @override
+  String get generationSeed => 'シード';
+
+  @override
+  String get generationRandomSeed => 'ランダム（空欄）';
+
+  @override
+  String get generationSmartDuration => '自動の長さ';
+
+  @override
   String get usageTokenBreakdown => 'トークン内訳';
 
   @override

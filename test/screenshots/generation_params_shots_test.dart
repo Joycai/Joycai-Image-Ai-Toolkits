@@ -60,7 +60,12 @@ void main() {
       {'imageTask': 'layers', 'aspectRatio': '16:9'},
     ),
     (Vendors.xaiApi, 'grok-imagine-video', 'video', {'seconds': '9'}),
-    (Vendors.dashscopeNative, 'wan3.0-video', 'video', {'aspectRatio': '21:9', 'watermark': 'off'}),
+    (
+      Vendors.dashscopeNative,
+      'wan3.0-video',
+      'video',
+      {'aspectRatio': '21:9', 'watermark': 'off', 'seconds': '-1', 'seed': '2147483647'},
+    ),
     (
       Vendors.dashscopeNative,
       'qwen-image-3.0',
