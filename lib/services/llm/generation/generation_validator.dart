@@ -110,7 +110,12 @@ Future<Map<String, dynamic>?> validateGeneration(
   for (final attachment in attachments) {
     // The multimodal video wire owns bounded stat/read/probe/encode. Reading
     // it here first would allocate an arbitrarily large file before its cap.
-    if (schema.contract.referenceAudioVideo) continue;
+    if (schema.contract.referenceAudioVideo &&
+        (schema.protocol != WireProtocol.dashscopeVideo ||
+            attachment.referenceType == LLMReferenceType.referenceVideo ||
+            attachment.referenceType == LLMReferenceType.referenceAudio)) {
+      continue;
+    }
     if (needsWanReferenceValidation &&
         attachment.bytes == null &&
         attachment.path != null &&

@@ -19,6 +19,31 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 留在这份文件里的，是**不随代码走的那部分**：哪一轮做了什么、结论现在住在哪、
 以及还欠什么。
 
+## 2026-11-19 · Wan 3.0 video Phase 3（WAN-10 音视频阶段）
+
+- 基于 PR #418 合并后的 `main` @ `3d51240`，分支 `codex/wan3-video-phase3`。
+- 接入视频/音频参考与百炼临时上传；官方规范要求音视频使用 URL，因此本轮
+  不尝试 Base64 请求体探针。北京/新加坡使用同区域上传入口，其他官方区域本地拒绝，
+  自定义网关沿用自己的原生 base。长期约束见[百炼 API §6](../api/qianwen-bailian.md#6-v1--视频异步任务仅异步)。
+- 共享契约参数化素材限额：Wan 10 图/5 视频/5 音频/总计 20，MiniMax 仍为 9/3/3/12。
+  全部素材先完成本地格式、大小、尺寸、帧率、时长校验，再上传私有副本；
+  每类音视频总时长 ≤15 秒，输入视频+固定输出 ≤30 秒。空提示词音视频任务正常入队。
+- 上传遵循既有 consent/proxy/abort；API key 不进入签名存储请求，policy/上传不触发
+  付费提交标记，临时 URL 不持久化。重试重新上传，已接单恢复只轮询，清理失败不丢票据。
+  v1 快照复用既有素材角色，无 DB 迁移；输入图数与视频秒数分别计入 ticket。
+- 四语素材说明复用现有文件卡，四宽度浅深色新增音视频实图已逐图查看；
+  手机补拍定位到提示区，数量、规格、按钮和两条素材均可见。依据维护中的设计规范
+  与实际渲染，未比对原始设计稿。截图证据：
+  `build/ui-screenshots/workbench_{mobile,tablet,ipad,desktop}_{light,dark}_wan3_references.png`。
+- macOS / Flutter 3.47.9 / Dart 3.13.7 验证：`dart format lib test tool`
+  **978 文件、0 变更**；`flutter analyze` **No issues found!**；
+  `flutter test -x screenshots` **3617 通过、11 skip**。
+  新增上传/工作台定向测试 10 项通过；参数表与 Wan 工作台截图 **64 项通过**，
+  日志无打印异常或溢出。
+- **仍欠**：file/link 独立输入设计、二选一约束及 prompt_extend 依赖；WAN-09 固定首帧比例
+  实测；真实区域账号上传/生成联调。本轮仅本地模拟测试与截图，未调用付费上游，
+  未验证原生手机设备。保留[施工计划](2026-11-wan3-video-audit.md)。
+
 ## 2026-11-19 · Wan 3.0 video Phase 2（WAN-08）
 
 - 基于 PR #417 合并后的 `main` @ `df646dd`，分支 `codex/wan3-video-phase2`。

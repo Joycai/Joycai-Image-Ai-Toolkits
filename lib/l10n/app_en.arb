@@ -1118,7 +1118,6 @@
   "generationLayersRatioInactive": "Aspect ratio is unused in layer decomposition.",
   "generationTransparentSource": "Select one source image with an alpha channel for transparent editing.",
   "generationReferenceMedia": "Reference video / audio",
-  "generationReferenceMediaHint": "Up to 9 images, 3 videos and 3 audio files; 12 files total. Each clip: 2–15 s; videos and audio each total at most 15 s.",
   "generationAddReferenceVideo": "Add video",
   "generationAddReferenceAudio": "Add audio",
   "generationUnsupportedReferenceMedia": "This model does not support video/audio references. Remove them to continue.",
@@ -1140,6 +1139,30 @@
       }
     }
   },
+  "generationReferenceMediaLimits": "Up to {images} images, {videos} videos and {audios} audio files; {total} files total. Each clip: {min}–{seconds} s; videos and audio each total at most {seconds} s.",
+  "@generationReferenceMediaLimits": {
+    "placeholders": {
+      "images": {
+        "type": "int"
+      },
+      "videos": {
+        "type": "int"
+      },
+      "audios": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "min": {
+        "type": "int"
+      },
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "generationReferenceUploadHint": "Audio/video references use temporary cloud uploads (48 h). Video: MP4/MOV, ≤100 MB, 240–4096 px, ≥16 fps. Audio: WAV/MP3, ≤15 MB. Input video + output: ≤30 s.",
   "usageTokenBreakdown": "Token breakdown",
   "usageTotalTokens": "Total tokens",
   "usage": "Usage",

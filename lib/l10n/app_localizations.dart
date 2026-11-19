@@ -2499,12 +2499,6 @@ abstract class AppLocalizations {
   /// **'Reference video / audio'**
   String get generationReferenceMedia;
 
-  /// No description provided for @generationReferenceMediaHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Up to 9 images, 3 videos and 3 audio files; 12 files total. Each clip: 2–15 s; videos and audio each total at most 15 s.'**
-  String get generationReferenceMediaHint;
-
   /// No description provided for @generationAddReferenceVideo.
   ///
   /// In en, this message translates to:
@@ -2588,6 +2582,25 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Smart duration'**
   String get generationSmartDuration;
+
+  /// No description provided for @generationReferenceMediaLimits.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to {images} images, {videos} videos and {audios} audio files; {total} files total. Each clip: {min}–{seconds} s; videos and audio each total at most {seconds} s.'**
+  String generationReferenceMediaLimits(
+    int images,
+    int videos,
+    int audios,
+    int total,
+    int min,
+    int seconds,
+  );
+
+  /// No description provided for @generationReferenceUploadHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio/video references use temporary cloud uploads (48 h). Video: MP4/MOV, ≤100 MB, 240–4096 px, ≥16 fps. Audio: WAV/MP3, ≤15 MB. Input video + output: ≤30 s.'**
+  String get generationReferenceUploadHint;
 
   /// No description provided for @usageTokenBreakdown.
   ///

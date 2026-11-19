@@ -167,14 +167,30 @@
 - **input 不是 chat 形状**：`input.prompt`（≤20,000 字符，可用「图1」「视频1」
   指代素材）+ `input.media[]`，media 项 =
   `{type: first_frame|last_frame|reference_image|reference_video|reference_audio|file|link, url}`
-  （URL 或 Base64）。`prompt` 与 `media` 至少一个。
+  （图片支持 URL/Base64；音视频使用 HTTP(S) 或临时 OSS URL，不发送 Base64）。
+  `prompt` 与 `media` 至少一个。仓库已接入前三种图片角色及音视频参考；file/link 尚待独立设计。
 - `parameters`：`resolution`（`480P|720P|1080P`，默认 1080P）、`ratio`
   （`adaptive|21:9|16:9|4:3|1:1|3:4|9:16`）、`duration`（2–30s，默认 5，`-1` 智能）、
   `audio`（默认 **true**，生成音频；**false 不影响价格**）、`prompt_extend`、
   `watermark`（boolean，默认 false）、`seed`（-1 或 0–2147483647；省略/-1 随机）。
-- 首尾帧与参考图严格互斥；`last_frame` 必须配 `first_frame`。参考图最多 **10 张**，
+- 首尾帧与所有参考素材严格互斥；`last_frame` 必须配 `first_frame`。参考图最多 **10 张**，
   每张 ≤20 MB，单边 240–8000 px，比例 1:8–8:1；接受 JPEG/PNG/BMP/WEBP，
   PNG 不得包含 alpha 通道。
+- 音视频参考分别最多 **5 段**，全部素材合计 **20 个**。视频 MP4/MOV：
+  单段 1–15 秒、视频合计 ≤15 秒、≤100 MB、边长 240–4096 px、比例 1:8–8:1、
+  ≥16 fps；音频 WAV/MP3：单段 1–15 秒、音频合计 ≤15 秒、≤15 MB。
+  输入视频总时长 + 固定输出时长 ≤30 秒；智能时长 -1 交由服务端决定。
+- 音视频使用[百炼临时文件上传](https://help.aliyun.com/zh/model-studio/get-temporary-file-url/)：
+  同区域 `GET /api/v1/uploads?action=getPolicy&model=...`（Bearer API key），
+  按 policy 对 `upload_host` 发 multipart POST（签名字段在前，file 最后；不携带 API key），
+  返回 `oss://{upload_dir}/{filename}`。视频提交带 `X-DashScope-OssResourceResolve: enable`。
+  官方临时存储免费、有效 48 小时，且绑定模型/账号，仅北京、新加坡支持。
+  MaaS 北京/新加坡映射到对应区域的传统 policy 入口，其他官方区域本地拒绝，
+  不跨区域回退；自定义网关沿用其原生 API base，需要自行支持该接口。
+- 仓库在任何上传前验证全部素材并保存私有临时副本；有音视频时同批图片也上传，
+  纯图片保持 inline 路径。上传沿用 consent/proxy/cancellation，上传完成不代表付费提交；
+  仅最终 synthesis 发送触发 body-sent 回调。临时 URL/policy 不落盘，重试重新获取，
+  已接单任务恢复仅轮询，提交后清理本地临时副本。
 - 业务空间专属入口：`https://{WorkspaceId}.{region}.maas.aliyuncs.com/api/v1`；
   原有 `dashscope.aliyuncs.com` 入口仍兼容。原生路径推导保留 host。
 - 回执与轮询同 I2（同一个 `GET /tasks/{task_id}`、同一套状态枚举）。
@@ -316,3 +332,13 @@ seed 留空省略，显式 -1 或 0–2147483647 以整数下发；相同 seed �
 历史排队快照允许缺少默认 seed，不放行显式值篡改。仅本地验证，无付费上游调用。
 WAN-09 未做真实首帧+固定 ratio 实测，继续保留 adaptive 默认与可编辑比例，
 不启用 frameRatioAdaptive 强制锁定。Phase 3 音视频/file/link 输入仍未接入。
+
+
+### 2026-11-19 · Wan 3.0 video Phase 3 音视频复核
+
+依据[官方视频规范](https://help.aliyun.com/zh/model-studio/wan3-video-generation-api-reference)
+与[临时上传规范](https://help.aliyun.com/zh/model-studio/get-temporary-file-url/)接入音视频参考。
+文档只为音视频规定 URL，因此没有尝试 Base64 或真实付费探针。
+本地模拟覆盖上传、取消、错误、凭证隔离、素材限额及旧任务兼容；不代表真实区域账号联调通过。
+文件容器探测复用本地 MP4/MOV（H.264/H.265）及 WAV/MP3 解析器，无法可靠读取元数据时拒绝。
+仍欠 WAN-09 的真实首帧比例验证、区域账号的上传联调及独立 file/link 工作台设计。

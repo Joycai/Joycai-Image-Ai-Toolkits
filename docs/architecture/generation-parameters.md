@@ -232,4 +232,23 @@ usage normally. It never represents a negative billable duration.
 
 WAN-09 remains unverified: frame ratio defaults to adaptive but stays editable
 until a separately authorized live test establishes fixed-ratio behavior.
-Phase 3 multimodal inputs are still out of scope. See the plan ledger and API §6.
+Phase 3 enables reference audio/video through the existing media roles and v1
+snapshot codec; no DB migration or persisted upload URLs. Contract fields declare
+per-kind and total counts (Wan 5/5/20; MiniMax unchanged at 3/3/12), minimum clip
+length and per-kind duration budget for shared localized hints. The native Wan
+wire validates bounded files and metadata before any upload: MP4/MOV ≤100 MB,
+240–4096 px, aspect ≤8:1, ≥16 fps; WAV/MP3 ≤15 MB; clips 1–15 s and each kind's
+sum ≤15 s. Input-video duration plus fixed output must be ≤30 s; -1 is left to
+the upstream smart-duration policy. Images retain their existing validation.
+
+Reference uploads use the existing consent/proxy-aware client, with an abortable
+policy GET and multipart POST. Only the final synthesis body fires the paid
+submission hook. Authorization goes only to the API, never the signed storage
+host; redirects are disabled. All bytes are validated and copied privately before
+upload, so later local file changes cannot replace validated data. Retry obtains
+new temporary URLs; accepted jobs still resume by polling. Cleanup cannot discard
+an accepted job ticket. Beijing and Singapore retain their region for upload;
+unsupported official regions fail locally, custom gateways keep their own base.
+Images-only submissions retain inline transport. Actual API acceptance is not
+claimed by local mocks. file/link input remains a separate UI and contract design.
+See the plan ledger and API §6.

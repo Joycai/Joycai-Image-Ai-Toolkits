@@ -1,6 +1,6 @@
 # `wan3.0-video` 官方规范核查与修复计划
 
-Created: 2026-11-19 · Baseline: `main` @ `1e102d8` · Status: Phase 1 已完成；Phase 2 WAN-08 已实现并验收；WAN-09 实测与 Phase 3 待办
+Created: 2026-11-19 · Baseline: `main` @ `1e102d8` · Status: Phase 1/2 WAN-01～08 已完成；Phase 3 音视频已实现并本地验收；WAN-09 实测及 file/link 待办
 
 本文档记录对照阿里云百炼（Model Studio / DashScope）官方 `wan3.0-video` / `wan3.0-video-prime` API 文档核查后的问题清单与分阶段修复计划。执行完毕并验收通过后，按 [台账](README.md) 约定将结论归档至 `docs/plans/README.md`、`docs/api/qianwen-bailian.md` 和 `docs/architecture/generation-parameters.md`，并删除本施工文档。
 
@@ -49,7 +49,9 @@ Created: 2026-11-19 · Baseline: `main` @ `1e102d8` · Status: Phase 1 已完成
 - [x] WAN-07：协议/架构文档及 payload、校验、快照、域名单测与截图覆盖。
 - [x] Phase 2 / WAN-08：独立 prompt 长度/必填契约、素材空提示词、智能时长、seed、默认快照兼容与四语控件。
 - [ ] Phase 2 / WAN-09：固定首帧比例的真实上游行为仍待单独授权实测；保持默认 adaptive 和可编辑比例。
-- [ ] Phase 3：WAN-10，先验证上传与请求体约束。
+- [x] Phase 3 / WAN-10 音视频：官方 URL 约束确认、临时上传、本地硬校验、参数化限额及四语工作台。
+- [ ] Phase 3 / WAN-10 file/link：独立输入槽位、二选一互斥和 prompt_extend 依赖设计。
+- [ ] 真实区域账号上传与生成联调：本轮仅本地 mock，不调用付费上游。
 
 - [x] Phase 1 验收：format 973 文件、0 变更；analyze `No issues found!`；
   非截图测试 3603 通过、11 skip；参数表和 Wan 工作台截图 56 项通过，
@@ -59,9 +61,13 @@ Created: 2026-11-19 · Baseline: `main` @ `1e102d8` · Status: Phase 1 已完成
   非截图测试 3608 通过、11 skip；参数表和 Wan 工作台截图 56 项通过。
   四宽度浅深色实图已查看，修复英文智能时长截断，日志无异常/溢出。
 
-Phase 1 验收记录保留；本轮继续 Phase 2，WAN-09 实测与 Phase 3 保留，计划暂不删除。验证环境为 macOS、
+- [x] Phase 3 音视频本地验收：format 978 文件、0 变更；analyze `No issues found!`；
+  非截图测试 3617 通过、11 skip；参数表与 Wan 工作台截图 64 项通过。
+  四宽度浅深色素材卡实图已逐图查看，手机说明区补拍可见，无异常/溢出。
+
+Phase 1/2 验收记录保留；本轮完成 Phase 3 音视频，WAN-09 实测与 file/link 保留，计划暂不删除。验证环境为 macOS、
 Flutter 3.47.9 / Dart 3.13.7；未调用付费上游、未验证原生手机设备。
-归档结论见 [台账](README.md) 的 Phase 1 / Phase 2 条目。
+归档结论见 [台账](README.md) 各阶段条目。
 
 ## 修复计划
 
@@ -149,8 +155,25 @@ Flutter 3.47.9 / Dart 3.13.7；未调用付费上游、未验证原生手机设�
 
 ---
 
-### Phase 3：全模态参考素材扩展（覆盖 WAN-10，需先实测）
+### Phase 3：音视频参考与临时上传（WAN-10 阶段实现）
 
-1. **前置实测**：验证百炼 `video-synthesis` 对 `reference_video` / `reference_audio` 是否接受 `data:` Base64 及最大请求体限制；若仅支持公网/OSS URL，需先引入对象存储或百炼临时文件上传能力。
-2. **契约参数化**：将 `lib/services/llm/generation/generation_schema.dart` 中硬编码的 MiniMax 音视频限额（`3/3/12`）参数化到 `GenerationProtocolContract`（支持百炼的 `5/5/20` 及 `输入视频+输出时长 ≤ 30s` 校验），并在 `DashScopeVideoProtocol` 中映射 `reference_video` / `reference_audio`。
-3. **`file` / `link` 输入**：需新增工作台输入槽位、二选一互斥约束，以及传入时强制 `prompt_extend: true` 的 schema 规则，建议单独设计并立项。
+基于 PR #418 合并后的 `main` @ `3d51240`，分支 `codex/wan3-video-phase3`。
+按计划推荐，将 file/link 留待独立设计；本轮完成音视频、上传与素材限额。
+
+1. **官方约束确认**：复核[视频 API](https://help.aliyun.com/zh/model-studio/wan3-video-generation-api-reference)
+   和[临时上传](https://help.aliyun.com/zh/model-studio/get-temporary-file-url/)。
+   音视频使用 HTTP(S)/OSS URL；无 Base64 请求体探针。临时存储 48 小时、模型/账号绑定，
+   仅北京/新加坡；MaaS 映射到同区域 policy API，自定义网关沿用 base。
+2. **契约与校验**：将 3/3/12 参数化，Wan 5/5/20、MiniMax 原值保留。
+   图片仍检查 20 MB/Wan 格式规格；视频 100 MB、240–4096 px、1:8–8:1、≥16 fps；
+   音频 15 MB；单段 1–15 秒、每类总长 ≤15 秒、输入视频+固定输出 ≤30 秒。
+   全部校验完后再上传，私有临时副本防止校验后源文件改变。智能 -1 交给上游。
+3. **上传与任务生命周期**：签名 multipart 不带 API key，复用 consent/proxy/abort；
+   policy/上传不触发付费 body-sent，仅 synthesis 触发。临时 URL 不持久化，失败重试重新上传，
+   已接单任务恢复只轮询。音视频不计入输入图片数；视频秒数随 ticket 返回。
+   清理副本失败不会丢失已经接受的任务句柄。素材空提示词可正确入队，无 DB 迁移。
+4. **交互简报**：沿用现有参考文件卡、按钮、移除动作与停放素材行为，
+   四语提示按契约显示数量/时长，Wan 增加格式、大小、临时上传期限说明。
+   四宽度浅深色截图覆盖参数卡及实际音视频素材卡；基线 `/tmp/wan-phase3-before/`。
+5. **继续待办**：file/link 工作台输入、二选一约束、prompt_extend:true 依赖独立立项；
+   WAN-09 固定首帧比例与真实区域账号上传/生成联调仍需单独授权，不能把本地 mock 当作线上验收。

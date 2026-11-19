@@ -11,6 +11,12 @@ class GenerationProtocolContract {
     this.groupLimit,
     this.subjectReferences = false,
     this.referenceAudioVideo = false,
+    this.referenceUpload = false,
+    this.maxReferenceVideos = 0,
+    this.maxReferenceAudios = 0,
+    this.maxReferenceMedia = 0,
+    this.minReferenceSeconds = 0,
+    this.maxReferenceTotalSeconds = 0,
     this.standaloneLastFrame = false,
     this.frameRatioAdaptive = false,
     this.promptMaxCharacters,
@@ -25,6 +31,12 @@ class GenerationProtocolContract {
   final int? groupLimit;
   final bool subjectReferences;
   final bool referenceAudioVideo;
+  final bool referenceUpload;
+  final int maxReferenceVideos;
+  final int maxReferenceAudios;
+  final int maxReferenceMedia;
+  final int minReferenceSeconds;
+  final int maxReferenceTotalSeconds;
   final bool standaloneLastFrame;
   final bool frameRatioAdaptive;
   final int? promptMaxCharacters;
@@ -35,6 +47,13 @@ class GenerationProtocolContract {
   static const declarations = <WireProtocol, GenerationProtocolContract>{
     WireProtocol.dashscopeVideo: GenerationProtocolContract(
       exclusiveFrames: true,
+      referenceAudioVideo: true,
+      referenceUpload: true,
+      maxReferenceVideos: 5,
+      maxReferenceAudios: 5,
+      maxReferenceMedia: 20,
+      minReferenceSeconds: 1,
+      maxReferenceTotalSeconds: 15,
       promptMaxCharacters: 20000,
       promptRequired: true,
       promptOptionalWithMedia: true,
@@ -44,6 +63,11 @@ class GenerationProtocolContract {
     WireProtocol.minimaxVideo: GenerationProtocolContract(
       exclusiveFrames: true,
       referenceAudioVideo: true,
+      maxReferenceVideos: 3,
+      maxReferenceAudios: 3,
+      maxReferenceMedia: 12,
+      minReferenceSeconds: 2,
+      maxReferenceTotalSeconds: 15,
       standaloneLastFrame: true,
       frameRatioAdaptive: true,
       promptMaxCharacters: 7000,

@@ -3,8 +3,14 @@ part of 'video_config_panel.dart';
 /// The native video wire's additional reference inputs. Selection belongs to
 /// WorkbenchUIState, including parked files after switching to another model.
 class _ReferenceFilesSection extends StatelessWidget {
-  const _ReferenceFilesSection({required this.enabled, this.captionStyle});
-  final bool enabled;
+  const _ReferenceFilesSection({
+    required this.contract,
+    required this.maxImages,
+    this.captionStyle,
+  });
+  final GenerationProtocolContract contract;
+  final int maxImages;
+  bool get enabled => contract.referenceAudioVideo;
   final TextStyle? captionStyle;
 
   Future<void> _pick(BuildContext context, {required bool audio}) async {
@@ -37,7 +43,21 @@ class _ReferenceFilesSection extends StatelessWidget {
       children: [
         Text(l10n.generationReferenceMedia, style: captionStyle),
         const SizedBox(height: AppSpace.s4),
-        Text(l10n.generationReferenceMediaHint, style: Theme.of(context).textTheme.labelSmall),
+        if (enabled) ...[
+          Text(
+            l10n.generationReferenceMediaLimits(
+              maxImages,
+              contract.maxReferenceVideos,
+              contract.maxReferenceAudios,
+              contract.maxReferenceMedia,
+              contract.minReferenceSeconds,
+              contract.maxReferenceTotalSeconds,
+            ),
+            style: Theme.of(context).textTheme.labelSmall,
+          ),
+          if (contract.referenceUpload)
+            Text(l10n.generationReferenceUploadHint, style: Theme.of(context).textTheme.labelSmall),
+        ],
         const SizedBox(height: AppSpace.s6),
         Wrap(
           spacing: AppSpace.s6,

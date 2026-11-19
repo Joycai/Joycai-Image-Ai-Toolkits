@@ -213,7 +213,10 @@ class GenerationSchema {
     if (videos + audios > 0 && !contract.referenceAudioVideo) {
       diagnostics.add(const GenerationDiagnostic('unsupportedReferenceMedia'));
     }
-    if (contract.referenceAudioVideo && (videos > 3 || audios > 3 || media.length > 12)) {
+    if (contract.referenceAudioVideo &&
+        (videos > contract.maxReferenceVideos ||
+            audios > contract.maxReferenceAudios ||
+            media.length > contract.maxReferenceMedia)) {
       diagnostics.add(const GenerationDiagnostic('tooManyReferences'));
     }
     if (first > 1 || last > 1) diagnostics.add(const GenerationDiagnostic('duplicateFrame'));

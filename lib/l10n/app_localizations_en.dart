@@ -1448,10 +1448,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get generationReferenceMedia => 'Reference video / audio';
 
   @override
-  String get generationReferenceMediaHint =>
-      'Up to 9 images, 3 videos and 3 audio files; 12 files total. Each clip: 2–15 s; videos and audio each total at most 15 s.';
-
-  @override
   String get generationAddReferenceVideo => 'Add video';
 
   @override
@@ -1495,6 +1491,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get generationSmartDuration => 'Smart duration';
+
+  @override
+  String generationReferenceMediaLimits(
+    int images,
+    int videos,
+    int audios,
+    int total,
+    int min,
+    int seconds,
+  ) {
+    return 'Up to $images images, $videos videos and $audios audio files; $total files total. Each clip: $min–$seconds s; videos and audio each total at most $seconds s.';
+  }
+
+  @override
+  String get generationReferenceUploadHint =>
+      'Audio/video references use temporary cloud uploads (48 h). Video: MP4/MOV, ≤100 MB, 240–4096 px, ≥16 fps. Audio: WAV/MP3, ≤15 MB. Input video + output: ≤30 s.';
 
   @override
   String get usageTokenBreakdown => 'Token breakdown';

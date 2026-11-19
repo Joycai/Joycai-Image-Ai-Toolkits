@@ -1400,10 +1400,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get generationReferenceMedia => '参照動画・音声';
 
   @override
-  String get generationReferenceMediaHint =>
-      '画像9枚、動画3本、音声3本まで、合計12ファイル。各クリップ2〜15秒、動画・音声はそれぞれ合計15秒以内。';
-
-  @override
   String get generationAddReferenceVideo => '動画を追加';
 
   @override
@@ -1446,6 +1442,22 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get generationSmartDuration => '自動の長さ';
+
+  @override
+  String generationReferenceMediaLimits(
+    int images,
+    int videos,
+    int audios,
+    int total,
+    int min,
+    int seconds,
+  ) {
+    return '画像$images枚、動画$videos本、音声$audios本まで、合計$totalファイル。各クリップ$min〜$seconds秒、動画・音声はそれぞれ合計$seconds秒以内。';
+  }
+
+  @override
+  String get generationReferenceUploadHint =>
+      '動画・音声の参照素材は一時クラウドにアップロードされます（48時間）。動画：MP4/MOV、100 MB以下、240〜4096 px、16 fps以上。音声：WAV/MP3、15 MB以下。入力動画と出力の合計は30秒以内。';
 
   @override
   String get usageTokenBreakdown => 'トークン内訳';

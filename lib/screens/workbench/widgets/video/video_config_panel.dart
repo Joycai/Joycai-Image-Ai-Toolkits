@@ -24,6 +24,7 @@ import '../../../../models/tag.dart';
 import '../../../../services/files/persistent_media_service.dart';
 import '../../../../services/llm/generation/generation_schema.dart';
 import '../../../../services/llm/model_capabilities.dart';
+import '../../../../services/llm/protocols/generation_contract.dart';
 import '../../../../state/app_state.dart';
 import '../../../../state/workbench_ui_state.dart';
 import '../../../../widgets/drag/app_drag_session.dart';
@@ -353,7 +354,8 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
           const SizedBox(height: _kCardGap),
           _PanelCard(
             child: _ReferenceFilesSection(
-              enabled: schema?.contract.referenceAudioVideo == true,
+              contract: schema?.contract ?? GenerationProtocolContract.standard,
+              maxImages: caps.maxReferenceImages ?? 0,
               captionStyle: captionStyle,
             ),
           ),
