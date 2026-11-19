@@ -201,7 +201,7 @@ class Platforms {
     PlatformProfile(
       id: dashscope,
       officialHost: 'https://dashscope.aliyuncs.com',
-      hosts: ['dashscope.aliyuncs.com', 'dashscope-intl.aliyuncs.com'],
+      hosts: ['dashscope.aliyuncs.com', 'dashscope-intl.aliyuncs.com', '.maas.aliyuncs.com'],
       routes: [
         PlatformRoute(RouteKind.chat, '/compatible-mode/v1', Vendors.dashscope),
         PlatformRoute(RouteKind.anthropic, '/apps/anthropic/v1', Vendors.dashscope),

@@ -365,3 +365,66 @@ Map<String, dynamic> dashscopePayloadForLog(Map<String, dynamic> payload, int re
       entry.key: (entry.key == 'input' || entry.key == 'messages') ? note : entry.value,
   };
 }
+
+/// IO-free native video body. Media URLs are already encoded by the caller.
+Map<String, dynamic> buildDashScopeVideoPayload({
+  required String modelId,
+  required String prompt,
+  List<Map<String, String>> media = const [],
+  Map<String, dynamic>? options,
+}) {
+  final first = media.any((item) => item['type'] == 'first_frame');
+  final last = media.any((item) => item['type'] == 'last_frame');
+  final references = media.where((item) => item['type'] == 'reference_image').length;
+  if ((first || last) && references > 0) {
+    throw LLMApiException('Frames and reference images are mutually exclusive. Nothing was sent.');
+  }
+  if (last && !first) {
+    throw LLMApiException('A last frame requires a first frame. Nothing was sent.');
+  }
+  if (references > 10) {
+    throw LLMApiException(
+      'DashScope video supports at most 10 reference images. Nothing was sent.',
+    );
+  }
+  final parameters = <String, dynamic>{
+    // Send audio explicitly; disabling it does not change the upstream price.
+    'audio': readStringOption(options, 'videoAudio') != 'off',
+  };
+
+  final resolution = readStringOption(options, 'resolution');
+  if (resolution != null) {
+    // Shared spelling is lowercase (480p); DashScope wants 480P/720P/1080P.
+    // The legacy Veo "4k" option has no upstream equivalent — clamp to the
+    // documented maximum instead of sending a field the endpoint rejects.
+    final tier = resolution.toLowerCase();
+    parameters['resolution'] = tier.contains('480')
+        ? '480P'
+        : tier.contains('720')
+        ? '720P'
+        : '1080P';
+  }
+
+  final aspect = readStringOption(options, 'aspectRatio');
+  if (aspect != null && aspect != 'not_set') {
+    parameters['ratio'] = aspect; // `adaptive` is upstream's own default.
+  }
+
+  final seconds = int.tryParse(resolveVideoSeconds(options) ?? '');
+  if (seconds != null) parameters['duration'] = seconds.clamp(2, 30);
+
+  final promptExtend = dashscopePromptExtend(options);
+  if (promptExtend != null) parameters['prompt_extend'] = promptExtend;
+
+  final watermark = switch (readStringOption(options, 'watermark')) {
+    'on' => true,
+    'off' => false,
+    _ => null,
+  };
+  if (watermark != null) parameters['watermark'] = watermark;
+  return <String, dynamic>{
+    'model': modelId,
+    'input': {'prompt': prompt, if (media.isNotEmpty) 'media': media},
+    'parameters': parameters,
+  };
+}

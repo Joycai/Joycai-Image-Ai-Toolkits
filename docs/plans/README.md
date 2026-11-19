@@ -19,6 +19,31 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 留在这份文件里的，是**不随代码走的那部分**：哪一轮做了什么、结论现在住在哪、
 以及还欠什么。
 
+## 2026-11-19 · Wan 3.0 video Phase 1
+
+- 基于已核对的本地/远端 `main` @ `1e102d8`，在
+  `codex/fix-wan3-video-support` 完成 WAN-01～WAN-07。
+- 原生视频声明首尾帧与参考图互斥，尾帧依赖首帧；所有图片执行 Wan
+  20 MB、格式、尺寸、比例及 PNG alpha 硬校验，参考图上限提高为 10。
+- 参数表补齐 21:9 与共用 watermark；纯函数 payload builder 保留直接调用防御，
+  水印默认省略。历史 v1 快照可缺默认 watermark，显式篡改仍拒绝。
+- MaaS 子域名自动识别为百炼，原生路径推导保持原 host；未新增 DB 迁移、
+  模型/vendor 嗅探或 UI 文案。长期契约见
+  [百炼 API §6](../api/qianwen-bailian.md#6-v1--视频异步任务仅异步) 与
+  [生成参数](../architecture/generation-parameters.md#wan-30-video-contract-2026-11-19)。
+- macOS / Flutter 3.47.9 / Dart 3.13.7 验证：format **973 文件、0 变更**；
+  analyze **No issues found!**；`flutter test -x screenshots` **3603 通过、11 skip**。
+  定向 payload/输入计数测试 13 项通过。
+- 参数表（四语、四宽度浅深色及八主题）与 Wan 工作台截图共 **56 项通过**；
+  手机滚动水印补拍后工作台 8 项再次通过，无打印异常或溢出。
+  已查看 390/834/1024/1440 浅深色实际工作台、手机水印/参考图可达状态，
+  以及英文和日文参数表。依据维护中的设计规范和真实渲染，未比对原始设计稿。
+  证据：`build/ui-screenshots/workbench_{mobile,tablet,ipad,desktop}_{light,dark}_wan3_video.png`
+  与 `generation_*.png`。未调用付费上游；未进行原生手机设备验收。
+- **仍欠 Phase 2/3（WAN-08～WAN-10）**：prompt 策略、智能时长、seed、
+  首帧固定比例行为确认与多模态素材扩展。保留
+  [施工计划](2026-11-wan3-video-audit.md)，Phase 1 已勾选，后续按需另轮实施。
+
 ## 2026-11-08 · DESK-03 macOS 原生菜单（阶段实现）
 
 - Settings、八个目的地与快捷键帮助接入原生菜单，复用 `AppShortcuts`；
@@ -52,6 +77,7 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 |---|---|
 | [`2026-11-desktop-standards.md`](2026-11-desktop-standards.md) | Flutter 与 macOS/Windows 桌面体验修复；DESK-01 已恢复桥接、隔离菜单语义，完成分段、任务筛选/置顶、导航及[剩余自绘控件源码审计与修复](../custom-controls-accessibility-audit.md)；DESK-02 已实现工作台画廊、浏览器网格/列表及跨栏键盘焦点，3.47.8 Windows 原生验证发现的导航 tooltip 与浏览器滑块 AXTree 边界已修复，五页及主题切换复测通过；完整 Narrator/原生验收仍待完成；DESK-03 原生菜单已实现并继续验收，DESK-04～06 待实施。证据见 [Windows 无障碍记录](../windows-accessibility-validation.md)、[画廊键盘验证](../gallery-keyboard-validation.md)、[浏览器键盘验证](../browser-keyboard-validation.md)。 |
 | [`2026-11-windows-store.md`](2026-11-windows-store.md) | Microsoft Store 发布准备施工计划；按 WIN-01～WIN-06 推进，完成后归档结论并删除正文。 |
+| [`2026-11-wan3-video-audit.md`](2026-11-wan3-video-audit.md) | `wan3.0-video` / `wan3.0-video-prime` 对照百炼官方文档的核查问题清单与分阶段修复计划（WAN-01～WAN-10）；Phase 1（WAN-01～07）已实现，Phase 2/3 保留待办。 |
 | [`2026-08-assistant-timeout.md`](2026-08-assistant-timeout.md) | 不是施工说明书，是**一次真实故障的取证记录**（`api_logs/` 里七条日志的耗时还原）。`architecture/assistant-context.md` 直接引它作为「为什么要早elide」的证据。 |
 
 ## 2026-11-07 · Microsoft Store 发布准备（实现中）
