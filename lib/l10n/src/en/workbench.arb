@@ -1342,5 +1342,92 @@
   "generationAgentTextOnly": "Agent prompt enhancement supports text-to-image only. Choose Direct for image editing.",
   "imageSizeFollowReference": "Follow reference",
   "imageSizeFollowReferenceHint": "Uses the last reference ratio; square without references",
-  "paramImageComplexity": "Planning complexity"
+  "paramImageComplexity": "Planning complexity",
+  "editVideo": "Edit video",
+  "extendVideo": "Extend video",
+  "sourceVideo": "Source video",
+  "dropSourceVideo": "Drop or choose a source video",
+  "dropVideosOnly": "Drop an MP4 or MOV video",
+  "videoAdditionalReferences": "Additional references",
+  "videoAdaptiveHint": "Adaptive is recommended. A fixed ratio may change the framing.",
+  "videoIntentPrefixHint": "Automatic prefix: {prefix}",
+  "@videoIntentPrefixHint": {
+    "placeholders": {
+      "prefix": {
+        "type": "String"
+      }
+    }
+  },
+  "insertIntentPrefix": "Insert prefix",
+  "videoIntentConflict": "Your prompt specifies a different direction. Explicit prompt instructions take precedence.",
+  "videoBidirectionalHint": "Describe both the scenes before and after the source video.",
+  "videoSmartBudget": "Input {input}s · Smart output · combined limit {limit}s",
+  "@videoSmartBudget": {
+    "placeholders": {
+      "input": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "videoFixedBudget": "Input {input}s + output {output}s · limit {limit}s",
+  "@videoFixedBudget": {
+    "placeholders": {
+      "input": {
+        "type": "String"
+      },
+      "output": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "videoExtensionEstimate": "About {seconds}s added to the source.",
+  "@videoExtensionEstimate": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "videoShortExtension": "Choose Smart or a final duration longer than the source video.",
+  "menuEditVideo": "Edit video",
+  "menuExtendVideo": "Extend video",
+  "sendToVideoReferenceClips": "Add as reference video",
+  "modelDoesNotSupportVideoEdit": "Source loaded. Select a model that supports this operation. Your current model was kept. Available: {models}",
+  "@modelDoesNotSupportVideoEdit": {
+    "placeholders": {
+      "models": {
+        "type": "String"
+      }
+    }
+  },
+  "videoReferenceToken": "Video {number}",
+  "@videoReferenceToken": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "imageReferenceToken": "Image {number}",
+  "@imageReferenceToken": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "audioReferenceToken": "Audio {number}",
+  "@audioReferenceToken": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  }
 }

@@ -2602,6 +2602,108 @@ abstract class AppLocalizations {
   /// **'Audio/video references use temporary cloud uploads (48 h). Video: MP4/MOV, ≤100 MB, 240–4096 px, ≥16 fps. Audio: WAV/MP3, ≤15 MB. Input video + output: ≤30 s.'**
   String get generationReferenceUploadHint;
 
+  /// No description provided for @paramVideoTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Video task'**
+  String get paramVideoTask;
+
+  /// No description provided for @paramExtendDirection.
+  ///
+  /// In en, this message translates to:
+  /// **'Direction'**
+  String get paramExtendDirection;
+
+  /// No description provided for @videoTaskGenerate.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate'**
+  String get videoTaskGenerate;
+
+  /// No description provided for @videoTaskEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get videoTaskEdit;
+
+  /// No description provided for @videoTaskExtend.
+  ///
+  /// In en, this message translates to:
+  /// **'Extend'**
+  String get videoTaskExtend;
+
+  /// No description provided for @extendDirectionBackward.
+  ///
+  /// In en, this message translates to:
+  /// **'After'**
+  String get extendDirectionBackward;
+
+  /// No description provided for @extendDirectionForward.
+  ///
+  /// In en, this message translates to:
+  /// **'Before'**
+  String get extendDirectionForward;
+
+  /// No description provided for @extendDirectionBidirectional.
+  ///
+  /// In en, this message translates to:
+  /// **'Both'**
+  String get extendDirectionBidirectional;
+
+  /// No description provided for @generationSourceVideoRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Select exactly one source video.'**
+  String get generationSourceVideoRequired;
+
+  /// No description provided for @generationUnsupportedVideoEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'This route does not support video editing.'**
+  String get generationUnsupportedVideoEdit;
+
+  /// No description provided for @generationUnsupportedVideoExtend.
+  ///
+  /// In en, this message translates to:
+  /// **'This route does not support video extension.'**
+  String get generationUnsupportedVideoExtend;
+
+  /// No description provided for @generationVideoDurationBudgetExceeded.
+  ///
+  /// In en, this message translates to:
+  /// **'Input video plus fixed output exceeds the duration budget. Reduce the output duration or select Smart.'**
+  String get generationVideoDurationBudgetExceeded;
+
+  /// No description provided for @generationUploadRegionUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'This region does not support temporary uploads. Use a Beijing or Singapore route.'**
+  String get generationUploadRegionUnsupported;
+
+  /// No description provided for @generationSourceVideoProbing.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading video metadata…'**
+  String get generationSourceVideoProbing;
+
+  /// No description provided for @generationSourceVideoTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'Video exceeds the 100 MB input limit.'**
+  String get generationSourceVideoTooLarge;
+
+  /// No description provided for @generationSourceVideoDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Each video must be 1–15 seconds; all input videos together must be at most 15 seconds.'**
+  String get generationSourceVideoDuration;
+
+  /// No description provided for @generationSourceVideoFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'Use MP4/MOV, 240–4096 px edges, an aspect ratio within 8:1 and at least 16 fps.'**
+  String get generationSourceVideoFormat;
+
   /// No description provided for @usageTokenBreakdown.
   ///
   /// In en, this message translates to:
@@ -11920,6 +12022,138 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Planning complexity'**
   String get paramImageComplexity;
+
+  /// No description provided for @editVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit video'**
+  String get editVideo;
+
+  /// No description provided for @extendVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'Extend video'**
+  String get extendVideo;
+
+  /// No description provided for @sourceVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'Source video'**
+  String get sourceVideo;
+
+  /// No description provided for @dropSourceVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'Drop or choose a source video'**
+  String get dropSourceVideo;
+
+  /// No description provided for @dropVideosOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Drop an MP4 or MOV video'**
+  String get dropVideosOnly;
+
+  /// No description provided for @videoAdditionalReferences.
+  ///
+  /// In en, this message translates to:
+  /// **'Additional references'**
+  String get videoAdditionalReferences;
+
+  /// No description provided for @videoAdaptiveHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Adaptive is recommended. A fixed ratio may change the framing.'**
+  String get videoAdaptiveHint;
+
+  /// No description provided for @videoIntentPrefixHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic prefix: {prefix}'**
+  String videoIntentPrefixHint(String prefix);
+
+  /// No description provided for @insertIntentPrefix.
+  ///
+  /// In en, this message translates to:
+  /// **'Insert prefix'**
+  String get insertIntentPrefix;
+
+  /// No description provided for @videoIntentConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'Your prompt specifies a different direction. Explicit prompt instructions take precedence.'**
+  String get videoIntentConflict;
+
+  /// No description provided for @videoBidirectionalHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe both the scenes before and after the source video.'**
+  String get videoBidirectionalHint;
+
+  /// No description provided for @videoSmartBudget.
+  ///
+  /// In en, this message translates to:
+  /// **'Input {input}s · Smart output · combined limit {limit}s'**
+  String videoSmartBudget(String input, String limit);
+
+  /// No description provided for @videoFixedBudget.
+  ///
+  /// In en, this message translates to:
+  /// **'Input {input}s + output {output}s · limit {limit}s'**
+  String videoFixedBudget(String input, String output, String limit);
+
+  /// No description provided for @videoExtensionEstimate.
+  ///
+  /// In en, this message translates to:
+  /// **'About {seconds}s added to the source.'**
+  String videoExtensionEstimate(String seconds);
+
+  /// No description provided for @videoShortExtension.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Smart or a final duration longer than the source video.'**
+  String get videoShortExtension;
+
+  /// No description provided for @menuEditVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit video'**
+  String get menuEditVideo;
+
+  /// No description provided for @menuExtendVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'Extend video'**
+  String get menuExtendVideo;
+
+  /// No description provided for @sendToVideoReferenceClips.
+  ///
+  /// In en, this message translates to:
+  /// **'Add as reference video'**
+  String get sendToVideoReferenceClips;
+
+  /// No description provided for @modelDoesNotSupportVideoEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Source loaded. Select a model that supports this operation. Your current model was kept. Available: {models}'**
+  String modelDoesNotSupportVideoEdit(String models);
+
+  /// No description provided for @videoReferenceToken.
+  ///
+  /// In en, this message translates to:
+  /// **'Video {number}'**
+  String videoReferenceToken(int number);
+
+  /// No description provided for @imageReferenceToken.
+  ///
+  /// In en, this message translates to:
+  /// **'Image {number}'**
+  String imageReferenceToken(int number);
+
+  /// No description provided for @audioReferenceToken.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio {number}'**
+  String audioReferenceToken(int number);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

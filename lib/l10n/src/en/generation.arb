@@ -62,5 +62,22 @@
       }
     }
   },
-  "generationReferenceUploadHint": "Audio/video references use temporary cloud uploads (48 h). Video: MP4/MOV, ≤100 MB, 240–4096 px, ≥16 fps. Audio: WAV/MP3, ≤15 MB. Input video + output: ≤30 s."
+  "generationReferenceUploadHint": "Audio/video references use temporary cloud uploads (48 h). Video: MP4/MOV, ≤100 MB, 240–4096 px, ≥16 fps. Audio: WAV/MP3, ≤15 MB. Input video + output: ≤30 s.",
+  "paramVideoTask": "Video task",
+  "paramExtendDirection": "Direction",
+  "videoTaskGenerate": "Generate",
+  "videoTaskEdit": "Edit",
+  "videoTaskExtend": "Extend",
+  "extendDirectionBackward": "After",
+  "extendDirectionForward": "Before",
+  "extendDirectionBidirectional": "Both",
+  "generationSourceVideoRequired": "Select exactly one source video.",
+  "generationUnsupportedVideoEdit": "This route does not support video editing.",
+  "generationUnsupportedVideoExtend": "This route does not support video extension.",
+  "generationVideoDurationBudgetExceeded": "Input video plus fixed output exceeds the duration budget. Reduce the output duration or select Smart.",
+  "generationUploadRegionUnsupported": "This region does not support temporary uploads. Use a Beijing or Singapore route.",
+  "generationSourceVideoProbing": "Reading video metadata…",
+  "generationSourceVideoTooLarge": "Video exceeds the 100 MB input limit.",
+  "generationSourceVideoDuration": "Each video must be 1–15 seconds; all input videos together must be at most 15 seconds.",
+  "generationSourceVideoFormat": "Use MP4/MOV, 240–4096 px edges, an aspect ratio within 8:1 and at least 16 fps."
 }

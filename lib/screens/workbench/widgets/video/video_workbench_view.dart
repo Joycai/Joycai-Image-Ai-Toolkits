@@ -15,6 +15,8 @@ import '../../../../state/workbench_ui_state.dart';
 import '../../../../widgets/ui/app_action_target.dart';
 import '../../../../widgets/ui/app_button.dart';
 import '../../../../widgets/ui/app_icon_button.dart';
+import '../../../../widgets/ui/app_menu_anchor.dart';
+import '../../video_task_actions.dart';
 
 /// The gap between the player panel and the gallery area's edges
 /// (`A2` 「与画廊间距 10」).
@@ -30,7 +32,6 @@ const double _kStripMinArea = 480;
 
 /// From this width a strip can afford the labelled "Open in System Player"
 /// button; under it the button is the bare glyph.
-const double _kStripLabelledArea = 600;
 
 enum _PlayerForm { panel, strip, phone }
 
@@ -325,6 +326,27 @@ class _VideoWorkbenchOverlayState extends State<VideoWorkbenchOverlay> {
               ],
               const SizedBox(height: AppSpace.s6),
               Text(path, maxLines: 1, overflow: TextOverflow.ellipsis, style: monoStyle),
+              if (File(path).existsSync()) ...[
+                const SizedBox(height: AppSpace.s6),
+                Wrap(
+                  spacing: AppSpace.s6,
+                  runSpacing: AppSpace.s4,
+                  children: [
+                    AppButton(
+                      label: l10n.menuEditVideo,
+                      variant: AppButtonVariant.secondary,
+                      size: AppButtonSize.compact,
+                      onPressed: () => openVideoTask(context, path, 'edit'),
+                    ),
+                    AppButton(
+                      label: l10n.menuExtendVideo,
+                      variant: AppButtonVariant.secondary,
+                      size: AppButtonSize.compact,
+                      onPressed: () => openVideoTask(context, path, 'extend'),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
         ),
@@ -397,25 +419,30 @@ class _VideoWorkbenchOverlayState extends State<VideoWorkbenchOverlay> {
           ),
         ),
         const SizedBox(width: 8),
-        // A strip has room for one action: retry while the file will not play,
-        // open in the system player otherwise.
-        _hasError
-            ? _actionButton(
-                context,
-                icon: Icons.refresh,
-                label: l10n.videoRetry,
-                onPressed: _retry,
-                labelled: !phone && areaWidth >= _kStripLabelledArea,
-                height: AppSize.control,
-              )
-            : _actionButton(
-                context,
-                icon: Icons.open_in_new,
-                label: l10n.openInSystemPlayer,
-                onPressed: () => _openInSystemPlayer(path),
-                labelled: !phone && areaWidth >= _kStripLabelledArea,
-                height: AppSize.control,
+        AppMenuAnchor(
+          menuChildren: [
+            if (File(path).existsSync()) ...[
+              MenuItemButton(
+                onPressed: () => openVideoTask(context, path, 'edit'),
+                child: Text(l10n.menuEditVideo),
               ),
+              MenuItemButton(
+                onPressed: () => openVideoTask(context, path, 'extend'),
+                child: Text(l10n.menuExtendVideo),
+              ),
+            ],
+            if (_hasError) MenuItemButton(onPressed: _retry, child: Text(l10n.videoRetry)),
+            MenuItemButton(
+              onPressed: () => _openInSystemPlayer(path),
+              child: Text(l10n.openInSystemPlayer),
+            ),
+          ],
+          builder: (context, controller, _) => AppIconButton(
+            icon: Icons.more_horiz,
+            tooltip: l10n.more,
+            onPressed: () => controller.isOpen ? controller.close() : controller.open(),
+          ),
+        ),
         const SizedBox(width: 2),
         _closeButton(context, l10n, size: AppSize.control),
       ],

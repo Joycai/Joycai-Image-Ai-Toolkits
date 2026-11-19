@@ -62,5 +62,22 @@
       }
     }
   },
-  "generationReferenceUploadHint": "音视频参考使用临时云端上传（48 小时）。视频：MP4/MOV，≤100 MB，240–4096 px，≥16 fps。音频：WAV/MP3，≤15 MB。输入视频与输出合计 ≤30 秒。"
+  "generationReferenceUploadHint": "音视频参考使用临时云端上传（48 小时）。视频：MP4/MOV，≤100 MB，240–4096 px，≥16 fps。音频：WAV/MP3，≤15 MB。输入视频与输出合计 ≤30 秒。",
+  "paramVideoTask": "视频任务",
+  "paramExtendDirection": "延长方向",
+  "videoTaskGenerate": "生成",
+  "videoTaskEdit": "编辑",
+  "videoTaskExtend": "延长",
+  "extendDirectionBackward": "向后",
+  "extendDirectionForward": "向前",
+  "extendDirectionBidirectional": "双向",
+  "generationSourceVideoRequired": "请选择一个源视频。",
+  "generationUnsupportedVideoEdit": "当前通道不支持视频编辑。",
+  "generationUnsupportedVideoExtend": "当前通道不支持视频延长。",
+  "generationVideoDurationBudgetExceeded": "输入视频与固定输出时长之和超过预算，请缩短输出或改用智能时长。",
+  "generationUploadRegionUnsupported": "当前地域不支持临时上传，请选择北京或新加坡通道。",
+  "generationSourceVideoProbing": "正在读取视频元数据…",
+  "generationSourceVideoTooLarge": "视频超过 100 MB 输入上限。",
+  "generationSourceVideoDuration": "每段视频须为 1–15 秒，所有输入视频合计不超过 15 秒。",
+  "generationSourceVideoFormat": "请使用 MP4/MOV，边长 240–4096 px、比例不超过 8:1、帧率至少 16 fps。"
 }

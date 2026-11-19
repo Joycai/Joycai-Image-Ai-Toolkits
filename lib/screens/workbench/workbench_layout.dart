@@ -6,6 +6,7 @@ import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/system/ui_prefs.dart';
 import '../../state/app_state.dart';
+import '../../state/workbench_ui_state.dart';
 import '../../widgets/glass/app_glass.dart';
 import '../../widgets/glass/glass_controls.dart';
 import '../../widgets/ui/panel_resizer.dart';
@@ -297,6 +298,20 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
 
   @override
   Widget build(BuildContext context) {
+    final ui = context.read<WorkbenchUIState?>();
+    context.select<WorkbenchUIState?, int>((s) => s?.videoPanelRequest ?? 0);
+    if (ui != null && ui.videoPanelRequest > ui.videoPanelHandled) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || ui.videoPanelRequest <= ui.videoPanelHandled) return;
+        ui.videoPanelHandled = ui.videoPanelRequest;
+        if (Responsive.isMobile(context)) {
+          _openRightSheet();
+        } else if (Responsive.isTablet(context)) {
+          _scaffoldKey.currentState?.openEndDrawer();
+        }
+      });
+    }
+
     return LayoutBuilder(builder: (context, constraints) => _build(context, constraints.maxWidth));
   }
 

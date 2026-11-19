@@ -62,5 +62,22 @@
       }
     }
   },
-  "generationReferenceUploadHint": "音影片參考使用臨時雲端上傳（48 小時）。影片：MP4/MOV，≤100 MB，240–4096 px，≥16 fps。音訊：WAV/MP3，≤15 MB。輸入影片與輸出合計 ≤30 秒。"
+  "generationReferenceUploadHint": "音影片參考使用臨時雲端上傳（48 小時）。影片：MP4/MOV，≤100 MB，240–4096 px，≥16 fps。音訊：WAV/MP3，≤15 MB。輸入影片與輸出合計 ≤30 秒。",
+  "paramVideoTask": "影片任務",
+  "paramExtendDirection": "延長方向",
+  "videoTaskGenerate": "生成",
+  "videoTaskEdit": "編輯",
+  "videoTaskExtend": "延長",
+  "extendDirectionBackward": "向後",
+  "extendDirectionForward": "向前",
+  "extendDirectionBidirectional": "雙向",
+  "generationSourceVideoRequired": "請選擇一個來源影片。",
+  "generationUnsupportedVideoEdit": "目前通道不支援影片編輯。",
+  "generationUnsupportedVideoExtend": "目前通道不支援影片延長。",
+  "generationVideoDurationBudgetExceeded": "輸入影片與固定輸出時長總和超過預算，請縮短輸出或改用智慧時長。",
+  "generationUploadRegionUnsupported": "目前地域不支援臨時上傳，請選擇北京或新加坡通道。",
+  "generationSourceVideoProbing": "正在讀取影片中繼資料…",
+  "generationSourceVideoTooLarge": "影片超過 100 MB 輸入上限。",
+  "generationSourceVideoDuration": "每段影片須為 1–15 秒，所有輸入影片合計不超過 15 秒。",
+  "generationSourceVideoFormat": "請使用 MP4/MOV，邊長 240–4096 px、比例不超過 8:1、影格率至少 16 fps。"
 }

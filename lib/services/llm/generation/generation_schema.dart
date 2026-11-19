@@ -233,7 +233,11 @@ class GenerationSchema {
   ]) {
     final limit = contract.promptMaxCharacters;
     return [
-      if (contract.promptRequired &&
+      if ((contract.promptRequired ||
+              (operation == GenerationOperation.editVideo &&
+                  contract.videoEdit?.promptRequired == true) ||
+              (operation == GenerationOperation.extendVideo &&
+                  contract.videoExtend?.promptRequired == true)) &&
           prompt.trim().isEmpty &&
           !allowsEmptyPrompt(media, operation: operation))
         const GenerationDiagnostic('promptRequired'),
