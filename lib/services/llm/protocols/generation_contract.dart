@@ -13,7 +13,9 @@ class GenerationProtocolContract {
     this.referenceAudioVideo = false,
     this.standaloneLastFrame = false,
     this.frameRatioAdaptive = false,
-    this.requiredPromptMaxCharacters,
+    this.promptMaxCharacters,
+    this.promptRequired = false,
+    this.promptOptionalWithMedia = false,
   });
 
   final int? referenceMaxSeconds;
@@ -25,11 +27,18 @@ class GenerationProtocolContract {
   final bool referenceAudioVideo;
   final bool standaloneLastFrame;
   final bool frameRatioAdaptive;
-  final int? requiredPromptMaxCharacters;
+  final int? promptMaxCharacters;
+  final bool promptRequired;
+  final bool promptOptionalWithMedia;
 
   static const standard = GenerationProtocolContract();
   static const declarations = <WireProtocol, GenerationProtocolContract>{
-    WireProtocol.dashscopeVideo: GenerationProtocolContract(exclusiveFrames: true),
+    WireProtocol.dashscopeVideo: GenerationProtocolContract(
+      exclusiveFrames: true,
+      promptMaxCharacters: 20000,
+      promptRequired: true,
+      promptOptionalWithMedia: true,
+    ),
     WireProtocol.xaiVideos: GenerationProtocolContract(lastFrame: false, exclusiveFrames: true),
     WireProtocol.openaiVideos: GenerationProtocolContract(lastFrame: false),
     WireProtocol.minimaxVideo: GenerationProtocolContract(
@@ -37,7 +46,8 @@ class GenerationProtocolContract {
       referenceAudioVideo: true,
       standaloneLastFrame: true,
       frameRatioAdaptive: true,
-      requiredPromptMaxCharacters: 7000,
+      promptMaxCharacters: 7000,
+      promptRequired: true,
     ),
     WireProtocol.minimaxH3BaseVideo: GenerationProtocolContract(exclusiveFrames: true),
     WireProtocol.arkImages: GenerationProtocolContract(groupLimit: 15),

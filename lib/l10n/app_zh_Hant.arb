@@ -937,6 +937,18 @@
   "promptExpansionDisabled": "關閉",
   "promptExpansionBalanced": "均衡",
   "promptExpansionQuality": "品質優先",
+  "generationPromptRequired": "請輸入提示詞或新增支援的參考素材。",
+  "generationPromptTooLong": "提示詞最多允許 {count} 個字元。",
+  "generationSeed": "隨機種子",
+  "generationRandomSeed": "隨機（留空）",
+  "generationSmartDuration": "智慧時長",
+  "@generationPromptTooLong": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "usageTokenBreakdown": "Token 組成",
   "usageTotalTokens": "總 Token",
   "usage": "用量",

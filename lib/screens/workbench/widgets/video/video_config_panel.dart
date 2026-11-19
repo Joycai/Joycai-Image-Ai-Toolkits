@@ -174,7 +174,10 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
       uiState.videoGenerationMedia,
     );
     final schema = appState.generationSchemaForModel(selectedModel);
-    final promptDiagnostics = schema.validatePrompt(_promptController.text);
+    final promptDiagnostics = schema.validatePrompt(
+      _promptController.text,
+      uiState.videoGenerationMedia,
+    );
     if (promptDiagnostics.isNotEmpty) {
       AppSnackBar.warning(context, GenerationParamTexts.diagnostic(l10n, promptDiagnostics.first));
       return;
@@ -460,7 +463,11 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
     final generateButton = ValueListenableBuilder<TextEditingValue>(
       valueListenable: _promptController,
       builder: (context, promptValue, _) {
-        final bool enabled = hasModels && promptValue.text.isNotEmpty;
+        final bool enabled =
+            hasModels &&
+            schema != null &&
+            (promptValue.text.trim().isNotEmpty ||
+                schema.allowsEmptyPrompt(uiState.videoGenerationMedia));
         return DecoratedBox(
           // `1a` lifts the live button on a glow in its ring colour; the
           // disabled one (`1b`) sits flat on the track.

@@ -59,6 +59,9 @@ void main() {
               app.setWorkbenchTab(5);
               app.isConsoleExpanded = false;
               await app.updateVideoConfig(modelId: models[suffix].toString());
+              final model = app.videoModels.firstWhere((m) => m.id == models[suffix]);
+              await app.setVideoParam(model, 'seconds', '-1');
+              await app.setVideoParam(model, 'seed', '2147483647');
               final state = app.workbenchUIState;
               state.setVideoFirstFrame(null);
               state.setVideoLastFrame(null);
@@ -77,7 +80,7 @@ void main() {
               await tester.tap(find.descendant(of: panel, matching: find.text(text)).last);
               await settle(tester);
               if (size.label == 'mobile') {
-                await tester.ensureVisible(find.text('Watermark').last);
+                await tester.ensureVisible(find.text('Duration').last);
                 await settle(tester);
               }
             },

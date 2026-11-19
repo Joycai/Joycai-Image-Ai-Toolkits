@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -8,6 +9,7 @@ import 'package:joycai_image_ai_toolkits/services/llm/generation/generation_sche
 import 'package:joycai_image_ai_toolkits/services/llm/generation/generation_validator.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_dispatcher.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/output_spec.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/dashscope_payload.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/platforms.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
@@ -162,9 +164,10 @@ void main() {
     );
   });
 
-  test('v1 snapshots may omit only default watermark, explicit tampering fails', () async {
+  test('v1 snapshots may omit only default watermark and seed, explicit tampering fails', () async {
     final oldValues = schema.effective(schema.readLegacy({}), GenerationOperation.textVideo)
-      ..remove('watermark');
+      ..remove('watermark')
+      ..remove('seed');
     final request = GenerationRequest(
       prompt: 'a cat',
       operation: GenerationOperation.textVideo,
@@ -178,11 +181,143 @@ void main() {
     final options = generationTaskOptions({'generation': request.toJson()});
     expect(request.toJson()['version'], 1);
     await validate([], options);
-    await validate([], {...options, 'watermark': 'not_set'});
+    await validate([], {...options, 'watermark': 'not_set', 'seed': 'not_set'});
+    for (final value in ['-1', '0', '2147483647', 'bad']) {
+      await expectLater(validate([], {...options, 'seed': value}), rejected);
+    }
     for (final value in ['on', 'off', 'invalid']) {
       await expectLater(validate([], {...options, 'watermark': value}), rejected);
     }
     await expectLater(validate([], {...options, 'videoAudio': 'off'}), rejected);
+  });
+
+  test('prompt is bounded by code points independently of required media', () async {
+    for (final id in ['wan3.0-video', 'wan3.0-video-prime']) {
+      final s = LLMDispatcher.generationSchemaFor(
+        channelType: Vendors.dashscopeNative,
+        modelId: id,
+        tag: 'video',
+      );
+      expect(s.validatePrompt('😀' * 20000), isEmpty);
+      expect(s.validatePrompt('字' * 20001).single.code, 'promptTooLong');
+      expect(s.validatePrompt('😀' * 20001).single.count, 20000);
+      for (final prompt in ['', '  ']) {
+        expect(s.validatePrompt(prompt).single.code, 'promptRequired');
+        await expectLater(
+          validateGeneration(s, [LLMMessage(role: LLMRole.user, content: prompt)], {}),
+          rejected,
+        );
+        for (final role in [LLMReferenceType.media, LLMReferenceType.firstFrame]) {
+          await validateGeneration(s, [
+            LLMMessage(role: LLMRole.user, content: prompt, attachments: [attachment(valid, role)]),
+          ], {});
+        }
+      }
+      await expectLater(
+        validateGeneration(s, [
+          LLMMessage(role: LLMRole.user, content: 'a' * 20001, attachments: [attachment(valid)]),
+        ], {}),
+        rejected,
+      );
+    }
+    const media = [GenerationMedia(GenerationMediaRole.firstFrame, 'frame.png')];
+    final minimax = LLMDispatcher.generationSchemaFor(
+      channelType: Vendors.minimax,
+      modelId: 'MiniMax-H3',
+      tag: 'video',
+    );
+    expect(minimax.validatePrompt('', media).single.code, 'promptRequired');
+    expect(minimax.validatePrompt('😀' * 7000), isEmpty);
+    expect(minimax.validatePrompt('a' * 7001).single.count, 7000);
+    expect(() => buildDashScopeVideoPayload(modelId: 'unused', prompt: ''), rejected);
+    expect(
+      () => buildDashScopeVideoPayload(
+        modelId: 'unused',
+        prompt: 'a' * 20001,
+        media: [
+          {'type': 'reference_image', 'url': 'image'},
+        ],
+      ),
+      rejected,
+    );
+    expect(
+      (buildDashScopeVideoPayload(
+            modelId: 'unused',
+            prompt: '',
+            media: [
+              {'type': 'first_frame', 'url': 'frame'},
+            ],
+          )['input']
+          as Map)['prompt'],
+      '',
+    );
+  });
+
+  test('smart duration and seed survive schema, JSON snapshot and wire encoding', () async {
+    for (final seed in ['not_set', '-1', '0', '2147483647']) {
+      final values = schema.readLegacy({'seconds': '-1', 'seed': seed});
+      expect(schema.validate(values, []), isEmpty);
+      final request = GenerationRequest(
+        prompt: 'a cat',
+        operation: GenerationOperation.textVideo,
+        values: values,
+        media: const [],
+        modelId: 'wan3.0-video',
+        channelType: Vendors.dashscopeNative,
+        protocolId: schema.protocol?.id,
+        profileId: schema.profileId,
+      );
+      final restored = GenerationRequest.fromJson(
+        jsonDecode(jsonEncode(request.toJson())) as Map<String, dynamic>,
+      );
+      final options = generationTaskOptions({'generation': restored.toJson()});
+      await validate([], options);
+      final params = payload(options: options)['parameters'] as Map;
+      expect(params['duration'], -1);
+      expect(params['seed'], seed == 'not_set' ? null : int.parse(seed));
+      expect(OutputSpec.from(options).seconds, isNull);
+      expect(OutputSpec.from(options, metadata: {'output_seconds': 12}).seconds, 12);
+      await expectLater(validate([], {...options, 'seconds': '5'}), rejected);
+      await expectLater(validate([], {...options, 'seed': '42'}), rejected);
+    }
+    for (final seed in ['-2', '2147483648', '1.5', 'invalid']) {
+      await expectLater(validate([], {'seed': seed}), rejected);
+      expect(() => payload(options: {'seed': seed}), rejected);
+    }
+    for (final seconds in ['-2', '0', '1', '31', '2.5']) {
+      await expectLater(validate([], {'seconds': seconds}), rejected);
+    }
+    for (final seconds in ['-1', '2', '30']) {
+      await validate([], {'seconds': seconds});
+    }
+    final relay = LLMDispatcher.generationSchemaFor(
+      channelType: Vendors.openAIRest,
+      modelId: 'wan3.0-video',
+      tag: 'video',
+    );
+    expect(relay.params.any((p) => p.key == 'seed'), isFalse);
+    await expectLater(
+      validateGeneration(relay, [LLMMessage(role: LLMRole.user, content: 'a cat')], {'seed': '42'}),
+      rejected,
+    );
+  });
+
+  test('frame ratio remains editable pending upstream evidence', () {
+    const media = [GenerationMedia(GenerationMediaRole.firstFrame, 'frame.png')];
+    final draft = schema.readLegacy({'aspectRatio': '21:9'});
+    final operation = schema.operation(draft, media);
+    expect(schema.fieldState('aspectRatio', operation, draft), GenerationFieldState.active);
+    expect(schema.effective(draft, operation)['aspectRatio']?.value, '21:9');
+    expect(
+      (payload(
+            options: {'aspectRatio': '21:9'},
+            media: [
+              {'type': 'first_frame', 'url': 'frame'},
+            ],
+          )['parameters']
+          as Map)['ratio'],
+      '21:9',
+    );
   });
 
   test('MaaS hosts infer DashScope and native bases without changing host', () {

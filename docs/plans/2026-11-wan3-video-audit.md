@@ -1,6 +1,6 @@
 # `wan3.0-video` 官方规范核查与修复计划
 
-Created: 2026-11-19 · Baseline: `main` @ `1e102d8` · Status: Phase 1 已完成并验收；Phase 2/3 待办
+Created: 2026-11-19 · Baseline: `main` @ `1e102d8` · Status: Phase 1 已完成；Phase 2 WAN-08 已实现并验收；WAN-09 实测与 Phase 3 待办
 
 本文档记录对照阿里云百炼（Model Studio / DashScope）官方 `wan3.0-video` / `wan3.0-video-prime` API 文档核查后的问题清单与分阶段修复计划。执行完毕并验收通过后，按 [台账](README.md) 约定将结论归档至 `docs/plans/README.md`、`docs/api/qianwen-bailian.md` 和 `docs/architecture/generation-parameters.md`，并删除本施工文档。
 
@@ -47,16 +47,21 @@ Created: 2026-11-19 · Baseline: `main` @ `1e102d8` · Status: Phase 1 已完成
 - [x] WAN-05：共用水印控件、纯函数 payload 与旧 v1 默认快照兼容。
 - [x] WAN-06：MaaS 平台识别与原生路径推导。
 - [x] WAN-07：协议/架构文档及 payload、校验、快照、域名单测与截图覆盖。
-- [ ] Phase 2：WAN-08 / WAN-09，需另轮授权与必要的上游实测。
+- [x] Phase 2 / WAN-08：独立 prompt 长度/必填契约、素材空提示词、智能时长、seed、默认快照兼容与四语控件。
+- [ ] Phase 2 / WAN-09：固定首帧比例的真实上游行为仍待单独授权实测；保持默认 adaptive 和可编辑比例。
 - [ ] Phase 3：WAN-10，先验证上传与请求体约束。
 
 - [x] Phase 1 验收：format 973 文件、0 变更；analyze `No issues found!`；
   非截图测试 3603 通过、11 skip；参数表和 Wan 工作台截图 56 项通过，
   手机滚动水印复拍的工作台 8 项亦通过。日志无溢出/截图异常。
 
-仅执行 Phase 1；后两期保留，本施工计划暂不删除。验证环境为 macOS、
+- [x] Phase 2 / WAN-08 本地验收：format 975 文件、0 变更；analyze `No issues found!`；
+  非截图测试 3608 通过、11 skip；参数表和 Wan 工作台截图 56 项通过。
+  四宽度浅深色实图已查看，修复英文智能时长截断，日志无异常/溢出。
+
+Phase 1 验收记录保留；本轮继续 Phase 2，WAN-09 实测与 Phase 3 保留，计划暂不删除。验证环境为 macOS、
 Flutter 3.47.9 / Dart 3.13.7；未调用付费上游、未验证原生手机设备。
-归档结论见 [台账](README.md#2026-11-19--wan-30-video-phase-1)。
+归档结论见 [台账](README.md) 的 Phase 1 / Phase 2 条目。
 
 ## 修复计划
 
@@ -119,14 +124,28 @@ Flutter 3.47.9 / Dart 3.13.7；未调用付费上游、未验证原生手机设�
 
 ---
 
-### Phase 2：参数与交互增强（覆盖 WAN-08 / WAN-09，按需另开）
+### Phase 2：参数与交互增强（WAN-08 已实现；WAN-09 实测待办）
 
-1. **Prompt 20,000 字符上限与空 prompt 策略**：
-   - 在 `GenerationProtocolContract` 中将最大长度校验与必填校验拆开（避免 `requiredPromptMaxCharacters` 误把允许空 prompt 的模型锁死）；评估是否在有首帧/参考图时放开 `video_config_panel.dart` 的空 prompt 提交按钮。
-2. **`duration: -1` 智能时长**：
-   - 设计交互控件（例如独立开关 `autoDuration` 或支持 auto 态的时长编辑器），同步更新 `en` / `zh` / `zh_Hant` / `ja` 四语言 `.arb`（`dart tool/merge_l10n.dart` → `flutter gen-l10n`）、旧快照兼容和四宽度截图。
-3. **`seed` 与 `frameRatioAdaptive`**：
-   - 评估全局视频 `seed` 控件需求；用真实 API Key 验证 `wan3.0-video` 首帧模式下传入固定 `ratio` 的实际行为后再决定是否启用 `frameRatioAdaptive: true`。
+本轮基于合并 PR #417 后 `main` @ `df646dd`，分支 `codex/wan3-video-phase2`。
+交互简报：保留现有模型参数卡和控件层级，时长改为下拉菜单（智能/2–30s），
+默认仍为 5 秒；seed 全行数字输入，空值表示随机。复用 AppDropdown/AppTextField、
+既有间距与浅深色主题；窄屏沿用滚动面板。依据维护中的设计规范与 Phase 1 实际截图，
+基线副本保存在 `/tmp/wan-phase2-before/`。验收覆盖四语、四宽度、浅深色，以及
+空提示词按钮随素材增删变化、seed 边界/清空、智能时长与快照往返。
+
+1. **Prompt 20,000 字符上限与空 prompt 策略（已实现）**：
+   - `promptMaxCharacters`、`promptRequired`、`promptOptionalWithMedia` 独立声明；
+     原生 Wan 接受有素材的空提示词，按 Unicode 码点计数，超长提交显示四语提示。
+     MiniMax 保留必填和 7,000 字符限制。素材本身仍经独立校验。
+2. **`duration: -1` 智能时长（已实现）**：
+   - 下拉选择智能或 2–30 秒，保留默认 5 秒。智能值直接编码为 -1，
+     不新增 autoDuration 状态或改变已有排队任务的时长。时长全行展示避免长文案截断。
+3. **`seed`（已实现）与 `frameRatioAdaptive`（待实测）**：
+   - 共用整数编辑器仅由原生 Wan profile 声明；不向其他视频协议推广。
+     空值 `not_set` 省略，-1 或 0–2147483647 下发整数；旧快照可缺默认值，
+     显式篡改拒绝。四语源文件合并和生成已完成。
+   - 本轮仅本地测试/截图，不调用付费上游。WAN-09 真实首帧+固定比例行为
+     仍未确认，继续保留 adaptive 默认及可编辑比例；不启用强制锁定。
 
 ---
 

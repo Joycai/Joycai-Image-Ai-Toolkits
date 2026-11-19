@@ -6,8 +6,7 @@ part of '../../model_capabilities.dart';
 ///  * `resolution` — 480P / 720P / 1080P (upstream default 1080P; the
 ///    protocol uppercases whatever the shared spelling delivers).
 ///  * `aspectRatio` — `adaptive` (default) or a fixed ratio.
-///  * `seconds` — 2–30 s (`-1` smart mode is not exposed; upstream
-///    default 5).
+///  * `seconds` — 2–30 s or -1 (smart duration); default 5.
 ///  * `videoAudio` — whether the model also generates audio. Upstream
 ///    defaults to **on**; disabling audio does not change the price.
 ///    The protocol always sends the field explicitly.
@@ -41,9 +40,40 @@ const _dashscopeWanVideo = ModelCapabilities(
       key: 'seconds',
       valueType: ParamValueType.integer,
       labelKey: 'videoSeconds',
-      control: ParamControl.slider,
+      control: ParamControl.dropdown,
       defaultValue: '5',
-      options: [],
+      options: [
+        ParamOption('-1'),
+        ParamOption('2'),
+        ParamOption('3'),
+        ParamOption('4'),
+        ParamOption('5'),
+        ParamOption('6'),
+        ParamOption('7'),
+        ParamOption('8'),
+        ParamOption('9'),
+        ParamOption('10'),
+        ParamOption('11'),
+        ParamOption('12'),
+        ParamOption('13'),
+        ParamOption('14'),
+        ParamOption('15'),
+        ParamOption('16'),
+        ParamOption('17'),
+        ParamOption('18'),
+        ParamOption('19'),
+        ParamOption('20'),
+        ParamOption('21'),
+        ParamOption('22'),
+        ParamOption('23'),
+        ParamOption('24'),
+        ParamOption('25'),
+        ParamOption('26'),
+        ParamOption('27'),
+        ParamOption('28'),
+        ParamOption('29'),
+        ParamOption('30'),
+      ],
       min: 2,
       max: 30,
     ),
@@ -56,6 +86,16 @@ const _dashscopeWanVideo = ModelCapabilities(
     ),
     _dashscopePromptExtend,
     _dashscopeWatermark,
+    ParamSpec(
+      key: 'seed',
+      labelKey: 'seed',
+      valueType: ParamValueType.integer,
+      control: ParamControl.integer,
+      defaultValue: 'not_set',
+      options: [ParamOption('not_set')],
+      min: -1,
+      max: 2147483647,
+    ),
   ],
 );
 

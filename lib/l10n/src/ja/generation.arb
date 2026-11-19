@@ -27,5 +27,17 @@
   "paramPromptExpansionMode": "プロンプト拡張",
   "promptExpansionDisabled": "無効",
   "promptExpansionBalanced": "バランス",
-  "promptExpansionQuality": "品質優先"
+  "promptExpansionQuality": "品質優先",
+  "generationPromptRequired": "プロンプトを入力するか、対応する参照素材を追加してください。",
+  "generationPromptTooLong": "プロンプトは {count} 文字以内で入力してください。",
+  "generationSeed": "シード",
+  "generationRandomSeed": "ランダム（空欄）",
+  "generationSmartDuration": "自動の長さ",
+  "@generationPromptTooLong": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

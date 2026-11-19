@@ -27,5 +27,17 @@
   "paramPromptExpansionMode": "提示词扩写",
   "promptExpansionDisabled": "关闭",
   "promptExpansionBalanced": "均衡",
-  "promptExpansionQuality": "质量优先"
+  "promptExpansionQuality": "质量优先",
+  "generationPromptRequired": "请输入提示词或添加支持的参考素材。",
+  "generationPromptTooLong": "提示词最多允许 {count} 个字符。",
+  "generationSeed": "随机种子",
+  "generationRandomSeed": "随机（留空）",
+  "generationSmartDuration": "智能时长",
+  "@generationPromptTooLong": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

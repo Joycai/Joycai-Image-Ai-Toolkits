@@ -12,6 +12,7 @@ import '../../../../widgets/ui/app_field_size.dart';
 import '../../../../widgets/ui/app_segmented_control.dart';
 import '../../../../widgets/ui/app_slider.dart';
 import '../size_picker/size_field.dart';
+import 'integer_param_editor.dart';
 
 typedef ParamEditorBuilder = Widget Function(BuildContext context, ParamEditorData data);
 
@@ -52,6 +53,7 @@ class ParamEditorRegistry {
     ParamControl.segmented: _segmented,
     ParamControl.slider: _slider,
     ParamControl.customSize: _size,
+    ParamControl.integer: _integer,
   });
 
   Widget build(BuildContext context, ParamEditorData data) {
@@ -138,3 +140,10 @@ Widget _slider(BuildContext context, ParamEditorData data) {
     ),
   );
 }
+
+Widget _integer(BuildContext context, ParamEditorData data) => IntegerParamEditor(
+  spec: data.param.legacy,
+  value: data.legacyValue,
+  hint: data.optionLabel(data.param.legacy.defaultValue),
+  onChanged: data.change,
+);

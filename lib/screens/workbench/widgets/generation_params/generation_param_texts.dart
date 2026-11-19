@@ -7,6 +7,8 @@ class GenerationParamTexts {
       switch (diagnostic.code) {
         'unsupportedReferenceMedia' => l10n.generationUnsupportedReferenceMedia,
         'videoPromptLength' => l10n.generationVideoPromptLength,
+        'promptRequired' => l10n.generationPromptRequired,
+        'promptTooLong' => l10n.generationPromptTooLong(diagnostic.count!),
         'wanEditSize' => l10n.generationWanEditSize,
         'agentTextOnly' => l10n.generationAgentTextOnly,
         'transparentJpeg' => l10n.generationTransparentJpeg,
@@ -25,6 +27,8 @@ class GenerationParamTexts {
     switch (labelKey) {
       case 'promptExpansionMode':
         return l10n.paramPromptExpansionMode;
+      case 'seed':
+        return l10n.generationSeed;
       case 'videoSeconds':
         return l10n.videoSeconds;
       case 'videoAudio':
@@ -106,6 +110,10 @@ class GenerationParamTexts {
       };
     }
     if (value == 'not_set' && hasExplicitAuto) return l10n.generationOptionDefault;
+    if (paramKey == 'seed' && (value == 'not_set' || value == '-1')) {
+      return l10n.generationRandomSeed;
+    }
+    if (paramKey == 'seconds' && value == '-1') return l10n.generationSmartDuration;
     if (paramKey == 'seconds') return '${value}s';
     if (paramKey == 'videoQuality') {
       if (value == 'standard') return l10n.videoQualityStandard;

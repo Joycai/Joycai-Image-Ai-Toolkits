@@ -160,11 +160,20 @@ class GenerationSchema {
           : param.decode(options[param.key].toString()),
   };
 
-  List<GenerationDiagnostic> validatePrompt(String prompt) {
-    final limit = contract.requiredPromptMaxCharacters;
+  /// Prompt presence and length are independent of the chosen input mode.
+  bool allowsEmptyPrompt(List<GenerationMedia> media) =>
+      contract.promptOptionalWithMedia && media.isNotEmpty;
+
+  List<GenerationDiagnostic> validatePrompt(
+    String prompt, [
+    List<GenerationMedia> media = const [],
+  ]) {
+    final limit = contract.promptMaxCharacters;
     return [
-      if (limit != null && (prompt.trim().isEmpty || prompt.runes.length > limit))
-        const GenerationDiagnostic('videoPromptLength'),
+      if (contract.promptRequired && prompt.trim().isEmpty && !allowsEmptyPrompt(media))
+        const GenerationDiagnostic('promptRequired'),
+      if (limit != null && prompt.runes.length > limit)
+        GenerationDiagnostic('promptTooLong', count: limit),
     ];
   }
 

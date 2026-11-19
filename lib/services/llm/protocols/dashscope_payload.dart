@@ -373,6 +373,11 @@ Map<String, dynamic> buildDashScopeVideoPayload({
   List<Map<String, String>> media = const [],
   Map<String, dynamic>? options,
 }) {
+  if (prompt.runes.length > 20000 || (prompt.trim().isEmpty && media.isEmpty)) {
+    throw LLMApiException(
+      'DashScope video requires a prompt or media and at most 20000 prompt characters. Nothing was sent.',
+    );
+  }
   final first = media.any((item) => item['type'] == 'first_frame');
   final last = media.any((item) => item['type'] == 'last_frame');
   final references = media.where((item) => item['type'] == 'reference_image').length;
@@ -411,7 +416,18 @@ Map<String, dynamic> buildDashScopeVideoPayload({
   }
 
   final seconds = int.tryParse(resolveVideoSeconds(options) ?? '');
-  if (seconds != null) parameters['duration'] = seconds.clamp(2, 30);
+  if (seconds != null) parameters['duration'] = seconds == -1 ? -1 : seconds.clamp(2, 30);
+
+  final seedText = options?['seed']?.toString();
+  if (seedText != null && seedText != 'not_set') {
+    final seed = int.tryParse(seedText);
+    if (seed == null || seed < -1 || seed > 2147483647) {
+      throw LLMApiException(
+        'Seed must be -1 or an integer from 0 to 2147483647. Nothing was sent.',
+      );
+    }
+    parameters['seed'] = seed;
+  }
 
   final promptExtend = dashscopePromptExtend(options);
   if (promptExtend != null) parameters['prompt_extend'] = promptExtend;

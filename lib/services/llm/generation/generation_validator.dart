@@ -87,7 +87,7 @@ Future<Map<String, dynamic>?> validateGeneration(
                               'watermark',
                             ].contains(entry.key)) ||
                         (schema.protocol == WireProtocol.dashscopeVideo &&
-                            entry.key == 'watermark')) &&
+                            const ['watermark', 'seed'].contains(entry.key))) &&
                     schema.params.firstWhere((p) => p.key == entry.key).defaultValue ==
                         entry.value),
           ))) {
@@ -97,7 +97,7 @@ Future<Map<String, dynamic>?> validateGeneration(
   }
   final diagnostics = [
     ...schema.validate(effective, media),
-    ...schema.validatePrompt(user?.content ?? ''),
+    ...schema.validatePrompt(user?.content ?? '', media),
   ];
   if (diagnostics.isNotEmpty) {
     throw LLMApiException(
