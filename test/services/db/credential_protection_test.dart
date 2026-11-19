@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/models/llm_channel.dart';
 import 'package:joycai_image_ai_toolkits/services/db/database_service.dart';
 import 'package:joycai_image_ai_toolkits/services/db/repositories/model_repository.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/channel_routes.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/channel_upload_config.dart';
 import 'package:joycai_image_ai_toolkits/services/security/credential_protection.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
@@ -194,6 +196,41 @@ void main() {
           throwsA(isA<CredentialProtectionException>()),
         );
       }
+    },
+  );
+
+  test(
+    'upload secret is protected, redacted in backups and retained on same-machine restore',
+    () async {
+      const endpoint = 'https://token-plan.cn-beijing.maas.aliyuncs.com/api/v1';
+      final routes = ChannelRoutes.resolve('dashscope-native', endpoint, null).withUploadConfig(
+        const ChannelUploadConfig(
+          tokenPlan: true,
+          endpoint: 'https://dashscope.aliyuncs.com/api/v1',
+          apiKey: 'upload-private',
+        ),
+      );
+      await protected.addChannel(
+        LLMChannel(
+          displayName: 'Plan',
+          type: routes.primaryVendorId,
+          endpoint: endpoint,
+          apiKey: 'plan-private',
+          routes: routes.encode(),
+        ),
+      );
+      final stored = (await raw.query('llm_channels')).single;
+      expect(
+        ChannelUploadConfig.documentKey(stored['routes'] as String),
+        startsWith(CredentialProtection.prefix),
+      );
+      final backup = await protected.getAllDataRaw();
+      expect(jsonEncode(backup), isNot(contains('upload-private')));
+      expect(jsonEncode(backup), isNot(contains(CredentialProtection.prefix)));
+      await protected.restoreBackup(backup);
+      final restored = (await protected.getChannels()).single;
+      expect(ChannelUploadConfig.documentKey(restored.routes), 'upload-private');
+      expect(restored.apiKey, 'plan-private');
     },
   );
 

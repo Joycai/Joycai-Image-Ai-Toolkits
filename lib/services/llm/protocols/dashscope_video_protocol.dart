@@ -75,7 +75,7 @@ class DashScopeVideoProtocol implements VideoJobProtocol {
     try {
       if (needsUpload) {
         // Fail unsupported official regions before copying or sending files.
-        dashscopeUploadBase(config.endpoint);
+        dashscopeMediaUploadBase(config);
         prepared = await prepareDashScopeVideoMedia(
           attachments,
           outputSeconds: int.tryParse(resolveVideoSeconds(options) ?? '') ?? 5,
@@ -138,7 +138,8 @@ class DashScopeVideoProtocol implements VideoJobProtocol {
         headers: {
           ...target.headers(),
           'X-DashScope-Async': 'enable',
-          if (needsUpload) 'X-DashScope-OssResourceResolve': 'enable',
+          if (media.any((item) => item['url']!.startsWith('oss://')))
+            'X-DashScope-OssResourceResolve': 'enable',
         },
         body: jsonEncode(payload),
         options: options,

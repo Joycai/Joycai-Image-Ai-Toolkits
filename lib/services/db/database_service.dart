@@ -18,6 +18,7 @@ import '../../models/task_item.dart';
 import '../../models/token_usage.dart';
 import '../../models/usage_checkpoint.dart';
 import '../llm/channel_routes.dart';
+import '../llm/channel_upload_config.dart';
 import '../security/credential_protection.dart';
 import 'database_migrations.dart';
 import 'repositories/cookie_repository.dart';
@@ -93,10 +94,11 @@ class DatabaseService {
       // An explicit import can contain credentials from a signed build.
       // Reject encrypted credentials before AppState/queues are constructed so
       // bootstrap can show recovery instead of failing after the first frame.
-      final channels = await db.query('llm_channels', columns: ['api_key']);
+      final channels = await db.query('llm_channels', columns: ['api_key', 'routes']);
       final settings = await _querySettings(db, CredentialProtection.settingKeys);
       if ([
         ...channels.map((row) => row['api_key']),
+        ...channels.map((row) => ChannelUploadConfig.documentKey(row['routes'] as String?)),
         ...settings.map((row) => row['value']),
       ].whereType<String>().any(CredentialProtection.isEnvelope)) {
         throw const CredentialProtectionException();
@@ -106,14 +108,27 @@ class DatabaseService {
     // Darwin's executeUpdate rejects SQLITE_ROW; this PRAGMA returns a row.
     await db.rawQuery('PRAGMA secure_delete = ON');
     await db.transaction((txn) async {
-      final channels = await txn.query('llm_channels', columns: ['id', 'api_key']);
+      final channels = await txn.query('llm_channels', columns: ['id', 'api_key', 'routes']);
       final settings = await _querySettings(txn, CredentialProtection.settingKeys);
       final hasEncryptedValues = [
         ...channels.map((row) => row['api_key'] as String),
+        ...channels.map((row) => ChannelUploadConfig.documentKey(row['routes'] as String?)),
         ...settings.map((row) => row['value'] as String? ?? ''),
       ].any(CredentialProtection.isEnvelope);
       await _credentialProtection!.prepare(allowCreate: !hasEncryptedValues);
       for (final row in channels) {
+        final uploadKey = ChannelUploadConfig.documentKey(row['routes'] as String?);
+        if (CredentialProtection.isEnvelope(uploadKey)) {
+          await revealCredential(uploadKey);
+        } else if (uploadKey.isNotEmpty) {
+          final secret = await protectCredential(uploadKey);
+          await txn.update(
+            'llm_channels',
+            {'routes': ChannelUploadConfig.mapDocumentKey(row['routes'] as String?, (_) => secret)},
+            where: 'id = ?',
+            whereArgs: [row['id']],
+          );
+        }
         final value = row['api_key'] as String;
         if (CredentialProtection.isEnvelope(value)) {
           await revealCredential(value);
@@ -656,6 +671,7 @@ class DatabaseService {
       final map = Map<String, dynamic>.from(row);
       if (map.containsKey('api_key')) {
         map['api_key'] = ''; // Redact key on backup export
+        map['routes'] = ChannelUploadConfig.mapDocumentKey(map['routes'] as String?, (_) => '');
       }
       return map;
     }).toList();
@@ -1230,6 +1246,8 @@ class DatabaseService {
     final Map<String, String> keys = {};
     for (final row in rows) {
       final apiKey = row['api_key'] as String? ?? '';
+      final uploadKey = ChannelUploadConfig.documentKey(row['routes'] as String?);
+      keys['${_channelIdentity(row)}\u0000mediaUpload'] = uploadKey;
       if (apiKey.isEmpty) continue;
       keys[_channelIdentity(row)] = apiKey;
     }
@@ -1256,6 +1274,20 @@ class DatabaseService {
           throw const CredentialProtectionException();
         }
         row['api_key'] = await protectCredential(value);
+      }
+      final uploadKey = ChannelUploadConfig.documentKey(row['routes'] as String?);
+      if (CredentialProtection.isEnvelope(uploadKey)) throw const CredentialProtectionException();
+      final protectedUpload = uploadKey.isEmpty
+          ? (preservedKeys['${_channelIdentity(row)}\u0000mediaUpload'] ?? '')
+          : await protectCredential(uploadKey);
+      // Empty backup placeholders are restored only into an existing upload section.
+      final rawRoutes = row['routes'] as String?;
+      if (rawRoutes != null && protectedUpload.isNotEmpty) {
+        final document = jsonDecode(rawRoutes);
+        if (document is Map && document['mediaUpload'] is Map) {
+          (document['mediaUpload'] as Map)['apiKey'] = protectedUpload;
+          row['routes'] = jsonEncode(document);
+        }
       }
       // A group the file does not carry is no default, not a dangling id.
       if (row['default_fee_group_id'] != null) {

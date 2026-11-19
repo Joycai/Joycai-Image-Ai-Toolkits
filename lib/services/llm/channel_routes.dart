@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'channel_upload_config.dart';
 import 'vendors/platforms.dart';
 import 'vendors/vendors.dart';
 
@@ -48,6 +49,7 @@ class ChannelRoutes {
   static const int docVersion = 1;
 
   final PlatformProfile platform;
+  final ChannelUploadConfig? uploadConfig;
 
   /// `scheme://authority` taken verbatim from the stored address, or '' for
   /// a legacy endpoint that is not a URL (then every path is the whole
@@ -61,6 +63,7 @@ class ChannelRoutes {
   final String primaryVendorId;
 
   ChannelRoutes._({
+    this.uploadConfig,
     required this.platform,
     required this.host,
     required List<RouteEntry> entries,
@@ -162,7 +165,15 @@ class ChannelRoutes {
     final hit = _resolved[key];
     if (hit != null) return hit;
     if (_resolved.length >= 256) _resolved.clear();
-    return _resolved[key] = _resolve(type, endpoint, doc);
+    final routes = _resolve(type, endpoint, doc);
+    ChannelUploadConfig? upload;
+    try {
+      final json = doc == null ? null : jsonDecode(doc);
+      if (json is Map) upload = ChannelUploadConfig.fromJson(json['mediaUpload']);
+    } on FormatException {
+      /* Legacy malformed documents have no upload settings. */
+    }
+    return _resolved[key] = routes.withUploadConfig(upload);
   }
 
   /// [resolve] is pure and asked from build methods (a model card, the
@@ -289,14 +300,23 @@ class ChannelRoutes {
     return trimmed;
   }
 
+  ChannelRoutes withUploadConfig(ChannelUploadConfig? config) => ChannelRoutes._(
+    platform: platform,
+    host: host,
+    entries: entries,
+    primaryVendorId: primaryVendorId,
+    uploadConfig: config,
+  );
+
   ChannelRoutes _copy({String? host, List<RouteEntry>? entries, String? primaryVendorId}) =>
-      _narrowed(
-        platform: platform,
-        host: host ?? this.host,
-        entries: entries ?? this.entries,
-        primaryVendorId: primaryVendorId ?? this.primaryVendorId,
-      ) ??
-      this;
+      (_narrowed(
+                platform: platform,
+                host: host ?? this.host,
+                entries: entries ?? this.entries,
+                primaryVendorId: primaryVendorId ?? this.primaryVendorId,
+              ) ??
+              this)
+          .withUploadConfig(uploadConfig);
 
   ChannelRoutes withHost(String host) => _copy(host: host.trim());
 
@@ -348,6 +368,7 @@ class ChannelRoutes {
   /// flat values it is written beside.
   String encode() => jsonEncode({
     'v': docVersion,
+    if (uploadConfig != null) 'mediaUpload': uploadConfig!.toJson(),
     'host': host,
     'routes': [
       for (final e in entries) {'kind': e.kind.id, if (e.path != null) 'path': e.path},

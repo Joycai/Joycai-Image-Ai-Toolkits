@@ -5,6 +5,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import '../../core/app_paths.dart';
 import '../db/database_service.dart';
+import '../llm/channel_upload_config.dart';
 import 'credential_protection.dart';
 
 /// Bootstrap-only, after explicit confirmation and before any live DB consumer.
@@ -49,6 +50,14 @@ class CredentialRecoveryService {
       await db.rawQuery('PRAGMA secure_delete = ON');
       await db.transaction((txn) async {
         await txn.update('llm_channels', {'api_key': ''});
+        for (final row in await txn.query('llm_channels', columns: ['id', 'routes'])) {
+          await txn.update(
+            'llm_channels',
+            {'routes': ChannelUploadConfig.mapDocumentKey(row['routes'] as String?, (_) => '')},
+            where: 'id = ?',
+            whereArgs: [row['id']],
+          );
+        }
         for (final key in CredentialProtection.settingKeys) {
           await txn.delete('settings', where: 'key = ?', whereArgs: [key]);
         }

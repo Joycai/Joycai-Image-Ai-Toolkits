@@ -4,6 +4,8 @@ import 'package:joycai_image_ai_toolkits/models/llm_model.dart';
 import 'package:joycai_image_ai_toolkits/models/pricing_group.dart';
 import 'package:joycai_image_ai_toolkits/models/spec_rate.dart';
 import 'package:joycai_image_ai_toolkits/services/db/database_service.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/channel_routes.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/channel_upload_config.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_config_resolver.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
@@ -23,6 +25,33 @@ void main() {
 
     setUp(() async => db = await openTestDatabase());
     tearDown(() async => closeTestDatabase(db));
+
+    test('independent upload credentials survive database normalization and resolution', () async {
+      const endpoint = 'https://token-plan.cn-beijing.maas.aliyuncs.com/api/v1';
+      final routes = ChannelRoutes.resolve('dashscope-native', endpoint, null).withUploadConfig(
+        const ChannelUploadConfig(
+          tokenPlan: true,
+          endpoint: 'https://dashscope.aliyuncs.com/api/v1',
+          apiKey: 'upload-only',
+        ),
+      );
+      final id = await db.addChannel(
+        LLMChannel(
+          displayName: 'Plan',
+          type: routes.primaryVendorId,
+          endpoint: routes.primaryAddress,
+          apiKey: 'plan-only',
+          routes: routes.encode(),
+        ),
+      );
+      final model = await db.addModel(
+        LLMModel(modelId: 'wan3.0-video', modelName: 'Wan', tag: 'video', channelId: id),
+      );
+      final config = await LLMConfigResolver(database: db).resolveConfig(model);
+      expect(config.apiKey, 'plan-only');
+      expect(config.uploadConfig!.apiKey, 'upload-only');
+      expect(config.uploadConfig!.tokenPlan, isTrue);
+    });
 
     test('should resolve config from database', () async {
       // Setup mock data in the in-memory DB

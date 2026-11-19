@@ -3,7 +3,7 @@
 ## 范围与存储约定
 
 macOS 商店配置（`Platform.isMacOS && !AppDistribution.direct`）在任何实时数据库访问前
-配置 `MacCredentialProtection`。保护渠道 API Key、代理密码和 MCP Token。
+配置 `MacCredentialProtection`。保护渠道 API Key、渠道独立素材上传 API Key、代理密码和 MCP Token。
 未打包的 Windows 站外配置及其他平台保留原有存储方式；打包 Windows 使用下文 DPAPI。
 文件权限和 JSON 导出脱敏仍适用于所有配置。
 这不是整库加密：提示词、素材路径、下载 Cookie 等不在本次加密范围内。
@@ -126,3 +126,10 @@ macOS 下载版使用 `.direct` Bundle ID 和独立沙盒，不再自动读取�
 数据库，也必须在 DatabaseService 发布连接前拒绝，不等到 AppState 加载渠道时报错。
 无 protector 时预检渠道 API Key、代理密码和 MCP Token 的所有版本 envelope；
 发现密文显示下载版专用恢复说明，保留原值，不提供自动清空或明文降级。
+
+## Token Plan 独立上传凭据（2026-11-19）
+
+渠道 routes JSON 的 `mediaUpload.apiKey` 与主渠道 Key 共用凭据保护器：仓库写入时加密，
+业务读取时解密，启动时校验/迁移，JSON 备份清空该字段。同机恢复脱敏备份按渠道身份
+保留本机上传凭据；外来密文拒绝导入。显式凭据重录恢复也会清空该字段。
+上传凭据不参与生成/轮询、不进入任务快照与调试日志。

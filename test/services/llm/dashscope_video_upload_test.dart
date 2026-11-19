@@ -3,10 +3,12 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:image/image.dart' as img;
+import 'package:joycai_image_ai_toolkits/services/llm/channel_upload_config.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/generation/generation_request.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/generation/generation_schema.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_dispatcher.dart';
@@ -97,10 +99,10 @@ void main() {
   });
 
   test('region routing preserves gateways and refuses unsupported official regions', () {
-    expect(dashscopeUploadBase(config.endpoint), 'https://dashscope.aliyuncs.com/api/v1');
+    expect(dashscopeUploadBase(config.endpoint), config.endpoint);
     expect(
       dashscopeUploadBase('https://ws.ap-southeast-1.maas.aliyuncs.com'),
-      'https://dashscope-intl.aliyuncs.com/api/v1',
+      'https://ws.ap-southeast-1.maas.aliyuncs.com/api/v1',
     );
     expect(
       dashscopeUploadBase('https://dashscope-intl.aliyuncs.com/compatible-mode/v1'),
@@ -114,6 +116,90 @@ void main() {
       expect(() => dashscopeUploadBase('https://$host/api/v1'), rejected);
     }
   });
+
+  test(
+    'Token Plan source upload uses independent credentials and synthesis keeps plan key',
+    () async {
+      const host = 'token-plan.cn-beijing.maas.aliyuncs.com';
+      for (final suffix in ['', '/api/v1', '/compatible-mode/v1', '/apps/anthropic']) {
+        expect(dashscopeUploadBase('https://$host$suffix'), 'https://$host/api/v1');
+      }
+      final requests = <String>[];
+      final bytes = await File('test/support/reference_media/three_seconds.mp4').readAsBytes();
+      await http.runWithClient(
+        () => dispatcher.startLongRunning(
+          LLMModelConfig(
+            modelId: 'wan3.0-video',
+            channelType: Vendors.dashscopeNative,
+            endpoint: 'https://$host',
+            apiKey: 'test-plan-key',
+            uploadConfig: const ChannelUploadConfig(
+              tokenPlan: true,
+              endpoint: 'https://dashscope.aliyuncs.com/api/v1',
+              apiKey: 'upload-only-key',
+            ),
+          ),
+          [
+            LLMMessage(
+              role: LLMRole.user,
+              content: 'Add ocean sounds',
+              attachments: [
+                LLMAttachment.fromFile(
+                  File('test/support/reference_media/three_seconds.mp4'),
+                  'video/mp4',
+                  referenceType: LLMReferenceType.sourceVideo,
+                ),
+              ],
+            ),
+          ],
+          options: {'videoTask': 'edit'},
+        ),
+        () => MockClient((r) async {
+          requests.add(r.url.path);
+          if (r.url.path.startsWith('/api/v1/files')) {
+            expect(r.url.host, 'dashscope.aliyuncs.com');
+            expect(r.headers['Authorization'], 'Bearer upload-only-key');
+            if (r.url.path.endsWith('/file-id')) {
+              return http.Response(
+                jsonEncode({
+                  'data': {
+                    'size': bytes.length,
+                    'md5': md5.convert(bytes).toString(),
+                    'url': 'https://storage.example.test/clip.mp4?signature=fresh',
+                  },
+                }),
+                200,
+              );
+            }
+            if (r.method == 'GET') {
+              return http.Response('{"data":{"total":0,"files":[]}}', 200);
+            }
+            expect(latin1.decode(r.bodyBytes), contains('name="files"'));
+            expect(latin1.decode(r.bodyBytes), contains('file-extract'));
+            return http.Response(
+              '{"data":{"uploaded_files":[{"file_id":"file-id"}],"failed_uploads":[]}}',
+              200,
+            );
+          }
+          expect(r.url.host, host);
+          expect(r.headers['Authorization'], 'Bearer test-plan-key');
+          expect(r.url.path, '/api/v1/services/aigc/video-generation/video-synthesis');
+          expect(r.headers['X-DashScope-OssResourceResolve'], isNull);
+          expect(
+            jsonDecode(r.body)['input']['media'][0]['url'],
+            'https://storage.example.test/clip.mp4?signature=fresh',
+          );
+          return http.Response('{"output":{"task_id":"edited"}}', 200);
+        }),
+      );
+      expect(requests, [
+        '/api/v1/files',
+        '/api/v1/files',
+        '/api/v1/files/file-id',
+        '/api/v1/services/aigc/video-generation/video-synthesis',
+      ]);
+    },
+  );
 
   test('schema and payload allow 10/5/5, reject sixth clips and frame combinations', () {
     final schema = LLMDispatcher.generationSchemaFor(
@@ -340,7 +426,7 @@ void main() {
         if (r.url.path.endsWith('/uploads')) {
           expect(bodySent, payloads.length);
           expect(r.method, 'GET');
-          expect(r.url.host, 'dashscope.aliyuncs.com');
+          expect(r.url.host, Uri.parse(config.endpoint).host);
           expect(r.url.queryParameters, {'action': 'getPolicy', 'model': 'wan3.0-video'});
           expect(r.headers['Authorization'], 'Bearer test-secret');
           policies++;

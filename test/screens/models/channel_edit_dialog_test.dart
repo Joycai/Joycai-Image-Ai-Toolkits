@@ -6,6 +6,7 @@ import 'package:joycai_image_ai_toolkits/models/llm_channel.dart';
 import 'package:joycai_image_ai_toolkits/screens/models/widgets/channel_edit_dialog.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
+import 'package:joycai_image_ai_toolkits/widgets/models/channel_form_sections.dart';
 import 'package:joycai_image_ai_toolkits/widgets/models/channel_provider_presets.dart';
 
 import '../../support/private_data_dir.dart';
@@ -22,7 +23,11 @@ LLMChannel _sampleChannel({String type = 'google-genai-rest'}) => LLMChannel(
   tagColor: 0xFF2196F3,
 );
 
-Future<void> _pumpDialog(WidgetTester tester, {String type = 'google-genai-rest'}) async {
+Future<void> _pumpDialog(
+  WidgetTester tester, {
+  String type = 'google-genai-rest',
+  LLMChannel? channel,
+}) async {
   await tester.pumpWidget(
     MaterialApp(
       localizationsDelegates: const [
@@ -39,7 +44,7 @@ Future<void> _pumpDialog(WidgetTester tester, {String type = 'google-genai-rest'
             body: ChannelEditDialog(
               l10n: l10n,
               appState: AppState(),
-              channel: _sampleChannel(type: type),
+              channel: channel ?? _sampleChannel(type: type),
             ),
           );
         },
@@ -52,6 +57,55 @@ Future<void> _pumpDialog(WidgetTester tester, {String type = 'google-genai-rest'
 void main() {
   usePrivateDataDir('joycai_channel_edit_dialog_test');
   useRealAsyncAppState();
+
+  testWidgets('Token Plan endpoint reveals independent upload fields and toggle parks them', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1440, 1800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await _pumpDialog(
+      tester,
+      channel: LLMChannel(
+        displayName: 'Plan',
+        endpoint: 'https://token-plan.cn-beijing.maas.aliyuncs.com/api/v1',
+        apiKey: 'plan-key',
+        type: Vendors.dashscopeNative,
+      ),
+    );
+    final l10n = AppLocalizations.of(tester.element(find.byType(ChannelEditDialog)))!;
+    expect(find.text(l10n.channelTokenPlan), findsOneWidget);
+    expect(find.text(l10n.channelUploadKey), findsOneWidget);
+    final uploadField = find.byWidgetPredicate(
+      (w) => w is TextField && w.controller?.text == 'https://dashscope.aliyuncs.com/api/v1',
+    );
+    expect(uploadField, findsOneWidget);
+    await tester.ensureVisible(find.text(l10n.channelTokenPlan));
+    await tester.tap(
+      find.descendant(
+        of: find.ancestor(
+          of: find.text(l10n.channelTokenPlan),
+          matching: find.byType(ChannelToggleCard),
+        ),
+        matching: find.byType(Switch),
+      ),
+    );
+    await tester.pump();
+    expect(find.text(l10n.channelUploadKey), findsNothing);
+    await tester.tap(
+      find.descendant(
+        of: find.ancestor(
+          of: find.text(l10n.channelTokenPlan),
+          matching: find.byType(ChannelToggleCard),
+        ),
+        matching: find.byType(Switch),
+      ),
+    );
+    await tester.pump();
+    expect(uploadField, findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 
   // Regression: editing an existing channel used to crash with
   // "LayoutBuilder does not support returning intrinsic dimensions" because
