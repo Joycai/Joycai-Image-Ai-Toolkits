@@ -292,7 +292,13 @@ extension AppStateWorkbench on AppState {
       imagePaths = galleryState.selectedImages.map((f) => f.path).toList();
     }
 
-    if (prompt.isEmpty && imagePaths.isEmpty) return;
+    final hasReferenceFiles =
+        isVideoTask &&
+        [
+          'referenceVideoPaths',
+          'referenceAudioPaths',
+        ].any((key) => (params[key] as List?)?.isNotEmpty == true);
+    if (prompt.isEmpty && imagePaths.isEmpty && !hasReferenceFiles) return;
 
     if (isVideoTask && !isVideoCompatibleModel(modelIdentifier is int ? modelIdentifier : null)) {
       addLog('Error: Selected model is not compatible with video generation.', level: 'ERROR');

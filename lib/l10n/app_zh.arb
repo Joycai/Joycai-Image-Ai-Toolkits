@@ -990,7 +990,6 @@
   "generationLayersRatioInactive": "图层分解不使用宽高比。",
   "generationTransparentSource": "透明编辑需要一张带透明通道的原图。",
   "generationReferenceMedia": "参考视频／音频",
-  "generationReferenceMediaHint": "最多 9 张图片、3 段视频、3 段音频，合计最多 12 个文件。每段 2–15 秒；视频和音频各自总时长不超过 15 秒。",
   "generationAddReferenceVideo": "添加视频",
   "generationAddReferenceAudio": "添加音频",
   "generationUnsupportedReferenceMedia": "此模型不支持视频／音频参考，请移除后继续。",
@@ -1012,6 +1011,30 @@
       }
     }
   },
+  "generationReferenceMediaLimits": "最多 {images} 张图片、{videos} 段视频、{audios} 段音频，合计最多 {total} 个文件。每段 {min}–{seconds} 秒；视频和音频各自总时长不超过 {seconds} 秒。",
+  "@generationReferenceMediaLimits": {
+    "placeholders": {
+      "images": {
+        "type": "int"
+      },
+      "videos": {
+        "type": "int"
+      },
+      "audios": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "min": {
+        "type": "int"
+      },
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "generationReferenceUploadHint": "音视频参考使用临时云端上传（48 小时）。视频：MP4/MOV，≤100 MB，240–4096 px，≥16 fps。音频：WAV/MP3，≤15 MB。输入视频与输出合计 ≤30 秒。",
   "usageTokenBreakdown": "Token 构成",
   "usageTotalTokens": "总 Token",
   "usage": "用量",

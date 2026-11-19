@@ -43,49 +43,73 @@ void main() {
     }
   });
   for (final suffix in ['']) {
-    for (final size in kShotSizes) {
-      for (final brightness in Brightness.values) {
-        testWidgets('Wan $suffix ${size.label} ${brightness.name}', (tester) async {
-          await shoot(
+    for (final references in [false, true]) {
+      for (final size in kShotSizes) {
+        for (final brightness in Brightness.values) {
+          testWidgets('Wan $suffix refs=$references ${size.label} ${brightness.name}', (
             tester,
-            env: env,
-            screen: AppScreen.workbench,
-            size: size,
-            brightness: brightness,
-            locale: const Locale('en'),
-            suffix: 'wan3_video',
-            before: (_) async {
-              final app = AppState();
-              app.setWorkbenchTab(5);
-              app.isConsoleExpanded = false;
-              await app.updateVideoConfig(modelId: models[suffix].toString());
-              final model = app.videoModels.firstWhere((m) => m.id == models[suffix]);
-              await app.setVideoParam(model, 'seconds', '-1');
-              await app.setVideoParam(model, 'seed', '2147483647');
-              final state = app.workbenchUIState;
-              state.setVideoFirstFrame(null);
-              state.setVideoLastFrame(null);
-            },
-            after: (tester) async {
-              final layout = tester
-                  .element(find.byType(ImageCard).first)
-                  .read<WorkbenchLayoutState>();
-              if (layout.rightPanelDetached) {
-                await actInRealAsync(tester, () async {
-                  layout.openRightPanel();
-                });
-              }
-              final panel = find.byType(VideoConfigPanel).last;
-              final text = AppLocalizations.of(tester.element(panel))!.modelSelection;
-              await tester.tap(find.descendant(of: panel, matching: find.text(text)).last);
-              await settle(tester);
-              if (size.label == 'mobile') {
-                await tester.ensureVisible(find.text('Duration').last);
+          ) async {
+            await shoot(
+              tester,
+              env: env,
+              screen: AppScreen.workbench,
+              size: size,
+              brightness: brightness,
+              locale: const Locale('en'),
+              suffix: references ? 'wan3_references' : 'wan3_video',
+              before: (_) async {
+                final app = AppState();
+                app.setWorkbenchTab(5);
+                app.isConsoleExpanded = false;
+                await app.updateVideoConfig(modelId: models[suffix].toString());
+                final model = app.videoModels.firstWhere((m) => m.id == models[suffix]);
+                await app.setVideoParam(model, 'seconds', '-1');
+                await app.setVideoParam(model, 'seed', '2147483647');
+                final state = app.workbenchUIState;
+                state.setVideoFirstFrame(null);
+                state.setVideoLastFrame(null);
+                for (final audio in [false, true]) {
+                  for (final path in [
+                    ...(audio ? state.videoReferenceAudios : state.videoReferenceVideos),
+                  ]) {
+                    state.removeVideoReferenceFile(path, audio: audio);
+                  }
+                  if (references) {
+                    state.addVideoReferenceFiles([
+                      audio ? 'forest_ambience.wav' : 'camera_motion.mp4',
+                    ], audio: audio);
+                  }
+                }
+              },
+              after: (tester) async {
+                final layout = tester
+                    .element(find.byType(ImageCard).first)
+                    .read<WorkbenchLayoutState>();
+                if (layout.rightPanelDetached) {
+                  await actInRealAsync(tester, () async {
+                    layout.openRightPanel();
+                  });
+                }
+                final panel = find.byType(VideoConfigPanel).last;
+                final text = AppLocalizations.of(tester.element(panel))!.modelSelection;
+                await tester.tap(find.descendant(of: panel, matching: find.text(text)).last);
                 await settle(tester);
-              }
-            },
-          );
-        });
+                if (references) {
+                  final heading = AppLocalizations.of(tester.element(panel))!
+                      .generationReferenceMedia;
+                  await Scrollable.ensureVisible(
+                    tester.element(find.text(heading).last),
+                    alignment: 0.2,
+                  );
+                  await settle(tester);
+                } else if (size.label == 'mobile') {
+                  await tester.ensureVisible(find.text('Duration').last);
+                  await settle(tester);
+                }
+              },
+            );
+          });
+        }
       }
     }
   }

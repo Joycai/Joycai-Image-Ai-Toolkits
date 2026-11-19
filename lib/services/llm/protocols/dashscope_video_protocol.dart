@@ -1,8 +1,11 @@
+import 'dart:async';
 import 'dart:convert';
 
 import '../llm_debug_logger.dart';
 import '../llm_types.dart';
 import 'dashscope_payload.dart';
+import 'dashscope_upload.dart';
+import 'dashscope_video_media.dart';
 import 'protocol.dart';
 
 /// Alibaba DashScope's native async video surface (wan3.x — its *only*
@@ -29,50 +32,94 @@ class DashScopeVideoProtocol implements VideoJobProtocol {
     final config = target.config;
     final userMsg = history.lastWhere((m) => m.role == LLMRole.user, orElse: () => history.last);
 
-    final media = <Map<String, String>>[];
-    for (final att in userMsg.attachments) {
-      final bytes = await readAttachmentBytes(att);
-      if (bytes == null) continue;
-      final String role;
-      switch (att.referenceType) {
-        case LLMReferenceType.firstFrame:
-          role = 'first_frame';
-        case LLMReferenceType.lastFrame:
-          role = 'last_frame';
-        default:
-          role = 'reference_image';
-      }
-      media.add({'type': role, 'url': imageDataUrl(bytes, att.mimeType)});
+    var aborted = false;
+    final abort = abortTriggerOf(options);
+    if (abort != null) unawaited(abort.then((_) => aborted = true));
+    void checkCancelled() {
+      if (aborted || (cancellationProbeOf(options)?.call() ?? false)) throw const LLMCancelled();
     }
 
-    final payload = buildDashScopeVideoPayload(
+    // Cheap role/count/prompt validation precedes file access and uploads.
+    buildDashScopeVideoPayload(
       modelId: config.modelId,
       prompt: userMsg.content,
-      media: media,
+      media: [
+        for (final att in userMsg.attachments) {'type': dashscopeVideoMediaRole(att), 'url': ''},
+      ],
       options: options,
     );
-
-    final base = dashscopeNativeBase(config.endpoint);
-    final url = Uri.parse('$base/services/aigc/video-generation/video-synthesis');
-    logger?.call('Submitting DashScope video task to: ${url.host}', level: 'DEBUG');
-
-    LLMDebugLog? debugFile;
-    if (LLMDebugLogger.enabled) {
-      debugFile = await LLMDebugLogger.startLog(config.modelId, 'DashScope (Video Submit)', {
-        'url': redactUrl(url),
-        'payload': {
-          ...payload,
-          if (media.isNotEmpty) 'input': '[prompt + ${media.length} base64 media item(s)]',
-        },
-      });
-    }
-
+    final needsUpload = userMsg.attachments.any(
+      (att) =>
+          att.referenceType == LLMReferenceType.referenceVideo ||
+          att.referenceType == LLMReferenceType.referenceAudio,
+    );
+    final media = <Map<String, String>>[];
     final client = config.createClient();
+    DashScopePreparedMedia? prepared;
     try {
+      if (needsUpload) {
+        // Fail unsupported official regions before copying or sending files.
+        dashscopeUploadBase(config.endpoint);
+        prepared = await prepareDashScopeVideoMedia(
+          userMsg.attachments,
+          outputSeconds: int.tryParse(resolveVideoSeconds(options) ?? '') ?? 5,
+          checkCancelled: checkCancelled,
+        );
+        for (final entry in prepared.files) {
+          final url = await uploadDashScopeMedia(
+            client: client,
+            target: target,
+            file: entry.file,
+            mime: entry.mime,
+            options: options,
+            checkCancelled: checkCancelled,
+          );
+          media.add({'type': entry.role, 'url': url});
+        }
+      } else {
+        // Existing image-only requests keep their inline path and region support.
+        for (final att in userMsg.attachments) {
+          checkCancelled();
+          final bytes = await readAttachmentBytes(att);
+          if (bytes == null) throw LLMApiException('Unreadable reference image. Nothing was sent.');
+          media.add({
+            'type': dashscopeVideoMediaRole(att),
+            'url': imageDataUrl(bytes, att.mimeType),
+          });
+        }
+      }
+      checkCancelled();
+
+      final payload = buildDashScopeVideoPayload(
+        modelId: config.modelId,
+        prompt: userMsg.content,
+        media: media,
+        options: options,
+      );
+
+      final base = dashscopeNativeBase(config.endpoint);
+      final url = Uri.parse('$base/services/aigc/video-generation/video-synthesis');
+      logger?.call('Submitting DashScope video task to: ${url.host}', level: 'DEBUG');
+
+      LLMDebugLog? debugFile;
+      if (LLMDebugLogger.enabled) {
+        debugFile = await LLMDebugLogger.startLog(config.modelId, 'DashScope (Video Submit)', {
+          'url': redactUrl(url),
+          'payload': {
+            ...payload,
+            if (media.isNotEmpty) 'input': '[prompt + ${media.length} media item(s)]',
+          },
+        });
+      }
+
       final response = await sendJsonRequest(
         client,
         url,
-        headers: {...target.headers(), 'X-DashScope-Async': 'enable'},
+        headers: {
+          ...target.headers(),
+          'X-DashScope-Async': 'enable',
+          if (needsUpload) 'X-DashScope-OssResourceResolve': 'enable',
+        },
         body: jsonEncode(payload),
         options: options,
       );
@@ -93,9 +140,21 @@ class DashScopeVideoProtocol implements VideoJobProtocol {
       // Into the log the moment it exists — the only handle left if polling
       // ever dies.
       logger?.call('DashScope video task id: $taskId', level: 'INFO');
-      return VideoSubmission(taskId, inputImages: media.length);
+      return VideoSubmission(
+        taskId,
+        inputImages: media
+            .where((m) => !['reference_video', 'reference_audio'].contains(m['type']))
+            .length,
+        inputVideoSeconds: prepared?.videoSeconds ?? 0,
+      );
     } finally {
       client.close();
+      try {
+        await prepared?.dispose();
+      } catch (_) {
+        // A cleanup failure must never discard an accepted paid job's ticket.
+        logger?.call('Could not remove temporary upload copies.', level: 'WARNING');
+      }
     }
   }
 

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
@@ -73,6 +75,16 @@ void main() {
     state.removeVideoReferenceImage(reference);
     await tester.pump();
     expect(button().onPressed, isNull);
+    for (final audio in [false, true]) {
+      final path = audio ? 'reference.wav' : 'reference.mp4';
+      state.addVideoReferenceFiles([path], audio: audio);
+      await tester.pump();
+      expect(button().onPressed, isNotNull);
+      expect(find.text(l10n.generationReferenceMediaLimits(10, 5, 5, 20, 1, 15)), findsOneWidget);
+      state.removeVideoReferenceFile(path, audio: audio);
+      await tester.pump();
+      expect(button().onPressed, isNull);
+    }
     final prompt = find.descendant(of: panel, matching: find.byType(TextField)).last;
     tester.widget<TextField>(prompt).controller!.text = ' ';
     await tester.pump();
@@ -87,5 +99,31 @@ void main() {
     tester.widget<TextField>(prompt).controller!.text = 'a cat';
     await tester.pump();
     expect(button().onPressed, isNotNull);
+  });
+
+  test('empty prompt with only audio/video reaches the persisted queue', () async {
+    final app = AppState();
+    app.taskQueue.updateConcurrency(0); // No executor or upstream request.
+    for (final (key, extension) in [
+      ('referenceVideoPaths', 'mp4'),
+      ('referenceAudioPaths', 'wav'),
+    ]) {
+      final count = app.taskQueue.queue.length;
+      await app.submitVideoTask(model, {
+        'prompt': '',
+        key: [File('test/support/reference_media/three_seconds.$extension').absolute.path],
+      });
+      expect(app.taskQueue.queue.length, count + 1);
+      final task = app.taskQueue.queue.firstWhere(
+        (t) =>
+            ((t.parameters['generation'] as Map?)?['media'] as List?)?.any(
+              (m) => m['role'] == (extension == 'mp4' ? 'referenceVideo' : 'referenceAudio'),
+            ) ==
+            true,
+      );
+      expect(task.imagePaths, isEmpty);
+      expect((task.parameters['generation'] as Map)['prompt'], '');
+      expect((task.parameters['generation'] as Map)['media'], hasLength(1));
+    }
   });
 }

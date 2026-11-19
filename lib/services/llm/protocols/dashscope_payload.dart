@@ -3,13 +3,14 @@ import 'dart:math' as math;
 import '../image_size_rules.dart';
 import '../llm_types.dart';
 import '../model_capabilities.dart';
+import '../vendors/vendor_profile.dart';
+import 'generation_contract.dart';
 import 'protocol.dart';
 
 /// Pure request/response helpers for DashScope's native surfaces.
 ///
-/// Everything here is IO-free on purpose: the repo has no HTTP mock setup, so
-/// the only way these rules get pinned by tests is to keep them out of the
-/// protocol's request path. `gemini_payload.dart` is the same arrangement.
+/// IO-free builders keep wire rules independently testable. Transport tests
+/// additionally cover upload and submission boundaries.
 
 /// The `/api/v1` base a channel's endpoint implies.
 ///
@@ -378,11 +379,34 @@ Map<String, dynamic> buildDashScopeVideoPayload({
       'DashScope video requires a prompt or media and at most 20000 prompt characters. Nothing was sent.',
     );
   }
+  const supported = {
+    'first_frame',
+    'last_frame',
+    'reference_image',
+    'reference_video',
+    'reference_audio',
+  };
+  if (media.any((item) => !supported.contains(item['type']))) {
+    throw LLMApiException('Unsupported DashScope video media role. Nothing was sent.');
+  }
+  final contract = GenerationProtocolContract.forWire(WireProtocol.dashscopeVideo);
+  final videos = media.where((item) => item['type'] == 'reference_video').length;
+  final audios = media.where((item) => item['type'] == 'reference_audio').length;
+  if (videos > contract.maxReferenceVideos ||
+      audios > contract.maxReferenceAudios ||
+      media.length > contract.maxReferenceMedia) {
+    throw LLMApiException('Too many DashScope reference media items. Nothing was sent.');
+  }
+  for (final role in ['first_frame', 'last_frame']) {
+    if (media.where((item) => item['type'] == role).length > 1) {
+      throw LLMApiException('Use one image per frame slot. Nothing was sent.');
+    }
+  }
   final first = media.any((item) => item['type'] == 'first_frame');
   final last = media.any((item) => item['type'] == 'last_frame');
   final references = media.where((item) => item['type'] == 'reference_image').length;
-  if ((first || last) && references > 0) {
-    throw LLMApiException('Frames and reference images are mutually exclusive. Nothing was sent.');
+  if ((first || last) && references + videos + audios > 0) {
+    throw LLMApiException('Frames and reference media are mutually exclusive. Nothing was sent.');
   }
   if (last && !first) {
     throw LLMApiException('A last frame requires a first frame. Nothing was sent.');

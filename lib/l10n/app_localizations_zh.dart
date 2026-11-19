@@ -1394,10 +1394,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get generationReferenceMedia => '参考视频／音频';
 
   @override
-  String get generationReferenceMediaHint =>
-      '最多 9 张图片、3 段视频、3 段音频，合计最多 12 个文件。每段 2–15 秒；视频和音频各自总时长不超过 15 秒。';
-
-  @override
   String get generationAddReferenceVideo => '添加视频';
 
   @override
@@ -1440,6 +1436,22 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get generationSmartDuration => '智能时长';
+
+  @override
+  String generationReferenceMediaLimits(
+    int images,
+    int videos,
+    int audios,
+    int total,
+    int min,
+    int seconds,
+  ) {
+    return '最多 $images 张图片、$videos 段视频、$audios 段音频，合计最多 $total 个文件。每段 $min–$seconds 秒；视频和音频各自总时长不超过 $seconds 秒。';
+  }
+
+  @override
+  String get generationReferenceUploadHint =>
+      '音视频参考使用临时云端上传（48 小时）。视频：MP4/MOV，≤100 MB，240–4096 px，≥16 fps。音频：WAV/MP3，≤15 MB。输入视频与输出合计 ≤30 秒。';
 
   @override
   String get usageTokenBreakdown => 'Token 构成';
@@ -7959,10 +7971,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get generationReferenceMedia => '參考影片／音訊';
 
   @override
-  String get generationReferenceMediaHint =>
-      '最多 9 張圖片、3 段影片、3 段音訊，合計最多 12 個檔案。每段 2–15 秒；影片和音訊各自總時長不超過 15 秒。';
-
-  @override
   String get generationAddReferenceVideo => '新增影片';
 
   @override
@@ -8005,6 +8013,22 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get generationSmartDuration => '智慧時長';
+
+  @override
+  String generationReferenceMediaLimits(
+    int images,
+    int videos,
+    int audios,
+    int total,
+    int min,
+    int seconds,
+  ) {
+    return '最多 $images 張圖片、$videos 段影片、$audios 段音訊，合計最多 $total 個檔案。每段 $min–$seconds 秒；影片和音訊各自總時長不超過 $seconds 秒。';
+  }
+
+  @override
+  String get generationReferenceUploadHint =>
+      '音影片參考使用臨時雲端上傳（48 小時）。影片：MP4/MOV，≤100 MB，240–4096 px，≥16 fps。音訊：WAV/MP3，≤15 MB。輸入影片與輸出合計 ≤30 秒。';
 
   @override
   String get usageTokenBreakdown => 'Token 組成';
