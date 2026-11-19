@@ -51,6 +51,7 @@ void main() {
     final source = await File(p.join(root.path, 'frame.png')).writeAsString('frame');
     final draft = <String, dynamic>{
       'firstFramePath': source.path,
+      'sourceVideoPath': source.path,
       'referenceImagePaths': [source.path],
     };
     final staged = await snapshotTaskMedia(
@@ -62,6 +63,7 @@ void main() {
     expect(draft['firstFramePath'], source.path);
     expect(staged.images.single, isNot(source.path));
     expect(staged.parameters['firstFramePath'], staged.images.single);
+    expect(staged.parameters['sourceVideoPath'], staged.images.single);
     expect(staged.parameters['referenceImagePaths'], [staged.images.single]);
     final renamed = await snapshotTaskMedia(
       [source.path],

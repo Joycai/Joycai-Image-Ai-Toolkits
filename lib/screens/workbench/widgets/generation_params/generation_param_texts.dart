@@ -5,6 +5,15 @@ import '../../../../services/llm/generation/generation_schema.dart';
 class GenerationParamTexts {
   static String diagnostic(AppLocalizations l10n, GenerationDiagnostic diagnostic) =>
       switch (diagnostic.code) {
+        'sourceVideoRequired' => l10n.generationSourceVideoRequired,
+        'unsupportedVideoEdit' => l10n.generationUnsupportedVideoEdit,
+        'unsupportedVideoExtend' => l10n.generationUnsupportedVideoExtend,
+        'uploadRegionUnsupported' => l10n.generationUploadRegionUnsupported,
+        'sourceVideoProbing' => l10n.generationSourceVideoProbing,
+        'sourceVideoTooLarge' => l10n.generationSourceVideoTooLarge,
+        'sourceVideoDuration' => l10n.generationSourceVideoDuration,
+        'sourceVideoFormat' => l10n.generationSourceVideoFormat,
+        'videoDurationBudgetExceeded' => l10n.generationVideoDurationBudgetExceeded,
         'unsupportedReferenceMedia' => l10n.generationUnsupportedReferenceMedia,
         'videoPromptLength' => l10n.generationVideoPromptLength,
         'promptRequired' => l10n.generationPromptRequired,
@@ -59,6 +68,10 @@ class GenerationParamTexts {
         return l10n.mjStylize;
       case 'mjChaos':
         return l10n.mjChaos;
+      case 'videoTask':
+        return l10n.paramVideoTask;
+      case 'extendDirection':
+        return l10n.paramExtendDirection;
       case 'imageTask':
         return l10n.paramImageTask;
       case 'maxImages':
@@ -86,6 +99,20 @@ class GenerationParamTexts {
     String value, {
     bool hasExplicitAuto = false,
   }) {
+    if (paramKey == 'videoTask') {
+      return switch (value) {
+        'edit' => l10n.videoTaskEdit,
+        'extend' => l10n.videoTaskExtend,
+        _ => l10n.videoTaskGenerate,
+      };
+    }
+    if (paramKey == 'extendDirection') {
+      return switch (value) {
+        'forward' => l10n.extendDirectionForward,
+        'bidirectional' => l10n.extendDirectionBidirectional,
+        _ => l10n.extendDirectionBackward,
+      };
+    }
     if (paramKey == 'promptExpansionMode') {
       return switch (value) {
         'disabled' => l10n.promptExpansionDisabled,

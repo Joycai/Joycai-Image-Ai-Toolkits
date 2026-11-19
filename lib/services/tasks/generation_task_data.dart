@@ -40,6 +40,8 @@ Map<String, dynamic> snapshotGenerationTask({
   );
   final media = type == TaskType.videoGenerate
       ? <GenerationMedia>[
+          if (options['sourceVideoPath'] case final String path)
+            GenerationMedia(GenerationMediaRole.sourceVideo, path),
           if (options['firstFramePath'] case final String path)
             GenerationMedia(GenerationMediaRole.firstFrame, path),
           if (options['lastFramePath'] case final String path)
@@ -69,6 +71,7 @@ Map<String, dynamic> snapshotGenerationTask({
   );
   const mediaKeys = {
     'prompt',
+    'sourceVideoPath',
     'firstFramePath',
     'lastFramePath',
     'referenceImagePaths',

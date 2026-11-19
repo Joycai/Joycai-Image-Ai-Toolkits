@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:desktop_drop/desktop_drop.dart';
@@ -24,7 +25,9 @@ import '../../../../models/tag.dart';
 import '../../../../services/files/persistent_media_service.dart';
 import '../../../../services/llm/generation/generation_schema.dart';
 import '../../../../services/llm/model_capabilities.dart';
+import '../../../../services/llm/protocols/dashscope_payload.dart';
 import '../../../../services/llm/protocols/generation_contract.dart';
+import '../../../../services/media/video_thumbnail_service.dart';
 import '../../../../state/app_state.dart';
 import '../../../../state/workbench_ui_state.dart';
 import '../../../../widgets/drag/app_drag_session.dart';
@@ -35,6 +38,7 @@ import '../../../../widgets/ui/app_action_target.dart';
 import '../../../../widgets/ui/app_button.dart';
 import '../../../../widgets/ui/app_field_size.dart';
 import '../../../../widgets/ui/app_icon_button.dart';
+import '../../../../widgets/ui/app_segmented_control.dart';
 import '../../../../widgets/ui/app_snackbar.dart';
 import '../../../../widgets/ui/app_switch.dart';
 import '../../../../widgets/ui/markdown_editor.dart';
@@ -46,13 +50,15 @@ import '../config/prompt_history_sheet.dart';
 import '../config/prompt_library_sheet.dart';
 import '../generation_params/generation_param_panel.dart';
 import '../generation_params/generation_param_texts.dart';
+import '../preview/media_preview_dialog.dart';
 
 part 'video_drop_parts.dart';
 part 'video_frame_slots.dart';
 part 'video_model_section.dart';
 part 'video_panel_chrome.dart';
-part 'video_reference_images.dart';
 part 'video_reference_files.dart';
+part 'video_reference_images.dart';
+part 'video_source_slot.dart';
 
 /// Space between two cards in the column, and the column's own inset
 /// (`A2 · 1a`: `padding:10; gap:10`, the same column as `A1`).
@@ -157,32 +163,40 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
 
     if (selectedModel == null) return;
 
+    final operation = appState.videoOperationFor(selectedModel);
+    final media = appState.videoMediaFor(selectedModel);
+    final transforming =
+        operation == GenerationOperation.editVideo || operation == GenerationOperation.extendVideo;
     final params = <String, dynamic>{
       'prompt': _promptController.text,
-      'referenceImagePaths': uiState.videoReferenceImages.map((i) => i.path).toList(),
-      'referenceVideoPaths': uiState.videoReferenceVideos,
-      'referenceAudioPaths': uiState.videoReferenceAudios,
-      'firstFramePath': uiState.videoFirstFrame?.path,
-      'lastFramePath': uiState.videoLastFrame?.path,
+      'referenceImagePaths': [
+        for (final m in media)
+          if (m.role == GenerationMediaRole.reference) m.path,
+      ],
+      'referenceVideoPaths': [
+        for (final m in media)
+          if (m.role == GenerationMediaRole.referenceVideo) m.path,
+      ],
+      'referenceAudioPaths': [
+        for (final m in media)
+          if (m.role == GenerationMediaRole.referenceAudio) m.path,
+      ],
+      if (transforming) 'sourceVideoPath': uiState.videoSourceVideoPath,
+      if (!transforming) 'firstFramePath': uiState.videoFirstFrame?.path,
+      if (!transforming) 'lastFramePath': uiState.videoLastFrame?.path,
       // Every video control is declared per family (resolution, ratio,
       // seconds, quality…); only what the model declares is sent.
       ...appState.effectiveVideoParams(selectedModel),
     };
 
-    final diagnostics = appState.generationInputDiagnostics(
-      selectedModel,
-      params,
-      uiState.videoGenerationMedia,
-    );
+    final diagnostics = [...appState.generationInputDiagnostics(selectedModel, params, media)];
     final schema = appState.generationSchemaForModel(selectedModel);
-    final promptDiagnostics = schema.validatePrompt(
-      _promptController.text,
-      uiState.videoGenerationMedia,
-    );
+    final promptDiagnostics = schema.validatePrompt(_promptController.text, media, operation);
     if (promptDiagnostics.isNotEmpty) {
       AppSnackBar.warning(context, GenerationParamTexts.diagnostic(l10n, promptDiagnostics.first));
       return;
     }
+    diagnostics.addAll(appState.videoSourceInputDiagnostics(selectedModel));
     if (diagnostics.isNotEmpty) {
       AppSnackBar.warning(context, GenerationParamTexts.diagnostic(l10n, diagnostics.first));
       return;
@@ -256,12 +270,24 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
         ? null
         : appState.generationSchemaForModel(modelInChannel);
     final caps = modelInChannel == null ? const ModelCapabilities() : schema!.capabilities;
+    final operation = modelInChannel == null
+        ? GenerationOperation.textVideo
+        : appState.videoOperationFor(modelInChannel);
+    final transforming =
+        operation == GenerationOperation.editVideo || operation == GenerationOperation.extendVideo;
+    final media = modelInChannel == null
+        ? <GenerationMedia>[]
+        : appState.videoMediaFor(modelInChannel);
+    final sourceDiagnostics = modelInChannel == null
+        ? <GenerationDiagnostic>[]
+        : appState.videoSourceInputDiagnostics(modelInChannel);
+    final modeSpec = caps.videoParams.where((p) => p.key == 'videoTask').firstOrNull;
     final diagnostics = modelInChannel == null
         ? <GenerationDiagnostic>[]
         : appState.generationInputDiagnostics(
             modelInChannel,
             appState.effectiveVideoParams(modelInChannel),
-            uiState.videoGenerationMedia,
+            media,
           );
 
     // The bottom sheet is this panel's phone form: the layout opens it below
@@ -294,73 +320,137 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
           ),
         ),
         const SizedBox(height: _kCardGap),
-        // `A2 · 1a` 「帧」: two slots side by side at every width — the phone
-        // sheet (`1d`) keeps the pair too, only taller.
-        _PanelCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(l10n.frames, maxLines: 1, overflow: TextOverflow.ellipsis, style: captionStyle),
-              const SizedBox(height: _kCardInnerGap),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: _FrameDropTarget(
-                      label: l10n.firstFrame,
-                      image: uiState.videoFirstFrame,
-                      onDrop: uiState.setVideoFirstFrame,
-                      onClear: () => uiState.setVideoFirstFrame(null),
-                      emptyIcon: Icons.first_page,
-                      emptyTitle: l10n.dropFirstFrame,
-                      confirmMessage: l10n.dropSetAsFirstFrame,
-                    ),
-                  ),
-                  if (schema?.supportsLastFrame == true || uiState.videoLastFrame != null) ...[
-                    const SizedBox(width: _kCardInnerGap),
+        if (modeSpec != null && modelInChannel != null) ...[
+          AppSegmentedControl<String>(
+            expand: true,
+            tightLabels: true,
+            value: appState.getVideoParam(modelInChannel, modeSpec),
+            segments: [
+              for (final option in modeSpec.options)
+                AppSegment(
+                  value: option.value,
+                  label: GenerationParamTexts.option(l10n, 'videoTask', option.value),
+                ),
+            ],
+            onChanged: (value) => appState.setVideoParam(modelInChannel, 'videoTask', value),
+          ),
+          const SizedBox(height: _kCardGap),
+        ],
+        if (transforming && modelInChannel != null)
+          _PanelCard(
+            child: _SourceVideoSlot(
+              model: modelInChannel,
+              operation: operation,
+              captionStyle: captionStyle,
+            ),
+          ),
+        if (!transforming)
+          // `A2 · 1a` 「帧」: two slots side by side at every width — the phone
+          // sheet (`1d`) keeps the pair too, only taller.
+          _PanelCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  l10n.frames,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: captionStyle,
+                ),
+                const SizedBox(height: _kCardInnerGap),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Expanded(
                       child: _FrameDropTarget(
-                        label: l10n.lastFrame,
-                        image: uiState.videoLastFrame,
-                        onDrop: uiState.setVideoLastFrame,
-                        onClear: () => uiState.setVideoLastFrame(null),
-                        emptyIcon: Icons.last_page,
-                        emptyTitle: l10n.dropLastFrame,
-                        confirmMessage: l10n.dropSetAsLastFrame,
+                        label: l10n.firstFrame,
+                        image: uiState.videoFirstFrame,
+                        onDrop: uiState.setVideoFirstFrame,
+                        onClear: () => uiState.setVideoFirstFrame(null),
+                        emptyIcon: Icons.first_page,
+                        emptyTitle: l10n.dropFirstFrame,
+                        confirmMessage: l10n.dropSetAsFirstFrame,
                       ),
                     ),
+                    if (schema?.supportsLastFrame == true || uiState.videoLastFrame != null) ...[
+                      const SizedBox(width: _kCardInnerGap),
+                      Expanded(
+                        child: _FrameDropTarget(
+                          label: l10n.lastFrame,
+                          image: uiState.videoLastFrame,
+                          onDrop: uiState.setVideoLastFrame,
+                          onClear: () => uiState.setVideoLastFrame(null),
+                          emptyIcon: Icons.last_page,
+                          emptyTitle: l10n.dropLastFrame,
+                          confirmMessage: l10n.dropSetAsLastFrame,
+                        ),
+                      ),
+                    ],
                   ],
-                ],
-              ),
+                ),
+              ],
+            ),
+          ),
+        if (transforming)
+          ExpansionTile(
+            tilePadding: EdgeInsets.zero,
+            childrenPadding: EdgeInsets.zero,
+            title: Text(l10n.videoAdditionalReferences, style: captionStyle),
+            children: [
+              if (caps.supportsReferenceImages || uiState.videoReferenceImages.isNotEmpty) ...[
+                const SizedBox(height: _kCardGap),
+                _PanelCard(
+                  child: _ReferenceImagesSection(
+                    images: uiState.videoReferenceImages,
+                    onDrop: uiState.addVideoReferenceImage,
+                    onRemove: uiState.removeVideoReferenceImage,
+                    maxImages: caps.maxReferenceImages,
+                    captionStyle: captionStyle,
+                  ),
+                ),
+              ],
+              if (schema?.contract.referenceAudioVideo == true ||
+                  uiState.videoReferenceVideos.isNotEmpty ||
+                  uiState.videoReferenceAudios.isNotEmpty) ...[
+                const SizedBox(height: _kCardGap),
+                _PanelCard(
+                  child: _ReferenceFilesSection(
+                    contract: schema?.contract ?? GenerationProtocolContract.standard,
+                    maxImages: caps.maxReferenceImages ?? 0,
+                    captionStyle: captionStyle,
+                  ),
+                ),
+              ],
             ],
-          ),
-        ),
-        if (caps.supportsReferenceImages || uiState.videoReferenceImages.isNotEmpty) ...[
-          const SizedBox(height: _kCardGap),
-          _PanelCard(
-            child: _ReferenceImagesSection(
-              images: uiState.videoReferenceImages,
-              onDrop: uiState.addVideoReferenceImage,
-              onRemove: uiState.removeVideoReferenceImage,
-              maxImages: caps.maxReferenceImages,
-              captionStyle: captionStyle,
+          )
+        else ...[
+          if (caps.supportsReferenceImages || uiState.videoReferenceImages.isNotEmpty) ...[
+            const SizedBox(height: _kCardGap),
+            _PanelCard(
+              child: _ReferenceImagesSection(
+                images: uiState.videoReferenceImages,
+                onDrop: uiState.addVideoReferenceImage,
+                onRemove: uiState.removeVideoReferenceImage,
+                maxImages: caps.maxReferenceImages,
+                captionStyle: captionStyle,
+              ),
             ),
-          ),
-        ],
-        if (schema?.contract.referenceAudioVideo == true ||
-            uiState.videoReferenceVideos.isNotEmpty ||
-            uiState.videoReferenceAudios.isNotEmpty) ...[
-          const SizedBox(height: _kCardGap),
-          _PanelCard(
-            child: _ReferenceFilesSection(
-              contract: schema?.contract ?? GenerationProtocolContract.standard,
-              maxImages: caps.maxReferenceImages ?? 0,
-              captionStyle: captionStyle,
+          ],
+          if (schema?.contract.referenceAudioVideo == true ||
+              uiState.videoReferenceVideos.isNotEmpty ||
+              uiState.videoReferenceAudios.isNotEmpty) ...[
+            const SizedBox(height: _kCardGap),
+            _PanelCard(
+              child: _ReferenceFilesSection(
+                contract: schema?.contract ?? GenerationProtocolContract.standard,
+                maxImages: caps.maxReferenceImages ?? 0,
+                captionStyle: captionStyle,
+              ),
             ),
-          ),
+          ],
         ],
-        for (final diagnostic in diagnostics) ...[
+        for (final diagnostic in [...diagnostics, ...sourceDiagnostics]) ...[
           const SizedBox(height: AppSpace.s4),
           Text(
             GenerationParamTexts.diagnostic(l10n, diagnostic),
@@ -426,6 +516,109 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
             ),
           ),
           const SizedBox(height: _kCardInnerGap),
+          if (transforming &&
+              schema != null &&
+              ((operation == GenerationOperation.editVideo
+                      ? schema.contract.videoEdit?.promptRouted
+                      : schema.contract.videoExtend?.promptRouted) ==
+                  true))
+            ValueListenableBuilder<TextEditingValue>(
+              valueListenable: _promptController,
+              builder: (context, value, _) {
+                final direction =
+                    appState.effectiveVideoParams(modelInChannel!)['extendDirection'] as String?;
+                final composed = composeDashScopeIntentPrompt(
+                  prompt: value.text,
+                  operation: operation,
+                  extendDirection: direction,
+                );
+                final prefix = composed.endsWith(value.text)
+                    ? composed.substring(0, composed.length - value.text.length)
+                    : '';
+                final conflict =
+                    operation == GenerationOperation.extendVideo &&
+                    ((direction == 'forward' &&
+                            RegExp(
+                              r'向后|backward|append',
+                              caseSensitive: false,
+                            ).hasMatch(value.text)) ||
+                        (direction == 'backward' &&
+                            RegExp(
+                              r'向前|forward|prepend',
+                              caseSensitive: false,
+                            ).hasMatch(value.text)));
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (prefix.isNotEmpty) ...[
+                      Text(l10n.videoIntentPrefixHint(prefix), style: textTheme.labelSmall),
+                      AppButton(
+                        label: l10n.insertIntentPrefix,
+                        variant: AppButtonVariant.text,
+                        onPressed: () {
+                          _promptController.text = composed;
+                          appState.setVideoPromptDraft(composed);
+                        },
+                      ),
+                    ],
+                    if (conflict) Text(l10n.videoIntentConflict, style: textTheme.labelSmall),
+                  ],
+                );
+              },
+            ),
+          if (transforming && media.isNotEmpty)
+            Wrap(
+              spacing: AppSpace.s4,
+              runSpacing: AppSpace.s4,
+              children: [
+                for (final role in [
+                  GenerationMediaRole.reference,
+                  GenerationMediaRole.sourceVideo,
+                  GenerationMediaRole.referenceAudio,
+                ])
+                  for (
+                    var i = 0;
+                    i <
+                        media
+                            .where(
+                              (m) => role == GenerationMediaRole.sourceVideo
+                                  ? [
+                                      GenerationMediaRole.sourceVideo,
+                                      GenerationMediaRole.referenceVideo,
+                                    ].contains(m.role)
+                                  : m.role == role,
+                            )
+                            .length;
+                    i++
+                  )
+                    ActionChip(
+                      label: Text(
+                        role == GenerationMediaRole.reference
+                            ? l10n.imageReferenceToken(i + 1)
+                            : role == GenerationMediaRole.referenceAudio
+                            ? l10n.audioReferenceToken(i + 1)
+                            : l10n.videoReferenceToken(i + 1),
+                      ),
+                      onPressed: () {
+                        final token = role == GenerationMediaRole.reference
+                            ? l10n.imageReferenceToken(i + 1)
+                            : role == GenerationMediaRole.referenceAudio
+                            ? l10n.audioReferenceToken(i + 1)
+                            : l10n.videoReferenceToken(i + 1);
+                        final value = _promptController.value;
+                        final selection = value.selection;
+                        final start = selection.isValid ? selection.start : value.text.length;
+                        final end = selection.isValid ? selection.end : value.text.length;
+                        final text = value.text.replaceRange(start, end, token);
+                        _promptController.value = TextEditingValue(
+                          text: text,
+                          selection: TextSelection.collapsed(offset: start + token.length),
+                        );
+                        appState.setVideoPromptDraft(text);
+                      },
+                    ),
+              ],
+            ),
           _fillable(
             fill: fill,
             child: ConstrainedBox(
@@ -439,7 +632,12 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
                   isMarkdown: appState.isMarkdownWorkbench,
                   onMarkdownChanged: appState.setIsMarkdownWorkbench,
                   maxLines: 8,
-                  hint: l10n.promptHint,
+                  hint:
+                      operation == GenerationOperation.extendVideo &&
+                          appState.effectiveVideoParams(modelInChannel!)['extendDirection'] ==
+                              'bidirectional'
+                      ? l10n.videoBidirectionalHint
+                      : l10n.promptHint,
                   // Silent draft path — typing here must not notify the whole app.
                   // See AppStateWorkbench.setVideoPromptDraft.
                   onChanged: appState.setVideoPromptDraft,
@@ -468,8 +666,10 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
         final bool enabled =
             hasModels &&
             schema != null &&
+            diagnostics.isEmpty &&
+            sourceDiagnostics.isEmpty &&
             (promptValue.text.trim().isNotEmpty ||
-                schema.allowsEmptyPrompt(uiState.videoGenerationMedia));
+                schema.allowsEmptyPrompt(media, operation: operation));
         return DecoratedBox(
           // `1a` lifts the live button on a glow in its ring colour; the
           // disabled one (`1b`) sits flat on the track.
@@ -489,7 +689,11 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
             onPressed: enabled ? _handleSubmit : null,
             fullWidth: true,
             minimumHeight: actionHeight,
-            label: l10n.generateVideo,
+            label: operation == GenerationOperation.editVideo
+                ? l10n.editVideo
+                : operation == GenerationOperation.extendVideo
+                ? l10n.extendVideo
+                : l10n.generateVideo,
           ),
         );
       },
@@ -592,7 +796,8 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
                 // edge fade hid that there was more. The head lays out at its
                 // natural height in both arrangements, so the measurement is
                 // the same either side of the switch and cannot oscillate.
-                if (headRoom < _kMinHeadHeight ||
+                if (transforming ||
+                    headRoom < _kMinHeadHeight ||
                     (_headExtent != null && _headExtent! > headRoom)) {
                   return ScrollEdgeFade(
                     child: SingleChildScrollView(

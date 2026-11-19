@@ -91,6 +91,8 @@ class GenerationRequest {
         GenerationValueKind.boolean => entry.value.value == true ? 'on' : 'off',
         _ => entry.value.value.toString(),
       },
+    if (media.any((m) => m.role == GenerationMediaRole.sourceVideo))
+      'sourceVideoPath': media.firstWhere((m) => m.role == GenerationMediaRole.sourceVideo).path,
     if (media.any((m) => m.role == GenerationMediaRole.firstFrame))
       'firstFramePath': media.firstWhere((m) => m.role == GenerationMediaRole.firstFrame).path,
     if (media.any((m) => m.role == GenerationMediaRole.lastFrame))
@@ -125,6 +127,7 @@ Map<String, dynamic> generationTaskOptions(Map<String, dynamic> parameters) {
   if (request == null) return Map.of(parameters);
   const mediaKeys = {
     'prompt',
+    'sourceVideoPath',
     'firstFramePath',
     'lastFramePath',
     'referenceImagePaths',

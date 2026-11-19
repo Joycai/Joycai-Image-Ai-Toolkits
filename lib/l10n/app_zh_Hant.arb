@@ -972,6 +972,23 @@
     }
   },
   "generationReferenceUploadHint": "音影片參考使用臨時雲端上傳（48 小時）。影片：MP4/MOV，≤100 MB，240–4096 px，≥16 fps。音訊：WAV/MP3，≤15 MB。輸入影片與輸出合計 ≤30 秒。",
+  "paramVideoTask": "影片任務",
+  "paramExtendDirection": "延長方向",
+  "videoTaskGenerate": "生成",
+  "videoTaskEdit": "編輯",
+  "videoTaskExtend": "延長",
+  "extendDirectionBackward": "向後",
+  "extendDirectionForward": "向前",
+  "extendDirectionBidirectional": "雙向",
+  "generationSourceVideoRequired": "請選擇一個來源影片。",
+  "generationUnsupportedVideoEdit": "目前通道不支援影片編輯。",
+  "generationUnsupportedVideoExtend": "目前通道不支援影片延長。",
+  "generationVideoDurationBudgetExceeded": "輸入影片與固定輸出時長總和超過預算，請縮短輸出或改用智慧時長。",
+  "generationUploadRegionUnsupported": "目前地域不支援臨時上傳，請選擇北京或新加坡通道。",
+  "generationSourceVideoProbing": "正在讀取影片中繼資料…",
+  "generationSourceVideoTooLarge": "影片超過 100 MB 輸入上限。",
+  "generationSourceVideoDuration": "每段影片須為 1–15 秒，所有輸入影片合計不超過 15 秒。",
+  "generationSourceVideoFormat": "請使用 MP4/MOV，邊長 240–4096 px、比例不超過 8:1、影格率至少 16 fps。",
   "usageTokenBreakdown": "Token 組成",
   "usageTotalTokens": "總 Token",
   "usage": "用量",
@@ -1704,6 +1721,12 @@
   "mediaImageOutput": "圖像輸出",
   "mediaVideoInput": "輸入影片 · 美元/秒",
   "mediaVideoPriceHint": "輸入影片按輸出解析度和品質匹配單價；未設定的檔位標記為費用不完整。",
+  "channelTokenPlan": "使用 Token Plan",
+  "channelTokenPlanHint": "生成與輪詢使用渠道金鑰，本機素材使用獨立的上傳憑證。",
+  "channelUploadEndpoint": "素材上傳位址",
+  "channelUploadKey": "素材上傳 API 金鑰",
+  "channelUploadAccountHint": "請使用北京地域的一般百煉金鑰上傳檔案。相同內容會重用已有檔案，並更新下載連結。上傳檔案保留在你的帳號中供重用，任務完成後可在檔案管理中刪除。",
+  "channelUploadRequired": "請填寫獨立上傳 API 金鑰及有效的非 Token Plan HTTPS 位址。",
   "prompts": "提示",
   "promptLibrary": "提示庫",
   "newPrompt": "新提示",
@@ -3592,5 +3615,92 @@
   "generationAgentTextOnly": "智慧體提示詞增強僅支援文生圖。編輯影像時請選擇直接增強。",
   "imageSizeFollowReference": "跟隨參考圖",
   "imageSizeFollowReferenceHint": "採用最後一張參考圖比例；無參考圖時為正方形",
-  "paramImageComplexity": "構圖複雜度"
+  "paramImageComplexity": "構圖複雜度",
+  "editVideo": "編輯影片",
+  "extendVideo": "延長影片",
+  "sourceVideo": "來源影片",
+  "dropSourceVideo": "拖入或選擇來源影片",
+  "dropVideosOnly": "請拖入 MP4 或 MOV 影片",
+  "videoAdditionalReferences": "附加參考素材",
+  "videoAdaptiveHint": "建議使用自適應比例，固定比例可能改變構圖。",
+  "videoIntentPrefixHint": "將自動附加：{prefix}",
+  "@videoIntentPrefixHint": {
+    "placeholders": {
+      "prefix": {
+        "type": "String"
+      }
+    }
+  },
+  "insertIntentPrefix": "插入前綴",
+  "videoIntentConflict": "提示詞指定了不同的方向，將優先使用提示詞中的明確指令。",
+  "videoBidirectionalHint": "請同時描述來源影片之前與之後的片段。",
+  "videoSmartBudget": "輸入 {input}s · 智慧輸出 · 輸入與輸出合計上限 {limit}s",
+  "@videoSmartBudget": {
+    "placeholders": {
+      "input": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "videoFixedBudget": "輸入 {input}s + 輸出 {output}s · 合計上限 {limit}s",
+  "@videoFixedBudget": {
+    "placeholders": {
+      "input": {
+        "type": "String"
+      },
+      "output": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "videoExtensionEstimate": "預計比來源影片增加約 {seconds}s。",
+  "@videoExtensionEstimate": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "videoShortExtension": "建議使用智慧時長，或選擇比來源影片更長的最終時長。",
+  "menuEditVideo": "編輯影片",
+  "menuExtendVideo": "延長影片",
+  "sendToVideoReferenceClips": "加入參考影片",
+  "modelDoesNotSupportVideoEdit": "已載入來源影片。請選擇支援該操作的模型，目前模型未變更。可用模型：{models}",
+  "@modelDoesNotSupportVideoEdit": {
+    "placeholders": {
+      "models": {
+        "type": "String"
+      }
+    }
+  },
+  "videoReferenceToken": "影片{number}",
+  "@videoReferenceToken": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "imageReferenceToken": "圖{number}",
+  "@imageReferenceToken": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "audioReferenceToken": "音訊{number}",
+  "@audioReferenceToken": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  }
 }

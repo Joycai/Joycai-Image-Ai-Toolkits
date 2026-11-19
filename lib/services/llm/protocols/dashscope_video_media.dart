@@ -10,7 +10,7 @@ import '../llm_types.dart';
 String dashscopeVideoMediaRole(LLMAttachment attachment) => switch (attachment.referenceType) {
   LLMReferenceType.firstFrame => 'first_frame',
   LLMReferenceType.lastFrame => 'last_frame',
-  LLMReferenceType.referenceVideo => 'reference_video',
+  LLMReferenceType.sourceVideo || LLMReferenceType.referenceVideo => 'reference_video',
   LLMReferenceType.referenceAudio => 'reference_audio',
   _ => 'reference_image',
 };

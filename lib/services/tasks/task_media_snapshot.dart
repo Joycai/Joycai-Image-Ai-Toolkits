@@ -13,7 +13,7 @@ Future<({List<String> images, Map<String, dynamic> parameters})> snapshotTaskMed
   if (type == TaskType.aiRename || type == TaskType.imageDownload) {
     return (images: List.of(images), parameters: Map.of(parameters));
   }
-  const singles = ['firstFramePath', 'lastFramePath'];
+  const singles = ['sourceVideoPath', 'firstFramePath', 'lastFramePath'];
   const lists = ['referenceImagePaths', 'referenceVideoPaths', 'referenceAudioPaths'];
   final generation = GenerationRequest.fromTask(parameters)?.toJson();
   final paths = <String>[

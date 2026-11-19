@@ -62,5 +62,22 @@
       }
     }
   },
-  "generationReferenceUploadHint": "動画・音声の参照素材は一時クラウドにアップロードされます（48時間）。動画：MP4/MOV、100 MB以下、240〜4096 px、16 fps以上。音声：WAV/MP3、15 MB以下。入力動画と出力の合計は30秒以内。"
+  "generationReferenceUploadHint": "動画・音声の参照素材は一時クラウドにアップロードされます（48時間）。動画：MP4/MOV、100 MB以下、240〜4096 px、16 fps以上。音声：WAV/MP3、15 MB以下。入力動画と出力の合計は30秒以内。",
+  "paramVideoTask": "動画タスク",
+  "paramExtendDirection": "延長方向",
+  "videoTaskGenerate": "生成",
+  "videoTaskEdit": "編集",
+  "videoTaskExtend": "延長",
+  "extendDirectionBackward": "後方",
+  "extendDirectionForward": "前方",
+  "extendDirectionBidirectional": "前後",
+  "generationSourceVideoRequired": "元動画を1本選択してください。",
+  "generationUnsupportedVideoEdit": "この経路は動画編集に対応していません。",
+  "generationUnsupportedVideoExtend": "この経路は動画延長に対応していません。",
+  "generationVideoDurationBudgetExceeded": "入力動画と固定出力時間の合計が上限を超えています。出力を短くするか、自動を選択してください。",
+  "generationUploadRegionUnsupported": "このリージョンは一時アップロードに非対応です。北京またはシンガポールの経路を選択してください。",
+  "generationSourceVideoProbing": "動画情報を読み込み中…",
+  "generationSourceVideoTooLarge": "動画が入力上限の100 MBを超えています。",
+  "generationSourceVideoDuration": "各動画は1～15秒、入力動画の合計は15秒以内にしてください。",
+  "generationSourceVideoFormat": "MP4/MOV、各辺240～4096 px、縦横比8:1以内、16 fps以上をご使用ください。"
 }

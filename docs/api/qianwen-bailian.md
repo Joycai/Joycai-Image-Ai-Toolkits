@@ -185,8 +185,52 @@
   按 policy 对 `upload_host` 发 multipart POST（签名字段在前，file 最后；不携带 API key），
   返回 `oss://{upload_dir}/{filename}`。视频提交带 `X-DashScope-OssResourceResolve: enable`。
   官方临时存储免费、有效 48 小时，且绑定模型/账号，仅北京、新加坡支持。
-  MaaS 北京/新加坡映射到对应区域的传统 policy 入口，其他官方区域本地拒绝，
-  不跨区域回退；自定义网关沿用其原生 API base，需要自行支持该接口。
+  MaaS 北京/新加坡保留配置的工作空间或套餐域名，其他官方区域本地拒绝；
+  不跨区域或跨套餐回退。Token Plan 的 `token-plan.cn-beijing.maas.aliyuncs.com`
+  本身不提供官方临时上传通道。渠道编辑器启用 Token Plan 后，需配置独立上传地址
+  （默认 `https://dashscope.aliyuncs.com/api/v1`）与普通百炼 API Key；上传 Key
+  仅用于 files 列举/上传/查询，生成/轮询继续使用套餐地址和套餐 Key。配置存于渠道 routes JSON
+  的 `mediaUpload`，不新增数据库迁移，不进入任务参数或请求日志。缺少配置时在上传前拒绝。
+  官方临时上传契约要求两把 Key 属于同一阿里云主账号和地域，上传绑定同一模型。
+  **2026-11-19 用户授权实测：该配置不能视为已跑通的套餐上传方案。** 指定本地 MP4
+  用普通 Key 获取 policy、OSS 上传均 HTTP 200；携带 OSS 解析头使用套餐 Key 提交
+  `wan3.0-video` 编辑返回 HTTP 400 `BadRequest.ResourceNotExist`（底层素材 404），
+  request_id `a4d63cfa-7499-4b72-882f-d30eeaddc790`，未返回 task_id。
+  套餐域名 getPolicy 为 404；套餐 Key 调普通域名 getPolicy 为 401 InvalidApiKey；
+  临时素材直接 HTTPS 读取为 403。此样本未核实两 Key 主账号归属，不能据此断言
+  所有同账号组合均不支持；也不能将独立上传配置宣称为成功解决方案。
+  后续需验证可读取的 HTTPS 素材 URL，或经用户选择改用普通 API 生成；不得静默切换计费渠道。
+  **同日后续端到端成功样本（用户授权；普通上传 Key + Token Plan 生成 Key）：**
+  使用普通 Key 对 `https://dashscope.aliyuncs.com/api/v1/files` 发 multipart POST，
+  字段 `files` 为指定 MP4、`purpose=file-extract`，HTTP 200 返回 file_id；
+  `GET /api/v1/files/{file_id}` 同样使用普通 Key，HTTP 200 返回签名 HTTP 下载 URL，
+  无鉴权 Range 读取为 206；该样本 URL 换为 HTTPS 后也可读取（不得泛化所有 URL 可改写）。
+  使用返回 URL 作为 `input.media[0]={type:reference_video,url:...}`，无需 OSS 解析头，
+  以套餐 Key 向套餐视频 synthesis 端点提交，参数 `audio=true,resolution=720P,ratio=adaptive,duration=-1`。
+  HTTP 200 接单并在约 182 秒后 SUCCEEDED，task_id `994c3e28-9066-4c64-a7cb-7acbfc989715`，
+  submit request_id `2559972e-2b4c-41c6-9d2b-b51b7bb0a913`。
+  产物已下载并完整解码：H.264 1280×720/30 fps，AAC 44.1 kHz 双声道，容器约 5.038 秒；
+  抽查五帧主场景与人物相符，未声称逐像素保真或已听审音效。上游 usage 为输入 5 秒、输出 5 秒、
+  duration 10 秒、SR 720；duration 为总和，不可再作为输出时长叠加入账，未核对账户实扣。
+  files 与 uploads 是不同接口：前者为文件管理资源（非固定 48 小时自动清理），可使用普通 Key
+  `GET /api/v1/files` 列举、`GET /api/v1/files/{file_id}` 刷新元数据/URL、
+  `DELETE /api/v1/files/{file_id}` 删除；异步任务完成前不得删除输入文件。
+  本样本签名 URL 有效期约 24 小时，不代表文件本身保存期。普通 Key 的 files 路径已验证，
+  不代表套餐 Key 可调用 files，也不证明所有账号/地域组合均可用。
+  应用已将启用 Token Plan 的渠道切换至上述 files 流程；普通渠道仍用临时 OSS 上传。
+  上传前分页列举（100 条/页，上限 100 页），按文件大小和 MD5 匹配；MD5 同时接受官方示例
+  的十六进制及本账号实际返回的 Base64。匹配后按 file_id 重新查询并复核内容，刷新下载 URL；
+  已删除/内容变化的候选跳过，未命中才上传。查询失败不会盲目上传；上传响应和新文件内容也须校验。
+  按端点/凭据摘要在进程内串行查询与上传，避免同一作用域并发重复上传；不缓存或持久化签名 URL。
+  只读 GET 遇 429 至多重试两次，遵守不超过 30 秒的 Retry-After（更长则报错），等待可取消；
+  POST 不在上传助手内自动重试。不同进程/设备同时上传不提供原子去重保证。
+  保留远端文件供后续任务复用，不在提交成功时自动删除，避免破坏在途异步任务；渠道四语说明告知此保留行为。
+  files 官方只支持北京，套餐渠道配置官方新加坡上传域名时在文件准备前拒绝；自定义网关需自行提供 files 契约。
+  仅 media 中实际有 oss:// 地址时才添加 OSS 解析头，files 下载 URL 不添加该头。
+  App 实现另以硬性禁止 POST 的只读真实测试连续两次复用此视频成功，含一次 GET 429 后恢复，未新增生成任务。
+  套餐 Key 不得发送到按量付费上传域名。参见
+  [Token Plan 接入说明](https://help.aliyun.com/zh/model-studio/use-chat-client-or-development-tool/)。
+  自定义网关沿用其原生 API base，需要自行支持该接口。
 - 仓库在任何上传前验证全部素材并保存私有临时副本；有音视频时同批图片也上传，
   纯图片保持 inline 路径。上传沿用 consent/proxy/cancellation，上传完成不代表付费提交；
   仅最终 synthesis 发送触发 body-sent 回调。临时 URL/policy 不落盘，重试重新获取，
@@ -196,7 +240,16 @@
 - 回执与轮询同 I2（同一个 `GET /tasks/{task_id}`、同一套状态枚举）。
 - **成功结果是顶层扁平字段 `output.video_url`**（不是 choices 结构），
   另带 `orig_prompt`。失败时 `output.code`/`output.message`。
-- usage：`video_count`(=1) / `duration` / `fps` / `SR` / `ratio`，**无 token**。
+- usage：`video_count`(=1) / `duration` / `input_video_duration` /
+  `output_video_duration` / `fps` / `SR` / `ratio`，**无 token**。
+  `duration` 可为输入+输出之和；输出结算优先使用 `output_video_duration`，
+  仅旧回包缺该字段时回退 `duration`。输入单独透传，`SR` 归一为输出规格，避免重复计费。
+- 编辑/延长仍使用同一异步接口。应用内部 `videoTask=edit|extend` 不作为 wire 字段发送；
+  独立源视频占 `reference_video` 首位（视频1），也计入视频数量/时长预算，并走临时上传。
+  编辑/延长要求非空提示词，默认 `duration=-1`、`ratio=adaptive`；比例允许编辑并提示风险。
+  延长固定时长表示最终输出总时长，方向 `backward|forward|bidirectional` 通过提示词表达。
+  纯函数 `composeDashScopeIntentPrompt` 在缺少中英文意图词时幂等附加前缀，
+  UI 透明预览并可一键插入；不改写用户原文/历史，显式意图优先，附加后仍校验 20,000 码点。
 - 轮询间隔与 task_id 有效期该页未写 ⚠ —— 类推图片的 5–10s / 24h。
 - **失败任务装在 HTTP 200 里**（`task_status: FAILED` + `output.code`），
   通用的错误信封检查抢不到它 —— 轮询方要自己实现状态机。图片异步同理。
@@ -342,3 +395,10 @@ WAN-09 未做真实首帧+固定 ratio 实测，继续保留 adaptive 默认与�
 本地模拟覆盖上传、取消、错误、凭证隔离、素材限额及旧任务兼容；不代表真实区域账号联调通过。
 文件容器探测复用本地 MP4/MOV（H.264/H.265）及 WAV/MP3 解析器，无法可靠读取元数据时拒绝。
 仍欠 WAN-09 的真实首帧比例验证、区域账号的上传联调及独立 file/link 工作台设计。
+
+### 2026-11-19 · 跨模型视频编辑/延长复核
+
+- 本地 Mock 验证 sourceVideo 首位、上传/图片计数隔离、三方向前缀、历史快照兼容与
+  输入 5s + 输出 7.5s 的独立结算。没有发起真实付费请求。
+- 仍需另行授权实测：延长结果是否拼接原片及短时长边界、英文方向路由、智能时长
+  usage 字段、非 adaptive 比例（WAN-09）、MOV PCM/ALAC 音轨。file/link 仍为独立后续迭代。

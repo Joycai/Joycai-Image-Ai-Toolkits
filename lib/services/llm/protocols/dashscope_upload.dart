@@ -5,23 +5,25 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:uuid/uuid.dart';
 
+import '../channel_upload_config.dart';
 import '../llm_types.dart';
+import 'dashscope_files.dart';
 import 'dashscope_payload.dart';
 import 'protocol.dart';
 
 /// Temporary upload supports Beijing and Singapore. Keep custom gateway bases,
-/// but never silently send an official region's credentials to another region.
+/// including workspace/plan domains: credentials must stay on the configured host.
 String dashscopeUploadBase(String endpoint) {
   final native = dashscopeNativeBase(endpoint);
   final uri = Uri.parse(native);
   if (uri.host.endsWith('.maas.aliyuncs.com')) {
     if (uri.host == 'cn-beijing.maas.aliyuncs.com' ||
         uri.host.endsWith('.cn-beijing.maas.aliyuncs.com')) {
-      return 'https://dashscope.aliyuncs.com/api/v1';
+      return native;
     }
     if (uri.host == 'ap-southeast-1.maas.aliyuncs.com' ||
         uri.host.endsWith('.ap-southeast-1.maas.aliyuncs.com')) {
-      return 'https://dashscope-intl.aliyuncs.com/api/v1';
+      return native;
     }
     throw LLMApiException('Temporary media upload supports Beijing and Singapore only.');
   }
@@ -31,6 +33,54 @@ String dashscopeUploadBase(String endpoint) {
     throw LLMApiException('Temporary media upload supports Beijing and Singapore only.');
   }
   return native;
+}
+
+/// Resolve only the upload endpoint; never fall back to inference credentials
+/// for a plan channel, even when its independent configuration is incomplete.
+String dashscopeMediaUploadBase(LLMModelConfig config) {
+  final upload = config.uploadConfig;
+  if (upload?.tokenPlan == true || ChannelUploadConfig.isTokenPlan(config.endpoint)) {
+    if (upload == null ||
+        !upload.tokenPlan ||
+        upload.endpoint.trim().isEmpty ||
+        upload.apiKey.trim().isEmpty) {
+      throw LLMApiException(
+        'Token Plan requires a separate media upload endpoint and API key in channel settings. Nothing was sent.',
+      );
+    }
+    final uri = Uri.tryParse(upload.endpoint);
+    if (uri == null ||
+        uri.scheme != 'https' ||
+        uri.host.isEmpty ||
+        uri.userInfo.isNotEmpty ||
+        uri.hasQuery ||
+        uri.hasFragment ||
+        ChannelUploadConfig.isTokenPlan(upload.endpoint)) {
+      throw LLMApiException(
+        'Media upload requires a non-Token Plan HTTPS endpoint. Nothing was sent.',
+      );
+    }
+    final base = dashscopeUploadBase(upload.endpoint);
+    final host = Uri.parse(base).host;
+    if (host == 'dashscope-intl.aliyuncs.com' ||
+        host == 'ap-southeast-1.maas.aliyuncs.com' ||
+        host.endsWith('.ap-southeast-1.maas.aliyuncs.com')) {
+      throw LLMApiException(
+        'Token Plan file management requires a Beijing upload endpoint. Nothing was sent.',
+      );
+    }
+    return base;
+  }
+  return dashscopeUploadBase(config.endpoint);
+}
+
+bool dashscopeSupportsTemporaryUpload(String endpoint) {
+  try {
+    dashscopeUploadBase(endpoint);
+    return true;
+  } on LLMApiException {
+    return false;
+  }
 }
 
 /// Uploads one already validated private snapshot. URLs and policies are
@@ -45,13 +95,28 @@ Future<String> uploadDashScopeMedia({
   Map<String, dynamic>? options,
 }) async {
   checkCancelled();
-  final uri = Uri.parse('${dashscopeUploadBase(target.config.endpoint)}/uploads')
+  if (target.config.uploadConfig?.tokenPlan == true) {
+    return uploadDashScopeFile(
+      client: client,
+      base: dashscopeMediaUploadBase(target.config),
+      apiKey: target.config.uploadConfig!.apiKey.trim(),
+      file: file,
+      mime: mime,
+      checkCancelled: checkCancelled,
+      options: options,
+    );
+  }
+  final uri = Uri.parse('${dashscopeMediaUploadBase(target.config)}/uploads')
       .replace(queryParameters: {'action': 'getPolicy', 'model': target.config.modelId});
   // This GET and the OSS upload must NOT fire the paid-submit body-sent hook.
   final request = buildJsonRequest(
     'GET',
     uri,
-    headers: target.headers(),
+    headers: {
+      ...target.headers(),
+      if (target.config.uploadConfig?.tokenPlan == true)
+        'Authorization': 'Bearer ${target.config.uploadConfig!.apiKey.trim()}',
+    },
     body: '',
     options: options,
   );

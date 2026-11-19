@@ -1509,6 +1509,61 @@ class AppLocalizationsEn extends AppLocalizations {
       'Audio/video references use temporary cloud uploads (48 h). Video: MP4/MOV, ≤100 MB, 240–4096 px, ≥16 fps. Audio: WAV/MP3, ≤15 MB. Input video + output: ≤30 s.';
 
   @override
+  String get paramVideoTask => 'Video task';
+
+  @override
+  String get paramExtendDirection => 'Direction';
+
+  @override
+  String get videoTaskGenerate => 'Generate';
+
+  @override
+  String get videoTaskEdit => 'Edit';
+
+  @override
+  String get videoTaskExtend => 'Extend';
+
+  @override
+  String get extendDirectionBackward => 'After';
+
+  @override
+  String get extendDirectionForward => 'Before';
+
+  @override
+  String get extendDirectionBidirectional => 'Both';
+
+  @override
+  String get generationSourceVideoRequired => 'Select exactly one source video.';
+
+  @override
+  String get generationUnsupportedVideoEdit => 'This route does not support video editing.';
+
+  @override
+  String get generationUnsupportedVideoExtend => 'This route does not support video extension.';
+
+  @override
+  String get generationVideoDurationBudgetExceeded =>
+      'Input video plus fixed output exceeds the duration budget. Reduce the output duration or select Smart.';
+
+  @override
+  String get generationUploadRegionUnsupported =>
+      'This region does not support temporary uploads. Use a Beijing or Singapore route.';
+
+  @override
+  String get generationSourceVideoProbing => 'Reading video metadata…';
+
+  @override
+  String get generationSourceVideoTooLarge => 'Video exceeds the 100 MB input limit.';
+
+  @override
+  String get generationSourceVideoDuration =>
+      'Each video must be 1–15 seconds; all input videos together must be at most 15 seconds.';
+
+  @override
+  String get generationSourceVideoFormat =>
+      'Use MP4/MOV, 240–4096 px edges, an aspect ratio within 8:1 and at least 16 fps.';
+
+  @override
   String get usageTokenBreakdown => 'Token breakdown';
 
   @override
@@ -3408,6 +3463,27 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get mediaVideoPriceHint =>
       'Match input video rates using the output resolution and quality. Missing rates remain incomplete.';
+
+  @override
+  String get channelTokenPlan => 'Use Token Plan';
+
+  @override
+  String get channelTokenPlanHint =>
+      'Generation and polling use the channel key. Local media uses separate upload credentials.';
+
+  @override
+  String get channelUploadEndpoint => 'Media upload endpoint';
+
+  @override
+  String get channelUploadKey => 'Media upload API key';
+
+  @override
+  String get channelUploadAccountHint =>
+      'Use a regular Beijing Model Studio key for file uploads. Existing files are reused by content; download links are refreshed. Uploaded files remain in your account for reuse and can be deleted in file management after tasks finish.';
+
+  @override
+  String get channelUploadRequired =>
+      'Enter a separate upload API key and a valid non-Token Plan HTTPS endpoint.';
 
   @override
   String get prompts => 'Prompts';
@@ -6849,4 +6925,89 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get paramImageComplexity => 'Planning complexity';
+
+  @override
+  String get editVideo => 'Edit video';
+
+  @override
+  String get extendVideo => 'Extend video';
+
+  @override
+  String get sourceVideo => 'Source video';
+
+  @override
+  String get dropSourceVideo => 'Drop or choose a source video';
+
+  @override
+  String get dropVideosOnly => 'Drop an MP4 or MOV video';
+
+  @override
+  String get videoAdditionalReferences => 'Additional references';
+
+  @override
+  String get videoAdaptiveHint => 'Adaptive is recommended. A fixed ratio may change the framing.';
+
+  @override
+  String videoIntentPrefixHint(String prefix) {
+    return 'Automatic prefix: $prefix';
+  }
+
+  @override
+  String get insertIntentPrefix => 'Insert prefix';
+
+  @override
+  String get videoIntentConflict =>
+      'Your prompt specifies a different direction. Explicit prompt instructions take precedence.';
+
+  @override
+  String get videoBidirectionalHint =>
+      'Describe both the scenes before and after the source video.';
+
+  @override
+  String videoSmartBudget(String input, String limit) {
+    return 'Input ${input}s · Smart output · combined limit ${limit}s';
+  }
+
+  @override
+  String videoFixedBudget(String input, String output, String limit) {
+    return 'Input ${input}s + output ${output}s · limit ${limit}s';
+  }
+
+  @override
+  String videoExtensionEstimate(String seconds) {
+    return 'About ${seconds}s added to the source.';
+  }
+
+  @override
+  String get videoShortExtension =>
+      'Choose Smart or a final duration longer than the source video.';
+
+  @override
+  String get menuEditVideo => 'Edit video';
+
+  @override
+  String get menuExtendVideo => 'Extend video';
+
+  @override
+  String get sendToVideoReferenceClips => 'Add as reference video';
+
+  @override
+  String modelDoesNotSupportVideoEdit(String models) {
+    return 'Source loaded. Select a model that supports this operation. Your current model was kept. Available: $models';
+  }
+
+  @override
+  String videoReferenceToken(int number) {
+    return 'Video $number';
+  }
+
+  @override
+  String imageReferenceToken(int number) {
+    return 'Image $number';
+  }
+
+  @override
+  String audioReferenceToken(int number) {
+    return 'Audio $number';
+  }
 }

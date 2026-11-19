@@ -19,6 +19,66 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 留在这份文件里的，是**不随代码走的那部分**：哪一轮做了什么、结论现在住在哪、
 以及还欠什么。
 
+## 2026-11-19 · Token Plan 独立素材上传配置
+
+- 已落实用户提出的去重：上传前分页查询，按大小与内容 MD5（十六进制/Base64）匹配，
+  查询元数据刷新 URL；跳过已删除/变更的文件，同端点和凭据作用域在进程内串行，
+  不保留 URL 缓存。文件保留在百炼账号供复用，后续独立文件管理/删除 UI 不在本次范围。
+
+- 阿里渠道编辑器新增 Token Plan 开关、素材上传 HTTPS 地址与独立 API Key；
+  现有 Token Plan 域名自动识别，四语表单沿用既有控件，无新玻璃层或数据库迁移。
+- 配置存于 routes JSON `mediaUpload`，路由编辑、仓库规范化和配置副本保留它；
+  套餐渠道改用普通 Key 操作 files，生成/轮询继续使用套餐 Key；普通渠道保留签名 OSS 临时上传。
+  缺少独立配置时在发送素材前拒绝。
+- 上传 Key 复用凭据保护、启动校验、备份脱敏、同机恢复与显式重录清理。
+- 本地验证：四语合并/生成、格式与静态分析；配置回读、鉴权隔离、表单开关、
+  加密与备份恢复回归。全量 3640 passed / 11 skipped，analyze 为 No issues found!。
+  32 张四语 × 390/834/1024/1440 × 浅深色截图已逐图检查。
+- 后续用户授权真实复现：普通 API 获取 policy/上传均 200，Token Plan 编辑提交返回
+  400 `BadRequest.ResourceNotExist`（素材 404），未返回任务 ID；套餐上传接口 404、
+  套餐 Key 调普通上传接口 401、素材直接 HTTPS 403。详见 API 文档 §6 实测记录。
+  **该临时 OSS 路径失败**：需改用可读取的素材 URL；
+  两 Key 的主账号归属尚未核实，不外推所有账号组合。独立配置 UI 的本地测试通过不代表套餐可读素材。
+- 同日后续实测已跑通替代路径：普通 Key `POST /api/v1/files` 上传 → 普通 Key 查询文件
+  元数据取签名下载 URL → 套餐 Key 提交/轮询 Wan 3.0 编辑 → SUCCEEDED → 下载并完整解码。
+  唯一成功接单任务 `994c3e28-9066-4c64-a7cb-7acbfc989715`，约 182 秒；输出 H.264
+  1280×720/30 fps、AAC 双声道、约 5.038 秒。上游输入/输出各 5 秒，未核对实扣。
+  `build/wan-live-validation/edited.mp4` 为本地产物（不入 Git）；签名 URL、Key 不入文档。
+  应用现已接入 files 路径和查询复用；普通上传凭据仍独立保护，未新增 DB 迁移。
+  App 新代码只读真实验证连续两次复用该视频成功，POST 被硬性禁止，含一次 429 后恢复；
+  真实生成沿用此前唯一成功样本，本轮未新增付费生成。
+- files 接入后验收：四语源键去重/一致性检查、merge/gen-l10n、格式通过，analyze 为
+  No issues found!，全量 3650 passed / 11 skipped。32 张四语 × 四宽度 × 浅深色
+  截图逐图检查无溢出，繁体夹具已改用 scriptCode Hant，确认真实繁体渲染。
+  测试覆盖上传/复用/分页/删除与内容变化/签名 URL 刷新/并发隔离/取消/429/凭据脱敏，
+  新增与既有上传针对性测试共 20 项。
+
+## 2026-11-19 · 跨模型视频编辑与延长（Wan 3.0 首发）
+
+- 基于 PR #420 合并后的 `main` @ `7df1834`，分支 `codex/video-edit-extend-impl`。
+- Phase 1（`399a05f`）：操作/源视频契约、操作级默认值、偏好隔离、历史 v1 快照兼容、
+  源视频首位与临时上传、幂等意图前缀，以及输出/输入时长分桶结算修复。
+- Phase 2（`6df7190`）：代数防竞态探测、源视频卡/预算、顶层模式和延长方向、
+  停放首尾帧、可折叠参考素材、编号与透明前缀、播放器/画廊/拖拽闭环、四语文案。
+- Phase 3：预览顶栏、已完成任务再编辑/延长、任务详情、独立计费与交互回归，
+  API 和 [参数架构](../architecture/generation-parameters.md) 已记录长期约定。
+  全部沿用 videoGenerate 与 v1 快照，无 DB 迁移；不静默切换模型、不污染用户原提示词。
+  点击回归发现并修复手机配置 FAB 遮挡播放器菜单，播放器/画廊留白同步避让。
+- 各阶段提交前均运行 format / analyze / 非截图全量测试。Phase 1 为 3623 passed、
+  Phase 2 为 3627 passed、Phase 3 为 3633 passed（均 11 skipped）。
+  本地化合并与生成通过；三个阶段的 flutter analyze 均为 No issues found!。
+- 可视化矩阵：Wan 工作台 192 张新增编辑空态/正常/超限及延长三方向；播放器/全屏预览
+  64 张；原生成/参考 16 张；参数面板 48 张。覆盖 390/834/1024/1440、浅深色、
+  en/zh/zh_Hant/ja；两份 harness 最终 320 passed，无溢出日志。
+  截图保存在 `build/ui-screenshots/`，逐图核对新增控件及操作文案，无新增截断。
+  缩略图使用本地测试提取器，播放器在无原生插件的 harness 中显示降级态；
+  本轮不代表原生手机或 Windows AXTree/视频解码实机验收。
+- 未发起真实付费请求。仍欠独立授权实测：延长输出是否拼接原片、固定时长不大于
+  源片的边界、英文方向路由、智能时长 usage 字段、非 adaptive 比例（WAN-09）、
+  MOV PCM/ALAC 音轨。后续可优化随机读取 MP4 元数据；file/link 保留独立迭代。
+- 临时设计计划已执行并删除；历史从 `5e74481:docs/plans/2026-11-video-edit-extend-design.md`
+  取回。未改变 build_script/macOS 公证相关工作。
+
 ## 2026-11-19 · Wan 3.0 video Phase 3（WAN-10 音视频阶段）
 
 - 基于 PR #418 合并后的 `main` @ `3d51240`，分支 `codex/wan3-video-phase3`。
@@ -123,7 +183,6 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 | [`2026-11-desktop-standards.md`](2026-11-desktop-standards.md) | Flutter 与 macOS/Windows 桌面体验修复；DESK-01 已恢复桥接、隔离菜单语义，完成分段、任务筛选/置顶、导航及[剩余自绘控件源码审计与修复](../custom-controls-accessibility-audit.md)；DESK-02 已实现工作台画廊、浏览器网格/列表及跨栏键盘焦点，3.47.8 Windows 原生验证发现的导航 tooltip 与浏览器滑块 AXTree 边界已修复，五页及主题切换复测通过；完整 Narrator/原生验收仍待完成；DESK-03 原生菜单已实现并继续验收，DESK-04～06 待实施。证据见 [Windows 无障碍记录](../windows-accessibility-validation.md)、[画廊键盘验证](../gallery-keyboard-validation.md)、[浏览器键盘验证](../browser-keyboard-validation.md)。 |
 | [`2026-11-windows-store.md`](2026-11-windows-store.md) | Microsoft Store 发布准备施工计划；按 WIN-01～WIN-06 推进，完成后归档结论并删除正文。 |
 | [`2026-11-wan3-video-audit.md`](2026-11-wan3-video-audit.md) | `wan3.0-video` / `wan3.0-video-prime` 对照百炼官方文档的核查问题清单与分阶段修复计划（WAN-01～WAN-10）；Phase 1 和 Phase 2 的 WAN-08 已实现；WAN-09 上游实测与 Phase 3 保留待办。 |
-| [`2026-11-video-edit-extend-design.md`](2026-11-video-edit-extend-design.md) | 跨模型视频编辑与视频延长功能设计文档（以 Wan 3.0 首发，涵盖协议契约、Schema 语义、计费结算修复、工作台 UX 与分阶段实施计划）；设计评审中。 |
 | [`2026-08-assistant-timeout.md`](2026-08-assistant-timeout.md) | 不是施工说明书，是**一次真实故障的取证记录**（`api_logs/` 里七条日志的耗时还原）。`architecture/assistant-context.md` 直接引它作为「为什么要早elide」的证据。 |
 
 ## 2026-11-07 · Microsoft Store 发布准备（实现中）

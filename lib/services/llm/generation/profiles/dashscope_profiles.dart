@@ -15,6 +15,20 @@ const _dashscopeWanVideo = ModelCapabilities(
   maxReferenceImages: 10,
   videoParams: [
     ParamSpec(
+      key: 'videoTask',
+      labelKey: 'videoTask',
+      control: ParamControl.segmented,
+      defaultValue: 'generate',
+      options: [ParamOption('generate'), ParamOption('edit'), ParamOption('extend')],
+    ),
+    ParamSpec(
+      key: 'extendDirection',
+      labelKey: 'extendDirection',
+      control: ParamControl.segmented,
+      defaultValue: 'backward',
+      options: [ParamOption('backward'), ParamOption('forward'), ParamOption('bidirectional')],
+    ),
+    ParamSpec(
       key: 'aspectRatio',
       labelKey: 'aspectRatio',
       control: ParamControl.dropdown,

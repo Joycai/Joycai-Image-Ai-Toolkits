@@ -10,6 +10,7 @@ import '../../../../core/file_utils.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../models/app_image.dart';
 import '../../../../services/db/repositories/image_layer_repository.dart';
+import '../../../../services/files/persistent_media_service.dart';
 import '../../../../state/app_state.dart';
 import '../../../../state/gallery_state.dart';
 import '../../../../state/workbench_ui_state.dart';
@@ -17,6 +18,7 @@ import '../../../../widgets/dialogs/file_rename_dialog.dart';
 import '../../../../widgets/glass/app_glass_menu.dart';
 import '../../../../widgets/ui/app_key_label.dart';
 import '../../../../widgets/ui/app_snackbar.dart';
+import '../../video_task_actions.dart';
 import '../layers/layer_canvas_page.dart';
 import '../preview/media_preview_dialog.dart';
 import 'gallery_file_actions.dart';
@@ -127,6 +129,34 @@ Future<void> showImageCardContextMenu(
           },
         ),
       ]),
+    if (isVideo && !multi) ...[
+      AppGlassMenuItem(
+        icon: Icons.edit_outlined,
+        label: l10n.menuEditVideo,
+        onSelected: () => openVideoTask(context, imageFile.path, 'edit'),
+      ),
+      AppGlassMenuItem(
+        icon: Icons.more_time,
+        label: l10n.menuExtendVideo,
+        onSelected: () => openVideoTask(context, imageFile.path, 'extend'),
+      ),
+      AppGlassMenuItem(
+        icon: Icons.video_library_outlined,
+        label: l10n.sendToVideoReferenceClips,
+        onSelected: () async {
+          try {
+            final path = await PersistentMediaService.instance.importFile(imageFile.path);
+            workbenchUIState.addVideoReferenceFiles([path], audio: false);
+            appState.setWorkbenchTab(5);
+            workbenchUIState.requestVideoPanel();
+          } catch (error) {
+            if (context.mounted) AppSnackBar.error(context, l10n.importFailed('$error'));
+          }
+        },
+      ),
+      const AppGlassMenuDivider(),
+    ],
+
     if (layerSet != null)
       AppGlassMenuItem(
         icon: Icons.layers_outlined,

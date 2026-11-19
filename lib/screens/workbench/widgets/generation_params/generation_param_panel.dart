@@ -19,6 +19,7 @@ class GenerationParamPanel extends StatelessWidget {
     required this.valueOf,
     required this.onChanged,
     this.video = false,
+    this.hiddenKeys = const {},
     this.media = const [],
     this.modelName = '',
     this.storedValueOf,
@@ -32,6 +33,7 @@ class GenerationParamPanel extends StatelessWidget {
   final String Function(ParamSpec) valueOf;
   final void Function(String key, String value) onChanged;
   final bool video;
+  final Set<String> hiddenKeys;
   final List<GenerationMedia> media;
   final String modelName;
   final String? Function(String key)? storedValueOf;
@@ -79,6 +81,7 @@ class GenerationParamPanel extends StatelessWidget {
       ));
     }
     for (final spec in specs) {
+      if (hiddenKeys.contains(spec.key)) continue;
       final fieldState = operation == null
           ? GenerationFieldState.active
           : schema!.fieldState(spec.key, operation, draft);

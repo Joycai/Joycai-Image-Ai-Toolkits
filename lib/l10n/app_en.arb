@@ -1163,6 +1163,23 @@
     }
   },
   "generationReferenceUploadHint": "Audio/video references use temporary cloud uploads (48 h). Video: MP4/MOV, ≤100 MB, 240–4096 px, ≥16 fps. Audio: WAV/MP3, ≤15 MB. Input video + output: ≤30 s.",
+  "paramVideoTask": "Video task",
+  "paramExtendDirection": "Direction",
+  "videoTaskGenerate": "Generate",
+  "videoTaskEdit": "Edit",
+  "videoTaskExtend": "Extend",
+  "extendDirectionBackward": "After",
+  "extendDirectionForward": "Before",
+  "extendDirectionBidirectional": "Both",
+  "generationSourceVideoRequired": "Select exactly one source video.",
+  "generationUnsupportedVideoEdit": "This route does not support video editing.",
+  "generationUnsupportedVideoExtend": "This route does not support video extension.",
+  "generationVideoDurationBudgetExceeded": "Input video plus fixed output exceeds the duration budget. Reduce the output duration or select Smart.",
+  "generationUploadRegionUnsupported": "This region does not support temporary uploads. Use a Beijing or Singapore route.",
+  "generationSourceVideoProbing": "Reading video metadata…",
+  "generationSourceVideoTooLarge": "Video exceeds the 100 MB input limit.",
+  "generationSourceVideoDuration": "Each video must be 1–15 seconds; all input videos together must be at most 15 seconds.",
+  "generationSourceVideoFormat": "Use MP4/MOV, 240–4096 px edges, an aspect ratio within 8:1 and at least 16 fps.",
   "usageTokenBreakdown": "Token breakdown",
   "usageTotalTokens": "Total tokens",
   "usage": "Usage",
@@ -2344,6 +2361,12 @@
   "mediaImageOutput": "Image output",
   "mediaVideoInput": "Input video · USD/second",
   "mediaVideoPriceHint": "Match input video rates using the output resolution and quality. Missing rates remain incomplete.",
+  "channelTokenPlan": "Use Token Plan",
+  "channelTokenPlanHint": "Generation and polling use the channel key. Local media uses separate upload credentials.",
+  "channelUploadEndpoint": "Media upload endpoint",
+  "channelUploadKey": "Media upload API key",
+  "channelUploadAccountHint": "Use a regular Beijing Model Studio key for file uploads. Existing files are reused by content; download links are refreshed. Uploaded files remain in your account for reuse and can be deleted in file management after tasks finish.",
+  "channelUploadRequired": "Enter a separate upload API key and a valid non-Token Plan HTTPS endpoint.",
   "prompts": "Prompts",
   "promptLibrary": "Prompt Library",
   "newPrompt": "New Prompt",
@@ -4408,5 +4431,92 @@
   "generationAgentTextOnly": "Agent prompt enhancement supports text-to-image only. Choose Direct for image editing.",
   "imageSizeFollowReference": "Follow reference",
   "imageSizeFollowReferenceHint": "Uses the last reference ratio; square without references",
-  "paramImageComplexity": "Planning complexity"
+  "paramImageComplexity": "Planning complexity",
+  "editVideo": "Edit video",
+  "extendVideo": "Extend video",
+  "sourceVideo": "Source video",
+  "dropSourceVideo": "Drop or choose a source video",
+  "dropVideosOnly": "Drop an MP4 or MOV video",
+  "videoAdditionalReferences": "Additional references",
+  "videoAdaptiveHint": "Adaptive is recommended. A fixed ratio may change the framing.",
+  "videoIntentPrefixHint": "Automatic prefix: {prefix}",
+  "@videoIntentPrefixHint": {
+    "placeholders": {
+      "prefix": {
+        "type": "String"
+      }
+    }
+  },
+  "insertIntentPrefix": "Insert prefix",
+  "videoIntentConflict": "Your prompt specifies a different direction. Explicit prompt instructions take precedence.",
+  "videoBidirectionalHint": "Describe both the scenes before and after the source video.",
+  "videoSmartBudget": "Input {input}s · Smart output · combined limit {limit}s",
+  "@videoSmartBudget": {
+    "placeholders": {
+      "input": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "videoFixedBudget": "Input {input}s + output {output}s · limit {limit}s",
+  "@videoFixedBudget": {
+    "placeholders": {
+      "input": {
+        "type": "String"
+      },
+      "output": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "videoExtensionEstimate": "About {seconds}s added to the source.",
+  "@videoExtensionEstimate": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "videoShortExtension": "Choose Smart or a final duration longer than the source video.",
+  "menuEditVideo": "Edit video",
+  "menuExtendVideo": "Extend video",
+  "sendToVideoReferenceClips": "Add as reference video",
+  "modelDoesNotSupportVideoEdit": "Source loaded. Select a model that supports this operation. Your current model was kept. Available: {models}",
+  "@modelDoesNotSupportVideoEdit": {
+    "placeholders": {
+      "models": {
+        "type": "String"
+      }
+    }
+  },
+  "videoReferenceToken": "Video {number}",
+  "@videoReferenceToken": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "imageReferenceToken": "Image {number}",
+  "@imageReferenceToken": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "audioReferenceToken": "Audio {number}",
+  "@audioReferenceToken": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  }
 }

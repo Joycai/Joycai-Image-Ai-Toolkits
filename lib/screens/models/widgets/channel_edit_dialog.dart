@@ -8,6 +8,7 @@ import '../../../models/llm_channel.dart';
 import '../../../services/catalogue/route_switching.dart';
 import '../../../services/llm/channel_probe_service.dart';
 import '../../../services/llm/channel_routes.dart';
+import '../../../services/llm/channel_upload_config.dart';
 import '../../../services/llm/llm_types.dart';
 import '../../../services/llm/model_routes.dart';
 import '../../../services/llm/vendors/platforms.dart';
@@ -53,6 +54,9 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
   late TextEditingController epCtrl;
   late TextEditingController keyCtrl;
   late TextEditingController tagCtrl;
+  late TextEditingController uploadEndpointCtrl;
+  late TextEditingController uploadKeyCtrl;
+  bool _tokenPlan = false;
 
   late String type;
   late bool discovery;
@@ -101,6 +105,12 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
         ? RoutedChannel.routesOf(channel)
         : ChannelRoutes.resolve(type, epCtrl.text, null);
     _openedRoutes = _routes;
+    final upload = _routes.uploadConfig;
+    _tokenPlan = upload?.tokenPlan ?? ChannelUploadConfig.isTokenPlan(channel?.endpoint ?? '');
+    uploadEndpointCtrl = TextEditingController(
+      text: upload?.endpoint ?? 'https://dashscope.aliyuncs.com/api/v1',
+    );
+    uploadKeyCtrl = TextEditingController(text: upload?.apiKey ?? '');
     hostCtrl = TextEditingController(text: _routes.host);
     discovery = channel?.enableDiscovery ?? true;
     tagColor = channel?.tagColor ?? AppConstants.tagColors.first.toARGB32();
@@ -118,6 +128,8 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
     epCtrl.dispose();
     keyCtrl.dispose();
     tagCtrl.dispose();
+    uploadEndpointCtrl.dispose();
+    uploadKeyCtrl.dispose();
     hostCtrl.dispose();
     super.dispose();
   }
@@ -226,6 +238,32 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
 
   Future<void> _save() async {
     final routeMode = _routeMode;
+    if (_isDashscope && _tokenPlan) {
+      final uri = Uri.tryParse(uploadEndpointCtrl.text.trim());
+      if (uploadKeyCtrl.text.trim().isEmpty ||
+          uri == null ||
+          uri.scheme != 'https' ||
+          uri.host.isEmpty ||
+          uri.userInfo.isNotEmpty ||
+          uri.hasQuery ||
+          uri.hasFragment ||
+          ChannelUploadConfig.isTokenPlan(uploadEndpointCtrl.text.trim())) {
+        AppSnackBar.warning(context, widget.l10n.channelUploadRequired);
+        return;
+      }
+    }
+    final upload = _isDashscope
+        ? ChannelUploadConfig(
+            tokenPlan: _tokenPlan,
+            endpoint: uploadEndpointCtrl.text.trim(),
+            apiKey: uploadKeyCtrl.text.trim(),
+          )
+        : null;
+    final savedRoutes =
+        (routeMode
+                ? _routes
+                : ChannelRoutes.resolve(type, epCtrl.text.trim(), widget.channel?.routes))
+            .withUploadConfig(upload);
     final data = LLMChannel(
       displayName: nameCtrl.text.trim(),
       endpoint: routeMode ? _routes.primaryAddress : epCtrl.text.trim(),
@@ -233,7 +271,7 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
       type: routeMode ? _routes.primaryVendorId : type,
       // The single-address form carries no document: the stored one is kept
       // and its write mark folds the edited address back in.
-      routes: routeMode ? _routes.encode() : null,
+      routes: savedRoutes.encode(),
       enableDiscovery: discovery,
       tag: tagCtrl.text.trim(),
       tagColor: tagColor,
@@ -451,6 +489,10 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
       _buildBasicSection(l10n, stacked: stacked),
       const SizedBox(height: AppSpace.s16),
       _buildConfigSection(l10n, stacked: stacked),
+      if (_isDashscope) ...[
+        const SizedBox(height: AppSpace.s16),
+        _buildUploadSection(l10n, stacked: stacked),
+      ],
       const SizedBox(height: AppSpace.s16),
       _pair(
         _buildAppearanceSection(l10n, stacked: stacked),
@@ -627,6 +669,37 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
     ProtocolFamily.midjourney => l10n.protocolMidjourneyDesc,
     ProtocolFamily.dashscope => l10n.protocolDashScopeNativeDesc,
   };
+
+  bool get _isDashscope => _routes.platform.id == Platforms.dashscope;
+
+  Widget _buildUploadSection(AppLocalizations l10n, {required bool stacked}) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      ChannelToggleCard(
+        title: l10n.channelTokenPlan,
+        description: l10n.channelTokenPlanHint,
+        value: _tokenPlan,
+        onChanged: (value) => setState(() => _tokenPlan = value),
+      ),
+      if (_tokenPlan) ...[
+        const SizedBox(height: AppSpace.s10),
+        Text(l10n.channelUploadAccountHint, style: Theme.of(context).textTheme.bodySmall),
+        const SizedBox(height: AppSpace.s10),
+        _pair(
+          ChannelLabelledField(
+            label: l10n.channelUploadEndpoint,
+            child: ChannelField(controller: uploadEndpointCtrl, mono: true),
+          ),
+          ChannelLabelledField(
+            label: l10n.channelUploadKey,
+            helper: l10n.apiKeyStorageNotice,
+            child: ChannelField(controller: uploadKeyCtrl, mono: true, obscurable: true),
+          ),
+          stacked: stacked,
+        ),
+      ],
+    ],
+  );
 
   Widget _buildConfigSection(AppLocalizations l10n, {required bool stacked}) {
     if (_routeMode) return _buildRouteConfigSection(l10n, stacked: stacked);

@@ -1224,5 +1224,92 @@
   "generationAgentTextOnly": "エージェントによるプロンプト拡張はテキストからの生成専用です。画像編集には直接拡張を選択してください。",
   "imageSizeFollowReference": "参照画像に合わせる",
   "imageSizeFollowReferenceHint": "最後の参照画像の比率を使用。参照画像なしでは正方形",
-  "paramImageComplexity": "構図の複雑さ"
+  "paramImageComplexity": "構図の複雑さ",
+  "editVideo": "動画を編集",
+  "extendVideo": "動画を延長",
+  "sourceVideo": "元動画",
+  "dropSourceVideo": "元動画をドロップまたは選択",
+  "dropVideosOnly": "MP4またはMOVをドロップ",
+  "videoAdditionalReferences": "追加の参考素材",
+  "videoAdaptiveHint": "自動比率を推奨します。固定比率では構図が変わる場合があります。",
+  "videoIntentPrefixHint": "自動付加：{prefix}",
+  "@videoIntentPrefixHint": {
+    "placeholders": {
+      "prefix": {
+        "type": "String"
+      }
+    }
+  },
+  "insertIntentPrefix": "接頭文を挿入",
+  "videoIntentConflict": "プロンプトに別の方向が指定されています。明示された指示が優先されます。",
+  "videoBidirectionalHint": "元動画の前後両方のシーンを記述してください。",
+  "videoSmartBudget": "入力 {input}秒 · 自動出力 · 合計上限 {limit}秒",
+  "@videoSmartBudget": {
+    "placeholders": {
+      "input": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "videoFixedBudget": "入力 {input}秒 + 出力 {output}秒 · 上限 {limit}秒",
+  "@videoFixedBudget": {
+    "placeholders": {
+      "input": {
+        "type": "String"
+      },
+      "output": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "videoExtensionEstimate": "元動画より約{seconds}秒長くなります。",
+  "@videoExtensionEstimate": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "videoShortExtension": "自動、または元動画より長い最終時間を推奨します。",
+  "menuEditVideo": "動画を編集",
+  "menuExtendVideo": "動画を延長",
+  "sendToVideoReferenceClips": "参考動画に追加",
+  "modelDoesNotSupportVideoEdit": "元動画を読み込みました。対応モデルを選択してください。現在のモデルは変更していません。候補：{models}",
+  "@modelDoesNotSupportVideoEdit": {
+    "placeholders": {
+      "models": {
+        "type": "String"
+      }
+    }
+  },
+  "videoReferenceToken": "動画{number}",
+  "@videoReferenceToken": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "imageReferenceToken": "画像{number}",
+  "@imageReferenceToken": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "audioReferenceToken": "音声{number}",
+  "@audioReferenceToken": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  }
 }

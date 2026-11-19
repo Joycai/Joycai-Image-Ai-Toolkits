@@ -15,9 +15,12 @@ enum GenerationOperation {
   firstFrame,
   firstLastFrame,
   referenceVideo,
+  editVideo,
+  extendVideo,
 }
 
 enum GenerationMediaRole {
+  sourceVideo,
   source,
   reference,
   firstFrame,
@@ -89,6 +92,8 @@ class GenerationSchema {
           ? GenerationOperation.subjectImage
           : GenerationOperation.editImage;
     }
+    if (values['videoTask']?.value == 'edit') return GenerationOperation.editVideo;
+    if (values['videoTask']?.value == 'extend') return GenerationOperation.extendVideo;
     if (media.any((m) => m.role == GenerationMediaRole.lastFrame)) {
       return GenerationOperation.firstLastFrame;
     }
@@ -103,6 +108,23 @@ class GenerationSchema {
     GenerationOperation operation, [
     Map<String, GenerationValue> values = const {},
   ]) {
+    if (key == 'extendDirection' &&
+        (operation != GenerationOperation.extendVideo || contract.videoExtend == null)) {
+      return GenerationFieldState.inactive;
+    }
+    if (key == 'seconds' &&
+        ((operation == GenerationOperation.editVideo &&
+                contract.videoEdit?.durationEditable == false) ||
+            (operation == GenerationOperation.extendVideo &&
+                contract.videoExtend?.durationSemantics ==
+                    VideoExtendDurationSemantics.fixedIncrement))) {
+      return GenerationFieldState.inactive;
+    }
+    if (key == 'aspectRatio') {
+      final policy = aspectPolicyFor(operation);
+      if (policy == VideoAspectPolicy.fixedAdaptive) return GenerationFieldState.fixed;
+      if (policy == VideoAspectPolicy.inherited) return GenerationFieldState.inactive;
+    }
     if (key == 'aspectRatio' &&
         contract.frameRatioAdaptive &&
         (operation == GenerationOperation.firstFrame ||
@@ -142,7 +164,7 @@ class GenerationSchema {
       if (fieldState(param.key, operation, draft) != GenerationFieldState.inactive)
         param.key: fieldState(param.key, operation, draft) == GenerationFieldState.fixed
             ? fixedValue(param.key)
-            : draft[param.key] ?? param.defaultValue,
+            : draft[param.key] ?? defaultValueFor(param.key, operation),
   };
 
   GenerationValue fixedValue(String key) =>
@@ -153,24 +175,71 @@ class GenerationSchema {
       if (values[param.key] case final value?) param.key: param.encode(value),
   };
 
+  VideoAspectPolicy? aspectPolicyFor(GenerationOperation operation) => switch (operation) {
+    GenerationOperation.editVideo => contract.videoEdit?.aspectPolicy,
+    GenerationOperation.extendVideo => contract.videoExtend?.aspectPolicy,
+    _ => null,
+  };
+
+  String defaultStringFor(ParamSpec spec, GenerationOperation operation) {
+    if (spec.key == 'seconds') {
+      final duration = switch (operation) {
+        GenerationOperation.editVideo => contract.videoEdit?.defaultDuration,
+        GenerationOperation.extendVideo => contract.videoExtend?.defaultDuration,
+        _ => null,
+      };
+      if (duration != null) return duration;
+    }
+    if (spec.key == 'aspectRatio' &&
+        [
+          VideoAspectPolicy.recommendedAdaptive,
+          VideoAspectPolicy.fixedAdaptive,
+        ].contains(aspectPolicyFor(operation))) {
+      return 'adaptive';
+    }
+    return spec.defaultValue;
+  }
+
+  GenerationValue defaultValueFor(String key, GenerationOperation operation) {
+    final param = params.firstWhere((p) => p.key == key);
+    return param.decode(defaultStringFor(param.legacy, operation));
+  }
+
   Map<String, GenerationValue> readLegacy(Map<String, dynamic> options) => {
     for (final param in params)
       param.key: options[param.key] == null
-          ? param.defaultValue
+          ? defaultValueFor(
+              param.key,
+              operation({
+                if (options['videoTask'] case final String mode)
+                  'videoTask': GenerationValue(GenerationValueKind.choice, mode),
+              }, const []),
+            )
           : param.decode(options[param.key].toString()),
   };
 
   /// Prompt presence and length are independent of the chosen input mode.
-  bool allowsEmptyPrompt(List<GenerationMedia> media) =>
-      contract.promptOptionalWithMedia && media.isNotEmpty;
+  bool allowsEmptyPrompt(List<GenerationMedia> media, {GenerationOperation? operation}) =>
+      !(operation == GenerationOperation.editVideo && contract.videoEdit?.promptRequired == true) &&
+      !(operation == GenerationOperation.extendVideo &&
+          contract.videoExtend?.promptRequired == true) &&
+      contract.promptOptionalWithMedia &&
+      media.isNotEmpty;
 
   List<GenerationDiagnostic> validatePrompt(
     String prompt, [
     List<GenerationMedia> media = const [],
+    GenerationOperation? operation,
   ]) {
     final limit = contract.promptMaxCharacters;
     return [
-      if (contract.promptRequired && prompt.trim().isEmpty && !allowsEmptyPrompt(media))
+      if ((contract.promptRequired ||
+              (operation == GenerationOperation.editVideo &&
+                  contract.videoEdit?.promptRequired == true) ||
+              (operation == GenerationOperation.extendVideo &&
+                  contract.videoExtend?.promptRequired == true)) &&
+          prompt.trim().isEmpty &&
+          !allowsEmptyPrompt(media, operation: operation))
         const GenerationDiagnostic('promptRequired'),
       if (limit != null && prompt.runes.length > limit)
         GenerationDiagnostic('promptTooLong', count: limit),
@@ -207,7 +276,40 @@ class GenerationSchema {
     }
     final first = media.where((m) => m.role == GenerationMediaRole.firstFrame).length;
     final last = media.where((m) => m.role == GenerationMediaRole.lastFrame).length;
-    final videos = media.where((m) => m.role == GenerationMediaRole.referenceVideo).length;
+    final sources = media.where((m) => m.role == GenerationMediaRole.sourceVideo).length;
+    final videos =
+        sources + media.where((m) => m.role == GenerationMediaRole.referenceVideo).length;
+    final operationKind = operation(values, media);
+    final editing = operationKind == GenerationOperation.editVideo;
+    final extending = operationKind == GenerationOperation.extendVideo;
+    if (editing || extending) {
+      if ((editing && contract.videoEdit == null) || (extending && contract.videoExtend == null)) {
+        diagnostics.add(
+          GenerationDiagnostic(editing ? 'unsupportedVideoEdit' : 'unsupportedVideoExtend'),
+        );
+      }
+      if (sources != 1) diagnostics.add(const GenerationDiagnostic('sourceVideoRequired'));
+      if (first + last > 0) diagnostics.add(const GenerationDiagnostic('conflictingMedia'));
+      final imagesAllowed = editing
+          ? contract.videoEdit?.allowsReferenceImages
+          : contract.videoExtend?.allowsReferenceImages;
+      final audioAllowed = editing
+          ? contract.videoEdit?.allowsReferenceAudio
+          : contract.videoExtend?.allowsReferenceAudio;
+      final videosAllowed = editing
+          ? contract.videoEdit?.allowsExtraReferenceVideos
+          : contract.videoExtend?.allowsExtraReferenceVideos;
+      if (media.any(
+        (m) =>
+            (m.role == GenerationMediaRole.reference && imagesAllowed != true) ||
+            (m.role == GenerationMediaRole.referenceAudio && audioAllowed != true) ||
+            (m.role == GenerationMediaRole.referenceVideo && videosAllowed != true),
+      )) {
+        diagnostics.add(const GenerationDiagnostic('unsupportedReferenceMedia'));
+      }
+    } else if (sources > 0) {
+      diagnostics.add(const GenerationDiagnostic('unsupportedReferenceMedia'));
+    }
     final audios = media.where((m) => m.role == GenerationMediaRole.referenceAudio).length;
     final refs = media.length - first - last - videos - audios;
     if (videos + audios > 0 && !contract.referenceAudioVideo) {

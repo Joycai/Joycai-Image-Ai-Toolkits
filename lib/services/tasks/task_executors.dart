@@ -734,6 +734,15 @@ extension TaskExecutors on TaskQueueService {
     // 1. Prepare messages and attachments
     final attachments = <LLMAttachment>[];
 
+    if (task.generationOptions['sourceVideoPath'] case final String path) {
+      attachments.add(
+        LLMAttachment.fromFile(
+          File(path),
+          _getMimeType(path),
+          referenceType: LLMReferenceType.sourceVideo,
+        ),
+      );
+    }
     // First frame
     final firstFramePath = task.generationOptions['firstFramePath'] as String?;
     if (firstFramePath != null && firstFramePath.isNotEmpty) {

@@ -136,7 +136,8 @@ extension AppStateWorkbench on AppState {
     final base = _paramBase(model);
     // The mode selector belongs to the model/route, while settings within a
     // mode stay parked when the user switches to another one.
-    if (key == 'imageTask') return '$base.mode';
+    if (key == 'imageTask' || key == 'videoTask') return '$base.mode';
+    if (video) return GenerationPreferences.key(base, videoOperationFor(model), key);
     final schema = generationSchemaForModel(model);
     final modeSpec = schema.capabilities.imageParams.where((s) => s.key == 'imageTask').firstOrNull;
     final mode = modeSpec?.normalize(
@@ -220,14 +221,91 @@ extension AppStateWorkbench on AppState {
   }
 
   String getVideoParam(LLMModel model, ParamSpec spec) {
-    return spec.normalize(storedVideoParam(model, spec.key));
+    final stored = storedVideoParam(model, spec.key);
+    return stored != null && spec.isValid(stored)
+        ? stored
+        : generationSchemaForModel(model).defaultStringFor(spec, videoOperationFor(model));
   }
 
-  String? storedVideoParam(LLMModel model, String key) => GenerationPreferences.read(
-    _videoParamStore,
-    _paramKey(model, key, video: true),
-    '${_familyKey(model)}.$key',
+  GenerationOperation videoOperationFor(LLMModel model) {
+    final schema = generationSchemaForModel(model);
+    final spec = schema.capabilities.videoParams.where((s) => s.key == 'videoTask').firstOrNull;
+    final mode = spec?.normalize(_videoParamStore['${_paramBase(model)}.mode']) ?? 'generate';
+    return schema.operation(
+      schema.readLegacy({'videoTask': mode}),
+      workbenchUIState.videoGenerationMedia,
+    );
+  }
+
+  List<GenerationMedia> videoMediaFor(LLMModel model) => workbenchUIState.videoGenerationMediaFor(
+    videoOperationFor(model),
+    contract: generationSchemaForModel(model).contract,
   );
+
+  String? storedVideoParam(LLMModel model, String key) {
+    final operation = videoOperationFor(model);
+    final stored = _videoParamStore[_paramKey(model, key, video: true)];
+    if (operation == GenerationOperation.editVideo ||
+        operation == GenerationOperation.extendVideo) {
+      return stored;
+    }
+    return stored ?? _videoParamStore['${_familyKey(model)}.$key'];
+  }
+
+  List<GenerationDiagnostic> videoSourceInputDiagnostics(LLMModel model) {
+    final operation = videoOperationFor(model);
+    if (operation != GenerationOperation.editVideo &&
+        operation != GenerationOperation.extendVideo) {
+      return const [];
+    }
+    final schema = generationSchemaForModel(model);
+    final routed = RoutedChannel.forModel(
+      allChannels.firstWhere((c) => c.id == model.channelId),
+      model,
+    );
+    final media = videoMediaFor(model);
+    return videoSourceDiagnostics(
+      schema: schema,
+      operation: videoOperationFor(model),
+      options: effectiveVideoParams(model),
+      uploadSupported:
+          !schema.contract.referenceUpload || dashscopeSupportsTemporaryUpload(routed.endpoint),
+      probes: [
+        for (final m in media)
+          if (m.role == GenerationMediaRole.sourceVideo)
+            workbenchUIState.videoSourceProbe
+          else if (m.role == GenerationMediaRole.referenceVideo)
+            workbenchUIState.videoReferenceProbes[m.path],
+      ],
+    );
+  }
+
+  /// Import once, keep the selected paid route, and return whether it supports
+  /// the requested operation. The caller owns the localized explanation.
+  Future<bool> openVideoInTaskMode({required String path, required String mode}) async {
+    final imported = await PersistentMediaService.instance.importFile(path);
+    final probe = workbenchUIState.setVideoSourceVideo(imported);
+    final model =
+        videoModels
+            .where((m) => m.id.toString() == lastVideoModelId || m.modelId == lastVideoModelId)
+            .firstOrNull ??
+        videoModels.firstOrNull;
+    final schema = model == null ? null : generationSchemaForModel(model);
+    final supported =
+        (mode == 'edit'
+            ? schema?.contract.videoEdit != null
+            : schema?.contract.videoExtend != null) &&
+        schema!.capabilities.videoParams.any(
+          (p) => p.key == 'videoTask' && p.options.any((o) => o.value == mode),
+        );
+    if (supported) await setVideoParam(model!, 'videoTask', mode);
+    navigateToScreen(0);
+    setWorkbenchTab(5);
+    await setConfigPanelExpanded(true);
+    workbenchUIState.requestVideoPanel();
+    await probe;
+    return supported;
+  }
 
   Future<void> setVideoParam(LLMModel model, String paramKey, String value) async {
     _videoParamStore = {..._videoParamStore, _paramKey(model, paramKey, video: true): value};
@@ -240,12 +318,14 @@ extension AppStateWorkbench on AppState {
   /// the model. Resolution and ratio use the same declarations as extras;
   /// there are no panel-owned video parameter defaults.
   Map<String, dynamic> effectiveVideoParams(LLMModel model) {
-    final caps = generationSchemaForModel(model).capabilities;
+    final schema = generationSchemaForModel(model);
+    final caps = schema.capabilities;
     final result = <String, dynamic>{};
     for (final spec in caps.videoParams) {
       result[spec.key] = getVideoParam(model, spec);
     }
-    return result;
+    final draft = schema.readLegacy(result);
+    return schema.legacyOptions(schema.effective(draft, videoOperationFor(model)));
   }
 
   Future<void> updateVideoConfig({String? modelId, String? prompt}) async {
@@ -298,7 +378,12 @@ extension AppStateWorkbench on AppState {
           'referenceVideoPaths',
           'referenceAudioPaths',
         ].any((key) => (params[key] as List?)?.isNotEmpty == true);
-    if (prompt.isEmpty && imagePaths.isEmpty && !hasReferenceFiles) return;
+    if (prompt.isEmpty &&
+        imagePaths.isEmpty &&
+        !hasReferenceFiles &&
+        params['sourceVideoPath'] == null) {
+      return;
+    }
 
     if (isVideoTask && !isVideoCompatibleModel(modelIdentifier is int ? modelIdentifier : null)) {
       addLog('Error: Selected model is not compatible with video generation.', level: 'ERROR');

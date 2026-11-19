@@ -32,6 +32,21 @@ class DashScopeVideoProtocol implements VideoJobProtocol {
     final config = target.config;
     final userMsg = history.lastWhere((m) => m.role == LLMRole.user, orElse: () => history.last);
 
+    final attachments = [
+      ...userMsg.attachments.where((a) => a.referenceType == LLMReferenceType.sourceVideo),
+      ...userMsg.attachments.where((a) => a.referenceType != LLMReferenceType.sourceVideo),
+    ];
+    final sources = attachments
+        .where((a) => a.referenceType == LLMReferenceType.sourceVideo)
+        .length;
+    final task = options?['videoTask'] ?? 'generate';
+    if (sources > 1 ||
+        ((task == 'edit' || task == 'extend') && sources != 1) ||
+        (task == 'generate' && sources != 0)) {
+      throw LLMApiException(
+        'Exactly one source video is required for editing or extending. Nothing was sent.',
+      );
+    }
     var aborted = false;
     final abort = abortTriggerOf(options);
     if (abort != null) unawaited(abort.then((_) => aborted = true));
@@ -44,12 +59,13 @@ class DashScopeVideoProtocol implements VideoJobProtocol {
       modelId: config.modelId,
       prompt: userMsg.content,
       media: [
-        for (final att in userMsg.attachments) {'type': dashscopeVideoMediaRole(att), 'url': ''},
+        for (final att in attachments) {'type': dashscopeVideoMediaRole(att), 'url': ''},
       ],
       options: options,
     );
-    final needsUpload = userMsg.attachments.any(
+    final needsUpload = attachments.any(
       (att) =>
+          att.referenceType == LLMReferenceType.sourceVideo ||
           att.referenceType == LLMReferenceType.referenceVideo ||
           att.referenceType == LLMReferenceType.referenceAudio,
     );
@@ -59,9 +75,9 @@ class DashScopeVideoProtocol implements VideoJobProtocol {
     try {
       if (needsUpload) {
         // Fail unsupported official regions before copying or sending files.
-        dashscopeUploadBase(config.endpoint);
+        dashscopeMediaUploadBase(config);
         prepared = await prepareDashScopeVideoMedia(
-          userMsg.attachments,
+          attachments,
           outputSeconds: int.tryParse(resolveVideoSeconds(options) ?? '') ?? 5,
           checkCancelled: checkCancelled,
         );
@@ -78,7 +94,7 @@ class DashScopeVideoProtocol implements VideoJobProtocol {
         }
       } else {
         // Existing image-only requests keep their inline path and region support.
-        for (final att in userMsg.attachments) {
+        for (final att in attachments) {
           checkCancelled();
           final bytes = await readAttachmentBytes(att);
           if (bytes == null) throw LLMApiException('Unreadable reference image. Nothing was sent.');
@@ -107,7 +123,11 @@ class DashScopeVideoProtocol implements VideoJobProtocol {
           'url': redactUrl(url),
           'payload': {
             ...payload,
-            if (media.isNotEmpty) 'input': '[prompt + ${media.length} media item(s)]',
+            if (media.isNotEmpty)
+              'input': {
+                'prompt': (payload['input'] as Map)['prompt'],
+                'media': '${media.length} media item(s)',
+              },
           },
         });
       }
@@ -118,7 +138,8 @@ class DashScopeVideoProtocol implements VideoJobProtocol {
         headers: {
           ...target.headers(),
           'X-DashScope-Async': 'enable',
-          if (needsUpload) 'X-DashScope-OssResourceResolve': 'enable',
+          if (media.any((item) => item['url']!.startsWith('oss://')))
+            'X-DashScope-OssResourceResolve': 'enable',
         },
         body: jsonEncode(payload),
         options: options,
@@ -213,7 +234,13 @@ class DashScopeVideoProtocol implements VideoJobProtocol {
             operationName,
             videoUrl,
             requiresAuth: videoUriNeedsAuth(videoUrl, config.endpoint),
-            renderedSeconds: usage is Map ? usage['duration'] : null,
+            renderedSeconds: usage is Map
+                ? (usage['output_video_duration'] ?? usage['duration'])
+                : null,
+            inputSeconds: usage is Map ? usage['input_video_duration'] : null,
+            outputSize: usage is Map && usage['SR'] is num && (usage['SR'] as num) > 0
+                ? '${(usage['SR'] as num).toInt()}p'
+                : null,
           );
         case 'FAILED':
         case 'CANCELED':

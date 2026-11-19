@@ -9,6 +9,7 @@ import '../../models/media_pricing.dart';
 import '../../models/pricing_group.dart';
 import '../../models/spec_rate.dart';
 import '../privacy/ai_consent_service.dart';
+import 'channel_upload_config.dart';
 import 'vendors/vendor_profile.dart';
 
 /// The app's own reasoning-intensity vocabulary (playbook 03: never let one
@@ -59,6 +60,7 @@ class LLMModelConfig {
   final String endpoint;
 
   final String apiKey;
+  final ChannelUploadConfig? uploadConfig;
 
   /// Per-model opt-in: ask the model to reason before answering.
   ///
@@ -187,6 +189,7 @@ class LLMModelConfig {
     required this.channelType,
     required String endpoint,
     required this.apiKey,
+    this.uploadConfig,
     this.enableThinking = false,
     this.reasoningEffort,
     this.enableWebSearch = false,
@@ -236,6 +239,7 @@ class LLMModelConfig {
         channelType: channelType,
         endpoint: endpoint ?? this.endpoint,
         apiKey: apiKey,
+        uploadConfig: uploadConfig,
         enableThinking: enableThinking,
         reasoningEffort: reasoningEffort,
         enableWebSearch: enableWebSearch ?? this.enableWebSearch,

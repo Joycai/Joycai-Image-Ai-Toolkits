@@ -643,5 +643,11 @@
   "mediaImageCache": "圖像快取輸入",
   "mediaImageOutput": "圖像輸出",
   "mediaVideoInput": "輸入影片 · 美元/秒",
-  "mediaVideoPriceHint": "輸入影片按輸出解析度和品質匹配單價；未設定的檔位標記為費用不完整。"
+  "mediaVideoPriceHint": "輸入影片按輸出解析度和品質匹配單價；未設定的檔位標記為費用不完整。",
+  "channelTokenPlan": "使用 Token Plan",
+  "channelTokenPlanHint": "生成與輪詢使用渠道金鑰，本機素材使用獨立的上傳憑證。",
+  "channelUploadEndpoint": "素材上傳位址",
+  "channelUploadKey": "素材上傳 API 金鑰",
+  "channelUploadAccountHint": "請使用北京地域的一般百煉金鑰上傳檔案。相同內容會重用已有檔案，並更新下載連結。上傳檔案保留在你的帳號中供重用，任務完成後可在檔案管理中刪除。",
+  "channelUploadRequired": "請填寫獨立上傳 API 金鑰及有效的非 Token Plan HTTPS 位址。"
 }

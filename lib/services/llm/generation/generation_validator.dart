@@ -40,6 +40,7 @@ Future<Map<String, dynamic>?> validateGeneration(
   final media = [
     for (final attachment in attachments)
       GenerationMedia(switch (attachment.referenceType) {
+        LLMReferenceType.sourceVideo => GenerationMediaRole.sourceVideo,
         LLMReferenceType.firstFrame => GenerationMediaRole.firstFrame,
         LLMReferenceType.lastFrame => GenerationMediaRole.lastFrame,
         LLMReferenceType.referenceVideo => GenerationMediaRole.referenceVideo,
@@ -87,7 +88,7 @@ Future<Map<String, dynamic>?> validateGeneration(
                               'watermark',
                             ].contains(entry.key)) ||
                         (schema.protocol == WireProtocol.dashscopeVideo &&
-                            const ['watermark', 'seed'].contains(entry.key))) &&
+                            const ['watermark', 'seed', 'videoTask'].contains(entry.key))) &&
                     schema.params.firstWhere((p) => p.key == entry.key).defaultValue ==
                         entry.value),
           ))) {
@@ -97,7 +98,7 @@ Future<Map<String, dynamic>?> validateGeneration(
   }
   final diagnostics = [
     ...schema.validate(effective, media),
-    ...schema.validatePrompt(user?.content ?? '', media),
+    ...schema.validatePrompt(user?.content ?? '', media, operation),
   ];
   if (diagnostics.isNotEmpty) {
     throw LLMApiException(
@@ -112,6 +113,7 @@ Future<Map<String, dynamic>?> validateGeneration(
     // it here first would allocate an arbitrarily large file before its cap.
     if (schema.contract.referenceAudioVideo &&
         (schema.protocol != WireProtocol.dashscopeVideo ||
+            attachment.referenceType == LLMReferenceType.sourceVideo ||
             attachment.referenceType == LLMReferenceType.referenceVideo ||
             attachment.referenceType == LLMReferenceType.referenceAudio)) {
       continue;

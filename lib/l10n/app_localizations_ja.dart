@@ -1460,6 +1460,58 @@ class AppLocalizationsJa extends AppLocalizations {
       '動画・音声の参照素材は一時クラウドにアップロードされます（48時間）。動画：MP4/MOV、100 MB以下、240〜4096 px、16 fps以上。音声：WAV/MP3、15 MB以下。入力動画と出力の合計は30秒以内。';
 
   @override
+  String get paramVideoTask => '動画タスク';
+
+  @override
+  String get paramExtendDirection => '延長方向';
+
+  @override
+  String get videoTaskGenerate => '生成';
+
+  @override
+  String get videoTaskEdit => '編集';
+
+  @override
+  String get videoTaskExtend => '延長';
+
+  @override
+  String get extendDirectionBackward => '後方';
+
+  @override
+  String get extendDirectionForward => '前方';
+
+  @override
+  String get extendDirectionBidirectional => '前後';
+
+  @override
+  String get generationSourceVideoRequired => '元動画を1本選択してください。';
+
+  @override
+  String get generationUnsupportedVideoEdit => 'この経路は動画編集に対応していません。';
+
+  @override
+  String get generationUnsupportedVideoExtend => 'この経路は動画延長に対応していません。';
+
+  @override
+  String get generationVideoDurationBudgetExceeded =>
+      '入力動画と固定出力時間の合計が上限を超えています。出力を短くするか、自動を選択してください。';
+
+  @override
+  String get generationUploadRegionUnsupported => 'このリージョンは一時アップロードに非対応です。北京またはシンガポールの経路を選択してください。';
+
+  @override
+  String get generationSourceVideoProbing => '動画情報を読み込み中…';
+
+  @override
+  String get generationSourceVideoTooLarge => '動画が入力上限の100 MBを超えています。';
+
+  @override
+  String get generationSourceVideoDuration => '各動画は1～15秒、入力動画の合計は15秒以内にしてください。';
+
+  @override
+  String get generationSourceVideoFormat => 'MP4/MOV、各辺240～4096 px、縦横比8:1以内、16 fps以上をご使用ください。';
+
+  @override
   String get usageTokenBreakdown => 'トークン内訳';
 
   @override
@@ -3267,6 +3319,25 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get mediaVideoPriceHint => '入力動画の単価は出力解像度と品質で選択します。未設定の料金は不完全として表示します。';
+
+  @override
+  String get channelTokenPlan => 'Token Plan を使用';
+
+  @override
+  String get channelTokenPlanHint => '生成とポーリングにはチャネルのキーを、ローカル素材には専用のアップロード認証情報を使います。';
+
+  @override
+  String get channelUploadEndpoint => '素材アップロード URL';
+
+  @override
+  String get channelUploadKey => '素材アップロード API キー';
+
+  @override
+  String get channelUploadAccountHint =>
+      'ファイルのアップロードには北京リージョンの通常の Model Studio キーを使用します。同じ内容のファイルを再利用し、ダウンロードリンクを更新します。ファイルはアカウントに保持され、タスク完了後にファイル管理で削除できます。';
+
+  @override
+  String get channelUploadRequired => '専用アップロード API キーと、Token Plan 以外の有効な HTTPS URL を入力してください。';
 
   @override
   String get prompts => 'プロンプト';
@@ -6621,4 +6692,86 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get paramImageComplexity => '構図の複雑さ';
+
+  @override
+  String get editVideo => '動画を編集';
+
+  @override
+  String get extendVideo => '動画を延長';
+
+  @override
+  String get sourceVideo => '元動画';
+
+  @override
+  String get dropSourceVideo => '元動画をドロップまたは選択';
+
+  @override
+  String get dropVideosOnly => 'MP4またはMOVをドロップ';
+
+  @override
+  String get videoAdditionalReferences => '追加の参考素材';
+
+  @override
+  String get videoAdaptiveHint => '自動比率を推奨します。固定比率では構図が変わる場合があります。';
+
+  @override
+  String videoIntentPrefixHint(String prefix) {
+    return '自動付加：$prefix';
+  }
+
+  @override
+  String get insertIntentPrefix => '接頭文を挿入';
+
+  @override
+  String get videoIntentConflict => 'プロンプトに別の方向が指定されています。明示された指示が優先されます。';
+
+  @override
+  String get videoBidirectionalHint => '元動画の前後両方のシーンを記述してください。';
+
+  @override
+  String videoSmartBudget(String input, String limit) {
+    return '入力 $input秒 · 自動出力 · 合計上限 $limit秒';
+  }
+
+  @override
+  String videoFixedBudget(String input, String output, String limit) {
+    return '入力 $input秒 + 出力 $output秒 · 上限 $limit秒';
+  }
+
+  @override
+  String videoExtensionEstimate(String seconds) {
+    return '元動画より約$seconds秒長くなります。';
+  }
+
+  @override
+  String get videoShortExtension => '自動、または元動画より長い最終時間を推奨します。';
+
+  @override
+  String get menuEditVideo => '動画を編集';
+
+  @override
+  String get menuExtendVideo => '動画を延長';
+
+  @override
+  String get sendToVideoReferenceClips => '参考動画に追加';
+
+  @override
+  String modelDoesNotSupportVideoEdit(String models) {
+    return '元動画を読み込みました。対応モデルを選択してください。現在のモデルは変更していません。候補：$models';
+  }
+
+  @override
+  String videoReferenceToken(int number) {
+    return '動画$number';
+  }
+
+  @override
+  String imageReferenceToken(int number) {
+    return '画像$number';
+  }
+
+  @override
+  String audioReferenceToken(int number) {
+    return '音声$number';
+  }
 }

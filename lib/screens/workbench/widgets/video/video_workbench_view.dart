@@ -12,9 +12,12 @@ import '../../../../core/design_tokens.dart';
 import '../../../../core/responsive.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../state/workbench_ui_state.dart';
+import '../../../../widgets/glass/glass_controls.dart';
 import '../../../../widgets/ui/app_action_target.dart';
 import '../../../../widgets/ui/app_button.dart';
 import '../../../../widgets/ui/app_icon_button.dart';
+import '../../../../widgets/ui/app_menu_anchor.dart';
+import '../../video_task_actions.dart';
 
 /// The gap between the player panel and the gallery area's edges
 /// (`A2` 「与画廊间距 10」).
@@ -27,10 +30,6 @@ const double _kPanelMinArea = 760;
 /// Below this the tablet strip's labelled button no longer fits beside the
 /// title, and the player takes the phone strip.
 const double _kStripMinArea = 480;
-
-/// From this width a strip can afford the labelled "Open in System Player"
-/// button; under it the button is the bare glyph.
-const double _kStripLabelledArea = 600;
 
 enum _PlayerForm { panel, strip, phone }
 
@@ -68,18 +67,23 @@ _PlayerMetrics _metricsFor(BuildContext context, double areaWidth) {
   return _PlayerMetrics.panel;
 }
 
+// The phone configuration FAB sits above the same gallery bottom edge. Keep
+// the player's menu and close targets above it; the grid uses the same inset.
+double _phoneActionClearance(BuildContext context) =>
+    Responsive.isMobile(context) ? GlassFab.extent + AppSpace.s16 : 0;
+
 class VideoWorkbenchOverlay extends StatefulWidget {
   const VideoWorkbenchOverlay({super.key});
 
   /// How far up from the bottom of the gallery area the player reaches while
   /// it is showing — the panel plus the 10px inset under it — for a gallery
   /// area [areaWidth] wide. 202 for the full panel, 112 for the tablet strip,
-  /// 96 for the phone strip.
+  /// 168 for the phone strip, including clearance for its configuration FAB.
   ///
   /// Zero is the caller's to decide: the player shows only while
   /// `WorkbenchUIState.lastGeneratedVideoPath` is set.
   static double occupiedHeight(BuildContext context, double areaWidth) =>
-      _metricsFor(context, areaWidth).panelHeight + _kInset;
+      _metricsFor(context, areaWidth).panelHeight + _kInset + _phoneActionClearance(context);
 
   @override
   State<VideoWorkbenchOverlay> createState() => _VideoWorkbenchOverlayState();
@@ -181,7 +185,7 @@ class _VideoWorkbenchOverlayState extends State<VideoWorkbenchOverlay> {
     return Positioned(
       left: _kInset,
       right: _kInset,
-      bottom: _kInset,
+      bottom: _kInset + _phoneActionClearance(context),
       child: LayoutBuilder(
         builder: (context, box) {
           final double areaWidth = box.maxWidth + _kInset * 2;
@@ -325,6 +329,27 @@ class _VideoWorkbenchOverlayState extends State<VideoWorkbenchOverlay> {
               ],
               const SizedBox(height: AppSpace.s6),
               Text(path, maxLines: 1, overflow: TextOverflow.ellipsis, style: monoStyle),
+              if (File(path).existsSync()) ...[
+                const SizedBox(height: AppSpace.s6),
+                Wrap(
+                  spacing: AppSpace.s6,
+                  runSpacing: AppSpace.s4,
+                  children: [
+                    AppButton(
+                      label: l10n.menuEditVideo,
+                      variant: AppButtonVariant.secondary,
+                      size: AppButtonSize.compact,
+                      onPressed: () => openVideoTask(context, path, 'edit'),
+                    ),
+                    AppButton(
+                      label: l10n.menuExtendVideo,
+                      variant: AppButtonVariant.secondary,
+                      size: AppButtonSize.compact,
+                      onPressed: () => openVideoTask(context, path, 'extend'),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
         ),
@@ -397,25 +422,30 @@ class _VideoWorkbenchOverlayState extends State<VideoWorkbenchOverlay> {
           ),
         ),
         const SizedBox(width: 8),
-        // A strip has room for one action: retry while the file will not play,
-        // open in the system player otherwise.
-        _hasError
-            ? _actionButton(
-                context,
-                icon: Icons.refresh,
-                label: l10n.videoRetry,
-                onPressed: _retry,
-                labelled: !phone && areaWidth >= _kStripLabelledArea,
-                height: AppSize.control,
-              )
-            : _actionButton(
-                context,
-                icon: Icons.open_in_new,
-                label: l10n.openInSystemPlayer,
-                onPressed: () => _openInSystemPlayer(path),
-                labelled: !phone && areaWidth >= _kStripLabelledArea,
-                height: AppSize.control,
+        AppMenuAnchor(
+          menuChildren: [
+            if (File(path).existsSync()) ...[
+              MenuItemButton(
+                onPressed: () => openVideoTask(context, path, 'edit'),
+                child: Text(l10n.menuEditVideo),
               ),
+              MenuItemButton(
+                onPressed: () => openVideoTask(context, path, 'extend'),
+                child: Text(l10n.menuExtendVideo),
+              ),
+            ],
+            if (_hasError) MenuItemButton(onPressed: _retry, child: Text(l10n.videoRetry)),
+            MenuItemButton(
+              onPressed: () => _openInSystemPlayer(path),
+              child: Text(l10n.openInSystemPlayer),
+            ),
+          ],
+          builder: (context, controller, _) => AppIconButton(
+            icon: Icons.more_horiz,
+            tooltip: l10n.more,
+            onPressed: () => controller.isOpen ? controller.close() : controller.open(),
+          ),
+        ),
         const SizedBox(width: 2),
         _closeButton(context, l10n, size: AppSize.control),
       ],

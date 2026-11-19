@@ -1454,6 +1454,57 @@ class AppLocalizationsZh extends AppLocalizations {
       '音视频参考使用临时云端上传（48 小时）。视频：MP4/MOV，≤100 MB，240–4096 px，≥16 fps。音频：WAV/MP3，≤15 MB。输入视频与输出合计 ≤30 秒。';
 
   @override
+  String get paramVideoTask => '视频任务';
+
+  @override
+  String get paramExtendDirection => '延长方向';
+
+  @override
+  String get videoTaskGenerate => '生成';
+
+  @override
+  String get videoTaskEdit => '编辑';
+
+  @override
+  String get videoTaskExtend => '延长';
+
+  @override
+  String get extendDirectionBackward => '向后';
+
+  @override
+  String get extendDirectionForward => '向前';
+
+  @override
+  String get extendDirectionBidirectional => '双向';
+
+  @override
+  String get generationSourceVideoRequired => '请选择一个源视频。';
+
+  @override
+  String get generationUnsupportedVideoEdit => '当前通道不支持视频编辑。';
+
+  @override
+  String get generationUnsupportedVideoExtend => '当前通道不支持视频延长。';
+
+  @override
+  String get generationVideoDurationBudgetExceeded => '输入视频与固定输出时长之和超过预算，请缩短输出或改用智能时长。';
+
+  @override
+  String get generationUploadRegionUnsupported => '当前地域不支持临时上传，请选择北京或新加坡通道。';
+
+  @override
+  String get generationSourceVideoProbing => '正在读取视频元数据…';
+
+  @override
+  String get generationSourceVideoTooLarge => '视频超过 100 MB 输入上限。';
+
+  @override
+  String get generationSourceVideoDuration => '每段视频须为 1–15 秒，所有输入视频合计不超过 15 秒。';
+
+  @override
+  String get generationSourceVideoFormat => '请使用 MP4/MOV，边长 240–4096 px、比例不超过 8:1、帧率至少 16 fps。';
+
+  @override
   String get usageTokenBreakdown => 'Token 构成';
 
   @override
@@ -3246,6 +3297,25 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get mediaVideoPriceHint => '输入视频按输出分辨率和质量匹配单价；未配置的档位标记为费用不完整。';
+
+  @override
+  String get channelTokenPlan => '使用 Token Plan';
+
+  @override
+  String get channelTokenPlanHint => '生成与轮询使用渠道密钥，本地素材使用独立的上传凭证。';
+
+  @override
+  String get channelUploadEndpoint => '素材上传地址';
+
+  @override
+  String get channelUploadKey => '素材上传 API 密钥';
+
+  @override
+  String get channelUploadAccountHint =>
+      '请使用北京地域的普通百炼密钥上传文件。相同内容会复用已有文件，并刷新下载链接。上传文件保留在你的账号中供复用，任务完成后可在文件管理中删除。';
+
+  @override
+  String get channelUploadRequired => '请填写独立上传 API 密钥及有效的非 Token Plan HTTPS 地址。';
 
   @override
   String get prompts => '提示词';
@@ -6580,6 +6650,88 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get paramImageComplexity => '构图复杂度';
+
+  @override
+  String get editVideo => '编辑视频';
+
+  @override
+  String get extendVideo => '延长视频';
+
+  @override
+  String get sourceVideo => '源视频';
+
+  @override
+  String get dropSourceVideo => '拖入或选择源视频';
+
+  @override
+  String get dropVideosOnly => '请拖入 MP4 或 MOV 视频';
+
+  @override
+  String get videoAdditionalReferences => '附加参考素材';
+
+  @override
+  String get videoAdaptiveHint => '建议使用自适应比例，固定比例可能改变构图。';
+
+  @override
+  String videoIntentPrefixHint(String prefix) {
+    return '将自动附加：$prefix';
+  }
+
+  @override
+  String get insertIntentPrefix => '插入前缀';
+
+  @override
+  String get videoIntentConflict => '提示词指定了不同的方向，将优先使用提示词中的明确指令。';
+
+  @override
+  String get videoBidirectionalHint => '请同时描述源视频之前与之后的片段。';
+
+  @override
+  String videoSmartBudget(String input, String limit) {
+    return '输入 ${input}s · 智能输出 · 输入与输出合计上限 ${limit}s';
+  }
+
+  @override
+  String videoFixedBudget(String input, String output, String limit) {
+    return '输入 ${input}s + 输出 ${output}s · 合计上限 ${limit}s';
+  }
+
+  @override
+  String videoExtensionEstimate(String seconds) {
+    return '预计比源视频增加约 ${seconds}s。';
+  }
+
+  @override
+  String get videoShortExtension => '建议使用智能时长，或选择比源视频更长的最终时长。';
+
+  @override
+  String get menuEditVideo => '编辑视频';
+
+  @override
+  String get menuExtendVideo => '延长视频';
+
+  @override
+  String get sendToVideoReferenceClips => '添加到参考视频';
+
+  @override
+  String modelDoesNotSupportVideoEdit(String models) {
+    return '已载入源视频。请选择支持该操作的模型，当前模型未变更。可用模型：$models';
+  }
+
+  @override
+  String videoReferenceToken(int number) {
+    return '视频$number';
+  }
+
+  @override
+  String imageReferenceToken(int number) {
+    return '图$number';
+  }
+
+  @override
+  String audioReferenceToken(int number) {
+    return '音频$number';
+  }
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -8029,6 +8181,57 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   @override
   String get generationReferenceUploadHint =>
       '音影片參考使用臨時雲端上傳（48 小時）。影片：MP4/MOV，≤100 MB，240–4096 px，≥16 fps。音訊：WAV/MP3，≤15 MB。輸入影片與輸出合計 ≤30 秒。';
+
+  @override
+  String get paramVideoTask => '影片任務';
+
+  @override
+  String get paramExtendDirection => '延長方向';
+
+  @override
+  String get videoTaskGenerate => '生成';
+
+  @override
+  String get videoTaskEdit => '編輯';
+
+  @override
+  String get videoTaskExtend => '延長';
+
+  @override
+  String get extendDirectionBackward => '向後';
+
+  @override
+  String get extendDirectionForward => '向前';
+
+  @override
+  String get extendDirectionBidirectional => '雙向';
+
+  @override
+  String get generationSourceVideoRequired => '請選擇一個來源影片。';
+
+  @override
+  String get generationUnsupportedVideoEdit => '目前通道不支援影片編輯。';
+
+  @override
+  String get generationUnsupportedVideoExtend => '目前通道不支援影片延長。';
+
+  @override
+  String get generationVideoDurationBudgetExceeded => '輸入影片與固定輸出時長總和超過預算，請縮短輸出或改用智慧時長。';
+
+  @override
+  String get generationUploadRegionUnsupported => '目前地域不支援臨時上傳，請選擇北京或新加坡通道。';
+
+  @override
+  String get generationSourceVideoProbing => '正在讀取影片中繼資料…';
+
+  @override
+  String get generationSourceVideoTooLarge => '影片超過 100 MB 輸入上限。';
+
+  @override
+  String get generationSourceVideoDuration => '每段影片須為 1–15 秒，所有輸入影片合計不超過 15 秒。';
+
+  @override
+  String get generationSourceVideoFormat => '請使用 MP4/MOV，邊長 240–4096 px、比例不超過 8:1、影格率至少 16 fps。';
 
   @override
   String get usageTokenBreakdown => 'Token 組成';
@@ -9823,6 +10026,25 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get mediaVideoPriceHint => '輸入影片按輸出解析度和品質匹配單價；未設定的檔位標記為費用不完整。';
+
+  @override
+  String get channelTokenPlan => '使用 Token Plan';
+
+  @override
+  String get channelTokenPlanHint => '生成與輪詢使用渠道金鑰，本機素材使用獨立的上傳憑證。';
+
+  @override
+  String get channelUploadEndpoint => '素材上傳位址';
+
+  @override
+  String get channelUploadKey => '素材上傳 API 金鑰';
+
+  @override
+  String get channelUploadAccountHint =>
+      '請使用北京地域的一般百煉金鑰上傳檔案。相同內容會重用已有檔案，並更新下載連結。上傳檔案保留在你的帳號中供重用，任務完成後可在檔案管理中刪除。';
+
+  @override
+  String get channelUploadRequired => '請填寫獨立上傳 API 金鑰及有效的非 Token Plan HTTPS 位址。';
 
   @override
   String get prompts => '提示';
@@ -13158,4 +13380,86 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get paramImageComplexity => '構圖複雜度';
+
+  @override
+  String get editVideo => '編輯影片';
+
+  @override
+  String get extendVideo => '延長影片';
+
+  @override
+  String get sourceVideo => '來源影片';
+
+  @override
+  String get dropSourceVideo => '拖入或選擇來源影片';
+
+  @override
+  String get dropVideosOnly => '請拖入 MP4 或 MOV 影片';
+
+  @override
+  String get videoAdditionalReferences => '附加參考素材';
+
+  @override
+  String get videoAdaptiveHint => '建議使用自適應比例，固定比例可能改變構圖。';
+
+  @override
+  String videoIntentPrefixHint(String prefix) {
+    return '將自動附加：$prefix';
+  }
+
+  @override
+  String get insertIntentPrefix => '插入前綴';
+
+  @override
+  String get videoIntentConflict => '提示詞指定了不同的方向，將優先使用提示詞中的明確指令。';
+
+  @override
+  String get videoBidirectionalHint => '請同時描述來源影片之前與之後的片段。';
+
+  @override
+  String videoSmartBudget(String input, String limit) {
+    return '輸入 ${input}s · 智慧輸出 · 輸入與輸出合計上限 ${limit}s';
+  }
+
+  @override
+  String videoFixedBudget(String input, String output, String limit) {
+    return '輸入 ${input}s + 輸出 ${output}s · 合計上限 ${limit}s';
+  }
+
+  @override
+  String videoExtensionEstimate(String seconds) {
+    return '預計比來源影片增加約 ${seconds}s。';
+  }
+
+  @override
+  String get videoShortExtension => '建議使用智慧時長，或選擇比來源影片更長的最終時長。';
+
+  @override
+  String get menuEditVideo => '編輯影片';
+
+  @override
+  String get menuExtendVideo => '延長影片';
+
+  @override
+  String get sendToVideoReferenceClips => '加入參考影片';
+
+  @override
+  String modelDoesNotSupportVideoEdit(String models) {
+    return '已載入來源影片。請選擇支援該操作的模型，目前模型未變更。可用模型：$models';
+  }
+
+  @override
+  String videoReferenceToken(int number) {
+    return '影片$number';
+  }
+
+  @override
+  String imageReferenceToken(int number) {
+    return '圖$number';
+  }
+
+  @override
+  String audioReferenceToken(int number) {
+    return '音訊$number';
+  }
 }

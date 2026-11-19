@@ -13,6 +13,8 @@ import '../services/db/database_service.dart';
 import '../services/db/repositories/assistant_session_repository.dart';
 import '../services/db/repositories/task_repository.dart';
 import '../services/llm/generation/generation_schema.dart';
+import '../services/llm/protocols/generation_contract.dart';
+import '../services/media/video_source_probe.dart';
 
 /// How the comparator arranges the two images.
 ///
@@ -108,6 +110,91 @@ class WorkbenchUIState extends ChangeNotifier {
       (optSelectedSysPrompt ?? '').trim().isEmpty ? PresetOutputKind.prompt : optPresetOutputKind;
 
   // Video Generation State
+  String? videoSourceVideoPath;
+  VideoSourceProbe? videoSourceProbe;
+  bool videoSourceProbing = false;
+  int _videoSourceGeneration = 0;
+  int videoPanelRequest = 0;
+  int videoPanelHandled = 0;
+  bool _videoDisposed = false;
+  Map<String, VideoSourceProbe> videoReferenceProbes = const {};
+
+  Future<void> setVideoSourceVideo(String path) async {
+    final generation = ++_videoSourceGeneration;
+    videoSourceVideoPath = path;
+    videoSourceProbe = null;
+    videoSourceProbing = true;
+    notifyListeners();
+    final result = await probeVideoSource(path);
+    if (_videoDisposed || generation != _videoSourceGeneration) return;
+    videoSourceProbe = result;
+    videoSourceProbing = false;
+    notifyListeners();
+  }
+
+  void clearVideoSourceVideo() {
+    ++_videoSourceGeneration;
+    videoSourceVideoPath = null;
+    videoSourceProbe = null;
+    videoSourceProbing = false;
+    notifyListeners();
+  }
+
+  void requestVideoPanel() {
+    videoPanelRequest++;
+    notifyListeners();
+  }
+
+  Future<void> _probeVideoReference(String path) async {
+    final result = await probeVideoSource(path);
+    if (_videoDisposed || !_videoReferenceVideos.contains(path)) return;
+    videoReferenceProbes = {...videoReferenceProbes, path: result};
+    notifyListeners();
+  }
+
+  List<GenerationMedia> videoGenerationMediaFor(
+    GenerationOperation operation, {
+    GenerationProtocolContract? contract,
+  }) {
+    if (operation != GenerationOperation.editVideo &&
+        operation != GenerationOperation.extendVideo) {
+      return videoGenerationMedia;
+    }
+    final edit = operation == GenerationOperation.editVideo;
+    return [
+      if (videoSourceVideoPath case final path?)
+        GenerationMedia(GenerationMediaRole.sourceVideo, path),
+      if (contract == null ||
+          (edit
+                  ? contract.videoEdit?.allowsReferenceImages
+                  : contract.videoExtend?.allowsReferenceImages) ==
+              true)
+        for (final image in videoReferenceImages)
+          GenerationMedia(GenerationMediaRole.reference, image.path),
+      if (contract == null ||
+          (edit
+                  ? contract.videoEdit?.allowsExtraReferenceVideos
+                  : contract.videoExtend?.allowsExtraReferenceVideos) ==
+              true)
+        for (final path in _videoReferenceVideos)
+          GenerationMedia(GenerationMediaRole.referenceVideo, path),
+      if (contract == null ||
+          (edit
+                  ? contract.videoEdit?.allowsReferenceAudio
+                  : contract.videoExtend?.allowsReferenceAudio) ==
+              true)
+        for (final path in _videoReferenceAudios)
+          GenerationMedia(GenerationMediaRole.referenceAudio, path),
+    ];
+  }
+
+  @override
+  void dispose() {
+    _videoDisposed = true;
+    ++_videoSourceGeneration;
+    super.dispose();
+  }
+
   List<AppImage> videoReferenceImages = [];
   List<String> _videoReferenceVideos = [];
   List<String> _videoReferenceAudios = [];
@@ -133,6 +220,11 @@ class WorkbenchUIState extends ChangeNotifier {
       _videoReferenceVideos = {..._videoReferenceVideos, ...paths}.toList();
     }
     notifyListeners();
+    if (!audio) {
+      for (final path in paths) {
+        _probeVideoReference(path);
+      }
+    }
   }
 
   void removeVideoReferenceFile(String path, {required bool audio}) {
@@ -140,6 +232,7 @@ class WorkbenchUIState extends ChangeNotifier {
       _videoReferenceAudios = _videoReferenceAudios.where((p) => p != path).toList();
     } else {
       _videoReferenceVideos = _videoReferenceVideos.where((p) => p != path).toList();
+      videoReferenceProbes = {...videoReferenceProbes}..remove(path);
     }
     notifyListeners();
   }

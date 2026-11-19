@@ -18,6 +18,7 @@ import '../../../../widgets/shell/shell_cover.dart';
 import '../../../../widgets/ui/app_action_target.dart';
 import '../../../../widgets/ui/app_control_label.dart';
 import '../../../../widgets/ui/app_snackbar.dart';
+import '../../video_task_actions.dart';
 import 'preview_handler.dart';
 
 /// Hero scope for thumbnails in the workbench gallery.
@@ -265,6 +266,34 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
                                   .copyWith(color: Colors.white54),
                             ),
                             const Spacer(),
+                            if (AppConstants.isVideoFile(activeFile.path)) ...[
+                              AppControlLabel(
+                                label: l10n.menuEditVideo,
+                                child: IconButton(
+                                  icon: const Icon(Icons.edit_outlined, color: Colors.white),
+                                  onPressed: () {
+                                    final action = openVideoTask(context, activeFile.path, 'edit');
+                                    Navigator.pop(context);
+                                    action.ignore();
+                                  },
+                                ),
+                              ),
+                              AppControlLabel(
+                                label: l10n.menuExtendVideo,
+                                child: IconButton(
+                                  icon: const Icon(Icons.more_time, color: Colors.white),
+                                  onPressed: () {
+                                    final action = openVideoTask(
+                                      context,
+                                      activeFile.path,
+                                      'extend',
+                                    );
+                                    Navigator.pop(context);
+                                    action.ignore();
+                                  },
+                                ),
+                              ),
+                            ],
                             AppControlLabel(
                               label: l10n.save,
                               child: IconButton(

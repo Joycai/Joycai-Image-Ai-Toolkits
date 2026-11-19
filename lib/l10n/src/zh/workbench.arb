@@ -1224,5 +1224,92 @@
   "generationAgentTextOnly": "智能体提示词增强仅支持文生图。编辑图像时请选择直接增强。",
   "imageSizeFollowReference": "跟随参考图",
   "imageSizeFollowReferenceHint": "采用最后一张参考图比例；无参考图时为正方形",
-  "paramImageComplexity": "构图复杂度"
+  "paramImageComplexity": "构图复杂度",
+  "editVideo": "编辑视频",
+  "extendVideo": "延长视频",
+  "sourceVideo": "源视频",
+  "dropSourceVideo": "拖入或选择源视频",
+  "dropVideosOnly": "请拖入 MP4 或 MOV 视频",
+  "videoAdditionalReferences": "附加参考素材",
+  "videoAdaptiveHint": "建议使用自适应比例，固定比例可能改变构图。",
+  "videoIntentPrefixHint": "将自动附加：{prefix}",
+  "@videoIntentPrefixHint": {
+    "placeholders": {
+      "prefix": {
+        "type": "String"
+      }
+    }
+  },
+  "insertIntentPrefix": "插入前缀",
+  "videoIntentConflict": "提示词指定了不同的方向，将优先使用提示词中的明确指令。",
+  "videoBidirectionalHint": "请同时描述源视频之前与之后的片段。",
+  "videoSmartBudget": "输入 {input}s · 智能输出 · 输入与输出合计上限 {limit}s",
+  "@videoSmartBudget": {
+    "placeholders": {
+      "input": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "videoFixedBudget": "输入 {input}s + 输出 {output}s · 合计上限 {limit}s",
+  "@videoFixedBudget": {
+    "placeholders": {
+      "input": {
+        "type": "String"
+      },
+      "output": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "videoExtensionEstimate": "预计比源视频增加约 {seconds}s。",
+  "@videoExtensionEstimate": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "videoShortExtension": "建议使用智能时长，或选择比源视频更长的最终时长。",
+  "menuEditVideo": "编辑视频",
+  "menuExtendVideo": "延长视频",
+  "sendToVideoReferenceClips": "添加到参考视频",
+  "modelDoesNotSupportVideoEdit": "已载入源视频。请选择支持该操作的模型，当前模型未变更。可用模型：{models}",
+  "@modelDoesNotSupportVideoEdit": {
+    "placeholders": {
+      "models": {
+        "type": "String"
+      }
+    }
+  },
+  "videoReferenceToken": "视频{number}",
+  "@videoReferenceToken": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "imageReferenceToken": "图{number}",
+  "@imageReferenceToken": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "audioReferenceToken": "音频{number}",
+  "@audioReferenceToken": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  }
 }

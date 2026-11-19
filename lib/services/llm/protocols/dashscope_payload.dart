@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import '../generation/generation_schema.dart';
 import '../image_size_rules.dart';
 import '../llm_types.dart';
 import '../model_capabilities.dart';
@@ -367,6 +368,38 @@ Map<String, dynamic> dashscopePayloadForLog(Map<String, dynamic> payload, int re
   };
 }
 
+/// Preserve explicit intent and the original stored prompt. Only the wire body
+/// receives a language-aware prefix; composing twice is idempotent.
+String composeDashScopeIntentPrompt({
+  required String prompt,
+  required GenerationOperation operation,
+  String? extendDirection,
+}) {
+  final edit = operation == GenerationOperation.editVideo;
+  final extend = operation == GenerationOperation.extendVideo;
+  if (!edit && !extend) return prompt;
+  final intent = edit
+      ? RegExp(
+          r'编辑视频|修改视频|重塑视频|视频1中的|将整个画面|替换|去掉|删除|改成|改为|\bedit (?:the )?video\b|\breplace\b|\bremove\b|\b(?:change|convert)\b.*\bto\b',
+          caseSensitive: false,
+        )
+      : RegExp(r'延长|延续|续写|向前|向后|\b(?:extend|continue|prepend|append)\b', caseSensitive: false);
+  if (intent.hasMatch(prompt)) return prompt;
+  final chinese =
+      RegExp(r'[\u4e00-\u9fff]').hasMatch(prompt) && !RegExp(r'[\u3040-\u30ff]').hasMatch(prompt);
+  final prefix = edit
+      ? (chinese ? '编辑视频，' : 'Edit Video 1: ')
+      : switch (extendDirection ?? 'backward') {
+          'forward' => chinese ? '将视频1向前延长，' : 'Extend Video 1 forward before its first frame: ',
+          'bidirectional' =>
+            chinese
+                ? '以视频1为中间段向前向后双向延长，'
+                : 'Extend Video 1 in both directions before the start and after the end: ',
+          _ => chinese ? '将视频1向后延长，' : 'Extend Video 1 backward from its last frame: ',
+        };
+  return '$prefix$prompt';
+}
+
 /// IO-free native video body. Media URLs are already encoded by the caller.
 Map<String, dynamic> buildDashScopeVideoPayload({
   required String modelId,
@@ -374,6 +407,32 @@ Map<String, dynamic> buildDashScopeVideoPayload({
   List<Map<String, String>> media = const [],
   Map<String, dynamic>? options,
 }) {
+  final mode = options?['videoTask'] ?? 'generate';
+  if (!['generate', 'edit', 'extend'].contains(mode) ||
+      (mode == 'extend' &&
+          ![
+            'backward',
+            'forward',
+            'bidirectional',
+          ].contains(options?['extendDirection'] ?? 'backward'))) {
+    throw LLMApiException('Unsupported video task or direction. Nothing was sent.');
+  }
+  final operation = mode == 'edit'
+      ? GenerationOperation.editVideo
+      : mode == 'extend'
+      ? GenerationOperation.extendVideo
+      : GenerationOperation.textVideo;
+  if (mode != 'generate' &&
+      (prompt.trim().isEmpty || !media.any((m) => m['type'] == 'reference_video'))) {
+    throw LLMApiException(
+      'Editing and extending require a source video and prompt. Nothing was sent.',
+    );
+  }
+  prompt = composeDashScopeIntentPrompt(
+    prompt: prompt,
+    operation: operation,
+    extendDirection: options?['extendDirection'] as String?,
+  );
   if (prompt.runes.length > 20000 || (prompt.trim().isEmpty && media.isEmpty)) {
     throw LLMApiException(
       'DashScope video requires a prompt or media and at most 20000 prompt characters. Nothing was sent.',
@@ -434,12 +493,13 @@ Map<String, dynamic> buildDashScopeVideoPayload({
         : '1080P';
   }
 
-  final aspect = readStringOption(options, 'aspectRatio');
+  final aspect =
+      readStringOption(options, 'aspectRatio') ?? (mode != 'generate' ? 'adaptive' : null);
   if (aspect != null && aspect != 'not_set') {
     parameters['ratio'] = aspect; // `adaptive` is upstream's own default.
   }
 
-  final seconds = int.tryParse(resolveVideoSeconds(options) ?? '');
+  final seconds = int.tryParse(resolveVideoSeconds(options) ?? (mode != 'generate' ? '-1' : ''));
   if (seconds != null) parameters['duration'] = seconds == -1 ? -1 : seconds.clamp(2, 30);
 
   final seedText = options?['seed']?.toString();
