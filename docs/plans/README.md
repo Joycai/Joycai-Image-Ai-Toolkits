@@ -123,6 +123,7 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 | [`2026-11-desktop-standards.md`](2026-11-desktop-standards.md) | Flutter 与 macOS/Windows 桌面体验修复；DESK-01 已恢复桥接、隔离菜单语义，完成分段、任务筛选/置顶、导航及[剩余自绘控件源码审计与修复](../custom-controls-accessibility-audit.md)；DESK-02 已实现工作台画廊、浏览器网格/列表及跨栏键盘焦点，3.47.8 Windows 原生验证发现的导航 tooltip 与浏览器滑块 AXTree 边界已修复，五页及主题切换复测通过；完整 Narrator/原生验收仍待完成；DESK-03 原生菜单已实现并继续验收，DESK-04～06 待实施。证据见 [Windows 无障碍记录](../windows-accessibility-validation.md)、[画廊键盘验证](../gallery-keyboard-validation.md)、[浏览器键盘验证](../browser-keyboard-validation.md)。 |
 | [`2026-11-windows-store.md`](2026-11-windows-store.md) | Microsoft Store 发布准备施工计划；按 WIN-01～WIN-06 推进，完成后归档结论并删除正文。 |
 | [`2026-11-wan3-video-audit.md`](2026-11-wan3-video-audit.md) | `wan3.0-video` / `wan3.0-video-prime` 对照百炼官方文档的核查问题清单与分阶段修复计划（WAN-01～WAN-10）；Phase 1 和 Phase 2 的 WAN-08 已实现；WAN-09 上游实测与 Phase 3 保留待办。 |
+| [`2026-11-video-edit-extend-design.md`](2026-11-video-edit-extend-design.md) | 跨模型视频编辑与视频延长功能设计文档（以 Wan 3.0 首发，涵盖协议契约、Schema 语义、计费结算修复、工作台 UX 与分阶段实施计划）；设计评审中。 |
 | [`2026-08-assistant-timeout.md`](2026-08-assistant-timeout.md) | 不是施工说明书，是**一次真实故障的取证记录**（`api_logs/` 里七条日志的耗时还原）。`architecture/assistant-context.md` 直接引它作为「为什么要早elide」的证据。 |
 
 ## 2026-11-07 · Microsoft Store 发布准备（实现中）
