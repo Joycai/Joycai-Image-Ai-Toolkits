@@ -86,6 +86,25 @@ class _FactsAndActions extends StatelessWidget {
 
     final rows = <(String, String, int)>[
       (l10n.model, task.modelId, 1),
+      if (task.generationOptions['videoTask'] == 'edit' ||
+          task.generationOptions['videoTask'] == 'extend')
+        (
+          l10n.paramVideoTask,
+          task.generationOptions['videoTask'] == 'edit' ? l10n.editVideo : l10n.extendVideo,
+          2,
+        ),
+      if (task.generationOptions['sourceVideoPath'] case final String path)
+        (l10n.sourceVideo, p.basename(path), 2),
+      if (task.generationOptions['videoTask'] == 'extend')
+        (
+          l10n.paramExtendDirection,
+          switch (task.generationOptions['extendDirection']) {
+            'forward' => l10n.extendDirectionForward,
+            'bidirectional' => l10n.extendDirectionBidirectional,
+            _ => l10n.extendDirectionBackward,
+          },
+          1,
+        ),
       if (task.isBatch)
         (
           l10n.batchModeAsync,

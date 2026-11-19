@@ -164,33 +164,39 @@ void main() {
     );
   });
 
-  test('v1 snapshots may omit only default watermark and seed, explicit tampering fails', () async {
-    final oldValues = schema.effective(schema.readLegacy({}), GenerationOperation.textVideo)
-      ..remove('watermark')
-      ..remove('seed')
-      ..remove('videoTask');
-    final request = GenerationRequest(
-      prompt: 'a cat',
-      operation: GenerationOperation.textVideo,
-      values: oldValues,
-      media: const [],
-      modelId: 'wan3.0-video',
-      channelType: Vendors.dashscopeNative,
-      protocolId: schema.protocol?.id,
-      profileId: schema.profileId,
-    );
-    final options = generationTaskOptions({'generation': request.toJson()});
-    expect(request.toJson()['version'], 1);
-    await validate([], options);
-    await validate([], {...options, 'watermark': 'not_set', 'seed': 'not_set'});
-    for (final value in ['-1', '0', '2147483647', 'bad']) {
-      await expectLater(validate([], {...options, 'seed': value}), rejected);
-    }
-    for (final value in ['on', 'off', 'invalid']) {
-      await expectLater(validate([], {...options, 'watermark': value}), rejected);
-    }
-    await expectLater(validate([], {...options, 'videoAudio': 'off'}), rejected);
-  });
+  test(
+    'v1 snapshots may omit only default watermark, seed and videoTask, explicit tampering fails',
+    () async {
+      final oldValues = schema.effective(schema.readLegacy({}), GenerationOperation.textVideo)
+        ..remove('watermark')
+        ..remove('seed')
+        ..remove('videoTask');
+      final request = GenerationRequest(
+        prompt: 'a cat',
+        operation: GenerationOperation.textVideo,
+        values: oldValues,
+        media: const [],
+        modelId: 'wan3.0-video',
+        channelType: Vendors.dashscopeNative,
+        protocolId: schema.protocol?.id,
+        profileId: schema.profileId,
+      );
+      final options = generationTaskOptions({'generation': request.toJson()});
+      expect(request.toJson()['version'], 1);
+      await validate([], options);
+      await validate([], {...options, 'watermark': 'not_set', 'seed': 'not_set'});
+      for (final value in ['-1', '0', '2147483647', 'bad']) {
+        await expectLater(validate([], {...options, 'seed': value}), rejected);
+      }
+      for (final value in ['on', 'off', 'invalid']) {
+        await expectLater(validate([], {...options, 'watermark': value}), rejected);
+      }
+      for (final value in ['edit', 'extend', 'invalid']) {
+        await expectLater(validate([], {...options, 'videoTask': value}), rejected);
+      }
+      await expectLater(validate([], {...options, 'videoAudio': 'off'}), rejected);
+    },
+  );
 
   test('prompt is bounded by code points independently of required media', () async {
     for (final id in ['wan3.0-video', 'wan3.0-video-prime']) {

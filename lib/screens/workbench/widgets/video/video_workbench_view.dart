@@ -12,6 +12,7 @@ import '../../../../core/design_tokens.dart';
 import '../../../../core/responsive.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../state/workbench_ui_state.dart';
+import '../../../../widgets/glass/glass_controls.dart';
 import '../../../../widgets/ui/app_action_target.dart';
 import '../../../../widgets/ui/app_button.dart';
 import '../../../../widgets/ui/app_icon_button.dart';
@@ -29,9 +30,6 @@ const double _kPanelMinArea = 760;
 /// Below this the tablet strip's labelled button no longer fits beside the
 /// title, and the player takes the phone strip.
 const double _kStripMinArea = 480;
-
-/// From this width a strip can afford the labelled "Open in System Player"
-/// button; under it the button is the bare glyph.
 
 enum _PlayerForm { panel, strip, phone }
 
@@ -69,18 +67,23 @@ _PlayerMetrics _metricsFor(BuildContext context, double areaWidth) {
   return _PlayerMetrics.panel;
 }
 
+// The phone configuration FAB sits above the same gallery bottom edge. Keep
+// the player's menu and close targets above it; the grid uses the same inset.
+double _phoneActionClearance(BuildContext context) =>
+    Responsive.isMobile(context) ? GlassFab.extent + AppSpace.s16 : 0;
+
 class VideoWorkbenchOverlay extends StatefulWidget {
   const VideoWorkbenchOverlay({super.key});
 
   /// How far up from the bottom of the gallery area the player reaches while
   /// it is showing — the panel plus the 10px inset under it — for a gallery
   /// area [areaWidth] wide. 202 for the full panel, 112 for the tablet strip,
-  /// 96 for the phone strip.
+  /// 168 for the phone strip, including clearance for its configuration FAB.
   ///
   /// Zero is the caller's to decide: the player shows only while
   /// `WorkbenchUIState.lastGeneratedVideoPath` is set.
   static double occupiedHeight(BuildContext context, double areaWidth) =>
-      _metricsFor(context, areaWidth).panelHeight + _kInset;
+      _metricsFor(context, areaWidth).panelHeight + _kInset + _phoneActionClearance(context);
 
   @override
   State<VideoWorkbenchOverlay> createState() => _VideoWorkbenchOverlayState();
@@ -182,7 +185,7 @@ class _VideoWorkbenchOverlayState extends State<VideoWorkbenchOverlay> {
     return Positioned(
       left: _kInset,
       right: _kInset,
-      bottom: _kInset,
+      bottom: _kInset + _phoneActionClearance(context),
       child: LayoutBuilder(
         builder: (context, box) {
           final double areaWidth = box.maxWidth + _kInset * 2;

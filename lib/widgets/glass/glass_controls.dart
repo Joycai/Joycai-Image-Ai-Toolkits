@@ -422,6 +422,7 @@ class _GlassIconButtonState extends State<GlassIconButton> {
 /// The accent's solid form as a 56px floating button on a phone (`A1 · 1e`
 /// FAB: tinted glass at r22).
 class GlassFab extends StatelessWidget {
+  static const double extent = 56;
   const GlassFab({super.key, required this.icon, required this.onPressed, this.tooltip});
 
   final IconData icon;
@@ -436,7 +437,7 @@ class GlassFab extends StatelessWidget {
       borderRadius: BorderRadius.circular(AppRadius.dialog),
       child: AppTintedGlass(
         borderRadius: BorderRadius.circular(AppRadius.dialog),
-        child: SizedBox(width: 56, height: 56, child: Icon(icon, size: 24)),
+        child: SizedBox(width: extent, height: extent, child: Icon(icon, size: 24)),
       ),
     );
     if (tooltip != null) fab = Tooltip(excludeFromSemantics: true, message: tooltip!, child: fab);

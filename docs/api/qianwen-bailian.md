@@ -196,7 +196,16 @@
 - 回执与轮询同 I2（同一个 `GET /tasks/{task_id}`、同一套状态枚举）。
 - **成功结果是顶层扁平字段 `output.video_url`**（不是 choices 结构），
   另带 `orig_prompt`。失败时 `output.code`/`output.message`。
-- usage：`video_count`(=1) / `duration` / `fps` / `SR` / `ratio`，**无 token**。
+- usage：`video_count`(=1) / `duration` / `input_video_duration` /
+  `output_video_duration` / `fps` / `SR` / `ratio`，**无 token**。
+  `duration` 可为输入+输出之和；输出结算优先使用 `output_video_duration`，
+  仅旧回包缺该字段时回退 `duration`。输入单独透传，`SR` 归一为输出规格，避免重复计费。
+- 编辑/延长仍使用同一异步接口。应用内部 `videoTask=edit|extend` 不作为 wire 字段发送；
+  独立源视频占 `reference_video` 首位（视频1），也计入视频数量/时长预算，并走临时上传。
+  编辑/延长要求非空提示词，默认 `duration=-1`、`ratio=adaptive`；比例允许编辑并提示风险。
+  延长固定时长表示最终输出总时长，方向 `backward|forward|bidirectional` 通过提示词表达。
+  纯函数 `composeDashScopeIntentPrompt` 在缺少中英文意图词时幂等附加前缀，
+  UI 透明预览并可一键插入；不改写用户原文/历史，显式意图优先，附加后仍校验 20,000 码点。
 - 轮询间隔与 task_id 有效期该页未写 ⚠ —— 类推图片的 5–10s / 24h。
 - **失败任务装在 HTTP 200 里**（`task_status: FAILED` + `output.code`），
   通用的错误信封检查抢不到它 —— 轮询方要自己实现状态机。图片异步同理。
@@ -342,3 +351,10 @@ WAN-09 未做真实首帧+固定 ratio 实测，继续保留 adaptive 默认与�
 本地模拟覆盖上传、取消、错误、凭证隔离、素材限额及旧任务兼容；不代表真实区域账号联调通过。
 文件容器探测复用本地 MP4/MOV（H.264/H.265）及 WAV/MP3 解析器，无法可靠读取元数据时拒绝。
 仍欠 WAN-09 的真实首帧比例验证、区域账号的上传联调及独立 file/link 工作台设计。
+
+### 2026-11-19 · 跨模型视频编辑/延长复核
+
+- 本地 Mock 验证 sourceVideo 首位、上传/图片计数隔离、三方向前缀、历史快照兼容与
+  输入 5s + 输出 7.5s 的独立结算。没有发起真实付费请求。
+- 仍需另行授权实测：延长结果是否拼接原片及短时长边界、英文方向路由、智能时长
+  usage 字段、非 adaptive 比例（WAN-09）、MOV PCM/ALAC 音轨。file/link 仍为独立后续迭代。

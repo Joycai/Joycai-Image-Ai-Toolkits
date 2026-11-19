@@ -209,7 +209,8 @@ watermark on/off as booleans, omitting the default not_set. Audio is explicit;
 disabling it does not change the upstream price.
 
 Version-1 queued DashScope video snapshots may omit additive watermark and seed
-keys only when their effective values remain the declared defaults (`not_set`).
+keys only when their effective values remain the declared defaults (`not_set`),
+and videoTask only when its effective value remains `generate`.
 Explicit mismatches still fail before submission. Accepted jobs retain their existing resume path.
 MaaS workspace hosts infer DashScope with native paths derived independently of
 the host. No schema migration is needed.
@@ -252,3 +253,45 @@ unsupported official regions fail locally, custom gateways keep their own base.
 Images-only submissions retain inline transport. Actual API acceptance is not
 claimed by local mocks. file/link input remains a separate UI and contract design.
 See the plan ledger and API §6.
+
+### Cross-model video editing and extension (2026-11-19)
+
+`GenerationOperation.editVideo` / `extendVideo` use the existing videoGenerate task
+and v1 snapshot. `GenerationMediaRole.sourceVideo` / `LLMReferenceType.sourceVideo`
+identify one source, independently of additional reference clips. VideoEditContract
+and VideoExtendContract declare source kind, prompt requirement, permitted references,
+aspect policy, smart/default duration, directions and duration semantics. UI consumes
+these contracts; model selection and protocol routing remain in the dispatcher.
+Native DashScope registers both; other protocols remain unsupported until declared.
+
+`videoTask` (`generate/edit/extend`) is stored at `$base.mode`, like imageTask.
+Other preferences remain operation-scoped. Edit/extend never read old family keys,
+so a legacy text-video 5s value cannot override their -1 smart-duration default.
+`effectiveVideoParams` calls schema.effective with the current operation; inactive
+extendDirection cannot leak to generate/edit. Wan uses adaptive by default and allows
+explicit ratios. Its fixed extension duration is total output, not added seconds.
+
+WorkbenchUIState owns source selection and asynchronous, bounded source probing;
+generation tokens reject stale completions after replacement, clear or disposal.
+Metadata drives local diagnostics and combined input/output budgets. Source and
+additional video probes are revalidated before upload. `videoGenerationMediaFor`
+parks first/last frames outside editing/extension requests without losing selection.
+Returning to generate parks the source. Snapshot copying includes sourceVideoPath;
+execution never compresses audio/video or reports them as inputImages.
+
+Result-player, gallery, full-preview and completed-task actions share
+openVideoInTaskMode: persist the source, open the video panel and select a supported
+operation. An unsupported current model is retained with a localized explanation;
+there is no silent paid-model switch. Source, direction and operation remain visible
+in task details. No new TaskType or database migration is involved.
+
+Wan routes intent in the wire prompt: a pure, idempotent composer preserves explicit
+Chinese/English edit/extend intent and otherwise prefixes the selected direction.
+The workbench previews that prefix and offers insertion; original prompt/history
+remain unchanged. Post-composition code-point limits are enforced. Usage settlement
+prefers output_video_duration over aggregate duration, separately carries input
+seconds and normalizes SR; old duration-only responses retain compatibility.
+
+Live output semantics, English direction routing, smart-duration usage, non-adaptive
+ratio and MOV audio-codec acceptance remain unverified. Probe memory can later be
+reduced with random-access MP4 box reading. file/link remain a separate iteration.

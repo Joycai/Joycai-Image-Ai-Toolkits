@@ -10,7 +10,9 @@ import 'package:joycai_image_ai_toolkits/models/app_image.dart';
 import 'package:joycai_image_ai_toolkits/models/llm_channel.dart';
 import 'package:joycai_image_ai_toolkits/models/llm_model.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/gallery/image_card.dart';
+import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/preview/media_preview_dialog.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/video/video_config_panel.dart';
+import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/video/video_workbench_view.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/workbench_layout.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 import 'package:joycai_image_ai_toolkits/services/media/reference_media_probe.dart';
@@ -229,6 +231,54 @@ void main() {
                     .descendant(of: panel, matching: find.textContaining(label))
                     .first;
                 await Scrollable.ensureVisible(tester.element(source), alignment: .15);
+                await settle(tester);
+              },
+            );
+          });
+        }
+      }
+    }
+  }
+  for (final locale in [
+    const Locale('en'),
+    const Locale('zh'),
+    const Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hant'),
+    const Locale('ja'),
+  ]) {
+    for (final size in kShotSizes) {
+      for (final brightness in Brightness.values) {
+        for (final surface in ['player', 'preview']) {
+          testWidgets('video $surface ${locale.toLanguageTag()} ${size.label} ${brightness.name}', (
+            tester,
+          ) async {
+            final path = File('test/support/reference_media/three_seconds.mp4').absolute.path;
+            await shoot(
+              tester,
+              env: env,
+              screen: AppScreen.workbench,
+              size: size,
+              brightness: brightness,
+              locale: locale,
+              suffix: 'wan3_${surface}_${locale.toLanguageTag()}',
+              before: (_) async {
+                final app = AppState();
+                app.setWorkbenchTab(5);
+                app.workbenchUIState.setLastGeneratedVideoPath(surface == 'player' ? path : null);
+                app.workbenchUIState.videoPanelHandled = app.workbenchUIState.videoPanelRequest;
+                app.workbenchUIState.clearVideoSourceVideo();
+              },
+              after: (_) async {
+                if (surface == 'preview') {
+                  showMediaPreview(
+                    tester.element(find.byType(Scaffold).first),
+                    galleryImages: [AppImage.fromFile(File(path))],
+                    initialIndex: 0,
+                  );
+                } else {
+                  final player = find.byType(VideoWorkbenchOverlay);
+                  final more = find.descendant(of: player, matching: find.byIcon(Icons.more_horiz));
+                  if (more.evaluate().isNotEmpty) await tester.tap(more);
+                }
                 await settle(tester);
               },
             );

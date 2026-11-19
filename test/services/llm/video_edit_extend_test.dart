@@ -4,6 +4,10 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:joycai_image_ai_toolkits/models/media_pricing.dart';
+import 'package:joycai_image_ai_toolkits/models/pricing_group.dart';
+import 'package:joycai_image_ai_toolkits/models/spec_rate.dart';
+import 'package:joycai_image_ai_toolkits/services/billing/media_accounting.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/generation/generation_preferences.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/generation/generation_schema.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/generation/generation_validator.dart';
@@ -180,6 +184,30 @@ void main() {
           );
           expect(result['input_video_seconds'], usage['input_video_duration']);
           expect(result['output_size'], usage.containsKey('SR') ? '720p' : null);
+          if (usage.containsKey('input_video_duration')) {
+            final pricing = PricingGroup(
+              name: 'Wan',
+              billingMode: 'spec',
+              outputUnit: OutputUnit.second,
+              outputRates: const [SpecRate(size: '720p', price: 0.2)],
+              mediaPricing: const MediaPricing(
+                videoInputRates: [SpecRate(size: '720p', price: 0.1)],
+              ),
+            );
+            final pending = MediaAccounting.price(
+              pricing,
+              {'input_seconds': 5},
+              options: {'resolution': '720p', 'seconds': -1},
+              video: true,
+              pending: true,
+            );
+            final settled = MediaAccounting.settle(pending, {
+              'output_seconds': result[videoRenderedSecondsKey],
+              'input_seconds': result['input_video_seconds'],
+              'output_size': result['output_size'],
+            });
+            expect(settled.cost, closeTo(5 * 0.1 + 7.5 * 0.2, 1e-12));
+          }
         },
         () => MockClient((r) async {
           expect(r.method, 'GET');

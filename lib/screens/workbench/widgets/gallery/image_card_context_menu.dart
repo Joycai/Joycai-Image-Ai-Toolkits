@@ -88,34 +88,6 @@ Future<void> showImageCardContextMenu(
   final bool inTempWorkspace = appState.galleryState.viewMode == GalleryViewMode.temp;
 
   final entries = <AppGlassMenuEntry>[
-    if (isVideo && !multi) ...[
-      AppGlassMenuItem(
-        icon: Icons.edit_outlined,
-        label: l10n.menuEditVideo,
-        onSelected: () => openVideoTask(context, imageFile.path, 'edit'),
-      ),
-      AppGlassMenuItem(
-        icon: Icons.more_time,
-        label: l10n.menuExtendVideo,
-        onSelected: () => openVideoTask(context, imageFile.path, 'extend'),
-      ),
-      AppGlassMenuItem(
-        icon: Icons.video_library_outlined,
-        label: l10n.sendToVideoReferenceClips,
-        onSelected: () async {
-          try {
-            final path = await PersistentMediaService.instance.importFile(imageFile.path);
-            workbenchUIState.addVideoReferenceFiles([path], audio: false);
-            appState.setWorkbenchTab(5);
-            workbenchUIState.requestVideoPanel();
-          } catch (error) {
-            if (context.mounted) AppSnackBar.error(context, l10n.importFailed('$error'));
-          }
-        },
-      ),
-      const AppGlassMenuDivider(),
-    ],
-
     if (isVideo)
       AppGlassMenuItem(
         icon: Icons.visibility_outlined,
@@ -157,6 +129,34 @@ Future<void> showImageCardContextMenu(
           },
         ),
       ]),
+    if (isVideo && !multi) ...[
+      AppGlassMenuItem(
+        icon: Icons.edit_outlined,
+        label: l10n.menuEditVideo,
+        onSelected: () => openVideoTask(context, imageFile.path, 'edit'),
+      ),
+      AppGlassMenuItem(
+        icon: Icons.more_time,
+        label: l10n.menuExtendVideo,
+        onSelected: () => openVideoTask(context, imageFile.path, 'extend'),
+      ),
+      AppGlassMenuItem(
+        icon: Icons.video_library_outlined,
+        label: l10n.sendToVideoReferenceClips,
+        onSelected: () async {
+          try {
+            final path = await PersistentMediaService.instance.importFile(imageFile.path);
+            workbenchUIState.addVideoReferenceFiles([path], audio: false);
+            appState.setWorkbenchTab(5);
+            workbenchUIState.requestVideoPanel();
+          } catch (error) {
+            if (context.mounted) AppSnackBar.error(context, l10n.importFailed('$error'));
+          }
+        },
+      ),
+      const AppGlassMenuDivider(),
+    ],
+
     if (layerSet != null)
       AppGlassMenuItem(
         icon: Icons.layers_outlined,

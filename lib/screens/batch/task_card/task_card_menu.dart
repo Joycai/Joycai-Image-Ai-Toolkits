@@ -72,6 +72,9 @@ class _TaskMenuButtonState extends State<TaskMenuButton> {
     final canRetry =
         task.canRemove && (task.status == TaskStatus.failed || task.status == TaskStatus.cancelled);
     final canRemove = _isTerminal(task);
+    final videoResults = task.resultPaths.where(
+      (path) => AppConstants.isVideoFile(path) && File(path).existsSync(),
+    );
     final hasPrompt = task.generationOptions.containsKey('prompt');
 
     setState(() => _open = true);
@@ -106,6 +109,18 @@ class _TaskMenuButtonState extends State<TaskMenuButton> {
             label: task.isBatch ? l10n.batchRetry : l10n.retryTask,
             onSelected: () => queue.retryTask(task.id),
           ),
+        if (task.status == TaskStatus.completed && videoResults.isNotEmpty) ...[
+          AppGlassMenuItem(
+            icon: Icons.edit_outlined,
+            label: l10n.menuEditVideo,
+            onSelected: () => openVideoTask(context, videoResults.first, 'edit'),
+          ),
+          AppGlassMenuItem(
+            icon: Icons.more_time,
+            label: l10n.menuExtendVideo,
+            onSelected: () => openVideoTask(context, videoResults.first, 'extend'),
+          ),
+        ],
         if (hasPrompt)
           AppGlassMenuItem(
             icon: Icons.content_copy,

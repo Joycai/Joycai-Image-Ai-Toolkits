@@ -24,6 +24,7 @@ import '../../widgets/ui/app_section_label.dart';
 import '../../widgets/ui/app_snackbar.dart';
 import '../../widgets/ui/dashed_border.dart';
 import '../../widgets/ui/scroll_edge_fade.dart';
+import '../workbench/video_task_actions.dart';
 import 'task_log_dialog.dart';
 
 part 'task_card/task_card_cells.dart';
