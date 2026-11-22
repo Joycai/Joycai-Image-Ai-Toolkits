@@ -5,10 +5,13 @@ import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/spec_rate.dart';
 import '../../services/billing/spec_billing.dart';
+import '../../services/catalogue/builtin_model_specs.dart';
 import '../ui/app_button.dart';
 import '../ui/app_segmented_control.dart';
 import '../ui/app_text_field.dart';
+import '../ui/searchable_picker.dart';
 import 'fee_group_draft.dart';
+import 'model_picker_options.dart';
 import 'spec_rate_table.dart';
 
 /// The fee-group editor's fields (`D2 · 1e / 1f`, `D1a · 1d`): the name,
@@ -42,7 +45,18 @@ class FeeGroupEditorFields extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: [
-            _Caption(l10n.groupName),
+            Row(
+              children: [
+                Expanded(child: _Caption(l10n.groupName)),
+                AppButton(
+                  label: l10n.feeGroupLoadOfficialPreset,
+                  icon: Icons.auto_awesome_outlined,
+                  variant: AppButtonVariant.text,
+                  size: AppButtonSize.compact,
+                  onPressed: () => _pickOfficialPreset(context, l10n),
+                ),
+              ],
+            ),
             AppTextField(
               controller: draft.nameCtrl,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
@@ -131,6 +145,22 @@ class FeeGroupEditorFields extends StatelessWidget {
         );
       },
     );
+  }
+
+  Future<void> _pickOfficialPreset(BuildContext context, AppLocalizations l10n) async {
+    final result = await showSearchablePicker<BuiltinModelSpec>(
+      context: context,
+      title: l10n.feeGroupPresetPickerTitle,
+      searchHint: l10n.modelPresetSearchHint,
+      icon: Icons.payments_outlined,
+      options: [
+        for (final spec in BuiltinModelSpecs.all)
+          builtinModelPresetOption(l10n, spec, pricingFocused: true),
+      ],
+    );
+    if (result != null) {
+      draft.applyBuiltinPricing(result.value);
+    }
   }
 
   Widget _buildRates(BuildContext context, AppLocalizations l10n) {

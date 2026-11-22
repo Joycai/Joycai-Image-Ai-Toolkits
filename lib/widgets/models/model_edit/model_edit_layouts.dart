@@ -95,6 +95,8 @@ extension _Layouts on _ModelEditDialogState {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _idField(size, autofocus: true, helper: l10n.addModelIdHelper),
+                const SizedBox(height: AppSpace.s6),
+                _presetBar(context),
                 const SizedBox(height: _ModelEditDialogState._fieldGap),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,

@@ -3340,6 +3340,46 @@ class AppLocalizationsJa extends AppLocalizations {
   String get channelUploadRequired => '専用アップロード API キーと、Token Plan 以外の有効な HTTPS URL を入力してください。';
 
   @override
+  String get modelPresetLabel => '内蔵モデルプリセット';
+
+  @override
+  String modelPresetMatched(String name) {
+    return '一致：$name';
+  }
+
+  @override
+  String modelPresetApplied(String name) {
+    return '適用済み：$name';
+  }
+
+  @override
+  String get modelPresetNone => '一致する内蔵モデルがありません。手動でプリセットを選択できます';
+
+  @override
+  String get modelPresetApply => '適用';
+
+  @override
+  String get modelPresetChoose => 'プリセット選択';
+
+  @override
+  String get modelPresetPickerTitle => '内蔵モデルプリセットを選択';
+
+  @override
+  String get modelPresetSearchHint => 'モデル名・ID・プロバイダーで検索…';
+
+  @override
+  String get modelPresetThinkingTag => '思考対応';
+
+  @override
+  String get modelPresetDefaultPricingNote => '料金グループ未設定時は公式 API の既定単価が自動適用されます。';
+
+  @override
+  String get feeGroupLoadOfficialPreset => '公式単価を読み込む';
+
+  @override
+  String get feeGroupPresetPickerTitle => '公式 API 単価プリセット';
+
+  @override
   String get prompts => 'プロンプト';
 
   @override

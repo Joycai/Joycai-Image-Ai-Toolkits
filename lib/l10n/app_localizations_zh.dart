@@ -3318,6 +3318,46 @@ class AppLocalizationsZh extends AppLocalizations {
   String get channelUploadRequired => '请填写独立上传 API 密钥及有效的非 Token Plan HTTPS 地址。';
 
   @override
+  String get modelPresetLabel => '内置模型参数';
+
+  @override
+  String modelPresetMatched(String name) {
+    return '已匹配：$name';
+  }
+
+  @override
+  String modelPresetApplied(String name) {
+    return '已套用：$name';
+  }
+
+  @override
+  String get modelPresetNone => '未自动匹配到内置模型，可手动选择要套用的模型参数';
+
+  @override
+  String get modelPresetApply => '套用';
+
+  @override
+  String get modelPresetChoose => '选择预设';
+
+  @override
+  String get modelPresetPickerTitle => '选择内置模型参数';
+
+  @override
+  String get modelPresetSearchHint => '搜索模型名、ID 或厂商…';
+
+  @override
+  String get modelPresetThinkingTag => '支持思考';
+
+  @override
+  String get modelPresetDefaultPricingNote => '未选择计费组时，将自动按官方 API 默认定价计费。';
+
+  @override
+  String get feeGroupLoadOfficialPreset => '套用官方定价';
+
+  @override
+  String get feeGroupPresetPickerTitle => '官方 API 定价预设';
+
+  @override
   String get prompts => '提示词';
 
   @override
@@ -10045,6 +10085,46 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get channelUploadRequired => '請填寫獨立上傳 API 金鑰及有效的非 Token Plan HTTPS 位址。';
+
+  @override
+  String get modelPresetLabel => '內建模型參數';
+
+  @override
+  String modelPresetMatched(String name) {
+    return '已符合：$name';
+  }
+
+  @override
+  String modelPresetApplied(String name) {
+    return '已套用：$name';
+  }
+
+  @override
+  String get modelPresetNone => '未自動符合內建模型，可手動選擇要套用的模型參數';
+
+  @override
+  String get modelPresetApply => '套用';
+
+  @override
+  String get modelPresetChoose => '選擇預設';
+
+  @override
+  String get modelPresetPickerTitle => '選擇內建模型參數';
+
+  @override
+  String get modelPresetSearchHint => '搜尋模型名稱、ID 或廠商…';
+
+  @override
+  String get modelPresetThinkingTag => '支援思考';
+
+  @override
+  String get modelPresetDefaultPricingNote => '未選擇計費組時，將自動按官方 API 預設價格計費。';
+
+  @override
+  String get feeGroupLoadOfficialPreset => '套用官方定價';
+
+  @override
+  String get feeGroupPresetPickerTitle => '官方 API 定價預設';
 
   @override
   String get prompts => '提示';

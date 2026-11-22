@@ -4,6 +4,7 @@ import '../../models/media_pricing.dart';
 import '../../models/pricing_group.dart';
 import '../../models/spec_rate.dart';
 import '../../services/billing/spec_billing.dart';
+import '../../services/catalogue/builtin_model_specs.dart';
 import '../../state/app_state.dart';
 import 'spec_rate_table.dart';
 
@@ -202,6 +203,39 @@ class FeeGroupDraft extends ChangeNotifier {
 
   /// Called by the spec table after it edits a row's conditions in place.
   void touch() => notifyListeners();
+
+  /// Loads official API pricing from a built-in model preset into the draft.
+  /// Keeps an already-typed group name, or seeds it with the preset's name
+  /// when blank.
+  void applyBuiltinPricing(BuiltinModelSpec spec) {
+    final g = spec.pricing.toPricingGroup(name: spec.displayName);
+    if (nameCtrl.text.trim().isEmpty) {
+      nameCtrl.text = spec.displayName;
+    }
+    billingMode = g.billingMode;
+    inputPriceCtrl.text = g.inputPrice.toString();
+    cacheInputPriceCtrl.text = g.cacheInputPrice?.toString() ?? '';
+    outputPriceCtrl.text = g.outputPrice.toString();
+    requestPriceCtrl.text = g.requestPrice.toString();
+
+    imageTokenInputCtrl.text = g.mediaPricing.imageInput?.toString() ?? '';
+    imageTokenCacheCtrl.text = g.mediaPricing.imageCache?.toString() ?? '';
+    imageTokenOutputCtrl.text = g.mediaPricing.imageOutput?.toString() ?? '';
+
+    outputUnit = g.outputUnit;
+    for (final row in specRows) {
+      row.dispose();
+    }
+    specRows
+      ..clear()
+      ..addAll(g.outputRates.where((r) => !r.isCatchAll).map(SpecRateDraft.of));
+    final other = g.outputRates.where((r) => r.isCatchAll).firstOrNull;
+    otherPriceCtrl.text = other == null ? '' : other.price.toStringAsFixed(4);
+
+    inputImagePriceCtrl.text = g.inputUnitPrice > 0 ? g.inputUnitPrice.toStringAsFixed(4) : '';
+    inputFreeCtrl.text = g.inputFreeUnits > 0 ? '${g.inputFreeUnits}' : '';
+    notifyListeners();
+  }
 
   /// The table as it will be stored: the ordinary rows, then the catch-all
   /// only when it has a price — a blank one is *no* catch-all, which is what

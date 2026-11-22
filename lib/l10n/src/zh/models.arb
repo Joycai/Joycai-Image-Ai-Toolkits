@@ -698,5 +698,31 @@
   "channelUploadEndpoint": "素材上传地址",
   "channelUploadKey": "素材上传 API 密钥",
   "channelUploadAccountHint": "请使用北京地域的普通百炼密钥上传文件。相同内容会复用已有文件，并刷新下载链接。上传文件保留在你的账号中供复用，任务完成后可在文件管理中删除。",
-  "channelUploadRequired": "请填写独立上传 API 密钥及有效的非 Token Plan HTTPS 地址。"
+  "channelUploadRequired": "请填写独立上传 API 密钥及有效的非 Token Plan HTTPS 地址。",
+  "modelPresetLabel": "内置模型参数",
+  "modelPresetMatched": "已匹配：{name}",
+  "@modelPresetMatched": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "modelPresetApplied": "已套用：{name}",
+  "@modelPresetApplied": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "modelPresetNone": "未自动匹配到内置模型，可手动选择要套用的模型参数",
+  "modelPresetApply": "套用",
+  "modelPresetChoose": "选择预设",
+  "modelPresetPickerTitle": "选择内置模型参数",
+  "modelPresetSearchHint": "搜索模型名、ID 或厂商…",
+  "modelPresetThinkingTag": "支持思考",
+  "modelPresetDefaultPricingNote": "未选择计费组时，将自动按官方 API 默认定价计费。",
+  "feeGroupLoadOfficialPreset": "套用官方定价",
+  "feeGroupPresetPickerTitle": "官方 API 定价预设"
 }

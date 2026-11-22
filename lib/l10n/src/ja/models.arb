@@ -649,5 +649,31 @@
   "channelUploadEndpoint": "素材アップロード URL",
   "channelUploadKey": "素材アップロード API キー",
   "channelUploadAccountHint": "ファイルのアップロードには北京リージョンの通常の Model Studio キーを使用します。同じ内容のファイルを再利用し、ダウンロードリンクを更新します。ファイルはアカウントに保持され、タスク完了後にファイル管理で削除できます。",
-  "channelUploadRequired": "専用アップロード API キーと、Token Plan 以外の有効な HTTPS URL を入力してください。"
+  "channelUploadRequired": "専用アップロード API キーと、Token Plan 以外の有効な HTTPS URL を入力してください。",
+  "modelPresetLabel": "内蔵モデルプリセット",
+  "modelPresetMatched": "一致：{name}",
+  "@modelPresetMatched": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "modelPresetApplied": "適用済み：{name}",
+  "@modelPresetApplied": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "modelPresetNone": "一致する内蔵モデルがありません。手動でプリセットを選択できます",
+  "modelPresetApply": "適用",
+  "modelPresetChoose": "プリセット選択",
+  "modelPresetPickerTitle": "内蔵モデルプリセットを選択",
+  "modelPresetSearchHint": "モデル名・ID・プロバイダーで検索…",
+  "modelPresetThinkingTag": "思考対応",
+  "modelPresetDefaultPricingNote": "料金グループ未設定時は公式 API の既定単価が自動適用されます。",
+  "feeGroupLoadOfficialPreset": "公式単価を読み込む",
+  "feeGroupPresetPickerTitle": "公式 API 単価プリセット"
 }
