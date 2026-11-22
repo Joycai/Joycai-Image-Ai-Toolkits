@@ -5980,6 +5980,78 @@ abstract class AppLocalizations {
   /// **'Enter a separate upload API key and a valid non-Token Plan HTTPS endpoint.'**
   String get channelUploadRequired;
 
+  /// No description provided for @modelPresetLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Built-in model preset'**
+  String get modelPresetLabel;
+
+  /// No description provided for @modelPresetMatched.
+  ///
+  /// In en, this message translates to:
+  /// **'Matched: {name}'**
+  String modelPresetMatched(String name);
+
+  /// No description provided for @modelPresetApplied.
+  ///
+  /// In en, this message translates to:
+  /// **'Applied: {name}'**
+  String modelPresetApplied(String name);
+
+  /// No description provided for @modelPresetNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No automatic match — you can still pick a built-in preset manually'**
+  String get modelPresetNone;
+
+  /// No description provided for @modelPresetApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get modelPresetApply;
+
+  /// No description provided for @modelPresetChoose.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose preset'**
+  String get modelPresetChoose;
+
+  /// No description provided for @modelPresetPickerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select model preset'**
+  String get modelPresetPickerTitle;
+
+  /// No description provided for @modelPresetSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search model name, ID, or provider...'**
+  String get modelPresetSearchHint;
+
+  /// No description provided for @modelPresetThinkingTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Thinking'**
+  String get modelPresetThinkingTag;
+
+  /// No description provided for @modelPresetDefaultPricingNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Official API pricing is used automatically when no fee group is assigned.'**
+  String get modelPresetDefaultPricingNote;
+
+  /// No description provided for @feeGroupLoadOfficialPreset.
+  ///
+  /// In en, this message translates to:
+  /// **'Load official pricing'**
+  String get feeGroupLoadOfficialPreset;
+
+  /// No description provided for @feeGroupPresetPickerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Official API pricing presets'**
+  String get feeGroupPresetPickerTitle;
+
   /// No description provided for @prompts.
   ///
   /// In en, this message translates to:

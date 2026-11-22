@@ -6,6 +6,7 @@ import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/llm_channel.dart';
 import '../../../models/llm_model.dart';
+import '../../../services/catalogue/builtin_model_specs.dart';
 import '../../../services/catalogue/model_id_uniqueness.dart';
 import '../../../services/llm/llm_types.dart';
 import '../../../services/llm/model_discovery_service.dart';
@@ -483,6 +484,7 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
       // absent stays unset (the editor's "not set"), never a guess. The
       // output cap is deliberately not seeded — see `discoveredLimitsOf`.
       final limits = discoveredLimitsOf(m);
+      final builtin = BuiltinModelSpecs.match(m.modelId)?.spec;
       await widget.appState.addModel(
         LLMModel(
           modelId: m.modelId,
@@ -491,14 +493,15 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
           sortOrder: widget.appState.allModels.length,
           channelId: widget.channel.id,
           feeGroupId: feeGroupId,
-          contextWindow: limits.contextWindow,
+          contextWindow: limits.contextWindow ?? builtin?.contextWindow,
         ),
       );
     }
     if (mounted) Navigator.pop(context);
   }
 
-  String _inferTag(DiscoveredModel m) => ModelFamilyClassifier.inferTag(m.modelId);
+  String _inferTag(DiscoveredModel m) =>
+      BuiltinModelSpecs.match(m.modelId)?.spec.tag ?? ModelFamilyClassifier.inferTag(m.modelId);
 }
 
 /// The 18px r4 check: the solid accent when picked, a 1.5px hairline when not,

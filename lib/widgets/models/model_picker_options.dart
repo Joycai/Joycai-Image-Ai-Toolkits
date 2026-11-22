@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../../core/constants.dart';
+import '../../core/model_kind_palette.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/llm_channel.dart';
 import '../../models/llm_model.dart';
+import '../../services/catalogue/builtin_model_specs.dart';
+import '../../services/catalogue/context_window_scale.dart';
 import '../ui/searchable_picker.dart';
+import 'fee_group_summary.dart';
 
 /// Turns the app's two pickable records into [PickerOption]s.
 ///
@@ -38,3 +43,47 @@ PickerOption<int> modelPickerOption(LLMModel m, {LLMChannel? channel}) => Picker
       ? null
       : Color(channel!.tagColor ?? AppConstants.defaultTagColor),
 );
+
+/// Formats a concise one-line spec summary (context / output / thinking / price)
+/// for a built-in model preset.
+String formatBuiltinSpecBrief(
+  AppLocalizations l10n,
+  BuiltinModelSpec spec, {
+  bool includePricing = true,
+}) {
+  final parts = <String>[];
+  if (spec.contextWindow != null) {
+    parts.add('${ContextWindowScale.label(spec.contextWindow!)} ctx');
+  }
+  if (spec.maxOutputTokens != null) {
+    parts.add('${ContextWindowScale.label(spec.maxOutputTokens!)} out');
+  }
+  if (spec.supportsThinking) {
+    parts.add(l10n.modelPresetThinkingTag);
+  }
+  if (includePricing) {
+    final price = feeGroupSummary(l10n, spec.pricing.toPricingGroup(name: spec.displayName));
+    if (price.isNotEmpty) parts.add(price);
+  }
+  return parts.join(' · ');
+}
+
+/// A built-in model preset row for [showSearchablePicker].
+PickerOption<BuiltinModelSpec> builtinModelPresetOption(
+  AppLocalizations l10n,
+  BuiltinModelSpec spec, {
+  bool pricingFocused = false,
+}) {
+  final summary = pricingFocused
+      ? feeGroupSummary(l10n, spec.pricing.toPricingGroup(name: spec.displayName))
+      : formatBuiltinSpecBrief(l10n, spec);
+  return PickerOption<BuiltinModelSpec>(
+    value: spec,
+    label: spec.displayName,
+    secondary: [spec.canonicalId, if (summary.isNotEmpty) summary].join(' · '),
+    badge: spec.provider,
+    badgeColor: modelTagAccent(spec.tag),
+    marker: spec.supportsThinking ? l10n.modelPresetThinkingTag : null,
+    markerIcon: spec.supportsThinking ? Icons.psychology_outlined : null,
+  );
+}

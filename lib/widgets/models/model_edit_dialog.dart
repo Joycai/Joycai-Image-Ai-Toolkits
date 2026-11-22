@@ -9,6 +9,7 @@ import '../../l10n/app_localizations.dart';
 import '../../models/llm_channel.dart';
 import '../../models/llm_model.dart';
 import '../../models/pricing_group.dart';
+import '../../services/catalogue/builtin_model_specs.dart';
 import '../../services/catalogue/context_window_scale.dart';
 import '../../services/catalogue/model_id_uniqueness.dart';
 import '../../services/catalogue/output_cap_scale.dart';
@@ -136,6 +137,10 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
   /// Whether a field has been typed into, so an empty new form does not open
   /// covered in error strokes.
   bool _idTouched = false;
+
+  /// Stable id of the built-in model preset the user explicitly applied in
+  /// this opening of the dialog, if any.
+  String? _appliedPresetId;
 
   /// Whether the fee group was picked by hand. Until it is, a new model's
   /// group follows its channel's default as the channel changes.

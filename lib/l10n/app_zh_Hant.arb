@@ -1727,6 +1727,32 @@
   "channelUploadKey": "素材上傳 API 金鑰",
   "channelUploadAccountHint": "請使用北京地域的一般百煉金鑰上傳檔案。相同內容會重用已有檔案，並更新下載連結。上傳檔案保留在你的帳號中供重用，任務完成後可在檔案管理中刪除。",
   "channelUploadRequired": "請填寫獨立上傳 API 金鑰及有效的非 Token Plan HTTPS 位址。",
+  "modelPresetLabel": "內建模型參數",
+  "modelPresetMatched": "已符合：{name}",
+  "@modelPresetMatched": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "modelPresetApplied": "已套用：{name}",
+  "@modelPresetApplied": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "modelPresetNone": "未自動符合內建模型，可手動選擇要套用的模型參數",
+  "modelPresetApply": "套用",
+  "modelPresetChoose": "選擇預設",
+  "modelPresetPickerTitle": "選擇內建模型參數",
+  "modelPresetSearchHint": "搜尋模型名稱、ID 或廠商…",
+  "modelPresetThinkingTag": "支援思考",
+  "modelPresetDefaultPricingNote": "未選擇計費組時，將自動按官方 API 預設價格計費。",
+  "feeGroupLoadOfficialPreset": "套用官方定價",
+  "feeGroupPresetPickerTitle": "官方 API 定價預設",
   "prompts": "提示",
   "promptLibrary": "提示庫",
   "newPrompt": "新提示",

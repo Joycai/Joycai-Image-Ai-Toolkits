@@ -3486,6 +3486,48 @@ class AppLocalizationsEn extends AppLocalizations {
       'Enter a separate upload API key and a valid non-Token Plan HTTPS endpoint.';
 
   @override
+  String get modelPresetLabel => 'Built-in model preset';
+
+  @override
+  String modelPresetMatched(String name) {
+    return 'Matched: $name';
+  }
+
+  @override
+  String modelPresetApplied(String name) {
+    return 'Applied: $name';
+  }
+
+  @override
+  String get modelPresetNone =>
+      'No automatic match — you can still pick a built-in preset manually';
+
+  @override
+  String get modelPresetApply => 'Apply';
+
+  @override
+  String get modelPresetChoose => 'Choose preset';
+
+  @override
+  String get modelPresetPickerTitle => 'Select model preset';
+
+  @override
+  String get modelPresetSearchHint => 'Search model name, ID, or provider...';
+
+  @override
+  String get modelPresetThinkingTag => 'Thinking';
+
+  @override
+  String get modelPresetDefaultPricingNote =>
+      'Official API pricing is used automatically when no fee group is assigned.';
+
+  @override
+  String get feeGroupLoadOfficialPreset => 'Load official pricing';
+
+  @override
+  String get feeGroupPresetPickerTitle => 'Official API pricing presets';
+
+  @override
   String get prompts => 'Prompts';
 
   @override

@@ -15,6 +15,8 @@ extension _IdentitySection on _ModelEditDialogState {
         _caption(l10n.basicInfo),
         const SizedBox(height: AppSpace.s6),
         _idField(size),
+        const SizedBox(height: AppSpace.s6),
+        _presetBar(context),
         const SizedBox(height: _ModelEditDialogState._fieldGap),
         if (pairFields)
           Row(
@@ -78,7 +80,10 @@ extension _IdentitySection on _ModelEditDialogState {
             autofocus: autofocus,
             hint: 'e.g. gpt-4, gemini-1.5-pro',
             error: missing || taken,
-            onChanged: (_) => _rebuild(() => _idTouched = true),
+            onChanged: (_) => _rebuild(() {
+              _idTouched = true;
+              _appliedPresetId = null;
+            }),
           ),
         ),
         if (missing)
@@ -192,31 +197,175 @@ extension _IdentitySection on _ModelEditDialogState {
 
   Widget _feeGroupField(AppFieldSize size) {
     final l10n = widget.l10n;
-    return AppLabelledField(
-      label: l10n.feeGroup,
-      size: size,
-      child: Builder(
-        // Its own context: the metrics scope sits below the dialog
-        // state's, which would read the desktop height on a phone.
-        builder: (context) => AppDropdown<int?>(
-          value: feeGroupId,
-          items: [
-            // A real answer — no group — drawn as the absence it is.
-            AppDropdownItem(value: null, label: l10n.noFeeGroup, muted: true),
-            // `D2b · 21f`: each group's charge in the same shape whatever
-            // its mode, so the user reads the price without first reading
-            // the mode.
-            for (final g in widget.appState.allPricingGroups)
-              AppDropdownItem(value: g.id!, label: g.name, trailing: feeGroupSummary(l10n, g)),
-          ],
-          onChanged: (v) => _rebuild(() {
-            feeGroupId = v;
-            _feeGroupTouched = true;
-          }),
-          prefixIcon: Icons.payments_outlined,
+    final hasDefaultPricing = feeGroupId == null && _matchedPreset != null;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AppLabelledField(
+          label: l10n.feeGroup,
           size: size,
-          height: ModelEditMetrics.of(context).fieldHeight,
+          child: Builder(
+            // Its own context: the metrics scope sits below the dialog
+            // state's, which would read the desktop height on a phone.
+            builder: (context) => AppDropdown<int?>(
+              value: feeGroupId,
+              items: [
+                // A real answer — no group — drawn as the absence it is.
+                AppDropdownItem(value: null, label: l10n.noFeeGroup, muted: true),
+                // `D2b · 21f`: each group's charge in the same shape whatever
+                // its mode, so the user reads the price without first reading
+                // the mode.
+                for (final g in widget.appState.allPricingGroups)
+                  AppDropdownItem(value: g.id!, label: g.name, trailing: feeGroupSummary(l10n, g)),
+              ],
+              onChanged: (v) => _rebuild(() {
+                feeGroupId = v;
+                _feeGroupTouched = true;
+              }),
+              prefixIcon: Icons.payments_outlined,
+              size: size,
+              height: ModelEditMetrics.of(context).fieldHeight,
+            ),
+          ),
         ),
+        if (hasDefaultPricing)
+          Padding(
+            padding: const EdgeInsets.only(top: AppSpace.s4),
+            child: ModelEditHelperText(l10n.modelPresetDefaultPricingNote),
+          ),
+      ],
+    );
+  }
+
+  // --- Built-in model preset ------------------------------------------------
+
+  BuiltinModelSpec? get _matchedPreset => BuiltinModelSpecs.match(idCtrl.text)?.spec;
+
+  void _applyModelPreset(BuiltinModelSpec spec) {
+    final id = idCtrl.text.trim();
+    final from = LLMDispatcher.surfaceForModel(id, tag: tag);
+    final to = LLMDispatcher.surfaceForModel(id, tag: spec.tag);
+    _rebuild(() {
+      if (from != to) {
+        _pinBySurface[from] = wireProtocol;
+        wireProtocol = _pinBySurface[to];
+      }
+      tag = spec.tag;
+      if (spec.contextWindow != null) {
+        contextMode = ContextWindowMode.specified;
+        contextCtrl.text = '${spec.contextWindow}';
+      }
+      if (spec.maxOutputTokens != null && spec.tag != 'image' && spec.tag != 'video') {
+        outputCapSpecified = true;
+        outputCapCtrl.text = '${spec.maxOutputTokens}';
+      }
+      if (spec.supportsThinking) {
+        if (spec.defaultReasoningEffort != null) {
+          reasoningEffort = spec.defaultReasoningEffort;
+        }
+      } else {
+        reasoningEffort = null;
+      }
+      if (spec.generationProfile != null &&
+          _generationProfileChoices.contains(spec.generationProfile)) {
+        generationProfile = spec.generationProfile;
+      }
+      _appliedPresetId = spec.id;
+    });
+  }
+
+  Future<void> _pickModelPreset(BuildContext context) async {
+    final l10n = widget.l10n;
+    final current = BuiltinModelSpecs.byId(_appliedPresetId) ?? _matchedPreset;
+    final result = await showSearchablePicker<BuiltinModelSpec>(
+      context: context,
+      title: l10n.modelPresetPickerTitle,
+      searchHint: l10n.modelPresetSearchHint,
+      icon: Icons.auto_awesome_outlined,
+      selected: current,
+      options: [for (final spec in BuiltinModelSpecs.all) builtinModelPresetOption(l10n, spec)],
+    );
+    if (result != null && mounted) {
+      _applyModelPreset(result.value);
+    }
+  }
+
+  Widget _presetBar(BuildContext context) {
+    final l10n = widget.l10n;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final applied = BuiltinModelSpecs.byId(_appliedPresetId);
+    final matched = _matchedPreset;
+    final display = applied ?? matched;
+
+    final String headline;
+    if (applied != null) {
+      headline = l10n.modelPresetApplied(applied.displayName);
+    } else if (matched != null) {
+      headline = l10n.modelPresetMatched(matched.displayName);
+    } else {
+      headline = l10n.modelPresetNone;
+    }
+
+    final brief = display == null ? '' : formatBuiltinSpecBrief(l10n, display);
+
+    return ModelEditCard(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpace.s10, vertical: AppSpace.s6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.auto_awesome_outlined,
+            size: AppSize.iconSm,
+            color: display != null ? scheme.primary : scheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: AppSpace.s6),
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  headline,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: display != null ? scheme.onSurface : scheme.onSurfaceVariant,
+                    fontWeight: display != null ? FontWeight.w500 : FontWeight.w400,
+                  ),
+                ),
+                if (brief.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    brief,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelSmall?.mono.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSpace.s6),
+          if (matched != null && applied?.id != matched.id) ...[
+            AppButton(
+              label: l10n.modelPresetApply,
+              variant: AppButtonVariant.tonal,
+              size: AppButtonSize.compact,
+              onPressed: () => _applyModelPreset(matched),
+            ),
+            const SizedBox(width: AppSpace.s4),
+          ],
+          AppButton(
+            label: l10n.modelPresetChoose,
+            variant: AppButtonVariant.text,
+            size: AppButtonSize.compact,
+            onPressed: () => _pickModelPreset(context),
+          ),
+        ],
       ),
     );
   }

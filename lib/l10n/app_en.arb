@@ -2367,6 +2367,32 @@
   "channelUploadKey": "Media upload API key",
   "channelUploadAccountHint": "Use a regular Beijing Model Studio key for file uploads. Existing files are reused by content; download links are refreshed. Uploaded files remain in your account for reuse and can be deleted in file management after tasks finish.",
   "channelUploadRequired": "Enter a separate upload API key and a valid non-Token Plan HTTPS endpoint.",
+  "modelPresetLabel": "Built-in model preset",
+  "modelPresetMatched": "Matched: {name}",
+  "@modelPresetMatched": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "modelPresetApplied": "Applied: {name}",
+  "@modelPresetApplied": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "modelPresetNone": "No automatic match — you can still pick a built-in preset manually",
+  "modelPresetApply": "Apply",
+  "modelPresetChoose": "Choose preset",
+  "modelPresetPickerTitle": "Select model preset",
+  "modelPresetSearchHint": "Search model name, ID, or provider...",
+  "modelPresetThinkingTag": "Thinking",
+  "modelPresetDefaultPricingNote": "Official API pricing is used automatically when no fee group is assigned.",
+  "feeGroupLoadOfficialPreset": "Load official pricing",
+  "feeGroupPresetPickerTitle": "Official API pricing presets",
   "prompts": "Prompts",
   "promptLibrary": "Prompt Library",
   "newPrompt": "New Prompt",

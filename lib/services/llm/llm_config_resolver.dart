@@ -4,6 +4,7 @@ import '../../models/llm_model.dart';
 import '../../models/media_pricing.dart';
 import '../../models/pricing_group.dart';
 import '../../models/spec_rate.dart';
+import '../catalogue/builtin_model_specs.dart';
 import '../db/database_service.dart';
 import 'generation/generation_profile_store.dart';
 import 'llm_types.dart';
@@ -118,27 +119,36 @@ class LLMConfigResolver {
     double inputUnitFee = 0.0;
     int inputFreeUnits = 0;
 
+    PricingGroup? resolvedGroup;
     if (pricingGroupId != null) {
       final pricingGroups = await _db.getPricingGroups();
-      final group = pricingGroups.cast<PricingGroup?>().firstWhere(
+      resolvedGroup = pricingGroups.cast<PricingGroup?>().firstWhere(
         (g) => g?.id == pricingGroupId,
         orElse: () => null,
       );
-      if (group != null) {
-        pricingKnown = true;
-        mediaPricing = group.mediaPricing;
-        inputFee = group.inputPrice;
-        cacheInputFee = group.cacheInputPrice;
-        outputFee = group.outputPrice;
-        billingMode = group.billingMode;
-        requestFee = group.requestPrice;
-        outputUnit = group.outputUnit;
-        outputRates = group.outputRates;
-        // Spec under every unit and request mode (`D2e`); never token.
-        if (group.chargesInputImages) {
-          inputUnitFee = group.inputUnitPrice;
-          inputFreeUnits = group.inputFreeUnits;
-        }
+    }
+    // Fall back to official API pricing for recognized built-in models when no
+    // user fee group is assigned.
+    if (resolvedGroup == null) {
+      final builtin = BuiltinModelSpecs.match(modelData.modelId)?.spec;
+      if (builtin != null) {
+        resolvedGroup = builtin.pricing.toPricingGroup(name: builtin.displayName);
+      }
+    }
+    if (resolvedGroup != null) {
+      pricingKnown = true;
+      mediaPricing = resolvedGroup.mediaPricing;
+      inputFee = resolvedGroup.inputPrice;
+      cacheInputFee = resolvedGroup.cacheInputPrice;
+      outputFee = resolvedGroup.outputPrice;
+      billingMode = resolvedGroup.billingMode;
+      requestFee = resolvedGroup.requestPrice;
+      outputUnit = resolvedGroup.outputUnit;
+      outputRates = resolvedGroup.outputRates;
+      // Spec under every unit and request mode (`D2e`); never token.
+      if (resolvedGroup.chargesInputImages) {
+        inputUnitFee = resolvedGroup.inputUnitPrice;
+        inputFreeUnits = resolvedGroup.inputFreeUnits;
       }
     }
 
