@@ -83,11 +83,16 @@ class FeeGroupEditorFields extends StatelessWidget {
                     _Caption(l10n.mediaTokenPrices),
                     Text(l10n.mediaPriceUnknown, style: Theme.of(context).textTheme.labelSmall),
                     const SizedBox(height: AppSpace.s10),
-                    _priceField(context, draft.imageTokenInputCtrl, l10n.mediaImageInput, '\$/M'),
-                    const SizedBox(height: AppSpace.s10),
-                    _priceField(context, draft.imageTokenCacheCtrl, l10n.mediaImageCache, '\$/M'),
-                    const SizedBox(height: AppSpace.s10),
-                    _priceField(context, draft.imageTokenOutputCtrl, l10n.mediaImageOutput, '\$/M'),
+                    _tokenPriceFields([
+                      _priceField(context, draft.imageTokenInputCtrl, l10n.mediaImageInput, '\$/M'),
+                      _priceField(context, draft.imageTokenCacheCtrl, l10n.mediaImageCache, '\$/M'),
+                      _priceField(
+                        context,
+                        draft.imageTokenOutputCtrl,
+                        l10n.mediaImageOutput,
+                        '\$/M',
+                      ),
+                    ]),
                   ] else ...[
                     AppButton(
                       label: l10n.mediaVideoInput,
@@ -162,46 +167,21 @@ class FeeGroupEditorFields extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (draft.isToken)
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final fields = [
-                _priceField(context, draft.inputPriceCtrl, l10n.priceLabelInput, '\$/M'),
-                _priceField(
-                  context,
-                  draft.cacheInputPriceCtrl,
-                  l10n.priceLabelCache,
-                  '\$/M',
-                  // The rate a blank field inherits; with no input rate yet,
-                  // the rule itself.
-                  hintText: draft.inputPriceCtrl.text.trim().isEmpty
-                      ? l10n.cachePriceBlankPlaceholder
-                      : draft.inputPriceCtrl.text.trim(),
-                ),
-                _priceField(context, draft.outputPriceCtrl, l10n.priceLabelOutput, '\$/M'),
-              ];
-              if (constraints.maxWidth >= 3 * _minRateField + 2 * 8) {
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    for (final (i, field) in fields.indexed) ...[
-                      if (i > 0) const SizedBox(width: 8),
-                      Expanded(child: field),
-                    ],
-                  ],
-                );
-              }
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  for (final (i, field) in fields.indexed) ...[
-                    if (i > 0) const SizedBox(height: AppSpace.s10),
-                    field,
-                  ],
-                ],
-              );
-            },
-          )
+          _tokenPriceFields([
+            _priceField(context, draft.inputPriceCtrl, l10n.priceLabelInput, '\$/M'),
+            _priceField(
+              context,
+              draft.cacheInputPriceCtrl,
+              l10n.priceLabelCache,
+              '\$/M',
+              // The rate a blank field inherits; with no input rate yet,
+              // the rule itself.
+              hintText: draft.inputPriceCtrl.text.trim().isEmpty
+                  ? l10n.cachePriceBlankPlaceholder
+                  : draft.inputPriceCtrl.text.trim(),
+            ),
+            _priceField(context, draft.outputPriceCtrl, l10n.priceLabelOutput, '\$/M'),
+          ])
         else
           _priceField(context, draft.requestPriceCtrl, l10n.priceLabelRequest, '\$/Req'),
         const SizedBox(height: AppSpace.s6),
@@ -232,6 +212,32 @@ class FeeGroupEditorFields extends StatelessWidget {
       ],
     );
   }
+
+  static Widget _tokenPriceFields(List<Widget> fields) => LayoutBuilder(
+    builder: (context, constraints) {
+      if (constraints.maxWidth >= 3 * _minRateField + 2 * 8) {
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (final (i, field) in fields.indexed) ...[
+              if (i > 0) const SizedBox(width: 8),
+              Expanded(child: field),
+            ],
+          ],
+        );
+      }
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final (i, field) in fields.indexed) ...[
+            if (i > 0) const SizedBox(height: AppSpace.s10),
+            field,
+          ],
+        ],
+      );
+    },
+  );
 
   static InputDecoration _decoration(BuildContext context) => InputDecoration(
     filled: true,
