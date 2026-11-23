@@ -27,6 +27,42 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  testWidgets('image token prices follow the text token layout at both widths', (tester) async {
+    final draft = FeeGroupDraft(PricingGroup(name: 'Image model', billingMode: 'token'));
+    addTearDown(draft.dispose);
+    await pump(tester, FeeGroupEditorFields(draft: draft));
+
+    Rect bounds(TextEditingController controller) => tester.getRect(
+      find.byWidgetPredicate((widget) => widget is TextField && widget.controller == controller),
+    );
+
+    final imageFields = [
+      draft.imageTokenInputCtrl,
+      draft.imageTokenCacheCtrl,
+      draft.imageTokenOutputCtrl,
+    ];
+    final textFields = [draft.inputPriceCtrl, draft.cacheInputPriceCtrl, draft.outputPriceCtrl];
+    for (final (index, controller) in imageFields.indexed) {
+      final image = bounds(controller);
+      final text = bounds(textFields[index]);
+      expect(image.top, bounds(imageFields.first).top);
+      expect(image.left, text.left);
+      expect(image.width, text.width);
+    }
+
+    tester.view.physicalSize = const Size(360, 900);
+    await tester.pumpAndSettle();
+    for (final (index, controller) in imageFields.indexed) {
+      final image = bounds(controller);
+      final text = bounds(textFields[index]);
+      expect(image.left, text.left);
+      expect(image.width, text.width);
+      if (index > 0) {
+        expect(image.top, greaterThan(bounds(imageFields[index - 1]).bottom));
+      }
+    }
+  });
+
   testWidgets('the editor shows the input row under request and spec, not under token', (
     tester,
   ) async {
