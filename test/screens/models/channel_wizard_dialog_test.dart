@@ -1,12 +1,12 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/l10n/localizations_delegates.dart';
 import 'package:joycai_image_ai_toolkits/screens/models/widgets/channel_wizard_dialog.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/widgets/models/channel_form_sections.dart';
 import 'package:joycai_image_ai_toolkits/widgets/models/channel_provider_presets.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../support/private_data_dir.dart';
 import '../../support/real_async.dart';
@@ -23,12 +23,7 @@ Future<void> _pumpWizard(WidgetTester tester, {double width = 1400}) async {
 
   await tester.pumpWidget(
     MaterialApp(
-      localizationsDelegates: const [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
+      localizationsDelegates: appLocalizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       home: Builder(
         builder: (context) {

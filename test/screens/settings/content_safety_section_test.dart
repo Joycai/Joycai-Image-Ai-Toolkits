@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/l10n/localizations_delegates.dart';
 import 'package:joycai_image_ai_toolkits/screens/settings/widgets/content_safety_section.dart';
+import 'package:material_ui/material_ui.dart';
 
 void main() {
   for (final result in [true, false, PlatformException(code: 'no_mail_handler')]) {
@@ -27,7 +28,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           locale: Locale('en'),
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          localizationsDelegates: appLocalizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(body: SingleChildScrollView(child: ContentSafetySection())),
         ),

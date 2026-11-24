@@ -14,7 +14,7 @@ import tempfile
 import xml.etree.ElementTree as ET
 import zipfile
 
-PINNED_FLUTTER = "3.47.8"
+PINNED_FLUTTER = "3.50.1"
 LANGUAGES = {"en-US", "zh-CN", "zh-TW", "ja-JP"}
 CAPABILITIES = {"internetClient", "privateNetworkClientServer", "runFullTrust"}
 MIN_OS = "10.0.17763.0"
@@ -124,8 +124,9 @@ def verify_package(package, config, version):
                 "Expected one full-trust desktop application")
         executable = apps[0].get("Executable", "").replace("\\", "/").lower()
         require(executable == "joycai_image_ai_toolkits.exe", "Unexpected executable")
-        for name in (executable, "flutter_windows.dll", "sqlite3.dll", "data/app.so", "data/icudtl.dat",
-                     "resources.pri", "msvcp140.dll", "vcruntime140.dll"):
+        for name in (executable, "flutter_windows.dll", "sqlite3.dll", "cnativeapi.dll",
+                     "data/app.so", "data/icudtl.dat", "resources.pri",
+                     "msvcp140.dll", "vcruntime140.dll"):
             require(name in names, f"Missing runtime resource: {name}")
         logos = [root.findtext("p:Properties/p:Logo", namespaces=NS)]
         for node in root.iter():

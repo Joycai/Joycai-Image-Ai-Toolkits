@@ -1,9 +1,10 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/l10n/localizations_delegates.dart';
 import 'package:joycai_image_ai_toolkits/screens/metrics/widgets/usage_stats.dart';
 import 'package:joycai_image_ai_toolkits/screens/metrics/widgets/usage_summary.dart';
 import 'package:joycai_image_ai_toolkits/screens/metrics/widgets/usage_token_charts.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Renders the usage summary block.
 ///
@@ -39,7 +40,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        localizationsDelegates: appLocalizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: Align(

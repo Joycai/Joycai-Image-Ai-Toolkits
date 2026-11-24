@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/core/constants.dart';
 import 'package:joycai_image_ai_toolkits/widgets/models/model_edit_controls.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The model editor's stop slider (`D1c`): stops at equal distances, a value
 /// in stop units, snapping for a ladder and resting between stops for a scale.

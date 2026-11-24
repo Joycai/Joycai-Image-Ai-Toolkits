@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Names a standard control without repeating its visual tooltip to readers.
 class AppControlLabel extends StatelessWidget {

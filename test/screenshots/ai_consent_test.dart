@@ -3,11 +3,11 @@ library;
 
 import 'dart:async';
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/screens/settings/widgets/ai_consent_section.dart';
 import 'package:joycai_image_ai_toolkits/services/privacy/ai_consent_service.dart';
 import 'package:joycai_image_ai_toolkits/widgets/privacy/ai_consent_dialog.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'harness/fixture_env.dart';
 import 'harness/shoot.dart';

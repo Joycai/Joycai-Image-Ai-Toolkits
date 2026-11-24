@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/core/constants.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/l10n/localizations_delegates.dart';
 import 'package:joycai_image_ai_toolkits/services/privacy/ai_consent_service.dart';
 import 'package:joycai_image_ai_toolkits/widgets/privacy/ai_consent_dialog.dart';
+import 'package:material_ui/material_ui.dart';
 
 void main() {
   final scope = AiConsentScope.forRequest(
@@ -20,7 +21,7 @@ void main() {
             accent: AppConstants.presetThemes.values.first,
             brightness: Brightness.light,
           ),
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          localizationsDelegates: appLocalizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           locale: const Locale('en'),
           home: Builder(
@@ -49,7 +50,7 @@ void main() {
     bool? result = true;
     await tester.pumpWidget(
       MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        localizationsDelegates: appLocalizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: Builder(
           builder: (context) => Scaffold(

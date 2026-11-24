@@ -7,9 +7,10 @@
 @Tags(<String>['screenshots'])
 library;
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 
+import '../support/material_ui_finders.dart';
 import 'harness/fixture_env.dart';
 import 'harness/shoot.dart';
 import 'harness/suite.dart';
@@ -68,7 +69,7 @@ void main() {
             await tapText(tester, 'NewAPI 中转');
           } else {
             await tapText(tester, 'NewAPI 中转');
-            final Finder edit = find.byTooltip('编辑');
+            final Finder edit = findTooltip('编辑');
             if (edit.evaluate().isEmpty) return;
             await tester.tap(edit.first, warnIfMissed: false);
             await settle(tester);

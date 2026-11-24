@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/core/constants.dart';
 import 'package:joycai_image_ai_toolkits/widgets/models/context_window_slider.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The context window's Specify slider (`D1c · 1a`): nine stops, a magnet,
 /// tick labels that are buttons, ⇧-arrows that skip the minor stops.

@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/models/pricing_group.dart';
 import 'package:joycai_image_ai_toolkits/models/spec_rate.dart';
 import 'package:joycai_image_ai_toolkits/widgets/models/fee_group_summary.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The one-line summary every fee group is shown as (`D2b · 21e / 21f`):
 /// the same shape whatever the mode, so a price can be read without first

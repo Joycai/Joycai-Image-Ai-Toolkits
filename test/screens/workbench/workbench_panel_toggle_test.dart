@@ -1,7 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:joycai_image_ai_toolkits/screens/workbench/workbench_layout.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// `⌘\` and `⇧⌘\` are called "show or hide", so on a tablet they have to be
 /// able to hide.

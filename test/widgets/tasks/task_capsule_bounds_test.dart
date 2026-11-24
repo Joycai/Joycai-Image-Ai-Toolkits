@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/design_tokens.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/widgets/glass/app_glass.dart';
 import 'package:joycai_image_ai_toolkits/widgets/tasks/task_capsule_monitor.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../screenshots/harness/fixture_env.dart';
 import '../../screenshots/harness/fixture_seed.dart';

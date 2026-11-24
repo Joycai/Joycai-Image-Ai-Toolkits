@@ -3,7 +3,7 @@ import 'dart:ui' show ClipOp;
 
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/app_theme.dart';
@@ -207,6 +207,22 @@ class _CropResizeViewState extends State<CropResizeView> {
               fit: BoxFit.contain,
               mode: ExtendedImageMode.editor,
               enableLoadState: true,
+              loadStateChanged: (state) => switch (state.extendedImageLoadState) {
+                LoadState.loading => Center(
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+                LoadState.failed => Center(
+                  child: Icon(
+                    Icons.broken_image_outlined,
+                    size: 32,
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
+                ),
+                LoadState.completed => null,
+              },
               extendedImageEditorKey: uiState.cropKey,
               initEditorConfigHandler: (state) {
                 return EditorConfig(

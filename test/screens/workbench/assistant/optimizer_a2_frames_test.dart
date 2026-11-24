@@ -5,10 +5,10 @@
 // count and the pending-edit list the header and the right panel are built
 // from — plus the two layouts that have somewhere to overflow: the config
 // panel at the width it narrows to, and the composer's swap of send for stop.
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/l10n/localizations_delegates.dart';
 import 'package:joycai_image_ai_toolkits/models/prompt.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/assistant/optimizer_config_panel.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/assistant/prompt_optimizer_view.dart';
@@ -18,8 +18,10 @@ import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/state/workbench_ui_state.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_button.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
+import '../../../support/material_ui_finders.dart';
 import '../../../support/private_data_dir.dart';
 import '../../../support/real_async.dart';
 
@@ -173,7 +175,7 @@ void main() {
         ChangeNotifierProvider<WorkbenchUIState>.value(
           value: ui,
           child: MaterialApp(
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            localizationsDelegates: appLocalizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
             home: Scaffold(
               body: PromptOptimizerChatView(
@@ -197,14 +199,14 @@ void main() {
     testWidgets('idle, the composer sends and says so', (tester) async {
       await pumpChat(tester, busy: false, onAbort: () {});
       final l10n = await en();
-      expect(find.byTooltip(l10n.optAbort), findsNothing);
+      expect(findTooltip(l10n.optAbort), findsNothing);
       expect(find.text(l10n.optSendHint), findsOneWidget);
     });
 
     testWidgets('busy, send is replaced by stop and the hint names Esc', (tester) async {
       await pumpChat(tester, busy: true, onAbort: () {});
       final l10n = await en();
-      expect(find.byTooltip(l10n.optAbort), findsOneWidget);
+      expect(findTooltip(l10n.optAbort), findsOneWidget);
       expect(find.text(l10n.optAbortHint), findsOneWidget);
       expect(find.text(l10n.optChatBusyHint), findsOneWidget);
     });
@@ -214,7 +216,7 @@ void main() {
       // A stop control there would do nothing when pressed.
       await pumpChat(tester, busy: true, onAbort: null);
       final l10n = await en();
-      expect(find.byTooltip(l10n.optAbort), findsNothing);
+      expect(findTooltip(l10n.optAbort), findsNothing);
       expect(find.byIcon(Icons.arrow_upward_rounded), findsOneWidget);
     });
 
@@ -263,7 +265,7 @@ void main() {
         ChangeNotifierProvider<AppState>.value(
           value: appState,
           child: MaterialApp(
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            localizationsDelegates: appLocalizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
             home: Scaffold(
               // The width the assistant's right panel narrows to, which is where

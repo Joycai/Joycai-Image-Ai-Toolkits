@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/l10n/localizations_delegates.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_markdown.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// [AppMarkdown] walks the parser's tree itself, so every shape the parser can
 /// hand it is a shape it has to survive: empty markers, ragged tables, blocks
@@ -72,7 +73,7 @@ void main() {
         for (final input in inputs) {
           await tester.pumpWidget(
             MaterialApp(
-              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              localizationsDelegates: appLocalizationsDelegates,
               supportedLocales: AppLocalizations.supportedLocales,
               home: Scaffold(
                 body: SingleChildScrollView(

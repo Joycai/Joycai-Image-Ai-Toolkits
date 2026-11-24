@@ -1,11 +1,14 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/l10n/localizations_delegates.dart';
 import 'package:joycai_image_ai_toolkits/screens/models/widgets/channel_route_table.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/channel_routes.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_dispatcher.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/platforms.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
+import 'package:material_ui/material_ui.dart';
+
+import '../../support/material_ui_finders.dart';
 
 /// `D1f · 4c`: the channel editor's route table.
 void main() {
@@ -23,7 +26,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         locale: const Locale('en'),
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        localizationsDelegates: appLocalizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: SingleChildScrollView(
@@ -121,10 +124,10 @@ void main() {
     await pump(tester, two, inUse: {RouteKind.anthropic: 2});
     // Blocked, and saying why: the one in use, and the primary.
     expect(
-      find.byTooltip("The primary route can't be turned off — make another route primary first"),
+      findTooltip("The primary route can't be turned off — make another route primary first"),
       findsOneWidget,
     );
-    expect(find.byTooltip("2 models use this route, so it can't be turned off"), findsOneWidget);
+    expect(findTooltip("2 models use this route, so it can't be turned off"), findsOneWidget);
   });
 
   testWidgets('making a route primary moves it first', (tester) async {

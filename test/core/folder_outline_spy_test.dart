@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/folder_outline_spy.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The spy publishes one integer as the user scrolls, and moves the view
 /// when asked. Nothing else may depend on it: the grid does not subscribe.

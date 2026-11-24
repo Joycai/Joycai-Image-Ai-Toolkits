@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/l10n/localizations_delegates.dart';
 import 'package:joycai_image_ai_toolkits/widgets/shell/app_native_menu.dart';
+import 'package:material_ui/material_ui.dart';
 
 void main() {
   const channel = MethodChannel('joycai/native_menu');
@@ -43,7 +44,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         navigatorKey: navigator,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        localizationsDelegates: appLocalizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: AppNativeMenu(
           onNavigate: destinations.add,
@@ -92,7 +93,7 @@ void main() {
         valueListenable: locale,
         builder: (_, value, _) => MaterialApp(
           locale: value,
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          localizationsDelegates: appLocalizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           home: AppNativeMenu(onNavigate: (_) {}, onShortcuts: () {}, child: const SizedBox()),
         ),
@@ -121,7 +122,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         navigatorKey: navigator,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        localizationsDelegates: appLocalizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: AppNativeMenu(onNavigate: (_) {}, onShortcuts: () {}, child: const Scaffold()),
       ),

@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/design_tokens.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/l10n/localizations_delegates.dart';
 import 'package:joycai_image_ai_toolkits/models/llm_channel.dart';
 import 'package:joycai_image_ai_toolkits/models/llm_model.dart';
 import 'package:joycai_image_ai_toolkits/models/pricing_group.dart';
@@ -12,9 +12,11 @@ import 'package:joycai_image_ai_toolkits/widgets/models/fee_group_row.dart';
 import 'package:joycai_image_ai_toolkits/widgets/models/pricing_group_manager.dart';
 import 'package:joycai_image_ai_toolkits/widgets/models/spec_rate_table.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_icon_button.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
+import '../../support/material_ui_finders.dart';
 import '../../support/private_data_dir.dart';
 
 /// Renders the fee-group grid.
@@ -133,7 +135,7 @@ void main() {
       ChangeNotifierProvider.value(
         value: appState,
         child: MaterialApp(
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          localizationsDelegates: appLocalizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(body: fill ? manager : SingleChildScrollView(child: manager)),
         ),
@@ -191,7 +193,7 @@ void main() {
       final row = find
           .ancestor(of: find.textContaining(name), matching: find.byType(FeeGroupRow))
           .first;
-      final delete = find.descendant(of: row, matching: find.byTooltip('Delete'));
+      final delete = find.descendant(of: row, matching: findTooltip('Delete'));
       expect(
         tester.getRect(row).right - tester.getRect(delete).right,
         closeTo(AppSpace.s6, 0.5),
@@ -470,7 +472,7 @@ void main() {
       findsOneWidget,
     );
     final sort = tester.widget<AppIconButton>(
-      find.ancestor(of: find.byTooltip('Reorder'), matching: find.byType(AppIconButton)),
+      find.ancestor(of: findTooltip('Reorder'), matching: find.byType(AppIconButton)),
     );
     expect(sort.onPressed, isNull);
   });
@@ -479,7 +481,7 @@ void main() {
     final appState = await seedState(tester);
     await pumpManager(tester, appState, const Size(1920, 1080));
 
-    await tester.tap(find.byTooltip('Reorder'));
+    await tester.tap(findTooltip('Reorder'));
     for (var i = 0; i < 3; i++) {
       await tester.pump(const Duration(milliseconds: 100));
     }

@@ -1,9 +1,9 @@
 // `A3d 4d`: a knowledge session moves between writing prompts and
 // maintaining the base without becoming another conversation — and nothing
 // else about a session's mode may move.
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/l10n/localizations_delegates.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/assistant/optimizer_config_panel.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/assistant/prompt_optimizer_view.dart';
 import 'package:joycai_image_ai_toolkits/services/assistant/knowledge_base_service.dart';
@@ -12,6 +12,7 @@ import 'package:joycai_image_ai_toolkits/services/db/database_service.dart';
 import 'package:joycai_image_ai_toolkits/services/db/repositories/assistant_session_repository.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/state/workbench_ui_state.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
@@ -78,7 +79,7 @@ void main() {
         ChangeNotifierProvider<WorkbenchUIState>.value(
           value: ui,
           child: MaterialApp(
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            localizationsDelegates: appLocalizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
             home: Scaffold(
               body: PromptOptimizerChatView(
@@ -112,7 +113,7 @@ void main() {
         ChangeNotifierProvider<AppState>.value(
           value: AppState(),
           child: MaterialApp(
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            localizationsDelegates: appLocalizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
             home: Scaffold(
               body: OptimizerConfigPanel(

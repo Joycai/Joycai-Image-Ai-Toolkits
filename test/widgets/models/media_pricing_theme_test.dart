@@ -1,13 +1,14 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/core/constants.dart';
 import 'package:joycai_image_ai_toolkits/core/design_tokens.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/l10n/localizations_delegates.dart';
 import 'package:joycai_image_ai_toolkits/models/pricing_group.dart';
 import 'package:joycai_image_ai_toolkits/widgets/models/fee_group_draft.dart';
 import 'package:joycai_image_ai_toolkits/widgets/models/fee_group_editor_fields.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_text_field.dart';
+import 'package:material_ui/material_ui.dart';
 
 void main() {
   for (final accent in AppConstants.presetThemes.entries) {
@@ -21,7 +22,7 @@ void main() {
         await tester.pumpWidget(
           MaterialApp(
             theme: theme,
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            localizationsDelegates: appLocalizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
             home: Scaffold(
               body: SingleChildScrollView(child: FeeGroupEditorFields(draft: draft)),

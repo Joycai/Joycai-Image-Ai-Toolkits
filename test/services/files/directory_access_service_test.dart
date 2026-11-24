@@ -88,4 +88,42 @@ void main() {
     expect(await access.restore('/reference'), DirectoryAccessStatus.available);
     expect(await access.authorizeReadOnly('/reference'), isTrue);
   });
+
+  test('normalizePickedDirectoryUri trims trailing separators and rejects non-file URIs', () {
+    expect(DirectoryAccessService.normalizePickedDirectoryUri(null), isNull);
+    expect(
+      DirectoryAccessService.normalizePickedDirectoryUri(
+        Uri.parse('content://com.android.externalstorage.documents/tree/primary%3APictures'),
+      ),
+      isNull,
+    );
+    expect(
+      DirectoryAccessService.normalizePickedDirectoryUri(
+        Uri.directory('/Users/demo/Pictures', windows: false),
+        windows: false,
+      ),
+      '/Users/demo/Pictures',
+    );
+    expect(
+      DirectoryAccessService.normalizePickedDirectoryUri(
+        Uri.directory('/', windows: false),
+        windows: false,
+      ),
+      '/',
+    );
+    expect(
+      DirectoryAccessService.normalizePickedDirectoryUri(
+        Uri.directory(r'C:\Users\demo\Pictures', windows: true),
+        windows: true,
+      ),
+      r'C:\Users\demo\Pictures',
+    );
+    expect(
+      DirectoryAccessService.normalizePickedDirectoryUri(
+        Uri.directory(r'C:\', windows: true),
+        windows: true,
+      ),
+      r'C:\',
+    );
+  });
 }

@@ -52,9 +52,10 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../core/app_effects.dart';
@@ -341,23 +342,31 @@ class _BenchDriverState extends State<_BenchDriver> with SingleTickerProviderSta
   }
 
   Future<void> _applyWindowSize(Size? size) async {
-    await windowManager.ensureInitialized();
+    final Window? window;
+    try {
+      window = WindowManager.instance.getCurrent();
+    } on ArgumentError {
+      return;
+    } on MissingPluginException {
+      return;
+    }
+    if (window == null) return;
     for (var attempt = 0; attempt < 10; attempt++) {
       if (size == null) {
-        if (await windowManager.isMaximized()) break;
-        await windowManager.maximize();
+        if (window.isMaximized) break;
+        window.maximize();
       } else {
-        if (await windowManager.isMaximized()) await windowManager.unmaximize();
-        await windowManager.setSize(size);
-        final actual = await windowManager.getSize();
+        if (window.isMaximized) window.unmaximize();
+        window.setSize(size.toNative(), false);
+        final actual = window.size.toSize();
         if ((actual.width - size.width).abs() < 2 && (actual.height - size.height).abs() < 2) {
           break;
         }
       }
       await Future<void>.delayed(const Duration(milliseconds: 200));
     }
-    await windowManager.show();
-    await windowManager.focus();
+    window.show();
+    window.focus();
   }
 
   void _onTimings(List<FrameTiming> timings) {

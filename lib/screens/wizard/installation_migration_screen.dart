@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';

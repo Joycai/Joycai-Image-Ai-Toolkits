@@ -1,11 +1,12 @@
 import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/core/constants.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/l10n/localizations_delegates.dart';
 import 'package:joycai_image_ai_toolkits/widgets/files/folder_outline_bar.dart';
 import 'package:joycai_image_ai_toolkits/widgets/glass/app_glass_menu.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The outline bar's width degradation, its taps and its menus (`A1b`).
 ///
@@ -38,7 +39,7 @@ void main() {
       brightness: Brightness.light,
     ),
     locale: const Locale('en'),
-    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    localizationsDelegates: appLocalizationsDelegates,
     supportedLocales: AppLocalizations.supportedLocales,
     home: Scaffold(
       body: Align(

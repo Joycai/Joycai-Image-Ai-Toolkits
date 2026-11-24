@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/l10n/localizations_delegates.dart';
 import 'package:joycai_image_ai_toolkits/models/app_image.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/assistant/prompt_optimizer_toolbar.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/workbench_glass_toolbar.dart';
@@ -9,9 +9,11 @@ import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/state/gallery_state.dart';
 import 'package:joycai_image_ai_toolkits/widgets/glass/glass_controls.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_dialog.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
+import '../../support/material_ui_finders.dart';
 import '../../support/private_data_dir.dart';
 import '../../support/real_async.dart';
 
@@ -95,7 +97,7 @@ void main() {
         ],
         child: MaterialApp(
           locale: const Locale('en'),
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          localizationsDelegates: appLocalizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: Align(
@@ -120,7 +122,7 @@ void main() {
   }
 
   bool toolLabelsShown() => find.text('Compare').evaluate().isNotEmpty;
-  bool refreshInline() => find.byTooltip('Refresh').evaluate().isNotEmpty;
+  bool refreshInline() => findTooltip('Refresh').evaluate().isNotEmpty;
   bool toolsCollapsed() =>
       find.text('Tools').evaluate().isNotEmpty ||
       find.byIcon(Icons.handyman_outlined).evaluate().isNotEmpty;
@@ -131,7 +133,7 @@ void main() {
   bool viewLabelsShown(WidgetTester tester) => tester.widget<GlassSegmented>(viewSwitch).showLabels;
 
   Future<void> openMore(WidgetTester tester) async {
-    await tester.tap(find.byTooltip('More'));
+    await tester.tap(findTooltip('More'));
     await tester.pumpAndSettle();
   }
 
@@ -141,8 +143,8 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(toolLabelsShown(), isTrue);
     expect(refreshInline(), isTrue);
-    expect(find.byTooltip('Thumbnail Size'), findsOneWidget);
-    expect(find.byTooltip('Import from Gallery'), findsOneWidget);
+    expect(findTooltip('Thumbnail Size'), findsOneWidget);
+    expect(findTooltip('Import from Gallery'), findsOneWidget);
     expect(toolsCollapsed(), isFalse);
   });
 
@@ -184,7 +186,7 @@ void main() {
       expect(toggle.left, greaterThanOrEqualTo(bar.left - 0.01), reason: 'at ${width}px');
       expect(
         bar.right + 0.01,
-        greaterThanOrEqualTo(tester.getRect(find.byTooltip('More')).right),
+        greaterThanOrEqualTo(tester.getRect(findTooltip('More')).right),
         reason: 'More fell off the bar at ${width}px',
       );
     }
@@ -309,7 +311,7 @@ void main() {
       }
       final workspace = viewLabelsShown(tester)
           ? find.text('Workspace')
-          : find.byTooltip('Temp Workspace');
+          : findTooltip('Temp Workspace');
       expect(workspace, findsOneWidget, reason: 'at ${width}px');
     }
   });
@@ -331,13 +333,13 @@ void main() {
         );
         expect(tester.takeException(), isNull, reason: 'tab $tab at ${width}px');
         expect(tabStrip, findsNothing);
-        expect(find.byTooltip('Back'), findsOneWidget);
+        expect(findTooltip('Back'), findsOneWidget);
       }
     }
 
     await pumpAtWidth(tester, 390, phone: true, tab: WorkbenchTab.crop, hasLeftPanel: false);
     expect(find.text('Crop'), findsOneWidget, reason: 'the menu names the active tool');
-    await tester.tap(find.byTooltip('Back'));
+    await tester.tap(findTooltip('Back'));
     await tester.pump();
     expect(lastController.index, WorkbenchTab.image);
   });
@@ -346,7 +348,7 @@ void main() {
     for (var width = 300.0; width <= 1000.0; width += 50) {
       await pumpAtWidth(tester, width, tab: WorkbenchTab.crop);
       expect(tester.takeException(), isNull, reason: 'Overflow at ${width}px');
-      expect(find.byTooltip('Back'), findsNothing);
+      expect(findTooltip('Back'), findsNothing);
       expect(find.byIcon(Icons.arrow_back), findsNothing);
     }
   });

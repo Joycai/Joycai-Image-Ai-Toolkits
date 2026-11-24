@@ -3,7 +3,6 @@ library;
 
 import 'dart:io';
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/models/app_image.dart';
@@ -19,6 +18,7 @@ import 'package:joycai_image_ai_toolkits/services/media/reference_media_probe.da
 import 'package:joycai_image_ai_toolkits/services/media/video_source_probe.dart';
 import 'package:joycai_image_ai_toolkits/services/media/video_thumbnail_service.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 import 'harness/fixture_env.dart';

@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/core/constants.dart';
@@ -10,6 +9,7 @@ import 'package:joycai_image_ai_toolkits/services/llm/vendors/platforms.dart';
 import 'package:joycai_image_ai_toolkits/widgets/models/app_route_badge.dart';
 import 'package:joycai_image_ai_toolkits/widgets/models/route_labels.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/dashed_border.dart';
+import 'package:material_ui/material_ui.dart';
 
 void main() {
   Future<ColorScheme> pump(WidgetTester tester, Widget child, {String? fontFamily}) async {

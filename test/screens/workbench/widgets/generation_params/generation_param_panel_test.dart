@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/l10n/localizations_delegates.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/generation_params/generation_param_panel.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/generation_params/param_editor_registry.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/generation_params/param_presentation.dart';
@@ -11,10 +11,11 @@ import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_dropdown.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_segmented_control.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_slider.dart';
+import 'package:material_ui/material_ui.dart';
 
 void main() {
   Widget host(Widget child) => MaterialApp(
-    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    localizationsDelegates: appLocalizationsDelegates,
     supportedLocales: AppLocalizations.supportedLocales,
     home: Scaffold(
       body: Center(child: SizedBox(width: 280, child: child)),

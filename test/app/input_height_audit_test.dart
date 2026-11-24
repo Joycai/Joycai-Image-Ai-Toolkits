@@ -1,11 +1,12 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../screenshots/harness/fixture_env.dart';
 import '../screenshots/harness/fixture_seed.dart';
 import '../screenshots/harness/shoot.dart';
+import '../support/material_ui_finders.dart';
 
 /// Every input and select box draws its outline at the height of the box it
 /// is given, and at the same height on the desktop as in this harness.
@@ -68,7 +69,7 @@ void main() {
       AppScreen.models,
       desktop,
       (WidgetTester tester) async {
-        final edit = find.byTooltip('编辑');
+        final edit = findTooltip('编辑');
         if (edit.evaluate().isEmpty) return;
         await tester.tap(edit.first, warnIfMissed: false);
         await settle(tester);

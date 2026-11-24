@@ -10,10 +10,10 @@ library;
 
 import 'dart:async';
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/state/workbench_ui_state.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'harness/fixture_env.dart';
 import 'harness/fixture_seed.dart';
@@ -78,7 +78,7 @@ void main() {
       before: (_) async {
         final AppState appState = AppState();
         appState.setWorkbenchTab(tab.index);
-        tab.seed(appState);
+        await tab.seed(appState);
       },
       // Scrolled to the end of the transcript, because the refined-prompt card
       // is the part of this screen worth photographing and the run console

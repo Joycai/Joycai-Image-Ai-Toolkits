@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_slider.dart';
+import 'package:material_ui/material_ui.dart';
 
 void main() {
   testWidgets('slider preserves keyboard steps, bounds, theme and disabled behavior', (

@@ -12,17 +12,18 @@
 @Tags(<String>['screenshots'])
 library;
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/core/design_tokens.dart';
 import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/l10n/localizations_delegates.dart';
 import 'package:joycai_image_ai_toolkits/models/spec_rate.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/size_picker/size_field.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/size_picker/size_picker_panel.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/model_capabilities.dart';
 import 'package:joycai_image_ai_toolkits/widgets/glass/app_glass.dart';
+import 'package:material_ui/material_ui.dart';
 
 void main() {
   ParamSpec sizeSpec(String modelId) =>
@@ -89,7 +90,7 @@ void main() {
         MaterialApp(
           debugShowCheckedModeBanner: false,
           locale: const Locale('zh'),
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          localizationsDelegates: appLocalizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           theme: buildAppTheme(
             accent: ThemeAccent.fromSeed(const Color(0xFF3B6CF6)),

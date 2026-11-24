@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The app slider uses the theme's track, thumb, accent and disabled colors.
 /// Keep native focus, keyboard increments and accessibility semantics inside

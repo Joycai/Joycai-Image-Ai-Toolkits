@@ -1,6 +1,6 @@
 # Testing Strategy
 
-Use Flutter 3.47.8, matching [CI](.github/workflows/flutter-ci.yml). Run commands
+Use Flutter 3.50.1, matching [CI](.github/workflows/flutter-ci.yml). Run commands
 from the repository root after `flutter pub get`. If localization sources changed,
 run `dart tool/merge_l10n.dart` successfully before `flutter gen-l10n`.
 

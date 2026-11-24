@@ -1,11 +1,11 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/l10n/localizations_delegates.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/model_tag_chip.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/searchable_picker.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Covers [SearchablePickerField]'s load-bearing behaviours, each of which
 /// went wrong in a way that only shows up under a state a single mount does not
@@ -43,12 +43,7 @@ void main() {
   }) {
     return MaterialApp(
       theme: buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light),
-      localizationsDelegates: const [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
+      localizationsDelegates: appLocalizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       builder: (context, child) => MediaQuery(
         data: MediaQuery.of(context).copyWith(textScaler: textScaler),
@@ -220,12 +215,7 @@ void main() {
       ];
       return MaterialApp(
         theme: buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light),
-        localizationsDelegates: const [
-          AppLocalizations.delegate,
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
+        localizationsDelegates: appLocalizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: Center(

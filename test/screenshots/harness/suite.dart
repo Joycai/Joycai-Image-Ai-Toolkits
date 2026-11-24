@@ -8,9 +8,9 @@
 // Each file installs its own [FixtureEnv] — its own temp tree and database —
 // so the pieces never contend for a lock when they run side by side.
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../support/real_async.dart';
 import 'fixture_env.dart';

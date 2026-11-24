@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/core/design_tokens.dart';
 import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Covers the type scale added to [buildAppTheme] so widgets can read
 /// `textTheme.bodyMedium` etc. instead of a literal `TextStyle(fontSize: N)`.
