@@ -66,7 +66,7 @@ void main() async {
     DatabaseService().configureCredentialProtection(const WindowsCredentialProtection());
   }
 
-  await _hideNativeTitleBar();
+  _hideNativeTitleBar();
 
   final packageInfo = await PackageInfo.fromPlatform();
 
@@ -219,6 +219,7 @@ void main() async {
   // A first-run macOS notification permission request can remain unanswered.
   // Never hold the bootstrap/import UI (or the first app frame) behind it.
   WidgetsBinding.instance.addPostFrameCallback((_) {
+    _focusNativeWindow();
     unawaited(appState.taskQueue.resumePendingTasks());
     unawaited(NotificationService().init());
   });
@@ -228,18 +229,39 @@ void main() async {
 ///
 /// The design draws the title bar as part of the app — it carries the
 /// navigation — so the native one is hidden. macOS keeps its traffic lights
-/// (`windowButtonVisibility`), which sit inside the window there.
-Future<void> _hideNativeTitleBar() async {
+/// (`isWindowControlButtonsVisible`), which sit inside the window there;
+/// Windows and Linux draw their own caption buttons in [AppTitleBar].
+void _hideNativeTitleBar() {
   if (!usesCustomWindowChrome) return;
 
-  final window = WindowManager.instance.getCurrent();
+  final Window? window;
+  try {
+    window = WindowManager.instance.getCurrent();
+  } on ArgumentError {
+    return;
+  } on MissingPluginException {
+    return;
+  }
   if (window == null) return;
   window.titleBarStyle = TitleBarStyle.hidden;
-  window.isWindowControlButtonsVisible = true;
+  window.isWindowControlButtonsVisible = Platform.isMacOS;
+}
+
+void _focusNativeWindow() {
+  if (!usesCustomWindowChrome) return;
+
+  final Window? window;
+  try {
+    window = WindowManager.instance.getCurrent();
+  } on ArgumentError {
+    return;
+  } on MissingPluginException {
+    return;
+  }
+  if (window == null) return;
   if (window.isMinimized) {
     window.restore();
   }
-  window.show();
   window.focus();
 }
 

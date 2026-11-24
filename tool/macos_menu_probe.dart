@@ -1,6 +1,7 @@
 // Native menu acceptance probe. No app database, task queue or network is opened.
 // flutter run -d macos --release -t tool/macos_menu_probe.dart
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/l10n/localizations_delegates.dart';
 import 'package:joycai_image_ai_toolkits/widgets/shell/app_native_menu.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -25,7 +26,7 @@ class _ProbeState extends State<_Probe> {
   @override
   Widget build(BuildContext context) => MaterialApp(
     locale: _locale,
-    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    localizationsDelegates: appLocalizationsDelegates,
     supportedLocales: AppLocalizations.supportedLocales,
     home: Builder(
       builder: (context) => AppNativeMenu(

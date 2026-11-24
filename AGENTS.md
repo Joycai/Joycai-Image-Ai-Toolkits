@@ -51,7 +51,8 @@ main.dart          MultiProvider root → MyApp → AppWindowFrame → MainNavig
 core/              Responsive breakpoints, AppConstants/enums, AppPaths, file utils, design_tokens,
                      app_shortcuts (the one keyboard-shortcut table)
                      (incl. AppDock, the phone dock's size), app_theme, app_semantic_colors, theme_accent
-l10n/              generated — never edit; sources are l10n/src/<lang>/<module>.arb
+l10n/              generated (`app_localizations*.dart` — never edit; sources are l10n/src/<lang>/<module>.arb)
+                     plus hand-written `localizations_delegates.dart` (for `material_ui`/`cupertino_ui`)
 models/            LLMModel, LLMChannel, PricingGroup, Prompt/SystemPrompt (+ PresetOutputKind), PromptTag, PromptHistoryEntry,
                      TaskItem (+ TaskType, TaskEvent), TokenUsage (one billed request; owns its
                      cost arithmetic) + UsageCheckpoint, AppImage, BrowserFile, LogEntry,

@@ -54,6 +54,7 @@ import 'dart:io';
 
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -341,7 +342,14 @@ class _BenchDriverState extends State<_BenchDriver> with SingleTickerProviderSta
   }
 
   Future<void> _applyWindowSize(Size? size) async {
-    final window = WindowManager.instance.getCurrent();
+    final Window? window;
+    try {
+      window = WindowManager.instance.getCurrent();
+    } on ArgumentError {
+      return;
+    } on MissingPluginException {
+      return;
+    }
     if (window == null) return;
     for (var attempt = 0; attempt < 10; attempt++) {
       if (size == null) {

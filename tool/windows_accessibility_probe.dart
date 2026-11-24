@@ -5,6 +5,7 @@
 // AXTree errors. A completed counter alone is NOT an accessibility pass.
 import 'dart:async';
 
+import 'package:flutter/services.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_menu_anchor.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_segmented_control.dart';
 import 'package:material_ui/material_ui.dart';
@@ -41,10 +42,16 @@ class _ProbeState extends State<_Probe> {
         Tooltip.dismissAllToolTips();
         if (_menu.isOpen) _menu.close();
         // Resize while the tooltip is leaving, the original crash boundary.
-        WindowManager.instance.getCurrent()?.setSize(
-          Size(i.isEven ? 1000 : 900, 700).toNative(),
-          false,
-        );
+        try {
+          WindowManager.instance.getCurrent()?.setSize(
+            Size(i.isEven ? 1000 : 900, 700).toNative(),
+            false,
+          );
+        } on ArgumentError {
+          // No nativeapi library loaded outside desktop runtime.
+        } on MissingPluginException {
+          // No window to resize.
+        }
         if (!mounted) return;
         if (i % 5 == 0) {
           final closed = showDialog<void>(

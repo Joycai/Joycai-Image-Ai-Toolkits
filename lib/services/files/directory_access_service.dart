@@ -1,6 +1,7 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:path/path.dart' as p;
 
 /// OS authorization is independent of application path settings and MCP rules.
 /// Native grants stay on this Mac, outside the application's backup database.
@@ -49,8 +50,7 @@ class DirectoryAccessService {
         initialDirectory: initialDirectory,
         dialogTitle: dialogTitle,
       );
-      if (uri == null) return null;
-      return uri.isScheme('file') ? uri.toFilePath() : uri.toString();
+      return normalizePickedDirectoryUri(uri);
     }
     return _channel.invokeMethod<String>('pick', {
       'initialDirectory': initialDirectory,
@@ -75,6 +75,14 @@ class DirectoryAccessService {
     } on PlatformException {
       return false;
     }
+  }
+
+  @visibleForTesting
+  static String? normalizePickedDirectoryUri(Uri? uri, {bool? windows}) {
+    if (uri == null || !uri.isScheme('file')) return null;
+    final isWindows = windows ?? (!kIsWeb && defaultTargetPlatform == TargetPlatform.windows);
+    final context = p.Context(style: isWindows ? p.Style.windows : p.Style.posix);
+    return context.normalize(uri.toFilePath(windows: isWindows));
   }
 
   static DirectoryAccessStatus _status(String? value) => DirectoryAccessStatus.values.firstWhere(

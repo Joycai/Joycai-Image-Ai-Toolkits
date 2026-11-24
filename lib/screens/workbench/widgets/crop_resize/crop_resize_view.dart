@@ -207,6 +207,22 @@ class _CropResizeViewState extends State<CropResizeView> {
               fit: BoxFit.contain,
               mode: ExtendedImageMode.editor,
               enableLoadState: true,
+              loadStateChanged: (state) => switch (state.extendedImageLoadState) {
+                LoadState.loading => Center(
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+                LoadState.failed => Center(
+                  child: Icon(
+                    Icons.broken_image_outlined,
+                    size: 32,
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
+                ),
+                LoadState.completed => null,
+              },
               extendedImageEditorKey: uiState.cropKey,
               initEditorConfigHandler: (state) {
                 return EditorConfig(

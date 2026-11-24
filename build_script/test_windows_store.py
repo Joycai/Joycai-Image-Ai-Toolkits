@@ -75,8 +75,9 @@ class StoreValidationTest(unittest.TestCase):
           <Applications><Application Executable="joycai_image_ai_toolkits.exe"
             EntryPoint="Windows.FullTrustApplication"/></Applications></Package>'''
         files = {name: b"fixture" for name in (
-            "joycai_image_ai_toolkits.exe", "flutter_windows.dll", "sqlite3.dll", "data/app.so", "data/icudtl.dat",
-            "resources.pri", "msvcp140.dll", "vcruntime140.dll", "Images/StoreLogo.png")}
+            "joycai_image_ai_toolkits.exe", "flutter_windows.dll", "sqlite3.dll", "cnativeapi.dll",
+            "data/app.so", "data/icudtl.dat", "resources.pri", "msvcp140.dll", "vcruntime140.dll",
+            "Images/StoreLogo.png")}
         files["AppxManifest.xml"] = manifest.encode()
         return files
 
@@ -102,7 +103,7 @@ class StoreValidationTest(unittest.TestCase):
             files["AppxManifest.xml"] = files["AppxManifest.xml"].replace(old, new)
             with self.subTest(old=old), self.assertRaises(ValueError):
                 self.verify(files)
-        for missing in ("flutter_windows.dll", "sqlite3.dll", "Images/StoreLogo.png", "data/app.so"):
+        for missing in ("flutter_windows.dll", "sqlite3.dll", "cnativeapi.dll", "Images/StoreLogo.png", "data/app.so"):
             files = copy.copy(original)
             del files[missing]
             with self.subTest(missing=missing), self.assertRaises(ValueError):
