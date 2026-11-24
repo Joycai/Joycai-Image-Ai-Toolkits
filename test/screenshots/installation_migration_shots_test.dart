@@ -1,16 +1,17 @@
 @Tags(<String>['screenshots'])
 library;
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_paths.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/core/constants.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/l10n/localizations_delegates.dart';
 import 'package:joycai_image_ai_toolkits/screens/wizard/installation_migration_screen.dart';
 import 'package:joycai_image_ai_toolkits/screens/wizard/setup_wizard.dart';
 import 'package:joycai_image_ai_toolkits/services/files/installation_migration_service.dart';
 import 'package:joycai_image_ai_toolkits/state/installation_migration_state.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'harness/fixture_env.dart';
 import 'harness/shoot.dart';
@@ -109,7 +110,7 @@ Future<void> _migrationShot(
     MaterialApp(
       debugShowCheckedModeBanner: false,
       locale: locale,
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      localizationsDelegates: appLocalizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       theme: buildAppTheme(
         accent: AppConstants.presetThemes.values.first,

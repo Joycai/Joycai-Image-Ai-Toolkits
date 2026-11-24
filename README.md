@@ -1,6 +1,6 @@
 # Joycai Image AI Toolkits
 
-[![Flutter](https://img.shields.io/badge/Flutter-3.47.8-%2302569B.svg?style=flat&logo=Flutter&logoColor=white)](https://flutter.dev)
+[![Flutter](https://img.shields.io/badge/Flutter-3.50.1-%2302569B.svg?style=flat&logo=Flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/dart-%230175C2.svg?style=flat&logo=dart&logoColor=white)](https://dart.dev)
 [![Version](https://img.shields.io/badge/version-4.31.9-blue.svg)](https://github.com/Joycai/Joycai-Image-Ai-Toolkits/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -71,8 +71,8 @@ Joycai Image AI Toolkits is a powerful, cross-platform desktop & mobile applicat
 
 ## 🛠️ Technical Stack
 
-*   **Framework**: [Flutter](https://flutter.dev) (Material 3), version 3.47.8
-*   **Dart SDK**: `^3.13.0`
+*   **Framework**: [Flutter](https://flutter.dev) (Material 3), version 3.50.1
+*   **Dart SDK**: `^3.14.0`
 *   **App Version**: 4.31.9
 *   **State Management**: [Provider](https://pub.dev/packages/provider) — `AppState` coordinates dedicated gallery, file browser, staging, downloader, model, workbench, task, log, and MCP states
 *   **Database**: [SQLite](https://pub.dev/packages/sqflite) (via `sqflite_common_ffi` for Desktop support)
@@ -84,7 +84,7 @@ Joycai Image AI Toolkits is a powerful, cross-platform desktop & mobile applicat
 
 ### Prerequisites
 
-*   Flutter SDK 3.47.8 (includes Dart 3.13.7; CI and release builds use this version)
+*   Flutter SDK 3.50.1 (includes Dart 3.14.0; CI and release builds use this version)
 *   Native build tools for your target platform (see [build configuration](.github/workflows/flutter-build.yml)). Release automation builds Windows, macOS, Linux, and Android; iOS requires a local Apple toolchain and signing.
 *   An API key for your chosen hosted provider, or a running local Ollama / LM Studio endpoint.
 

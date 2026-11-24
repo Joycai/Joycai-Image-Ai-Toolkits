@@ -9,12 +9,13 @@
 @Tags(<String>['screenshots'])
 library;
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/l10n/localizations_delegates.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/markdown_editor.dart';
+import 'package:material_ui/material_ui.dart';
 
 const _prompt =
     '## 主体\n一位身着**墨绿色丝绒长裙**的年轻女性，侧身站在落地窗前，左手轻扶窗框，目光望向窗外。\n\n'
@@ -37,7 +38,7 @@ void main() {
           MaterialApp(
             debugShowCheckedModeBanner: false,
             locale: const Locale('zh'),
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            localizationsDelegates: appLocalizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
             theme: buildAppTheme(
               accent: ThemeAccent.fromSeed(const Color(0xFF3B6CF6)),

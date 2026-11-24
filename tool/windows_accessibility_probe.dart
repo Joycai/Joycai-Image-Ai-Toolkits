@@ -5,14 +5,13 @@
 // AXTree errors. A completed counter alone is NOT an accessibility pass.
 import 'dart:async';
 
-import 'package:flutter/material.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_menu_anchor.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_segmented_control.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:window_manager/window_manager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await windowManager.ensureInitialized();
   runApp(const _Probe());
 }
 
@@ -42,7 +41,10 @@ class _ProbeState extends State<_Probe> {
         Tooltip.dismissAllToolTips();
         if (_menu.isOpen) _menu.close();
         // Resize while the tooltip is leaving, the original crash boundary.
-        await windowManager.setSize(Size(i.isEven ? 1000 : 900, 700));
+        WindowManager.instance.getCurrent()?.setSize(
+          Size(i.isEven ? 1000 : 900, 700).toNative(),
+          false,
+        );
         if (!mounted) return;
         if (i % 5 == 0) {
           final closed = showDialog<void>(

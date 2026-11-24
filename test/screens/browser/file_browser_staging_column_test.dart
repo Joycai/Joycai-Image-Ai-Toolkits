@@ -6,11 +6,10 @@
 // open/close decision lives in the screen's layout build, not in a state
 // class, and a test against a different mount would prove nothing.
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:joycai_image_ai_toolkits/screens/browser/widgets/browser_staging_panel.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../screenshots/harness/fixture_env.dart';
 import '../../screenshots/harness/fixture_seed.dart';

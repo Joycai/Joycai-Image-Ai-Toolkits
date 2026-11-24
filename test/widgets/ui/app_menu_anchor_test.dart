@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_menu_anchor.dart';
+import 'package:material_ui/material_ui.dart';
 
 void main() {
   testWidgets('menu and tooltip keep distinct traversal parents through overlay teardown', (

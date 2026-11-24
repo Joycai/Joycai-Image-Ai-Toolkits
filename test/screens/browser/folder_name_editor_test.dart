@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/screens/browser/widgets/folder_name_editor.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The in-row name field's contract: Enter commits a good name, Enter on a
 /// bad one shows why and commits nothing, Escape and an unchanged name both

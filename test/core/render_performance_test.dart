@@ -4,12 +4,11 @@
 // flake generator. Each asserts on the *structure* that made a frame cheap, so
 // a regression shows up as a failing expectation rather than as a laptop fan.
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:joycai_image_ai_toolkits/core/thumbnail_decode.dart';
 import 'package:joycai_image_ai_toolkits/widgets/glass/app_glass.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_breathing_dot.dart';
+import 'package:material_ui/material_ui.dart';
 
 void main() {
   group('thumbnail size snapping', () {

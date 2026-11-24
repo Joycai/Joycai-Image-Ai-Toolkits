@@ -1,11 +1,12 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/design_tokens.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/l10n/localizations_delegates.dart';
 import 'package:joycai_image_ai_toolkits/models/app_image.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/gallery/gallery_selection_bar.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/state/gallery_state.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 import '../../screenshots/harness/fixture_env.dart';
@@ -37,7 +38,7 @@ void main() {
           ChangeNotifierProvider.value(value: appState.workbenchUIState),
         ],
         child: const MaterialApp(
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          localizationsDelegates: appLocalizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: Align(alignment: Alignment.bottomCenter, child: GallerySelectionBar()),

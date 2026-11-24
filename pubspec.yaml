@@ -4,20 +4,22 @@ publish_to: 'none'
 version: 4.31.9+0
 
 environment:
-  sdk: ^3.13.0
+  sdk: ^3.14.0
 
 dependencies:
   flutter:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
+  material_ui: ^1.11.1
+  cupertino_ui: ^1.1.7
   provider: ^6.1.5
   uuid: ^4.5.3
-  file_picker: ^13.3.2
+  file_picker: ^13.4.1
   # Never imported: its plugin is the database on macOS, iOS and Android
   # (database_service.dart uses sqflite_common_ffi's API on all platforms).
-  sqflite: ^2.4.4+2
-  sqflite_common_ffi: ^2.4.4
+  sqflite: ^2.4.6
+  sqflite_common_ffi: ^2.4.7
   path_provider: ^2.1.6
   path: ^1.9.1
   http: ^1.6.0
@@ -27,21 +29,21 @@ dependencies:
   package_info_plus: ^10.2.0
   flutter_markdown_plus: ^1.0.11
   markdown: ^7.3.0
-  flutter_local_notifications: ^22.3.3
+  flutter_local_notifications: ^23.0.4
   desktop_drop: ^0.8.4
   html: ^0.15.6
   crypto: ^3.0.8
   share_plus: ^13.3.1
   image_picker: ^1.2.4
   image_size_getter: ^2.4.1
-  gal: ^2.3.2
-  image: ^4.12.0
+  gal: ^3.0.1
+  image: ^4.13.1
   extended_image: ^10.0.1
   video_player: ^2.11.1
   # Never imported: video_player's Windows implementation.
-  video_player_win: ^3.3.1
+  video_player_win: ^3.3.2
   fc_native_video_thumbnail: ^4.0.0
-  window_manager: ^0.5.2
+  window_manager: ^0.7.1
   # Both only for the Windows recycle-bin call in trash_service.dart; win32 was
   # already here transitively.
   win32: ^6.4.0

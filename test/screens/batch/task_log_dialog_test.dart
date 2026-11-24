@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/l10n/localizations_delegates.dart';
 import 'package:joycai_image_ai_toolkits/models/task_item.dart';
 import 'package:joycai_image_ai_toolkits/screens/batch/task_log_dialog.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The log viewer is the only way to see why a task failed, so these pin down
 /// that it shows the whole log — not just the tail the card already showed —
@@ -25,7 +26,7 @@ void main() {
   Future<void> pumpDialog(WidgetTester tester, TaskItem item) async {
     await tester.pumpWidget(
       MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        localizationsDelegates: appLocalizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(body: TaskLogDialog(task: item)),
       ),

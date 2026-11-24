@@ -1,14 +1,15 @@
 // `A3d 4c`: the assistant's 「管理预设」 lands on the presets — the library's
 // system templates, filtered to refiner — and only for that one visit.
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/l10n/localizations_delegates.dart';
 import 'package:joycai_image_ai_toolkits/models/prompt.dart';
 import 'package:joycai_image_ai_toolkits/screens/prompts/prompts_screen.dart';
 import 'package:joycai_image_ai_toolkits/screens/prompts/widgets/prompts_header.dart';
 import 'package:joycai_image_ai_toolkits/services/tasks/task_queue_service.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/state/log_state.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
@@ -40,7 +41,7 @@ void main() {
             ChangeNotifierProvider<TaskQueueService>.value(value: queue),
           ],
           child: MaterialApp(
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            localizationsDelegates: appLocalizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
             // Keyed, so that a second pump mounts the screen again, the way the
             // shell does on every navigation.

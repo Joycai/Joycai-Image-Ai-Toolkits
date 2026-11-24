@@ -1,19 +1,21 @@
 import 'dart:io';
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/l10n/localizations_delegates.dart';
 import 'package:joycai_image_ai_toolkits/models/image_layer.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/layers/layer_canvas_page.dart';
 import 'package:joycai_image_ai_toolkits/services/media/layer_composite_service.dart';
 import 'package:joycai_image_ai_toolkits/state/workbench_ui_state.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
+import '../../support/material_ui_finders.dart';
 import '../../support/private_data_dir.dart';
 
 /// The layer canvas (`A7`) puts every layer back in its box on the base —
@@ -70,7 +72,7 @@ void main() {
             brightness: Brightness.light,
           ),
           locale: const Locale('en'),
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          localizationsDelegates: appLocalizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           home: LayerCanvasPage(set: set),
         ),
@@ -112,13 +114,13 @@ void main() {
     expect(titleY, lessThan(figureY));
     expect(figureY, lessThan(baseY));
 
-    await tester.tap(find.byTooltip('Hide layer').at(1)); // figure's row
+    await tester.tap(findTooltip('Hide layer').at(1)); // figure's row
     await tester.pump();
     expect(
       find.byWidgetPredicate((w) => w is Image && w.key == ValueKey(set.overlays.first.path)),
       findsNothing,
     );
-    expect(find.byTooltip('Show layer'), findsOneWidget);
+    expect(findTooltip('Show layer'), findsOneWidget);
   });
 
   testWidgets('a tap on the canvas picks the topmost box under it', (tester) async {
@@ -155,7 +157,7 @@ void main() {
       expect(find.text('title'), findsOneWidget, reason: '$size');
       expect(find.text('Base'), findsOneWidget, reason: '$size');
       expect(
-        find.byTooltip('Export composite').evaluate().isNotEmpty ||
+        findTooltip('Export composite').evaluate().isNotEmpty ||
             find.text('Export composite').evaluate().isNotEmpty,
         isTrue,
         reason: '$size',

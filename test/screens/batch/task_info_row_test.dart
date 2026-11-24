@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/screens/batch/task_queue_screen.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// One labelled line of a task's expanded detail.
 ///

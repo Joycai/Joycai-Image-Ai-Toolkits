@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Success, warning and information — the meanings the theme colour is not
 /// allowed to touch.

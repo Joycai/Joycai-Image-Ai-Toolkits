@@ -7,7 +7,7 @@ through WIN-06 remain prerequisites for release readiness.
 
 ## Local preparation
 
-Use Python 3.12 and Flutter 3.47.8 on Windows with the Visual Studio C++ build tools:
+Use Python 3.12 and Flutter 3.50.1 on Windows with the Visual Studio C++ build tools:
 
 ```powershell
 python -m unittest discover -s build_script -p 'test_windows*.py'

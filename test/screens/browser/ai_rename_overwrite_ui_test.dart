@@ -1,13 +1,14 @@
 import 'dart:io';
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/l10n/localizations_delegates.dart';
 import 'package:joycai_image_ai_toolkits/screens/browser/ai_rename_dialog.dart';
 import 'package:joycai_image_ai_toolkits/services/tasks/ai_rename_agent.dart';
 import 'package:joycai_image_ai_toolkits/services/tasks/ai_rename_review.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/state/file_browser_state.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 
@@ -64,7 +65,7 @@ void main() {
           ChangeNotifierProvider<FileBrowserState>.value(value: appState.fileBrowserState),
         ],
         child: MaterialApp(
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          localizationsDelegates: appLocalizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           locale: const Locale('en'),
           home: Scaffold(body: AiRenameDialog(debugInitialRows: rows)),

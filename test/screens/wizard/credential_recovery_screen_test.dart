@@ -1,10 +1,11 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/l10n/localizations_delegates.dart';
 import 'package:joycai_image_ai_toolkits/screens/wizard/credential_recovery_screen.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_button.dart';
+import 'package:material_ui/material_ui.dart';
 
 void main() {
   testWidgets('direct Mac recovery explains signature mismatch without offering data reset', (
@@ -13,7 +14,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         locale: const Locale('en'),
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        localizationsDelegates: appLocalizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: CredentialRecoveryScreen(requiresSignedMacBuild: true, onRetry: () async {}),
       ),
@@ -33,7 +34,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         locale: const Locale('en'),
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        localizationsDelegates: appLocalizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: CredentialRecoveryScreen(
           onRetry: () async {},
@@ -65,7 +66,7 @@ void main() {
     var calls = 0;
     await tester.pumpWidget(
       MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        localizationsDelegates: appLocalizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: CredentialRecoveryScreen(
           onRetry: () {

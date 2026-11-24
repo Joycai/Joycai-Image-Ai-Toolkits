@@ -1,10 +1,10 @@
 @Tags(['screenshots'])
 library;
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/screens/settings/widgets/content_safety_section.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'harness/fixture_env.dart';
 import 'harness/shoot.dart';

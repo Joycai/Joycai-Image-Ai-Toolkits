@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/l10n/localizations_delegates.dart';
 import 'package:joycai_image_ai_toolkits/models/spec_rate.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/size_picker/size_field.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/size_picker/size_picker_panel.dart';
@@ -11,6 +11,7 @@ import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/size_picker/s
 import 'package:joycai_image_ai_toolkits/screens/workbench/workbench_layout.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/model_capabilities.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_button.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 /// The `A1c` size picker: what it writes, when it refuses to, and where it
@@ -21,7 +22,7 @@ void main() {
 
   Widget host(Widget child, {double width = 340}) => MaterialApp(
     locale: const Locale('en'),
-    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    localizationsDelegates: appLocalizationsDelegates,
     supportedLocales: AppLocalizations.supportedLocales,
     theme: buildAppTheme(accent: ThemeAccent.fromSeed(Colors.indigo), brightness: Brightness.light),
     home: Scaffold(

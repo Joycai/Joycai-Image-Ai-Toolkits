@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/core/design_tokens.dart';
 import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/l10n/localizations_delegates.dart';
 import 'package:joycai_image_ai_toolkits/widgets/models/model_edit_controls.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// `D2a`: the parameter summary's guide line takes the accent (35%) while a
 /// protocol is pinned, and eases there (M2).
@@ -17,7 +18,7 @@ void main() {
   Future<void> pump(WidgetTester tester, bool governed) => tester.pumpWidget(
     MaterialApp(
       theme: theme,
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      localizationsDelegates: appLocalizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       home: Scaffold(
         body: ModelEditParamBlock(items: const ['size: auto'], governed: governed),

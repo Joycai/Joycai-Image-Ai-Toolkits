@@ -11,11 +11,11 @@ library;
 import 'dart:async';
 import 'dart:io';
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/constants.dart';
 import 'package:joycai_image_ai_toolkits/models/app_image.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/assistant/result_feedback_dialog.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'harness/fixture_env.dart';
 import 'harness/shoot.dart';

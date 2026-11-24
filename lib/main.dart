@@ -1,9 +1,8 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
@@ -19,6 +18,7 @@ import 'core/design_tokens.dart';
 import 'core/responsive.dart';
 import 'core/theme_accent.dart';
 import 'l10n/app_localizations.dart';
+import 'l10n/localizations_delegates.dart';
 import 'screens/batch/task_queue_screen.dart';
 import 'screens/browser/file_browser_screen.dart';
 import 'screens/downloader/image_downloader_screen.dart';
@@ -88,7 +88,7 @@ void main() async {
             accent: AppConstants.presetThemes.values.first,
             brightness: Brightness.dark,
           ),
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          localizationsDelegates: appLocalizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           builder: (context, child) => Column(
             children: [
@@ -139,7 +139,7 @@ void main() async {
             accent: AppConstants.presetThemes.values.first,
             brightness: Brightness.dark,
           ),
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          localizationsDelegates: appLocalizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           home: CredentialRecoveryScreen(
             requiresSignedMacBuild: Platform.isMacOS && AppDistribution.direct,
@@ -232,14 +232,15 @@ void main() async {
 Future<void> _hideNativeTitleBar() async {
   if (!usesCustomWindowChrome) return;
 
-  await windowManager.ensureInitialized();
-  await windowManager.waitUntilReadyToShow(
-    const WindowOptions(titleBarStyle: TitleBarStyle.hidden, windowButtonVisibility: true),
-    () async {
-      await windowManager.show();
-      await windowManager.focus();
-    },
-  );
+  final window = WindowManager.instance.getCurrent();
+  if (window == null) return;
+  window.titleBarStyle = TitleBarStyle.hidden;
+  window.isWindowControlButtonsVisible = true;
+  if (window.isMinimized) {
+    window.restore();
+  }
+  window.show();
+  window.focus();
 }
 
 class MyApp extends StatefulWidget {
@@ -300,12 +301,7 @@ class _MyAppState extends State<MyApp> {
         brightness: Brightness.dark,
         fontFamily: fontFamily,
       ),
-      localizationsDelegates: const [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
+      localizationsDelegates: appLocalizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       // Wrapped here rather than around MaterialApp: the frame and the chrome
       // sync both need the theme that actually resolved, and

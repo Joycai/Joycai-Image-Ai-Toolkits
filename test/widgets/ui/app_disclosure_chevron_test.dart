@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_disclosure_chevron.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Both trees' chevrons turn rather than swap glyphs (`plans/README.md`).
 void main() {

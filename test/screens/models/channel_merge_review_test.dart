@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/l10n/localizations_delegates.dart';
 import 'package:joycai_image_ai_toolkits/models/llm_channel.dart';
 import 'package:joycai_image_ai_toolkits/models/llm_model.dart';
 import 'package:joycai_image_ai_toolkits/screens/models/widgets/channel_merge_review.dart';
@@ -9,6 +9,7 @@ import 'package:joycai_image_ai_toolkits/services/llm/model_routes.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/platforms.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import '../../support/private_data_dir.dart';
@@ -76,7 +77,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         locale: const Locale('en'),
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        localizationsDelegates: appLocalizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: Builder(

@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_semantic_colors.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
@@ -6,6 +5,7 @@ import 'package:joycai_image_ai_toolkits/core/design_tokens.dart';
 import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
 import 'package:joycai_image_ai_toolkits/widgets/glass/app_glass.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_snackbar.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Covers [AppSnackBar]'s four outcomes (`01 全局壳层 · 1d / 1h`).
 ///

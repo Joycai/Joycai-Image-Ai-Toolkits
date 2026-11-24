@@ -7,11 +7,10 @@
 // These widths are narrow enough that the two chords every platform has
 // cannot fit either, so the test fails the same way on Linux CI as on a Mac.
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:joycai_image_ai_toolkits/core/app_shortcuts.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_key_label.dart';
+import 'package:material_ui/material_ui.dart';
 
 void main() {
   const Key labelKey = ValueKey<String>('label');

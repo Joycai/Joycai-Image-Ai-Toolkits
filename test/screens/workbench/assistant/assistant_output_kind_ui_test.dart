@@ -2,16 +2,17 @@
 // marker on tiles, the empty chat's question, and the copy row under an
 // analysis result. The panel's row is pinned beside the rest of its card, in
 // `optimizer_a2_frames_test.dart`.
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/l10n/localizations_delegates.dart';
 import 'package:joycai_image_ai_toolkits/models/prompt.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/assistant/prompt_optimizer_view.dart';
 import 'package:joycai_image_ai_toolkits/services/assistant/prompt_optimizer_agent.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/state/workbench_ui_state.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_neutral_marker.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 SystemPrompt preset(int id, String title, PresetOutputKind kind) => SystemPrompt(
@@ -46,7 +47,7 @@ void main() {
         value: ui,
         child: MaterialApp(
           locale: const Locale('en'),
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          localizationsDelegates: appLocalizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: PromptOptimizerChatView(
@@ -113,7 +114,7 @@ void main() {
           value: WorkbenchUIState(),
           child: MaterialApp(
             locale: const Locale('en'),
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            localizationsDelegates: appLocalizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
             home: Scaffold(
               body: PromptOptimizerChatView(

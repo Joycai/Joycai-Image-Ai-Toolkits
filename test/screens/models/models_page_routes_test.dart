@@ -1,14 +1,15 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/core/constants.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/l10n/localizations_delegates.dart';
 import 'package:joycai_image_ai_toolkits/models/llm_channel.dart';
 import 'package:joycai_image_ai_toolkits/models/llm_model.dart';
 import 'package:joycai_image_ai_toolkits/screens/models/widgets/channel_row.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 import 'package:joycai_image_ai_toolkits/widgets/models/app_route_badge.dart';
 import 'package:joycai_image_ai_toolkits/widgets/models/model_card.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// `D1f · 4a`: the models page names platforms and routes.
 void main() {
@@ -31,7 +32,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         locale: const Locale('en'),
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        localizationsDelegates: appLocalizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         theme: buildAppTheme(
           accent: AppConstants.presetThemes.values.first,

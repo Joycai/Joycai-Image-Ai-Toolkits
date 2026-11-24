@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/l10n/localizations_delegates.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/assistant/optimizer_context_card.dart';
 import 'package:joycai_image_ai_toolkits/services/assistant/assistant_context_usage.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The card has to render four states of one number, three of which carry no
 /// window: nothing measured yet, an unlimited model, a model with no window
@@ -23,7 +24,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        localizationsDelegates: appLocalizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: Align(

@@ -26,7 +26,7 @@
 //     are not hidden: [ShellCover] only tells the ground to shrink to the
 //     strip that is still showing behind the title bar.
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// How many settled full-cover routes are on top of the shell.
 ///

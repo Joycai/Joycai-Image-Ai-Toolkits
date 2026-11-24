@@ -1,8 +1,8 @@
 // Native menu acceptance probe. No app database, task queue or network is opened.
 // flutter run -d macos --release -t tool/macos_menu_probe.dart
-import 'package:flutter/material.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/widgets/shell/app_native_menu.dart';
+import 'package:material_ui/material_ui.dart';
 
 void main() => runApp(const _Probe());
 

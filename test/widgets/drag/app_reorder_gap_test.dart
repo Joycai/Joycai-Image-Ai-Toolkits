@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
+import 'package:flutter_localizations/flutter_localizations.dart' show GlobalWidgetsLocalizations;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/widgets/drag/app_reorder_gap.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// `AppReorderGap`: the 00d 「空位即落点」 indicator, found in the gap the
 /// framework's reorderable list opens.

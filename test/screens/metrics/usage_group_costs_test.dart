@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/l10n/localizations_delegates.dart';
 import 'package:joycai_image_ai_toolkits/models/pricing_group.dart';
 import 'package:joycai_image_ai_toolkits/models/spec_rate.dart';
 import 'package:joycai_image_ai_toolkits/screens/metrics/widgets/usage_group_costs.dart';
 import 'package:joycai_image_ai_toolkits/screens/metrics/widgets/usage_stats.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Renders the per-group cost cards.
 ///
@@ -54,7 +55,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        localizationsDelegates: appLocalizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: Align(
@@ -101,7 +102,7 @@ void main() {
     await tester.pumpWidget(const SizedBox());
     await tester.pumpWidget(
       MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        localizationsDelegates: appLocalizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: UsageGroupCosts(stats: stats({1: 0.5, 2: 1.5}), groups: groups),

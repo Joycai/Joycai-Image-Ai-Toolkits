@@ -1,15 +1,16 @@
 import 'dart:convert';
 
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/l10n/localizations_delegates.dart';
 import 'package:joycai_image_ai_toolkits/screens/settings/widgets/mcp_settings_block.dart';
 import 'package:joycai_image_ai_toolkits/services/db/database_service.dart';
 import 'package:joycai_image_ai_toolkits/services/tasks/task_queue_service.dart';
 import 'package:joycai_image_ai_toolkits/state/mcp_server_state.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import '../../support/in_memory_database.dart';
@@ -55,7 +56,7 @@ void main() {
         ),
         locale: const Locale('en'),
         supportedLocales: AppLocalizations.supportedLocales,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        localizationsDelegates: appLocalizationsDelegates,
         home: Scaffold(
           body: SingleChildScrollView(child: McpSettingsBlock(server: state)),
         ),

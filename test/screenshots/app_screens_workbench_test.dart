@@ -11,7 +11,6 @@ library;
 import 'dart:async';
 
 import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/constants.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/config/generation_settings_dialog.dart';
@@ -21,6 +20,7 @@ import 'package:joycai_image_ai_toolkits/screens/workbench/workbench_layout.dart
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/widgets/glass/app_glass_menu.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_dropdown.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 import 'harness/fixture_env.dart';

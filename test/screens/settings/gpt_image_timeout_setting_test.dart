@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/l10n/localizations_delegates.dart';
 import 'package:joycai_image_ai_toolkits/screens/settings/widgets/application_section.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/gpt_image_timeout.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_dropdown.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 import '../../support/private_data_dir.dart';
@@ -30,7 +31,7 @@ void main() {
             value: state,
             child: MaterialApp(
               locale: locale,
-              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              localizationsDelegates: appLocalizationsDelegates,
               supportedLocales: AppLocalizations.supportedLocales,
               home: const Scaffold(body: SingleChildScrollView(child: ApplicationSection())),
             ),

@@ -1,17 +1,18 @@
 import 'dart:ui' show Tristate;
 
-import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/l10n/localizations_delegates.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_icon_button.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_setting_row.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_switch.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/color_hue_picker.dart';
+import 'package:material_ui/material_ui.dart';
 
 Widget host(Widget child) => MaterialApp(
-  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  localizationsDelegates: appLocalizationsDelegates,
   supportedLocales: AppLocalizations.supportedLocales,
   home: Scaffold(
     body: Center(child: SizedBox(width: 400, child: child)),

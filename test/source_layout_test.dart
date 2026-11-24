@@ -193,7 +193,7 @@ void main() {
     // `dart:ui` too: it is where `Color` and `IconData`'s cousins live, and
     // would let the same thing back in under another name.
     final flutterImport = RegExp(
-      r'''^\s*(?:import|export)\s+['"](?:package:flutter/|dart:ui)[^'"]*['"]''',
+      r'''^\s*(?:import|export)\s+['"](?:package:(?:flutter|material_ui|cupertino_ui)/|dart:ui)[^'"]*['"]''',
       multiLine: true,
     );
     final leaked = <String>[];

@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -14,6 +13,7 @@ import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/video/video_w
 import 'package:joycai_image_ai_toolkits/services/media/video_thumbnail_service.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/focus_pane.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../screenshots/harness/fixture_env.dart';
 import '../../screenshots/harness/shoot.dart';

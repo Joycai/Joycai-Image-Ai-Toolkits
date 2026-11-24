@@ -1,12 +1,13 @@
 // `A3e 5f`: a model that takes no images answers blind. The log used to be
 // the only place that said so; now the conversation does — once per model.
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/l10n/localizations_delegates.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/assistant/prompt_optimizer_view.dart';
 import 'package:joycai_image_ai_toolkits/services/assistant/prompt_optimizer_agent.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/state/workbench_ui_state.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
@@ -92,7 +93,7 @@ void main() {
         value: WorkbenchUIState()..optimizerSession = session,
         child: MaterialApp(
           locale: const Locale('en'),
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          localizationsDelegates: appLocalizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: PromptOptimizerChatView(

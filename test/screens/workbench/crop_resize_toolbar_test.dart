@@ -1,13 +1,15 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/l10n/localizations_delegates.dart';
 import 'package:joycai_image_ai_toolkits/models/app_image.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/crop_resize/crop_resize_toolbar.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/state/workbench_ui_state.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
+import '../../support/material_ui_finders.dart';
 import '../../support/private_data_dir.dart';
 import '../../support/real_async.dart';
 
@@ -62,7 +64,7 @@ void main() {
         ],
         child: MaterialApp(
           locale: const Locale('en'),
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          localizationsDelegates: appLocalizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: Align(
@@ -97,7 +99,7 @@ void main() {
     expect(find.text(l10n.overwriteSource), findsOneWidget);
     expect(find.text(l10n.reset), findsOneWidget);
     expect(find.text(samplerName), findsOneWidget);
-    expect(find.byTooltip(l10n.more), findsNothing);
+    expect(findTooltip(l10n.more), findsNothing);
   });
 
   testWidgets('at its own preferred width nothing has given way', (tester) async {
@@ -115,7 +117,7 @@ void main() {
     expect(find.text(l10n.reset), findsOneWidget);
     expect(find.text(samplerName), findsOneWidget);
     expect(find.text('9:16'), findsOneWidget);
-    expect(find.byTooltip(l10n.more), findsNothing);
+    expect(findTooltip(l10n.more), findsNothing);
   });
 
   testWidgets('the bar sheds decoration before it sheds meaning', (tester) async {
@@ -165,8 +167,8 @@ void main() {
     // Wherever it went — a glyph in the row, the ⋮ menu, or the narrow step
     // flow's save menu — it is at most one tap away, under its warning glyph.
     if (find.byIcon(Icons.warning_amber_rounded).evaluate().isEmpty) {
-      final opener = find.byTooltip(l10n.more).evaluate().isNotEmpty
-          ? find.byTooltip(l10n.more)
+      final opener = findTooltip(l10n.more).evaluate().isNotEmpty
+          ? findTooltip(l10n.more)
           : find.byIcon(Icons.save_outlined);
       await tester.tap(opener);
       await tester.pumpAndSettle();
@@ -229,7 +231,7 @@ void main() {
     final l10n = await en();
 
     for (final name in [l10n.width, l10n.height]) {
-      expect(find.byTooltip(name), findsOneWidget, reason: name);
+      expect(findTooltip(name), findsOneWidget, reason: name);
       expect(
         find.byWidgetPredicate((w) => w is Semantics && w.properties.label == name),
         findsOneWidget,

@@ -11,11 +11,12 @@ library;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/constants.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_segmented_control.dart';
+import 'package:material_ui/material_ui.dart';
 
+import '../support/material_ui_finders.dart';
 import 'harness/fixture_env.dart';
 import 'harness/shoot.dart';
 import 'harness/suite.dart';
@@ -150,7 +151,7 @@ void main() {
             // The add action is a labelled button on desktop and a tooltipped
             // icon on narrow layouts; accept either spelling.
             Finder add = find.text('添加渠道');
-            if (add.evaluate().isEmpty) add = find.byTooltip('添加渠道');
+            if (add.evaluate().isEmpty) add = findTooltip('添加渠道');
             if (add.evaluate().isEmpty) return;
             await tester.tap(add.first, warnIfMissed: false);
             await settle();
@@ -239,7 +240,7 @@ void main() {
             await tester.tap(find.text('中转 · OpenAI 兼容').first, warnIfMissed: false);
             await settle();
           } else {
-            final Finder edit = find.byTooltip('编辑');
+            final Finder edit = findTooltip('编辑');
             if (edit.evaluate().isEmpty) return;
             await tester.tap(edit.first, warnIfMissed: false);
             await settle();
@@ -354,7 +355,7 @@ final List<_FeeGroupShot> _feeGroupShots = <_FeeGroupShot>[
   }, sizes: const <String>['desktop', 'tablet', 'mobile']),
   // D2 1g: reorder mode — every grip on show, the placeholder explaining.
   _FeeGroupShot('reorder', (tester, _) async {
-    await tester.tap(find.byTooltip('排序'), warnIfMissed: false);
+    await tester.tap(findTooltip('排序'), warnIfMissed: false);
     for (int i = 0; i < 4; i++) {
       await tester.pump(const Duration(milliseconds: 100));
     }

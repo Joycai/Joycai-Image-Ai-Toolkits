@@ -1,12 +1,13 @@
 // `A3d 4c`: the empty chat says what *this* mode does, and what it offers is
 // a selection or a draft — never a send.
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/l10n/localizations_delegates.dart';
 import 'package:joycai_image_ai_toolkits/models/prompt.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/assistant/prompt_optimizer_view.dart';
 import 'package:joycai_image_ai_toolkits/services/assistant/prompt_optimizer_agent.dart';
 import 'package:joycai_image_ai_toolkits/state/workbench_ui_state.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 void main() {
@@ -34,7 +35,7 @@ void main() {
       ChangeNotifierProvider<WorkbenchUIState>.value(
         value: ui,
         child: MaterialApp(
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          localizationsDelegates: appLocalizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: PromptOptimizerChatView(

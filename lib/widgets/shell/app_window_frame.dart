@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -22,6 +22,17 @@ import 'shell_cover.dart';
 /// Desktop only. On Android and iOS there is no window to frame, and
 /// `window_manager` has no implementation there to call into.
 bool get usesCustomWindowChrome => Platform.isWindows || Platform.isMacOS || Platform.isLinux;
+
+Window? _currentWindow() {
+  try {
+    return WindowManager.instance.getCurrent();
+  } on ArgumentError {
+    // No nativeapi dynamic library loaded in headless widget tests.
+    return null;
+  } on MissingPluginException {
+    return null;
+  }
+}
 
 /// Height of the title bar the app draws for itself (`01 · 1b`).
 const double kTitleBarHeight = 36;
@@ -374,17 +385,7 @@ class _DragAndMaximise extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.translucent,
-      onDoubleTap: () async {
-        if (await windowManager.isMaximized()) {
-          await windowManager.unmaximize();
-        } else {
-          await windowManager.maximize();
-        }
-      },
-      child: DragToMoveArea(child: child),
-    );
+    return DragToMoveArea(child: child);
   }
 }
 
@@ -402,13 +403,13 @@ class _WindowButtons extends StatelessWidget {
         _WindowButton(
           icon: Icons.remove,
           label: l10n.minimizeWindow,
-          onPressed: windowManager.minimize,
+          onPressed: () => _currentWindow()?.minimize(),
         ),
         const _MaximiseButton(),
         _WindowButton(
           icon: Icons.close,
           label: l10n.closeWindow,
-          onPressed: windowManager.close,
+          onPressed: () => _currentWindow()?.close(),
           danger: true,
         ),
       ],
@@ -417,8 +418,8 @@ class _WindowButtons extends StatelessWidget {
 }
 
 /// The middle button, which is two buttons depending on the window's state —
-/// tracked through [WindowListener], because a window can be maximised by
-/// dragging it to the top of the screen as well as by this button.
+/// tracked through a native window listener, because a window can be maximised
+/// by dragging it to the top of the screen as well as by this button.
 class _MaximiseButton extends StatefulWidget {
   const _MaximiseButton();
 
@@ -426,41 +427,44 @@ class _MaximiseButton extends StatefulWidget {
   State<_MaximiseButton> createState() => _MaximiseButtonState();
 }
 
-class _MaximiseButtonState extends State<_MaximiseButton> with WindowListener {
+class _MaximiseButtonState extends State<_MaximiseButton> {
+  Window? _window;
+  ListenerId? _listenerId;
   bool _maximized = false;
 
   @override
   void initState() {
     super.initState();
-    windowManager.addListener(this);
-    _readWindowState();
+    final window = _currentWindow();
+    if (window == null) return;
+    _window = window;
+    _maximized = window.isMaximized;
+    _listenerId = window.addListener(_onWindowEvent);
   }
 
-  /// Guarded: a `flutter test` run reports as desktop with no plugin to
-  /// answer, and an unhandled [MissingPluginException] fails the test.
-  Future<void> _readWindowState() async {
-    try {
-      final value = await windowManager.isMaximized();
-      if (mounted) setState(() => _maximized = value);
-    } on MissingPluginException {
-      // No window to ask about.
+  void _onWindowEvent(WindowEvent event) {
+    if (!mounted) return;
+    switch (event) {
+      case WindowMaximizedEvent():
+        setState(() => _maximized = true);
+      case WindowRestoredEvent():
+        setState(() => _maximized = _window?.isMaximized ?? false);
+      default:
+        break;
     }
   }
 
   @override
   void dispose() {
-    windowManager.removeListener(this);
+    final id = _listenerId;
+    if (id != null) {
+      try {
+        _window?.removeListener(id);
+      } on ArgumentError {
+        // No native window in widget tests.
+      }
+    }
     super.dispose();
-  }
-
-  @override
-  void onWindowMaximize() {
-    if (mounted) setState(() => _maximized = true);
-  }
-
-  @override
-  void onWindowUnmaximize() {
-    if (mounted) setState(() => _maximized = false);
   }
 
   @override
@@ -469,7 +473,15 @@ class _MaximiseButtonState extends State<_MaximiseButton> with WindowListener {
     return _WindowButton(
       icon: _maximized ? Icons.filter_none : Icons.crop_square,
       label: _maximized ? l10n.restoreWindow : l10n.maximizeWindow,
-      onPressed: () => _maximized ? windowManager.unmaximize() : windowManager.maximize(),
+      onPressed: () {
+        final window = _window ?? _currentWindow();
+        if (window == null) return;
+        if (_maximized) {
+          window.unmaximize();
+        } else {
+          window.maximize();
+        }
+      },
     );
   }
 }

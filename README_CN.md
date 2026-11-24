@@ -1,6 +1,6 @@
 # Joycai Image AI Toolkits
 
-[![Flutter](https://img.shields.io/badge/Flutter-3.47.8-%2302569B.svg?style=flat&logo=Flutter&logoColor=white)](https://flutter.dev)
+[![Flutter](https://img.shields.io/badge/Flutter-3.50.1-%2302569B.svg?style=flat&logo=Flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/dart-%230175C2.svg?style=flat&logo=dart&logoColor=white)](https://dart.dev)
 [![Version](https://img.shields.io/badge/version-4.31.9-blue.svg)](https://github.com/Joycai/Joycai-Image-Ai-Toolkits/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -71,8 +71,8 @@ Joycai Image AI Toolkits 是一个功能强大的跨平台桌面与移动应用�
 
 ## 🛠️ 技术栈
 
-*   **框架**：[Flutter](https://flutter.dev) (Material 3)，版本 3.47.8
-*   **Dart SDK**：`^3.13.0`
+*   **框架**：[Flutter](https://flutter.dev) (Material 3)，版本 3.50.1
+*   **Dart SDK**：`^3.14.0`
 *   **应用版本**：4.31.9
 *   **状态管理**：[Provider](https://pub.dev/packages/provider) — `AppState` 协调图库、文件浏览、暂存、下载、模型、工作台、任务、日志及 MCP 等独立状态
 *   **数据库**：[SQLite](https://pub.dev/packages/sqflite)（通过 `sqflite_common_ffi` 支持桌面端）
@@ -84,7 +84,7 @@ Joycai Image AI Toolkits 是一个功能强大的跨平台桌面与移动应用�
 
 ### 前置条件
 
-*   Flutter SDK 3.47.8（包含 Dart 3.13.7；CI 和发布构建使用此版本）
+*   Flutter SDK 3.50.1（包含 Dart 3.14.0；CI 和发布构建使用此版本）
 *   目标平台的原生构建工具（参见 [构建配置](.github/workflows/flutter-build.yml)）。发布自动化构建 Windows、macOS、Linux 和 Android；iOS 需本地 Apple 工具链及签名。
 *   所选托管服务的 API 密钥，或已运行的本地 Ollama / LM Studio 服务。
 

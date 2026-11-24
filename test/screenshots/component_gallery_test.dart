@@ -36,7 +36,6 @@
 @Tags(<String>['screenshots'])
 library;
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_semantic_colors.dart';
 import 'package:joycai_image_ai_toolkits/core/app_shortcuts.dart';
@@ -45,6 +44,7 @@ import 'package:joycai_image_ai_toolkits/core/constants.dart';
 import 'package:joycai_image_ai_toolkits/core/design_tokens.dart';
 import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/l10n/localizations_delegates.dart';
 import 'package:joycai_image_ai_toolkits/widgets/settings/dual_tone_swatch.dart';
 import 'package:joycai_image_ai_toolkits/widgets/settings/theme_accent_picker.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_button.dart';
@@ -63,6 +63,7 @@ import 'package:joycai_image_ai_toolkits/widgets/ui/app_section_label.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_segmented_control.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_slider.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_text_field.dart';
+import 'package:material_ui/material_ui.dart';
 
 void main() {
   for (final MapEntry<String, ThemeAccent> seed in AppConstants.presetThemes.entries) {
@@ -82,7 +83,7 @@ void main() {
             // AppLocalizations, so a MaterialApp without the delegates throws
             // rather than degrading. The real app always has them.
             locale: const Locale('zh'),
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            localizationsDelegates: appLocalizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
             // The font the app actually runs with. Without it the theme falls
             // back to Roboto, which has no CJK — every label in this gallery
@@ -124,7 +125,7 @@ void main() {
           MaterialApp(
             debugShowCheckedModeBanner: false,
             locale: const Locale('zh'),
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            localizationsDelegates: appLocalizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
             theme: buildAppTheme(
               accent: seed.value,

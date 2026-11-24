@@ -11,7 +11,6 @@ library;
 import 'dart:io';
 
 import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/models/browser_file.dart';
@@ -20,8 +19,10 @@ import 'package:joycai_image_ai_toolkits/screens/workbench/directory_tree_item.d
 import 'package:joycai_image_ai_toolkits/services/files/trash_service.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/widgets/glass/app_glass_menu.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as p;
 
+import '../support/material_ui_finders.dart';
 import 'harness/fixture_env.dart';
 import 'harness/shoot.dart';
 import 'harness/suite.dart';
@@ -131,7 +132,7 @@ void main() {
         appState.fileBrowserState.clearSelection();
       },
       after: (WidgetTester tester) async {
-        await tester.tap(find.byTooltip('暂存区').first);
+        await tester.tap(findTooltip('暂存区').first);
         for (int i = 0; i < 4; i++) {
           await tester.pump(const Duration(milliseconds: 120));
         }

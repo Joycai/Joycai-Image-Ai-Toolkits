@@ -1,12 +1,14 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/l10n/localizations_delegates.dart';
 import 'package:joycai_image_ai_toolkits/screens/downloader/widgets/downloader_advanced_dialog.dart';
 import 'package:joycai_image_ai_toolkits/services/db/repositories/cookie_repository.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 import '../../screenshots/harness/fixture_env.dart';
+import '../../support/material_ui_finders.dart';
 import '../../support/real_async.dart';
 
 /// The cookie history panel (S3): a retention choice above the list, a remove
@@ -63,7 +65,7 @@ void main() {
         ChangeNotifierProvider<AppState>.value(
           value: appState,
           child: MaterialApp(
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            localizationsDelegates: appLocalizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
             locale: const Locale('en'),
             home: Builder(
@@ -103,7 +105,7 @@ void main() {
                 find
                     .descendant(
                       of: find.byElementPredicate((e) => e == row),
-                      matching: find.byTooltip(l10n.cookieHistoryForget),
+                      matching: findTooltip(l10n.cookieHistoryForget),
                     )
                     .evaluate()
                     .length ==
@@ -111,7 +113,7 @@ void main() {
           );
       final removeA = find.descendant(
         of: find.byElementPredicate((e) => e == rowOfA),
-        matching: find.byTooltip(l10n.cookieHistoryForget),
+        matching: findTooltip(l10n.cookieHistoryForget),
       );
       await tester.ensureVisible(removeA);
       await tester.pumpAndSettle();

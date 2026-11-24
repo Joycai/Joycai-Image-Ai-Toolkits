@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../models/llm_model.dart';
 import '../../../models/token_usage.dart';

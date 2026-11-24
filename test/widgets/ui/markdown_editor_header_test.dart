@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/l10n/localizations_delegates.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_switch.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/markdown_editor.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The editor's header keeps the view toggle and the expand button against the
 /// right edge, whatever width it is given.
@@ -14,7 +15,7 @@ void main() {
   Future<void> pump(WidgetTester tester, double width, {bool bordered = true}) {
     return tester.pumpWidget(
       MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        localizationsDelegates: appLocalizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: Align(

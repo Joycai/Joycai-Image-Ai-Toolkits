@@ -15,7 +15,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
@@ -29,6 +28,7 @@ import 'package:joycai_image_ai_toolkits/widgets/dialogs/file_rename_dialog.dart
 import 'package:joycai_image_ai_toolkits/widgets/files/transfer_dialog_parts.dart';
 import 'package:joycai_image_ai_toolkits/widgets/glass/glass_controls.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_dialog.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'harness/fixture_env.dart';
 import 'harness/fixture_seed.dart';

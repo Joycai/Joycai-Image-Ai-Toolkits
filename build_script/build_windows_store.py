@@ -14,7 +14,7 @@ import tempfile
 import xml.etree.ElementTree as ET
 import zipfile
 
-PINNED_FLUTTER = "3.47.8"
+PINNED_FLUTTER = "3.50.1"
 LANGUAGES = {"en-US", "zh-CN", "zh-TW", "ja-JP"}
 CAPABILITIES = {"internetClient", "privateNetworkClientServer", "runFullTrust"}
 MIN_OS = "10.0.17763.0"

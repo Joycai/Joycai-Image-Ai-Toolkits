@@ -45,10 +45,12 @@ class DirectoryAccessService {
     String? requiredPath,
   }) async {
     if (!_useNative) {
-      return FilePicker.getDirectoryPath(
+      final uri = await FilePicker.pickDirectory(
         initialDirectory: initialDirectory,
         dialogTitle: dialogTitle,
       );
+      if (uri == null) return null;
+      return uri.isScheme('file') ? uri.toFilePath() : uri.toString();
     }
     return _channel.invokeMethod<String>('pick', {
       'initialDirectory': initialDirectory,

@@ -1,10 +1,11 @@
 import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/design_tokens.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/l10n/localizations_delegates.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_markdown.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// `A1e`: what rendered markdown has to get right wherever it appears. The
 /// look is the gallery's job; these pin the rules a stylesheet cannot express
@@ -21,7 +22,7 @@ void main() {
   }) {
     return tester.pumpWidget(
       MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        localizationsDelegates: appLocalizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: SingleChildScrollView(
@@ -265,7 +266,7 @@ void main() {
         '| a | b |\n|---|---|\n| c | d |\n\n```json\n{}\n```\n\n---\n\n![alt](https://example.com/x.png)';
     await tester.pumpWidget(
       const MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        localizationsDelegates: appLocalizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: SingleChildScrollView(
@@ -298,7 +299,7 @@ void main() {
   ) async {
     Future<void> at(double scale) => tester.pumpWidget(
       MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        localizationsDelegates: appLocalizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: MediaQuery(
           data: MediaQueryData(textScaler: TextScaler.linear(scale)),

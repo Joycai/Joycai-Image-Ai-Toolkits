@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 
-import 'package:flutter/material.dart';
 import 'package:material_color_utilities/material_color_utilities.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A theme colour as the *pair* it has to be: one accent for light mode and
 /// a separately tuned one for dark.
