@@ -446,9 +446,10 @@ class _MaximiseButtonState extends State<_MaximiseButton> {
     if (!mounted) return;
     switch (event) {
       case WindowMaximizedEvent():
-        setState(() => _maximized = true);
-      case WindowRestoredEvent():
-        setState(() => _maximized = _window?.isMaximized ?? false);
+        if (!_maximized) setState(() => _maximized = true);
+      case WindowRestoredEvent() || WindowResizedEvent():
+        final isMaximized = _window?.isMaximized ?? false;
+        if (isMaximized != _maximized) setState(() => _maximized = isMaximized);
       default:
         break;
     }
@@ -476,7 +477,7 @@ class _MaximiseButtonState extends State<_MaximiseButton> {
       onPressed: () {
         final window = _window ?? _currentWindow();
         if (window == null) return;
-        if (_maximized) {
+        if (window.isMaximized) {
           window.unmaximize();
         } else {
           window.maximize();

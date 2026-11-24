@@ -67,6 +67,7 @@ void main() async {
   }
 
   _hideNativeTitleBar();
+  WidgetsBinding.instance.addPostFrameCallback((_) => _focusNativeWindow());
 
   final packageInfo = await PackageInfo.fromPlatform();
 
@@ -219,7 +220,6 @@ void main() async {
   // A first-run macOS notification permission request can remain unanswered.
   // Never hold the bootstrap/import UI (or the first app frame) behind it.
   WidgetsBinding.instance.addPostFrameCallback((_) {
-    _focusNativeWindow();
     unawaited(appState.taskQueue.resumePendingTasks());
     unawaited(NotificationService().init());
   });
