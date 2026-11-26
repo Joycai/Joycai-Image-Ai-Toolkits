@@ -87,6 +87,43 @@ void main() {
     expect(await access.restoreAll(), isEmpty);
     expect(await access.restore('/reference'), DirectoryAccessStatus.available);
     expect(await access.authorizeReadOnly('/reference'), isTrue);
+    expect(await access.listGrants(), isEmpty);
+    expect(await access.revoke('/reference'), isFalse);
+    expect(await access.revokeAll(), 0);
+  });
+
+  test('lists, revokes one, and revokes all grants on macOS', () async {
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      calls.add(call);
+      return switch (call.method) {
+        'list' => [
+          {'path': '/Users/demo/Output', 'readOnly': false},
+          {'path': '/Users/demo/Ref', 'readOnly': true},
+        ],
+        'revoke' => call.arguments['path'] == '/Users/demo/Ref',
+        'revokeAll' => 2,
+        _ => null,
+      };
+    });
+
+    expect(await access.listGrants(), const [
+      DirectoryGrant(path: '/Users/demo/Output', readOnly: false),
+      DirectoryGrant(path: '/Users/demo/Ref', readOnly: true),
+    ]);
+    expect(await access.revoke('/Users/demo/Ref'), isTrue);
+    expect(await access.revoke('/Users/demo/Missing'), isFalse);
+    expect(await access.revokeAll(), 2);
+    expect(calls.map((c) => c.method), ['list', 'revoke', 'revoke', 'revokeAll']);
+    expect(calls[1].arguments, {'path': '/Users/demo/Ref'});
+  });
+
+  test('listGrants, revoke, and revokeAll surface native store errors', () async {
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      throw PlatformException(code: 'grant_store');
+    });
+    await expectLater(access.listGrants(), throwsA(isA<PlatformException>()));
+    await expectLater(access.revoke('/Users/demo/Ref'), throwsA(isA<PlatformException>()));
+    await expectLater(access.revokeAll(), throwsA(isA<PlatformException>()));
   });
 
   test('normalizePickedDirectoryUri trims trailing separators and rejects non-file URIs', () {

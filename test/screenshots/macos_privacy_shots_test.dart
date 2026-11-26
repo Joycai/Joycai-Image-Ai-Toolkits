@@ -4,6 +4,7 @@ library;
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:joycai_image_ai_toolkits/core/app_distribution.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -37,7 +38,7 @@ void main() {
                 await settle(tester, 6);
               },
             );
-          }, skip: !Platform.isMacOS);
+          }, skip: !Platform.isMacOS || !AppDistribution.direct);
         }
       }
     }

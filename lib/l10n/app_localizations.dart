@@ -7570,6 +7570,72 @@ abstract class AppLocalizations {
   /// **'Could not open System Settings. Open Privacy & Security → Full Disk Access manually.'**
   String get macPrivacySettingsOpenFailed;
 
+  /// No description provided for @macAuthorizedFolders.
+  ///
+  /// In en, this message translates to:
+  /// **'Authorized folders'**
+  String get macAuthorizedFolders;
+
+  /// No description provided for @macAuthorizedFoldersDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'View or revoke macOS folder access permissions saved by this app. Removing a folder from a feature alone does not revoke its system permission.'**
+  String get macAuthorizedFoldersDesc;
+
+  /// No description provided for @macManageAuthorizedFolders.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage permissions'**
+  String get macManageAuthorizedFolders;
+
+  /// No description provided for @macNoAuthorizedFolders.
+  ///
+  /// In en, this message translates to:
+  /// **'No external folder permissions are currently stored.'**
+  String get macNoAuthorizedFolders;
+
+  /// No description provided for @macAuthorizedFolderReadOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Read-only'**
+  String get macAuthorizedFolderReadOnly;
+
+  /// No description provided for @macRevokeFolderAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoke'**
+  String get macRevokeFolderAccess;
+
+  /// No description provided for @macRevokeAllFolderAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoke all'**
+  String get macRevokeAllFolderAccess;
+
+  /// No description provided for @macAuthorizedFoldersLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load stored folder permissions.'**
+  String get macAuthorizedFoldersLoadFailed;
+
+  /// No description provided for @macAuthorizedFoldersRevokeFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not revoke folder permission.'**
+  String get macAuthorizedFoldersRevokeFailed;
+
+  /// No description provided for @macAuthorizedFolderRevoked.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder permission revoked'**
+  String get macAuthorizedFolderRevoked;
+
+  /// No description provided for @macAuthorizedFoldersRevokedAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All folder permissions revoked'**
+  String get macAuthorizedFoldersRevokedAll;
+
   /// No description provided for @shortcutGridMove.
   ///
   /// In en, this message translates to:
@@ -8821,7 +8887,7 @@ abstract class AppLocalizations {
   /// No description provided for @credentialRecoveryBody.
   ///
   /// In en, this message translates to:
-  /// **'Joycai could not access or verify protected credentials. Unlock your Mac and try again. If this continues, restore Keychain access for the original macOS user account and signed app. Your stored credentials have not been cleared. Do not delete Keychain items or reset the database to resolve this error.'**
+  /// **'Joycai could not access or verify protected credentials. Unlock your Mac and try again. If this continues, restore Keychain access for the original macOS user account and signed app. Retry does not clear credentials. Do not delete Keychain items. If Keychain access or the original wrapping key cannot be restored, you can clear the saved credentials and enter them again in Settings. A database snapshot is kept first in the data folder\'s credential-recovery directory.'**
   String get credentialRecoveryBody;
 
   /// No description provided for @credentialRecoveryRetry.

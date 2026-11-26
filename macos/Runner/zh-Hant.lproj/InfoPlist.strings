@@ -1,0 +1,5 @@
+/* Localized versions of Info.plist keys */
+
+"NSPhotoLibraryUsageDescription" = "此應用程式需要存取您的照片圖庫，以便選取圖片進行 AI 處理。";
+"NSPhotoLibraryAddUsageDescription" = "此應用程式需要權限，以將產生的圖片和影片儲存至您的照片圖庫。";
+"NSUserNotificationUsageDescription" = "此應用程式需要傳送通知，以便在背景任務完成和 AI 處理結束時即時通知您。";

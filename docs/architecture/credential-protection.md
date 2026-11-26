@@ -52,8 +52,7 @@ JSON 导出仍将凭据留空，不导出包装密钥或密文。恢复脱敏备
 MCP Token、授权和开关仍不从外部备份导入。跨设备应使用脱敏 JSON 并重新输入凭据，
 不能只复制加密 SQLite。`ThisDeviceOnly` 不是跨设备凭据恢复机制。
 
-如果包装密钥确实已丢失，已有密文不能恢复。本轮不提供自动清库或销毁密钥的恢复按钮，
-需要先保留数据库并单独设计明确的凭据重录流程；不能把不可逆丢失伪装成“尚未配置”。
+如果包装密钥确实已丢失，已有密文不能恢复。在 Mac App Store 版（`Platform.isMacOS && !AppDistribution.direct`）上，恢复页与 Windows 一样支持在明确勾选确认后清除三类凭据（渠道 API Key、独立上传 API Key、代理密码和 MCP Token）并关闭 MCP：先调用 `MacCredentialProtection.prepare(allowCreate: true)` 确认钥匙串可用，再通过 `CredentialRecoveryService.reset()` 保存 `credential-recovery/before-reset-*` 快照并事务清除凭据、保留非秘密数据以便重录。Direct 站外版仍不提供重置，避免误清需要原签名版解锁的密文。
 
 ## 安全与验收边界
 
@@ -96,14 +95,15 @@ backup import rejects them. Normal JSON backup stays redacted. Copying encrypted
 is not a supported credential transfer mechanism. User profile/domain DPAPI recovery
 rules can vary; this is not a promise that every cross-device copy is undecryptable.
 
-Windows failure recovery preserves Retry and adds an explicitly confirmed reset of
-channel keys, proxy password and MCP token. Before resetting, verify DPAPI availability,
-save a WAL-aware `VACUUM INTO` snapshot under `credential-recovery/before-reset-*`, and
-check its SQLite integrity. Then clear only those credential fields transactionally
+Windows and Mac App Store failure recovery preserve Retry and add an explicitly
+confirmed reset of channel keys, independent upload keys, proxy password and MCP
+token. Before resetting, verify protector availability (`prepare(allowCreate: true)`),
+save a WAL-aware `VACUUM INTO` snapshot under `credential-recovery/before-reset-*`,
+and check its SQLite integrity. Then clear only those credential fields transactionally
 and disable MCP. Snapshot failure leaves original credentials unchanged. Other data
 remains; users re-enter credentials in Settings. The retained snapshot may contain
-sensitive data and is not an export for sharing. Mac recovery continues to offer Retry
-without this Windows reset action.
+sensitive data and is not an export for sharing. Direct macOS builds continue to
+offer Retry without this reset action.
 
 Audit boundary: downloader cookies remain plaintext in `downloader_cookies`, governed
 by the existing retention/off controls; they are not protected by this adapter. Debug

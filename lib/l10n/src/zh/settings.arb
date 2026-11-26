@@ -258,5 +258,16 @@
   "macFullDiskAccessHelp": "查看授权说明",
   "macFullDiskAccessInstructions": "在「系统设置 → 隐私与安全性 → 完全磁盘访问权限」中添加本应用并开启，按系统提示重新打开应用。此权限允许访问隐私保护的数据，但不会关闭 App Sandbox，也不能代替目录授权。",
   "macOpenSystemSettings": "打开系统设置",
-  "macPrivacySettingsOpenFailed": "无法打开系统设置，请手动前往「隐私与安全性 → 完全磁盘访问权限」。"
+  "macPrivacySettingsOpenFailed": "无法打开系统设置，请手动前往「隐私与安全性 → 完全磁盘访问权限」。",
+  "macAuthorizedFolders": "已授权目录",
+  "macAuthorizedFoldersDesc": "查看或撤销此应用已保存的 macOS 文件夹访问权限。仅从功能配置中移除路径不会自动撤销系统权限。",
+  "macManageAuthorizedFolders": "管理权限",
+  "macNoAuthorizedFolders": "当前没有已保存的外部目录权限。",
+  "macAuthorizedFolderReadOnly": "只读",
+  "macRevokeFolderAccess": "撤销",
+  "macRevokeAllFolderAccess": "全部撤销",
+  "macAuthorizedFoldersLoadFailed": "无法读取已保存的目录权限。",
+  "macAuthorizedFoldersRevokeFailed": "无法撤销目录权限。",
+  "macAuthorizedFolderRevoked": "已撤销目录权限",
+  "macAuthorizedFoldersRevokedAll": "已撤销全部目录权限"
 }

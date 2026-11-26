@@ -82,4 +82,48 @@ void main() {
     expect((await db.query('llm_channels')).single['api_key'], 'joycai-secret:win-dpapi:v1:lost');
     expect((await db.query('prompts')).single['text'], 'Keep prompt');
   });
+
+  test(
+    'clears macOS Keychain v1 envelopes while preserving non-secret data and snapshot',
+    () async {
+      await db.update('llm_channels', {
+        'api_key': 'joycai-secret:v1:lost-mac-key',
+        'routes': '{"mediaUpload":{"apiKey":"joycai-secret:v1:lost-mac-upload"}}',
+      });
+      await db.update('settings', {
+        'value': 'joycai-secret:v1:lost-proxy',
+      }, where: "key = 'proxy_password'");
+      await db.update('settings', {
+        'value': 'joycai-secret:v1:lost-mcp',
+      }, where: "key = 'mcp_token'");
+
+      await recovery.reset();
+      expect((await db.query('llm_channels')).single, {
+        'id': 1,
+        'api_key': '',
+        'display_name': 'Keep channel',
+        'routes': '{"mediaUpload":{"apiKey":""}}',
+      });
+      expect((await db.query('prompts')).single['text'], 'Keep prompt');
+      final settings = {for (final row in await db.query('settings')) row['key']: row['value']};
+      expect(settings, {'output_directory': 'keep-output_directory', 'mcp_enabled': 'false'});
+      final snapshots = await Directory(p.join(root.path, 'credential-recovery'))
+          .list(recursive: true)
+          .where((e) => e is File)
+          .toList();
+      final saved = await databaseFactoryFfi.openDatabase(
+        snapshots.single.path,
+        options: OpenDatabaseOptions(readOnly: true, singleInstance: false),
+      );
+      try {
+        expect(
+          (await saved.query('llm_channels')).single['api_key'],
+          'joycai-secret:v1:lost-mac-key',
+        );
+        expect((await saved.query('llm_channels')).single['routes'], contains('lost-mac-upload'));
+      } finally {
+        await saved.close();
+      }
+    },
+  );
 }

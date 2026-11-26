@@ -11,10 +11,20 @@ import 'credential_protection.dart';
 /// Bootstrap-only, after explicit confirmation and before any live DB consumer.
 /// Keeps a SQLite snapshot before removing only the three protected credentials.
 class CredentialRecoveryService {
-  CredentialRecoveryService({Future<String> Function()? dataDirectory, this._factory})
-    : _directory = dataDirectory ?? AppPaths.getDataDirectory;
+  CredentialRecoveryService({Future<String> Function()? dataDirectory, DatabaseFactory? factory})
+    : _directory = dataDirectory ?? AppPaths.getDataDirectory,
+      _injectedFactory = factory;
   final Future<String> Function() _directory;
-  final DatabaseFactory? _factory;
+  final DatabaseFactory? _injectedFactory;
+
+  DatabaseFactory get _factory {
+    if (_injectedFactory != null) return _injectedFactory;
+    if (Platform.isWindows || Platform.isLinux) {
+      sqfliteFfiInit();
+      return databaseFactoryFfi;
+    }
+    return databaseFactory;
+  }
 
   Future<void> reset() async {
     Database? db;
@@ -22,21 +32,22 @@ class CredentialRecoveryService {
       final root = await _directory();
       final path = p.join(root, 'joycai_workbench.db');
       if (!await File(path).exists()) throw const CredentialProtectionException();
-      sqfliteFfiInit();
-      db = await (_factory ?? databaseFactoryFfi).openDatabase(
-        path,
-        options: OpenDatabaseOptions(singleInstance: false),
-      );
+      final factory = _factory;
+      db = await factory.openDatabase(path, options: OpenDatabaseOptions(singleInstance: false));
       if (await db.getVersion() != DatabaseService.dbVersion) {
         throw const CredentialProtectionException();
       }
       final snapshots = await Directory(p.join(root, 'credential-recovery'))
           .create(recursive: true);
+      await DatabaseService.restrictToOwner(null, directory: snapshots.path);
       final snapshot = await snapshots.createTemp('before-reset-');
+      await DatabaseService.restrictToOwner(null, directory: snapshot.path);
       // VACUUM includes committed WAL data; never copy a live SQLite file alone.
+      // Apple's SQLite rejects an existing output file; let VACUUM create it.
       final snapshotPath = p.join(snapshot.path, 'joycai_workbench.db');
       await db.execute('VACUUM INTO ?', [snapshotPath]);
-      final saved = await (_factory ?? databaseFactoryFfi).openDatabase(
+      await DatabaseService.restrictToOwner(snapshotPath);
+      final saved = await factory.openDatabase(
         snapshotPath,
         options: OpenDatabaseOptions(readOnly: true, singleInstance: false),
       );
@@ -66,7 +77,10 @@ class CredentialRecoveryService {
           'value': 'false',
         }, conflictAlgorithm: ConflictAlgorithm.replace);
       });
-      await db.rawQuery('PRAGMA wal_checkpoint(TRUNCATE)');
+      final checkpoint = await db.rawQuery('PRAGMA wal_checkpoint(TRUNCATE)');
+      if (checkpoint.isNotEmpty && checkpoint.first.values.first != 0) {
+        throw const CredentialProtectionException();
+      }
     } catch (_) {
       throw const CredentialProtectionException();
     } finally {

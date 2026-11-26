@@ -1,0 +1,5 @@
+/* Localized versions of Info.plist keys */
+
+"NSPhotoLibraryUsageDescription" = "This app needs access to your photo library to allow you to select images for AI processing.";
+"NSPhotoLibraryAddUsageDescription" = "This app needs permission to save generated images and videos to your photo library.";
+"NSUserNotificationUsageDescription" = "This app needs to send notifications to inform you about completed background tasks and AI processing results.";

@@ -8,14 +8,33 @@ import 'package:path/path.dart' as p;
 /// The runner owns one scope per root for watchers/background tasks until exit.
 enum DirectoryAccessStatus { available, needsAuthorization, unavailable, moved }
 
+@immutable
+class DirectoryGrant {
+  const DirectoryGrant({required this.path, required this.readOnly});
+
+  final String path;
+  final bool readOnly;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is DirectoryGrant && path == other.path && readOnly == other.readOnly;
+
+  @override
+  int get hashCode => Object.hash(path, readOnly);
+}
+
 class DirectoryAccessService {
   DirectoryAccessService({MethodChannel? channel, bool? useNative})
     : _channel = channel ?? const MethodChannel('joycai/directory_access'),
-      _useNative = useNative ?? (!kIsWeb && defaultTargetPlatform == TargetPlatform.macOS);
+      _useNativeOverride = useNative;
 
   static final instance = DirectoryAccessService();
   final MethodChannel _channel;
-  final bool _useNative;
+  final bool? _useNativeOverride;
+
+  bool get _useNative =>
+      _useNativeOverride ?? (!kIsWeb && defaultTargetPlatform == TargetPlatform.macOS);
 
   Future<Map<String, DirectoryAccessStatus>> restoreAll() async {
     if (!_useNative) return const {};
@@ -75,6 +94,33 @@ class DirectoryAccessService {
     } on PlatformException {
       return false;
     }
+  }
+
+  /// Lists persisted security-scoped directory grants on macOS without exposing
+  /// raw bookmark data. Throws [PlatformException] if the native store cannot be read.
+  Future<List<DirectoryGrant>> listGrants() async {
+    if (!_useNative) return const [];
+    final raw = await _channel.invokeListMethod<dynamic>('list') ?? const [];
+    return [
+      for (final entry in raw)
+        if (entry is Map)
+          DirectoryGrant(
+            path: entry['path'] as String? ?? '',
+            readOnly: entry['readOnly'] as bool? ?? false,
+          ),
+    ];
+  }
+
+  /// Revokes a single persisted security-scoped directory bookmark on macOS.
+  Future<bool> revoke(String path) async {
+    if (!_useNative) return false;
+    return (await _channel.invokeMethod<bool>('revoke', {'path': path})) == true;
+  }
+
+  /// Revokes all persisted security-scoped directory bookmarks on macOS.
+  Future<int> revokeAll() async {
+    if (!_useNative) return 0;
+    return await _channel.invokeMethod<int>('revokeAll') ?? 0;
   }
 
   @visibleForTesting

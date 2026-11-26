@@ -12,8 +12,10 @@ class CredentialRecoveryScreen extends StatefulWidget {
     required this.onRetry,
     this.onReset,
     this.requiresSignedMacBuild = false,
+    this.isWindows = false,
   });
   final bool requiresSignedMacBuild;
+  final bool isWindows;
   final Future<void> Function() onRetry;
   final Future<void> Function()? onReset;
 
@@ -60,9 +62,9 @@ class _CredentialRecoveryScreenState extends State<CredentialRecoveryScreen> {
                   Text(
                     widget.requiresSignedMacBuild
                         ? l10n.credentialRecoveryDirectMacBody
-                        : widget.onReset == null
-                        ? l10n.credentialRecoveryBody
-                        : l10n.credentialRecoveryWindowsBody,
+                        : widget.isWindows
+                        ? l10n.credentialRecoveryWindowsBody
+                        : l10n.credentialRecoveryBody,
                     style: theme.textTheme.bodyLarge,
                   ),
                   const SizedBox(height: AppSpace.s28),
