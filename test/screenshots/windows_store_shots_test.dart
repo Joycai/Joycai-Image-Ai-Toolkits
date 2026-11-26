@@ -39,7 +39,11 @@ void main() {
                   fontFamily: 'NotoSansSC',
                 ),
                 home: recovery
-                    ? CredentialRecoveryScreen(onRetry: () async {}, onReset: () async {})
+                    ? CredentialRecoveryScreen(
+                        isWindows: true,
+                        onRetry: () async {},
+                        onReset: () async {},
+                      )
                     : InstallationMigrationScreen(state: state, onContinue: () {}, windows: true),
               ),
             );

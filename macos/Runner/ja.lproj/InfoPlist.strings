@@ -1,0 +1,5 @@
+/* Localized versions of Info.plist keys */
+
+"NSPhotoLibraryUsageDescription" = "AI 処理用の画像を選択するため、写真ライブラリへのアクセスが必要です。";
+"NSPhotoLibraryAddUsageDescription" = "生成された画像や動画を写真ライブラリに保存するための許可が必要です。";
+"NSUserNotificationUsageDescription" = "バックグラウンドタスクや AI 処理の完了をお知らせするため、通知の送信が必要です。";

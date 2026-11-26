@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/app_distribution.dart';
 import '../../../core/app_paths.dart';
 import '../../../core/app_semantic_colors.dart';
 import '../../../core/app_theme.dart';
@@ -245,6 +246,18 @@ class _ApplicationSectionState extends State<ApplicationSection> {
                   ),
                 ],
                 if (Platform.isMacOS) ...[
+                  const SizedBox(height: AppSpace.s10),
+                  AppSettingRow(
+                    title: l10n.macAuthorizedFolders,
+                    description: l10n.macAuthorizedFoldersDesc,
+                    footer: AppButton(
+                      label: l10n.macManageAuthorizedFolders,
+                      variant: AppButtonVariant.secondary,
+                      onPressed: _showAuthorizedFoldersDialog,
+                    ),
+                  ),
+                ],
+                if (Platform.isMacOS && AppDistribution.direct) ...[
                   const SizedBox(height: AppSpace.s10),
                   AppSettingRow(
                     title: l10n.macFullDiskAccess,
@@ -574,6 +587,14 @@ class _ApplicationSectionState extends State<ApplicationSection> {
     }
   }
 
+  Future<void> _showAuthorizedFoldersDialog() async {
+    await showDialog<void>(
+      context: context,
+      animationStyle: appDialogAnimation(context),
+      builder: (_) => const _AuthorizedFoldersDialog(),
+    );
+  }
+
   void _showRestartDialog(AppLocalizations l10n) {
     AppDialog.show<void>(
       context,
@@ -626,6 +647,176 @@ class _ExperimentalBadge extends StatelessWidget {
         label,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(color: semantic.onWarningContainer),
       ),
+    );
+  }
+}
+
+class _AuthorizedFoldersDialog extends StatefulWidget {
+  const _AuthorizedFoldersDialog();
+
+  @override
+  State<_AuthorizedFoldersDialog> createState() => _AuthorizedFoldersDialogState();
+}
+
+class _AuthorizedFoldersDialogState extends State<_AuthorizedFoldersDialog> {
+  List<DirectoryGrant> _grants = const [];
+  bool _loading = true;
+  bool _error = false;
+  bool _busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = false;
+    });
+    try {
+      final grants = await DirectoryAccessService.instance.listGrants();
+      if (!mounted) return;
+      setState(() {
+        _grants = grants;
+        _loading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _error = true;
+        _loading = false;
+      });
+    }
+  }
+
+  Future<void> _revoke(String path, AppLocalizations l10n) async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      final removed = await DirectoryAccessService.instance.revoke(path);
+      if (!mounted) return;
+      if (removed) AppSnackBar.info(context, l10n.macAuthorizedFolderRevoked);
+      await _load();
+    } catch (_) {
+      if (mounted) {
+        AppSnackBar.error(context, l10n.macAuthorizedFoldersRevokeFailed);
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _revokeAll(AppLocalizations l10n) async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      final count = await DirectoryAccessService.instance.revokeAll();
+      if (!mounted) return;
+      if (count > 0) AppSnackBar.info(context, l10n.macAuthorizedFoldersRevokedAll);
+      await _load();
+    } catch (_) {
+      if (mounted) {
+        AppSnackBar.error(context, l10n.macAuthorizedFoldersRevokeFailed);
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    final Widget content;
+    if (_loading) {
+      content = const Center(
+        child: Padding(padding: EdgeInsets.all(AppSpace.s16), child: CircularProgressIndicator()),
+      );
+    } else if (_error) {
+      content = Text(
+        l10n.macAuthorizedFoldersLoadFailed,
+        style: theme.textTheme.bodyMedium?.copyWith(color: scheme.error),
+      );
+    } else if (_grants.isEmpty) {
+      content = Text(
+        l10n.macNoAuthorizedFolders,
+        style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+      );
+    } else {
+      content = Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (var i = 0; i < _grants.length; i++) ...[
+            if (i > 0) const SizedBox(height: AppSpace.s10),
+            Container(
+              padding: const EdgeInsets.all(AppSpace.s10),
+              decoration: BoxDecoration(
+                color: scheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(AppRadius.control),
+                border: Border.all(color: scheme.outlineVariant),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(_grants[i].path, style: theme.textTheme.bodySmall?.mono),
+                        if (_grants[i].readOnly) ...[
+                          const SizedBox(height: AppSpace.s4),
+                          Text(
+                            l10n.macAuthorizedFolderReadOnly,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: scheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: AppSpace.s10),
+                  AppButton(
+                    label: l10n.macRevokeFolderAccess,
+                    variant: AppButtonVariant.secondary,
+                    size: AppButtonSize.compact,
+                    onPressed: _busy ? null : () => _revoke(_grants[i].path, l10n),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      );
+    }
+
+    return AppDialog(
+      icon: Icons.folder_outlined,
+      title: l10n.macAuthorizedFolders,
+      maxWidth: 560,
+      maxHeight: 480,
+      scrollable: true,
+      onClose: () => Navigator.pop(context),
+      content: content,
+      actions: [
+        if (!_loading && !_error && _grants.isNotEmpty)
+          AppButton(
+            label: l10n.macRevokeAllFolderAccess,
+            variant: AppButtonVariant.destructiveOutline,
+            onPressed: _busy ? null : () => _revokeAll(l10n),
+          ),
+        AppButton(
+          label: l10n.close,
+          variant: AppButtonVariant.secondary,
+          onPressed: () => Navigator.pop(context),
+        ),
+      ],
     );
   }
 }

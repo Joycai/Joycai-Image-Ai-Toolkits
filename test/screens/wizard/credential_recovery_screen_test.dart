@@ -37,6 +37,7 @@ void main() {
         localizationsDelegates: appLocalizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: CredentialRecoveryScreen(
+          isWindows: true,
           onRetry: () async {},
           onReset: () {
             resets++;
@@ -61,6 +62,43 @@ void main() {
     expect(tester.widget<AppButton>(reset).onPressed, isNotNull);
   });
 
+  testWidgets('macOS Store credential reset requires explicit consent and uses macOS body', (
+    tester,
+  ) async {
+    final attempt = Completer<void>();
+    var resets = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        localizationsDelegates: appLocalizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: CredentialRecoveryScreen(
+          onRetry: () async {},
+          onReset: () {
+            resets++;
+            return attempt.future;
+          },
+        ),
+      ),
+    );
+    expect(find.textContaining('restore Keychain access'), findsOneWidget);
+    expect(find.textContaining('Windows user'), findsNothing);
+    final reset = find.widgetWithText(AppButton, 'Clear credentials and continue');
+    expect(tester.widget<AppButton>(reset).onPressed, isNull);
+    await tester.ensureVisible(find.byType(CheckboxListTile));
+    await tester.tap(find.byType(CheckboxListTile));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(reset);
+    await tester.tap(reset);
+    await tester.pump();
+    expect(resets, 1);
+    expect(tester.widget<AppButton>(reset).onPressed, isNull);
+    attempt.completeError(StateError('private key details'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('private key details'), findsNothing);
+    expect(tester.widget<AppButton>(reset).onPressed, isNotNull);
+  });
+
   testWidgets('retry is serialized and errors leave recovery available', (tester) async {
     final attempt = Completer<void>();
     var calls = 0;
@@ -76,9 +114,11 @@ void main() {
         ),
       ),
     );
+    await tester.ensureVisible(find.byType(AppButton));
     await tester.tap(find.byType(AppButton));
     await tester.pump();
     expect(tester.widget<AppButton>(find.byType(AppButton)).loading, isTrue);
+    await tester.ensureVisible(find.byType(AppButton));
     await tester.tap(find.byType(AppButton));
     expect(calls, 1);
     attempt.completeError(StateError('synthetic-private-details'));

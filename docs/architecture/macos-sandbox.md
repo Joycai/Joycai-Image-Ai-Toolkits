@@ -61,13 +61,7 @@ validation, sandbox and bookmark entitlements, and no embedded provisioning
 profile. This remains an ad-hoc signed package, not a notarized Developer ID
 release. Developer ID signing/notarization remains separate work.
 
-Application settings offers an optional Full Disk Access help dialog and a
-System Settings link. Users grant that permission themselves. It only addresses
-macOS privacy restrictions: it does not disable App Sandbox, replace directory
-selection/bookmarks, or grant root privileges. No automatic permission probing
-or launch-time prompt is performed. If opening the settings URL fails, the UI
-shows the manual path. Native settings navigation and grant/restart behavior
-must be verified on a real Mac; widget tests cannot grant OS permissions.
+Direct builds (only when `AppDistribution.direct` is true) offer an optional Full Disk Access help dialog and System Settings link in **Settings → Application**; Store builds hide this entry. Users grant that permission themselves. It only addresses macOS privacy restrictions: it does not disable App Sandbox, replace directory selection/bookmarks, or grant root privileges. No automatic permission probing or launch-time prompt is performed. If opening the settings URL fails, the UI shows the manual path. Native settings navigation and grant/restart behavior must be verified on a real Mac; widget tests cannot grant OS permissions.
 
 ## Store distribution signing
 
@@ -144,6 +138,14 @@ are refreshed atomically, preserving read-only scope. There is one retained scop
 per saved root for the app session (watchers and background work outlive screens).
 Replacement acquires its new scope before releasing the previous one; unsuccessful
 restoration and application termination release held scopes.
+
+`DirectoryAccessService` also exposes `listGrants()`, `revoke(path)` and
+`revokeAll()` backed by the native `list`, `revoke` and `revokeAll` methods.
+`list` returns path and read-only status without exposing raw bookmark bytes;
+`revoke` / `revokeAll` atomically remove persisted bookmarks from
+`directory-grants.plist` and stop active security-scoped access handles. Users
+can inspect and revoke stored permissions in **Settings → Application →
+Authorized folders** (both Store and Direct builds).
 
 Returned statuses distinguish `available`, `needsAuthorization`, `unavailable`
 and `moved`. Offline, denied, deleted or corrupt bookmarks are retained for retry;

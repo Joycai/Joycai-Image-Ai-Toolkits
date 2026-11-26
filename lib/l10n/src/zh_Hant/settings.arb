@@ -258,5 +258,16 @@
   "macFullDiskAccessHelp": "查看授權說明",
   "macFullDiskAccessInstructions": "在「系統設定 → 隱私權與安全性 → 完整磁碟存取權」中加入本應用程式並開啟，依系統提示重新開啟應用程式。此權限允許存取隱私保護的資料，但不會關閉 App Sandbox，也不能取代資料夾授權。",
   "macOpenSystemSettings": "開啟系統設定",
-  "macPrivacySettingsOpenFailed": "無法開啟系統設定，請手動前往「隱私權與安全性 → 完整磁碟存取權」。"
+  "macPrivacySettingsOpenFailed": "無法開啟系統設定，請手動前往「隱私權與安全性 → 完整磁碟存取權」。",
+  "macAuthorizedFolders": "已授權資料夾",
+  "macAuthorizedFoldersDesc": "檢視或撤銷此應用程式已儲存的 macOS 資料夾存取權限。僅從功能設定中移除路徑不會自動撤銷系統權限。",
+  "macManageAuthorizedFolders": "管理權限",
+  "macNoAuthorizedFolders": "目前沒有已儲存的外部資料夾權限。",
+  "macAuthorizedFolderReadOnly": "唯讀",
+  "macRevokeFolderAccess": "撤銷",
+  "macRevokeAllFolderAccess": "全部撤銷",
+  "macAuthorizedFoldersLoadFailed": "無法讀取已儲存的資料夾權限。",
+  "macAuthorizedFoldersRevokeFailed": "無法撤銷資料夾權限。",
+  "macAuthorizedFolderRevoked": "已撤銷資料夾權限",
+  "macAuthorizedFoldersRevokedAll": "已撤銷全部資料夾權限"
 }

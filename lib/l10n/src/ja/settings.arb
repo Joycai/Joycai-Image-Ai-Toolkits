@@ -258,5 +258,16 @@
   "macFullDiskAccessHelp": "許可の手順を表示",
   "macFullDiskAccessInstructions": "「システム設定 → プライバシーとセキュリティ → フルディスクアクセス」でこのアプリを追加し、有効にしてください。再起動を求められた場合は従ってください。この権限は保護されたデータへのアクセスを許可しますが、App Sandbox を解除したり、フォルダの許可を代替したりするものではありません。",
   "macOpenSystemSettings": "システム設定を開く",
-  "macPrivacySettingsOpenFailed": "システム設定を開けませんでした。「プライバシーとセキュリティ → フルディスクアクセス」を手動で開いてください。"
+  "macPrivacySettingsOpenFailed": "システム設定を開けませんでした。「プライバシーとセキュリティ → フルディスクアクセス」を手動で開いてください。",
+  "macAuthorizedFolders": "許可済みのフォルダ",
+  "macAuthorizedFoldersDesc": "このアプリに保存されている macOS のフォルダアクセス許可を確認・取り消しできます。機能の設定からパスを削除しただけではシステム許可は取り消されません。",
+  "macManageAuthorizedFolders": "許可を管理",
+  "macNoAuthorizedFolders": "現在保存されている外部フォルダの許可はありません。",
+  "macAuthorizedFolderReadOnly": "読み取り専用",
+  "macRevokeFolderAccess": "取り消す",
+  "macRevokeAllFolderAccess": "すべて取り消す",
+  "macAuthorizedFoldersLoadFailed": "保存済みのフォルダ許可を読み込めませんでした。",
+  "macAuthorizedFoldersRevokeFailed": "フォルダの許可を取り消せませんでした。",
+  "macAuthorizedFolderRevoked": "フォルダの許可を取り消しました",
+  "macAuthorizedFoldersRevokedAll": "すべてのフォルダ許可を取り消しました"
 }

@@ -135,6 +135,35 @@ final class DirectoryAccess {
           var states: [String: String] = [:]
           for path in Array(records.keys) { states[path] = restore(path, records: &records) }
           result(states)
+        case "list":
+          let records = try load()
+          let entries: [[String: Any]] = records.keys.sorted().map { path in
+            ["path": path, "readOnly": records[path]?.readOnly ?? false]
+          }
+          result(entries)
+        case "revoke":
+          guard let path = args["path"] as? String else {
+            result(FlutterError(code: "bad_args", message: "path required", details: nil))
+            return
+          }
+          var records = try load()
+          if records.removeValue(forKey: path) != nil {
+            try save(records)
+            if let previous = active.removeValue(forKey: path) {
+              previous.stopAccessingSecurityScopedResource()
+            }
+            result(true)
+          } else {
+            result(false)
+          }
+        case "revokeAll":
+          let records = try load()
+          let count = records.count
+          if count > 0 {
+            try save([:])
+          }
+          stopAll()
+          result(count)
         case "restore":
           guard let path = args["path"] as? String else {
             result(FlutterError(code: "bad_args", message: "path required", details: nil))

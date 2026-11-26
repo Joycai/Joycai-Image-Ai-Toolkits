@@ -4164,6 +4164,39 @@ class AppLocalizationsZh extends AppLocalizations {
   String get macPrivacySettingsOpenFailed => '无法打开系统设置，请手动前往「隐私与安全性 → 完全磁盘访问权限」。';
 
   @override
+  String get macAuthorizedFolders => '已授权目录';
+
+  @override
+  String get macAuthorizedFoldersDesc => '查看或撤销此应用已保存的 macOS 文件夹访问权限。仅从功能配置中移除路径不会自动撤销系统权限。';
+
+  @override
+  String get macManageAuthorizedFolders => '管理权限';
+
+  @override
+  String get macNoAuthorizedFolders => '当前没有已保存的外部目录权限。';
+
+  @override
+  String get macAuthorizedFolderReadOnly => '只读';
+
+  @override
+  String get macRevokeFolderAccess => '撤销';
+
+  @override
+  String get macRevokeAllFolderAccess => '全部撤销';
+
+  @override
+  String get macAuthorizedFoldersLoadFailed => '无法读取已保存的目录权限。';
+
+  @override
+  String get macAuthorizedFoldersRevokeFailed => '无法撤销目录权限。';
+
+  @override
+  String get macAuthorizedFolderRevoked => '已撤销目录权限';
+
+  @override
+  String get macAuthorizedFoldersRevokedAll => '已撤销全部目录权限';
+
+  @override
   String get shortcutGridMove => '移动并选中项目';
 
   @override
@@ -4823,7 +4856,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get credentialRecoveryBody =>
-      'Joycai 无法访问或验证受保护的凭据。请解锁 Mac 后重试。若仍然失败，请恢复原 macOS 用户账户及签名应用的钥匙串访问权限。已有凭据未被清空，请勿通过删除钥匙串项目或重置数据库解决此问题。';
+      'Joycai 无法访问或验证受保护的凭据。请解锁 Mac 后重试。若仍然失败，请恢复原 macOS 用户账户及签名应用的钥匙串访问权限。重试不会清除凭据，请勿删除钥匙串项目。若无法恢复钥匙串访问或原包装密钥，可清除已保存凭据后在设置中重新输入；清除前会在数据目录的 credential-recovery 子目录保存数据库快照。';
 
   @override
   String get credentialRecoveryRetry => '重试';
@@ -10934,6 +10967,39 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get macPrivacySettingsOpenFailed => '無法開啟系統設定，請手動前往「隱私權與安全性 → 完整磁碟存取權」。';
 
   @override
+  String get macAuthorizedFolders => '已授權資料夾';
+
+  @override
+  String get macAuthorizedFoldersDesc => '檢視或撤銷此應用程式已儲存的 macOS 資料夾存取權限。僅從功能設定中移除路徑不會自動撤銷系統權限。';
+
+  @override
+  String get macManageAuthorizedFolders => '管理權限';
+
+  @override
+  String get macNoAuthorizedFolders => '目前沒有已儲存的外部資料夾權限。';
+
+  @override
+  String get macAuthorizedFolderReadOnly => '唯讀';
+
+  @override
+  String get macRevokeFolderAccess => '撤銷';
+
+  @override
+  String get macRevokeAllFolderAccess => '全部撤銷';
+
+  @override
+  String get macAuthorizedFoldersLoadFailed => '無法讀取已儲存的資料夾權限。';
+
+  @override
+  String get macAuthorizedFoldersRevokeFailed => '無法撤銷資料夾權限。';
+
+  @override
+  String get macAuthorizedFolderRevoked => '已撤銷資料夾權限';
+
+  @override
+  String get macAuthorizedFoldersRevokedAll => '已撤銷全部資料夾權限';
+
+  @override
   String get shortcutGridMove => '移動並選取項目';
 
   @override
@@ -11593,7 +11659,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get credentialRecoveryBody =>
-      'Joycai 無法存取或驗證受保護的憑證。請解鎖 Mac 後重試。若仍然失敗，請恢復原 macOS 使用者帳號及簽署 App 的鑰匙圈存取權限。現有憑證未被清空，請勿透過刪除鑰匙圈項目或重設資料庫解決此問題。';
+      'Joycai 無法存取或驗證受保護的憑證。請解鎖 Mac 後重試。若仍然失敗，請恢復原 macOS 使用者帳號及簽署 App 的鑰匙圈存取權限。重試不會清除憑證，請勿刪除鑰匙圈項目。若無法恢復鑰匙圈存取或原包裝金鑰，可清除已儲存憑證後在設定中重新輸入；清除前會在資料目錄的 credential-recovery 子目錄儲存資料庫快照。';
 
   @override
   String get credentialRecoveryRetry => '重試';

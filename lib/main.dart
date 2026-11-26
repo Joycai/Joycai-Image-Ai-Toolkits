@@ -144,11 +144,21 @@ void main() async {
           supportedLocales: AppLocalizations.supportedLocales,
           home: CredentialRecoveryScreen(
             requiresSignedMacBuild: Platform.isMacOS && AppDistribution.direct,
+            isWindows: AppPaths.usesWindowsPackageStorage,
             onReset: AppPaths.usesWindowsPackageStorage
                 ? () async {
                     // Do not discard saved credentials while the OS protector
                     // itself is unavailable; clearing cannot repair that case.
                     await const WindowsCredentialProtection().prepare(allowCreate: true);
+                    await CredentialRecoveryService().reset();
+                    await DatabaseService().database;
+                    if (!recovered.isCompleted) recovered.complete();
+                  }
+                : (Platform.isMacOS && !AppDistribution.direct)
+                ? () async {
+                    // Do not discard saved credentials while the Keychain wrapping
+                    // key cannot be accessed or created.
+                    await const MacCredentialProtection().prepare(allowCreate: true);
                     await CredentialRecoveryService().reset();
                     await DatabaseService().database;
                     if (!recovered.isCompleted) recovered.complete();

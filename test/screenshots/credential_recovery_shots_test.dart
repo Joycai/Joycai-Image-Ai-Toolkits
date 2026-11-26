@@ -42,6 +42,7 @@ void main() {
               home: CredentialRecoveryScreen(
                 requiresSignedMacBuild: AppDistribution.direct,
                 onRetry: () async {},
+                onReset: AppDistribution.direct ? null : () async {},
               ),
             ),
           );

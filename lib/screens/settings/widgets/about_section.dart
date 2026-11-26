@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../../core/app_distribution.dart';
 import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
 import '../../../core/file_utils.dart';
@@ -78,7 +79,8 @@ class _AboutSectionState extends State<AboutSection> {
     );
   }
 
-  /// The six rows: five that leave the app, and the third-party licences,
+  /// The link rows: external links that leave the app (with the GitHub Releases
+  /// changelog limited to direct-download builds), and the third-party licences,
   /// which Flutter draws in a page of its own.
   Widget _links(BuildContext context, AppLocalizations l10n) {
     return SettingsGroup(
@@ -92,14 +94,15 @@ class _AboutSectionState extends State<AboutSection> {
           external: true,
           onTap: () => _open(_githubUrl),
         ),
-        _LinkRow(
-          icon: Icons.history,
-          title: l10n.aboutChangelog,
-          note: l10n.aboutChangelogNote,
-          action: l10n.aboutActionOpen,
-          external: true,
-          onTap: () => _open(_releasesUrl),
-        ),
+        if (AppDistribution.direct)
+          _LinkRow(
+            icon: Icons.history,
+            title: l10n.aboutChangelog,
+            note: l10n.aboutChangelogNote,
+            action: l10n.aboutActionOpen,
+            external: true,
+            onTap: () => _open(_releasesUrl),
+          ),
         _LinkRow(
           icon: Icons.privacy_tip_outlined,
           title: l10n.aboutPrivacyPolicy,

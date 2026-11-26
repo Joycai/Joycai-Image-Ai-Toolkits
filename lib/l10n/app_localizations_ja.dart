@@ -4198,6 +4198,40 @@ class AppLocalizationsJa extends AppLocalizations {
       'システム設定を開けませんでした。「プライバシーとセキュリティ → フルディスクアクセス」を手動で開いてください。';
 
   @override
+  String get macAuthorizedFolders => '許可済みのフォルダ';
+
+  @override
+  String get macAuthorizedFoldersDesc =>
+      'このアプリに保存されている macOS のフォルダアクセス許可を確認・取り消しできます。機能の設定からパスを削除しただけではシステム許可は取り消されません。';
+
+  @override
+  String get macManageAuthorizedFolders => '許可を管理';
+
+  @override
+  String get macNoAuthorizedFolders => '現在保存されている外部フォルダの許可はありません。';
+
+  @override
+  String get macAuthorizedFolderReadOnly => '読み取り専用';
+
+  @override
+  String get macRevokeFolderAccess => '取り消す';
+
+  @override
+  String get macRevokeAllFolderAccess => 'すべて取り消す';
+
+  @override
+  String get macAuthorizedFoldersLoadFailed => '保存済みのフォルダ許可を読み込めませんでした。';
+
+  @override
+  String get macAuthorizedFoldersRevokeFailed => 'フォルダの許可を取り消せませんでした。';
+
+  @override
+  String get macAuthorizedFolderRevoked => 'フォルダの許可を取り消しました';
+
+  @override
+  String get macAuthorizedFoldersRevokedAll => 'すべてのフォルダ許可を取り消しました';
+
+  @override
   String get shortcutGridMove => '項目を移動して選択';
 
   @override
@@ -4861,7 +4895,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get credentialRecoveryBody =>
-      'Joycai は保護された認証情報にアクセスできないか、検証できませんでした。Mac のロックを解除して再試行してください。解決しない場合は、元の macOS ユーザーアカウントと署名済みアプリのキーチェーンへのアクセスを復元してください。保存済みの認証情報は消去されていません。キーチェーン項目の削除やデータベースのリセットは行わないでください。';
+      'Joycai は保護された認証情報にアクセスできないか、検証できませんでした。Mac のロックを解除して再試行してください。解決しない場合は、元の macOS ユーザーアカウントと署名済みアプリのキーチェーンへのアクセスを復元してください。再試行しても認証情報は消去されません。キーチェーン項目は削除しないでください。キーチェーンや元のラッピングキーを復元できない場合は、保存済みの認証情報を消去して設定画面で再入力できます。消去前にデータフォルダー内の credential-recovery にデータベースのスナップショットを保存します。';
 
   @override
   String get credentialRecoveryRetry => '再試行';

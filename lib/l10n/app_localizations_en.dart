@@ -4369,6 +4369,40 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not open System Settings. Open Privacy & Security → Full Disk Access manually.';
 
   @override
+  String get macAuthorizedFolders => 'Authorized folders';
+
+  @override
+  String get macAuthorizedFoldersDesc =>
+      'View or revoke macOS folder access permissions saved by this app. Removing a folder from a feature alone does not revoke its system permission.';
+
+  @override
+  String get macManageAuthorizedFolders => 'Manage permissions';
+
+  @override
+  String get macNoAuthorizedFolders => 'No external folder permissions are currently stored.';
+
+  @override
+  String get macAuthorizedFolderReadOnly => 'Read-only';
+
+  @override
+  String get macRevokeFolderAccess => 'Revoke';
+
+  @override
+  String get macRevokeAllFolderAccess => 'Revoke all';
+
+  @override
+  String get macAuthorizedFoldersLoadFailed => 'Could not load stored folder permissions.';
+
+  @override
+  String get macAuthorizedFoldersRevokeFailed => 'Could not revoke folder permission.';
+
+  @override
+  String get macAuthorizedFolderRevoked => 'Folder permission revoked';
+
+  @override
+  String get macAuthorizedFoldersRevokedAll => 'All folder permissions revoked';
+
+  @override
   String get shortcutGridMove => 'Move and select an item';
 
   @override
@@ -5040,7 +5074,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get credentialRecoveryBody =>
-      'Joycai could not access or verify protected credentials. Unlock your Mac and try again. If this continues, restore Keychain access for the original macOS user account and signed app. Your stored credentials have not been cleared. Do not delete Keychain items or reset the database to resolve this error.';
+      'Joycai could not access or verify protected credentials. Unlock your Mac and try again. If this continues, restore Keychain access for the original macOS user account and signed app. Retry does not clear credentials. Do not delete Keychain items. If Keychain access or the original wrapping key cannot be restored, you can clear the saved credentials and enter them again in Settings. A database snapshot is kept first in the data folder\'s credential-recovery directory.';
 
   @override
   String get credentialRecoveryRetry => 'Try again';
