@@ -10,6 +10,7 @@ import '../core/theme_accent.dart';
 import '../core/thumbnail_fit.dart';
 import '../l10n/app_localizations.dart';
 import '../models/app_image.dart';
+import '../models/image_output_config.dart';
 import '../models/llm_channel.dart';
 import '../models/llm_model.dart';
 import '../models/pricing_group.dart';
@@ -34,6 +35,7 @@ import '../services/llm/model_capabilities.dart';
 import '../services/llm/model_descriptor.dart';
 import '../services/llm/model_family.dart';
 import '../services/llm/model_routes.dart';
+import '../services/llm/param_spec.dart';
 import '../services/llm/protocols/dashscope_upload.dart';
 import '../services/media/video_source_probe.dart';
 import '../services/system/font_service.dart';
@@ -258,6 +260,10 @@ class AppState extends ChangeNotifier {
 
   // Workbench configurations
   String? lastSelectedModelId;
+  List<ImageOutputConfig> _imageOutputConfigs = const [];
+  List<ImageOutputConfig> get imageOutputConfigs => _imageOutputConfigs;
+  bool _hasPersistedImageOutputs = false;
+  int _outputConfigSeq = 0;
   // Per-family image generation parameters, namespaced as "<family>.<paramKey>"
   // so that switching between e.g. nanoBanana and an OpenAI image model does
   // not clobber each other's remembered choices. Resolved through the model
@@ -372,6 +378,9 @@ class AppState extends ChangeNotifier {
 
     _imageChannels = _channelsServing(_imageModels, channels);
     _videoChannels = _channelsServing(_videoModels, channels);
+    if (!_hasPersistedImageOutputs && _imageOutputConfigs.isEmpty && _imageModels.isNotEmpty) {
+      _seedDefaultImageOutputConfig();
+    }
   }
 
   /// The channels that serve at least one model of the given kind.
@@ -688,6 +697,7 @@ class AppState extends ChangeNotifier {
       channels: await _db.getChannels(),
       pricingGroups: await _db.getPricingGroups(),
     );
+    await loadImageOutputConfigs();
 
     await downloaderState.loadCookieHistory();
     await loadPromptHistory();

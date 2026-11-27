@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import '../assistant/prompt_optimizer_agent.dart';
 import '../db/database_service.dart';
 import '../db/repositories/assistant_session_repository.dart';
@@ -91,11 +93,38 @@ class DatabaseMergeStore implements MergeStore {
     absorbedChannelId: plan.absorbedChannelId,
   );
 
+  static const String _imageOutputsKey = 'workbench_image_outputs';
+
   @override
   Future<void> remapSelections(Map<int, int> idMap) async {
     for (final key in selectionKeys) {
       final to = idMap[int.tryParse(await _db.getSetting(key) ?? '')];
       if (to != null) await _db.saveSetting(key, '$to');
+    }
+    final rawOutputs = await _db.getSetting(_imageOutputsKey);
+    if (rawOutputs != null && rawOutputs.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(rawOutputs);
+        if (decoded is List) {
+          var changed = false;
+          for (final item in decoded) {
+            if (item is Map) {
+              final rawId = item['modelDbId'];
+              final id = rawId is int ? rawId : int.tryParse(rawId?.toString() ?? '');
+              final to = id == null ? null : idMap[id];
+              if (to != null) {
+                item['modelDbId'] = to;
+                changed = true;
+              }
+            }
+          }
+          if (changed) {
+            await _db.saveSetting(_imageOutputsKey, jsonEncode(decoded));
+          }
+        }
+      } catch (_) {
+        /* ignore malformed stored outputs */
+      }
     }
   }
 
@@ -119,6 +148,25 @@ class DatabaseMergeStore implements MergeStore {
     for (final key in selectionKeys) {
       if (set.contains(int.tryParse(await _db.getSetting(key) ?? ''))) {
         selections++;
+      }
+    }
+    final rawOutputs = await _db.getSetting(_imageOutputsKey);
+    if (rawOutputs != null && rawOutputs.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(rawOutputs);
+        if (decoded is List) {
+          for (final item in decoded) {
+            if (item is Map) {
+              final rawId = item['modelDbId'];
+              final id = rawId is int ? rawId : int.tryParse(rawId?.toString() ?? '');
+              if (id != null && set.contains(id)) {
+                selections++;
+              }
+            }
+          }
+        }
+      } catch (_) {
+        /* ignore malformed stored outputs */
       }
     }
     return MergeReferences(

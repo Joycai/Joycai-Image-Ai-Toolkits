@@ -7182,4 +7182,79 @@ class AppLocalizationsEn extends AppLocalizations {
   String audioReferenceToken(int number) {
     return 'Audio $number';
   }
+
+  @override
+  String get generationRequestOptions => 'Request & transport';
+
+  @override
+  String get outputConfigs => 'Output Configs';
+
+  @override
+  String outputConfigsEnabledCount(int enabled, int total) {
+    return '$enabled/$total on';
+  }
+
+  @override
+  String get addOutputConfig => 'Add output';
+
+  @override
+  String get editOutputConfig => 'Edit output';
+
+  @override
+  String get outputConfigDialogSubtitle =>
+      'Choose a model and its parameters. Add multiple outputs to compare side by side.';
+
+  @override
+  String get outputConfigAlias => 'Label (optional)';
+
+  @override
+  String get outputConfigAliasHint => 'e.g. High-res transparent, Fast draft';
+
+  @override
+  String get noOutputConfigs => 'No output configs yet';
+
+  @override
+  String get noOutputConfigsHint =>
+      'Add one or more model configs to generate and compare outputs.';
+
+  @override
+  String get outputConfigModelUnavailable =>
+      'Model is no longer available. Edit or remove this output.';
+
+  @override
+  String get duplicateOutputConfig => 'Duplicate';
+
+  @override
+  String get editOutputConfigTooltip => 'Edit output config';
+
+  @override
+  String toggleOutputConfigLabel(String name) {
+    return 'Toggle $name';
+  }
+
+  @override
+  String get addOutputConfigFirst => 'Add an output config first';
+
+  @override
+  String get enableOutputConfigFirst => 'Enable at least one output';
+
+  @override
+  String processPromptOutputs(int count) {
+    return 'Process prompt · $count outputs';
+  }
+
+  @override
+  String processImagesOutputs(int outputs, int images) {
+    return 'Generate $outputs outputs ($images images)';
+  }
+
+  @override
+  String tasksSubmittedCount(int count) {
+    return 'Submitted $count tasks to queue';
+  }
+
+  @override
+  String outputConfigValidationError(String model, String message) {
+    return '$model: $message';
+  }
 }

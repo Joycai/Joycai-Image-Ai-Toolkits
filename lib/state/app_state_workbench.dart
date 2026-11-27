@@ -1,5 +1,14 @@
 part of 'app_state.dart';
 
+const String _imageOutputsSettingKey = 'workbench_image_outputs';
+
+typedef OutputSubmitFailure = ({
+  ImageOutputConfig config,
+  LLMModel? model,
+  GenerationDiagnostic? diagnostic,
+  bool modelMissing,
+});
+
 /// Workbench, video and scoped generation-parameter configuration, plus task
 /// submission. Split out of [AppState] as a `part of` extension; notifications
 /// route through [AppState.notify] since `notifyListeners` is protected.
@@ -202,6 +211,175 @@ extension AppStateWorkbench on AppState {
     return schema.legacyOptions(schema.effective(draft, schema.operation(draft, const [])));
   }
 
+  // --- Multi-output image configurations ------------------------------
+
+  String nextImageOutputConfigId() =>
+      'out_${DateTime.now().microsecondsSinceEpoch}_${++_outputConfigSeq}';
+
+  Future<void> loadImageOutputConfigs() async {
+    final raw = await _db.getSetting(_imageOutputsSettingKey);
+    if (raw != null && raw.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(raw);
+        if (decoded is List) {
+          _hasPersistedImageOutputs = true;
+          _imageOutputConfigs = List.unmodifiable([
+            for (final item in decoded)
+              if (item is Map<String, dynamic>)
+                ImageOutputConfig.fromJson(item)
+              else if (item is Map)
+                ImageOutputConfig.fromJson(item.map((k, v) => MapEntry(k.toString(), v))),
+          ]);
+          return;
+        }
+      } catch (_) {
+        /* fall through to seed default */
+      }
+    }
+    _hasPersistedImageOutputs = false;
+    _seedDefaultImageOutputConfig();
+  }
+
+  void _seedDefaultImageOutputConfig() {
+    if (imageModels.isEmpty) {
+      _imageOutputConfigs = const [];
+      return;
+    }
+    final savedDbId = int.tryParse(lastSelectedModelId ?? '');
+    LLMModel? match;
+    for (final m in imageModels) {
+      if (m.id == savedDbId || m.modelId == lastSelectedModelId) {
+        match = m;
+        break;
+      }
+    }
+    final resolved = match ?? imageModels.first;
+    _imageOutputConfigs = List.unmodifiable([
+      ImageOutputConfig(
+        id: nextImageOutputConfigId(),
+        modelDbId: resolved.id,
+        modelIdFallback: resolved.modelId,
+        enabled: true,
+        params: defaultOutputParamsForModel(resolved),
+        useBatch: useImageBatch && supportsImageBatch(resolved),
+      ),
+    ]);
+  }
+
+  LLMModel? resolveOutputModel(ImageOutputConfig config) {
+    for (final m in imageModels) {
+      if (config.modelDbId != null && m.id == config.modelDbId) return m;
+    }
+    final fallback = config.modelIdFallback;
+    if (fallback != null && fallback.isNotEmpty) {
+      for (final m in imageModels) {
+        if (m.modelId == fallback || m.id?.toString() == fallback) return m;
+      }
+    }
+    return null;
+  }
+
+  String getOutputParam(LLMModel model, ParamSpec spec, Map<String, String> params) {
+    final raw = params[spec.key];
+    if (raw != null && spec.isValid(raw)) return raw;
+    final schema = generationSchemaForModel(model);
+    final modeSpec = schema.capabilities.imageParams.where((s) => s.key == 'imageTask').firstOrNull;
+    final mode = modeSpec?.normalize(params['imageTask']);
+    final media = [
+      for (final image in galleryState.selectedImages)
+        GenerationMedia(GenerationMediaRole.reference, image.path),
+    ];
+    final operation = schema.operation(schema.readLegacy({'imageTask': ?mode}), media);
+    return schema.defaultStringFor(spec, operation);
+  }
+
+  Map<String, String> defaultOutputParamsForModel(LLMModel model) {
+    final schema = generationSchemaForModel(model);
+    return {
+      for (final spec in schema.capabilities.imageParams) spec.key: getImageParam(model, spec),
+    };
+  }
+
+  Map<String, dynamic> effectiveParamsForOutput(
+    LLMModel model,
+    Map<String, String> rawParams, {
+    List<GenerationMedia> media = const [],
+  }) {
+    final schema = generationSchemaForModel(model);
+    final result = <String, dynamic>{};
+    for (final spec in schema.capabilities.imageParams) {
+      result[spec.key] = getOutputParam(model, spec, rawParams);
+    }
+    final draft = schema.readLegacy(result);
+    return schema.legacyOptions(schema.effective(draft, schema.operation(draft, media)));
+  }
+
+  Future<void> _persistImageOutputConfigs(List<ImageOutputConfig> next) {
+    _hasPersistedImageOutputs = true;
+    _imageOutputConfigs = List.unmodifiable(next);
+    notify();
+    return _db
+        .saveSetting(_imageOutputsSettingKey, jsonEncode([for (final c in next) c.toJson()]))
+        .catchError((Object e) {
+          addLog('Failed to persist output configs: $e', level: 'ERROR');
+        });
+  }
+
+  Future<void> setImageOutputConfigs(List<ImageOutputConfig> configs) =>
+      _persistImageOutputConfigs(configs);
+
+  Future<void> addImageOutputConfig(ImageOutputConfig config) {
+    final normalized = config.id.isEmpty ? config.copyWith(id: nextImageOutputConfigId()) : config;
+    if (normalized.modelDbId != null) {
+      lastSelectedModelId = normalized.modelDbId.toString();
+      _db.saveSetting('last_model_id', lastSelectedModelId!).catchError((_) {});
+    }
+    return _persistImageOutputConfigs([..._imageOutputConfigs, normalized]);
+  }
+
+  Future<void> updateImageOutputConfig(ImageOutputConfig config) {
+    final next = [
+      for (final existing in _imageOutputConfigs) existing.id == config.id ? config : existing,
+    ];
+    return _persistImageOutputConfigs(next);
+  }
+
+  Future<void> toggleImageOutputConfig(String id, bool enabled) {
+    final next = [
+      for (final existing in _imageOutputConfigs)
+        existing.id == id ? existing.copyWith(enabled: enabled) : existing,
+    ];
+    return _persistImageOutputConfigs(next);
+  }
+
+  Future<void> duplicateImageOutputConfig(String id, {String copySuffix = ''}) {
+    final idx = _imageOutputConfigs.indexWhere((c) => c.id == id);
+    if (idx == -1) return Future.value();
+    final source = _imageOutputConfigs[idx];
+    final baseAlias = source.alias.trim();
+    final nextAlias = baseAlias.isEmpty
+        ? copySuffix.trim()
+        : (copySuffix.trim().isEmpty ? baseAlias : '$baseAlias (${copySuffix.trim()})');
+    final clone = source.copyWith(id: nextImageOutputConfigId(), enabled: true, alias: nextAlias);
+    final next = [..._imageOutputConfigs]..insert(idx + 1, clone);
+    return _persistImageOutputConfigs(next);
+  }
+
+  Future<void> deleteImageOutputConfig(String id) {
+    final next = [
+      for (final existing in _imageOutputConfigs)
+        if (existing.id != id) existing,
+    ];
+    return _persistImageOutputConfigs(next);
+  }
+
+  @visibleForTesting
+  void setImageOutputConfigsForTest(List<ImageOutputConfig> configs) {
+    _hasPersistedImageOutputs = true;
+    _imageOutputConfigs = List.unmodifiable(configs);
+    notify();
+  }
+
   // --- Scoped video generation parameters ------------------------------
 
   Future<void> loadVideoParams() async {
@@ -354,6 +532,7 @@ extension AppStateWorkbench on AppState {
     dynamic modelIdentifier,
     Map<String, dynamic> params, {
     String? modelIdDisplay,
+    bool recordHistory = true,
   }) async {
     final prompt = params['prompt'] as String? ?? '';
     final isVideoTask = params['taskType'] == TaskType.videoGenerate.name;
@@ -420,11 +599,69 @@ extension AppStateWorkbench on AppState {
     // doesn't leave a prompt in the history. Empty prompts are dropped by the
     // repository, which keeps image-only submissions out of the list.
     final historyType = _promptHistoryTypeFor(params['taskType'] as String?);
-    if (historyType != null) {
+    if (recordHistory && historyType != null) {
       await recordPromptHistory(historyType, prompt);
     }
 
     addLog('Task submitted with ${imagePaths.length} input images.');
+  }
+
+  Future<({int submitted, OutputSubmitFailure? failure})> submitImageOutputs({
+    required String prompt,
+  }) async {
+    final enabled = _imageOutputConfigs.where((c) => c.enabled).toList(growable: false);
+    if (enabled.isEmpty) {
+      return (submitted: 0, failure: null);
+    }
+
+    final media = [
+      for (final image in galleryState.selectedImages)
+        GenerationMedia(GenerationMediaRole.reference, image.path),
+    ];
+
+    final prepared = <({LLMModel model, Map<String, dynamic> params, String displayLabel})>[];
+    for (final config in enabled) {
+      final model = resolveOutputModel(config);
+      if (model == null || model.id == null) {
+        return (
+          submitted: 0,
+          failure: (config: config, model: model, diagnostic: null, modelMissing: true),
+        );
+      }
+      final batchEnabled = config.useBatch && supportsImageBatch(model);
+      final params = <String, dynamic>{
+        'prompt': prompt,
+        'executionMode': batchEnabled ? 'batch' : 'immediate',
+        ...effectiveParamsForOutput(model, config.params, media: media),
+      };
+      final diagnostics = generationInputDiagnostics(model, params, media);
+      if (diagnostics.isNotEmpty) {
+        return (
+          submitted: 0,
+          failure: (
+            config: config,
+            model: model,
+            diagnostic: diagnostics.first,
+            modelMissing: false,
+          ),
+        );
+      }
+      final alias = config.alias.trim();
+      final displayLabel = alias.isEmpty ? model.modelName : '${model.modelName} · $alias';
+      prepared.add((model: model, params: params, displayLabel: displayLabel));
+    }
+
+    for (final item in prepared) {
+      await submitTask(
+        item.model.id!,
+        item.params,
+        modelIdDisplay: item.displayLabel,
+        recordHistory: false,
+      );
+    }
+
+    await recordPromptHistory(PromptHistoryType.image, prompt);
+    return (submitted: prepared.length, failure: null);
   }
 
   /// The history bucket a task's prompt belongs in, or null for task types with

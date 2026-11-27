@@ -1429,5 +1429,76 @@
         "type": "int"
       }
     }
+  },
+  "generationRequestOptions": "Request & transport",
+  "outputConfigs": "Output Configs",
+  "outputConfigsEnabledCount": "{enabled}/{total} on",
+  "@outputConfigsEnabledCount": {
+    "placeholders": {
+      "enabled": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "addOutputConfig": "Add output",
+  "editOutputConfig": "Edit output",
+  "outputConfigDialogSubtitle": "Choose a model and its parameters. Add multiple outputs to compare side by side.",
+  "outputConfigAlias": "Label (optional)",
+  "outputConfigAliasHint": "e.g. High-res transparent, Fast draft",
+  "noOutputConfigs": "No output configs yet",
+  "noOutputConfigsHint": "Add one or more model configs to generate and compare outputs.",
+  "outputConfigModelUnavailable": "Model is no longer available. Edit or remove this output.",
+  "duplicateOutputConfig": "Duplicate",
+  "editOutputConfigTooltip": "Edit output config",
+  "toggleOutputConfigLabel": "Toggle {name}",
+  "@toggleOutputConfigLabel": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "addOutputConfigFirst": "Add an output config first",
+  "enableOutputConfigFirst": "Enable at least one output",
+  "processPromptOutputs": "Process prompt · {count} outputs",
+  "@processPromptOutputs": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "processImagesOutputs": "Generate {outputs} outputs ({images} images)",
+  "@processImagesOutputs": {
+    "placeholders": {
+      "outputs": {
+        "type": "int"
+      },
+      "images": {
+        "type": "int"
+      }
+    }
+  },
+  "tasksSubmittedCount": "Submitted {count} tasks to queue",
+  "@tasksSubmittedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "outputConfigValidationError": "{model}: {message}",
+  "@outputConfigValidationError": {
+    "placeholders": {
+      "model": {
+        "type": "String"
+      },
+      "message": {
+        "type": "String"
+      }
+    }
   }
 }

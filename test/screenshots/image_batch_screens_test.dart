@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/models/image_output_config.dart';
 import 'package:joycai_image_ai_toolkits/models/llm_channel.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/gallery/image_card.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/workbench_layout.dart';
@@ -107,6 +108,15 @@ void main() {
               app.setWorkbenchTab(0);
               app.isConsoleExpanded = false;
               app.setUseImageBatch(true);
+              app.setImageOutputConfigsForTest([
+                ImageOutputConfig(
+                  id: 'batch_shot',
+                  modelDbId: model.id,
+                  modelIdFallback: model.modelId,
+                  params: app.defaultOutputParamsForModel(model),
+                  useBatch: true,
+                ),
+              ]);
             },
             after: (tester) async {
               final layout = tester

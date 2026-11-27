@@ -12514,6 +12514,126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Audio {number}'**
   String audioReferenceToken(int number);
+
+  /// No description provided for @generationRequestOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Request & transport'**
+  String get generationRequestOptions;
+
+  /// No description provided for @outputConfigs.
+  ///
+  /// In en, this message translates to:
+  /// **'Output Configs'**
+  String get outputConfigs;
+
+  /// No description provided for @outputConfigsEnabledCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{enabled}/{total} on'**
+  String outputConfigsEnabledCount(int enabled, int total);
+
+  /// No description provided for @addOutputConfig.
+  ///
+  /// In en, this message translates to:
+  /// **'Add output'**
+  String get addOutputConfig;
+
+  /// No description provided for @editOutputConfig.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit output'**
+  String get editOutputConfig;
+
+  /// No description provided for @outputConfigDialogSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a model and its parameters. Add multiple outputs to compare side by side.'**
+  String get outputConfigDialogSubtitle;
+
+  /// No description provided for @outputConfigAlias.
+  ///
+  /// In en, this message translates to:
+  /// **'Label (optional)'**
+  String get outputConfigAlias;
+
+  /// No description provided for @outputConfigAliasHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. High-res transparent, Fast draft'**
+  String get outputConfigAliasHint;
+
+  /// No description provided for @noOutputConfigs.
+  ///
+  /// In en, this message translates to:
+  /// **'No output configs yet'**
+  String get noOutputConfigs;
+
+  /// No description provided for @noOutputConfigsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add one or more model configs to generate and compare outputs.'**
+  String get noOutputConfigsHint;
+
+  /// No description provided for @outputConfigModelUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Model is no longer available. Edit or remove this output.'**
+  String get outputConfigModelUnavailable;
+
+  /// No description provided for @duplicateOutputConfig.
+  ///
+  /// In en, this message translates to:
+  /// **'Duplicate'**
+  String get duplicateOutputConfig;
+
+  /// No description provided for @editOutputConfigTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit output config'**
+  String get editOutputConfigTooltip;
+
+  /// No description provided for @toggleOutputConfigLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Toggle {name}'**
+  String toggleOutputConfigLabel(String name);
+
+  /// No description provided for @addOutputConfigFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Add an output config first'**
+  String get addOutputConfigFirst;
+
+  /// No description provided for @enableOutputConfigFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable at least one output'**
+  String get enableOutputConfigFirst;
+
+  /// No description provided for @processPromptOutputs.
+  ///
+  /// In en, this message translates to:
+  /// **'Process prompt · {count} outputs'**
+  String processPromptOutputs(int count);
+
+  /// No description provided for @processImagesOutputs.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate {outputs} outputs ({images} images)'**
+  String processImagesOutputs(int outputs, int images);
+
+  /// No description provided for @tasksSubmittedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitted {count} tasks to queue'**
+  String tasksSubmittedCount(int count);
+
+  /// No description provided for @outputConfigValidationError.
+  ///
+  /// In en, this message translates to:
+  /// **'{model}: {message}'**
+  String outputConfigValidationError(String model, String message);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

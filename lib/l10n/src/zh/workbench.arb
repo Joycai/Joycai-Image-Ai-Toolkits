@@ -1311,5 +1311,76 @@
         "type": "int"
       }
     }
+  },
+  "generationRequestOptions": "请求与传输",
+  "outputConfigs": "输出配置",
+  "outputConfigsEnabledCount": "{enabled}/{total} 已启用",
+  "@outputConfigsEnabledCount": {
+    "placeholders": {
+      "enabled": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "addOutputConfig": "添加输出",
+  "editOutputConfig": "编辑输出",
+  "outputConfigDialogSubtitle": "选择模型与生成参数；可添加多个输出配置以便并发对比。",
+  "outputConfigAlias": "配置别名（可选）",
+  "outputConfigAliasHint": "例如：高清透明底 / 快速草图",
+  "noOutputConfigs": "暂无输出配置",
+  "noOutputConfigsHint": "添加一个或多个模型配置，提交时将并发生成对比。",
+  "outputConfigModelUnavailable": "该模型已不可用，请重新选择模型或删除此配置。",
+  "duplicateOutputConfig": "复制",
+  "editOutputConfigTooltip": "编辑输出配置",
+  "toggleOutputConfigLabel": "启用或停用 {name}",
+  "@toggleOutputConfigLabel": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "addOutputConfigFirst": "请先添加输出配置",
+  "enableOutputConfigFirst": "请至少启用 1 项输出",
+  "processPromptOutputs": "处理提示词 · {count} 项输出",
+  "@processPromptOutputs": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "processImagesOutputs": "并发生成 · {outputs} 项输出（{images} 张图）",
+  "@processImagesOutputs": {
+    "placeholders": {
+      "outputs": {
+        "type": "int"
+      },
+      "images": {
+        "type": "int"
+      }
+    }
+  },
+  "tasksSubmittedCount": "已提交 {count} 个任务至队列",
+  "@tasksSubmittedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "outputConfigValidationError": "{model}: {message}",
+  "@outputConfigValidationError": {
+    "placeholders": {
+      "model": {
+        "type": "String"
+      },
+      "message": {
+        "type": "String"
+      }
+    }
   }
 }

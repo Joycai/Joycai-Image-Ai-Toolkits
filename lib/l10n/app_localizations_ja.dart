@@ -6943,4 +6943,76 @@ class AppLocalizationsJa extends AppLocalizations {
   String audioReferenceToken(int number) {
     return '音声$number';
   }
+
+  @override
+  String get generationRequestOptions => 'リクエストと転送';
+
+  @override
+  String get outputConfigs => '出力設定';
+
+  @override
+  String outputConfigsEnabledCount(int enabled, int total) {
+    return '$enabled/$total 有効';
+  }
+
+  @override
+  String get addOutputConfig => '出力を追加';
+
+  @override
+  String get editOutputConfig => '出力を編集';
+
+  @override
+  String get outputConfigDialogSubtitle => 'モデルと生成パラメータを選択します。複数追加して並列比較できます。';
+
+  @override
+  String get outputConfigAlias => 'ラベル（任意）';
+
+  @override
+  String get outputConfigAliasHint => '例：高画質透過 / 高速ドラフト';
+
+  @override
+  String get noOutputConfigs => '出力設定がありません';
+
+  @override
+  String get noOutputConfigsHint => '1 つ以上のモデル設定を追加すると、並列生成して比較できます。';
+
+  @override
+  String get outputConfigModelUnavailable => 'このモデルは利用できません。編集または削除してください。';
+
+  @override
+  String get duplicateOutputConfig => '複製';
+
+  @override
+  String get editOutputConfigTooltip => '出力設定を編集';
+
+  @override
+  String toggleOutputConfigLabel(String name) {
+    return '$name を切り替え';
+  }
+
+  @override
+  String get addOutputConfigFirst => '先に出力設定を追加してください';
+
+  @override
+  String get enableOutputConfigFirst => '出力を 1 件以上有効にしてください';
+
+  @override
+  String processPromptOutputs(int count) {
+    return 'プロンプト処理 · $count 件出力';
+  }
+
+  @override
+  String processImagesOutputs(int outputs, int images) {
+    return '$outputs 件並列生成（画像 $images 枚）';
+  }
+
+  @override
+  String tasksSubmittedCount(int count) {
+    return '$count 件のタスクをキューに送信しました';
+  }
+
+  @override
+  String outputConfigValidationError(String model, String message) {
+    return '$model: $message';
+  }
 }
