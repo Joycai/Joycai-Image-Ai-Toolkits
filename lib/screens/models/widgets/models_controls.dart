@@ -1,7 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
-import '../../core/design_tokens.dart';
-import '../glass/glass_controls.dart';
+import '../../../core/design_tokens.dart';
+import '../../../widgets/glass/glass_controls.dart';
 
 /// The button treatments `D1a` uses in its column headers and filter row: the
 /// solid accent (Add Channel, Add Model) and the neutral hairline box on the

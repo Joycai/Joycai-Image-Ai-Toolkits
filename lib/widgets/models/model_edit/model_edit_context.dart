@@ -1,12 +1,36 @@
 part of '../model_edit_dialog.dart';
 
-/// The context window: Auto / Specify, the typed figure and its stepper.
+/// Token budget card combining Context Window and Max Output.
 extension _ContextSection on _ModelEditDialogState {
-  /// `1a`'s Specify view. The typed figure is the value; the slider, the
-  /// preset menu, the tick labels and the arrow keys are four ways of writing
-  /// it. A status string on the caption's row says where the figure sits
-  /// (`= 128k · preset`, `≈ 128k–256k`).
-  Widget _contextSection(BuildContext context) {
+  Widget _tokenBudgetSection(BuildContext context) {
+    final l10n = widget.l10n;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _caption(l10n.tokenBudget),
+        const SizedBox(height: AppSpace.s6),
+        ModelEditCard(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _contextContent(context),
+              if (_hasOutputCap) ...[
+                const SizedBox(height: AppSpace.s10),
+                const Divider(height: 1),
+                const SizedBox(height: AppSpace.s10),
+                _outputCapContent(context),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Context window field, mode grid and slider inside [_tokenBudgetSection].
+  Widget _contextContent(BuildContext context) {
     final l10n = widget.l10n;
     final theme = Theme.of(context);
     final tokens = _contextTokens;
@@ -15,13 +39,7 @@ extension _ContextSection on _ModelEditDialogState {
     final invalid = _contextTouched && !_contextValid;
 
     final description = switch (contextMode) {
-      // An image or video model has no conversation to budget, so "unset" is
-      // not a guess there but the right answer.
-      ContextWindowMode.unset => switch (tag) {
-        'image' => l10n.contextImageUnsetDesc,
-        'video' => l10n.contextVideoUnsetDesc,
-        _ => l10n.contextUnsetDesc,
-      },
+      ContextWindowMode.unset => l10n.contextUnsetDesc,
       ContextWindowMode.specified => l10n.contextWindowHint,
       ContextWindowMode.unlimited => l10n.contextUnlimitedDesc,
     };
@@ -34,7 +52,19 @@ extension _ContextSection on _ModelEditDialogState {
           crossAxisAlignment: CrossAxisAlignment.baseline,
           textBaseline: TextBaseline.alphabetic,
           children: [
-            Expanded(child: _caption(l10n.contextWindow, scope: _scope())),
+            Expanded(
+              child: Text.rich(
+                TextSpan(
+                  style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+                  children: [
+                    TextSpan(text: l10n.contextWindow),
+                    if (_scope() case final scope?) ...[const TextSpan(text: '  '), scope],
+                  ],
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
             if (specified && hasValue) ...[
               const SizedBox(width: AppSpace.s10),
               Text(

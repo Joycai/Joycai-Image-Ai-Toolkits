@@ -13,11 +13,11 @@ import '../../../widgets/drag/app_drag_lift.dart';
 import '../../../widgets/drag/app_reorder_gap.dart';
 import '../../../widgets/glass/app_glass_menu.dart';
 import '../../../widgets/glass/glass_controls.dart';
-import '../../../widgets/models/models_controls.dart';
 import '../../../widgets/ui/app_search_field.dart';
 import 'channel_merge_review.dart';
 import 'channel_row.dart';
 import 'models_actions.dart';
+import 'models_controls.dart';
 
 /// The channels column of the two-column layout (`D1a · 1a` 左栏).
 ///

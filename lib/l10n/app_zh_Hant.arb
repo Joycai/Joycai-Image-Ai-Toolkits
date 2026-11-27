@@ -1753,6 +1753,33 @@
   "modelPresetDefaultPricingNote": "未選擇計費組時，將自動按官方 API 預設價格計費。",
   "feeGroupLoadOfficialPreset": "套用官方定價",
   "feeGroupPresetPickerTitle": "官方 API 定價預設",
+  "modelDefaultPricingShort": "官方預設費率",
+  "modelPresetReferencePrice": "官方預設參考價：{price}",
+  "@modelPresetReferencePrice": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "tokenBudget": "Token 預算",
+  "behaviorAndExtensions": "行為與擴充",
+  "supportsMultimodalInput": "支援圖像/影片輸入（多模態）",
+  "supportsMultimodalInputDesc": "開啟後歸類為多模態模型，可用於提示詞助手看圖與 AI 重新命名。",
+  "reasoningEffortNotSupportedShort": "目前模型與協定不支援推理參數",
+  "transportCompatibility": "傳輸相容",
+  "transportSummary": "串流 {stream} · 標準 {standard}",
+  "@transportSummary": {
+    "placeholders": {
+      "stream": {
+        "type": "String"
+      },
+      "standard": {
+        "type": "String"
+      }
+    }
+  },
+  "mediaModelChatControlsHiddenNote": "圖像與影片模型不涉及對話上下文視窗、代理讀圖與文字推理階梯，已自動隱藏無關設定。",
   "prompts": "提示",
   "promptLibrary": "提示庫",
   "newPrompt": "新提示",

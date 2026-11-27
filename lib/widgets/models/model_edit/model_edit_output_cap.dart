@@ -12,7 +12,7 @@ part of '../model_edit_dialog.dart';
 /// snapping track rather than the magnet, because output caps are almost
 /// always a power of two.
 extension _OutputCapSection on _ModelEditDialogState {
-  Widget _outputCapSection(BuildContext context) {
+  Widget _outputCapContent(BuildContext context) {
     final l10n = widget.l10n;
     final theme = Theme.of(context);
     final tokens = _outputCapTokens;
@@ -72,7 +72,22 @@ extension _OutputCapSection on _ModelEditDialogState {
           crossAxisAlignment: CrossAxisAlignment.baseline,
           textBaseline: TextBaseline.alphabetic,
           children: [
-            Expanded(child: _caption(l10n.outputCap, scope: _scope(route: true))),
+            Expanded(
+              child: Text.rich(
+                TextSpan(
+                  style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+                  children: [
+                    TextSpan(text: l10n.outputCap),
+                    if (_scope(route: true) case final scope?) ...[
+                      const TextSpan(text: '  '),
+                      scope,
+                    ],
+                  ],
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
             if (status.isNotEmpty) ...[
               const SizedBox(width: AppSpace.s10),
               Text(

@@ -11,7 +11,6 @@ import '../../services/llm/model_routes.dart';
 import '../../services/system/ui_prefs.dart';
 import '../../state/app_state.dart';
 import '../../widgets/models/model_edit_dialog.dart';
-import '../../widgets/models/models_controls.dart';
 import '../../widgets/models/pricing_group_manager.dart';
 import '../../widgets/ui/app_button.dart';
 import '../../widgets/ui/app_dialog.dart';
@@ -25,6 +24,7 @@ import 'widgets/channel_wizard_dialog.dart';
 import 'widgets/discovery_dialog.dart';
 import 'widgets/model_detail_column.dart';
 import 'widgets/models_actions.dart';
+import 'widgets/models_controls.dart';
 import 'widgets/models_phone_layout.dart';
 
 /// Models & Channels (`D1a`): channels on the left, the selected channel's

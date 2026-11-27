@@ -6052,6 +6052,66 @@ abstract class AppLocalizations {
   /// **'Official API pricing presets'**
   String get feeGroupPresetPickerTitle;
 
+  /// No description provided for @modelDefaultPricingShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Default pricing'**
+  String get modelDefaultPricingShort;
+
+  /// No description provided for @modelPresetReferencePrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Official reference: {price}'**
+  String modelPresetReferencePrice(String price);
+
+  /// No description provided for @tokenBudget.
+  ///
+  /// In en, this message translates to:
+  /// **'Token Budget'**
+  String get tokenBudget;
+
+  /// No description provided for @behaviorAndExtensions.
+  ///
+  /// In en, this message translates to:
+  /// **'Behavior & Extensions'**
+  String get behaviorAndExtensions;
+
+  /// No description provided for @supportsMultimodalInput.
+  ///
+  /// In en, this message translates to:
+  /// **'Image / video input (Multimodal)'**
+  String get supportsMultimodalInput;
+
+  /// No description provided for @supportsMultimodalInputDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Marks this chat model as multimodal for Prompt Assistant vision and AI Rename.'**
+  String get supportsMultimodalInputDesc;
+
+  /// No description provided for @reasoningEffortNotSupportedShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Not supported by this model or protocol'**
+  String get reasoningEffortNotSupportedShort;
+
+  /// No description provided for @transportCompatibility.
+  ///
+  /// In en, this message translates to:
+  /// **'Transport Compatibility'**
+  String get transportCompatibility;
+
+  /// No description provided for @transportSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Stream {stream} · Standard {standard}'**
+  String transportSummary(String stream, String standard);
+
+  /// No description provided for @mediaModelChatControlsHiddenNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Image and video models do not use conversation context windows, agent vision, or text reasoning.'**
+  String get mediaModelChatControlsHiddenNote;
+
   /// No description provided for @prompts.
   ///
   /// In en, this message translates to:

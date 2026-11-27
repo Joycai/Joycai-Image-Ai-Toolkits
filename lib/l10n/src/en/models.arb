@@ -1062,5 +1062,32 @@
   "modelPresetThinkingTag": "Thinking",
   "modelPresetDefaultPricingNote": "Official API pricing is used automatically when no fee group is assigned.",
   "feeGroupLoadOfficialPreset": "Load official pricing",
-  "feeGroupPresetPickerTitle": "Official API pricing presets"
+  "feeGroupPresetPickerTitle": "Official API pricing presets",
+  "modelDefaultPricingShort": "Default pricing",
+  "modelPresetReferencePrice": "Official reference: {price}",
+  "@modelPresetReferencePrice": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "tokenBudget": "Token Budget",
+  "behaviorAndExtensions": "Behavior & Extensions",
+  "supportsMultimodalInput": "Image / video input (Multimodal)",
+  "supportsMultimodalInputDesc": "Marks this chat model as multimodal for Prompt Assistant vision and AI Rename.",
+  "reasoningEffortNotSupportedShort": "Not supported by this model or protocol",
+  "transportCompatibility": "Transport Compatibility",
+  "transportSummary": "Stream {stream} · Standard {standard}",
+  "@transportSummary": {
+    "placeholders": {
+      "stream": {
+        "type": "String"
+      },
+      "standard": {
+        "type": "String"
+      }
+    }
+  },
+  "mediaModelChatControlsHiddenNote": "Image and video models do not use conversation context windows, agent vision, or text reasoning."
 }

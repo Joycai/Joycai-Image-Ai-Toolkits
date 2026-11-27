@@ -3358,6 +3358,40 @@ class AppLocalizationsZh extends AppLocalizations {
   String get feeGroupPresetPickerTitle => '官方 API 定价预设';
 
   @override
+  String get modelDefaultPricingShort => '官方默认计费';
+
+  @override
+  String modelPresetReferencePrice(String price) {
+    return '官方默认参考价：$price';
+  }
+
+  @override
+  String get tokenBudget => 'Token 预算';
+
+  @override
+  String get behaviorAndExtensions => '行为与扩展';
+
+  @override
+  String get supportsMultimodalInput => '支持图像/视频输入（多模态）';
+
+  @override
+  String get supportsMultimodalInputDesc => '开启后归类为多模态模型，可用于提示词助手看图与 AI 重命名。';
+
+  @override
+  String get reasoningEffortNotSupportedShort => '当前模型与协议不支持推理参数';
+
+  @override
+  String get transportCompatibility => '传输兼容';
+
+  @override
+  String transportSummary(String stream, String standard) {
+    return '流式 $stream · 标准 $standard';
+  }
+
+  @override
+  String get mediaModelChatControlsHiddenNote => '图像与视频模型不涉及对话上下文窗口、代理读图与文本推理阶梯，已自动隐藏无关设置。';
+
+  @override
   String get prompts => '提示词';
 
   @override
@@ -10325,6 +10359,40 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get feeGroupPresetPickerTitle => '官方 API 定價預設';
+
+  @override
+  String get modelDefaultPricingShort => '官方預設費率';
+
+  @override
+  String modelPresetReferencePrice(String price) {
+    return '官方預設參考價：$price';
+  }
+
+  @override
+  String get tokenBudget => 'Token 預算';
+
+  @override
+  String get behaviorAndExtensions => '行為與擴充';
+
+  @override
+  String get supportsMultimodalInput => '支援圖像/影片輸入（多模態）';
+
+  @override
+  String get supportsMultimodalInputDesc => '開啟後歸類為多模態模型，可用於提示詞助手看圖與 AI 重新命名。';
+
+  @override
+  String get reasoningEffortNotSupportedShort => '目前模型與協定不支援推理參數';
+
+  @override
+  String get transportCompatibility => '傳輸相容';
+
+  @override
+  String transportSummary(String stream, String standard) {
+    return '串流 $stream · 標準 $standard';
+  }
+
+  @override
+  String get mediaModelChatControlsHiddenNote => '圖像與影片模型不涉及對話上下文視窗、代理讀圖與文字推理階梯，已自動隱藏無關設定。';
 
   @override
   String get prompts => '提示';

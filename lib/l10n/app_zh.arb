@@ -1879,6 +1879,33 @@
   "modelPresetDefaultPricingNote": "未选择计费组时，将自动按官方 API 默认定价计费。",
   "feeGroupLoadOfficialPreset": "套用官方定价",
   "feeGroupPresetPickerTitle": "官方 API 定价预设",
+  "modelDefaultPricingShort": "官方默认计费",
+  "modelPresetReferencePrice": "官方默认参考价：{price}",
+  "@modelPresetReferencePrice": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "tokenBudget": "Token 预算",
+  "behaviorAndExtensions": "行为与扩展",
+  "supportsMultimodalInput": "支持图像/视频输入（多模态）",
+  "supportsMultimodalInputDesc": "开启后归类为多模态模型，可用于提示词助手看图与 AI 重命名。",
+  "reasoningEffortNotSupportedShort": "当前模型与协议不支持推理参数",
+  "transportCompatibility": "传输兼容",
+  "transportSummary": "流式 {stream} · 标准 {standard}",
+  "@transportSummary": {
+    "placeholders": {
+      "stream": {
+        "type": "String"
+      },
+      "standard": {
+        "type": "String"
+      }
+    }
+  },
+  "mediaModelChatControlsHiddenNote": "图像与视频模型不涉及对话上下文窗口、代理读图与文本推理阶梯，已自动隐藏无关设置。",
   "prompts": "提示词",
   "promptLibrary": "提示词库",
   "newPrompt": "新建提示词",

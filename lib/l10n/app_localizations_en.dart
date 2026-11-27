@@ -3528,6 +3528,42 @@ class AppLocalizationsEn extends AppLocalizations {
   String get feeGroupPresetPickerTitle => 'Official API pricing presets';
 
   @override
+  String get modelDefaultPricingShort => 'Default pricing';
+
+  @override
+  String modelPresetReferencePrice(String price) {
+    return 'Official reference: $price';
+  }
+
+  @override
+  String get tokenBudget => 'Token Budget';
+
+  @override
+  String get behaviorAndExtensions => 'Behavior & Extensions';
+
+  @override
+  String get supportsMultimodalInput => 'Image / video input (Multimodal)';
+
+  @override
+  String get supportsMultimodalInputDesc =>
+      'Marks this chat model as multimodal for Prompt Assistant vision and AI Rename.';
+
+  @override
+  String get reasoningEffortNotSupportedShort => 'Not supported by this model or protocol';
+
+  @override
+  String get transportCompatibility => 'Transport Compatibility';
+
+  @override
+  String transportSummary(String stream, String standard) {
+    return 'Stream $stream · Standard $standard';
+  }
+
+  @override
+  String get mediaModelChatControlsHiddenNote =>
+      'Image and video models do not use conversation context windows, agent vision, or text reasoning.';
+
+  @override
   String get prompts => 'Prompts';
 
   @override

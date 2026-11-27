@@ -3380,6 +3380,41 @@ class AppLocalizationsJa extends AppLocalizations {
   String get feeGroupPresetPickerTitle => '公式 API 単価プリセット';
 
   @override
+  String get modelDefaultPricingShort => '公式デフォルト料金';
+
+  @override
+  String modelPresetReferencePrice(String price) {
+    return '公式参考単価：$price';
+  }
+
+  @override
+  String get tokenBudget => 'トークン予算';
+
+  @override
+  String get behaviorAndExtensions => '動作と拡張';
+
+  @override
+  String get supportsMultimodalInput => '画像・動画入力に対応（マルチモーダル）';
+
+  @override
+  String get supportsMultimodalInputDesc => '有効にするとマルチモーダルとして分類され、プロンプトアシスタントの画像認識やAIリネームで利用できます。';
+
+  @override
+  String get reasoningEffortNotSupportedShort => 'このモデルまたはプロトコルは推論パラメータに非対応';
+
+  @override
+  String get transportCompatibility => '通信互換性';
+
+  @override
+  String transportSummary(String stream, String standard) {
+    return 'ストリーム $stream · 標準 $standard';
+  }
+
+  @override
+  String get mediaModelChatControlsHiddenNote =>
+      '画像・動画モデルは会話コンテキスト、エージェント読込、テキスト推論を使用しないため、関連しない設定を非表示にしています。';
+
+  @override
   String get prompts => 'プロンプト';
 
   @override

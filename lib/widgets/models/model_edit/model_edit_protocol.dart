@@ -36,14 +36,6 @@ extension _ProtocolSections on _ModelEditDialogState {
     );
   }
 
-  /// Whether the provider card shows: extended thinking on the ④ wire, or a
-  /// web search some route can send — with routes the grant is the model's,
-  /// so the switch stays while any route honours it (`D1f · 4d`).
-  bool get _showProviderSection =>
-      _isAnthropicChannel ||
-      _webSearch != ServerWebSearch.unsupported ||
-      (_routeMode && _anyRouteSearches);
-
   bool get _anyRouteSearches {
     final routes = _routes;
     final id = idCtrl.text.trim();
@@ -57,66 +49,6 @@ extension _ProtocolSections on _ModelEditDialogState {
             wireProtocol: k.face.id,
           ) !=
           ServerWebSearch.unsupported,
-    );
-  }
-
-  /// `1d`'s provider card: extended thinking (Anthropic-format channels) and
-  /// host web search (wherever the resolved chat face can switch it on).
-  ///
-  /// Extended thinking is a view of [reasoningEffort], not a column of its
-  /// own: on this wire Off and Default both send nothing, so "on" is any
-  /// effort rung, and turning it on picks Medium.
-  Widget _providerSection(BuildContext context) {
-    final l10n = widget.l10n;
-    final supported = _reasoningSupported;
-    final thinkingOn = reasoningEffort != null && reasoningEffort != 'off';
-    final search = _webSearch;
-    final showThinking = _isAnthropicChannel;
-    final showSearch = search != ServerWebSearch.unsupported || (_routeMode && _anyRouteSearches);
-
-    return ModelEditCard(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpace.s10, vertical: AppSpace.s4),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (showThinking)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppSpace.s6),
-              child: ModelEditToggleRow(
-                title: l10n.enableThinking,
-                description: l10n.enableThinkingDesc,
-                value: thinkingOn,
-                dimmed: !supported,
-                onChanged: !supported
-                    ? null
-                    : (v) => _rebuild(
-                        () =>
-                            reasoningEffort = v ? (thinkingOn ? reasoningEffort : 'medium') : null,
-                      ),
-              ),
-            ),
-          if (showThinking && showSearch) const Divider(height: 1),
-          if (showSearch)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppSpace.s6),
-              child: ModelEditToggleRow(
-                title: l10n.enableWebSearch,
-                // A traceless switch says so where it is turned on: the reply
-                // carries no sources, and nothing shows whether it searched.
-                description: search == ServerWebSearch.traceless
-                    ? '${l10n.enableWebSearchDesc} ${l10n.enableWebSearchTracelessHint}'
-                    : l10n.enableWebSearchDesc,
-                value: enableWebSearch,
-                onChanged: (v) => _rebuild(() => enableWebSearch = v),
-              ),
-            ),
-          if (showSearch && _routeMode)
-            Padding(
-              padding: const EdgeInsets.only(bottom: AppSpace.s6),
-              child: _webSearchMatrix(context),
-            ),
-        ],
-      ),
     );
   }
 

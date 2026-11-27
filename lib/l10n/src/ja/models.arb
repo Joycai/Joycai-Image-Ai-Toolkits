@@ -675,5 +675,32 @@
   "modelPresetThinkingTag": "思考対応",
   "modelPresetDefaultPricingNote": "料金グループ未設定時は公式 API の既定単価が自動適用されます。",
   "feeGroupLoadOfficialPreset": "公式単価を読み込む",
-  "feeGroupPresetPickerTitle": "公式 API 単価プリセット"
+  "feeGroupPresetPickerTitle": "公式 API 単価プリセット",
+  "modelDefaultPricingShort": "公式デフォルト料金",
+  "modelPresetReferencePrice": "公式参考単価：{price}",
+  "@modelPresetReferencePrice": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "tokenBudget": "トークン予算",
+  "behaviorAndExtensions": "動作と拡張",
+  "supportsMultimodalInput": "画像・動画入力に対応（マルチモーダル）",
+  "supportsMultimodalInputDesc": "有効にするとマルチモーダルとして分類され、プロンプトアシスタントの画像認識やAIリネームで利用できます。",
+  "reasoningEffortNotSupportedShort": "このモデルまたはプロトコルは推論パラメータに非対応",
+  "transportCompatibility": "通信互換性",
+  "transportSummary": "ストリーム {stream} · 標準 {standard}",
+  "@transportSummary": {
+    "placeholders": {
+      "stream": {
+        "type": "String"
+      },
+      "standard": {
+        "type": "String"
+      }
+    }
+  },
+  "mediaModelChatControlsHiddenNote": "画像・動画モデルは会話コンテキスト、エージェント読込、テキスト推論を使用しないため、関連しない設定を非表示にしています。"
 }

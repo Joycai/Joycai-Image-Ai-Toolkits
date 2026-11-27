@@ -1,23 +1,23 @@
 import 'package:material_ui/material_ui.dart';
 
-import '../../core/app_semantic_colors.dart';
-import '../../core/app_theme.dart';
-import '../../core/constants.dart';
-import '../../core/design_tokens.dart';
-import '../../l10n/app_localizations.dart';
-import '../../models/llm_channel.dart';
-import '../../models/llm_model.dart';
-import '../../models/pricing_group.dart';
-import '../../services/llm/context_budget.dart';
-import '../../services/llm/llm_dispatcher.dart';
-import '../../services/llm/model_routes.dart';
-import '../../services/llm/vendors/platforms.dart';
-import '../ui/model_tag_chip.dart';
-import 'app_route_badge.dart';
-import 'fee_group_summary.dart';
+import '../../../core/app_semantic_colors.dart';
+import '../../../core/app_theme.dart';
+import '../../../core/constants.dart';
+import '../../../core/design_tokens.dart';
+import '../../../l10n/app_localizations.dart';
+import '../../../models/llm_channel.dart';
+import '../../../models/llm_model.dart';
+import '../../../models/pricing_group.dart';
+import '../../../services/llm/context_budget.dart';
+import '../../../services/llm/llm_dispatcher.dart';
+import '../../../services/llm/model_routes.dart';
+import '../../../services/llm/vendors/platforms.dart';
+import '../../../widgets/models/app_route_badge.dart';
+import '../../../widgets/models/fee_group_summary.dart';
+import '../../../widgets/models/route_labels.dart';
+import '../../../widgets/models/wire_protocol_labels.dart';
+import '../../../widgets/ui/model_tag_chip.dart';
 import 'models_controls.dart';
-import 'route_labels.dart';
-import 'wire_protocol_labels.dart';
 
 /// The three densities a [ModelCard] is drawn at.
 enum ModelCardSize {

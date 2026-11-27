@@ -137,45 +137,53 @@ extension _RouteSections on _ModelEditDialogState {
       children: [
         _caption(l10n.routeSectionTitle),
         const SizedBox(height: AppSpace.s6),
-        // `4g`: on a phone the strip scrolls sideways, current first, rather
-        // than wrapping; wider layouts have room and wrap.
-        if (phone)
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                for (final (i, k) in order.indexed) ...[
-                  if (i > 0) const SizedBox(width: AppSpace.s6),
-                  stripBadge(k),
-                ],
-              ],
-            ),
-          )
-        else
-          Wrap(
-            spacing: AppSpace.s6,
-            runSpacing: AppSpace.s6,
-            children: [for (final k in order) stripBadge(k)],
-          ),
-        if (address != null) ...[
-          const SizedBox(height: AppSpace.s6),
-          Text(
-            'POST ${LLMDispatcher.chatRequestUrl(current.face, address, modelId: idCtrl.text.trim().isEmpty ? '{id}' : idCtrl.text.trim())}',
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.labelSmall?.mono.copyWith(color: scheme.onSurfaceVariant),
-          ),
-        ],
-        AnimatedSize(
-          duration: AppMotion.durationOf(context, AppMotion.reveal),
-          curve: AppMotion.enter,
-          alignment: Alignment.topCenter,
-          child: _switchTarget == null
-              ? const SizedBox(width: double.infinity)
-              : Padding(
-                  padding: const EdgeInsets.only(top: AppSpace.s10),
-                  child: _switchPreview(context, routes, current, _switchTarget!),
+        ModelEditCard(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // `4g`: on a phone the strip scrolls sideways, current first, rather
+              // than wrapping; wider layouts have room and wrap.
+              if (phone)
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      for (final (i, k) in order.indexed) ...[
+                        if (i > 0) const SizedBox(width: AppSpace.s6),
+                        stripBadge(k),
+                      ],
+                    ],
+                  ),
+                )
+              else
+                Wrap(
+                  spacing: AppSpace.s6,
+                  runSpacing: AppSpace.s6,
+                  children: [for (final k in order) stripBadge(k)],
                 ),
+              if (address != null) ...[
+                const SizedBox(height: AppSpace.s6),
+                Text(
+                  'POST ${LLMDispatcher.chatRequestUrl(current.face, address, modelId: idCtrl.text.trim().isEmpty ? '{id}' : idCtrl.text.trim())}',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelSmall?.mono.copyWith(color: scheme.onSurfaceVariant),
+                ),
+              ],
+              AnimatedSize(
+                duration: AppMotion.durationOf(context, AppMotion.reveal),
+                curve: AppMotion.enter,
+                alignment: Alignment.topCenter,
+                child: _switchTarget == null
+                    ? const SizedBox(width: double.infinity)
+                    : Padding(
+                        padding: const EdgeInsets.only(top: AppSpace.s10),
+                        child: _switchPreview(context, routes, current, _switchTarget!),
+                      ),
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -285,19 +293,6 @@ extension _RouteSections on _ModelEditDialogState {
           ),
         ],
       ),
-    );
-  }
-
-  /// `4e` ②: the sections that change with the route, framed by one 2px
-  /// accent rule — the guide-line grammar of D1c's parameter summary.
-  Widget _routeScoped(BuildContext context, List<Widget> sections) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsetsDirectional.only(start: 12),
-      decoration: BoxDecoration(
-        border: BorderDirectional(start: BorderSide(color: scheme.primary, width: 2)),
-      ),
-      child: _stack(sections),
     );
   }
 

@@ -80,7 +80,7 @@ extension _Layouts on _ModelEditDialogState {
 
     return AppDialog(
       maxWidth: _ModelEditDialogState._addDialogWidth,
-      maxHeight: 640,
+      maxHeight: 680,
       scrollable: true,
       icon: Icons.add,
       title: l10n.addModel,
@@ -90,31 +90,46 @@ extension _Layouts on _ModelEditDialogState {
         child: Builder(
           builder: (context) {
             final size = _fieldSize(context);
+            final name = _nameField(size);
+            final channel = widget.preChannelId == null ? _channelField(size) : null;
             return Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                _kindSegmentedControl(context),
+                const SizedBox(height: _ModelEditDialogState._fieldGap),
                 _idField(size, autofocus: true, helper: l10n.addModelIdHelper),
                 const SizedBox(height: AppSpace.s6),
                 _presetBar(context),
                 const SizedBox(height: _ModelEditDialogState._fieldGap),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(child: _nameField(size)),
-                    const SizedBox(width: _ModelEditDialogState._fieldGap),
-                    Expanded(
-                      child: AppLabelledField(
-                        label: l10n.type,
-                        size: size,
-                        child: _kindMenuField(context),
-                      ),
-                    ),
-                  ],
-                ),
-                if (widget.preChannelId == null) ...[
+                if (channel == null)
+                  name
+                else if (phone) ...[
+                  name,
                   const SizedBox(height: _ModelEditDialogState._fieldGap),
-                  _channelField(size),
+                  channel,
+                ] else
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(child: name),
+                      const SizedBox(width: _ModelEditDialogState._fieldGap),
+                      Expanded(child: channel),
+                    ],
+                  ),
+                if (_isChatGroup) ...[
+                  const SizedBox(height: _ModelEditDialogState._fieldGap),
+                  ModelEditCard(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpace.s10,
+                      vertical: AppSpace.s4,
+                    ),
+                    child: ModelEditToggleRow(
+                      title: l10n.supportsMultimodalInput,
+                      value: _isMultimodal,
+                      onChanged: _setMultimodal,
+                    ),
+                  ),
                 ],
                 const SizedBox(height: _ModelEditDialogState._sectionGap),
                 // Everything else starts on Auto or its default; say so, so the
@@ -138,81 +153,126 @@ extension _Layouts on _ModelEditDialogState {
 
   // --- Chrome -------------------------------------------------------------
 
-  /// The ID and the channel it is reached through, as the heading's second
-  /// line.
-  String get _headingSubtitle {
-    final channel = _selectedChannel;
-    return [idCtrl.text.trim(), channel?.displayName ?? ''].where((s) => s.isNotEmpty).join(' · ');
+  String? _resolvedProtocolSummary(BuildContext context) {
+    final l10n = widget.l10n;
+    if (_routeMode) {
+      final current = _currentRoute;
+      return current == null ? null : routeLabel(l10n, current);
+    }
+    final menu = _menu;
+    if (menu == null) return null;
+    final effective = _activePin ?? menu.auto;
+    return effective == null ? null : wireProtocolLabel(l10n, effective);
   }
 
-  /// `1a`: the kind's plate, the title, the mono subtitle, close.
+  String _liveHeaderSummary(BuildContext context) {
+    final l10n = widget.l10n;
+    final channel = _selectedChannel;
+    final fee = _selectedFeeGroup;
+    final proto = _resolvedProtocolSummary(context);
+    return [
+      idCtrl.text.trim(),
+      channel?.displayName ?? '',
+      proto ?? '',
+      fee?.name ?? (_matchedPreset != null ? l10n.modelDefaultPricingShort : l10n.noFeeGroup),
+    ].where((s) => s.isNotEmpty).join(' · ');
+  }
+
+  /// 3-way kind switcher (`chat` / `image` / `video`); multimodal lives inside
+  /// the `chat` family's behavior card.
+  Widget _kindSegmentedControl(BuildContext context) {
+    final l10n = widget.l10n;
+    return AppSegmentedControl<String>(
+      expand: true,
+      compact: true,
+      style: AppSegmentStyle.raised,
+      track: AppSegmentTrack.fill,
+      value: _primaryKind,
+      onChanged: _selectPrimaryKind,
+      segments: [
+        AppSegment(value: 'chat', label: l10n.kindChat, icon: modelKindIcon('chat')),
+        AppSegment(value: 'image', label: l10n.kindImage, icon: modelKindIcon('image')),
+        AppSegment(value: 'video', label: l10n.kindVideo, icon: modelKindIcon('video')),
+      ],
+    );
+  }
+
+  /// Live model identity header + pinned 3-way kind segmented control.
   Widget _editHeading(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final textTheme = theme.textTheme;
-    final kindColor = modelTagAccent(tag);
-    final subtitle = _headingSubtitle;
+    final trimmedName = nameCtrl.text.trim();
+    final trimmedId = idCtrl.text.trim();
+    final liveTitle = trimmedName.isNotEmpty
+        ? trimmedName
+        : (trimmedId.isNotEmpty ? trimmedId : widget.l10n.editModel);
+    final subtitle = _liveHeaderSummary(context);
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Container(
-          width: AppSize.touch,
-          height: AppSize.touch,
-          decoration: BoxDecoration(
-            color: kindColor.withValues(alpha: AppAlpha.tint),
-            borderRadius: BorderRadius.circular(AppRadius.control),
-          ),
-          child: Icon(modelKindIcon(tag), size: 24, color: kindColor),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.only(top: 2),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  widget.l10n.editModel,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: textTheme.titleLarge,
-                ),
-                if (subtitle.isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: textTheme.labelSmall?.mono.copyWith(
-                      fontWeight: FontWeight.w400,
-                      color: scheme.onSurfaceVariant,
-                    ),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            ModelKindPlate(tag, size: AppSize.touch),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          liveTitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: textTheme.titleLarge,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpace.s6),
+                      ModelKindBadge(tag),
+                    ],
                   ),
+                  if (subtitle.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: textTheme.labelSmall?.mono.copyWith(
+                        fontWeight: FontWeight.w400,
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        IconButton(
-          icon: const Icon(Icons.close, size: AppSize.iconMd),
-          tooltip: widget.l10n.close,
-          onPressed: () => Navigator.pop(context),
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints.tightFor(
-            width: AppSize.iconButton,
-            height: AppSize.iconButton,
-          ),
-          style: IconButton.styleFrom(
-            foregroundColor: scheme.onSurfaceVariant,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadius.control),
-              side: BorderSide(color: scheme.outlineVariant),
+            const SizedBox(width: 12),
+            IconButton(
+              icon: const Icon(Icons.close, size: AppSize.iconMd),
+              tooltip: widget.l10n.close,
+              onPressed: () => Navigator.pop(context),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints.tightFor(
+                width: AppSize.iconButton,
+                height: AppSize.iconButton,
+              ),
+              style: IconButton.styleFrom(
+                foregroundColor: scheme.onSurfaceVariant,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.control),
+                ),
+              ),
             ),
-          ),
+          ],
         ),
+        const SizedBox(height: 12),
+        _kindSegmentedControl(context),
       ],
     );
   }
@@ -337,64 +397,70 @@ extension _Layouts on _ModelEditDialogState {
   // --- Layouts ------------------------------------------------------------
 
   Widget _twoColumns(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    final scheme = Theme.of(context).colorScheme;
+    return Stack(
       children: [
-        Expanded(
-          child: _stack([
-            _identitySection(context, pairFields: true),
-            _capabilitiesSection(context),
-            _previewSection(context),
-          ]),
+        Positioned.fill(
+          child: IgnorePointer(
+            child: Center(
+              child: SizedBox(
+                width: 1,
+                height: double.infinity,
+                child: ColoredBox(color: scheme.outlineVariant),
+              ),
+            ),
+          ),
         ),
-        const SizedBox(width: _ModelEditDialogState._columnGap),
-        Expanded(child: _stack(_requestSections(context))),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: _stack([
+                _identitySection(context, pairFields: true),
+                _billingSection(context),
+              ]),
+            ),
+            const SizedBox(width: _ModelEditDialogState._columnGap),
+            Expanded(child: _stack(_requestSections(context))),
+          ],
+        ),
       ],
     );
   }
 
-  /// How the model is requested, top to bottom (`D1c · 1a`; `D1f · 4e` with
-  /// routes). The protocol — or the route — is the cause of what follows it,
-  /// so it leads. With routes, what changes with the route sits right under
-  /// the strip inside one accent rule, and what belongs to the model
-  /// follows.
+  /// Kind-driven request & behavior column:
+  /// - Image / Video show protocol & capabilities + collapsible transport.
+  /// - Chat / Multimodal show routes or protocol + combined Token Budget +
+  ///   reasoning + multimodal/agent/search behavior + collapsible transport.
   List<Widget> _requestSections(BuildContext context) {
-    if (_routeMode) {
+    if (!_isChatGroup) {
       return [
-        _routeSection(context),
-        _routeScoped(context, [
-          if (_hasOutputCap) _outputCapSection(context),
-          _reasoningSection(context),
-        ]),
-        _contextSection(context),
-        _agentSection(context),
-        if (_showProviderSection) _providerSection(context),
+        if (_showProtocolSection) _protocolSection(context),
+        if (_showGenerationProfile) _generationProfileSection(context),
+        ModelEditHelperText(widget.l10n.mediaModelChatControlsHiddenNote),
+        _transportSection(context),
       ];
     }
     return [
-      // Absent entirely (no placeholder height) when there is nothing to
-      // choose and nothing to explain.
-      if (_showProtocolSection) _protocolSection(context),
+      if (_routeMode)
+        _routeSection(context)
+      else if (_showProtocolSection)
+        _protocolSection(context),
       if (_showGenerationProfile) _generationProfileSection(context),
-      _contextSection(context),
-      if (_hasOutputCap) _outputCapSection(context),
-      _agentSection(context),
+      _tokenBudgetSection(context),
       _reasoningSection(context),
-      if (_showProviderSection) _providerSection(context),
+      _behaviorSection(context),
+      _transportSection(context),
     ];
   }
 
   Widget _singleColumn(BuildContext context, {required bool pairFields}) {
-    final request = _requestSections(context);
-    // The protocol (or route) section leads what is requested; the
-    // capabilities belong right after it on one column.
-    final leads = _routeMode || _showProtocolSection;
+    final phone = ModelEditMetrics.of(context).phone;
     return _stack([
+      if (phone) _kindSegmentedControl(context),
       _identitySection(context, pairFields: pairFields),
-      if (leads) request.first,
-      _capabilitiesSection(context),
-      ...leads ? request.skip(1) : request,
-      _previewSection(context),
+      _billingSection(context),
+      ..._requestSections(context),
     ]);
   }
 
@@ -413,7 +479,7 @@ extension _Layouts on _ModelEditDialogState {
       ModelEditMetrics.of(context).phone ? AppFieldSize.large : AppFieldSize.regular;
 
   /// A section's caption; [scope] is its `D1f` scope, when there is one.
-  Widget _caption(String text, {AppSectionTone tone = AppSectionTone.accent, InlineSpan? scope}) =>
+  Widget _caption(String text, {AppSectionTone tone = AppSectionTone.neutral, InlineSpan? scope}) =>
       AppSectionLabel(text, padding: EdgeInsets.zero, tone: tone, suffix: scope);
 
   // --- Identity -----------------------------------------------------------
