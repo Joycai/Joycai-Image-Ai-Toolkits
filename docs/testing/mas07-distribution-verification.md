@@ -135,6 +135,63 @@ App Store Connect 当前构建问卷按事实选择「代替在 Apple 操作系�
 
 ## 尚未完成
 
-上传处理和当前出口合规问卷已完成；尚未进行 TestFlight 安装验收或提交审核。
-正式发布前仍需核对销售地区、商店版本记录和其他 MAS 台账项目。
-MAS-07 保持未整体勾选，不能将当前构建的「准备提交」状态当作审核通过。
+- 2026-11-27 的 `4.31.9 (0)` 候选构建已完成本地归档、商店签名导出、框架与隐私清单审计，但**尚未执行 Xcode Organizer Validate / Upload**、重新填报导出合规、TestFlight 安装验收或提交审核。
+- 正式发布前仍需核对销售地区（确认排除法国）、App Privacy 数据标签问卷、审核测试凭据与商店版本记录。
+- MAS-07 / MAS-08 保持未整体勾选，不能将本地签名通过当作上传验证或审核通过。
+
+## 2026-11-27 · Flutter 3.50.1 / 4.31.9 (0) 商店归档与 Privacy Manifest 审计（MAS-07 / MAS-08）
+
+日期：2026-11-27（北京时间）。基线：`d252615`（PR #426 已合入）+ `macos/Runner/PrivacyInfo.xcprivacy`。
+本次清理并重建 Release 产物后完成本地 Store Archive 与 `.pkg` 导出验证，**未上传至 App Store Connect**，未安装或运行商店包，未触发付费 AI 任务。
+
+### 导出产物与签名检查
+
+| 项目 | 结果 |
+|---|---|
+| Flutter / Dart 版本 | Flutter 3.50.1 / Dart 3.14.0 |
+| 版本 / 构建号 | `4.31.9` / `0` |
+| 架构 / 最低系统 | `x86_64 arm64`（universal）/ macOS 14.0 |
+| 应用证书链 | Apple Distribution: Cai Zhengxu (H9WK585493) → WWDR → Apple Root CA |
+| 安装包证书链 | 3rd Party Mac Developer Installer: Cai Zhengxu (H9WK585493) → WWDR → Apple Root CA |
+| 嵌入描述文件 | `Joycai Image AI Toolkits Store Distribution`（有效期至 2027-11-05；`H9WK585493.cn.joycai.joycaiImageAiToolkits`；无测试设备列表） |
+| 应用签名验证 | 解包 `Joycai Image AI Toolkits.pkg` 后，`codesign --verify --deep --strict --verbose=2` 通过并满足 Designated Requirement |
+| 权限（Entitlements） | `app-sandbox=true`、`files.bookmarks.app-scope=true`、`keychain-access-groups=['H9WK585493.cn.joycai.joycaiImageAiToolkits']`；保留网络 client/server、用户选择文件、图片/下载目录、照片库权限；不含 `get-task-allow` 与 `disable-library-validation` |
+| `Info.plist` 与本地化 | 含 `LSApplicationCategoryType=public.app-category.photography`、`NSPhotoLibraryUsageDescription`、`NSPhotoLibraryAddUsageDescription`、`NSUserNotificationUsageDescription`；`en` / `zh-Hans` / `zh-Hant` / `ja` 四套 `.lproj/InfoPlist.strings` 均已打入且通过 `plutil -lint` |
+
+本地产物保留于 gitignored `build/mas-distribution-20261127/`：`Joycai.xcarchive`、`export/Joycai Image AI Toolkits.pkg`、`expanded/`、`ExportOptions.plist`。
+
+### 嵌入框架与 Native Assets 审计
+
+Flutter 3.50.1 引入了三个 native assets 框架。经检查，解包后的 `Contents/Frameworks/` 下所有 5 个框架均为 `x86_64 arm64` 通用架构、通过 `--deep --strict` 签名验证且带有合法 `Info.plist` 标识：
+
+- `App.framework`（`io.flutter.flutter.app`、`1.0`）
+- `FlutterMacOS.framework`（`io.flutter.flutter-macos`、`1.0`）
+- `cnativeapi.framework`（`io.flutter.flutter.native-assets.cnativeapi`、`1.0`）
+- `objective_c.framework`（`io.flutter.flutter.native-assets.objective-c`、`1.0`）
+- `sqlite3.framework`（`io.flutter.flutter.native-assets.sqlite3`、`1.0`）
+
+### Privacy Manifest 与 Required Reason APIs 审计（MAS-08）
+
+对解包后的 `.app` 主二进制及上述 5 个框架执行 `nm -u` / `strings` 符号扫描，核对实际依赖的 Required Reason APIs：
+
+| 目标二进制 | 检出的 Required Reason API 符号 | 对应类别与声明依据 |
+|---|---|---|
+| 主程序 `Joycai Image AI Toolkits` | `_NSFileCreationDate`、`NSUserDefaults` / `standardUserDefaults` | `FileTimestamp`（`C617.1`, `3B52.1`, `DDA9.1`）、`UserDefaults`（`CA92.1`） |
+| `FlutterMacOS.framework` | `_stat` / `_lstat` / `_fstat`、`NSUserDefaults` / `standardUserDefaults` | 同上（引擎自带空 API 类别清单，由宿主应用清单覆盖声明） |
+| `cnativeapi.framework` | `NSUserDefaults` / `standardUserDefaults`、`systemUptime` | `UserDefaults`（`CA92.1`）、`SystemBootTime`（`35F9.1`） |
+| `sqlite3.framework` | `_stat` / `_lstat` / `_fstat`、`_statfs` / `_fstatfs` | `FileTimestamp`（`C617.1`, `3B52.1`, `DDA9.1`）、`DiskSpace`（`E174.1`） |
+| `App.framework` / `objective_c.framework` | 未检出 | — |
+
+包内共确认 **12 份** `PrivacyInfo.xcprivacy`：
+
+- 宿主应用 [macos/Runner/PrivacyInfo.xcprivacy](../../macos/Runner/PrivacyInfo.xcprivacy)（解包路径 `Contents/Resources/PrivacyInfo.xcprivacy`）：声明 `NSPrivacyTracking=false`、空 `NSPrivacyTrackingDomains` 与 `NSPrivacyCollectedDataTypes`，以及上述 4 类 Required Reason API（`CA92.1`、`C617.1`/`3B52.1`/`DDA9.1`、`35F9.1`、`E174.1`）。
+- `FlutterMacOS.framework` 自带清单：`NSPrivacyTracking=false`，无收集数据。
+- 10 个资源 bundle（`desktop_drop`、`file_picker_darwin`、`file_selector_macos`、`flutter_local_notifications`（含 `CA92.1`）、`gal`、`package_info_plus`、`share_plus`、`sqflite_darwin`、`url_launcher_macos`、`video_player_avfoundation`）：均声明 `NSPrivacyTracking=false`，无收集数据。
+- `fc_native_video_thumbnail` 与三个 native-assets 框架本身不带独立 `.bundle` 隐私清单；其用到的 API 类别均已由宿主应用 `PrivacyInfo.xcprivacy` 声明。
+
+### 下一步待办（需用户操作 / 在 App Store Connect 完成）
+
+1. 在 Xcode Organizer 中对 `build/mas-distribution-20261127/Joycai.xcarchive` 执行 **Validate App** 与 **Distribute App → Upload**（`4.31.9 (0)`）。
+2. 在 App Store Connect 为新构建**重新填写出口合规问卷**：除原有的 Dart HttpClient / BoringSSL 标准 TLS 外，本构建包含 `MAS-06` 新增的 CryptoKit AES-256-GCM 本地凭据加密（仍属系统标准加密算法，且继续确认**暂不在法国分发**并核对销售范围）。
+3. 在 Xcode Organizer 生成归档 **Privacy Report** 复核无警告，并据此在 App Store Connect 填写 **App 隐私（App Privacy）** 数据收集问卷。
+4. 通过 **TestFlight** 在干净用户环境中完成端到端实机验收后再提交审核。
