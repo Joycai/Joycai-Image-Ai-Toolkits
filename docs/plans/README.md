@@ -594,14 +594,23 @@ MAS-05 已收紧 Gemini 安全设置并补充内容反馈；MAS-06 已实现 Key
   - 未进行 TestFlight 安装验收或提交审核；尚未添加测试员。
     后续核对商店记录、版本/构建号、分类及上传要求，构建号按上传要求递增。
     GitHub 站外打包流程继续独立运行，不把本次导出视为商店审核通过。
+  - **2026-11-27 复验（Flutter 3.50.1 / 4.31.9 build 0）**：合入 PR #426 并补齐
+    `PrivacyInfo.xcprivacy` 后，已完成全新商店配置 Release 构建（85.1 MB）、Archive 与
+    `app-store-connect` / `export` 导出。`x86_64 arm64` 通用架构、`codesign --verify --deep --strict`、
+    `pkgutil --check-signature`、嵌入描述文件（`H9WK585493.cn.joycai.joycaiImageAiToolkits`）、
+    沙盒/钥匙串权限及不含 `get-task-allow`、`disable-library-validation` 均已验证；
+    `cnativeapi` / `objective_c` / `sqlite3` 三个 native assets 框架均确认双架构、合法签名与
+    `Info.plist`。尚未执行 Xcode Organizer Validate / Upload、重新填报含 CryptoKit 的出口合规或 TestFlight 验收。
   - 验收：归档通过商店验证并成功进入 App Store Connect / TestFlight。
 
-- [ ] **MAS-08 · Privacy Manifest 与 Required Reason APIs（待产物验证）**
-  - 仓库未发现应用自身 `PrivacyInfo.xcprivacy`；部分插件自带清单。本次检查本地
-    解析的 `file_picker`、`path_provider_foundation` 包目录时未发现该文件。
-    尚未核实构建生成步骤和最终包，不能据此认定最终产物缺失或一定被拒。
-  - 核对最终归档中 Flutter 与每个插件的清单，审计实际 Required Reason APIs
-    及适用理由；依据实际数据处理填写 App Privacy，不能套用空清单。
+- [ ] **MAS-08 · Privacy Manifest 与 Required Reason APIs（已补齐应用清单并完成二进制审计，待 Xcode Privacy Report 与上传复核）**
+  - **2026-11-27 已实现并审计**：新增 [macos/Runner/PrivacyInfo.xcprivacy](../../macos/Runner/PrivacyInfo.xcprivacy)
+    并接入 Xcode 资源构建阶段。基于导出 `.pkg` 解包产物的 `nm -u` / `strings` 符号扫描，覆盖
+    `UserDefaults` (`CA92.1`)、`FileTimestamp` (`C617.1`, `3B52.1`, `DDA9.1`)、`SystemBootTime` (`35F9.1`)
+    与 `DiskSpace` (`E174.1`)。包内确认应用自身、10 个插件 bundle 及 `FlutterMacOS.framework` 共 12 份清单；
+    `fc_native_video_thumbnail` 与 native-assets 框架无独立清单，所需类别由宿主清单覆盖。
+    详见 [MAS-07 / MAS-08 审计记录](../testing/mas07-distribution-verification.md#2026-11-27--flutter-3501--4319-0-商店归档与-privacy-manifest-审计mas-07--mas-08)。
+  - 仍欠：在 Xcode Organizer 生成归档 Privacy Report 确认无上传警告，并完成 App Store Connect 的 App Privacy 问卷申报。
   - 验收：保留归档隐私报告、清单检查结果及上传验证结果，处理相关警告。
 
 - [ ] **MAS-09 · 商业模式与审核可访问性（待产品决策）**
