@@ -40,6 +40,15 @@ class McpServerState extends ChangeNotifier {
   bool get supported => Platform.isMacOS || Platform.isWindows || Platform.isLinux;
   bool get running => _server.port != null;
   String get endpoint => 'http://127.0.0.1:${_server.port ?? port}/mcp';
+  String get token => _token;
+  String get maskedToken => maskToken(_token);
+
+  @visibleForTesting
+  static String maskToken(String token) {
+    if (token.isEmpty) return '';
+    if (token.length <= 10) return '••••••••';
+    return '${token.substring(0, 4)}••••••••${token.substring(token.length - 4)}';
+  }
 
   Future<void> load() async {
     if (busy) return;

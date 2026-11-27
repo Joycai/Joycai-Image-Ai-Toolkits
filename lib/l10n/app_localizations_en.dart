@@ -4403,6 +4403,102 @@ class AppLocalizationsEn extends AppLocalizations {
   String get macAuthorizedFoldersRevokedAll => 'All folder permissions revoked';
 
   @override
+  String get proxyStatusEnabled => 'Enabled';
+
+  @override
+  String get proxyStatusDisabled => 'Disabled';
+
+  @override
+  String get proxyOptionalTag => 'Optional';
+
+  @override
+  String get proxyTestConnection => 'Test connection';
+
+  @override
+  String get proxyTesting => 'Testing…';
+
+  @override
+  String proxyTestSuccess(int ms) {
+    return 'Proxy reachable · $ms ms';
+  }
+
+  @override
+  String get proxyTestInvalidAddress => 'Enter a valid host:port address.';
+
+  @override
+  String get proxyTestTimedOut => 'Connection timed out.';
+
+  @override
+  String get proxyTestRefused => 'Connection refused by proxy port.';
+
+  @override
+  String get proxyTestFailed => 'Unable to reach proxy server.';
+
+  @override
+  String get mcpUnsavedChanges => 'Unsaved changes';
+
+  @override
+  String get mcpCopyEndpoint => 'Copy endpoint';
+
+  @override
+  String get mcpAccessToken => 'Access token';
+
+  @override
+  String get mcpRevealToken => 'Show token';
+
+  @override
+  String get mcpHideToken => 'Hide token';
+
+  @override
+  String get mcpCopyToken => 'Copy token';
+
+  @override
+  String get mcpTokenCopied => 'Access token copied';
+
+  @override
+  String get mcpEndpointCopied => 'Endpoint copied';
+
+  @override
+  String get mcpFoldersViewList => 'List';
+
+  @override
+  String get mcpFoldersViewText => 'Plain text';
+
+  @override
+  String get mcpAddFolder => 'Add folder';
+
+  @override
+  String get mcpBrowseFolder => 'Browse folder';
+
+  @override
+  String get mcpFolderPathHint => '/path/to/references';
+
+  @override
+  String get mcpIncludeSubfolders => 'Include subfolders (/**)';
+
+  @override
+  String get mcpFolderRecursive => 'Subfolders';
+
+  @override
+  String get mcpFolderDirectOnly => 'Direct only';
+
+  @override
+  String get mcpFoldersEmpty => 'No folders allowed yet. Leave empty to block local file access.';
+
+  @override
+  String get mcpRemoveFolder => 'Remove folder';
+
+  @override
+  String get mcpRotateTokenConfirmTitle => 'Rotate access token?';
+
+  @override
+  String get mcpRotateTokenConfirmBody =>
+      'Existing MCP clients using the current token will be disconnected until updated with the new configuration.';
+
+  @override
+  String get mcpTokenRotated => 'Access token rotated';
+
+  @override
   String get shortcutGridMove => 'Move and select an item';
 
   @override

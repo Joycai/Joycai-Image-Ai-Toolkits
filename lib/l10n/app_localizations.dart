@@ -7636,6 +7636,192 @@ abstract class AppLocalizations {
   /// **'All folder permissions revoked'**
   String get macAuthorizedFoldersRevokedAll;
 
+  /// No description provided for @proxyStatusEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Enabled'**
+  String get proxyStatusEnabled;
+
+  /// No description provided for @proxyStatusDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Disabled'**
+  String get proxyStatusDisabled;
+
+  /// No description provided for @proxyOptionalTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional'**
+  String get proxyOptionalTag;
+
+  /// No description provided for @proxyTestConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Test connection'**
+  String get proxyTestConnection;
+
+  /// No description provided for @proxyTesting.
+  ///
+  /// In en, this message translates to:
+  /// **'Testing…'**
+  String get proxyTesting;
+
+  /// No description provided for @proxyTestSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Proxy reachable · {ms} ms'**
+  String proxyTestSuccess(int ms);
+
+  /// No description provided for @proxyTestInvalidAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid host:port address.'**
+  String get proxyTestInvalidAddress;
+
+  /// No description provided for @proxyTestTimedOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection timed out.'**
+  String get proxyTestTimedOut;
+
+  /// No description provided for @proxyTestRefused.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection refused by proxy port.'**
+  String get proxyTestRefused;
+
+  /// No description provided for @proxyTestFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to reach proxy server.'**
+  String get proxyTestFailed;
+
+  /// No description provided for @mcpUnsavedChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsaved changes'**
+  String get mcpUnsavedChanges;
+
+  /// No description provided for @mcpCopyEndpoint.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy endpoint'**
+  String get mcpCopyEndpoint;
+
+  /// No description provided for @mcpAccessToken.
+  ///
+  /// In en, this message translates to:
+  /// **'Access token'**
+  String get mcpAccessToken;
+
+  /// No description provided for @mcpRevealToken.
+  ///
+  /// In en, this message translates to:
+  /// **'Show token'**
+  String get mcpRevealToken;
+
+  /// No description provided for @mcpHideToken.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide token'**
+  String get mcpHideToken;
+
+  /// No description provided for @mcpCopyToken.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy token'**
+  String get mcpCopyToken;
+
+  /// No description provided for @mcpTokenCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Access token copied'**
+  String get mcpTokenCopied;
+
+  /// No description provided for @mcpEndpointCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Endpoint copied'**
+  String get mcpEndpointCopied;
+
+  /// No description provided for @mcpFoldersViewList.
+  ///
+  /// In en, this message translates to:
+  /// **'List'**
+  String get mcpFoldersViewList;
+
+  /// No description provided for @mcpFoldersViewText.
+  ///
+  /// In en, this message translates to:
+  /// **'Plain text'**
+  String get mcpFoldersViewText;
+
+  /// No description provided for @mcpAddFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Add folder'**
+  String get mcpAddFolder;
+
+  /// No description provided for @mcpBrowseFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse folder'**
+  String get mcpBrowseFolder;
+
+  /// No description provided for @mcpFolderPathHint.
+  ///
+  /// In en, this message translates to:
+  /// **'/path/to/references'**
+  String get mcpFolderPathHint;
+
+  /// No description provided for @mcpIncludeSubfolders.
+  ///
+  /// In en, this message translates to:
+  /// **'Include subfolders (/**)'**
+  String get mcpIncludeSubfolders;
+
+  /// No description provided for @mcpFolderRecursive.
+  ///
+  /// In en, this message translates to:
+  /// **'Subfolders'**
+  String get mcpFolderRecursive;
+
+  /// No description provided for @mcpFolderDirectOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Direct only'**
+  String get mcpFolderDirectOnly;
+
+  /// No description provided for @mcpFoldersEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No folders allowed yet. Leave empty to block local file access.'**
+  String get mcpFoldersEmpty;
+
+  /// No description provided for @mcpRemoveFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove folder'**
+  String get mcpRemoveFolder;
+
+  /// No description provided for @mcpRotateTokenConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Rotate access token?'**
+  String get mcpRotateTokenConfirmTitle;
+
+  /// No description provided for @mcpRotateTokenConfirmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Existing MCP clients using the current token will be disconnected until updated with the new configuration.'**
+  String get mcpRotateTokenConfirmBody;
+
+  /// No description provided for @mcpTokenRotated.
+  ///
+  /// In en, this message translates to:
+  /// **'Access token rotated'**
+  String get mcpTokenRotated;
+
   /// No description provided for @shortcutGridMove.
   ///
   /// In en, this message translates to:

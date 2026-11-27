@@ -10,6 +10,7 @@
 library;
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:joycai_image_ai_toolkits/core/constants.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/services/tasks/task_list_ordering.dart';
 import 'package:joycai_image_ai_toolkits/services/tasks/task_queue_service.dart';
@@ -196,6 +197,59 @@ void main() {
       );
       AppState().mcpServer.errorCode = null;
     });
+  }
+
+  for (final (ShotSize size, Brightness brightness, String? presetName) in [
+    (kShotSizes.last, Brightness.light, null),
+    (kShotSizes.last, Brightness.dark, null),
+    (kShotSizes.first, Brightness.light, null),
+    (kShotSizes[2], Brightness.light, 'Orange'),
+  ]) {
+    final accentSuffix = presetName == null ? '' : '_$presetName';
+    testWidgets(
+      'settings · connectivity expanded showcase @ ${size.label} ${brightness.name}$accentSuffix',
+      (tester) async {
+        final state = AppState();
+        String? prevEnabled;
+        String? prevUrl;
+        try {
+          await shoot(
+            tester,
+            env: env,
+            screen: AppScreen.settings,
+            size: size,
+            brightness: brightness,
+            accent: presetName == null ? null : AppConstants.presetThemes[presetName],
+            suffix: 'connectivityExpanded',
+            before: (_) async {
+              prevEnabled = await state.getSetting('proxy_enabled');
+              prevUrl = await state.getSetting('proxy_url');
+              await state.saveSetting('proxy_enabled', 'true');
+              await state.saveSetting('proxy_url', '127.0.0.1:7890');
+            },
+            after: (tester) async {
+              await actInRealAsync(tester, () => tester.tap(find.text('连接设置').first));
+              await settle(tester);
+              final addBtn = find.byKey(const Key('mcp-add-folder-button'));
+              await tester.ensureVisible(addBtn);
+              await tester.tap(addBtn);
+              await settle(tester);
+              await tester.enterText(
+                find.byKey(const Key('mcp-add-folder-input')),
+                '/Users/designer/Assets/References',
+              );
+              await tester.tap(find.byKey(const Key('mcp-confirm-add-folder')));
+              await settle(tester);
+            },
+          );
+        } finally {
+          await inRealAsync(tester, () async {
+            await state.saveSetting('proxy_enabled', prevEnabled ?? 'false');
+            await state.saveSetting('proxy_url', prevUrl ?? '');
+          });
+        }
+      },
+    );
   }
 
   // A queue row opened. `C1 10i` is most of what a row can show — the log, the

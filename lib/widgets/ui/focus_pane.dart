@@ -186,7 +186,7 @@ class _FocusPaneState extends State<FocusPane> {
                       duration: AppMotion.hover,
                       curve: AppMotion.quick,
                       height: FocusPane.activeEdgeThickness,
-                      color: node.hasFocus ? scheme.primary : Colors.transparent,
+                      color: node.hasFocus ? scheme.primary : scheme.primary.withValues(alpha: 0),
                     ),
                   ),
                 ),

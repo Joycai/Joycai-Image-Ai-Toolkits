@@ -368,7 +368,7 @@ class _NameField extends StatelessWidget {
           decoration: BoxDecoration(
             color: ink.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(AppRadius.control),
-            border: Border.all(width: 2, color: ringed ? accent : Colors.transparent),
+            border: Border.all(width: 2, color: ringed ? accent : accent.withValues(alpha: 0)),
           ),
           padding: const EdgeInsets.only(left: 8, right: 2),
           child: Row(

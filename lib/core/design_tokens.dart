@@ -357,7 +357,8 @@ extension AppAccent on ColorScheme {
   Color get accentText => onAccentTint;
 
   /// What a navigation item draws under itself when [selected].
-  Color navBackground({required bool selected}) => selected ? accentTint : Colors.transparent;
+  Color navBackground({required bool selected}) =>
+      selected ? accentTint : accentTint.withValues(alpha: 0);
 
   /// The ink a navigation item draws when [selected] — the deep ink — and the
   /// quiet grey otherwise.
