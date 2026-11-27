@@ -1,11 +1,9 @@
 part of '../workbench_config_panel.dart';
 
-/// The selection card: the dashed empty slot or the reorderable thumbnail
-/// strip, and the reference-image notice under it.
+/// The selection card: the dashed empty slot or the reorderable thumbnail strip.
 extension _SelectionCard on _WorkbenchConfigPanelState {
   Widget _buildSelectionCard(
     BuildContext context,
-    LLMModel? model,
     List<AppImage> selectedImages,
     AppLocalizations l10n,
   ) {
@@ -14,31 +12,36 @@ extension _SelectionCard on _WorkbenchConfigPanelState {
     final textTheme = theme.textTheme;
 
     if (selectedImages.isEmpty) {
-      // `A1` 「未选 = 虚线卡」: the 16:9 slot the selection will fill, drawn
-      // as an empty place rather than as a card with nothing in it.
-      return AspectRatio(
-        aspectRatio: 16 / 9,
-        child: DashedBorder(
-          color: colorScheme.outline,
-          radius: AppRadius.lg,
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.collections_outlined, size: AppSize.iconLg, color: colorScheme.outline),
-                const SizedBox(height: AppSpace.s6),
-                Text(
-                  l10n.noImagesSelected,
-                  style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
-                ),
-              ],
+      // `A1` 「未选 = 虚线卡」: compact empty reference slot leaving room for
+      // the prompt and output configs cards beneath it.
+      return ConstrainedBox(
+        constraints: const BoxConstraints(maxHeight: 112),
+        child: AspectRatio(
+          aspectRatio: 16 / 9,
+          child: DashedBorder(
+            color: colorScheme.outline,
+            radius: AppRadius.lg,
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.collections_outlined,
+                    size: AppSize.iconLg,
+                    color: colorScheme.outline,
+                  ),
+                  const SizedBox(height: AppSpace.s6),
+                  Text(
+                    l10n.noImagesSelected,
+                    style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
       );
     }
-
-    final notice = _buildReferenceImageNotice(context, model, selectedImages.length, l10n);
 
     // The whole thumbnail is the drag source, as `1a` draws it (no handle
     // glyph): straight away under a mouse, after a long press under a finger
@@ -170,61 +173,6 @@ extension _SelectionCard on _WorkbenchConfigPanelState {
               ],
             ),
           ],
-          if (notice != null) ...[const SizedBox(height: _kCardInnerGap), notice],
-        ],
-      ),
-    );
-  }
-
-  /// Warns when the selected model can't use the images the user has picked as
-  /// references (Imagen accepts none; OpenAI image caps the count).
-  ///
-  /// `A1 · 1c` 「琥珀提示条」: 11px warning ink on the warning container, r6.
-  /// Null when there is nothing to say.
-  Widget? _buildReferenceImageNotice(
-    BuildContext context,
-    LLMModel? model,
-    int selectedCount,
-    AppLocalizations l10n,
-  ) {
-    if (model == null || selectedCount == 0) return null;
-
-    // As the channel serves it: a relay model pinned to the Images API has
-    // that surface's reference-image ceiling, which its id cannot report.
-    final caps = Provider.of<AppState>(
-      context,
-      listen: false,
-    ).descriptorForModel(model).capabilities;
-    String? message;
-    if (!caps.supportsReferenceImages) {
-      message = l10n.referenceImagesNotSupported;
-    } else if (caps.maxReferenceImages != null && selectedCount > caps.maxReferenceImages!) {
-      message = l10n.referenceImagesLimited(caps.maxReferenceImages!);
-    }
-    if (message == null) return null;
-
-    final semantic = context.semantic;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: AppSpace.s4),
-      decoration: BoxDecoration(
-        color: semantic.warningContainer,
-        borderRadius: BorderRadius.circular(AppRadius.sm),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 1),
-            child: Icon(Icons.warning_amber_rounded, size: AppSize.iconSm, color: semantic.warning),
-          ),
-          const SizedBox(width: AppSpace.s4),
-          Expanded(
-            child: Text(
-              message,
-              style: Theme.of(context).textTheme.labelSmall
-                  ?.copyWith(color: semantic.onWarningContainer),
-            ),
-          ),
         ],
       ),
     );

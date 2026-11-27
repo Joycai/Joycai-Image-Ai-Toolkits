@@ -109,17 +109,7 @@ void main() {
     });
   }
 
-  testWidgets('the panel survives the model section being expanded', (tester) async {
-    // The regression this pins: the panel used to size itself with an
-    // [IntrinsicHeight], and expanding this section mounts two
-    // [SearchablePickerField]s, each of which contains a [LayoutBuilder] —
-    // which cannot report an intrinsic dimension. Layout threw and the right
-    // column rendered blank, followed by a cascade of mouse-tracker assertions
-    // that made the real cause hard to see.
-    //
-    // Deliberately asserting on the *panel*, not on the arrangement that
-    // happens to avoid the throw today: any future layout here is free, so
-    // long as the section can still be opened.
+  testWidgets('the panel survives opening the output config dialog', (tester) async {
     await mountApp(
       tester,
       env: env,
@@ -128,12 +118,12 @@ void main() {
       label: 'fill_model_expanded',
     );
 
-    await tester.tap(find.text('模型选择'), warnIfMissed: false);
+    await tester.tap(find.byIcon(Icons.tune_outlined).first, warnIfMissed: false);
     for (int i = 0; i < 5; i++) {
       await tester.pump(const Duration(milliseconds: 100));
     }
 
-    expect(tester.takeException(), isNull, reason: 'opening 模型选择 brought the config panel down');
+    expect(tester.takeException(), isNull, reason: 'opening output config dialog failed');
     expect(editorBoxHeight(tester), greaterThanOrEqualTo(kMinPromptEditorHeight - 1));
   });
 

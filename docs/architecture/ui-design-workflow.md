@@ -345,3 +345,26 @@ scale + `TextStyle.mono`, and opaque `surfaceContainerLow`/`surface` containers:
 - Visual review compared baseline PNGs (`settings_*_connectivity*.png`) against
   4 widths (390/834/1024/1440), light/dark, `en`/`zh`/`zh_Hant`/`ja` error
   states, plus expanded proxy/MCP showcase captures including Orange light.
+
+### 2026-11-27 Image workbench output configurations
+
+The Image Workbench right column (`WorkbenchConfigPanel`) now separates primary
+authoring inputs from model/parameter output targets while keeping warm-stone
+neutrals, paired accents, token scales, and shared `widgets/ui/` primitives:
+
+- **Three primary cards + docked action bar**: Reference image selection,
+  Prompt editor (maintaining `kMinPromptEditorHeight` and flex expansion on
+  desktop), and the new `OutputConfigListCard` above the docked CTA (`ConfigActionBar`).
+- **Relocated request switches**: `useStreaming` and `compressReferenceImages`
+  moved out of the sidebar toggle card into the Generation Settings `AppDialog`
+  under a top `Request & transport` (`generationRequestOptions`) section.
+- **Multi-output configurations (`ImageOutputConfig`)**: Persisted in
+  `workbench_image_outputs` (auto-seeded from legacy `last_model_id` when unset),
+  supporting independent enable/disable `AppSwitch`es, per-output parameter editing
+  via `showOutputConfigDialog` (`AppDialog` + `ModelSelectionSection(showHeader: false)`),
+  per-output Batch toggles, per-output reference-image capability warnings,
+  duplication, deletion, and pre-validated concurrent submission via
+  `AppStateWorkbench.submitImageOutputs`.
+- **Reference**: Maintained design tokens, `widgets/ui/` primitives, and inspected
+  Flutter renders across 390/834/1024/1440 widths in light/dark modes (no
+  external design service originals).

@@ -203,6 +203,24 @@ extension AppStateData on AppState {
 
     lastSelectedModelId = remap(lastSelectedModelId);
     lastVideoModelId = remap(lastVideoModelId);
+    var remappedOutputs = false;
+    final nextOutputs = <ImageOutputConfig>[
+      for (final config in _imageOutputConfigs)
+        if (config.modelDbId != null && plan.idMap[config.modelDbId!] != null)
+          (() {
+            remappedOutputs = true;
+            return config.copyWith(modelDbId: plan.idMap[config.modelDbId!]);
+          })()
+        else
+          config,
+    ];
+    if (remappedOutputs) {
+      _imageOutputConfigs = List.unmodifiable(nextOutputs);
+      await _db.saveSetting(
+        _imageOutputsSettingKey,
+        jsonEncode([for (final c in _imageOutputConfigs) c.toJson()]),
+      );
+    }
     final optimizer = plan.idMap[workbenchUIState.optSelectedModelDbId];
     if (optimizer != null) workbenchUIState.setOptimizerModel(optimizer);
     final downloader = plan.idMap[downloaderState.selectedModelDbId];

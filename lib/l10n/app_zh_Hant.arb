@@ -3777,5 +3777,76 @@
         "type": "int"
       }
     }
+  },
+  "generationRequestOptions": "請求與傳輸",
+  "outputConfigs": "輸出配置",
+  "outputConfigsEnabledCount": "{enabled}/{total} 已啟用",
+  "@outputConfigsEnabledCount": {
+    "placeholders": {
+      "enabled": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "addOutputConfig": "新增輸出",
+  "editOutputConfig": "編輯輸出",
+  "outputConfigDialogSubtitle": "選擇模型與生成參數；可新增多個輸出配置以便並發對比。",
+  "outputConfigAlias": "配置別名（選填）",
+  "outputConfigAliasHint": "例如：高畫質透明底 / 快速草稿",
+  "noOutputConfigs": "暫無輸出配置",
+  "noOutputConfigsHint": "新增一個或多個模型配置，提交時將並發生成對比。",
+  "outputConfigModelUnavailable": "此模型已無法使用，請重新選擇模型或刪除此配置。",
+  "duplicateOutputConfig": "複製",
+  "editOutputConfigTooltip": "編輯輸出配置",
+  "toggleOutputConfigLabel": "啟用或停用 {name}",
+  "@toggleOutputConfigLabel": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "addOutputConfigFirst": "請先新增輸出配置",
+  "enableOutputConfigFirst": "請至少啟用 1 項輸出",
+  "processPromptOutputs": "處理提示詞 · {count} 項輸出",
+  "@processPromptOutputs": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "processImagesOutputs": "並發生成 · {outputs} 項輸出（{images} 張圖）",
+  "@processImagesOutputs": {
+    "placeholders": {
+      "outputs": {
+        "type": "int"
+      },
+      "images": {
+        "type": "int"
+      }
+    }
+  },
+  "tasksSubmittedCount": "已提交 {count} 個任務至佇列",
+  "@tasksSubmittedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "outputConfigValidationError": "{model}: {message}",
+  "@outputConfigValidationError": {
+    "placeholders": {
+      "model": {
+        "type": "String"
+      },
+      "message": {
+        "type": "String"
+      }
+    }
   }
 }

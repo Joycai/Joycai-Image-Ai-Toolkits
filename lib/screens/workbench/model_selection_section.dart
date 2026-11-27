@@ -62,6 +62,10 @@ class ModelSelectionSection extends StatelessWidget {
   /// billing tier from it, and shows nothing without it.
   final List<SpecRate>? Function(LLMModel model)? specRatesOf;
 
+  /// Whether to draw the collapsible header above the channel/model pickers.
+  /// False when embedded inside a dedicated dialog.
+  final bool showHeader;
+
   const ModelSelectionSection({
     super.key,
     required this.availableModels,
@@ -78,6 +82,7 @@ class ModelSelectionSection extends StatelessWidget {
     this.schemaOf,
     this.storedImageParamOf,
     this.specRatesOf,
+    this.showHeader = true,
   });
 
   @override
@@ -217,6 +222,8 @@ class ModelSelectionSection extends StatelessWidget {
         ],
       ),
     );
+
+    if (!showHeader) return body;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

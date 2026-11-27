@@ -3777,5 +3777,76 @@
         "type": "int"
       }
     }
+  },
+  "generationRequestOptions": "リクエストと転送",
+  "outputConfigs": "出力設定",
+  "outputConfigsEnabledCount": "{enabled}/{total} 有効",
+  "@outputConfigsEnabledCount": {
+    "placeholders": {
+      "enabled": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "addOutputConfig": "出力を追加",
+  "editOutputConfig": "出力を編集",
+  "outputConfigDialogSubtitle": "モデルと生成パラメータを選択します。複数追加して並列比較できます。",
+  "outputConfigAlias": "ラベル（任意）",
+  "outputConfigAliasHint": "例：高画質透過 / 高速ドラフト",
+  "noOutputConfigs": "出力設定がありません",
+  "noOutputConfigsHint": "1 つ以上のモデル設定を追加すると、並列生成して比較できます。",
+  "outputConfigModelUnavailable": "このモデルは利用できません。編集または削除してください。",
+  "duplicateOutputConfig": "複製",
+  "editOutputConfigTooltip": "出力設定を編集",
+  "toggleOutputConfigLabel": "{name} を切り替え",
+  "@toggleOutputConfigLabel": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "addOutputConfigFirst": "先に出力設定を追加してください",
+  "enableOutputConfigFirst": "出力を 1 件以上有効にしてください",
+  "processPromptOutputs": "プロンプト処理 · {count} 件出力",
+  "@processPromptOutputs": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "processImagesOutputs": "{outputs} 件並列生成（画像 {images} 枚）",
+  "@processImagesOutputs": {
+    "placeholders": {
+      "outputs": {
+        "type": "int"
+      },
+      "images": {
+        "type": "int"
+      }
+    }
+  },
+  "tasksSubmittedCount": "{count} 件のタスクをキューに送信しました",
+  "@tasksSubmittedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "outputConfigValidationError": "{model}: {message}",
+  "@outputConfigValidationError": {
+    "placeholders": {
+      "model": {
+        "type": "String"
+      },
+      "message": {
+        "type": "String"
+      }
+    }
   }
 }

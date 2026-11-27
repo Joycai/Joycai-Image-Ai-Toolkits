@@ -2,17 +2,15 @@ import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/app_semantic_colors.dart';
 import '../../core/app_theme.dart';
 import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/app_image.dart';
-import '../../models/llm_channel.dart';
+import '../../models/image_output_config.dart';
 import '../../models/llm_model.dart';
 import '../../models/prompt.dart';
 import '../../models/prompt_history_entry.dart';
 import '../../models/tag.dart';
-import '../../services/llm/generation/generation_schema.dart';
 import '../../state/app_state.dart';
 import '../../state/gallery_state.dart';
 import '../../state/workbench_ui_state.dart';
@@ -22,13 +20,13 @@ import '../../widgets/files/file_visuals.dart';
 import '../../widgets/ui/app_action_target.dart';
 import '../../widgets/ui/app_button.dart';
 import '../../widgets/ui/app_snackbar.dart';
-import '../../widgets/ui/app_switch.dart';
 import '../../widgets/ui/dashed_border.dart';
 import '../../widgets/ui/markdown_editor.dart';
 import '../../widgets/ui/scroll_edge_fade.dart';
-import 'model_selection_section.dart';
 import 'widgets/config/config_action_bar.dart';
 import 'widgets/config/generation_settings_dialog.dart';
+import 'widgets/config/output_config_dialog.dart';
+import 'widgets/config/output_config_list_card.dart';
 import 'widgets/config/prompt_history_sheet.dart';
 import 'widgets/config/prompt_library_sheet.dart';
 import 'widgets/generation_params/generation_param_texts.dart';
@@ -38,16 +36,6 @@ part 'config_panel/config_selection_card.dart';
 
 /// Shortest the prompt editor — with the footer row under it — is allowed to
 /// be reported as.
-///
-/// Not a layout minimum — inside its [Expanded] the editor is whatever height
-/// is left. This is the height the card claims when asked how tall it *wants*
-/// to be, which is what decides when the panel starts scrolling instead of
-/// squeezing. An `expands: true` field answers zero on its own, so without a
-/// figure here the panel would happily crush the editor to nothing before
-/// giving the user a scrollbar.
-///
-/// 220 is about eight lines at the editor's own type scale — enough that a
-/// prompt is still being written rather than peeked at.
 const double kMinPromptEditorHeight = 220;
 
 /// Space between two cards in the column, and the column's own inset
@@ -65,21 +53,13 @@ const double _kPromptHeaderRow = AppSize.compact;
 
 /// Everything the prompt card spends above and around [kMinPromptEditorHeight]:
 /// its inset top and bottom, the header row and the gap under it.
-///
-/// Pinned rather than measured. It is the one term the head's cap is computed
-/// from besides the editor's floor, so a header that quietly grew would eat
-/// that floor with nothing to say it had. (Measuring it instead is what the
-/// panel's old [IntrinsicHeight] did, and what a [LayoutBuilder] anywhere in
-/// the column makes impossible; see the desktop branch of `build`.)
 const double _kPromptCardChrome = _kCardPadding * 2 + _kPromptHeaderRow + _kCardInnerGap;
 
-/// The least the head is worth pinning for.
-///
-/// Under this the panel gives up on holding the prompt's footer in place and
-/// scrolls as one, the way the bottom sheet does — a head squeezed to a
-/// sliver is not a layout anyone wanted, it is just the arithmetic running
-/// out.
-const double _kMinHeadHeight = 120;
+/// Room reserved for the selection card and output configs card in the pinned
+/// desktop layout before falling back to single-column scrolling.
+const double _kSelectionReserveHeight = 172;
+const double _kMinOutputsHeight = 132;
+const double _kMaxOutputsHeight = 300;
 
 /// The selection strip's thumbnails (`A1 · 1a` 「88px 缩略 · 序号」).
 const double _kThumbSize = 88;
@@ -88,9 +68,6 @@ const double _kThumbInset = 6;
 
 /// How far the thumbnail being dragged rises out of the strip.
 const double _kThumbLift = 3;
-
-/// A request toggle's row (`A1 · 1a`: `height:36`).
-const double _kToggleRowHeight = 36;
 
 class WorkbenchConfigPanel extends StatefulWidget {
   final ScrollController? scrollController;
@@ -102,8 +79,6 @@ class WorkbenchConfigPanel extends StatefulWidget {
 
 class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
   late MarkdownTextEditingController _promptController;
-
-  bool _isModelSettingsExpanded = false;
 
   List<Prompt> _allUserPrompts = [];
   List<PromptTag> _tags = [];
@@ -122,7 +97,6 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
     super.dispose();
   }
 
-  // Reloads prompts via AppState
   Future<void> _loadPrompts() async {
     final appState = Provider.of<AppState>(context, listen: false);
     final prompts = await appState.getPrompts();
@@ -136,80 +110,48 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
     }
   }
 
-  void _updateConfig({
-    int? modelDbId,
-    String? modelIdStr,
-    String? prompt,
-    bool? useStream,
-    bool? compressReferenceImages,
-  }) {
+  Future<void> _handleAddOutput() async {
     final appState = Provider.of<AppState>(context, listen: false);
-
-    String? idToSave;
-    if (modelDbId != null) {
-      idToSave = modelDbId.toString(); // Save PK as string
+    final l10n = AppLocalizations.of(context)!;
+    if (appState.imageModels.isEmpty) {
+      AppSnackBar.warning(
+        context,
+        l10n.noModelsConfigured,
+        action: AppSnackBarAction(
+          label: l10n.models,
+          onPressed: () => appState.navigateToScreen(6),
+        ),
+      );
+      return;
     }
+    await showOutputConfigDialog(context, onCommit: appState.addImageOutputConfig);
+  }
 
-    appState.updateWorkbenchConfig(
-      modelId: idToSave ?? modelIdStr,
-      prompt: prompt,
-      useStream: useStream,
-      compressReferenceImages: compressReferenceImages,
+  Future<void> _handleEditOutput(ImageOutputConfig config) async {
+    final appState = Provider.of<AppState>(context, listen: false);
+    await showOutputConfigDialog(
+      context,
+      initial: config,
+      onCommit: appState.updateImageOutputConfig,
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    // Select specific values to rebuild on change
     final imageModels = context.select<AppState, List<LLMModel>>((s) => s.imageModels);
-    // The channels that serve an image model, derived once per data load in
-    // `AppState._cacheData` rather than filtered here. Selecting the narrow
-    // view also means adding a chat-only channel no longer rebuilds this panel.
-    final imageChannels = context.select<AppState, List<LLMChannel>>((s) => s.imageChannels);
-    final isMarkdownWorkbench = context.select<AppState, bool>((s) => s.isMarkdownWorkbench);
-    final lastSelectedModelId = context.select<AppState, String?>((s) => s.lastSelectedModelId);
-    final lastPrompt = context.select<AppState, String>((s) => s.lastPrompt);
-    final useStream = context.select<AppState, bool>((s) => s.useStream);
-    final useBatch = context.select<AppState, bool>((s) => s.useImageBatch);
-    final compressReferenceImages = context.select<AppState, bool>(
-      (s) => s.compressReferenceImages,
+    final outputConfigs = context.select<AppState, List<ImageOutputConfig>>(
+      (s) => s.imageOutputConfigs,
     );
+    final isMarkdownWorkbench = context.select<AppState, bool>((s) => s.isMarkdownWorkbench);
+    final lastPrompt = context.select<AppState, String>((s) => s.lastPrompt);
     final promptHistory = context.select<AppState, List<PromptHistoryEntry>>(
       (s) => s.imagePromptHistory,
     );
-    // Rebuild parameter controls when the stored image params change.
     context.select<AppState, int>((s) => s.imageParamsRevision);
-
-    // Determine selected model from AppState
-    int? selectedModelDbId;
-    int? selectedChannelId;
-    LLMModel? resolvedModel;
-
-    if (imageModels.isNotEmpty) {
-      final savedModelId = lastSelectedModelId;
-      // `int.tryParse` once, rather than `m.id.toString()` per model: the id is
-      // written to the setting as a stringified int, so the old comparison
-      // allocated a throwaway String for every model ahead of the match.
-      final savedDbId = int.tryParse(savedModelId ?? '');
-      LLMModel? match;
-      for (final m in imageModels) {
-        if (m.id == savedDbId || m.modelId == savedModelId) {
-          match = m;
-          break;
-        }
-      }
-
-      final resolved = match ?? imageModels.first;
-      selectedModelDbId = resolved.id;
-      selectedChannelId = resolved.channelId;
-      resolvedModel = resolved;
-    }
-    final batchSupported = context.read<AppState>().supportsImageBatch(resolvedModel);
-    final batchEnabled = useBatch && batchSupported;
 
     final appState = Provider.of<AppState>(context, listen: false);
 
-    // BUT only if we are NOT currently on the optimizer tab to avoid overriding work-in-progress
+    // Sync editor from AppState only when not actively on the optimizer tab.
     if (appState.workbenchTabIndex != 4 && _promptController.text != lastPrompt) {
       _promptController.value = _promptController.value.copyWith(
         text: lastPrompt,
@@ -221,28 +163,18 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
     final textTheme = theme.textTheme;
     final l10n = AppLocalizations.of(context)!;
 
-    // The bottom sheet is this panel's phone form: the layout opens it below
-    // the 600 breakpoint and nowhere else, so it is also what decides the
-    // touch-sized Process button.
     final bool inSheet = widget.scrollController != null;
 
-    // `A1 · 1a`: the 11/500 tracked caption in the deep ink that heads a card.
     final captionStyle = textTheme.labelSmall?.copyWith(
       letterSpacing: AppType.trackedLabelSpacing,
       color: colorScheme.onAccentTint,
     );
 
-    // Lives in the editor's own footer rather than beside the Process
-    // button. Handing the draft to the assistant is a step *on the
-    // prompt*, and at the bottom of the panel it was an outlined bar the
-    // same width as the one button that actually runs the model -- two
-    // equals, where there is only one primary action.
     final editorActions = Row(
       children: [
         Expanded(
           child: Align(
             alignment: AlignmentDirectional.centerStart,
-            // `1a`: auto_awesome 14 and the label in the deep ink, no ground.
             child: AppButton(
               label: l10n.sendToOptimizer,
               icon: Icons.auto_awesome,
@@ -263,8 +195,6 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
             ),
           ),
         ),
-        // A bare glyph inside a card, as `1a` draws it: an outlined box here
-        // reads as a third control on a row that has two.
         IconButton(
           icon: const Icon(Icons.settings_outlined),
           tooltip: l10n.generationSettings,
@@ -274,117 +204,16 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
       ],
     );
 
-    // Everything above the prompt: what is selected, which model runs it,
-    // and the two request switches. Fixed content — it is as tall as it is
-    // — so on the desktop sidebar this is the half that gets a scroller
-    // when the window is short, and the prompt below keeps its height.
-    final Widget head = Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Off GalleryState, which owns the selection — AppState no longer
-        // re-broadcasts it.
-        Selector<GalleryState, List<AppImage>>(
-          selector: (_, s) => s.selectedImages,
-          builder: (context, selectedImages, _) =>
-              _buildSelectionCard(context, resolvedModel, selectedImages, l10n),
-        ),
-        const SizedBox(height: _kCardGap),
-        _PanelCard(
-          child: ModelSelectionSection(
-            availableModels: imageModels,
-            // Only offer channels that actually serve image models — a
-            // chat-only channel (e.g. DeepSeek) has nothing selectable here.
-            channels: imageChannels,
-            selectedChannelId: selectedChannelId,
-            selectedModelDbId: selectedModelDbId,
-            isExpanded: _isModelSettingsExpanded,
-            onToggleExpansion: () =>
-                setState(() => _isModelSettingsExpanded = !_isModelSettingsExpanded),
-            onChannelChanged: (val) {
-              final appState = Provider.of<AppState>(context, listen: false);
-              // Pick the first *image* model of the channel. Using the
-              // unfiltered model list here used to select a chat model,
-              // which imageModels can't resolve — the selection silently
-              // reverted and the channel appeared unclickable.
-              final firstInChannel = appState.imageModels
-                  .where((m) => m.channelId == val)
-                  .firstOrNull;
-              final newDbId = firstInChannel?.id;
-              if (newDbId != null) {
-                _updateConfig(modelDbId: newDbId);
-              }
-            },
-            onModelChanged: (val) {
-              _updateConfig(modelDbId: val);
-            },
-            imageParamResolver: (model, spec) =>
-                Provider.of<AppState>(context, listen: false).getImageParam(model, spec),
-            onImageParamChanged: (model, key, value) =>
-                Provider.of<AppState>(context, listen: false).setImageParam(model, key, value),
-            schemaOf: (model) =>
-                Provider.of<AppState>(context, listen: false).generationSchemaForModel(model),
-            capabilitiesOf: (model) => Provider.of<AppState>(
-              context,
-              listen: false,
-            ).generationSchemaForModel(model).capabilities,
-            storedImageParamOf: (model, key) =>
-                Provider.of<AppState>(context, listen: false).storedImageParam(model, key),
-            specRatesOf: (model) =>
-                Provider.of<AppState>(context, listen: false).specRatesFor(model),
-          ),
-        ),
-        const SizedBox(height: _kCardGap),
-        // `1a`: a tighter card, the two rows split by a hairline.
-        _PanelCard(
-          padding: const EdgeInsets.symmetric(horizontal: _kCardPadding, vertical: AppSpace.s4),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (batchSupported) ...[
-                _ToggleRow(
-                  title: l10n.batchSubmit,
-                  hint: l10n.batchSubmitHint,
-                  value: batchEnabled,
-                  onChanged: context.read<AppState>().setUseImageBatch,
-                ),
-                const Divider(),
-              ],
-              if (!batchEnabled)
-                _ToggleRow(
-                  title: l10n.useStreaming,
-                  hint: l10n.useStreamingDesc,
-                  value: useStream,
-                  onChanged: (v) => _updateConfig(useStream: v),
-                ),
-              const Divider(),
-              _ToggleRow(
-                title: l10n.compressReferenceImages,
-                hint: l10n.compressReferenceImagesDesc,
-                value: compressReferenceImages,
-                onChanged: (v) => _updateConfig(compressReferenceImages: v),
-              ),
-            ],
-          ),
-        ),
-      ],
+    final Widget selectionCard = Selector<GalleryState, List<AppImage>>(
+      selector: (_, s) => s.selectedImages,
+      builder: (context, selectedImages, _) => _buildSelectionCard(context, selectedImages, l10n),
     );
 
-    // The prompt card: caption and its two actions, then the editor and its
-    // footer. `fill: true` lets the card take whatever height the column
-    // leaves it. Only the desktop sidebar passes it — the mobile bottom sheet
-    // is scrolled by a controller above this widget, where the height is
-    // unbounded and a flex child throws.
     Widget buildPrompt({required bool fill}) => _PanelCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: fill ? MainAxisSize.max : MainAxisSize.min,
         children: [
-          // Given exactly its pinned height, not allowed to size itself:
-          // [PromptHistoryButton] brings a padded tap target on touch
-          // platforms (40 at its compact density), and a row that grew to
-          // hold it would take those pixels out of the editor's floor.
-          // Pinned, the target is clamped to the row instead.
           SizedBox(
             height: _kPromptHeaderRow,
             child: Row(
@@ -402,7 +231,7 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
                   type: PromptHistoryType.image,
                   onApply: (content) {
                     _promptController.text = content;
-                    _updateConfig(prompt: content);
+                    appState.updateWorkbenchConfig(prompt: content);
                   },
                 ),
                 IconButton(
@@ -418,9 +247,6 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
           _fillable(
             fill: fill,
             child: ConstrainedBox(
-              // A floor for the bottom sheet, where nothing else bounds the
-              // card. Under the desktop [Expanded] the height is already
-              // tight and this is a no-op.
               constraints: const BoxConstraints(minHeight: kMinPromptEditorHeight),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -437,17 +263,9 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
                       maxLines: 15,
                       initiallyPreview: false,
                       hint: l10n.promptHint,
-                      // Not _updateConfig: keystrokes take the silent draft
-                      // path so typing does not notify the whole app. See
-                      // AppStateWorkbench.setPromptDraft.
                       onChanged: appState.setPromptDraft,
                       expand: fill,
-                      // Filling, the height is handed down and there is
-                      // nothing to measure; only the bottom sheet, where
-                      // the card sizes itself, still probes.
                       probeAvailableHeight: !fill,
-                      // `1a` draws the editor as its own box inside the
-                      // card, under the markdown controls row.
                       bordered: true,
                     ),
                   ),
@@ -461,22 +279,51 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
       ),
     );
 
-    // Primary Execution Button — reused in both mobile (pinned) and desktop (docked)
-    //
-    // The enabled state hangs off the controller directly rather than off a
-    // panel rebuild: typing no longer notifies [AppState] (see
-    // setPromptDraft), so nothing else would re-run this. Listening to the
-    // controller keeps the button live at the cost of rebuilding one button
-    // per keystroke instead of the whole sidebar.
+    Widget buildOutputs({required bool scrollable}) => Selector<GalleryState, int>(
+      selector: (_, s) => s.selectedImages.length,
+      builder: (context, selectedCount, _) => OutputConfigListCard(
+        configs: outputConfigs,
+        selectedImageCount: selectedCount,
+        scrollable: scrollable,
+        onAdd: _handleAddOutput,
+        onEdit: _handleEditOutput,
+        onDuplicate: (c) =>
+            appState.duplicateImageOutputConfig(c.id, copySuffix: l10n.duplicateOutputConfig),
+        onDelete: (c) => appState.deleteImageOutputConfig(c.id),
+        onToggle: appState.toggleImageOutputConfig,
+      ),
+    );
+
+    final enabledConfigs = outputConfigs.where((c) => c.enabled).toList(growable: false);
+
     final processButton = Selector<GalleryState, int>(
       selector: (_, s) => s.selectedImages.length,
       builder: (context, selectedCount, _) => ValueListenableBuilder<TextEditingValue>(
         valueListenable: _promptController,
         builder: (context, promptValue, _) {
-          final bool enabled = promptValue.text.isNotEmpty;
+          final bool enabled = promptValue.text.isNotEmpty && enabledConfigs.isNotEmpty;
+
+          final String ctaLabel;
+          if (outputConfigs.isEmpty) {
+            ctaLabel = l10n.addOutputConfigFirst;
+          } else if (enabledConfigs.isEmpty) {
+            ctaLabel = l10n.enableOutputConfigFirst;
+          } else if (enabledConfigs.length == 1) {
+            final single = enabledConfigs.single;
+            final singleModel = appState.resolveOutputModel(single);
+            final singleBatch = single.useBatch && appState.supportsImageBatch(singleModel);
+            ctaLabel = singleBatch
+                ? l10n.batchSubmit
+                : selectedCount == 0
+                ? l10n.processPrompt
+                : l10n.processImages(selectedCount);
+          } else {
+            ctaLabel = selectedCount == 0
+                ? l10n.processPromptOutputs(enabledConfigs.length)
+                : l10n.processImagesOutputs(enabledConfigs.length, selectedCount);
+          }
+
           return DecoratedBox(
-            // `1a` lifts the live button on a glow in its own ring colour;
-            // the disabled one (`1c`) sits flat on the track.
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(AppRadius.control),
               boxShadow: enabled
@@ -489,14 +336,12 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
                     ]
                   : null,
             ),
-            // Colours, radius and the 13/600 label are the theme's; only the
-            // height is this button's own — 40, or the touch 44 on a phone.
             child: FilledButton(
               onPressed: !enabled
                   ? null
                   : () async {
                       final appState = Provider.of<AppState>(context, listen: false);
-                      if (selectedModelDbId == null) {
+                      if (imageModels.isEmpty) {
                         AppSnackBar.warning(
                           context,
                           l10n.noModelsConfigured,
@@ -508,62 +353,50 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
                         return;
                       }
 
-                      final selectedModel = appState.imageModels.firstWhere(
-                        (m) => m.id == selectedModelDbId,
-                      );
-                      final modelName = selectedModel.modelName;
-
-                      final params = <String, dynamic>{
-                        'prompt': _promptController.text,
-                        'executionMode': batchEnabled ? 'batch' : 'immediate',
-                        ...appState.effectiveImageParams(selectedModel),
-                      };
-
-                      final diagnostics = appState.generationInputDiagnostics(
-                        selectedModel,
-                        params,
-                        [
-                          for (final image in appState.galleryState.selectedImages)
-                            GenerationMedia(GenerationMediaRole.reference, image.path),
-                        ],
-                      );
-                      if (diagnostics.isNotEmpty) {
-                        AppSnackBar.warning(
-                          context,
-                          GenerationParamTexts.diagnostic(l10n, diagnostics.first),
-                        );
-                        return;
-                      }
+                      final ({int submitted, OutputSubmitFailure? failure}) result;
                       try {
-                        await appState.submitTask(
-                          selectedModelDbId,
-                          params,
-                          modelIdDisplay: modelName,
-                        );
+                        result = await appState.submitImageOutputs(prompt: _promptController.text);
                       } catch (error) {
                         if (context.mounted) AppSnackBar.warning(context, error.toString());
                         return;
                       }
                       if (!context.mounted) return;
 
+                      if (result.failure case final failure?) {
+                        final modelLabel =
+                            failure.model?.modelName ??
+                            failure.config.modelIdFallback ??
+                            l10n.model;
+                        final message = failure.modelMissing
+                            ? l10n.outputConfigValidationError(
+                                modelLabel,
+                                l10n.outputConfigModelUnavailable,
+                              )
+                            : l10n.outputConfigValidationError(
+                                modelLabel,
+                                GenerationParamTexts.diagnostic(l10n, failure.diagnostic!),
+                              );
+                        AppSnackBar.warning(context, message);
+                        return;
+                      }
+
+                      if (result.submitted == 0) return;
+
                       if (widget.scrollController != null) {
                         Navigator.pop(context);
                       }
 
-                      AppSnackBar.info(context, l10n.taskSubmitted);
+                      AppSnackBar.info(
+                        context,
+                        result.submitted == 1
+                            ? l10n.taskSubmitted
+                            : l10n.tasksSubmittedCount(result.submitted),
+                      );
                     },
               style: FilledButton.styleFrom(
                 minimumSize: Size(double.infinity, inSheet ? AppSize.touch : AppSize.large),
               ),
-              child: Text(
-                batchEnabled
-                    ? l10n.batchSubmit
-                    : selectedCount == 0
-                    ? l10n.processPrompt
-                    : l10n.processImages(selectedCount),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
+              child: Text(ctaLabel, maxLines: 1, overflow: TextOverflow.ellipsis),
             ),
           );
         },
@@ -571,9 +404,6 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
     );
 
     if (inSheet) {
-      // Mobile bottom sheet: pin the Process button at the top so it stays
-      // visible (`01 · 1h`). The optimizer entry rides with the editor in the
-      // scroll body, next to the text it acts on.
       return Column(
         mainAxisSize: MainAxisSize.max,
         children: [
@@ -595,9 +425,11 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    head,
+                    selectionCard,
                     const SizedBox(height: _kCardGap),
                     buildPrompt(fill: false),
+                    const SizedBox(height: _kCardGap),
+                    buildOutputs(scrollable: false),
                   ],
                 ),
               ),
@@ -607,26 +439,6 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
       );
     }
 
-    // Desktop sidebar (and the tablet end drawer). `A1 · 1a` draws this column
-    // with nothing scrolling in it: the prompt card is the flex child and
-    // everything else is as tall as it is. So the prompt's own footer —
-    // 「发送到提示词助手」 and the queue-settings gear — is always on screen,
-    // which is the point of putting them in the card rather than beside the
-    // Process button.
-    //
-    // The whole panel used to be one scroll view sized by an
-    // [IntrinsicHeight]: the column asked its children how tall they
-    // wanted to be, and whichever was larger — that or the viewport —
-    // won. Two things were wrong with it. Once the total went over the
-    // viewport *everything* scrolled, footer included, so the two
-    // actions the design pins vanished below the fold at any ordinary
-    // window height. And measuring intrinsics is impossible through a
-    // [LayoutBuilder] — expanding 「模型选择」 mounts two
-    // [SearchablePickerField]s, each of which contains one, and the
-    // panel threw during layout and rendered blank.
-    //
-    // So the split is explicit instead: the head gets a cap, the prompt
-    // gets the rest. Neither side is measured.
     return Column(
       children: [
         Expanded(
@@ -634,44 +446,45 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
             padding: const EdgeInsets.all(_kCardGap),
             child: LayoutBuilder(
               builder: (context, box) {
-                // The prompt card's floor, and the gap that separates it from
-                // the head.
-                const double promptFloor = kMinPromptEditorHeight + _kPromptCardChrome + _kCardGap;
+                const double promptFloor = kMinPromptEditorHeight + _kPromptCardChrome;
+                const double minPinnedHeight =
+                    promptFloor + _kSelectionReserveHeight + _kMinOutputsHeight + _kCardGap * 2;
 
-                // Not enough column to hold both. Rather than pin a
-                // footer over a head crushed to nothing, fall back to
-                // the bottom sheet's arrangement: one scroll, the card
-                // at its own natural height.
-                if (box.maxHeight < promptFloor + _kMinHeadHeight) {
+                if (box.maxHeight < minPinnedHeight) {
                   return ScrollEdgeFade(
                     child: SingleChildScrollView(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          head,
+                          selectionCard,
                           const SizedBox(height: _kCardGap),
                           buildPrompt(fill: false),
+                          const SizedBox(height: _kCardGap),
+                          buildOutputs(scrollable: false),
                         ],
                       ),
                     ),
                   );
                 }
 
+                final double outputsCap =
+                    (box.maxHeight - promptFloor - _kSelectionReserveHeight - _kCardGap * 2).clamp(
+                      _kMinOutputsHeight,
+                      _kMaxOutputsHeight,
+                    );
+
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    ConstrainedBox(
-                      // Everything the prompt does not need. The head
-                      // shrink-wraps under this and scrolls past it, so
-                      // the scroller is invisible until it is needed —
-                      // and while the head fits, every extra pixel of
-                      // window goes to the editor.
-                      constraints: BoxConstraints(maxHeight: box.maxHeight - promptFloor),
-                      child: ScrollEdgeFade(child: SingleChildScrollView(child: head)),
-                    ),
+                    selectionCard,
                     const SizedBox(height: _kCardGap),
                     Expanded(child: buildPrompt(fill: true)),
+                    const SizedBox(height: _kCardGap),
+                    ConstrainedBox(
+                      constraints: BoxConstraints(maxHeight: outputsCap),
+                      child: buildOutputs(scrollable: true),
+                    ),
                   ],
                 );
               },
@@ -683,21 +496,9 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
     );
   }
 
-  /// [Expanded] when the column may stretch, the child untouched when it may
-  /// not.
-  ///
-  /// The same subtree is built twice — once for the desktop sidebar, which has
-  /// a bounded height, and once for the mobile bottom sheet, which is scrolled
-  /// from above and has none. A flex child in the second would throw, so the
-  /// difference is one wrapper rather than two copies of the panel.
   static Widget _fillable({required bool fill, required Widget child}) =>
       fill ? Expanded(child: child) : child;
 
-  /// A 28px bare icon action inside a card (`1a` prompt header and footer):
-  /// a 16px glyph in [ink], the muted ink when disabled.
-  ///
-  /// Shrink-wrapped: the prompt header's height is a pinned term of the
-  /// panel's arithmetic, and a padded 48px tap target would silently grow it.
   static ButtonStyle _cardIconStyle(ColorScheme colorScheme, Color ink) => IconButton.styleFrom(
     foregroundColor: ink,
     disabledForegroundColor: colorScheme.outline,
@@ -721,7 +522,10 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
         } else {
           _promptController.text = content;
         }
-        _updateConfig(prompt: _promptController.text);
+        Provider.of<AppState>(
+          context,
+          listen: false,
+        ).updateWorkbenchConfig(prompt: _promptController.text);
       },
     );
   }

@@ -6900,6 +6900,78 @@ class AppLocalizationsZh extends AppLocalizations {
   String audioReferenceToken(int number) {
     return '音频$number';
   }
+
+  @override
+  String get generationRequestOptions => '请求与传输';
+
+  @override
+  String get outputConfigs => '输出配置';
+
+  @override
+  String outputConfigsEnabledCount(int enabled, int total) {
+    return '$enabled/$total 已启用';
+  }
+
+  @override
+  String get addOutputConfig => '添加输出';
+
+  @override
+  String get editOutputConfig => '编辑输出';
+
+  @override
+  String get outputConfigDialogSubtitle => '选择模型与生成参数；可添加多个输出配置以便并发对比。';
+
+  @override
+  String get outputConfigAlias => '配置别名（可选）';
+
+  @override
+  String get outputConfigAliasHint => '例如：高清透明底 / 快速草图';
+
+  @override
+  String get noOutputConfigs => '暂无输出配置';
+
+  @override
+  String get noOutputConfigsHint => '添加一个或多个模型配置，提交时将并发生成对比。';
+
+  @override
+  String get outputConfigModelUnavailable => '该模型已不可用，请重新选择模型或删除此配置。';
+
+  @override
+  String get duplicateOutputConfig => '复制';
+
+  @override
+  String get editOutputConfigTooltip => '编辑输出配置';
+
+  @override
+  String toggleOutputConfigLabel(String name) {
+    return '启用或停用 $name';
+  }
+
+  @override
+  String get addOutputConfigFirst => '请先添加输出配置';
+
+  @override
+  String get enableOutputConfigFirst => '请至少启用 1 项输出';
+
+  @override
+  String processPromptOutputs(int count) {
+    return '处理提示词 · $count 项输出';
+  }
+
+  @override
+  String processImagesOutputs(int outputs, int images) {
+    return '并发生成 · $outputs 项输出（$images 张图）';
+  }
+
+  @override
+  String tasksSubmittedCount(int count) {
+    return '已提交 $count 个任务至队列';
+  }
+
+  @override
+  String outputConfigValidationError(String model, String message) {
+    return '$model: $message';
+  }
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -13797,5 +13869,77 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   @override
   String audioReferenceToken(int number) {
     return '音訊$number';
+  }
+
+  @override
+  String get generationRequestOptions => '請求與傳輸';
+
+  @override
+  String get outputConfigs => '輸出配置';
+
+  @override
+  String outputConfigsEnabledCount(int enabled, int total) {
+    return '$enabled/$total 已啟用';
+  }
+
+  @override
+  String get addOutputConfig => '新增輸出';
+
+  @override
+  String get editOutputConfig => '編輯輸出';
+
+  @override
+  String get outputConfigDialogSubtitle => '選擇模型與生成參數；可新增多個輸出配置以便並發對比。';
+
+  @override
+  String get outputConfigAlias => '配置別名（選填）';
+
+  @override
+  String get outputConfigAliasHint => '例如：高畫質透明底 / 快速草稿';
+
+  @override
+  String get noOutputConfigs => '暫無輸出配置';
+
+  @override
+  String get noOutputConfigsHint => '新增一個或多個模型配置，提交時將並發生成對比。';
+
+  @override
+  String get outputConfigModelUnavailable => '此模型已無法使用，請重新選擇模型或刪除此配置。';
+
+  @override
+  String get duplicateOutputConfig => '複製';
+
+  @override
+  String get editOutputConfigTooltip => '編輯輸出配置';
+
+  @override
+  String toggleOutputConfigLabel(String name) {
+    return '啟用或停用 $name';
+  }
+
+  @override
+  String get addOutputConfigFirst => '請先新增輸出配置';
+
+  @override
+  String get enableOutputConfigFirst => '請至少啟用 1 項輸出';
+
+  @override
+  String processPromptOutputs(int count) {
+    return '處理提示詞 · $count 項輸出';
+  }
+
+  @override
+  String processImagesOutputs(int outputs, int images) {
+    return '並發生成 · $outputs 項輸出（$images 張圖）';
+  }
+
+  @override
+  String tasksSubmittedCount(int count) {
+    return '已提交 $count 個任務至佇列';
+  }
+
+  @override
+  String outputConfigValidationError(String model, String message) {
+    return '$model: $message';
   }
 }

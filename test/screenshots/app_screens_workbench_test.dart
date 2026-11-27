@@ -13,6 +13,7 @@ import 'dart:async';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/constants.dart';
+import 'package:joycai_image_ai_toolkits/models/image_output_config.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/config/generation_settings_dialog.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/gallery/image_card.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/size_picker/size_field.dart';
@@ -27,6 +28,24 @@ import 'harness/fixture_env.dart';
 import 'harness/fixture_seed.dart';
 import 'harness/shoot.dart';
 import 'harness/suite.dart';
+
+void seedOutputForModel(String modelId) {
+  final app = AppState();
+  app.lastSelectedModelId = modelId;
+  final model = app.imageModels
+      .where((m) => m.modelId == modelId || m.id.toString() == modelId)
+      .firstOrNull;
+  if (model != null) {
+    app.setImageOutputConfigsForTest([
+      ImageOutputConfig(
+        id: 'shot_$modelId',
+        modelDbId: model.id,
+        modelIdFallback: model.modelId,
+        params: app.defaultOutputParamsForModel(model),
+      ),
+    ]);
+  }
+}
 
 void main() {
   late FixtureEnv env;
@@ -71,7 +90,10 @@ void main() {
         after: (tester) async {
           unawaited(showGenerationSettingsDialog(tester.element(find.byType(ImageCard).first)));
           await settle(tester);
-          final toggle = find.descendant(of: find.byType(Dialog), matching: find.byType(Switch));
+          final toggle = find.descendant(
+            of: find.byKey(const ValueKey('save_generation_text_row')),
+            matching: find.byType(Switch),
+          );
           await actInRealAsync(tester, () async {
             await tester.tap(toggle);
           });
@@ -186,8 +208,10 @@ void main() {
               for (int p = 0; p < 5; p++) {
                 await tester.pump(const Duration(milliseconds: 120));
               }
+              await tester.tap(find.byIcon(Icons.tune_outlined).first);
+            } else {
+              await tester.tap(find.text('模型选择').last);
             }
-            await tester.tap(find.text('模型选择').last);
             for (int p = 0; p < 5; p++) {
               await tester.pump(const Duration(milliseconds: 120));
             }
@@ -217,7 +241,7 @@ void main() {
               AppState().setWorkbenchTab(0);
               AppState().clearImageSelection();
               AppState().isConsoleExpanded = false;
-              AppState().lastSelectedModelId = modelId;
+              seedOutputForModel(modelId);
             },
             after: (tester) async {
               final layout = tester
@@ -228,7 +252,10 @@ void main() {
                   layout.openRightPanel();
                 });
               }
-              await tester.tap(find.text('模型选择').last);
+              await settle(tester);
+              await tester.ensureVisible(find.byIcon(Icons.tune_outlined).first);
+              await settle(tester);
+              await tester.tap(find.byIcon(Icons.tune_outlined).first);
               await settle(tester);
               if (modelId.startsWith('gpt-image-')) {
                 await actInRealAsync(tester, () async {
@@ -281,7 +308,7 @@ void main() {
           before: (_) async {
             AppState().setWorkbenchTab(0);
             AppState().isConsoleExpanded = false;
-            AppState().lastSelectedModelId = 'qwen-image-2.1-pro';
+            seedOutputForModel('qwen-image-2.1-pro');
           },
           after: (tester) async {
             AppState().clearImageSelection();
@@ -293,7 +320,11 @@ void main() {
               await actInRealAsync(tester, () async => layout.openRightPanel());
             }
             await settle(tester);
-            await tester.tap(find.text('模型选择').last);
+            await tester.ensureVisible(find.byIcon(Icons.tune_outlined).first);
+            await settle(tester);
+            await tester.ensureVisible(find.byIcon(Icons.tune_outlined).first);
+            await settle(tester);
+            await tester.tap(find.byIcon(Icons.tune_outlined).first);
             await settle(tester);
             await tester.ensureVisible(find.byType(SizeField));
             await tester.tap(find.byType(SizeField));
@@ -317,7 +348,7 @@ void main() {
           before: (_) async {
             AppState().setWorkbenchTab(0);
             AppState().isConsoleExpanded = false;
-            AppState().lastSelectedModelId = 'wan2.7-image';
+            seedOutputForModel('wan2.7-image');
           },
           after: (tester) async {
             AppState().clearImageSelection();
@@ -329,7 +360,11 @@ void main() {
               await actInRealAsync(tester, () async => layout.openRightPanel());
             }
             await settle(tester);
-            await tester.tap(find.text('模型选择').last);
+            await tester.ensureVisible(find.byIcon(Icons.tune_outlined).first);
+            await settle(tester);
+            await tester.ensureVisible(find.byIcon(Icons.tune_outlined).first);
+            await settle(tester);
+            await tester.tap(find.byIcon(Icons.tune_outlined).first);
             await settle(tester);
             await tester.ensureVisible(find.byType(SizeField));
             await tester.tap(find.byType(SizeField));
@@ -369,7 +404,7 @@ void main() {
         before: (_) async {
           AppState().setWorkbenchTab(0);
           AppState().isConsoleExpanded = false;
-          AppState().lastSelectedModelId = modelId;
+          seedOutputForModel(modelId);
         },
         after: (WidgetTester tester) async {
           AppState().clearImageSelection();
@@ -377,7 +412,7 @@ void main() {
           for (int p = 0; p < 5; p++) {
             await tester.pump(const Duration(milliseconds: 120));
           }
-          await tester.tap(find.text('模型选择').last);
+          await tester.tap(find.byIcon(Icons.tune_outlined).first);
           for (int p = 0; p < 5; p++) {
             await tester.pump(const Duration(milliseconds: 120));
           }
@@ -409,7 +444,7 @@ void main() {
         before: (_) async {
           AppState().setWorkbenchTab(0);
           AppState().isConsoleExpanded = false;
-          AppState().lastSelectedModelId = modelId;
+          seedOutputForModel(modelId);
         },
         after: (WidgetTester tester) async {
           AppState().clearImageSelection();
@@ -417,9 +452,7 @@ void main() {
           for (int p = 0; p < 5; p++) {
             await tester.pump(const Duration(milliseconds: 120));
           }
-          await tester.tap(
-            find.text(locale.languageCode == 'en' ? 'Model Selection' : '模型选择').last,
-          );
+          await tester.tap(find.byIcon(Icons.tune_outlined).first);
           for (int p = 0; p < 5; p++) {
             await tester.pump(const Duration(milliseconds: 120));
           }
@@ -448,7 +481,7 @@ void main() {
         before: (_) async {
           AppState().setWorkbenchTab(0);
           AppState().isConsoleExpanded = false;
-          AppState().lastSelectedModelId = 'wan2.7-image';
+          seedOutputForModel('wan2.7-image');
         },
         after: (WidgetTester tester) async {
           AppState().clearImageSelection();
@@ -456,7 +489,7 @@ void main() {
           for (int p = 0; p < 5; p++) {
             await tester.pump(const Duration(milliseconds: 120));
           }
-          await tester.tap(find.text('模型选择').last);
+          await tester.tap(find.byIcon(Icons.tune_outlined).first);
           for (int p = 0; p < 5; p++) {
             await tester.pump(const Duration(milliseconds: 120));
           }
@@ -467,6 +500,65 @@ void main() {
         },
       );
     });
+  }
+
+  for (final size in kShotSizes) {
+    for (final brightness in Brightness.values) {
+      testWidgets('workbench · multiOutputs @ ${size.label} ${brightness.name}', (tester) async {
+        await shoot(
+          tester,
+          env: env,
+          screen: AppScreen.workbench,
+          size: size,
+          brightness: brightness,
+          suffix: 'multiOutputs',
+          before: (_) async {
+            final app = AppState();
+            app.setWorkbenchTab(0);
+            app.isConsoleExpanded = false;
+            final gpt = app.imageModels.firstWhere((m) => m.modelId == 'gpt-image-2.6-flare');
+            final gemini = app.imageModels.firstWhere((m) => m.modelId == 'gemini-nano-banana-2.1');
+            final seedream = app.imageModels.firstWhere(
+              (m) => m.modelId == 'doubao-seedream-5-0-pro-260628',
+            );
+            app.setImageOutputConfigsForTest([
+              ImageOutputConfig(
+                id: 'multi_1',
+                modelDbId: gpt.id,
+                modelIdFallback: gpt.modelId,
+                alias: '高清透明',
+                params: const {'size': '1024x1536', 'quality': 'high', 'background': 'transparent'},
+              ),
+              ImageOutputConfig(
+                id: 'multi_2',
+                modelDbId: gemini.id,
+                modelIdFallback: gemini.modelId,
+                alias: '快速对比',
+                params: const {'aspectRatio': '3:4'},
+              ),
+              ImageOutputConfig(
+                id: 'multi_3',
+                modelDbId: seedream.id,
+                modelIdFallback: seedream.modelId,
+                enabled: false,
+                alias: '备选方案',
+              ),
+            ]);
+          },
+          after: (tester) async {
+            AppState().clearImageSelection();
+            seedImageSelection(AppState());
+            final layout = tester
+                .element(find.byType(ImageCard).first)
+                .read<WorkbenchLayoutState>();
+            if (layout.rightPanelDetached) {
+              await actInRealAsync(tester, () async => layout.openRightPanel());
+            }
+            await settle(tester);
+          },
+        );
+      });
+    }
   }
 }
 
