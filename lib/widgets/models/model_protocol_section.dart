@@ -165,42 +165,55 @@ class ModelProtocolSection extends StatelessWidget {
       children: [
         header,
         const SizedBox(height: AppSpace.s6),
-        field,
-        if (form == ProtocolSectionForm.dropdown && pin != null)
-          ModelEditBackToAuto(onPressed: () => onChanged(null)),
-        AnimatedSize(
-          duration: AppMotion.durationOf(context, AppMotion.reveal),
-          curve: AppMotion.enter,
-          alignment: Alignment.topCenter,
+        ModelEditCard(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (helper != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: AppSpace.s6),
-                  child: ModelEditHelperText(helper),
+              field,
+              if (form == ProtocolSectionForm.dropdown && pin != null)
+                ModelEditBackToAuto(onPressed: () => onChanged(null)),
+              AnimatedSize(
+                duration: AppMotion.durationOf(context, AppMotion.reveal),
+                curve: AppMotion.enter,
+                alignment: Alignment.topCenter,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (helper != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: AppSpace.s6),
+                        child: ModelEditHelperText(helper),
+                      ),
+                    if (showParams) ...[
+                      const Padding(
+                        padding: EdgeInsets.only(top: AppSpace.s10),
+                        child: Divider(height: 1),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(top: AppSpace.s10),
+                        child: ModelEditParamBlock(
+                          items: paramSummaryItems(l10n, paramsCapabilities, menu.surface),
+                          // `D2a`: the rows a pinned protocol rules take its accent.
+                          governed: pin != null,
+                        ),
+                      ),
+                    ],
+                    if (unrecognized != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: AppSpace.s10),
+                        child: ModelEditNotice(tone: ModelEditTone.info, text: unrecognized),
+                      ),
+                    if (caveat != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: AppSpace.s10),
+                        child: ModelEditNotice(tone: ModelEditTone.warning, text: caveat),
+                      ),
+                    const SizedBox(width: double.infinity),
+                  ],
                 ),
-              if (showParams)
-                Padding(
-                  padding: const EdgeInsets.only(top: AppSpace.s10),
-                  child: ModelEditParamBlock(
-                    items: paramSummaryItems(l10n, paramsCapabilities, menu.surface),
-                    // `D2a`: the rows a pinned protocol rules take its accent.
-                    governed: pin != null,
-                  ),
-                ),
-              if (unrecognized != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: AppSpace.s10),
-                  child: ModelEditNotice(tone: ModelEditTone.info, text: unrecognized),
-                ),
-              if (caveat != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: AppSpace.s10),
-                  child: ModelEditNotice(tone: ModelEditTone.warning, text: caveat),
-                ),
-              const SizedBox(width: double.infinity),
+              ),
             ],
           ),
         ),

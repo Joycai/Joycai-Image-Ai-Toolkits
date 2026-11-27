@@ -3,7 +3,6 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../core/app_theme.dart';
 import '../../core/design_tokens.dart';
-import '../../core/model_kind_palette.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/llm_channel.dart';
@@ -29,16 +28,17 @@ import '../glass/app_glass.dart';
 import '../ui/app_action_target.dart';
 import '../ui/app_button.dart';
 import '../ui/app_dialog.dart';
+import '../ui/app_disclosure_chevron.dart';
 import '../ui/app_dropdown.dart';
 import '../ui/app_field_size.dart';
 import '../ui/app_labelled_field.dart';
 import '../ui/app_section_label.dart';
-import '../ui/model_tag_chip.dart' show modelKindIcon;
+import '../ui/app_segmented_control.dart';
+import '../ui/model_tag_chip.dart' show ModelKindBadge, ModelKindPlate, modelKindIcon;
 import '../ui/searchable_picker.dart';
 import 'app_route_badge.dart';
 import 'context_window_slider.dart';
 import 'fee_group_summary.dart';
-import 'model_edit_card_preview.dart';
 import 'model_edit_controls.dart';
 import 'model_picker_options.dart';
 import 'model_protocol_section.dart';
@@ -58,15 +58,16 @@ part 'model_edit/model_edit_routes.dart';
 ///
 /// Three forms from one state:
 ///
-/// - **Edit, dialog** (`1a`): 920 wide, two columns — what the model *is* on
-///   the left (identity, capabilities, the card it will make), how it is
-///   *requested* on the right (request method, context window, agent
-///   behaviour, reasoning, provider features). Folds to one column when the
-///   dialog is too narrow to hold two.
+/// - **Edit, dialog** (`1a`): 840 wide, two columns — identity and billing on
+///   the left, kind-driven request & behavior sections on the right (protocol /
+///   routes, token budget, reasoning, multimodal & search behavior, and
+///   collapsible transport compatibility) beneath a live header summary and a
+///   3-way kind switcher. Folds to one column when the dialog is too narrow.
 /// - **Edit, phone** (`1e`): a full-screen page under a glass bar with a
 ///   tinted-glass Save.
-/// - **Add** (`1e` right): 520 wide, ID / name / kind only — everything else
-///   stays on Auto or its default until the model has run once.
+/// - **Add** (`1e` right): 520 wide, 3-way kind switcher, ID / name / channel
+///   and (for chat models) the multimodal toggle — everything else stays on
+///   Auto or its default until the model has run once.
 class ModelEditDialog extends StatefulWidget {
   final AppLocalizations l10n;
   final AppState appState;
@@ -147,13 +148,16 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
   bool _feeGroupTouched = false;
   bool _contextTouched = false;
 
-  /// The kinds offered, in order. Colours live in [modelTagAccent] only.
-  static const List<String> _kinds = ['chat', 'image', 'video', 'multimodal'];
+  /// Remembers whether a chat-surface model was marked multimodal while
+  /// switching away to `image` or `video` and back.
+  late bool _rememberedMultimodal;
 
-  // D1c 「尺寸」.
-  static const double _dialogWidth = 920;
+  /// Low-frequency streaming/standard compatibility switches start collapsed.
+  bool _transportExpanded = false;
+
+  static const double _dialogWidth = 840;
   static const double _addDialogWidth = 520;
-  static const double _columnGap = 32;
+  static const double _columnGap = 24;
   static const double _sectionGap = 14;
   static const double _fieldGap = AppSpace.s10;
   static const double _phoneBarHeight = 56;
@@ -191,6 +195,7 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
         widget.preChannelId ??
         (widget.appState.allChannels.isNotEmpty ? widget.appState.allChannels.first.id : null);
     tag = model?.tag ?? 'chat';
+    _rememberedMultimodal = tag == 'multimodal';
     // A new model starts in its channel's default group (`D1b · 1e`); an
     // existing one keeps what it has.
     feeGroupId = model == null ? widget.appState.defaultFeeGroupFor(channelId) : model.feeGroupId;
@@ -251,11 +256,22 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
     super.dispose();
   }
 
+  /// Whether the model belongs to the conversation family (`chat` or `multimodal`).
+  bool get _isChatGroup => tag != 'image' && tag != 'video';
+
+  /// Whether multimodal input (`tag == 'multimodal'`) is enabled.
+  bool get _isMultimodal => tag == 'multimodal';
+
+  /// Top-level kind shown in the 3-way segmented control (`chat`, `image`, `video`).
+  String get _primaryKind => _isChatGroup ? 'chat' : tag;
+
   /// The Specify figure — digits, or the `128k` / `1m` shorthand the labels use.
   int? get _contextTokens => ContextWindowScale.parse(contextCtrl.text);
 
-  /// Specify needs a positive whole number; blank or zero blocks saving.
-  bool get _contextValid => contextMode != ContextWindowMode.specified || (_contextTokens ?? 0) > 0;
+  /// Specify needs a positive whole number; hidden on media kinds so it never
+  /// blocks saving an image or video model.
+  bool get _contextValid =>
+      !_isChatGroup || contextMode != ContextWindowMode.specified || (_contextTokens ?? 0) > 0;
 
   /// The output cap's Specify figure, in the context field's grammar.
   int? get _outputCapTokens => OutputCapScale.parse(outputCapCtrl.text);
@@ -302,6 +318,11 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
     (c) => c?.id == channelId,
     orElse: () => null,
   );
+
+  /// The pricing group currently picked, or null when none is picked.
+  PricingGroup? get _selectedFeeGroup => widget.appState.allPricingGroups
+      .cast<PricingGroup?>()
+      .firstWhere((g) => g?.id == feeGroupId, orElse: () => null);
 
   /// The protocol family of the vendor serving the model — through its route
   /// for a chat model — or null when no channel is picked. Read-only Layer 2
@@ -380,7 +401,9 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
       routeParams: saved?.routeParams,
       feeGroupId: feeGroupId,
       channelId: channelId,
-      contextWindow: ContextBudget.store(contextMode, _contextTokens ?? 0),
+      contextWindow: _isChatGroup
+          ? ContextBudget.store(contextMode, _contextTokens ?? 0)
+          : widget.model?.contextWindow,
       maxOutputTokens: saved != null ? saved.maxOutputTokens : _storedOutputCap,
     );
 

@@ -2061,9 +2061,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get capabilities => '機能';
 
   @override
-  String get cardPreview => 'カードプレビュー';
-
-  @override
   String get capabilityStreamingShort => 'ストリーミング';
 
   @override
@@ -2193,9 +2190,6 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get agentBehavior => 'エージェント動作';
-
-  @override
   String get forceViewAllImages => 'すべての参考画像を確認';
 
   @override
@@ -2231,9 +2225,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get reasoningEffortOn => 'オン';
-
-  @override
-  String get reasoningEffortUnavailable => '利用不可';
 
   @override
   String get enableThinking => '拡張思考';
@@ -2625,12 +2616,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get protocolBackToAuto => '自動に戻す';
 
   @override
-  String get contextImageUnsetDesc => '画像モデルはコンテキスト予算を使いません。未設定のままで構いません。';
-
-  @override
-  String get contextVideoUnsetDesc => '動画モデルはコンテキスト予算を使いません。未設定のままで構いません。';
-
-  @override
   String get protocolVideoTask => '非同期動画タスク';
 
   @override
@@ -2717,10 +2702,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get protocolUnavailable => '利用不可';
-
-  @override
-  String get reasoningEffortUnsupported =>
-      'このモデルは推論パラメーターを受け付けないため、スライダーは「オフ」のままです。対応するモデルに切り替えると有効になります。';
 
   @override
   String get modelIdRequiredTitle => 'Model ID は空にできません';
@@ -3378,6 +3359,44 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get feeGroupPresetPickerTitle => '公式 API 単価プリセット';
+
+  @override
+  String get modelDefaultPricingShort => '公式デフォルト料金';
+
+  @override
+  String modelPresetReferencePrice(String price) {
+    return '公式参考単価：$price';
+  }
+
+  @override
+  String get tokenBudget => 'トークン予算';
+
+  @override
+  String get behaviorAndExtensions => '動作と拡張';
+
+  @override
+  String get supportsMultimodalInput => '画像・動画入力に対応（マルチモーダル）';
+
+  @override
+  String get supportsMultimodalInputDesc => '有効にするとマルチモーダルとして分類され、プロンプトアシスタントの画像認識やAIリネームで利用できます。';
+
+  @override
+  String get reasoningEffortNotSupportedShort => 'このモデルまたはプロトコルは推論パラメータに非対応';
+
+  @override
+  String get transportCompatibility => '通信互換性';
+
+  @override
+  String get transportStreamIgnoredShort => '無視';
+
+  @override
+  String transportSummary(String stream, String standard) {
+    return 'ストリーム $stream · 標準 $standard';
+  }
+
+  @override
+  String get mediaModelChatControlsHiddenNote =>
+      '画像・動画モデルは会話コンテキスト、エージェント読込、テキスト推論を使用しないため、関連しない設定を非表示にしています。';
 
   @override
   String get prompts => 'プロンプト';

@@ -1208,7 +1208,6 @@
   },
   "deselectAll": "すべて選択解除",
   "capabilities": "機能",
-  "cardPreview": "カードプレビュー",
   "capabilityStreamingShort": "ストリーミング",
   "capabilityStandardShort": "標準リクエスト",
   "supportsStreaming": "ストリーミング対応",
@@ -1279,7 +1278,6 @@
   "contextStatusBetween": "≈ {lo}–{hi}",
   "contextStatusBelow": "< {label}",
   "contextStatusAbove": "> {label}",
-  "agentBehavior": "エージェント動作",
   "forceViewAllImages": "すべての参考画像を確認",
   "forceViewAllImagesDesc": "エージェントは結果を提出する前にすべての参考画像を確認します。小規模なローカルモデルに推奨。",
   "reasoningEffort": "推論強度",
@@ -1292,7 +1290,6 @@
   "reasoningEffortMax": "最高",
   "reasoningEffortDefaultShort": "デフォルト",
   "reasoningEffortOn": "オン",
-  "reasoningEffortUnavailable": "利用不可",
   "enableThinking": "拡張思考",
   "enableThinkingDesc": "回答前にモデルに推論させます。出力トークンを消費し、Anthropic 形式のチャンネルのみ対応。",
   "enableWebSearch": "サーバー側ウェブ検索",
@@ -1449,8 +1446,6 @@
   "protocolStreamIgnored": "「{name}」はストリーミングを使用しないため、この設定は無視されます",
   "protocolAutoSuffix": "· 自動",
   "protocolBackToAuto": "自動に戻す",
-  "contextImageUnsetDesc": "画像モデルはコンテキスト予算を使いません。未設定のままで構いません。",
-  "contextVideoUnsetDesc": "動画モデルはコンテキスト予算を使いません。未設定のままで構いません。",
   "protocolVideoTask": "非同期動画タスク",
   "protocolAsyncQueueNote": "送信後はタスクキューでポーリングされ、生成中はキャンセルできます。",
   "protocolPinStale": "選択は無効",
@@ -1477,7 +1472,6 @@
   "deleteChannel": "チャネルを削除",
   "discoveryOffEffect": "オフにすると、このチャネルでは「モデル取得」が無効になります",
   "protocolUnavailable": "利用不可",
-  "reasoningEffortUnsupported": "このモデルは推論パラメーターを受け付けないため、スライダーは「オフ」のままです。対応するモデルに切り替えると有効になります。",
   "modelIdRequiredTitle": "Model ID は空にできません",
   "modelIdRequiredDesc": "唯一の必須項目です。名前を空にすると ID が表示名になります。",
   "contextSpecifyInvalid": "正の整数を入力してください。空欄や 0 は保存できません。",
@@ -1753,6 +1747,34 @@
   "modelPresetDefaultPricingNote": "料金グループ未設定時は公式 API の既定単価が自動適用されます。",
   "feeGroupLoadOfficialPreset": "公式単価を読み込む",
   "feeGroupPresetPickerTitle": "公式 API 単価プリセット",
+  "modelDefaultPricingShort": "公式デフォルト料金",
+  "modelPresetReferencePrice": "公式参考単価：{price}",
+  "@modelPresetReferencePrice": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "tokenBudget": "トークン予算",
+  "behaviorAndExtensions": "動作と拡張",
+  "supportsMultimodalInput": "画像・動画入力に対応（マルチモーダル）",
+  "supportsMultimodalInputDesc": "有効にするとマルチモーダルとして分類され、プロンプトアシスタントの画像認識やAIリネームで利用できます。",
+  "reasoningEffortNotSupportedShort": "このモデルまたはプロトコルは推論パラメータに非対応",
+  "transportCompatibility": "通信互換性",
+  "transportStreamIgnoredShort": "無視",
+  "transportSummary": "ストリーム {stream} · 標準 {standard}",
+  "@transportSummary": {
+    "placeholders": {
+      "stream": {
+        "type": "String"
+      },
+      "standard": {
+        "type": "String"
+      }
+    }
+  },
+  "mediaModelChatControlsHiddenNote": "画像・動画モデルは会話コンテキスト、エージェント読込、テキスト推論を使用しないため、関連しない設定を非表示にしています。",
   "prompts": "プロンプト",
   "promptLibrary": "プロンプトライブラリ",
   "newPrompt": "新しいプロンプト",

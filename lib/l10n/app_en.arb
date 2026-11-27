@@ -1510,7 +1510,6 @@
   },
   "deselectAll": "Deselect All",
   "capabilities": "Capabilities",
-  "cardPreview": "Card preview",
   "capabilityStreamingShort": "Streaming",
   "capabilityStandardShort": "Standard requests",
   "supportsStreaming": "Supports Streaming",
@@ -1612,7 +1611,6 @@
       }
     }
   },
-  "agentBehavior": "Agent Behavior",
   "forceViewAllImages": "View all reference images",
   "forceViewAllImagesDesc": "Agents must view every reference image before delivering a result. Recommended for small local models.",
   "reasoningEffort": "Reasoning Effort",
@@ -1625,7 +1623,6 @@
   "reasoningEffortMax": "Max",
   "reasoningEffortDefaultShort": "Default",
   "reasoningEffortOn": "On",
-  "reasoningEffortUnavailable": "Unavailable",
   "enableThinking": "Extended thinking",
   "enableThinkingDesc": "Let the model reason before answering. Costs output tokens; Anthropic-format channels only.",
   "enableWebSearch": "Host web search",
@@ -1858,8 +1855,6 @@
   },
   "protocolAutoSuffix": "· Auto",
   "protocolBackToAuto": "Back to Auto",
-  "contextImageUnsetDesc": "Image models don't use the context budget; leave this unset.",
-  "contextVideoUnsetDesc": "Video models don't use the context budget; leave this unset.",
   "protocolVideoTask": "Async video task",
   "protocolAsyncQueueNote": "Submitted to the task queue and polled; can be cancelled while generating.",
   "protocolPinStale": "Selection inactive",
@@ -1917,7 +1912,6 @@
   "deleteChannel": "Delete channel",
   "discoveryOffEffect": "When off, Fetch Models is disabled for this channel",
   "protocolUnavailable": "Unavailable",
-  "reasoningEffortUnsupported": "This model takes no reasoning parameters, so the slider stays at Off. It lights up when you switch to a model that does.",
   "modelIdRequiredTitle": "Model ID can't be empty",
   "modelIdRequiredDesc": "It's the only required field; a blank name uses the ID as the display name.",
   "contextSpecifyInvalid": "Enter a positive whole number; blank or 0 can't be saved.",
@@ -2393,6 +2387,34 @@
   "modelPresetDefaultPricingNote": "Official API pricing is used automatically when no fee group is assigned.",
   "feeGroupLoadOfficialPreset": "Load official pricing",
   "feeGroupPresetPickerTitle": "Official API pricing presets",
+  "modelDefaultPricingShort": "Default pricing",
+  "modelPresetReferencePrice": "Official reference: {price}",
+  "@modelPresetReferencePrice": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "tokenBudget": "Token Budget",
+  "behaviorAndExtensions": "Behavior & Extensions",
+  "supportsMultimodalInput": "Image / video input (Multimodal)",
+  "supportsMultimodalInputDesc": "Marks this chat model as multimodal for Prompt Assistant vision and AI Rename.",
+  "reasoningEffortNotSupportedShort": "Not supported by this model or protocol",
+  "transportCompatibility": "Transport Compatibility",
+  "transportStreamIgnoredShort": "Ignored",
+  "transportSummary": "Stream {stream} · Standard {standard}",
+  "@transportSummary": {
+    "placeholders": {
+      "stream": {
+        "type": "String"
+      },
+      "standard": {
+        "type": "String"
+      }
+    }
+  },
+  "mediaModelChatControlsHiddenNote": "Image and video models do not use conversation context windows, agent vision, or text reasoning.",
   "prompts": "Prompts",
   "promptLibrary": "Prompt Library",
   "newPrompt": "New Prompt",

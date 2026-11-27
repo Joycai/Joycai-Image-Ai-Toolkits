@@ -3706,12 +3706,6 @@ abstract class AppLocalizations {
   /// **'Capabilities'**
   String get capabilities;
 
-  /// No description provided for @cardPreview.
-  ///
-  /// In en, this message translates to:
-  /// **'Card preview'**
-  String get cardPreview;
-
   /// No description provided for @capabilityStreamingShort.
   ///
   /// In en, this message translates to:
@@ -3922,12 +3916,6 @@ abstract class AppLocalizations {
   /// **'> {label}'**
   String contextStatusAbove(String label);
 
-  /// No description provided for @agentBehavior.
-  ///
-  /// In en, this message translates to:
-  /// **'Agent Behavior'**
-  String get agentBehavior;
-
   /// No description provided for @forceViewAllImages.
   ///
   /// In en, this message translates to:
@@ -3999,12 +3987,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'On'**
   String get reasoningEffortOn;
-
-  /// No description provided for @reasoningEffortUnavailable.
-  ///
-  /// In en, this message translates to:
-  /// **'Unavailable'**
-  String get reasoningEffortUnavailable;
 
   /// No description provided for @enableThinking.
   ///
@@ -4714,18 +4696,6 @@ abstract class AppLocalizations {
   /// **'Back to Auto'**
   String get protocolBackToAuto;
 
-  /// No description provided for @contextImageUnsetDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Image models don\'t use the context budget; leave this unset.'**
-  String get contextImageUnsetDesc;
-
-  /// No description provided for @contextVideoUnsetDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Video models don\'t use the context budget; leave this unset.'**
-  String get contextVideoUnsetDesc;
-
   /// No description provided for @protocolVideoTask.
   ///
   /// In en, this message translates to:
@@ -4881,12 +4851,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unavailable'**
   String get protocolUnavailable;
-
-  /// No description provided for @reasoningEffortUnsupported.
-  ///
-  /// In en, this message translates to:
-  /// **'This model takes no reasoning parameters, so the slider stays at Off. It lights up when you switch to a model that does.'**
-  String get reasoningEffortUnsupported;
 
   /// No description provided for @modelIdRequiredTitle.
   ///
@@ -6051,6 +6015,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Official API pricing presets'**
   String get feeGroupPresetPickerTitle;
+
+  /// No description provided for @modelDefaultPricingShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Default pricing'**
+  String get modelDefaultPricingShort;
+
+  /// No description provided for @modelPresetReferencePrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Official reference: {price}'**
+  String modelPresetReferencePrice(String price);
+
+  /// No description provided for @tokenBudget.
+  ///
+  /// In en, this message translates to:
+  /// **'Token Budget'**
+  String get tokenBudget;
+
+  /// No description provided for @behaviorAndExtensions.
+  ///
+  /// In en, this message translates to:
+  /// **'Behavior & Extensions'**
+  String get behaviorAndExtensions;
+
+  /// No description provided for @supportsMultimodalInput.
+  ///
+  /// In en, this message translates to:
+  /// **'Image / video input (Multimodal)'**
+  String get supportsMultimodalInput;
+
+  /// No description provided for @supportsMultimodalInputDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Marks this chat model as multimodal for Prompt Assistant vision and AI Rename.'**
+  String get supportsMultimodalInputDesc;
+
+  /// No description provided for @reasoningEffortNotSupportedShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Not supported by this model or protocol'**
+  String get reasoningEffortNotSupportedShort;
+
+  /// No description provided for @transportCompatibility.
+  ///
+  /// In en, this message translates to:
+  /// **'Transport Compatibility'**
+  String get transportCompatibility;
+
+  /// No description provided for @transportStreamIgnoredShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Ignored'**
+  String get transportStreamIgnoredShort;
+
+  /// No description provided for @transportSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Stream {stream} · Standard {standard}'**
+  String transportSummary(String stream, String standard);
+
+  /// No description provided for @mediaModelChatControlsHiddenNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Image and video models do not use conversation context windows, agent vision, or text reasoning.'**
+  String get mediaModelChatControlsHiddenNote;
 
   /// No description provided for @prompts.
   ///

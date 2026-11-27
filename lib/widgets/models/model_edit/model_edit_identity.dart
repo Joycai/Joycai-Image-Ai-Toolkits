@@ -1,6 +1,6 @@
 part of '../model_edit_dialog.dart';
 
-/// What the model *is*: id, name, channel, kind and fee group.
+/// What the model *is*: identity, preset matching, channel and billing.
 extension _IdentitySection on _ModelEditDialogState {
   Widget _identitySection(BuildContext context, {required bool pairFields}) {
     final l10n = widget.l10n;
@@ -32,24 +32,19 @@ extension _IdentitySection on _ModelEditDialogState {
           const SizedBox(height: _ModelEditDialogState._fieldGap),
           channel,
         ],
-        const SizedBox(height: _ModelEditDialogState._fieldGap),
-        AppLabelledField(
-          label: l10n.type,
-          size: size,
-          child: ModelEditChoiceGrid<String>(
-            choices: [
-              for (final k in _ModelEditDialogState._kinds)
-                ModelEditChoice(
-                  value: k,
-                  label: modelKindLabel(l10n, k),
-                  dotColor: modelTagAccent(k),
-                ),
-            ],
-            value: tag,
-            onChanged: _selectKind,
-          ),
-        ),
-        const SizedBox(height: _ModelEditDialogState._fieldGap),
+      ],
+    );
+  }
+
+  Widget _billingSection(BuildContext context) {
+    final l10n = widget.l10n;
+    final size = _fieldSize(context);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _caption(l10n.billing),
+        const SizedBox(height: AppSpace.s6),
         _feeGroupField(size),
       ],
     );
@@ -169,35 +164,13 @@ extension _IdentitySection on _ModelEditDialogState {
     );
   }
 
-  /// The add dialog's kind select: the dot, the kind's name.
-  Widget _kindMenuField(BuildContext context) {
-    final l10n = widget.l10n;
-    Widget dot(String kind) => Container(
-      width: 8,
-      height: 8,
-      decoration: BoxDecoration(color: modelTagAccent(kind), shape: BoxShape.circle),
-    );
-
-    return ModelEditMenuField<String>(
-      leading: dot(tag),
-      selected: tag,
-      onSelected: _selectKind,
-      entries: [
-        for (final k in _ModelEditDialogState._kinds)
-          ModelEditMenuEntry(value: k, label: modelKindLabel(l10n, k), leading: dot(k)),
-      ],
-      child: Text(
-        modelKindLabel(l10n, tag),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
-      ),
-    );
-  }
-
   Widget _feeGroupField(AppFieldSize size) {
     final l10n = widget.l10n;
-    final hasDefaultPricing = feeGroupId == null && _matchedPreset != null;
+    final matched = _matchedPreset;
+    final hasDefaultPricing = feeGroupId == null && matched != null;
+    final refPrice = hasDefaultPricing
+        ? feeGroupSummary(l10n, matched.pricing.toPricingGroup(name: matched.displayName))
+        : '';
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -229,11 +202,27 @@ extension _IdentitySection on _ModelEditDialogState {
             ),
           ),
         ),
-        if (hasDefaultPricing)
+        if (hasDefaultPricing) ...[
           Padding(
             padding: const EdgeInsets.only(top: AppSpace.s4),
             child: ModelEditHelperText(l10n.modelPresetDefaultPricingNote),
           ),
+          if (refPrice.isNotEmpty)
+            Builder(
+              builder: (context) {
+                final theme = Theme.of(context);
+                return Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Text(
+                    l10n.modelPresetReferencePrice(refPrice),
+                    style: theme.textTheme.labelSmall?.mono.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                );
+              },
+            ),
+        ],
       ],
     );
   }
@@ -252,6 +241,9 @@ extension _IdentitySection on _ModelEditDialogState {
         wireProtocol = _pinBySurface[to];
       }
       tag = spec.tag;
+      if (spec.tag == 'chat' || spec.tag == 'multimodal') {
+        _rememberedMultimodal = spec.tag == 'multimodal';
+      }
       if (spec.contextWindow != null) {
         contextMode = ContextWindowMode.specified;
         contextCtrl.text = '${spec.contextWindow}';
@@ -299,16 +291,48 @@ extension _IdentitySection on _ModelEditDialogState {
     final matched = _matchedPreset;
     final display = applied ?? matched;
 
-    final String headline;
-    if (applied != null) {
-      headline = l10n.modelPresetApplied(applied.displayName);
-    } else if (matched != null) {
-      headline = l10n.modelPresetMatched(matched.displayName);
-    } else {
-      headline = l10n.modelPresetNone;
+    final bool calmApplied = applied != null && (matched == null || applied.id == matched.id);
+    if (calmApplied) {
+      return ModelEditCard(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpace.s10, vertical: AppSpace.s6),
+        child: Row(
+          children: [
+            Icon(Icons.check_circle_outline, size: AppSize.iconSm, color: scheme.primary),
+            const SizedBox(width: AppSpace.s6),
+            Expanded(
+              child: Text(
+                l10n.modelPresetApplied(applied.displayName),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: scheme.onSurface,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            const SizedBox(width: AppSpace.s6),
+            AppButton(
+              label: l10n.modelPresetChoose,
+              variant: AppButtonVariant.text,
+              size: AppButtonSize.compact,
+              onPressed: () => _pickModelPreset(context),
+            ),
+          ],
+        ),
+      );
     }
 
-    final brief = display == null ? '' : formatBuiltinSpecBrief(l10n, display);
+    final String headline = applied != null
+        ? l10n.modelPresetApplied(applied.displayName)
+        : matched != null
+        ? l10n.modelPresetMatched(matched.displayName)
+        : l10n.modelPresetNone;
+
+    // Keep pricing out of the preset-apply bar so users don't expect "Apply"
+    // to overwrite their fee group selection; billing reference lives below.
+    final brief = display == null
+        ? ''
+        : formatBuiltinSpecBrief(l10n, display, includePricing: false);
 
     return ModelEditCard(
       padding: const EdgeInsets.symmetric(horizontal: AppSpace.s10, vertical: AppSpace.s6),
@@ -370,7 +394,17 @@ extension _IdentitySection on _ModelEditDialogState {
     );
   }
 
-  // --- Capabilities and preview --------------------------------------------
+  // --- Kind selection -------------------------------------------------------
+
+  void _selectPrimaryKind(String primary) {
+    final targetTag = primary == 'chat' ? (_rememberedMultimodal ? 'multimodal' : 'chat') : primary;
+    _selectKind(targetTag);
+  }
+
+  void _setMultimodal(bool enabled) {
+    _rememberedMultimodal = enabled;
+    _selectKind(enabled ? 'multimodal' : 'chat');
+  }
 
   /// Moves the kind.
   ///
@@ -391,6 +425,9 @@ extension _IdentitySection on _ModelEditDialogState {
         wireProtocol = _pinBySurface[to];
       }
       tag = value;
+      if (value == 'chat' || value == 'multimodal') {
+        _rememberedMultimodal = value == 'multimodal';
+      }
     });
   }
 }

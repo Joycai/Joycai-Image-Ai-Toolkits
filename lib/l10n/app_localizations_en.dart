@@ -2124,9 +2124,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get capabilities => 'Capabilities';
 
   @override
-  String get cardPreview => 'Card preview';
-
-  @override
   String get capabilityStreamingShort => 'Streaming';
 
   @override
@@ -2260,9 +2257,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get agentBehavior => 'Agent Behavior';
-
-  @override
   String get forceViewAllImages => 'View all reference images';
 
   @override
@@ -2299,9 +2293,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reasoningEffortOn => 'On';
-
-  @override
-  String get reasoningEffortUnavailable => 'Unavailable';
 
   @override
   String get enableThinking => 'Extended thinking';
@@ -2706,14 +2697,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get protocolBackToAuto => 'Back to Auto';
 
   @override
-  String get contextImageUnsetDesc =>
-      'Image models don\'t use the context budget; leave this unset.';
-
-  @override
-  String get contextVideoUnsetDesc =>
-      'Video models don\'t use the context budget; leave this unset.';
-
-  @override
   String get protocolVideoTask => 'Async video task';
 
   @override
@@ -2803,10 +2786,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get protocolUnavailable => 'Unavailable';
-
-  @override
-  String get reasoningEffortUnsupported =>
-      'This model takes no reasoning parameters, so the slider stays at Off. It lights up when you switch to a model that does.';
 
   @override
   String get modelIdRequiredTitle => 'Model ID can\'t be empty';
@@ -3526,6 +3505,45 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get feeGroupPresetPickerTitle => 'Official API pricing presets';
+
+  @override
+  String get modelDefaultPricingShort => 'Default pricing';
+
+  @override
+  String modelPresetReferencePrice(String price) {
+    return 'Official reference: $price';
+  }
+
+  @override
+  String get tokenBudget => 'Token Budget';
+
+  @override
+  String get behaviorAndExtensions => 'Behavior & Extensions';
+
+  @override
+  String get supportsMultimodalInput => 'Image / video input (Multimodal)';
+
+  @override
+  String get supportsMultimodalInputDesc =>
+      'Marks this chat model as multimodal for Prompt Assistant vision and AI Rename.';
+
+  @override
+  String get reasoningEffortNotSupportedShort => 'Not supported by this model or protocol';
+
+  @override
+  String get transportCompatibility => 'Transport Compatibility';
+
+  @override
+  String get transportStreamIgnoredShort => 'Ignored';
+
+  @override
+  String transportSummary(String stream, String standard) {
+    return 'Stream $stream · Standard $standard';
+  }
+
+  @override
+  String get mediaModelChatControlsHiddenNote =>
+      'Image and video models do not use conversation context windows, agent vision, or text reasoning.';
 
   @override
   String get prompts => 'Prompts';

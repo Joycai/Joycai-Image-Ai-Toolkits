@@ -368,3 +368,31 @@ neutrals, paired accents, token scales, and shared `widgets/ui/` primitives:
 - **Reference**: Maintained design tokens, `widgets/ui/` primitives, and inspected
   Flutter renders across 390/834/1024/1440 widths in light/dark modes (no
   external design service originals).
+
+### 2026-11-27 Model edit dialog UX redesign
+
+`ModelEditDialog` (`lib/widgets/models/model_edit_dialog.dart` and
+`lib/widgets/models/model_edit/*`) streamlines editing and adding models while
+preserving warm-stone neutrals, paired accents, `ModelEditMetrics`, and
+`widgets/ui/` primitives:
+
+- **3-way primary kind control + multimodal capability toggle**: Promoted the top
+  `AppSegmentedControl` (`Chat` / `Image` / `Video`, `AppSegmentStyle.raised`)
+  and moved `multimodal` from a fourth top-level kind into the `Behavior &
+  Extensions` card (`supportsMultimodalInput`), preserving `llm_models.tag`
+  (`'chat'` vs `'multimodal'`) without schema changes and nesting
+  `forceViewAllImages` underneath when multimodal input is active.
+- **Live header summary replacing Card Preview**: Removed `ModelEditCardPreview`
+  and added live title + `ModelKindBadge` + mono summary (`id · channel ·
+  resolved protocol/route · fee group`) in `_editHeading`, narrowing the desktop
+  dialog from `920` to `840` with a hairline two-column divider.
+- **Kind-driven right column & unified cards**: Image/video models hide Chat
+  context budget, agent image-viewing, and text reasoning controls; Chat models
+  unify `ModelProtocolSection` / routes, `Token Budget` (Context Window +
+  route-scoped Max Output), collapsible `Reasoning Effort` (single-line
+  unsupported row when unavailable), `Behavior & Extensions`, and collapsible
+  `Transport Compatibility` (`supportsStream` / `supportsStandard`).
+- **Layering & verification**: Moved single-screen `ModelCard` and
+  `ModelsControls` into `lib/screens/models/widgets/` (`source_layout_test`),
+  added `test/widgets/models/model_edit_dialog_ux_test.dart`, and visually
+  reviewed desktop/tablet/mobile light & dark renders in `build/ui-screenshots/`.

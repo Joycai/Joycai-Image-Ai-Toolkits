@@ -1,39 +1,122 @@
 part of '../model_edit_dialog.dart';
 
-/// Capabilities, the card preview, agent behaviour and the reasoning ladder.
+/// Behavior toggles, collapsible transport options and the reasoning ladder.
 extension _CapabilitySections on _ModelEditDialogState {
-  Widget _capabilitiesSection(BuildContext context) {
+  /// Low-frequency streaming and standard request compatibility toggles,
+  /// collapsed by default to keep the form focused.
+  Widget _transportSection(BuildContext context) {
     final l10n = widget.l10n;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final ignoredBy = _streamIgnoredBy;
     final asyncPinned = _asyncImagePinned;
+    final streamState = ignoredBy != null
+        ? l10n.transportStreamIgnoredShort
+        : (supportsStream ? l10n.reasoningEffortOn : l10n.reasoningEffortOff);
+    final standardState = supportsStandard ? l10n.reasoningEffortOn : l10n.reasoningEffortOff;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _caption(l10n.capabilities, scope: _scope()),
-        const SizedBox(height: AppSpace.s6),
         ModelEditCard(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpace.s10, vertical: AppSpace.s4),
+          padding: EdgeInsets.zero,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // With a non-streaming route pinned the toggle is inert: the
-              // value is preserved, not rewritten — switch back to auto and it
-              // comes back untouched. The notice below says which route.
-              ModelEditToggleRow(
-                title: l10n.supportsStreaming,
-                tooltip: l10n.supportsStreamingDesc,
-                value: supportsStream,
-                dimmed: ignoredBy != null,
-                onChanged: ignoredBy != null ? null : (v) => _rebuild(() => supportsStream = v),
+              Semantics(
+                button: true,
+                expanded: _transportExpanded,
+                label: l10n.transportCompatibility,
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(AppRadius.control),
+                    onTap: () => _rebuild(() => _transportExpanded = !_transportExpanded),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpace.s10,
+                        vertical: AppSpace.s10,
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              l10n.transportCompatibility,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: AppSpace.s6),
+                          Flexible(
+                            child: Text(
+                              l10n.transportSummary(streamState, standardState),
+                              textAlign: TextAlign.end,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.labelSmall?.mono.copyWith(
+                                color: scheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: AppSpace.s6),
+                          AppDisclosureChevron(
+                            open: _transportExpanded,
+                            size: AppSize.iconMd,
+                            color: scheme.onSurfaceVariant,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               ),
-              const Divider(height: 1),
-              ModelEditToggleRow(
-                title: l10n.supportsStandardRequest,
-                tooltip: l10n.supportsStandardRequestDesc,
-                value: supportsStandard,
-                onChanged: (v) => _rebuild(() => supportsStandard = v),
+              AnimatedSize(
+                duration: AppMotion.durationOf(context, AppMotion.reveal),
+                curve: AppMotion.enter,
+                alignment: Alignment.topCenter,
+                child: !_transportExpanded
+                    ? const SizedBox(width: double.infinity)
+                    : Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Divider(height: 1),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpace.s10,
+                              vertical: AppSpace.s4,
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // With a non-streaming route pinned the toggle
+                                // is inert: the value is preserved, not
+                                // rewritten — switch back to auto and it comes
+                                // back untouched.
+                                ModelEditToggleRow(
+                                  title: l10n.supportsStreaming,
+                                  tooltip: l10n.supportsStreamingDesc,
+                                  value: supportsStream,
+                                  dimmed: ignoredBy != null,
+                                  onChanged: ignoredBy != null
+                                      ? null
+                                      : (v) => _rebuild(() => supportsStream = v),
+                                ),
+                                const Divider(height: 1),
+                                ModelEditToggleRow(
+                                  title: l10n.supportsStandardRequest,
+                                  tooltip: l10n.supportsStandardRequestDesc,
+                                  value: supportsStandard,
+                                  onChanged: (v) => _rebuild(() => supportsStandard = v),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
               ),
             ],
           ),
@@ -49,7 +132,7 @@ extension _CapabilitySections on _ModelEditDialogState {
               // `1d`: a statement of fact, not an error.
               if (ignoredBy != null)
                 Padding(
-                  padding: const EdgeInsets.only(top: 8),
+                  padding: const EdgeInsets.only(top: AppSpace.s6),
                   child: ModelEditNotice(
                     tone: ModelEditTone.info,
                     text: l10n.protocolStreamIgnored(wireProtocolLabel(l10n, ignoredBy)),
@@ -57,7 +140,7 @@ extension _CapabilitySections on _ModelEditDialogState {
                 ),
               if (asyncPinned)
                 Padding(
-                  padding: const EdgeInsets.only(top: 8),
+                  padding: const EdgeInsets.only(top: AppSpace.s6),
                   child: ModelEditNotice(
                     tone: ModelEditTone.info,
                     text: l10n.protocolAsyncQueueNote,
@@ -71,27 +154,7 @@ extension _CapabilitySections on _ModelEditDialogState {
     );
   }
 
-  Widget _previewSection(BuildContext context) {
-    final l10n = widget.l10n;
-    final feeGroup = widget.appState.allPricingGroups.cast<PricingGroup?>().firstWhere(
-      (g) => g?.id == feeGroupId,
-      orElse: () => null,
-    );
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _caption(l10n.cardPreview),
-        const SizedBox(height: AppSpace.s6),
-        ModelEditCardPreview(model: _draftModel, channel: _selectedChannel, feeGroup: feeGroup),
-      ],
-    );
-  }
-
-  /// The model as it would be saved right now, for the card preview. Carries
-  /// the raw stored selection so the card can mark a stale one itself, and
-  /// no context window while Specify holds nothing savable.
+  /// The model as it would be saved right now, for route/protocol queries.
   LLMModel get _draftModel {
     final id = idCtrl.text.trim();
     final name = nameCtrl.text.trim();
@@ -104,7 +167,9 @@ extension _CapabilitySections on _ModelEditDialogState {
       supportsStandard: supportsStandard,
       channelId: channelId,
       feeGroupId: feeGroupId,
-      contextWindow: _contextValid ? ContextBudget.store(contextMode, _contextTokens ?? 0) : null,
+      contextWindow: _isChatGroup
+          ? (_contextValid ? ContextBudget.store(contextMode, _contextTokens ?? 0) : null)
+          : widget.model?.contextWindow,
       maxOutputTokens: _outputCapValid ? _storedOutputCap : null,
       forceViewAllImages: forceViewAllImages,
       enableThinking: reasoningEffort != null && reasoningEffort != 'off',
@@ -116,23 +181,99 @@ extension _CapabilitySections on _ModelEditDialogState {
     );
   }
 
-  // --- Behaviour ------------------------------------------------------------
+  // --- Behavior & Extensions ------------------------------------------------
 
-  Widget _agentSection(BuildContext context) {
+  Widget _behaviorSection(BuildContext context) {
     final l10n = widget.l10n;
+    final scheme = Theme.of(context).colorScheme;
+    final showThinking = _isAnthropicChannel;
+    final search = _webSearch;
+    final showSearch = search != ServerWebSearch.unsupported || (_routeMode && _anyRouteSearches);
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _caption(l10n.agentBehavior, scope: _scope()),
+        _caption(l10n.behaviorAndExtensions),
         const SizedBox(height: AppSpace.s6),
         ModelEditCard(
-          child: ModelEditToggleRow(
-            title: l10n.forceViewAllImages,
-            description: l10n.forceViewAllImagesDesc,
-            emphasized: true,
-            value: forceViewAllImages,
-            onChanged: (v) => _rebuild(() => forceViewAllImages = v),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpace.s10, vertical: AppSpace.s6),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ModelEditToggleRow(
+                title: l10n.supportsMultimodalInput,
+                description: l10n.supportsMultimodalInputDesc,
+                value: _isMultimodal,
+                onChanged: _setMultimodal,
+              ),
+              AnimatedSize(
+                duration: AppMotion.durationOf(context, AppMotion.reveal),
+                curve: AppMotion.enter,
+                alignment: Alignment.topCenter,
+                child: !_isMultimodal
+                    ? const SizedBox(width: double.infinity)
+                    : Padding(
+                        padding: const EdgeInsetsDirectional.only(
+                          start: AppSpace.s4,
+                          top: AppSpace.s10,
+                        ),
+                        child: Container(
+                          padding: const EdgeInsetsDirectional.only(start: 10),
+                          decoration: BoxDecoration(
+                            border: BorderDirectional(
+                              start: BorderSide(color: scheme.accentRule, width: 2),
+                            ),
+                          ),
+                          child: ModelEditToggleRow(
+                            title: l10n.forceViewAllImages,
+                            description: l10n.forceViewAllImagesDesc,
+                            value: forceViewAllImages,
+                            onChanged: (v) => _rebuild(() => forceViewAllImages = v),
+                          ),
+                        ),
+                      ),
+              ),
+              if (showThinking) ...[
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: AppSpace.s6),
+                  child: Divider(height: 1),
+                ),
+                ModelEditToggleRow(
+                  title: l10n.enableThinking,
+                  description: l10n.enableThinkingDesc,
+                  value: reasoningEffort != null && reasoningEffort != 'off',
+                  dimmed: !_reasoningSupported,
+                  onChanged: !_reasoningSupported
+                      ? null
+                      : (v) => _rebuild(
+                          () => reasoningEffort = v
+                              ? ((reasoningEffort != null && reasoningEffort != 'off')
+                                    ? reasoningEffort
+                                    : 'medium')
+                              : null,
+                        ),
+                ),
+              ],
+              if (showSearch) ...[
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: AppSpace.s6),
+                  child: Divider(height: 1),
+                ),
+                ModelEditToggleRow(
+                  title: l10n.enableWebSearch,
+                  // A traceless switch says so where it is turned on: the reply
+                  // carries no sources, and nothing shows whether it searched.
+                  description: search == ServerWebSearch.traceless
+                      ? '${l10n.enableWebSearchDesc} ${l10n.enableWebSearchTracelessHint}'
+                      : l10n.enableWebSearchDesc,
+                  value: enableWebSearch,
+                  onChanged: (v) => _rebuild(() => enableWebSearch = v),
+                ),
+                if (_routeMode) ...[const SizedBox(height: AppSpace.s6), _webSearchMatrix(context)],
+              ],
+            ],
           ),
         ),
       ],
@@ -166,19 +307,45 @@ extension _CapabilitySections on _ModelEditDialogState {
     return on >= 0 ? on : 0;
   }
 
-  /// Always present (`1a`). The stops are the model's: only the rungs its
-  /// wire tells apart. Where no rung reaches the request the slider greys out
-  /// with its thumb held at Off, and lights up again when the channel or the
-  /// kind changes to one that takes reasoning.
+  /// Reasoning effort slider when supported; collapses to a quiet 1-line row
+  /// when the current model/protocol does not accept reasoning parameters.
   Widget _reasoningSection(BuildContext context) {
     final l10n = widget.l10n;
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final ladder = _reasoningLadder;
     final supported = ladder.isNotEmpty;
-    final rungs = supported ? ladder : _allRungs;
-    final onOff = supported && !ladder.contains(ReasoningEffort.low);
-    final index = supported ? _rungIndex(ladder) : _allRungs.indexOf(ReasoningEffort.off);
-    final current = _rungLabel(rungs[index], short: false, onOff: onOff);
+
+    if (!supported) {
+      return ModelEditCard(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpace.s10, vertical: 9),
+        child: Row(
+          children: [
+            Text(
+              l10n.reasoningEffort,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w500,
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(width: AppSpace.s10),
+            Expanded(
+              child: Text(
+                l10n.reasoningEffortNotSupportedShort,
+                textAlign: TextAlign.end,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.labelSmall?.copyWith(color: scheme.outline),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final onOff = !ladder.contains(ReasoningEffort.low);
+    final index = _rungIndex(ladder);
+    final current = _rungLabel(ladder[index], short: false, onOff: onOff);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -186,48 +353,41 @@ extension _CapabilitySections on _ModelEditDialogState {
       children: [
         Row(
           children: [
-            Expanded(
-              child: _caption(
-                l10n.reasoningEffort,
-                tone: supported ? AppSectionTone.accent : AppSectionTone.neutral,
-                scope: _scope(route: true),
-              ),
-            ),
+            Expanded(child: _caption(l10n.reasoningEffort, scope: _scope(route: true))),
             const SizedBox(width: AppSpace.s10),
             Text(
-              supported ? current : l10n.reasoningEffortUnavailable,
-              style: theme.textTheme.labelSmall?.mono.copyWith(
-                color: supported ? theme.colorScheme.onSurface : theme.colorScheme.outline,
-              ),
+              current,
+              style: theme.textTheme.labelSmall?.mono.copyWith(color: scheme.onSurface),
             ),
           ],
         ),
         const SizedBox(height: AppSpace.s6),
-        ModelEditTrackSlider(
-          stopCount: rungs.length,
-          value: index.toDouble(),
-          snap: true,
-          highlight: supported ? index : null,
-          labels: [for (final rung in rungs) _rungLabel(rung, short: true, onOff: onOff)],
-          semanticLabel: l10n.reasoningEffort,
-          semanticValueOf: (v) => supported
-              ? _rungLabel(rungs[v.round()], short: false, onOff: onOff)
-              : l10n.reasoningEffortUnavailable,
-          onChanged: !supported
-              ? null
-              : (v) => _rebuild(() => reasoningEffort = ladder[v.round()]?.name),
+        ModelEditCard(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ModelEditTrackSlider(
+                stopCount: ladder.length,
+                value: index.toDouble(),
+                snap: true,
+                highlight: index,
+                labels: [for (final rung in ladder) _rungLabel(rung, short: true, onOff: onOff)],
+                semanticLabel: l10n.reasoningEffort,
+                semanticValueOf: (v) => _rungLabel(ladder[v.round()], short: false, onOff: onOff),
+                onChanged: (v) => _rebuild(() => reasoningEffort = ladder[v.round()]?.name),
+              ),
+              const SizedBox(height: AppSpace.s6),
+              ModelEditHelperText(l10n.reasoningEffortDesc),
+              // The Responses ladder is not trimmed per model, so the one
+              // known guaranteed 400 is said here instead (reasoning 03 §7.1).
+              if (_onResponsesFace) ...[
+                const SizedBox(height: AppSpace.s6),
+                ModelEditHelperText(l10n.reasoningEffortResponsesHint),
+              ],
+            ],
+          ),
         ),
-        const SizedBox(height: AppSpace.s6),
-        ModelEditHelperText(
-          supported ? l10n.reasoningEffortDesc : l10n.reasoningEffortUnsupported,
-          muted: !supported,
-        ),
-        // The Responses ladder is not trimmed per model, so the one known
-        // guaranteed 400 is said here instead (reasoning 03 §7.1).
-        if (supported && _onResponsesFace) ...[
-          const SizedBox(height: AppSpace.s6),
-          ModelEditHelperText(l10n.reasoningEffortResponsesHint),
-        ],
       ],
     );
   }
@@ -266,13 +426,3 @@ extension _CapabilitySections on _ModelEditDialogState {
     );
   }
 }
-
-/// Every rung, in the order a greyed slider shows them.
-const List<ReasoningEffort?> _allRungs = [
-  null,
-  ReasoningEffort.off,
-  ReasoningEffort.low,
-  ReasoningEffort.medium,
-  ReasoningEffort.high,
-  ReasoningEffort.max,
-];
