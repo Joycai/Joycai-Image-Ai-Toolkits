@@ -137,7 +137,7 @@ class _SidebarRow extends StatelessWidget {
         duration: AppMotion.durationOf(context, AppMotion.hover),
         curve: AppMotion.quick,
         decoration: BoxDecoration(
-          color: selected ? scheme.accentTint : Colors.transparent,
+          color: selected ? scheme.accentTint : scheme.accentTint.withValues(alpha: 0),
           borderRadius: radius,
         ),
         child: Material(

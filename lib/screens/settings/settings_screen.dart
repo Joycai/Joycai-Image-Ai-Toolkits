@@ -277,7 +277,7 @@ class _Card extends StatelessWidget {
 /// A category in the nav card — `1a`: 52 tall with a 32px plate and the note
 /// under the name; `1c` (tablet): 48 with a 28px plate and the name alone.
 /// Selected: the accent wash, a 1px accent edge, the name in the deep accent.
-class _NavRow extends StatefulWidget {
+class _NavRow extends StatelessWidget {
   const _NavRow({
     required this.category,
     required this.selected,
@@ -291,84 +291,77 @@ class _NavRow extends StatefulWidget {
   final VoidCallback onTap;
 
   @override
-  State<_NavRow> createState() => _NavRowState();
-}
-
-class _NavRowState extends State<_NavRow> {
-  bool _hovered = false;
-
-  @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final bool selected = widget.selected;
+    final radius = BorderRadius.circular(AppRadius.control);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 2),
       child: Semantics(
         selected: selected,
         button: true,
-        child: InkWell(
-          onTap: widget.onTap,
-          onHover: (v) => setState(() => _hovered = v),
-          // The hover ground is the container below, faded in over
-          // `AppMotion.hover`. Without this the InkWell's own highlight —
-          // Material's 8% onSurface, and instant — lands first on the card
-          // underneath, and the row flashes a darker grey for the 100ms it
-          // takes the real ground to cover it.
-          hoverColor: Colors.transparent,
-          borderRadius: BorderRadius.circular(AppRadius.control),
-          child: AnimatedContainer(
-            duration: AppMotion.durationOf(context, AppMotion.hover),
-            curve: AppMotion.quick,
-            height: widget.compact ? 48 : 52,
-            padding: const EdgeInsets.symmetric(horizontal: AppSpace.s10),
-            decoration: BoxDecoration(
-              color: selected
-                  ? colorScheme.accentTint
-                  : _hovered
-                  ? colorScheme.surfaceContainerLow
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(AppRadius.control),
-              border: Border.all(color: selected ? colorScheme.primary : Colors.transparent),
+        child: AnimatedContainer(
+          duration: AppMotion.durationOf(context, AppMotion.hover),
+          curve: AppMotion.quick,
+          height: compact ? 48 : 52,
+          decoration: BoxDecoration(
+            color: selected ? colorScheme.accentTint : colorScheme.accentTint.withValues(alpha: 0),
+            borderRadius: radius,
+            border: Border.all(
+              color: selected ? colorScheme.primary : colorScheme.primary.withValues(alpha: 0),
             ),
-            child: Row(
-              children: [
-                SettingsIdentityPlate(
-                  category: widget.category,
-                  size: widget.compact ? 28 : 32,
-                  radius: AppRadius.sm,
-                ),
-                const SizedBox(width: AppSpace.s10),
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _categoryLabel(widget.category, l10n),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: textTheme.bodyMedium?.copyWith(
-                          fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                          color: selected ? colorScheme.onAccentTint : colorScheme.onSurface,
-                        ),
-                      ),
-                      if (!widget.compact)
-                        Text(
-                          _categoryNote(widget.category, l10n),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: textTheme.labelSmall?.copyWith(
-                            fontWeight: FontWeight.w400,
-                            color: colorScheme.onSurfaceVariant,
+          ),
+          child: Material(
+            type: MaterialType.transparency,
+            child: InkWell(
+              onTap: onTap,
+              borderRadius: radius,
+              hoverDuration: AppMotion.durationOf(context, AppMotion.hover),
+              hoverColor: selected
+                  ? colorScheme.onSurface.withValues(alpha: 0)
+                  : colorScheme.onSurface.withValues(alpha: 0.04),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpace.s10),
+                child: Row(
+                  children: [
+                    SettingsIdentityPlate(
+                      category: category,
+                      size: compact ? 28 : 32,
+                      radius: AppRadius.sm,
+                    ),
+                    const SizedBox(width: AppSpace.s10),
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _categoryLabel(category, l10n),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: textTheme.bodyMedium?.copyWith(
+                              fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                              color: selected ? colorScheme.onAccentTint : colorScheme.onSurface,
+                            ),
                           ),
-                        ),
-                    ],
-                  ),
+                          if (!compact)
+                            Text(
+                              _categoryNote(category, l10n),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: textTheme.labelSmall?.copyWith(
+                                fontWeight: FontWeight.w400,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),

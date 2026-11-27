@@ -269,5 +269,43 @@
   "macAuthorizedFoldersLoadFailed": "Could not load stored folder permissions.",
   "macAuthorizedFoldersRevokeFailed": "Could not revoke folder permission.",
   "macAuthorizedFolderRevoked": "Folder permission revoked",
-  "macAuthorizedFoldersRevokedAll": "All folder permissions revoked"
+  "macAuthorizedFoldersRevokedAll": "All folder permissions revoked",
+  "proxyStatusEnabled": "Enabled",
+  "proxyStatusDisabled": "Disabled",
+  "proxyOptionalTag": "Optional",
+  "proxyTestConnection": "Test connection",
+  "proxyTesting": "Testing…",
+  "proxyTestSuccess": "Proxy reachable · {ms} ms",
+  "@proxyTestSuccess": {
+    "placeholders": {
+      "ms": {
+        "type": "int"
+      }
+    }
+  },
+  "proxyTestInvalidAddress": "Enter a valid host:port address.",
+  "proxyTestTimedOut": "Connection timed out.",
+  "proxyTestRefused": "Connection refused by proxy port.",
+  "proxyTestFailed": "Unable to reach proxy server.",
+  "mcpUnsavedChanges": "Unsaved changes",
+  "mcpCopyEndpoint": "Copy endpoint",
+  "mcpAccessToken": "Access token",
+  "mcpRevealToken": "Show token",
+  "mcpHideToken": "Hide token",
+  "mcpCopyToken": "Copy token",
+  "mcpTokenCopied": "Access token copied",
+  "mcpEndpointCopied": "Endpoint copied",
+  "mcpFoldersViewList": "List",
+  "mcpFoldersViewText": "Plain text",
+  "mcpAddFolder": "Add folder",
+  "mcpBrowseFolder": "Browse folder",
+  "mcpFolderPathHint": "/path/to/references",
+  "mcpIncludeSubfolders": "Include subfolders (/**)",
+  "mcpFolderRecursive": "Subfolders",
+  "mcpFolderDirectOnly": "Direct only",
+  "mcpFoldersEmpty": "No folders allowed yet. Leave empty to block local file access.",
+  "mcpRemoveFolder": "Remove folder",
+  "mcpRotateTokenConfirmTitle": "Rotate access token?",
+  "mcpRotateTokenConfirmBody": "Existing MCP clients using the current token will be disconnected until updated with the new configuration.",
+  "mcpTokenRotated": "Access token rotated"
 }

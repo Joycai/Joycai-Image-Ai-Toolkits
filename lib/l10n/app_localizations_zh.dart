@@ -4197,6 +4197,101 @@ class AppLocalizationsZh extends AppLocalizations {
   String get macAuthorizedFoldersRevokedAll => '已撤销全部目录权限';
 
   @override
+  String get proxyStatusEnabled => '已启用';
+
+  @override
+  String get proxyStatusDisabled => '已关闭';
+
+  @override
+  String get proxyOptionalTag => '可选';
+
+  @override
+  String get proxyTestConnection => '测试连通性';
+
+  @override
+  String get proxyTesting => '测试中…';
+
+  @override
+  String proxyTestSuccess(int ms) {
+    return '代理连通正常 · $ms ms';
+  }
+
+  @override
+  String get proxyTestInvalidAddress => '请输入有效的 host:port 代理地址。';
+
+  @override
+  String get proxyTestTimedOut => '连接超时，请检查代理服务是否运行。';
+
+  @override
+  String get proxyTestRefused => '代理端口拒绝连接。';
+
+  @override
+  String get proxyTestFailed => '无法连接到代理服务器。';
+
+  @override
+  String get mcpUnsavedChanges => '有未应用修改';
+
+  @override
+  String get mcpCopyEndpoint => '复制端点';
+
+  @override
+  String get mcpAccessToken => '访问令牌';
+
+  @override
+  String get mcpRevealToken => '显示令牌';
+
+  @override
+  String get mcpHideToken => '隐藏令牌';
+
+  @override
+  String get mcpCopyToken => '复制令牌';
+
+  @override
+  String get mcpTokenCopied => '访问令牌已复制';
+
+  @override
+  String get mcpEndpointCopied => '端点地址已复制';
+
+  @override
+  String get mcpFoldersViewList => '列表';
+
+  @override
+  String get mcpFoldersViewText => '纯文本';
+
+  @override
+  String get mcpAddFolder => '添加目录';
+
+  @override
+  String get mcpBrowseFolder => '选择文件夹';
+
+  @override
+  String get mcpFolderPathHint => '/path/to/references';
+
+  @override
+  String get mcpIncludeSubfolders => '包含子目录 (/**)';
+
+  @override
+  String get mcpFolderRecursive => '含子目录';
+
+  @override
+  String get mcpFolderDirectOnly => '仅当前目录';
+
+  @override
+  String get mcpFoldersEmpty => '暂无允许的文件夹。留空时，外部 Agent 无法读取本地参考图。';
+
+  @override
+  String get mcpRemoveFolder => '移除目录';
+
+  @override
+  String get mcpRotateTokenConfirmTitle => '更换访问令牌？';
+
+  @override
+  String get mcpRotateTokenConfirmBody => '当前正在使用旧令牌的 MCP 客户端将立即断开连接，需要更新为新的连接配置。';
+
+  @override
+  String get mcpTokenRotated => '访问令牌已更换';
+
+  @override
   String get shortcutGridMove => '移动并选中项目';
 
   @override
@@ -10998,6 +11093,101 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get macAuthorizedFoldersRevokedAll => '已撤銷全部資料夾權限';
+
+  @override
+  String get proxyStatusEnabled => '已啟用';
+
+  @override
+  String get proxyStatusDisabled => '已關閉';
+
+  @override
+  String get proxyOptionalTag => '選填';
+
+  @override
+  String get proxyTestConnection => '測試連線';
+
+  @override
+  String get proxyTesting => '測試中…';
+
+  @override
+  String proxyTestSuccess(int ms) {
+    return '代理連線正常 · $ms ms';
+  }
+
+  @override
+  String get proxyTestInvalidAddress => '請輸入有效的 host:port 代理位址。';
+
+  @override
+  String get proxyTestTimedOut => '連線逾時，請檢查代理服務是否執行中。';
+
+  @override
+  String get proxyTestRefused => '代理連接埠拒絕連線。';
+
+  @override
+  String get proxyTestFailed => '無法連線至代理伺服器。';
+
+  @override
+  String get mcpUnsavedChanges => '有未套用的變更';
+
+  @override
+  String get mcpCopyEndpoint => '複製端點';
+
+  @override
+  String get mcpAccessToken => '存取權杖';
+
+  @override
+  String get mcpRevealToken => '顯示權杖';
+
+  @override
+  String get mcpHideToken => '隱藏權杖';
+
+  @override
+  String get mcpCopyToken => '複製權杖';
+
+  @override
+  String get mcpTokenCopied => '存取權杖已複製';
+
+  @override
+  String get mcpEndpointCopied => '端點位址已複製';
+
+  @override
+  String get mcpFoldersViewList => '清單';
+
+  @override
+  String get mcpFoldersViewText => '純文字';
+
+  @override
+  String get mcpAddFolder => '新增資料夾';
+
+  @override
+  String get mcpBrowseFolder => '選擇資料夾';
+
+  @override
+  String get mcpFolderPathHint => '/path/to/references';
+
+  @override
+  String get mcpIncludeSubfolders => '包含子資料夾 (/**)';
+
+  @override
+  String get mcpFolderRecursive => '含子資料夾';
+
+  @override
+  String get mcpFolderDirectOnly => '僅目前資料夾';
+
+  @override
+  String get mcpFoldersEmpty => '尚無允許的資料夾。留空時，外部 Agent 無法讀取本機參考圖。';
+
+  @override
+  String get mcpRemoveFolder => '移除資料夾';
+
+  @override
+  String get mcpRotateTokenConfirmTitle => '更換存取權杖？';
+
+  @override
+  String get mcpRotateTokenConfirmBody => '目前使用舊權杖的 MCP 用戶端將立即中斷連線，需要更新為新的連線設定。';
+
+  @override
+  String get mcpTokenRotated => '存取權杖已更換';
 
   @override
   String get shortcutGridMove => '移動並選取項目';

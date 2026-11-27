@@ -213,7 +213,9 @@ class _AppTextFieldState extends State<AppTextField> {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(AppRadius.control + _ringWidth),
                   border: Border.all(
-                    color: _focused ? colorScheme.accentRing : Colors.transparent,
+                    color: _focused
+                        ? colorScheme.accentRing
+                        : colorScheme.accentRing.withValues(alpha: 0),
                     width: _ringWidth,
                   ),
                 ),

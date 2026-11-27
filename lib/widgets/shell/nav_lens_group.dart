@@ -174,7 +174,9 @@ class _NavLensState extends State<_NavLens> {
       height: widget.density.itemHeight,
       decoration: BoxDecoration(
         // The current cell's ground is the lens sliding behind the row.
-        color: _hovering && !widget.selected ? ink2.withValues(alpha: 0.08) : Colors.transparent,
+        color: _hovering && !widget.selected
+            ? ink2.withValues(alpha: 0.08)
+            : ink2.withValues(alpha: 0),
         borderRadius: BorderRadius.circular(widget.density.radius),
       ),
       child: Center(

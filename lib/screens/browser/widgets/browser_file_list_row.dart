@@ -286,6 +286,7 @@ class _SelectionCircle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final Color fill = active ? scheme.primary : scheme.outline;
     return AnimatedContainer(
       duration: AppMotion.durationOf(context, AppMotion.hover),
       curve: AppMotion.quick,
@@ -293,11 +294,8 @@ class _SelectionCircle extends StatelessWidget {
       height: 20,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: selected ? (active ? scheme.primary : scheme.outline) : Colors.transparent,
-        border: Border.all(
-          color: selected ? (active ? scheme.primary : scheme.outline) : scheme.outlineVariant,
-          width: 1.5,
-        ),
+        color: selected ? fill : fill.withValues(alpha: 0),
+        border: Border.all(color: selected ? fill : scheme.outlineVariant, width: 1.5),
       ),
       child: selected
           ? Icon(

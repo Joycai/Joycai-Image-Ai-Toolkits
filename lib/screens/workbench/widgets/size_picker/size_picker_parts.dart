@@ -200,7 +200,7 @@ class SizeNumberInput extends StatelessWidget {
       ),
       curve: AppMotion.quick,
       decoration: BoxDecoration(
-        color: flash ? scheme.accentTint : Colors.transparent,
+        color: flash ? scheme.accentTint : scheme.accentTint.withValues(alpha: 0),
         borderRadius: BorderRadius.circular(AppRadius.control),
       ),
       child: TextField(
@@ -218,7 +218,9 @@ class SizeNumberInput extends StatelessWidget {
         decoration: InputDecoration(
           isDense: true,
           filled: true,
-          fillColor: flash ? Colors.transparent : scheme.surfaceContainerLow,
+          fillColor: flash
+              ? scheme.surfaceContainerLow.withValues(alpha: 0)
+              : scheme.surfaceContainerLow,
           constraints: BoxConstraints.tightFor(height: height),
           contentPadding: EdgeInsets.symmetric(horizontal: AppSpace.s10, vertical: vertical),
           prefixText: prefix == null ? null : '$prefix  ',

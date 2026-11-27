@@ -4232,6 +4232,101 @@ class AppLocalizationsJa extends AppLocalizations {
   String get macAuthorizedFoldersRevokedAll => 'すべてのフォルダ許可を取り消しました';
 
   @override
+  String get proxyStatusEnabled => '有効';
+
+  @override
+  String get proxyStatusDisabled => 'オフ';
+
+  @override
+  String get proxyOptionalTag => '任意';
+
+  @override
+  String get proxyTestConnection => '接続テスト';
+
+  @override
+  String get proxyTesting => 'テスト中…';
+
+  @override
+  String proxyTestSuccess(int ms) {
+    return 'プロキシ接続正常 · $ms ms';
+  }
+
+  @override
+  String get proxyTestInvalidAddress => '有効な host:port アドレスを入力してください。';
+
+  @override
+  String get proxyTestTimedOut => '接続がタイムアウトしました。';
+
+  @override
+  String get proxyTestRefused => 'プロキシポートで接続が拒否されました。';
+
+  @override
+  String get proxyTestFailed => 'プロキシサーバーに接続できません。';
+
+  @override
+  String get mcpUnsavedChanges => '未適用の変更';
+
+  @override
+  String get mcpCopyEndpoint => 'エンドポイントをコピー';
+
+  @override
+  String get mcpAccessToken => 'アクセストークン';
+
+  @override
+  String get mcpRevealToken => 'トークンを表示';
+
+  @override
+  String get mcpHideToken => 'トークンを隠す';
+
+  @override
+  String get mcpCopyToken => 'トークンをコピー';
+
+  @override
+  String get mcpTokenCopied => 'アクセストークンをコピーしました';
+
+  @override
+  String get mcpEndpointCopied => 'エンドポイントをコピーしました';
+
+  @override
+  String get mcpFoldersViewList => 'リスト';
+
+  @override
+  String get mcpFoldersViewText => 'プレーンテキスト';
+
+  @override
+  String get mcpAddFolder => 'フォルダーを追加';
+
+  @override
+  String get mcpBrowseFolder => 'フォルダーを選択';
+
+  @override
+  String get mcpFolderPathHint => '/path/to/references';
+
+  @override
+  String get mcpIncludeSubfolders => 'サブフォルダーを含む (/**)';
+
+  @override
+  String get mcpFolderRecursive => 'サブフォルダー含む';
+
+  @override
+  String get mcpFolderDirectOnly => '直下のみ';
+
+  @override
+  String get mcpFoldersEmpty => '許可されたフォルダーはまだありません。空欄の場合、外部エージェントはローカル参照画像を読み取れません。';
+
+  @override
+  String get mcpRemoveFolder => 'フォルダーを削除';
+
+  @override
+  String get mcpRotateTokenConfirmTitle => 'アクセストークンを更新しますか？';
+
+  @override
+  String get mcpRotateTokenConfirmBody => '現在のトークンを使用している MCP クライアントは切断され、新しい接続設定への更新が必要になります。';
+
+  @override
+  String get mcpTokenRotated => 'アクセストークンを更新しました';
+
+  @override
   String get shortcutGridMove => '項目を移動して選択';
 
   @override

@@ -613,7 +613,7 @@ class _NoteField extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppRadius.control),
           border: Border.all(
             width: 2,
-            color: focusNode.hasFocus ? scheme.primary : Colors.transparent,
+            color: focusNode.hasFocus ? scheme.primary : scheme.primary.withValues(alpha: 0),
           ),
         ),
         child: Stack(

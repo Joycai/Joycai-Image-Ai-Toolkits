@@ -119,6 +119,37 @@ class SettingsField extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label,
+          style: theme.textTheme.labelSmall?.copyWith(
+            fontWeight: FontWeight.w400,
+            color: enabled ? colorScheme.onSurfaceVariant : colorScheme.outline,
+          ),
+        ),
+        const SizedBox(height: 4),
+        SettingsFieldScope(enabled: enabled, child: child),
+      ],
+    );
+  }
+}
+
+/// Applies the settings-card recessed surface input skin to [child] without
+/// rendering an extra caption above it.
+class SettingsFieldScope extends StatelessWidget {
+  const SettingsFieldScope({super.key, required this.child, this.enabled = true});
+
+  final Widget child;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final Color ink = enabled ? colorScheme.onSurface : colorScheme.outline;
 
     OutlineInputBorder hair() => OutlineInputBorder(
@@ -153,21 +184,6 @@ class SettingsField extends StatelessWidget {
     if (!enabled) {
       field = ExcludeFocus(child: IgnorePointer(child: field));
     }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          label,
-          style: theme.textTheme.labelSmall?.copyWith(
-            fontWeight: FontWeight.w400,
-            color: enabled ? colorScheme.onSurfaceVariant : colorScheme.outline,
-          ),
-        ),
-        const SizedBox(height: 4),
-        field,
-      ],
-    );
+    return field;
   }
 }

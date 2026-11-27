@@ -269,5 +269,43 @@
   "macAuthorizedFoldersLoadFailed": "無法讀取已儲存的資料夾權限。",
   "macAuthorizedFoldersRevokeFailed": "無法撤銷資料夾權限。",
   "macAuthorizedFolderRevoked": "已撤銷資料夾權限",
-  "macAuthorizedFoldersRevokedAll": "已撤銷全部資料夾權限"
+  "macAuthorizedFoldersRevokedAll": "已撤銷全部資料夾權限",
+  "proxyStatusEnabled": "已啟用",
+  "proxyStatusDisabled": "已關閉",
+  "proxyOptionalTag": "選填",
+  "proxyTestConnection": "測試連線",
+  "proxyTesting": "測試中…",
+  "proxyTestSuccess": "代理連線正常 · {ms} ms",
+  "@proxyTestSuccess": {
+    "placeholders": {
+      "ms": {
+        "type": "int"
+      }
+    }
+  },
+  "proxyTestInvalidAddress": "請輸入有效的 host:port 代理位址。",
+  "proxyTestTimedOut": "連線逾時，請檢查代理服務是否執行中。",
+  "proxyTestRefused": "代理連接埠拒絕連線。",
+  "proxyTestFailed": "無法連線至代理伺服器。",
+  "mcpUnsavedChanges": "有未套用的變更",
+  "mcpCopyEndpoint": "複製端點",
+  "mcpAccessToken": "存取權杖",
+  "mcpRevealToken": "顯示權杖",
+  "mcpHideToken": "隱藏權杖",
+  "mcpCopyToken": "複製權杖",
+  "mcpTokenCopied": "存取權杖已複製",
+  "mcpEndpointCopied": "端點位址已複製",
+  "mcpFoldersViewList": "清單",
+  "mcpFoldersViewText": "純文字",
+  "mcpAddFolder": "新增資料夾",
+  "mcpBrowseFolder": "選擇資料夾",
+  "mcpFolderPathHint": "/path/to/references",
+  "mcpIncludeSubfolders": "包含子資料夾 (/**)",
+  "mcpFolderRecursive": "含子資料夾",
+  "mcpFolderDirectOnly": "僅目前資料夾",
+  "mcpFoldersEmpty": "尚無允許的資料夾。留空時，外部 Agent 無法讀取本機參考圖。",
+  "mcpRemoveFolder": "移除資料夾",
+  "mcpRotateTokenConfirmTitle": "更換存取權杖？",
+  "mcpRotateTokenConfirmBody": "目前使用舊權杖的 MCP 用戶端將立即中斷連線，需要更新為新的連線設定。",
+  "mcpTokenRotated": "存取權杖已更換"
 }

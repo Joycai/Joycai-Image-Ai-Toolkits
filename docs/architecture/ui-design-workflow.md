@@ -319,3 +319,29 @@ the existing theme roles, constrained scrolling layout and retry action; it adds
 no destructive reset. All four locales are rendered at four widths in light/dark.
 Normal direct first launch uses its own empty container and the existing optional
 import/setup screens.
+
+### 2026-11-27 Connectivity settings redesign
+
+Settings → Connectivity (`Proxy Settings` + `MCP Server Settings`) reorganizes both
+cards around task hierarchy while preserving warm-stone neutrals, paired accents
+(`accentTint`/`onAccentTint`/`accentRing`), `AppSemanticColors`, the 7-step text
+scale + `TextStyle.mono`, and opaque `surfaceContainerLow`/`surface` containers:
+
+- Proxy settings pairs its master switch with an Enabled/Disabled status pill and
+  uses an animated `AnimatedSize` accordion (`AppMotion.sceneOf` + `AppMotion.enter`)
+  to collapse proxy fields when off. When enabled, the `host:port` row pairs
+  with an inline TCP connectivity test (`ProxyProbeService` in
+  `lib/services/system/proxy_probe_service.dart`, reporting reachability/latency ms
+  or typed errors without sending AI requests or credentials), followed by a
+  responsive username/password row (`ApiKeyField`).
+- MCP server settings adds an unsaved-draft badge (`mcpUnsavedChanges`), a recessed
+  status bar (`AppBreathingDot` + live draft endpoint preview + Copy endpoint), a
+  compact port + masked/revealable/copyable access token row, a dual-view allowed
+  reference folders editor (`List` with inline `+ Add folder`, native read-only
+  directory picker, recursive `/**` vs direct `/*` badges, and accessible remove
+  actions synced bidirectionally with `Plain text`), a warning callout
+  (`warningContainer`), and a wrapping compact action footer with `AppDialog`
+  confirmation before rotating the token.
+- Visual review compared baseline PNGs (`settings_*_connectivity*.png`) against
+  4 widths (390/834/1024/1440), light/dark, `en`/`zh`/`zh_Hant`/`ja` error
+  states, plus expanded proxy/MCP showcase captures including Orange light.

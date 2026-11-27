@@ -269,5 +269,43 @@
   "macAuthorizedFoldersLoadFailed": "无法读取已保存的目录权限。",
   "macAuthorizedFoldersRevokeFailed": "无法撤销目录权限。",
   "macAuthorizedFolderRevoked": "已撤销目录权限",
-  "macAuthorizedFoldersRevokedAll": "已撤销全部目录权限"
+  "macAuthorizedFoldersRevokedAll": "已撤销全部目录权限",
+  "proxyStatusEnabled": "已启用",
+  "proxyStatusDisabled": "已关闭",
+  "proxyOptionalTag": "可选",
+  "proxyTestConnection": "测试连通性",
+  "proxyTesting": "测试中…",
+  "proxyTestSuccess": "代理连通正常 · {ms} ms",
+  "@proxyTestSuccess": {
+    "placeholders": {
+      "ms": {
+        "type": "int"
+      }
+    }
+  },
+  "proxyTestInvalidAddress": "请输入有效的 host:port 代理地址。",
+  "proxyTestTimedOut": "连接超时，请检查代理服务是否运行。",
+  "proxyTestRefused": "代理端口拒绝连接。",
+  "proxyTestFailed": "无法连接到代理服务器。",
+  "mcpUnsavedChanges": "有未应用修改",
+  "mcpCopyEndpoint": "复制端点",
+  "mcpAccessToken": "访问令牌",
+  "mcpRevealToken": "显示令牌",
+  "mcpHideToken": "隐藏令牌",
+  "mcpCopyToken": "复制令牌",
+  "mcpTokenCopied": "访问令牌已复制",
+  "mcpEndpointCopied": "端点地址已复制",
+  "mcpFoldersViewList": "列表",
+  "mcpFoldersViewText": "纯文本",
+  "mcpAddFolder": "添加目录",
+  "mcpBrowseFolder": "选择文件夹",
+  "mcpFolderPathHint": "/path/to/references",
+  "mcpIncludeSubfolders": "包含子目录 (/**)",
+  "mcpFolderRecursive": "含子目录",
+  "mcpFolderDirectOnly": "仅当前目录",
+  "mcpFoldersEmpty": "暂无允许的文件夹。留空时，外部 Agent 无法读取本地参考图。",
+  "mcpRemoveFolder": "移除目录",
+  "mcpRotateTokenConfirmTitle": "更换访问令牌？",
+  "mcpRotateTokenConfirmBody": "当前正在使用旧令牌的 MCP 客户端将立即断开连接，需要更新为新的连接配置。",
+  "mcpTokenRotated": "访问令牌已更换"
 }
