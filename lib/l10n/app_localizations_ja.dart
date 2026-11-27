@@ -2061,9 +2061,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get capabilities => '機能';
 
   @override
-  String get cardPreview => 'カードプレビュー';
-
-  @override
   String get capabilityStreamingShort => 'ストリーミング';
 
   @override
@@ -2193,9 +2190,6 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get agentBehavior => 'エージェント動作';
-
-  @override
   String get forceViewAllImages => 'すべての参考画像を確認';
 
   @override
@@ -2231,9 +2225,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get reasoningEffortOn => 'オン';
-
-  @override
-  String get reasoningEffortUnavailable => '利用不可';
 
   @override
   String get enableThinking => '拡張思考';
@@ -2625,12 +2616,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get protocolBackToAuto => '自動に戻す';
 
   @override
-  String get contextImageUnsetDesc => '画像モデルはコンテキスト予算を使いません。未設定のままで構いません。';
-
-  @override
-  String get contextVideoUnsetDesc => '動画モデルはコンテキスト予算を使いません。未設定のままで構いません。';
-
-  @override
   String get protocolVideoTask => '非同期動画タスク';
 
   @override
@@ -2717,10 +2702,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get protocolUnavailable => '利用不可';
-
-  @override
-  String get reasoningEffortUnsupported =>
-      'このモデルは推論パラメーターを受け付けないため、スライダーは「オフ」のままです。対応するモデルに切り替えると有効になります。';
 
   @override
   String get modelIdRequiredTitle => 'Model ID は空にできません';
@@ -3404,6 +3385,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get transportCompatibility => '通信互換性';
+
+  @override
+  String get transportStreamIgnoredShort => '無視';
 
   @override
   String transportSummary(String stream, String standard) {

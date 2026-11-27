@@ -2124,9 +2124,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get capabilities => 'Capabilities';
 
   @override
-  String get cardPreview => 'Card preview';
-
-  @override
   String get capabilityStreamingShort => 'Streaming';
 
   @override
@@ -2260,9 +2257,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get agentBehavior => 'Agent Behavior';
-
-  @override
   String get forceViewAllImages => 'View all reference images';
 
   @override
@@ -2299,9 +2293,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reasoningEffortOn => 'On';
-
-  @override
-  String get reasoningEffortUnavailable => 'Unavailable';
 
   @override
   String get enableThinking => 'Extended thinking';
@@ -2706,14 +2697,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get protocolBackToAuto => 'Back to Auto';
 
   @override
-  String get contextImageUnsetDesc =>
-      'Image models don\'t use the context budget; leave this unset.';
-
-  @override
-  String get contextVideoUnsetDesc =>
-      'Video models don\'t use the context budget; leave this unset.';
-
-  @override
   String get protocolVideoTask => 'Async video task';
 
   @override
@@ -2803,10 +2786,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get protocolUnavailable => 'Unavailable';
-
-  @override
-  String get reasoningEffortUnsupported =>
-      'This model takes no reasoning parameters, so the slider stays at Off. It lights up when you switch to a model that does.';
 
   @override
   String get modelIdRequiredTitle => 'Model ID can\'t be empty';
@@ -3553,6 +3532,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get transportCompatibility => 'Transport Compatibility';
+
+  @override
+  String get transportStreamIgnoredShort => 'Ignored';
 
   @override
   String transportSummary(String stream, String standard) {

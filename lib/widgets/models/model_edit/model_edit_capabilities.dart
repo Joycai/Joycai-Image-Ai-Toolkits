@@ -10,7 +10,9 @@ extension _CapabilitySections on _ModelEditDialogState {
     final scheme = theme.colorScheme;
     final ignoredBy = _streamIgnoredBy;
     final asyncPinned = _asyncImagePinned;
-    final streamState = supportsStream ? l10n.reasoningEffortOn : l10n.reasoningEffortOff;
+    final streamState = ignoredBy != null
+        ? l10n.transportStreamIgnoredShort
+        : (supportsStream ? l10n.reasoningEffortOn : l10n.reasoningEffortOff);
     final standardState = supportsStandard ? l10n.reasoningEffortOn : l10n.reasoningEffortOff;
 
     return Column(
@@ -24,7 +26,7 @@ extension _CapabilitySections on _ModelEditDialogState {
             children: [
               Semantics(
                 button: true,
-                toggled: _transportExpanded,
+                expanded: _transportExpanded,
                 label: l10n.transportCompatibility,
                 child: Material(
                   color: Colors.transparent,

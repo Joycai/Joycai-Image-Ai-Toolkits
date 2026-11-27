@@ -58,15 +58,16 @@ part 'model_edit/model_edit_routes.dart';
 ///
 /// Three forms from one state:
 ///
-/// - **Edit, dialog** (`1a`): 920 wide, two columns — what the model *is* on
-///   the left (identity, capabilities, the card it will make), how it is
-///   *requested* on the right (request method, context window, agent
-///   behaviour, reasoning, provider features). Folds to one column when the
-///   dialog is too narrow to hold two.
+/// - **Edit, dialog** (`1a`): 840 wide, two columns — identity and billing on
+///   the left, kind-driven request & behavior sections on the right (protocol /
+///   routes, token budget, reasoning, multimodal & search behavior, and
+///   collapsible transport compatibility) beneath a live header summary and a
+///   3-way kind switcher. Folds to one column when the dialog is too narrow.
 /// - **Edit, phone** (`1e`): a full-screen page under a glass bar with a
 ///   tinted-glass Save.
-/// - **Add** (`1e` right): 520 wide, ID / name / kind only — everything else
-///   stays on Auto or its default until the model has run once.
+/// - **Add** (`1e` right): 520 wide, 3-way kind switcher, ID / name / channel
+///   and (for chat models) the multimodal toggle — everything else stays on
+///   Auto or its default until the model has run once.
 class ModelEditDialog extends StatefulWidget {
   final AppLocalizations l10n;
   final AppState appState;

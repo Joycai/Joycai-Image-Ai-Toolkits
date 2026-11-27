@@ -3,7 +3,7 @@ part of '../model_edit_dialog.dart';
 /// The three forms of one state (`1a` dialog, `1e` phone page, `1e` add
 /// dialog), their heading, footer and bar, and the column arrangements.
 extension _Layouts on _ModelEditDialogState {
-  /// `1a`: the 920 dialog.
+  /// `1a`: the 840 dialog.
   Widget _buildEditDialog(BuildContext context) {
     return AppDialog(
       maxWidth: _ModelEditDialogState._dialogWidth,
@@ -332,26 +332,45 @@ extension _Layouts on _ModelEditDialogState {
                     ),
                     const SizedBox(width: AppSpace.s4),
                     Expanded(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            l10n.editModel,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: textTheme.titleLarge?.copyWith(color: ink),
-                          ),
-                          Text(
-                            idCtrl.text.trim(),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: textTheme.labelSmall?.mono.copyWith(
-                              fontWeight: FontWeight.w400,
-                              color: scheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
+                      child: Builder(
+                        builder: (context) {
+                          final trimmedName = nameCtrl.text.trim();
+                          final trimmedId = idCtrl.text.trim();
+                          final liveTitle = trimmedName.isNotEmpty
+                              ? trimmedName
+                              : (trimmedId.isNotEmpty ? trimmedId : l10n.editModel);
+                          final subtitle = _liveHeaderSummary(context);
+                          return Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      liveTitle,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: textTheme.titleLarge?.copyWith(color: ink),
+                                    ),
+                                  ),
+                                  const SizedBox(width: AppSpace.s6),
+                                  ModelKindBadge(tag),
+                                ],
+                              ),
+                              if (subtitle.isNotEmpty)
+                                Text(
+                                  subtitle,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: textTheme.labelSmall?.mono.copyWith(
+                                    fontWeight: FontWeight.w400,
+                                    color: scheme.onSurfaceVariant,
+                                  ),
+                                ),
+                            ],
+                          );
+                        },
                       ),
                     ),
                     const SizedBox(width: 8),

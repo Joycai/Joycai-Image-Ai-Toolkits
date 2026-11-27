@@ -325,7 +325,37 @@ void main() {
       size: const Size(390, 844),
     );
     expect(find.byType(AppSegmentedControl<String>), findsOneWidget);
+    expect(tester.widget<ModelKindBadge>(find.byType(ModelKindBadge)).tag, 'multimodal');
     expect(tester.takeException(), isNull);
+
+    await runAsyncRethrowing(tester, () async {});
+  });
+
+  testWidgets('pinned non-streaming image protocol shows Ignored in collapsed transport summary', (
+    tester,
+  ) async {
+    final (state, channelId) = await seedChannel(
+      tester,
+      name: 'Relay',
+      vendorType: Vendors.newApiOpenAI,
+      endpoint: 'https://relay.example.com/v1',
+    );
+    final model = await runAsyncRethrowing(tester, () async {
+      final id = await state.addModel(
+        LLMModel(
+          modelId: 'img-fast',
+          modelName: 'Img Fast',
+          tag: 'image',
+          channelId: channelId,
+          wireProtocol: 'openai-images',
+        ),
+      );
+      return state.allModels.firstWhere((m) => m.id == id);
+    });
+
+    await pumpEditor(tester, appState: state, model: model);
+
+    expect(find.text('Stream Ignored · Standard On'), findsOneWidget);
 
     await runAsyncRethrowing(tester, () async {});
   });

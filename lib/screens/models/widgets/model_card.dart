@@ -38,11 +38,8 @@ enum ModelCardSize {
 /// the kind badge and, when a pinned protocol no longer applies, the
 /// 「Selection inactive」 warning badge; the model id in mono; and a row of
 /// capability chips closed by the fee group (or 「No Fee Group」). Edit and
-/// delete sit at the right edge when their callbacks are given.
-///
-/// Public so the model editor can render the card it is editing as a live
-/// preview: build an [LLMModel] from the form and pass it with no callbacks.
-/// Nothing in here reads providers.
+/// delete sit at the right edge when their callbacks are given. Nothing in here
+/// reads providers.
 class ModelCard extends StatelessWidget {
   const ModelCard({
     super.key,

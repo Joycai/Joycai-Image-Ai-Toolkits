@@ -2052,9 +2052,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get capabilities => '能力';
 
   @override
-  String get cardPreview => '卡片预览';
-
-  @override
   String get capabilityStreamingShort => '流式';
 
   @override
@@ -2182,9 +2179,6 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get agentBehavior => '代理行为';
-
-  @override
   String get forceViewAllImages => '查看全部参考图';
 
   @override
@@ -2220,9 +2214,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get reasoningEffortOn => '开启';
-
-  @override
-  String get reasoningEffortUnavailable => '不可用';
 
   @override
   String get enableThinking => '深度思考';
@@ -2610,12 +2601,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get protocolBackToAuto => '改回自动';
 
   @override
-  String get contextImageUnsetDesc => '生图模型不参与上下文预算，保持未设置即可。';
-
-  @override
-  String get contextVideoUnsetDesc => '视频模型不参与上下文预算，保持未设置即可。';
-
-  @override
   String get protocolVideoTask => '异步视频任务';
 
   @override
@@ -2700,9 +2685,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get protocolUnavailable => '不可用';
-
-  @override
-  String get reasoningEffortUnsupported => '该模型不接受推理参数，滑块固定在「关闭」——换成支持推理的模型时它会亮起来。';
 
   @override
   String get modelIdRequiredTitle => 'Model ID 不能为空';
@@ -3382,6 +3364,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get transportCompatibility => '传输兼容';
+
+  @override
+  String get transportStreamIgnoredShort => '已忽略';
 
   @override
   String transportSummary(String stream, String standard) {
@@ -9055,9 +9040,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get capabilities => '能力';
 
   @override
-  String get cardPreview => '卡片預覽';
-
-  @override
   String get capabilityStreamingShort => '串流';
 
   @override
@@ -9185,9 +9167,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   }
 
   @override
-  String get agentBehavior => '代理行為';
-
-  @override
   String get forceViewAllImages => '檢視全部參考圖';
 
   @override
@@ -9223,9 +9202,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get reasoningEffortOn => '開啟';
-
-  @override
-  String get reasoningEffortUnavailable => '不可用';
 
   @override
   String get enableThinking => '深度思考';
@@ -9613,12 +9589,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get protocolBackToAuto => '改回自動';
 
   @override
-  String get contextImageUnsetDesc => '生圖模型不參與上下文預算，保持未設定即可。';
-
-  @override
-  String get contextVideoUnsetDesc => '影片模型不參與上下文預算，保持未設定即可。';
-
-  @override
   String get protocolVideoTask => '非同步影片任務';
 
   @override
@@ -9703,9 +9673,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get protocolUnavailable => '不可用';
-
-  @override
-  String get reasoningEffortUnsupported => '該模型不接受推理參數，滑桿固定在「關閉」——換成支援推理的模型時它會亮起來。';
 
   @override
   String get modelIdRequiredTitle => 'Model ID 不能為空';
@@ -10385,6 +10352,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get transportCompatibility => '傳輸相容';
+
+  @override
+  String get transportStreamIgnoredShort => '已忽略';
 
   @override
   String transportSummary(String stream, String standard) {
