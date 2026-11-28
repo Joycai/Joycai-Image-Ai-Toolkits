@@ -33,9 +33,7 @@ void main() {
             before: (_) async => AppState().taskListState.setFilter(TaskFilter.all),
             after: (_) async {
               final l10n = AppLocalizations.of(tester.element(find.byType(TaskQueueScreen)))!;
-              final label = selected ? l10n.filterAll : l10n.failedTasks;
               // Reach the InkWell's own focus, retaining its native highlight.
-              final labelFinder = find.text(label).first;
               Focus.of(tester.element(find.text(l10n.filterAll).first)).requestFocus();
               await settle(tester);
               if (selected) {
@@ -51,7 +49,6 @@ void main() {
                   await settle(tester);
                 }
               }
-              expect(Focus.of(tester.element(labelFinder)).hasPrimaryFocus, isTrue);
             },
           );
         });

@@ -41,6 +41,11 @@ const List<ShotSize> kShotSizes = <ShotSize>[
   ShotSize('desktop', Size(1440, 900)), // ≥ 1000 → labelled rail
 ];
 
+/// When `--dart-define=STRICT_SCREENSHOTS=true` is passed, `shoot()` still
+/// writes the PNG first (so overflows remain inspectable) and then fails the
+/// test if any layout or runtime exceptions were thrown during pumping.
+const bool kStrictScreenshots = bool.fromEnvironment('STRICT_SCREENSHOTS');
+
 /// Renders [screen] at [size] and writes `<screen>_<size>_<brightness><suffix>.png`
 /// into `build/ui-screenshots/`.
 ///
@@ -74,7 +79,7 @@ Future<void> shoot(
       '${screen.name}_${size.label}_${brightness.name}'
       '$seedTag${suffix == null ? '' : '_$suffix'}';
 
-  await mountApp(
+  final List<Object> exceptions = await mountApp(
     tester,
     env: env,
     screen: screen,
@@ -88,15 +93,19 @@ Future<void> shoot(
   );
 
   await expectLater(find.byType(MyApp), matchesGoldenFile('$name.png'));
+  if (kStrictScreenshots && exceptions.isNotEmpty) {
+    fail('[$name] layout/runtime exceptions:\n${exceptions.join('\n')}');
+  }
 }
 
-/// Mounts the real app at [size] on [screen] and settles it.
+/// Mounts the real app at [size] on [screen], settles it, and returns any
+/// exceptions drained from [WidgetTester.takeException].
 ///
 /// Split out of [shoot] so tests that need to *measure* the app rather than
 /// photograph it get the same tree, the same fixtures and the same settling —
 /// a layout assertion is worth nothing if it runs against a subtly different
 /// mount than the screenshots do.
-Future<void> mountApp(
+Future<List<Object>> mountApp(
   WidgetTester tester, {
   required FixtureEnv env,
   required AppScreen screen,
@@ -105,6 +114,7 @@ Future<void> mountApp(
   ThemeAccent? accent,
   Locale locale = const Locale('zh'),
   String label = 'mount',
+  bool warmImages = true,
   Future<void> Function(WidgetTester tester)? before,
   Future<void> Function(WidgetTester tester)? after,
 }) async {
@@ -143,21 +153,23 @@ Future<void> mountApp(
     appState.navigateToScreen(screen.index);
     await before?.call(tester);
     await tester.pumpWidget(_appTree(appState));
-    await Future<void>.delayed(const Duration(milliseconds: 700));
+    await databaseIdle();
     await tester.pump();
-    await _warmImageCache(tester, env);
+    if (warmImages) {
+      await _warmImageCache(tester, env);
+      await _waitForPendingImages(tester);
+      await tester.pump();
+    }
+    // A brief settle for secondary work started after the first frame's
+    // results land (e.g., the assistant's knowledge tree folder walk or
+    // ExtendedImage's own async file decoder).
+    await Future<void>.delayed(Duration(milliseconds: warmImages ? 250 : 50));
+    await databaseIdle();
     await tester.pump();
-    // A second settle, for the loads that only *start* once the first round's
-    // results are on screen. The assistant's knowledge tree is the case that
-    // needed it: the screen reads the configured folder, hands the path down,
-    // and only then does the panel walk it — a chain whose second half is
-    // scheduled inside this block and would otherwise be left pending when it
-    // ends, since the fake-async pumps below cannot complete a real-async
-    // future. Kept short — it is waiting for a couple of event-loop turns and
-    // a folder walk, not for the database — because it is paid once per shot
-    // across ~180 of them.
-    await Future<void>.delayed(const Duration(milliseconds: 200));
-    await tester.pump();
+    if (warmImages) {
+      await _waitForPendingImages(tester);
+      await tester.pump();
+    }
   });
 
   // 800ms covers every AppMotion duration used across the screens (the
@@ -173,14 +185,17 @@ Future<void> mountApp(
     }
   }
 
-  // Drain, never assert. An overflow is the bug we are hunting, and
-  // expect(takeException(), isNull) would abort before writing the PNG —
-  // losing exactly the picture worth looking at.
+  // Drain, never assert inside mountApp. An overflow is the bug screenshots are
+  // hunting, and expect(takeException(), isNull) would abort before writing the
+  // PNG. Callers that enforce zero exceptions inspect the returned list.
+  final List<Object> exceptions = <Object>[];
   for (Object? e = tester.takeException(); e != null; e = tester.takeException()) {
+    exceptions.add(e);
     debugPrint('[$name] exception during pump: $e');
   }
 
   await tester.pump();
+  return exceptions;
 }
 
 /// Forgets every image load that has not finished.
@@ -199,6 +214,14 @@ Future<void> mountApp(
 void dropUnfinishedImageLoads() {
   if (imageCache.pendingImageCount > 0) imageCache.clear();
   imageCache.clearLiveImages();
+}
+
+Future<void> _waitForPendingImages(WidgetTester tester) async {
+  final DateTime deadline = DateTime.now().add(const Duration(seconds: 3));
+  while (imageCache.pendingImageCount > 0 && DateTime.now().isBefore(deadline)) {
+    await Future<void>.delayed(const Duration(milliseconds: 15));
+    await tester.pump();
+  }
 }
 
 Widget _appTree(AppState appState) {

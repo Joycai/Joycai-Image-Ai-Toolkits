@@ -5,7 +5,9 @@ import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/app_paths.dart';
+import '../../core/app_semantic_colors.dart';
 import '../../core/app_theme.dart';
+import '../../core/constants.dart';
 import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/llm_channel.dart';
@@ -209,7 +211,7 @@ class _SetupWizardState extends State<SetupWizard> {
           apiKey: apiKey,
           type: _channelType,
           tag: _channelNameController.text.trim().split(' ').first,
-          tagColor: Colors.blue.toARGB32(),
+          tagColor: AppConstants.tagColors.first.toARGB32(),
         ),
       );
       setState(() {
@@ -665,7 +667,7 @@ class _SetupWizardState extends State<SetupWizard> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.check_circle_outline, size: 80, color: Colors.green),
+          Icon(Icons.check_circle_outline, size: 80, color: context.semantic.success),
           const SizedBox(height: 24),
           Text(
             l10n.setupCompleteMessage,

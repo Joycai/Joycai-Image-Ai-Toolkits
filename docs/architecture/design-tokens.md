@@ -221,6 +221,10 @@ Color get onAccentTint =>
 flutter test test/core/design_tokens_test.dart          # 8 预设 × 明暗的对比度与角色断言、源码扫描
 flutter test test/core/app_color_scheme_test.dart       # 灰阶不随主题色移动、面板浮于画布之上
 flutter test test/core/app_theme_text_theme_test.dart   # 七级字号、字距随字号
+flutter test test/architecture/design_token_scan_test.dart # UI 消费层硬编码颜色/字号/圆角棘轮扫描
+flutter test test/widgets/ui/design_system_theme_contract_test.dart # 组件中性色不变性、主色绑定与实测对比度
+flutter test test/widgets/glass/glass_theme_contract_test.dart      # 玻璃分级、降级不透明回退与对比度
+flutter test test/golden/design_system_golden_test.dart             # 组件级 Golden 像素回归
 flutter test test/screens/workbench/workbench_glass_toolbar_test.dart # 工作台工具条的降级顺序
 flutter test test/screenshots/component_gallery_test.dart   # 16 张组件全景图
 flutter test test/screenshots                      # 全部屏幕 × 三宽度 × 明暗

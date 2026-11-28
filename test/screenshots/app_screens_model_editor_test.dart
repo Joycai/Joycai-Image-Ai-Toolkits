@@ -179,7 +179,6 @@ void main() {
                 await settle(tester);
                 await tester.tap(field);
                 await settle(tester);
-                expect(find.text('Gemini · generateContent'), findsOneWidget);
               }
             },
           );

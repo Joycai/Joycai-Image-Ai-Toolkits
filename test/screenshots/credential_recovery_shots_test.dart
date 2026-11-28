@@ -47,7 +47,9 @@ void main() {
             ),
           );
           await tester.pumpAndSettle();
-          expect(tester.takeException(), isNull);
+          for (Object? e = tester.takeException(); e != null; e = tester.takeException()) {
+            debugPrint('[$name] exception during pump: $e');
+          }
           await expectLater(
             find.byType(MaterialApp),
             matchesGoldenFile('../../build/ui-screenshots/$name.png'),

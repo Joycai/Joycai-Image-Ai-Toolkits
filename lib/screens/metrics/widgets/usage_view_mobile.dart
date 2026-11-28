@@ -37,11 +37,19 @@ class _UsageViewMobileState extends State<UsageViewMobile> {
 
   UsageController get _controller => widget.controller ?? _own!;
 
+  void _scheduleResetLoad() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _controller.load(reset: true);
+    });
+  }
+
   @override
   void initState() {
     super.initState();
     if (widget.controller == null) _own = _createController();
-    _controller.load(reset: true);
+    // Defer initial load past the enclosing screen's build pass because
+    // TokenUsageScreen shares this controller with its phone header.
+    _scheduleResetLoad();
   }
 
   @override
@@ -55,7 +63,7 @@ class _UsageViewMobileState extends State<UsageViewMobile> {
       _own?.dispose();
       _own = null;
     }
-    _controller.load(reset: true);
+    _scheduleResetLoad();
   }
 
   UsageController _createController() => UsageController(

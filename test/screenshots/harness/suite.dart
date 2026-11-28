@@ -19,6 +19,28 @@ import 'shoot.dart';
 
 export '../../support/real_async.dart';
 
+/// Waits for [appState]'s startup settings and initial background directory
+/// scans to settle, bounded by a timeout so tests never hang.
+Future<void> waitForAppSettle(
+  AppState appState, {
+  Duration timeout = const Duration(seconds: 3),
+}) async {
+  await appState.galleryState.settingsLoaded;
+  await appState.fileStagingState.ready;
+  await databaseIdle();
+
+  final DateTime deadline = DateTime.now().add(timeout);
+  while (DateTime.now().isBefore(deadline)) {
+    final bool galleryDone =
+        !appState.galleryState.isScanning && appState.galleryState.galleryImages.isNotEmpty;
+    final bool browserDone =
+        !appState.fileBrowserState.isScanning && appState.fileBrowserState.allFiles.isNotEmpty;
+    if (galleryDone && browserDone) break;
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+  }
+  await databaseIdle();
+}
+
 /// Installs this file's fixture environment and hands it to [onReady] once
 /// it is seeded and settled.
 void setUpScreenSuite(void Function(FixtureEnv env) onReady) {
@@ -35,7 +57,7 @@ void setUpScreenSuite(void Function(FixtureEnv env) onReady) {
     await appState.loadSettings();
     // setUpAll runs in real async (no fake-async zone), which is the only place
     // the compute()-based gallery and file-browser scans actually complete.
-    await Future<void>.delayed(const Duration(seconds: 1));
+    await waitForAppSettle(appState);
     markOneTaskRunning(appState);
     onReady(env);
   });

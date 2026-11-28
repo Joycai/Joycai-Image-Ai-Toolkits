@@ -21,7 +21,9 @@ import 'shell_cover.dart';
 ///
 /// Desktop only. On Android and iOS there is no window to frame, and
 /// `window_manager` has no implementation there to call into.
-bool get usesCustomWindowChrome => Platform.isWindows || Platform.isMacOS || Platform.isLinux;
+bool get usesCustomWindowChrome =>
+    !AppDestination.isMobilePlatform &&
+    (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
 
 Window? _currentWindow() {
   try {
