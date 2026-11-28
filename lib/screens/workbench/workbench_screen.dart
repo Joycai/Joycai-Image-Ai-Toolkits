@@ -392,7 +392,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
         } catch (_) {}
       }
 
-      final maskFile = AppImage(path: filePath, name: fileName);
+      final maskFile = await AppImage.fromPathAsync(filePath, name: fileName);
       _appState!.galleryState.addDroppedFiles([maskFile]);
 
       if (selectAfterSave) {

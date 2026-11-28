@@ -4686,5 +4686,16 @@
         "type": "String"
       }
     }
+  },
+  "gallerySortTooltip": "Sort by: {field} ({direction})",
+  "@gallerySortTooltip": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      },
+      "direction": {
+        "type": "String"
+      }
+    }
   }
 }

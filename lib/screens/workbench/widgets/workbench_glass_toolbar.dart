@@ -14,9 +14,11 @@ import '../../../models/app_image.dart';
 import '../../../services/files/persistent_media_service.dart';
 import '../../../state/app_state.dart';
 import '../../../state/gallery_state.dart';
+import '../../../state/workbench_ui_state.dart';
 import '../../../widgets/dialogs/thumbnail_size_dialog.dart';
 import '../../../widgets/files/thumbnail_fit_toggle.dart';
 import '../../../widgets/glass/app_glass.dart';
+import '../../../widgets/glass/app_glass_menu.dart';
 import '../../../widgets/glass/glass_controls.dart';
 import '../../../widgets/ui/app_action_target.dart';
 import '../../../widgets/ui/app_button.dart';
@@ -45,7 +47,8 @@ Future<void> pickImagesIntoWorkspace(BuildContext context, GalleryState galleryS
     final picked = await ImagePicker().pickMultiImage();
     for (final file in picked) {
       final path = await PersistentMediaService.instance.importFile(file.path);
-      galleryState.addDroppedFiles([AppImage(path: path, name: file.name)]);
+      final image = await AppImage.fromPathAsync(path, name: file.name);
+      galleryState.addDroppedFiles([image]);
       galleryState.setViewMode(GalleryViewMode.temp);
     }
   } catch (error) {
@@ -61,7 +64,8 @@ Future<void> takePhotoIntoWorkspace(BuildContext context, GalleryState gallerySt
     final photo = await ImagePicker().pickImage(source: ImageSource.camera);
     if (photo == null) return;
     final path = await PersistentMediaService.instance.importFile(photo.path);
-    galleryState.addDroppedFiles([AppImage(path: path, name: photo.name)]);
+    final image = await AppImage.fromPathAsync(path, name: photo.name);
+    galleryState.addDroppedFiles([image]);
     galleryState.setViewMode(GalleryViewMode.temp);
   } catch (error) {
     if (context.mounted) {
@@ -73,8 +77,8 @@ Future<void> takePhotoIntoWorkspace(BuildContext context, GalleryState gallerySt
 enum _View { sources, results, workspace }
 
 /// Icon actions the gallery bar folds into its overflow menu, cheapest-meaning
-/// first (`A1` spec: 导入 → 刷新 → 填充 → 尺寸).
-enum _Fold { import, refresh, fit, size }
+/// first (`A1` spec: 导入 → 刷新 → 填充 → 尺寸 → 排序).
+enum _Fold { import, refresh, fit, size, sort }
 
 /// Which of the three gallery views [GalleryState] is currently showing.
 _View _currentView(GalleryState s) {
@@ -236,11 +240,11 @@ bool _tabLabelsFit(BuildContext context, double width) {
 /// `A4 · 1b`), where the menu names the active tool and leads anywhere else.
 ///
 /// Degrades by measurement, never by breakpoint (four languages, scaled
-/// text). Gallery: the image/video labels go; then import, refresh, fit and
-/// size fold into the overflow menu one at a time; then the strip collapses
-/// into a Tools menu; the view switch never gives way and scrolls if it must.
-/// The strip's own labels go by [_tabLabelsFit], at the same bar width on
-/// every tab.
+/// text). Gallery: the image/video labels go; then import, refresh, fit,
+/// size and sort fold into the overflow menu one at a time; then the strip
+/// collapses into a Tools menu; the view switch never gives way and scrolls
+/// if it must. The strip's own labels go by [_tabLabelsFit], at the same bar
+/// width on every tab.
 class WorkbenchGlassToolbar extends StatefulWidget {
   const WorkbenchGlassToolbar({
     super.key,
@@ -561,6 +565,7 @@ class _GalleryRow extends StatelessWidget {
         ),
       ),
       if (_Fold.values.any((f) => !folded.contains(f))) const GlassDivider(),
+      if (!folded.contains(_Fold.sort)) const _GallerySortButton(),
       if (!folded.contains(_Fold.size)) const _ThumbnailSizeButton(),
       if (!folded.contains(_Fold.fit))
         GlassIconButton(
@@ -796,6 +801,120 @@ class _ToolsMenuButton extends StatelessWidget {
   }
 }
 
+String _gallerySortFieldLabel(GallerySortField field, AppLocalizations l10n) {
+  switch (field) {
+    case GallerySortField.name:
+      return l10n.sortName;
+    case GallerySortField.date:
+      return l10n.sortDate;
+    case GallerySortField.type:
+      return l10n.sortType;
+  }
+}
+
+WorkbenchUIState? _workbenchUIStateOf(BuildContext context) {
+  try {
+    return Provider.of<WorkbenchUIState>(context, listen: false);
+  } on ProviderNotFoundException {
+    return null;
+  }
+}
+
+const double _kGallerySortMenuWidth = 220;
+const double _kGallerySortMenuWidthPhone = 260;
+
+/// Opens the gallery sort menu (`B1a · 1f` parity): field radios, direction
+/// radios, and folder-grouping toggle in a G2 glass float under [anchorContext].
+Future<void> _showGallerySortMenu(
+  BuildContext context, {
+  required BuildContext anchorContext,
+  bool phone = false,
+}) async {
+  final l10n = AppLocalizations.of(context)!;
+  final gallery = context.read<GalleryState>();
+  final workbenchUI = _workbenchUIStateOf(context);
+  final field = gallery.sortField;
+  final ascending = gallery.sortAscending;
+  final groupByFolder = gallery.groupByFolder;
+
+  workbenchUI?.setGalleryMenuOpen(true);
+  try {
+    await showAppGlassMenuBelow(
+      anchorContext,
+      width: phone ? _kGallerySortMenuWidthPhone : _kGallerySortMenuWidth,
+      entries: [
+        for (final option in GallerySortField.values)
+          AppGlassMenuItem(
+            label: _gallerySortFieldLabel(option, l10n),
+            checked: field == option,
+            radio: true,
+            onSelected: () => gallery.setSortField(option),
+          ),
+        const AppGlassMenuDivider(),
+        AppGlassMenuItem(
+          label: l10n.sortAsc,
+          checked: ascending,
+          radio: true,
+          onSelected: () => gallery.setSortAscending(true),
+        ),
+        AppGlassMenuItem(
+          label: l10n.sortDesc,
+          checked: !ascending,
+          radio: true,
+          onSelected: () => gallery.setSortAscending(false),
+        ),
+        const AppGlassMenuDivider(),
+        AppGlassMenuItem(
+          label: l10n.browserGroupByFolder,
+          hint: l10n.browserGroupByFolderHint,
+          checked: groupByFolder,
+          onSelected: () => gallery.setGroupByFolder(!groupByFolder),
+        ),
+      ],
+    );
+  } finally {
+    workbenchUI?.setGalleryMenuOpen(false);
+  }
+}
+
+typedef _GallerySortSnapshot = ({GallerySortField field, bool ascending});
+
+/// Sort trigger on the floating gallery toolbar: opens the glass sort menu
+/// matching the file browser's sort control (`B1a · 1f`).
+class _GallerySortButton extends StatefulWidget {
+  const _GallerySortButton();
+
+  @override
+  State<_GallerySortButton> createState() => _GallerySortButtonState();
+}
+
+class _GallerySortButtonState extends State<_GallerySortButton> {
+  bool _open = false;
+
+  Future<void> _openMenu() async {
+    if (_open) return;
+    setState(() => _open = true);
+    try {
+      await _showGallerySortMenu(context, anchorContext: context);
+    } finally {
+      if (mounted) setState(() => _open = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final sort = context.select<GalleryState, _GallerySortSnapshot>(
+      (s) => (field: s.sortField, ascending: s.sortAscending),
+    );
+    final tooltip = l10n.gallerySortTooltip(
+      _gallerySortFieldLabel(sort.field, l10n),
+      sort.ascending ? l10n.sortAsc : l10n.sortDesc,
+    );
+    return GlassIconButton(icon: Icons.sort, tooltip: tooltip, active: _open, onPressed: _openMenu);
+  }
+}
+
 /// Thumbnail size as a popover slider (`A1 · 1a`: a G2 panel under the button,
 /// 80–400 with mono end labels).
 class _ThumbnailSizeButton extends StatelessWidget {
@@ -866,7 +985,7 @@ class _ThumbnailSizeButton extends StatelessWidget {
 /// Everything that did not fit on the bar, plus the actions that only ever
 /// live here (select all, clearing the workspace, capture on touch, the
 /// concurrency limit on a phone).
-class _GalleryOverflowMenu extends StatelessWidget {
+class _GalleryOverflowMenu extends StatefulWidget {
   const _GalleryOverflowMenu({
     required this.folded,
     required this.phone,
@@ -878,12 +997,22 @@ class _GalleryOverflowMenu extends StatelessWidget {
   final double size;
 
   @override
+  State<_GalleryOverflowMenu> createState() => _GalleryOverflowMenuState();
+}
+
+class _GalleryOverflowMenuState extends State<_GalleryOverflowMenu> {
+  final GlobalKey _anchorKey = GlobalKey();
+
+  @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final scheme = Theme.of(context).colorScheme;
     final gallery = context.read<GalleryState>();
     final appState = context.read<AppState>();
     final fit = context.select<AppState, ThumbnailFit>((s) => s.thumbnailFit);
+    final sort = context.select<GalleryState, _GallerySortSnapshot>(
+      (s) => (field: s.sortField, ascending: s.sortAscending),
+    );
     final isTouch = Platform.isAndroid || Platform.isIOS;
     // The one gallery fact the closed button's menu turns on. Everything else
     // it reads — the size to open the slider at, the actions — is one-shot.
@@ -898,7 +1027,33 @@ class _GalleryOverflowMenu extends StatelessWidget {
           onPressed: gallery.selectAllImages,
           child: Text(l10n.selectAll),
         ),
-        if (folded.contains(_Fold.size))
+        if (widget.folded.contains(_Fold.sort))
+          MenuItemButton(
+            leadingIcon: const Icon(Icons.sort, size: AppSize.iconLg),
+            trailingIcon: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _gallerySortFieldLabel(sort.field, l10n),
+                  style: Theme.of(context).textTheme.bodySmall
+                      ?.copyWith(color: scheme.onSurfaceVariant),
+                ),
+                const SizedBox(width: AppSpace.s4),
+                Icon(
+                  sort.ascending ? Icons.arrow_upward : Icons.arrow_downward,
+                  size: AppSize.iconSm,
+                  color: scheme.onSurfaceVariant,
+                  semanticLabel: sort.ascending ? l10n.sortAsc : l10n.sortDesc,
+                ),
+              ],
+            ),
+            onPressed: () {
+              final anchor = _anchorKey.currentContext ?? context;
+              _showGallerySortMenu(context, anchorContext: anchor, phone: widget.phone);
+            },
+            child: Text(l10n.sortBy),
+          ),
+        if (widget.folded.contains(_Fold.size))
           MenuItemButton(
             leadingIcon: const Icon(Icons.photo_size_select_large, size: AppSize.iconLg),
             onPressed: () => showThumbnailSizeDialog(
@@ -909,7 +1064,7 @@ class _GalleryOverflowMenu extends StatelessWidget {
             ),
             child: Text(l10n.thumbnailSize),
           ),
-        if (folded.contains(_Fold.fit))
+        if (widget.folded.contains(_Fold.fit))
           for (final option in ThumbnailFit.values)
             MenuItemButton(
               leadingIcon: Icon(
@@ -920,25 +1075,25 @@ class _GalleryOverflowMenu extends StatelessWidget {
               onPressed: () => appState.setThumbnailFit(option),
               child: Text(thumbnailFitLabel(l10n, option)),
             ),
-        if (folded.contains(_Fold.refresh))
+        if (widget.folded.contains(_Fold.refresh))
           MenuItemButton(
             leadingIcon: const Icon(Icons.refresh, size: AppSize.iconLg),
             onPressed: gallery.refreshImages,
             child: Text(l10n.refresh),
           ),
-        if (folded.contains(_Fold.import) && !phone)
+        if (widget.folded.contains(_Fold.import) && !widget.phone)
           MenuItemButton(
             leadingIcon: const Icon(Icons.add_photo_alternate_outlined, size: AppSize.iconLg),
             onPressed: () => pickImagesIntoWorkspace(context, gallery),
             child: Text(l10n.importFromGallery),
           ),
-        if (isTouch && !phone)
+        if (isTouch && !widget.phone)
           MenuItemButton(
             leadingIcon: const Icon(Icons.photo_camera_outlined, size: AppSize.iconLg),
             onPressed: () => takePhotoIntoWorkspace(context, gallery),
             child: Text(l10n.takePhoto),
           ),
-        if (phone)
+        if (widget.phone)
           MenuItemButton(
             leadingIcon: const Icon(Icons.sync_alt, size: AppSize.iconLg),
             onPressed: () => _showConcurrencyDialog(context, l10n),
@@ -958,9 +1113,10 @@ class _GalleryOverflowMenu extends StatelessWidget {
         ],
       ],
       builder: (context, controller, _) => GlassIconButton(
+        key: _anchorKey,
         icon: Icons.more_vert,
         tooltip: l10n.more,
-        size: size,
+        size: widget.size,
         active: controller.isOpen,
         onPressed: () => controller.isOpen ? controller.close() : controller.open(),
       ),

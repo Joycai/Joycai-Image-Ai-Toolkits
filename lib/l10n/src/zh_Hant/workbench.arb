@@ -1382,5 +1382,16 @@
         "type": "String"
       }
     }
+  },
+  "gallerySortTooltip": "排序方式：{field}（{direction}）",
+  "@gallerySortTooltip": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      },
+      "direction": {
+        "type": "String"
+      }
+    }
   }
 }

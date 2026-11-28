@@ -59,6 +59,8 @@ Map<String, List<int>> _scanImagesIsolate(List<String> paths) {
 
 enum GalleryViewMode { all, processed, temp, folder }
 
+enum GallerySortField { name, date, type }
+
 class GalleryState extends ChangeNotifier {
   /// The database this state reads and writes. Defaults to the app's one
   /// [DatabaseService]; a test hands in a [DatabaseService.forDatabase] over
@@ -73,6 +75,9 @@ class GalleryState extends ChangeNotifier {
   GalleryViewMode viewMode = GalleryViewMode.all;
   String? viewSourcePath; // Used when viewMode is folder
   bool folderViewIsResult = false; // Whether the browsed folder belongs to the result tree
+  GallerySortField sortField = GallerySortField.date;
+  bool sortAscending = false;
+  bool groupByFolder = true;
 
   // Model-based image lists
   List<AppImage> galleryImages = [];
@@ -190,12 +195,11 @@ class GalleryState extends ChangeNotifier {
     _cachedGlobalIndex = {};
     for (var i = 0; i < images.length; i++) {
       final img = images[i];
-      final parent = File(img.path).parent.path;
+      final parent = p.dirname(img.path);
       _cachedGrouped.putIfAbsent(parent, () => []).add(img);
       _cachedGlobalIndex[img.path] = i;
     }
-    _cachedSortedPaths = _cachedGrouped.keys.toList()
-      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    _cachedSortedPaths = _cachedGrouped.keys.toList()..sort(_compareFolders);
   }
 
   bool isScanning = false;
@@ -278,6 +282,20 @@ class GalleryState extends ChangeNotifier {
       thumbnailSize = double.tryParse(savedThumbSize) ?? 150.0;
     }
 
+    final savedSortField = await _db.getSetting('gallery_sort_field');
+    sortField = savedSortField == null
+        ? GallerySortField.date
+        : GallerySortField.values.firstWhere(
+            (e) => e.name == savedSortField,
+            orElse: () => GallerySortField.date,
+          );
+
+    final savedSortAsc = await _db.getSetting('gallery_sort_ascending');
+    sortAscending = savedSortAsc == 'true';
+
+    final savedGroup = await _db.getSetting('gallery_group_by_folder');
+    groupByFolder = savedGroup == null ? true : savedGroup == 'true';
+
     imagePrefix = await _db.getSetting('image_prefix') ?? 'result';
     outputDirectory = await _db.getSetting('output_directory');
 
@@ -315,6 +333,8 @@ class GalleryState extends ChangeNotifier {
 
     _setupOutputWatcher();
     _setupSourceWatchers();
+    folderImages = _sortedImages(folderImages, grouped: false);
+    droppedImages = _sortedImages(droppedImages, grouped: false);
     unawaited(_scanImages());
     unawaited(_scanProcessedImages());
     notifyListeners();
@@ -482,10 +502,17 @@ class GalleryState extends ChangeNotifier {
           PaintingBinding.instance.imageCache.evict(FileImage(File(img.path)));
           ImageMetadataService().evict(img.path);
         }
-        existingDropped.add(AppImage.fromFile(File(img.path), version: version));
+        existingDropped.add(
+          AppImage.fromFile(
+            File(img.path),
+            version: version,
+            modified: stat.modified,
+            size: stat.size,
+          ),
+        );
       }
     }
-    droppedImages = existingDropped;
+    droppedImages = _sortedImages(existingDropped, grouped: false);
 
     if (viewMode == GalleryViewMode.folder && viewSourcePath != null) {
       await _scanFolder(viewSourcePath!);
@@ -559,7 +586,9 @@ class GalleryState extends ChangeNotifier {
     final scanned = await compute(_scanImagesIsolate, [path]);
     if (_disposed || generation != _folderScanGeneration) return;
     _evictChanged([path], scanned);
-    folderImages = scanned.keys.map((path) => _scannedImage(path, scanned[path]!)).toList();
+    folderImages = _sortedImages([
+      for (final entry in scanned.entries) _scannedImage(entry.key, entry.value),
+    ], grouped: false);
     notifyListeners();
   }
 
@@ -577,7 +606,9 @@ class GalleryState extends ChangeNotifier {
     final scanned = await compute(_scanImagesIsolate, activeSourceDirectories);
     if (_disposed || generation != _sourceScanGeneration) return;
     _evictChanged(activeSourceDirectories, scanned);
-    galleryImages = scanned.keys.map((path) => _scannedImage(path, scanned[path]!)).toList();
+    galleryImages = _sortedImages([
+      for (final entry in scanned.entries) _scannedImage(entry.key, entry.value),
+    ], grouped: groupByFolder);
     notifyListeners();
   }
 
@@ -601,28 +632,105 @@ class GalleryState extends ChangeNotifier {
       if (_disposed || generation != _processedScanGeneration) return;
       _evictChanged(scanPaths, scanned);
 
-      // Newest first, from the modification times the isolate already read.
-      // This comparator used to call lastModifiedSync() on both sides of every
-      // comparison, which put an O(n log n) pile of blocking stats on the UI
-      // thread every time the output directory changed.
-      final sorted = scanned.keys.toList()
-        ..sort((a, b) => scanned[b]![0].compareTo(scanned[a]![0]));
-      processedImages = sorted.map((path) => _scannedImage(path, scanned[path]!)).toList();
+      processedImages = _sortedImages([
+        for (final entry in scanned.entries) _scannedImage(entry.key, entry.value),
+      ], grouped: groupByFolder);
     } catch (e) {
       processedImages = [];
     }
     notifyListeners();
   }
 
-  void addDroppedFiles(List<AppImage> files) {
-    final existingPaths = droppedImages.map((img) => img.path).toSet();
-    final newFiles = files.where((file) => !existingPaths.contains(file.path));
-    droppedImages = [...droppedImages, ...newFiles];
+  Future<void> setSortField(GallerySortField field) async {
+    if (sortField == field) return;
+    sortField = field;
+    _resortAll();
+    await _db.saveSetting('gallery_sort_field', field.name);
+  }
+
+  Future<void> setSortAscending(bool ascending) async {
+    if (sortAscending == ascending) return;
+    sortAscending = ascending;
+    _resortAll();
+    await _db.saveSetting('gallery_sort_ascending', ascending.toString());
+  }
+
+  Future<void> setGroupByFolder(bool grouped) async {
+    if (groupByFolder == grouped) return;
+    groupByFolder = grouped;
+    _resortAll();
+    await _db.saveSetting('gallery_group_by_folder', grouped.toString());
+  }
+
+  static int _mediaTypeRank(String path) => AppConstants.isVideoFile(path) ? 1 : 0;
+
+  static int _compareFolders(String a, String b) => a.toLowerCase().compareTo(b.toLowerCase());
+
+  int _compareImages(AppImage a, AppImage b) {
+    int cmp;
+    switch (sortField) {
+      case GallerySortField.name:
+        cmp = a.name.toLowerCase().compareTo(b.name.toLowerCase());
+      case GallerySortField.date:
+        final aMs = a.modified?.millisecondsSinceEpoch ?? 0;
+        final bMs = b.modified?.millisecondsSinceEpoch ?? 0;
+        cmp = aMs.compareTo(bMs);
+      case GallerySortField.type:
+        cmp = _mediaTypeRank(a.path).compareTo(_mediaTypeRank(b.path));
+        if (cmp == 0) {
+          cmp = p.extension(a.path).toLowerCase().compareTo(p.extension(b.path).toLowerCase());
+        }
+        if (cmp == 0) {
+          cmp = a.name.toLowerCase().compareTo(b.name.toLowerCase());
+        }
+    }
+    return sortAscending ? cmp : -cmp;
+  }
+
+  List<AppImage> _sortedImages(List<AppImage> source, {required bool grouped}) {
+    if (source.length <= 1) return List<AppImage>.of(source);
+    final indexed = <(AppImage, int)>[for (var i = 0; i < source.length; i++) (source[i], i)];
+    if (grouped) {
+      final folderOf = {for (final img in source) img.path: p.dirname(img.path)};
+      indexed.sort((a, b) {
+        final folderCmp = _compareFolders(folderOf[a.$1.path]!, folderOf[b.$1.path]!);
+        if (folderCmp != 0) return folderCmp;
+        final cmp = _compareImages(a.$1, b.$1);
+        return cmp != 0 ? cmp : a.$2.compareTo(b.$2);
+      });
+    } else {
+      indexed.sort((a, b) {
+        final cmp = _compareImages(a.$1, b.$1);
+        return cmp != 0 ? cmp : a.$2.compareTo(b.$2);
+      });
+    }
+    return [for (final entry in indexed) entry.$1];
+  }
+
+  void _resortAll() {
+    galleryImages = _sortedImages(galleryImages, grouped: groupByFolder);
+    processedImages = _sortedImages(processedImages, grouped: groupByFolder);
+    folderImages = _sortedImages(folderImages, grouped: false);
+    droppedImages = _sortedImages(droppedImages, grouped: false);
     notifyListeners();
   }
 
-  AppImage _scannedImage(String path, List<int> fingerprint) =>
-      AppImage.fromFile(File(path), version: '${fingerprint[0]}:${fingerprint[1]}');
+  void addDroppedFiles(List<AppImage> files) {
+    final existingPaths = droppedImages.map((img) => img.path).toSet();
+    final newFiles = [
+      for (final file in files)
+        if (existingPaths.add(file.path)) file,
+    ];
+    droppedImages = _sortedImages([...droppedImages, ...newFiles], grouped: false);
+    notifyListeners();
+  }
+
+  AppImage _scannedImage(String path, List<int> fingerprint) => AppImage.fromFile(
+    File(path),
+    version: '${fingerprint[0]}:${fingerprint[1]}',
+    modified: DateTime.fromMillisecondsSinceEpoch(fingerprint[0]),
+    size: fingerprint[1],
+  );
 
   /// Drops several pictures out of the temporary workspace at once.
   ///

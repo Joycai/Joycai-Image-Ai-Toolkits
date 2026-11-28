@@ -6991,6 +6991,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String outputConfigValidationError(String model, String message) {
     return '$model: $message';
   }
+
+  @override
+  String gallerySortTooltip(String field, String direction) {
+    return '排序方式：$field（$direction）';
+  }
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -13979,5 +13984,10 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   @override
   String outputConfigValidationError(String model, String message) {
     return '$model: $message';
+  }
+
+  @override
+  String gallerySortTooltip(String field, String direction) {
+    return '排序方式：$field（$direction）';
   }
 }

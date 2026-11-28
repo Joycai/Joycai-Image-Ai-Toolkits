@@ -398,7 +398,7 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
       AppSnackBar.success(context, successMessage);
 
       if (!overwrite) {
-        final newFile = AppImage(path: targetPath, name: targetName);
+        final newFile = await AppImage.fromPathAsync(targetPath, name: targetName);
         appState.galleryState.addDroppedFiles([newFile]);
       }
 

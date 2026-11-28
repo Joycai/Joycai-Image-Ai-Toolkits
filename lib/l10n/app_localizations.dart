@@ -12664,6 +12664,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{model}: {message}'**
   String outputConfigValidationError(String model, String message);
+
+  /// No description provided for @gallerySortTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort by: {field} ({direction})'**
+  String gallerySortTooltip(String field, String direction);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -3870,5 +3870,16 @@
         "type": "String"
       }
     }
+  },
+  "gallerySortTooltip": "並べ替え：{field}（{direction}）",
+  "@gallerySortTooltip": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      },
+      "direction": {
+        "type": "String"
+      }
+    }
   }
 }
