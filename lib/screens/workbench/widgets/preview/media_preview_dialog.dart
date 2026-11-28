@@ -103,6 +103,8 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
     super.dispose();
   }
 
+  bool get _isInteractive => !_closing && (ModalRoute.of(context)?.isCurrent ?? true);
+
   void _close() {
     if (_closing) return;
     final route = ModalRoute.of(context);
@@ -113,22 +115,34 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
     });
   }
 
+  void _toggleControls() {
+    if (!_isInteractive) return;
+    setState(() => _showControls = !_showControls);
+  }
+
+  void _openVideoAction(String path, String mode) {
+    if (!_isInteractive) return;
+    final action = openVideoTask(context, path, mode);
+    _close();
+    action.ignore();
+  }
+
   void _nextImage(int count) {
-    if (_closing || !_pageController.hasClients) return;
+    if (!_isInteractive || !_pageController.hasClients) return;
     if (_activeIndex < count - 1) {
       _pageController.jumpToPage(_activeIndex + 1);
     }
   }
 
   void _prevImage() {
-    if (_closing || !_pageController.hasClients) return;
+    if (!_isInteractive || !_pageController.hasClients) return;
     if (_activeIndex > 0) {
       _pageController.jumpToPage(_activeIndex - 1);
     }
   }
 
   void _jumpToPage(int index) {
-    if (_closing || !_pageController.hasClients) return;
+    if (!_isInteractive || !_pageController.hasClients) return;
     if (_activeIndex == index) return;
     if ((_activeIndex - index).abs() == 1) {
       // `move`, not `enter`: both endpoints of a page slide are visible.
@@ -214,8 +228,7 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
           const SingleActivator(LogicalKeyboardKey.end): () => _jumpToPage(images.length - 1),
           // Space reaches here only when the active page did not consume it —
           // the video handler binds Space to play/pause on its own focus node.
-          const SingleActivator(LogicalKeyboardKey.space): () =>
-              setState(() => _showControls = !_showControls),
+          const SingleActivator(LogicalKeyboardKey.space): _toggleControls,
         },
         child: Focus(
           autofocus: true,
@@ -225,12 +238,12 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
               children: [
                 // PageView for Main Content
                 GestureDetector(
-                  onTap: () => setState(() => _showControls = !_showControls),
+                  onTap: _toggleControls,
                   child: PageView.builder(
                     controller: _pageController,
                     itemCount: images.length,
                     onPageChanged: (index) {
-                      if (_closing) return;
+                      if (!_isInteractive) return;
                       setState(() => _activeIndex = index);
                       context.read<WorkbenchUIState>().setActivePreview(index);
                     },
@@ -320,26 +333,14 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
                                 label: l10n.menuEditVideo,
                                 child: IconButton(
                                   icon: const Icon(Icons.edit_outlined, color: Colors.white),
-                                  onPressed: () {
-                                    final action = openVideoTask(context, activeFile.path, 'edit');
-                                    _close();
-                                    action.ignore();
-                                  },
+                                  onPressed: () => _openVideoAction(activeFile.path, 'edit'),
                                 ),
                               ),
                               AppControlLabel(
                                 label: l10n.menuExtendVideo,
                                 child: IconButton(
                                   icon: const Icon(Icons.more_time, color: Colors.white),
-                                  onPressed: () {
-                                    final action = openVideoTask(
-                                      context,
-                                      activeFile.path,
-                                      'extend',
-                                    );
-                                    _close();
-                                    action.ignore();
-                                  },
+                                  onPressed: () => _openVideoAction(activeFile.path, 'extend'),
                                 ),
                               ),
                             ],
@@ -587,6 +588,7 @@ void showMediaPreview(
         FadeTransition(opacity: animation, child: child),
   );
   _activePreviewRoutes[navigator] = route;
+  _pendingPreviewOpens[navigator] = null;
   route.completed.whenComplete(() {
     if (!identical(_activePreviewRoutes[navigator], route)) return;
     _activePreviewRoutes[navigator] = null;

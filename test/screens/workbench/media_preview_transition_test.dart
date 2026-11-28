@@ -104,6 +104,7 @@ void main() {
     required WorkbenchUIState uiState,
     required ShellCoverController cover,
     String heroScope = kWorkbenchPreviewHeroScope,
+    bool disableAnimations = false,
   }) async {
     late BuildContext homeContext;
     await tester.pumpWidget(
@@ -113,7 +114,14 @@ void main() {
           debugShowCheckedModeBanner: false,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          builder: (context, child) => ShellCover(controller: cover, child: child!),
+          builder: (context, child) {
+            final covered = ShellCover(controller: cover, child: child!);
+            if (!disableAnimations) return covered;
+            return MediaQuery(
+              data: MediaQuery.of(context).copyWith(disableAnimations: true),
+              child: covered,
+            );
+          },
           home: Builder(
             builder: (context) {
               homeContext = context;
@@ -285,5 +293,172 @@ void main() {
     expect(find.byType(MediaPreviewDialog), findsNothing);
     expect(tester.takeException(), isNull);
     expect(cover.value, 0);
+  });
+
+  testWidgets('external Navigator.pop blocks mid-exit navigation and thumbnail jumps', (
+    tester,
+  ) async {
+    final uiState = WorkbenchUIState();
+    final cover = ShellCoverController();
+    addTearDown(() {
+      uiState.dispose();
+      cover.dispose();
+    });
+
+    final context = await mountHost(tester, uiState: uiState, cover: cover);
+
+    showMediaPreview(
+      context,
+      galleryImages: sampleImages,
+      initialIndex: 0,
+      heroScope: kWorkbenchPreviewHeroScope,
+    );
+    await tester.pumpAndSettle();
+    expect(uiState.activePreviewIndex, 0);
+
+    // Pop via Navigator directly (bypassing _close()) and send navigation
+    // inputs mid-exit.
+    Navigator.of(context).pop();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 30));
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.sendKeyEvent(LogicalKeyboardKey.end);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(MediaPreviewDialog), findsNothing);
+    expect(uiState.activePreviewIndex, 0);
+    expect(tester.takeException(), isNull);
+    expect(cover.value, 0);
+  });
+
+  testWidgets('multiple queued reopens keep latest and pushing a dialog cancels replay', (
+    tester,
+  ) async {
+    final uiState = WorkbenchUIState();
+    final cover = ShellCoverController();
+    addTearDown(() {
+      uiState.dispose();
+      cover.dispose();
+    });
+
+    final context = await mountHost(tester, uiState: uiState, cover: cover);
+
+    // Part A: multiple queued showMediaPreview calls mid-exit replay only the latest.
+    showMediaPreview(
+      context,
+      galleryImages: sampleImages,
+      initialIndex: 0,
+      heroScope: kWorkbenchPreviewHeroScope,
+    );
+    await tester.pumpAndSettle();
+
+    Navigator.of(context).maybePop();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 30));
+    showMediaPreview(
+      context,
+      galleryImages: sampleImages,
+      initialIndex: 0,
+      heroScope: kWorkbenchPreviewHeroScope,
+    );
+    showMediaPreview(
+      context,
+      galleryImages: sampleImages,
+      initialIndex: 1,
+      heroScope: kWorkbenchPreviewHeroScope,
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(MediaPreviewDialog), findsOneWidget);
+    expect(find.text('b.png'), findsOneWidget);
+    expect(uiState.activePreviewIndex, 1);
+    expect(cover.value, 1);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.byType(MediaPreviewDialog), findsNothing);
+    expect(cover.value, 0);
+
+    // Part B: pushing another route over the opener cancels a queued reopen.
+    showMediaPreview(
+      context,
+      galleryImages: sampleImages,
+      initialIndex: 0,
+      heroScope: kWorkbenchPreviewHeroScope,
+    );
+    await tester.pumpAndSettle();
+
+    Navigator.of(context).maybePop();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 30));
+    showMediaPreview(
+      context,
+      galleryImages: sampleImages,
+      initialIndex: 1,
+      heroScope: kWorkbenchPreviewHeroScope,
+    );
+    showDialog<void>(
+      context: context,
+      builder: (_) => const AlertDialog(content: Text('Blocking dialog')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Blocking dialog'), findsOneWidget);
+    expect(find.byType(MediaPreviewDialog), findsNothing);
+
+    Navigator.of(context).pop();
+    await tester.pumpAndSettle();
+    expect(find.byType(MediaPreviewDialog), findsNothing);
+    expect(cover.value, 0);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('reduced-motion open, Esc close, and immediate reopen settle cleanly', (
+    tester,
+  ) async {
+    final uiState = WorkbenchUIState();
+    final cover = ShellCoverController();
+    addTearDown(() {
+      uiState.dispose();
+      cover.dispose();
+    });
+
+    final context = await mountHost(
+      tester,
+      uiState: uiState,
+      cover: cover,
+      disableAnimations: true,
+    );
+
+    showMediaPreview(
+      context,
+      galleryImages: sampleImages,
+      initialIndex: 0,
+      heroScope: kWorkbenchPreviewHeroScope,
+    );
+    await tester.pump();
+    expect(find.byType(MediaPreviewDialog), findsOneWidget);
+    expect(cover.value, 1);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pump();
+    showMediaPreview(
+      context,
+      galleryImages: sampleImages,
+      initialIndex: 1,
+      heroScope: kWorkbenchPreviewHeroScope,
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(MediaPreviewDialog), findsOneWidget);
+    expect(find.text('b.png'), findsOneWidget);
+    expect(uiState.activePreviewIndex, 1);
+    expect(cover.value, 1);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.byType(MediaPreviewDialog), findsNothing);
+    expect(cover.value, 0);
+    expect(tester.takeException(), isNull);
   });
 }
