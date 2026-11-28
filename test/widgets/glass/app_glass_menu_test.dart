@@ -206,7 +206,9 @@ void main() {
     );
 
     // The helper lays the menu's *right* edge on the button's right edge, so
-    // the corner on the button is the top-right one.
+    // the corner on the button is the top-right one, and even when the button
+    // sits flush against the window edge it clamps to the right margin rather
+    // than double-flipping leftward.
     unawaited(
       showAppGlassMenuBelow(
         tester.element(find.byKey(anchorKey)),
@@ -215,6 +217,8 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(originOf(tester), Alignment.topRight);
+    final menuRect = tester.getRect(find.byType(AppGlassMenu));
+    expect(menuRect.right, closeTo(800 - 8, 0.01));
   });
 
   testWidgets('a menu flipped at the corner grows out of the corner it was flipped onto', (

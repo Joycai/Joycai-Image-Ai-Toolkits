@@ -48,6 +48,7 @@ typedef _GridInputs = ({
   List<AppImage> images,
   bool isResult,
   bool isTemp,
+  bool groupByFolder,
   String? permissionPath,
   bool isUnreachable,
   bool isScanning,
@@ -67,6 +68,7 @@ _GridInputs _gridInputs(GalleryState s) {
     images: s.currentViewImages,
     isResult: isResult,
     isTemp: isTemp,
+    groupByFolder: s.groupByFolder,
     permissionPath: permissionPath,
     isUnreachable: !isTemp && permissionPath != null && s.isPathUnreachable(permissionPath),
     isScanning: s.isScanning,
@@ -325,7 +327,7 @@ class _GalleryState extends State<Gallery> {
             file.path,
             appleBookmark: file.extraAppleBookmark,
           );
-          newFiles.add(AppImage(path: path, name: file.name));
+          newFiles.add(await AppImage.fromPathAsync(path, name: file.name));
         }
       }
     } catch (error) {
@@ -390,14 +392,11 @@ class _GalleryState extends State<Gallery> {
     final layout = _layoutOf(context);
     final phone = layout?.isMobile ?? false;
 
-    // The outline is up when the view has more than one folder to index —
-    // the same condition under which the grid draws its group headers.
-    final sortedPaths = grid.isTemp
-        ? const <String>[]
-        : (grid.isResult
-              ? galleryState.getGrouped(grid.images).keys.toList()
-              : galleryState.getSortedPaths(grid.images));
-    final showOutline = !grid.isTemp && sortedPaths.length > 1;
+    // The outline is up when the view is grouped and has more than one folder
+    // to index — the same condition under which the grid draws its group headers.
+    final groupedMode = !grid.isTemp && grid.groupByFolder;
+    final sortedPaths = groupedMode ? galleryState.getSortedPaths(grid.images) : const <String>[];
+    final showOutline = groupedMode && sortedPaths.length > 1;
     final outlineTop = _outlineTop(phone);
     final insets = chrome.copyWith(
       top: showOutline ? outlineTop + _outlineClearance : chrome.top,
@@ -572,17 +571,32 @@ class _GalleryState extends State<Gallery> {
     if (revealing) _reveal++;
     _lastBuiltEmpty = false;
 
-    // Grouping is memoized in GalleryState — only recomputed when the list identity changes.
-    final grouped = state.getGrouped(images);
-    final globalIndexByPath = state.getGlobalIndex(images);
-    final sortedPaths = isResult ? grouped.keys.toList() : state.getSortedPaths(images);
+    // Grouping applies when 2+ folders are present; a single folder in
+    // `all` keeps its path header regardless of the toggle (matching the
+    // menu hint "Applies with 2 or more folders checked").
+    final Map<String, List<AppImage>> byFolder = isTemp
+        ? const <String, List<AppImage>>{}
+        : state.getGrouped(images);
+    final bool groupedMode = !isTemp && (grid.groupByFolder || byFolder.length <= 1);
+    final Map<String, List<AppImage>> grouped;
+    final Map<String, int> globalIndexByPath;
+    final List<String> sortedPaths;
+    if (groupedMode) {
+      grouped = byFolder;
+      globalIndexByPath = state.getGlobalIndex(images);
+      sortedPaths = state.getSortedPaths(images);
+    } else {
+      grouped = {'': images};
+      globalIndexByPath = {for (var i = 0; i < images.length; i++) images[i].path: i};
+      sortedPaths = const [''];
+    }
 
     final Widget gridView = LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth <= 0) return const SizedBox.shrink();
 
         final bool showHeaders =
-            !isTemp && (grouped.length > 1 || grid.mode == GalleryViewMode.all);
+            groupedMode && (grouped.length > 1 || grid.mode == GalleryViewMode.all);
 
         // The spy's offset table, from the same numbers the delegate below
         // lays out with. After the frame: a table change can move the

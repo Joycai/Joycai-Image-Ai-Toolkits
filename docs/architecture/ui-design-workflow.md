@@ -396,3 +396,30 @@ preserving warm-stone neutrals, paired accents, `ModelEditMetrics`, and
   `ModelsControls` into `lib/screens/models/widgets/` (`source_layout_test`),
   added `test/widgets/models/model_edit_dialog_ux_test.dart`, and visually
   reviewed desktop/tablet/mobile light & dark renders in `build/ui-screenshots/`.
+
+### 2026-11-28 Workbench gallery sorting
+
+`GalleryState` and `WorkbenchGlassToolbar` now provide gallery sorting matching
+the File Browser's sort model and glass menu (`B1a · 1f`) while preserving
+warm-stone neutrals, paired accents, `WorkbenchGlassToolbar` measurement-based
+degradation, and the 3-layer glass budget:
+
+- **Sort state & persistence**: `GallerySortField` (`name`, `date`, `type`),
+  `sortAscending` (default `false`, newest first), and `groupByFolder` (default
+  `true`) persist under `gallery_sort_field`, `gallery_sort_ascending`, and
+  `gallery_group_by_folder`, applying across `all`, `processed`, `folder`, and
+  `temp` views with stable ordering and fresh list identities for `Selector`s.
+  `AppImage` carries optional off-thread `modified`/`size` metadata.
+- **Toolbar & menu**: `_GallerySortButton` (`GlassIconButton` with `Icons.sort`,
+  active G3 lens when open, and four-language localized `gallerySortTooltip`)
+  sits at the start of the gallery action cluster and folds last into
+  `_GalleryOverflowMenu` (with compact current-sort trailing indicator) on
+  narrow/phone widths. Opening the G2 `AppGlassMenu` hides `GallerySelectionBar`
+  via `WorkbenchUIState.setGalleryMenuOpen`.
+- **Right-edge dropdown clamping**: Fixed `_AppGlassMenuLayout` so
+  right-anchored dropdowns (`showAppGlassMenuBelow`, `anchor.x > 0`) clamp to
+  the right viewport margin instead of double-flipping leftward when the anchor
+  button sits closer than 8px to the window edge.
+- **Reference**: Maintained design tokens, `widgets/glass/` primitives, and
+  inspected before/after Flutter renders across 390/834/1024/1440 widths in
+  light/dark plus Orange light (no external design service originals).

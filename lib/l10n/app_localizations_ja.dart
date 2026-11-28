@@ -7034,4 +7034,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String outputConfigValidationError(String model, String message) {
     return '$model: $message';
   }
+
+  @override
+  String gallerySortTooltip(String field, String direction) {
+    return '並べ替え：$field（$direction）';
+  }
 }

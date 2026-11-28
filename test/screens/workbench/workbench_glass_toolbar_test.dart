@@ -7,6 +7,7 @@ import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/workbench_gla
 import 'package:joycai_image_ai_toolkits/screens/workbench/workbench_layout.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/state/gallery_state.dart';
+import 'package:joycai_image_ai_toolkits/widgets/glass/app_glass_menu.dart';
 import 'package:joycai_image_ai_toolkits/widgets/glass/glass_controls.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_dialog.dart';
 import 'package:material_ui/material_ui.dart';
@@ -27,7 +28,7 @@ import '../../support/real_async.dart';
 /// the widths they give way at:
 ///
 /// 1. the tool and mode labels go;
-/// 2. import, refresh, fit and size fold into the overflow menu;
+/// 2. import, refresh, fit, size and sort fold into the overflow menu;
 /// 3. the tools collapse into a Tools menu;
 /// 4. the view switch never gives way — it scrolls inside what is left.
 ///
@@ -138,11 +139,12 @@ void main() {
   }
 
   testWidgets('a roomy bar lays everything out inline, labels and all', (tester) async {
-    await pumpAtWidth(tester, 1700);
+    await pumpAtWidth(tester, 1750);
 
     expect(tester.takeException(), isNull);
     expect(toolLabelsShown(), isTrue);
     expect(refreshInline(), isTrue);
+    expect(find.byIcon(Icons.sort), findsOneWidget);
     expect(findTooltip('Thumbnail Size'), findsOneWidget);
     expect(findTooltip('Import from Gallery'), findsOneWidget);
     expect(toolsCollapsed(), isFalse);
@@ -197,11 +199,95 @@ void main() {
     await openMore(tester);
 
     expect(find.text('Select All'), findsOneWidget);
+    expect(find.text('Sort by'), findsOneWidget);
     expect(find.text('Thumbnail Size'), findsOneWidget);
     expect(find.text('Refresh'), findsOneWidget);
     expect(find.text('Import from Gallery'), findsOneWidget);
     expect(find.text('Fit (whole image)'), findsOneWidget);
     expect(find.text('Fill (cropped)'), findsOneWidget);
+  });
+
+  testWidgets('the sort button opens the glass sort menu and updates gallery state', (
+    tester,
+  ) async {
+    final appState = await pumpAtWidth(tester, 1750);
+    final gallery = appState.galleryState;
+
+    await inRealAsync(tester, () async {
+      await tester.tap(find.byIcon(Icons.sort));
+      await tester.pump();
+    });
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AppGlassMenu), findsOneWidget);
+    expect(find.text('Name'), findsOneWidget);
+    expect(find.text('Modify Date'), findsOneWidget);
+    expect(find.text('File Type'), findsOneWidget);
+    expect(find.text('ASC'), findsOneWidget);
+    expect(find.text('DESC'), findsOneWidget);
+    expect(find.text('Group by folder'), findsOneWidget);
+
+    await inRealAsync(tester, () async {
+      await tester.tap(find.text('Name'));
+      await tester.pump();
+    });
+    await tester.pumpAndSettle();
+    expect(gallery.sortField, GallerySortField.name);
+
+    await inRealAsync(tester, () async {
+      await tester.tap(find.byIcon(Icons.sort));
+      await tester.pump();
+    });
+    await tester.pumpAndSettle();
+    await inRealAsync(tester, () async {
+      await tester.tap(find.text('ASC'));
+      await tester.pump();
+    });
+    await tester.pumpAndSettle();
+    expect(gallery.sortAscending, isTrue);
+
+    await inRealAsync(tester, () async {
+      await tester.tap(find.byIcon(Icons.sort));
+      await tester.pump();
+    });
+    await tester.pumpAndSettle();
+    await inRealAsync(tester, () async {
+      await tester.tap(find.text('Group by folder'));
+      await tester.pump();
+    });
+    await tester.pumpAndSettle();
+    expect(gallery.groupByFolder, isFalse);
+
+    // Restore defaults for later tests sharing the singleton AppState.
+    await inRealAsync(tester, () async {
+      await gallery.setSortField(GallerySortField.date);
+      await gallery.setSortAscending(false);
+      await gallery.setGroupByFolder(true);
+    });
+  });
+
+  testWidgets('the overflow menu opens the glass sort menu on narrow bars and phones', (
+    tester,
+  ) async {
+    final appState = await pumpAtWidth(tester, 390, phone: true);
+    final gallery = appState.galleryState;
+
+    await openMore(tester);
+    await inRealAsync(tester, () async {
+      await tester.tap(find.text('Sort by'));
+      await tester.pump();
+    });
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AppGlassMenu), findsOneWidget);
+    await inRealAsync(tester, () async {
+      await tester.tap(find.text('File Type'));
+      await tester.pump();
+    });
+    await tester.pumpAndSettle();
+    expect(gallery.sortField, GallerySortField.type);
+
+    await inRealAsync(tester, () => gallery.setSortField(GallerySortField.date));
   });
 
   testWidgets('the collapsed tools menu still offers every tool by its full name', (tester) async {
@@ -398,7 +484,7 @@ void main() {
     testWidgets('a tool tab hands the rest of the bar to its controls', (tester) async {
       await pumpAtWidth(
         tester,
-        1600,
+        1750,
         tab: WorkbenchTab.crop,
         controls: const Text('TOOL CONTROLS'),
         controlsWidth: 200,

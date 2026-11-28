@@ -183,6 +183,7 @@ Future<void> showAppGlassMenu(
       position: local,
       entries: entries,
       width: width,
+      anchor: anchor,
       themes: InheritedTheme.capture(from: context, to: navigator.context),
       duration: AppMotion.durationOf(context, AppMotion.state),
       barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
@@ -290,6 +291,7 @@ class _AppGlassMenuRoute extends PopupRoute<VoidCallback> {
     required this.position,
     required this.entries,
     required this.width,
+    required this.anchor,
     required this.themes,
     required this.duration,
     required this.barrierLabel,
@@ -299,6 +301,7 @@ class _AppGlassMenuRoute extends PopupRoute<VoidCallback> {
   final Offset position;
   final List<AppGlassMenuEntry> entries;
   final double width;
+  final Alignment anchor;
   final CapturedThemes themes;
   final Duration duration;
 
@@ -328,7 +331,9 @@ class _AppGlassMenuRoute extends PopupRoute<VoidCallback> {
     Animation<double> animation,
     Animation<double> secondaryAnimation,
   ) {
-    return themes.wrap(_AppGlassMenuHost(position: position, entries: entries, width: width));
+    return themes.wrap(
+      _AppGlassMenuHost(position: position, entries: entries, width: width, anchor: anchor),
+    );
   }
 
   @override
@@ -364,11 +369,17 @@ class _AppGlassMenuRoute extends PopupRoute<VoidCallback> {
 /// level with the row that opened it; where the window runs out on the right
 /// it opens on the left instead, and it is clamped vertically.
 class _AppGlassMenuHost extends StatefulWidget {
-  const _AppGlassMenuHost({required this.position, required this.entries, required this.width});
+  const _AppGlassMenuHost({
+    required this.position,
+    required this.entries,
+    required this.width,
+    required this.anchor,
+  });
 
   final Offset position;
   final List<AppGlassMenuEntry> entries;
   final double width;
+  final Alignment anchor;
 
   @override
   State<_AppGlassMenuHost> createState() => _AppGlassMenuHostState();
@@ -471,6 +482,7 @@ class _AppGlassMenuHostState extends State<_AppGlassMenuHost> {
             delegate: _AppGlassMenuLayout(
               position: widget.position,
               padding: MediaQuery.paddingOf(context),
+              anchor: widget.anchor,
             ),
             child: AppGlassMenu(key: _menuKey, width: widget.width, entries: widget.entries),
           ),
@@ -537,10 +549,11 @@ class _AppGlassMenuScope extends InheritedWidget {
 }
 
 class _AppGlassMenuLayout extends SingleChildLayoutDelegate {
-  _AppGlassMenuLayout({required this.position, required this.padding});
+  _AppGlassMenuLayout({required this.position, required this.padding, required this.anchor});
 
   final Offset position;
   final EdgeInsets padding;
+  final Alignment anchor;
 
   static const double _margin = 8;
 
@@ -555,18 +568,22 @@ class _AppGlassMenuLayout extends SingleChildLayoutDelegate {
     final double maxX = math.max(minX, size.width - padding.right - _margin - childSize.width);
     final double maxY = math.max(minY, size.height - padding.bottom - _margin - childSize.height);
 
-    // Flip to the other side of the point before clamping: a menu opened near
-    // the bottom-right corner still has its corner at the click.
+    // Flip to the other side of a pointer click before clamping so a menu
+    // opened near the bottom-right corner keeps its corner at the click.
+    // A right-anchored dropdown already sits to the left of its button and
+    // only needs clamping to the viewport margin.
     double x = position.dx;
     double y = position.dy;
-    if (x > maxX) x = position.dx - childSize.width;
-    if (y > maxY) y = position.dy - childSize.height;
+    if (anchor.x <= 0 && x > maxX) x = position.dx - childSize.width;
+    if (anchor.y <= 0 && y > maxY) y = position.dy - childSize.height;
     return Offset(x.clamp(minX, maxX), y.clamp(minY, maxY));
   }
 
   @override
   bool shouldRelayout(_AppGlassMenuLayout oldDelegate) =>
-      oldDelegate.position != position || oldDelegate.padding != padding;
+      oldDelegate.position != position ||
+      oldDelegate.padding != padding ||
+      oldDelegate.anchor != anchor;
 }
 
 /// The menu panel itself: G2 glass at r16 with 6 of padding around the rows.
