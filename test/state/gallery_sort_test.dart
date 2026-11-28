@@ -188,5 +188,20 @@ void main() {
     expect(second.sortField, GallerySortField.type);
     expect(second.sortAscending, isTrue);
     expect(second.groupByFolder, isFalse);
+
+    // Clearing settings (e.g. reset or restoring an older backup without
+    // gallery_sort_* keys) must reset to defaults and re-sort cached lists.
+    final rawDb = await db.database;
+    await rawDb.delete('settings');
+    final f1 = await AppImage.fromPathAsync(p.join(alpha.path, 'a_second.jpg'));
+    final f2 = await AppImage.fromPathAsync(p.join(alpha.path, 'a_first.png'));
+    second.addDroppedFiles([f1, f2]);
+    expect(names(second.droppedImages), ['a_second.jpg', 'a_first.png']);
+
+    await second.reloadSettings();
+    expect(second.sortField, GallerySortField.date);
+    expect(second.sortAscending, isFalse);
+    expect(second.groupByFolder, isTrue);
+    expect(names(second.droppedImages), ['a_first.png', 'a_second.jpg']);
   });
 }

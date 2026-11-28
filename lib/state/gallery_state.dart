@@ -283,22 +283,18 @@ class GalleryState extends ChangeNotifier {
     }
 
     final savedSortField = await _db.getSetting('gallery_sort_field');
-    if (savedSortField != null) {
-      sortField = GallerySortField.values.firstWhere(
-        (e) => e.name == savedSortField,
-        orElse: () => GallerySortField.date,
-      );
-    }
+    sortField = savedSortField == null
+        ? GallerySortField.date
+        : GallerySortField.values.firstWhere(
+            (e) => e.name == savedSortField,
+            orElse: () => GallerySortField.date,
+          );
 
     final savedSortAsc = await _db.getSetting('gallery_sort_ascending');
-    if (savedSortAsc != null) {
-      sortAscending = savedSortAsc == 'true';
-    }
+    sortAscending = savedSortAsc == 'true';
 
     final savedGroup = await _db.getSetting('gallery_group_by_folder');
-    if (savedGroup != null) {
-      groupByFolder = savedGroup == 'true';
-    }
+    groupByFolder = savedGroup == null ? true : savedGroup == 'true';
 
     imagePrefix = await _db.getSetting('image_prefix') ?? 'result';
     outputDirectory = await _db.getSetting('output_directory');
@@ -337,6 +333,8 @@ class GalleryState extends ChangeNotifier {
 
     _setupOutputWatcher();
     _setupSourceWatchers();
+    folderImages = _sortedImages(folderImages, grouped: false);
+    droppedImages = _sortedImages(droppedImages, grouped: false);
     unawaited(_scanImages());
     unawaited(_scanProcessedImages());
     notifyListeners();
