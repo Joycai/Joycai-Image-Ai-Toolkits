@@ -7,6 +7,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 
+import 'bench/design_catalog.dart';
 import 'bench/render_bench.dart';
 import 'core/app_distribution.dart';
 import 'core/app_effects.dart';
@@ -59,6 +60,11 @@ import 'widgets/tasks/task_capsule_monitor.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  if (catalogEnabled) {
+    runApp(buildDesignCatalogApp());
+    return;
+  }
 
   if (Platform.isMacOS && !AppDistribution.direct) {
     DatabaseService().configureCredentialProtection(const MacCredentialProtection());
@@ -515,7 +521,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     }
 
     final isPhone = Responsive.isMobile(context);
-    final isTouchOs = Platform.isAndroid || Platform.isIOS;
+    final isTouchOs = AppDestination.isMobilePlatform;
     final showTopBar = isTouchOs && !isPhone;
 
     final mq = MediaQuery.of(context);

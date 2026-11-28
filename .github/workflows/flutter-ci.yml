@@ -77,13 +77,13 @@ jobs:
       # Sharded by file, not with --total-shards: that flag splits individual
       # tests, so every shard still compiles all ~289 files, and a few files
       # rely on an earlier test in the same file having run first. The
-      # screenshot harness is excluded by tag — it writes PNGs and asserts
-      # nothing (see dart_test.yaml).
+      # screenshot harness and component goldens are excluded here; goldens
+      # run in their own dedicated Ubuntu job below for consistent rasterization.
       - name: 'Run Tests'
         run: |
           mapfile -t files < <(find test -name '*_test.dart' | LC_ALL=C sort | awk -v n=3 -v i=${{ matrix.shard }} '(NR - 1) % n == i')
           echo "Shard ${{ matrix.shard }}: ${#files[@]} files"
-          flutter test -x screenshots "${files[@]}"
+          flutter test -x screenshots -x golden "${files[@]}"
 
       - name: 'Verify Direct Distribution Policies'
         if: matrix.shard == 0
@@ -94,3 +94,39 @@ jobs:
           test/core/safety_settings_test.dart
           test/services/llm/safety_payload_test.dart
           test/screens/settings/safety_settings_section_test.dart
+
+  golden:
+    name: Component Goldens
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 'Install Linux Native Build Dependencies'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang pkg-config libgtk-3-dev libx11-dev libxi-dev
+
+      - name: 'Install Flutter'
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          flutter-version: '3.50.1'
+          cache: true
+
+      - name: 'Install Dependencies'
+        run: flutter pub get
+
+      - name: 'Generate Localization'
+        run: flutter gen-l10n
+
+      - name: 'Run Component Golden Tests'
+        run: flutter test -t golden test/golden
+
+      - name: 'Upload Golden Failures'
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: golden-failures
+          path: test/golden/failures/
+          if-no-files-found: ignore

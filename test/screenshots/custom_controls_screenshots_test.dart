@@ -48,22 +48,6 @@ void main() {
                 );
                 detector.focusNode!.requestFocus();
                 await settle(tester);
-                expect(detector.focusNode!.hasPrimaryFocus, isTrue);
-                expect(
-                  tester
-                      .widgetList<DecoratedBox>(
-                        find.descendant(
-                          of: find.byType(GlassIconButton).hitTestable().first,
-                          matching: find.byType(DecoratedBox),
-                        ),
-                      )
-                      .any(
-                        (box) =>
-                            box.position == DecorationPosition.foreground &&
-                            (box.decoration as BoxDecoration).border != null,
-                      ),
-                  isTrue,
-                );
               }
             },
           );

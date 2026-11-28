@@ -60,9 +60,17 @@ enum AppDestination {
   /// cannot disagree with the key that is actually bound.
   String get shortcutHint => '${AppShortcuts.primaryModifierLabel}+${index + 1}';
 
+  /// Overridable in widget tests to exercise Android/iOS destination filtering
+  /// on desktop hosts.
+  @visibleForTesting
+  static bool? debugIsMobilePlatformOverride;
+
+  /// Whether the app is running on Android or iOS (or an explicit test override).
+  static bool get isMobilePlatform =>
+      debugIsMobilePlatformOverride ?? (Platform.isAndroid || Platform.isIOS);
+
   /// Whether this platform offers the destination at all.
-  static bool isAvailable(AppDestination d) =>
-      !(d.desktopOnly && (Platform.isAndroid || Platform.isIOS));
+  static bool isAvailable(AppDestination d) => !(d.desktopOnly && isMobilePlatform);
 
   /// Every destination this platform offers, in shortcut order.
   static List<AppDestination> get available => AppDestination.values.where(isAvailable).toList();

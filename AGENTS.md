@@ -29,18 +29,23 @@ flutter run                                        # run the app
 dart format lib test tool                          # gate 0 — page width 100, set in analysis_options.yaml
 flutter analyze                                    # gate 1 — must print "No issues found!"
 flutter test -x screenshots                        # gate 2 — everything but the screenshot harness
+flutter test -t golden test/golden                 # component golden regression suite
 flutter build macos                                # or windows / linux / apk / ipa
 flutter test test/screenshots                      # render every screen to build/ui-screenshots/*.png
+dart run tool/screenshot_diff.dart compare         # HTML diff report after snapshot + re-render
 flutter test test/screenshots/component_gallery_test.dart  # every component, 8 theme seeds × light/dark
 flutter test test/screenshots/render_probe.dart    # UI-thread rebuild/repaint cost (not in CI)
 ```
 
 **All three gates must be green after every code change, before any commit.** CI
 (`.github/workflows/flutter-ci.yml`) runs format (`--set-exit-if-changed`) then analyze
-in one job, and the tests sharded by file across three runners beside it.
+in one job, the non-screenshot/non-golden tests sharded by file across three runners, and
+`test/golden` in a dedicated Ubuntu job.
 A commit that only reformats goes into `.git-blame-ignore-revs`. The `screenshots` tag
-(`dart_test.yaml`) marks harness files that write PNGs and assert nothing;
-`rebuild_scope_test.dart` sits beside them but asserts, so it stays in the gate.
+(`dart_test.yaml`) marks harness files that write PNGs and assert nothing (enforced by
+`test/architecture/test_hygiene_scan_test.dart`);
+`rebuild_scope_test.dart` sits beside them but asserts, so it stays in the gate. `CATALOG=1`
+launches the standalone interactive design catalog (`lib/bench/design_catalog.dart`).
 
 ## Project Map
 
@@ -151,8 +156,9 @@ new layer or folder means changing that test on purpose.
 
 A test file goes where its subject lives: `test/<layer>/` and `test/services|widgets|screens/<domain>/`
 mirror the matching `lib/` folder. Classify by what the test actually exercises, not its
-file name. `test/app/` takes whole-app/navigation tests with no single screen;
-`test/architecture/` takes repo-wide audits that read source rather than exercise one module.
+file name. `test/app/` takes whole-app/navigation tests with no single screen (including
+`layout_invariants_test.dart`); `test/architecture/` takes repo-wide audits that read source
+rather than exercise one module; `test/golden/` holds deterministic component golden tests.
 
 ### State and data
 

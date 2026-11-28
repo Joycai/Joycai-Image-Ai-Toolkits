@@ -13,7 +13,12 @@ flutter test test/screenshots --plain-name workbench
 ```
 
 ```bash
-flutter test test/screenshots/component_gallery_test.dart
+flutter test --dart-define=STRICT_SCREENSHOTS=true test/screenshots/component_gallery_test.dart
+```
+
+```bash
+dart run tool/screenshot_diff.dart snapshot
+dart run tool/screenshot_diff.dart compare
 ```
 
 Output: `build/ui-screenshots/<screen>_<size>_<brightness>[_<suffix>].png`
@@ -26,21 +31,31 @@ workbench tab, the model editor's four states). 123 files from the
 The shots are split into one file per area because `flutter test` runs files
 in parallel but a file's own tests in sequence. As a single file they took
 ~150s on their own; split, the runner spreads them across cores. Each file
-seeds its own fixture environment, so a new shot goes into the file for its
-area, after that area's matrix.
+seeds its own fixture environment (`waitForAppSettle` in `harness/suite.dart`
+and `databaseIdle()` in `harness/shoot.dart`), so a new shot goes into the file
+for its area, after that area's matrix.
 
-**This is not a regression gate.** The comparator installed by
-`flutter_test_config.dart` always overwrites and always passes, so a UI change
-can never fail `flutter test`. Every file carries the `screenshots` tag, so the
-gate (`flutter test -x screenshots`, which CI runs) skips them; naming the
-directory still renders them. Layout exceptions are drained and printed rather
-than asserted — an overflow is the thing you want a picture of, and
-`expect(takeException(), isNull)` would abort before the PNG got written. Watch
-the run output for lines like:
+**This is not a regression gate — CI layout invariants live in
+`test/app/layout_invariants_test.dart` and component pixel goldens live in
+`test/golden/`.** The comparator installed by `flutter_test_config.dart` always
+overwrites and always passes, so a UI change does not fail `flutter test` on
+pixel diffs. Every render-only file carries the `screenshots` tag (enforced
+assertion-free by `test/architecture/test_hygiene_scan_test.dart`), so the gate
+(`flutter test -x screenshots`, which CI runs) skips them; naming the directory
+still renders them. By default, layout exceptions are drained and printed rather
+than asserted so the PNG still gets written; pass
+`--dart-define=STRICT_SCREENSHOTS=true` to fail the test after writing the PNG
+whenever any exception is caught. Watch the run output for lines like:
 
 ```
 [prompts_tablet_light] exception during pump: A RenderFlex overflowed by 113 pixels on the right.
 ```
+
+Use `dart run tool/screenshot_diff.dart snapshot` before UI edits and
+`dart run tool/screenshot_diff.dart compare` afterward to generate
+`build/ui-screenshots-diff/index.html` with side-by-side baseline/current/diff
+views. Retire one-off `*_shots_test.dart` files once their checks are absorbed
+into `test/app/layout_invariants_test.dart` or widget contract tests.
 
 ## Why this and not a Flutter web build
 

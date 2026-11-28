@@ -108,7 +108,7 @@ class _AppMarkdownState extends State<AppMarkdown> implements MarkdownBuilderDel
     // line of text — H2's bar, the task box — are scaled with it.
     _scaler = MediaQuery.textScalerOf(context);
     _fallback = MarkdownStyleSheet(
-      a: const TextStyle(color: Colors.blue),
+      a: TextStyle(color: _scheme.accentText),
       p: theme.textTheme.bodyMedium,
       pPadding: EdgeInsets.zero,
       code: theme.textTheme.bodyMedium?.copyWith(

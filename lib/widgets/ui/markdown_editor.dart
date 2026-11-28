@@ -704,7 +704,7 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
             hintText: widget.hint,
             border: InputBorder.none,
             contentPadding: const EdgeInsets.all(12),
-            fillColor: widget.isRefined ? Colors.grey.withValues(alpha: 0.05) : null,
+            fillColor: widget.isRefined ? colorScheme.onSurface.withValues(alpha: 0.05) : null,
             filled: widget.isRefined,
           ),
           style: Theme.of(context).textTheme.bodyMedium,

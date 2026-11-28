@@ -207,21 +207,30 @@ class _CropResizeViewState extends State<CropResizeView> {
               fit: BoxFit.contain,
               mode: ExtendedImageMode.editor,
               enableLoadState: true,
-              loadStateChanged: (state) => switch (state.extendedImageLoadState) {
-                LoadState.loading => Center(
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-                LoadState.failed => Center(
-                  child: Icon(
-                    Icons.broken_image_outlined,
-                    size: 32,
-                    color: Theme.of(context).colorScheme.outline,
-                  ),
-                ),
-                LoadState.completed => null,
+              loadStateChanged: (state) {
+                switch (state.extendedImageLoadState) {
+                  case LoadState.loading:
+                    return Center(
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    );
+                  case LoadState.failed:
+                    return Center(
+                      child: Icon(
+                        Icons.broken_image_outlined,
+                        size: 32,
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                    );
+                  case LoadState.completed:
+                    // Metadata finishes before full-image decode on fast disks;
+                    // re-arm when the editor itself mounts so the initial
+                    // selection badge never waits for a rebuild or first drag.
+                    _publishInitialCropRect();
+                    return null;
+                }
               },
               extendedImageEditorKey: uiState.cropKey,
               initEditorConfigHandler: (state) {

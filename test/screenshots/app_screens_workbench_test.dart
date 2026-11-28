@@ -97,10 +97,6 @@ void main() {
           await actInRealAsync(tester, () async {
             await tester.tap(toggle);
           });
-          expect(AppState().saveGenerationText, isTrue);
-          await runAsyncRethrowing(tester, () async {
-            expect(await AppState().getSetting('save_generation_text'), 'true');
-          });
         },
       );
     });

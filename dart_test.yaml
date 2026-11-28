@@ -8,3 +8,8 @@ tags:
   # render it (`flutter test test/screenshots`). Declared here so excluding it
   # does not warn that the tag is unknown.
   screenshots: {}
+
+  # Deterministic component golden regression tests under test/golden/.
+  # Run in a dedicated CI job (`flutter test -t golden test/golden`) and
+  # locally with `flutter test` or `flutter test test/golden`.
+  golden: {}

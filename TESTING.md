@@ -54,22 +54,36 @@ Set the widget test viewport for the layout being exercised. Tests do not share
 a global 1920×1080 viewport; responsive coverage includes phone, tablet, and
 desktop sizes.
 
-## Visual verification
+## Visual and layout verification
+
+The project uses a four-layer UI verification model:
+
+1. **Static source guards** (`test/architecture/`): `design_token_scan_test.dart` ratchets raw `Color(0x...)`, `Colors.<named>`, `fontSize`, and `BorderRadius.circular(...)` literals in `lib/screens/` and `lib/widgets/`, while `test_hygiene_scan_test.dart` forbids `expect()` calls inside `@Tags(['screenshots'])` files so assertions are never silently skipped by CI.
+2. **Component theme & overlay contracts**: `test/widgets/ui/design_system_theme_contract_test.dart` and `test/widgets/glass/glass_theme_contract_test.dart` assert neutral invariance, accent bindings across all 8 presets × light/dark, reduced-effects fallbacks, real `Tooltip`/`AppSnackBar`/`AppGlassMenu` overlays, and rendered WCAG AA contrast.
+3. **CI layout invariants** (`test/app/layout_invariants_test.dart`): mounts all 8 screens across 390 / 834 / 1024 / 1440 widths, light/dark, `zh`/`en`, all 6 workbench tabs, Windows compact density, and mobile-OS destination gating using real test fonts (`test/support/real_fonts.dart`), asserting zero exceptions, `<= 4` visible `BackdropFilter` layers, and non-clipped chrome controls.
+4. **Component goldens & interactive/screenshot review**:
+   - **Component goldens** (`test/golden/design_system_golden_test.dart`, tagged `golden`): deterministic pixel regression sheets with a tolerant comparator (`test/support/tolerant_golden_comparator.dart`). Run `flutter test -t golden test/golden` (or `--update-goldens` when intentionally updating component visuals); CI runs this in a dedicated Ubuntu job.
+   - **Live previews & Desktop Catalog**: `@Preview` definitions in `lib/widgets/ui/ui_previews.dart` and `lib/widgets/glass/glass_previews.dart`, plus the standalone interactive catalog launched via `CATALOG=1` (`lib/bench/design_catalog.dart`).
+   - **Full-screen screenshot harness** (`test/screenshots/`):
 
 ```bash
 flutter test test/screenshots
-flutter test test/screenshots/component_gallery_test.dart
+flutter test --dart-define=STRICT_SCREENSHOTS=true test/screenshots/component_gallery_test.dart
+dart run tool/screenshot_diff.dart snapshot
+dart run tool/screenshot_diff.dart compare
 ```
 
 The screenshot harness renders seeded real screens at 390 / 834 / 1024 / 1440px
 in light and dark modes and writes PNGs to `build/ui-screenshots/`. The component
-gallery covers eight accent seeds in both themes. Open the generated images and
-inspect the run output for layout exceptions.
+gallery covers eight accent seeds in both themes. Passing `--dart-define=STRICT_SCREENSHOTS=true`
+still writes PNGs first and then fails the test if any pump exceptions occurred. Use
+`tool/screenshot_diff.dart` to snapshot before edits and generate a side-by-side HTML
+diff report (`build/ui-screenshots-diff/index.html`) afterward.
 
 The `screenshots` tag excludes render-only harness tests from the normal gate.
 These overwrite PNGs and do not assert golden-image equality; layout exceptions
-are printed, not asserted. Assertion-based tests alongside them, such as
-`rebuild_scope_test.dart`, remain in the normal gate. See the
+are printed unless `STRICT_SCREENSHOTS=true` is set. Assertion-based tests alongside
+them, such as `rebuild_scope_test.dart`, remain in the normal gate. See the
 [screenshot harness guide](docs/ui-screenshot-harness.md).
 
 ## Performance verification

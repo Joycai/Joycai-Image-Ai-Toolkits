@@ -97,4 +97,46 @@ void main() {
       handle.dispose();
     }
   });
+
+  testWidgets('GlassIconButton shows foreground focus ring when focused via keyboard', (
+    tester,
+  ) async {
+    final strategy = FocusManager.instance.highlightStrategy;
+    FocusManager.instance.highlightStrategy = FocusHighlightStrategy.alwaysTraditional;
+    addTearDown(() => FocusManager.instance.highlightStrategy = strategy);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: GlassIconButton(icon: Icons.tune_outlined, tooltip: 'Tune', onPressed: () {}),
+          ),
+        ),
+      ),
+    );
+
+    final detector = tester.widget<FocusableActionDetector>(
+      find.descendant(
+        of: find.byType(GlassIconButton),
+        matching: find.byType(FocusableActionDetector),
+      ),
+    );
+    detector.focusNode!.requestFocus();
+    await tester.pumpAndSettle();
+
+    expect(detector.focusNode!.hasPrimaryFocus, isTrue);
+    expect(
+      tester
+          .widgetList<DecoratedBox>(
+            find.descendant(of: find.byType(GlassIconButton), matching: find.byType(DecoratedBox)),
+          )
+          .any(
+            (box) =>
+                box.position == DecorationPosition.foreground &&
+                box.decoration is BoxDecoration &&
+                (box.decoration as BoxDecoration).border != null,
+          ),
+      isTrue,
+    );
+  });
 }

@@ -357,9 +357,11 @@ class GalleryState extends ChangeNotifier {
       try {
         final dir = Directory(path);
         if (dir.existsSync()) {
-          _watchers[path] = dir.watch().listen((event) {
-            _debouncedSourceScan();
-          });
+          _watchers[path] = dir.watch().listen(
+            (event) => _debouncedSourceScan(),
+            onError: (Object e) => _log('Directory watch failed for $path: $e', level: 'ERROR'),
+            cancelOnError: true,
+          );
         }
       } catch (e) {
         _log('Failed to watch directory $path: $e', level: 'ERROR');
@@ -376,9 +378,11 @@ class GalleryState extends ChangeNotifier {
       try {
         final dir = Directory(outputDirectory!);
         if (dir.existsSync()) {
-          _outputWatcher = dir.watch().listen((event) {
-            _debouncedOutputScan();
-          });
+          _outputWatcher = dir.watch().listen(
+            (event) => _debouncedOutputScan(),
+            onError: (Object e) => _log('Output directory watch failed: $e', level: 'ERROR'),
+            cancelOnError: true,
+          );
         }
       } catch (e) {
         _log('Failed to watch output directory: $e', level: 'ERROR');
