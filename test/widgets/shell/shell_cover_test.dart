@@ -26,6 +26,19 @@ FullScreenCoverRoute<void> _coverRoute() => FullScreenCoverRoute<void>(
   transitionsBuilder: (_, animation, _, child) => FadeTransition(opacity: animation, child: child),
 );
 
+FullScreenCoverRoute<void> _heroCoverRoute(String tag) => FullScreenCoverRoute<void>(
+  fullscreenDialog: true,
+  transitionDuration: _reveal,
+  reverseTransitionDuration: _reveal,
+  pageBuilder: (_, _, _) => Scaffold(
+    backgroundColor: Colors.black,
+    body: Center(
+      child: Hero(tag: tag, child: const SizedBox(width: 200, height: 200)),
+    ),
+  ),
+  transitionsBuilder: (_, animation, _, child) => FadeTransition(opacity: animation, child: child),
+);
+
 void main() {
   testWidgets('the shell below stops ticking once the cover settles, and '
       'starts again before the exit shows', (WidgetTester tester) async {
@@ -180,5 +193,127 @@ void main() {
     controller.leave();
     await tester.pumpAndSettle();
     expect(groundSize(), const Size(1200, 800));
+  });
+
+  testWidgets('Hero Frame-0 offstage measurement does not prematurely mark cover opaque', (
+    WidgetTester tester,
+  ) async {
+    final controller = ShellCoverController();
+    addTearDown(controller.dispose);
+    final GlobalKey belowKey = GlobalKey();
+    final GlobalKey<NavigatorState> navKey = GlobalKey<NavigatorState>();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        navigatorKey: navKey,
+        builder: (context, child) => ShellCover(controller: controller, child: child!),
+        home: SizedBox.expand(
+          key: belowKey,
+          child: const Center(
+            child: Hero(tag: 'cover-hero-frame0', child: SizedBox(width: 48, height: 48)),
+          ),
+        ),
+      ),
+    );
+
+    final route = _heroCoverRoute('cover-hero-frame0');
+    navKey.currentState!.push(route);
+    // Frame 0: HeroController sets `toRoute.offstage = true` to measure the
+    // destination Hero, flipping ModalRoute's ProxyAnimation to complete.
+    // The real controller has not completed yet, so the route must stay
+    // transparent and the shell must stay uncovered.
+    await tester.pump();
+    expect(controller.covered, isFalse);
+    expect(route.overlayEntries.last.opaque, isFalse);
+    expect(_ticking(belowKey), isTrue);
+
+    await tester.pump(_reveal ~/ 2);
+    expect(controller.covered, isFalse);
+    expect(route.overlayEntries.last.opaque, isFalse);
+    expect(_ticking(belowKey), isTrue);
+
+    await tester.pumpAndSettle();
+    expect(controller.covered, isTrue);
+    expect(route.overlayEntries.last.opaque, isTrue);
+    expect(_ticking(belowKey), isFalse);
+
+    navKey.currentState!.pop();
+    await tester.pump();
+    expect(controller.covered, isFalse);
+    expect(route.overlayEntries.last.opaque, isFalse);
+    expect(_ticking(belowKey), isTrue);
+
+    await tester.pumpAndSettle();
+    expect(controller.value, 0);
+  });
+
+  testWidgets('rapid interrupted Hero transitions leave shell uncovered with no exceptions', (
+    WidgetTester tester,
+  ) async {
+    final controller = ShellCoverController();
+    addTearDown(controller.dispose);
+    final GlobalKey belowKey = GlobalKey();
+    final GlobalKey<NavigatorState> navKey = GlobalKey<NavigatorState>();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        navigatorKey: navKey,
+        builder: (context, child) => ShellCover(controller: controller, child: child!),
+        home: SizedBox.expand(
+          key: belowKey,
+          child: const Center(
+            child: Hero(tag: 'cover-hero-rapid', child: SizedBox(width: 48, height: 48)),
+          ),
+        ),
+      ),
+    );
+
+    navKey.currentState!.push(_heroCoverRoute('cover-hero-rapid'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 30));
+    navKey.currentState!.pop();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 20));
+    navKey.currentState!.push(_heroCoverRoute('cover-hero-rapid'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 30));
+    navKey.currentState!.pop();
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(controller.value, 0);
+    expect(_ticking(belowKey), isTrue);
+  });
+
+  testWidgets('tearing down a settled cover with WindowGround subscribed does not throw', (
+    WidgetTester tester,
+  ) async {
+    final controller = ShellCoverController();
+    addTearDown(controller.dispose);
+    final GlobalKey<NavigatorState> navKey = GlobalKey<NavigatorState>();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        navigatorKey: navKey,
+        builder: (context, child) => ShellCover(
+          controller: controller,
+          child: Stack(children: [const WindowGround(), child!]),
+        ),
+        home: const SizedBox.expand(),
+      ),
+    );
+
+    navKey.currentState!.push(_coverRoute());
+    await tester.pumpAndSettle();
+    expect(controller.value, 1);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(controller.value, 0);
   });
 }
