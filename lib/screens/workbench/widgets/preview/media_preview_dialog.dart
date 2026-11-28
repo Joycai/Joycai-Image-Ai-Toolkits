@@ -41,6 +41,21 @@ String previewHeroTag(String scope, String path) => '$scope::$path';
 final Expando<FullScreenCoverRoute<void>> _activePreviewRoutes =
     Expando<FullScreenCoverRoute<void>>('activeMediaPreviewRoute');
 
+/// Queues the latest preview open request received while an earlier preview
+/// route on the same [NavigatorState] is still animating out (`!isActive`), so
+/// clicking another thumbnail mid-exit still opens it once the exit completes.
+final Expando<_PendingMediaPreview> _pendingPreviewOpens = Expando<_PendingMediaPreview>(
+  'pendingMediaPreviewOpen',
+);
+
+typedef _PendingMediaPreview = ({
+  BuildContext context,
+  ModalRoute<dynamic>? openerRoute,
+  List<AppImage> images,
+  int initialIndex,
+  String? heroScope,
+});
+
 /// Full-screen, swipeable preview for a list of media files of any supported
 /// type. The dialog itself is file-type agnostic: it owns the chrome (toolbar,
 /// navigation, thumbnail strip, save/share) and delegates rendering of each
@@ -99,18 +114,21 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
   }
 
   void _nextImage(int count) {
+    if (_closing || !_pageController.hasClients) return;
     if (_activeIndex < count - 1) {
       _pageController.jumpToPage(_activeIndex + 1);
     }
   }
 
   void _prevImage() {
+    if (_closing || !_pageController.hasClients) return;
     if (_activeIndex > 0) {
       _pageController.jumpToPage(_activeIndex - 1);
     }
   }
 
   void _jumpToPage(int index) {
+    if (_closing || !_pageController.hasClients) return;
     if (_activeIndex == index) return;
     if ((_activeIndex - index).abs() == 1) {
       // `move`, not `enter`: both endpoints of a page slide are visible.
@@ -212,6 +230,7 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
                     controller: _pageController,
                     itemCount: images.length,
                     onPageChanged: (index) {
+                      if (_closing) return;
                       setState(() => _activeIndex = index);
                       context.read<WorkbenchUIState>().setActivePreview(index);
                     },
@@ -276,21 +295,26 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
                             // Stacked, the counter read as a subtitle *of* the
                             // file — a caption belonging to the picture rather
                             // than a place in the run.
-                            Flexible(
-                              child: Text(
-                                activeFile.name,
-                                style: Theme.of(context).textTheme.bodyMedium?.mono
-                                    .copyWith(color: Colors.white),
-                                overflow: TextOverflow.ellipsis,
+                            Expanded(
+                              child: Row(
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      activeFile.name,
+                                      style: Theme.of(context).textTheme.bodyMedium?.mono
+                                          .copyWith(color: Colors.white),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Text(
+                                    '${activeIndex + 1} / ${images.length}',
+                                    style: Theme.of(context).textTheme.labelMedium?.mono
+                                        .copyWith(color: Colors.white54),
+                                  ),
+                                ],
                               ),
                             ),
-                            const SizedBox(width: 10),
-                            Text(
-                              '${activeIndex + 1} / ${images.length}',
-                              style: Theme.of(context).textTheme.labelMedium?.mono
-                                  .copyWith(color: Colors.white54),
-                            ),
-                            const Spacer(),
                             if (AppConstants.isVideoFile(activeFile.path)) ...[
                               AppControlLabel(
                                 label: l10n.menuEditVideo,
@@ -520,14 +544,23 @@ void showMediaPreview(
 }) {
   if (galleryImages.isEmpty) return;
 
+  final images = List<AppImage>.unmodifiable(galleryImages);
+  final clampedIndex = initialIndex.clamp(0, images.length - 1);
+
   final navigator = Navigator.of(context);
   final active = _activePreviewRoutes[navigator];
   if (active != null && active.overlayEntries.isNotEmpty) {
+    if (!active.isActive) {
+      _pendingPreviewOpens[navigator] = (
+        context: context,
+        openerRoute: ModalRoute.of(context),
+        images: images,
+        initialIndex: clampedIndex,
+        heroScope: heroScope,
+      );
+    }
     return;
   }
-
-  final images = List<AppImage>.unmodifiable(galleryImages);
-  final clampedIndex = initialIndex.clamp(0, images.length - 1);
 
   final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
   workbenchUIState.setPreviewList(images, clampedIndex);
@@ -555,8 +588,20 @@ void showMediaPreview(
   );
   _activePreviewRoutes[navigator] = route;
   route.completed.whenComplete(() {
-    if (identical(_activePreviewRoutes[navigator], route)) {
-      _activePreviewRoutes[navigator] = null;
+    if (!identical(_activePreviewRoutes[navigator], route)) return;
+    _activePreviewRoutes[navigator] = null;
+    final pending = _pendingPreviewOpens[navigator];
+    _pendingPreviewOpens[navigator] = null;
+    if (pending != null &&
+        navigator.mounted &&
+        pending.context.mounted &&
+        (pending.openerRoute == null || pending.openerRoute!.isCurrent)) {
+      showMediaPreview(
+        pending.context,
+        galleryImages: pending.images,
+        initialIndex: pending.initialIndex,
+        heroScope: pending.heroScope,
+      );
     }
   });
   navigator.push(route);

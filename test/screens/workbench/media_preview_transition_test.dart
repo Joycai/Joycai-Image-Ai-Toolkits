@@ -8,6 +8,7 @@ import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/preview/media
 import 'package:joycai_image_ai_toolkits/state/workbench_ui_state.dart';
 import 'package:joycai_image_ai_toolkits/widgets/shell/shell_cover.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 
 void main() {
@@ -88,7 +89,7 @@ void main() {
     ];
     sampleImages = [];
     for (final name in ['a.png', 'b.png']) {
-      final file = File('${tempDir.path}/$name');
+      final file = File(p.join(tempDir.path, name));
       await file.writeAsBytes(pngBytes);
       sampleImages.add(AppImage.fromFile(file));
     }
@@ -169,33 +170,26 @@ void main() {
 
     expect(find.byType(MediaPreviewDialog), findsOneWidget);
 
-    // Pop and try re-opening while the preview is still mid-exit.
+    // Pop and try re-opening while the preview is still mid-exit: the latest
+    // target is queued rather than stacked, and opens once the exit finishes.
     Navigator.of(context).maybePop();
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 30));
     showMediaPreview(
       context,
       galleryImages: sampleImages,
-      initialIndex: 0,
+      initialIndex: 1,
       heroScope: kWorkbenchPreviewHeroScope,
     );
     await tester.pump();
     expect(find.byType(MediaPreviewDialog), findsOneWidget);
 
     await tester.pumpAndSettle();
-    expect(find.byType(MediaPreviewDialog), findsNothing);
-    expect(tester.takeException(), isNull);
-    expect(cover.value, 0);
-
-    // Once settled, opening again works normally.
-    showMediaPreview(
-      context,
-      galleryImages: sampleImages,
-      initialIndex: 1,
-      heroScope: kWorkbenchPreviewHeroScope,
-    );
-    await tester.pumpAndSettle();
     expect(find.byType(MediaPreviewDialog), findsOneWidget);
+    expect(uiState.activePreviewIndex, 1);
+    expect(find.text('b.png'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    expect(cover.value, 1);
 
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await tester.pumpAndSettle();
@@ -216,7 +210,7 @@ void main() {
 
     final context = await mountHost(tester, uiState: uiState, cover: cover);
 
-    // Open and immediately hit Escape mid-push.
+    // Open and immediately hit Escape + ArrowRight mid-push.
     showMediaPreview(
       context,
       galleryImages: sampleImages,
@@ -226,10 +220,12 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 30));
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
     await tester.pumpAndSettle();
 
     expect(find.byType(MediaPreviewDialog), findsNothing);
     expect(find.byKey(ValueKey(sampleImages.first.path)), findsOneWidget);
+    expect(uiState.activePreviewIndex, 0);
     expect(tester.takeException(), isNull);
     expect(cover.value, 0);
 

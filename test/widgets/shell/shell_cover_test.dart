@@ -316,4 +316,46 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(controller.value, 0);
   });
+
+  testWidgets('zero-duration cover (reduced motion) marks covered on push and releases on pop', (
+    WidgetTester tester,
+  ) async {
+    final controller = ShellCoverController();
+    addTearDown(controller.dispose);
+    final GlobalKey belowKey = GlobalKey();
+    final GlobalKey<NavigatorState> navKey = GlobalKey<NavigatorState>();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        navigatorKey: navKey,
+        builder: (context, child) => ShellCover(controller: controller, child: child!),
+        home: SizedBox.expand(key: belowKey),
+      ),
+    );
+
+    final route = FullScreenCoverRoute<void>(
+      fullscreenDialog: true,
+      transitionDuration: Duration.zero,
+      reverseTransitionDuration: Duration.zero,
+      pageBuilder: (_, _, _) =>
+          const Scaffold(backgroundColor: Colors.black, body: SizedBox.expand()),
+      transitionsBuilder: (_, animation, _, child) =>
+          FadeTransition(opacity: animation, child: child),
+    );
+
+    navKey.currentState!.push(route);
+    await tester.pump();
+    expect(controller.covered, isTrue);
+    expect(_ticking(belowKey), isFalse);
+
+    navKey.currentState!.pop();
+    await tester.pump();
+    expect(controller.covered, isFalse);
+    expect(_ticking(belowKey), isTrue);
+
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(controller.value, 0);
+  });
 }
