@@ -35,6 +35,27 @@ const String kBrowserPreviewHeroScope = 'file-browser';
 /// un-namespaced, that is a duplicate-tag assertion waiting on unlucky timing.
 String previewHeroTag(String scope, String path) => '$scope::$path';
 
+/// Tracks the active preview route per [NavigatorState] so rapid double-clicks,
+/// keyboard repeats, or clicks passing through an exiting preview cannot stack
+/// overlapping routes or collide Hero flights.
+final Expando<FullScreenCoverRoute<void>> _activePreviewRoutes =
+    Expando<FullScreenCoverRoute<void>>('activeMediaPreviewRoute');
+
+/// Queues the latest preview open request received while an earlier preview
+/// route on the same [NavigatorState] is still animating out (`!isActive`), so
+/// clicking another thumbnail mid-exit still opens it once the exit completes.
+final Expando<_PendingMediaPreview> _pendingPreviewOpens = Expando<_PendingMediaPreview>(
+  'pendingMediaPreviewOpen',
+);
+
+typedef _PendingMediaPreview = ({
+  BuildContext context,
+  ModalRoute<dynamic>? openerRoute,
+  List<AppImage> images,
+  int initialIndex,
+  String? heroScope,
+});
+
 /// Full-screen, swipeable preview for a list of media files of any supported
 /// type. The dialog itself is file-type agnostic: it owns the chrome (toolbar,
 /// navigation, thumbnail strip, save/share) and delegates rendering of each
@@ -46,7 +67,13 @@ class MediaPreviewDialog extends StatefulWidget {
   /// when the opener has no thumbnail to fly back to (list views).
   final String? heroScope;
 
-  const MediaPreviewDialog({super.key, this.heroScope});
+  /// Snapshot of the media items shown by this preview route.
+  final List<AppImage>? images;
+
+  /// Initial page index within [images].
+  final int? initialIndex;
+
+  const MediaPreviewDialog({super.key, this.heroScope, this.images, this.initialIndex});
 
   @override
   State<MediaPreviewDialog> createState() => _MediaPreviewDialogState();
@@ -54,13 +81,20 @@ class MediaPreviewDialog extends StatefulWidget {
 
 class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
   late PageController _pageController;
+  late final List<AppImage> _images;
+  late int _activeIndex;
   bool _showControls = true;
+  bool _closing = false;
 
   @override
   void initState() {
     super.initState();
     final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
-    _pageController = PageController(initialPage: workbenchUIState.activePreviewIndex);
+    final source = widget.images ?? workbenchUIState.previewImages;
+    _images = List<AppImage>.unmodifiable(source);
+    final rawIndex = widget.initialIndex ?? workbenchUIState.activePreviewIndex;
+    _activeIndex = _images.isEmpty ? 0 : rawIndex.clamp(0, _images.length - 1);
+    _pageController = PageController(initialPage: _activeIndex);
   }
 
   @override
@@ -69,27 +103,48 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
     super.dispose();
   }
 
+  bool get _isInteractive => !_closing && (ModalRoute.of(context)?.isCurrent ?? true);
+
+  void _close() {
+    if (_closing) return;
+    final route = ModalRoute.of(context);
+    if (route == null || !route.isCurrent) return;
+    _closing = true;
+    Navigator.of(context).maybePop().then((didPop) {
+      if (!didPop && mounted) _closing = false;
+    });
+  }
+
+  void _toggleControls() {
+    if (!_isInteractive) return;
+    setState(() => _showControls = !_showControls);
+  }
+
+  void _openVideoAction(String path, String mode) {
+    if (!_isInteractive) return;
+    final action = openVideoTask(context, path, mode);
+    _close();
+    action.ignore();
+  }
+
   void _nextImage(int count) {
-    final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
-    final i = workbenchUIState.activePreviewIndex;
-    if (i < count - 1) {
-      _pageController.jumpToPage(i + 1);
+    if (!_isInteractive || !_pageController.hasClients) return;
+    if (_activeIndex < count - 1) {
+      _pageController.jumpToPage(_activeIndex + 1);
     }
   }
 
   void _prevImage() {
-    final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
-    final i = workbenchUIState.activePreviewIndex;
-    if (i > 0) {
-      _pageController.jumpToPage(i - 1);
+    if (!_isInteractive || !_pageController.hasClients) return;
+    if (_activeIndex > 0) {
+      _pageController.jumpToPage(_activeIndex - 1);
     }
   }
 
   void _jumpToPage(int index) {
-    final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
-    final current = workbenchUIState.activePreviewIndex;
-    if (current == index) return;
-    if ((current - index).abs() == 1) {
+    if (!_isInteractive || !_pageController.hasClients) return;
+    if (_activeIndex == index) return;
+    if ((_activeIndex - index).abs() == 1) {
       // `move`, not `enter`: both endpoints of a page slide are visible.
       _pageController.animateToPage(
         index,
@@ -151,11 +206,10 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final workbenchUIState = Provider.of<WorkbenchUIState>(context);
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
-    final images = workbenchUIState.previewImages;
-    final activeIndex = workbenchUIState.activePreviewIndex;
+    final images = _images;
+    final activeIndex = _activeIndex;
 
     if (images.isEmpty) return const SizedBox.shrink();
 
@@ -167,15 +221,14 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
         bindings: {
           // Bound here because this is a PageRoute now: showDialog's barrier
           // used to translate Escape into a pop for free, a PageRoute doesn't.
-          const SingleActivator(LogicalKeyboardKey.escape): () => Navigator.maybePop(context),
+          const SingleActivator(LogicalKeyboardKey.escape): _close,
           const SingleActivator(LogicalKeyboardKey.arrowLeft): _prevImage,
           const SingleActivator(LogicalKeyboardKey.arrowRight): () => _nextImage(images.length),
           const SingleActivator(LogicalKeyboardKey.home): () => _jumpToPage(0),
           const SingleActivator(LogicalKeyboardKey.end): () => _jumpToPage(images.length - 1),
           // Space reaches here only when the active page did not consume it —
           // the video handler binds Space to play/pause on its own focus node.
-          const SingleActivator(LogicalKeyboardKey.space): () =>
-              setState(() => _showControls = !_showControls),
+          const SingleActivator(LogicalKeyboardKey.space): _toggleControls,
         },
         child: Focus(
           autofocus: true,
@@ -185,11 +238,15 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
               children: [
                 // PageView for Main Content
                 GestureDetector(
-                  onTap: () => setState(() => _showControls = !_showControls),
+                  onTap: _toggleControls,
                   child: PageView.builder(
                     controller: _pageController,
                     itemCount: images.length,
-                    onPageChanged: workbenchUIState.setActivePreview,
+                    onPageChanged: (index) {
+                      if (!_isInteractive) return;
+                      setState(() => _activeIndex = index);
+                      context.read<WorkbenchUIState>().setActivePreview(index);
+                    },
                     itemBuilder: (context, index) {
                       final path = images[index].path;
                       final handler = PreviewRegistry.resolve(path);
@@ -241,7 +298,7 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
                               label: l10n.close,
                               child: IconButton(
                                 icon: const Icon(Icons.arrow_back, color: Colors.white),
-                                onPressed: () => Navigator.pop(context),
+                                onPressed: _close,
                               ),
                             ),
                             const SizedBox(width: 8),
@@ -251,46 +308,39 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
                             // Stacked, the counter read as a subtitle *of* the
                             // file — a caption belonging to the picture rather
                             // than a place in the run.
-                            Flexible(
-                              child: Text(
-                                activeFile.name,
-                                style: Theme.of(context).textTheme.bodyMedium?.mono
-                                    .copyWith(color: Colors.white),
-                                overflow: TextOverflow.ellipsis,
+                            Expanded(
+                              child: Row(
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      activeFile.name,
+                                      style: Theme.of(context).textTheme.bodyMedium?.mono
+                                          .copyWith(color: Colors.white),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Text(
+                                    '${activeIndex + 1} / ${images.length}',
+                                    style: Theme.of(context).textTheme.labelMedium?.mono
+                                        .copyWith(color: Colors.white54),
+                                  ),
+                                ],
                               ),
                             ),
-                            const SizedBox(width: 10),
-                            Text(
-                              '${activeIndex + 1} / ${images.length}',
-                              style: Theme.of(context).textTheme.labelMedium?.mono
-                                  .copyWith(color: Colors.white54),
-                            ),
-                            const Spacer(),
                             if (AppConstants.isVideoFile(activeFile.path)) ...[
                               AppControlLabel(
                                 label: l10n.menuEditVideo,
                                 child: IconButton(
                                   icon: const Icon(Icons.edit_outlined, color: Colors.white),
-                                  onPressed: () {
-                                    final action = openVideoTask(context, activeFile.path, 'edit');
-                                    Navigator.pop(context);
-                                    action.ignore();
-                                  },
+                                  onPressed: () => _openVideoAction(activeFile.path, 'edit'),
                                 ),
                               ),
                               AppControlLabel(
                                 label: l10n.menuExtendVideo,
                                 child: IconButton(
                                   icon: const Icon(Icons.more_time, color: Colors.white),
-                                  onPressed: () {
-                                    final action = openVideoTask(
-                                      context,
-                                      activeFile.path,
-                                      'extend',
-                                    );
-                                    Navigator.pop(context);
-                                    action.ignore();
-                                  },
+                                  onPressed: () => _openVideoAction(activeFile.path, 'extend'),
                                 ),
                               ),
                             ],
@@ -438,10 +488,15 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
     BuildContext fromHeroContext,
     BuildContext toHeroContext,
   ) {
-    final gridHero = flightDirection == HeroFlightDirection.push
-        ? fromHeroContext.widget
-        : toHeroContext.widget;
-    return (gridHero as Hero).child;
+    final preferred = flightDirection == HeroFlightDirection.push ? fromHeroContext : toHeroContext;
+    if (preferred.mounted && preferred.widget is Hero) {
+      return (preferred.widget as Hero).child;
+    }
+    final fallback = flightDirection == HeroFlightDirection.push ? toHeroContext : fromHeroContext;
+    if (fallback.mounted && fallback.widget is Hero) {
+      return (fallback.widget as Hero).child;
+    }
+    return const SizedBox.shrink();
   }
 
   /// `12h`'s page chevrons: a 34px disc of white at 8%, not a 48px hole of
@@ -488,8 +543,28 @@ void showMediaPreview(
   required int initialIndex,
   String? heroScope,
 }) {
+  if (galleryImages.isEmpty) return;
+
+  final images = List<AppImage>.unmodifiable(galleryImages);
+  final clampedIndex = initialIndex.clamp(0, images.length - 1);
+
+  final navigator = Navigator.of(context);
+  final active = _activePreviewRoutes[navigator];
+  if (active != null && active.overlayEntries.isNotEmpty) {
+    if (!active.isActive) {
+      _pendingPreviewOpens[navigator] = (
+        context: context,
+        openerRoute: ModalRoute.of(context),
+        images: images,
+        initialIndex: clampedIndex,
+        heroScope: heroScope,
+      );
+    }
+    return;
+  }
+
   final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
-  workbenchUIState.setPreviewList(galleryImages, initialIndex);
+  workbenchUIState.setPreviewList(images, clampedIndex);
 
   // A PageRoute, not showDialog: hero flights only trigger between PageRoutes,
   // and the lightbox is the one dialog in the app with a real spatial origin —
@@ -503,14 +578,33 @@ void showMediaPreview(
   // gallery, its glass toolbar and the task capsule keep painting under the
   // black for as long as the preview is open — about 3ms of GPU time a frame
   // on an integrated GPU at 4K. See lib/widgets/shell/shell_cover.dart.
-  Navigator.of(context).push(
-    FullScreenCoverRoute(
-      fullscreenDialog: true,
-      transitionDuration: AppMotion.durationOf(context, AppMotion.reveal),
-      reverseTransitionDuration: AppMotion.durationOf(context, AppMotion.reveal),
-      pageBuilder: (_, _, _) => MediaPreviewDialog(heroScope: heroScope),
-      transitionsBuilder: (_, animation, _, child) =>
-          FadeTransition(opacity: animation, child: child),
-    ),
+  final route = FullScreenCoverRoute<void>(
+    fullscreenDialog: true,
+    transitionDuration: AppMotion.durationOf(context, AppMotion.reveal),
+    reverseTransitionDuration: AppMotion.durationOf(context, AppMotion.reveal),
+    pageBuilder: (_, _, _) =>
+        MediaPreviewDialog(heroScope: heroScope, images: images, initialIndex: clampedIndex),
+    transitionsBuilder: (_, animation, _, child) =>
+        FadeTransition(opacity: animation, child: child),
   );
+  _activePreviewRoutes[navigator] = route;
+  _pendingPreviewOpens[navigator] = null;
+  route.completed.whenComplete(() {
+    if (!identical(_activePreviewRoutes[navigator], route)) return;
+    _activePreviewRoutes[navigator] = null;
+    final pending = _pendingPreviewOpens[navigator];
+    _pendingPreviewOpens[navigator] = null;
+    if (pending != null &&
+        navigator.mounted &&
+        pending.context.mounted &&
+        (pending.openerRoute == null || pending.openerRoute!.isCurrent)) {
+      showMediaPreview(
+        pending.context,
+        galleryImages: pending.images,
+        initialIndex: pending.initialIndex,
+        heroScope: pending.heroScope,
+      );
+    }
+  });
+  navigator.push(route);
 }

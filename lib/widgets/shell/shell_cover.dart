@@ -26,6 +26,7 @@
 //     are not hidden: [ShellCover] only tells the ground to shrink to the
 //     strip that is still showing behind the title bar.
 
+import 'package:flutter/scheduler.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// How many settled full-cover routes are on top of the shell.
@@ -36,14 +37,28 @@ import 'package:material_ui/material_ui.dart';
 class ShellCoverController extends ValueNotifier<int> {
   ShellCoverController() : super(0);
 
+  bool _disposed = false;
+
   bool get covered => value > 0;
 
   /// Declare that something opaque now covers the shell. Every [enter] must be
   /// paired with a [leave] — [FullScreenCoverRoute] is the only caller, and it
   /// pairs them in `dispose` as well as on the reverse of its transition.
-  void enter() => value = value + 1;
+  void enter() {
+    if (_disposed) return;
+    value = value + 1;
+  }
 
-  void leave() => value = value > 0 ? value - 1 : 0;
+  void leave() {
+    if (_disposed) return;
+    value = value > 0 ? value - 1 : 0;
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
 }
 
 /// Publishes the [ShellCoverController] to the shell and to the routes below.
@@ -94,27 +109,32 @@ class FullScreenCoverRoute<T> extends PageRouteBuilder<T> {
   @override
   void install() {
     super.install();
-    animation!.addStatusListener(_onStatus);
+    // Observe the route's real controller rather than `animation` (ModalRoute's
+    // ProxyAnimation): HeroController sets `offstage = true` on Frame 0 to
+    // measure heroes, which swaps `animation` to `kAlwaysCompleteAnimation` and
+    // would otherwise trigger a false `completed` status mid-flight.
+    controller!.addStatusListener(_onStatus);
   }
 
   @override
   void dispose() {
-    animation?.removeStatusListener(_onStatus);
-    _setCovering(false);
+    controller?.removeStatusListener(_onStatus);
+    _setCovering(false, fromDispose: true);
     super.dispose();
   }
 
   void _onStatus(AnimationStatus status) => _setCovering(status == AnimationStatus.completed);
 
-  void _setCovering(bool value) {
+  void _setCovering(bool value, {bool fromDispose = false}) {
     if (_covering == value) return;
     _covering = value;
 
     // `ModalRoute` yields the barrier first and the modal scope second, and it
     // is the scope that carries `opaque`. Setting it notifies the Overlay,
     // which is why this is a supported thing to do after the fact rather than
-    // a constructor-time decision.
-    if (overlayEntries.isNotEmpty) {
+    // a constructor-time decision. Skip when disposing because entries are
+    // already being torn down.
+    if (!fromDispose && overlayEntries.isNotEmpty) {
       overlayEntries.last.opaque = value;
     }
 
@@ -123,8 +143,19 @@ class FullScreenCoverRoute<T> extends PageRouteBuilder<T> {
       _shell = context == null ? null : ShellCover.maybeOf(context);
       _shell?.enter();
     } else {
-      _shell?.leave();
+      final shell = _shell;
       _shell = null;
+      if (shell != null) {
+        // Route disposal can run during `finalizeTree` (persistentCallbacks),
+        // where notifying ValueListenableBuilder subscribers synchronously would
+        // trigger setState during build.
+        if (fromDispose &&
+            SchedulerBinding.instance.schedulerPhase == SchedulerPhase.persistentCallbacks) {
+          SchedulerBinding.instance.addPostFrameCallback((_) => shell.leave());
+        } else {
+          shell.leave();
+        }
+      }
     }
   }
 }
